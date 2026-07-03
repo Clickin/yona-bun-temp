@@ -208,7 +208,34 @@ test("blocks frontend route TSX work that adds raw anchor tags", () => {
   assert.equal(result.blocked, true);
   assert.match(formatScalaHtmlGoalGuardSummary(result), /anchor tag work/u);
   assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Router Link/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /href="#"/u);
   assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Query useMutation/u);
+});
+
+test("blocks frontend route TSX work that preserves placeholder hrefs through Link", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  return <Link href="#" onClick={handleStateTabClick}>Open</Link>;\n' +
+          '+  return <Link href="javascript:void(0)" className="title-prefix">[API]</Link>;\n',
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /placeholder Link href work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /Link to\/hash/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /button type="button"/u);
 });
 
 test("blocks frontend route TSX work that creates anchor tags through createElement", () => {
@@ -379,9 +406,7 @@ test("blocks frontend route TSX work that imperatively creates DOM nodes", () =>
     ],
     auditPatch:
       "+| 2026-07-03 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
-    routePatches: new Map([
-      [routeFile, '+  const form = document.createElement("form");\n'],
-    ]),
+    routePatches: new Map([[routeFile, '+  const form = document.createElement("form");\n']]),
     env: {},
   });
 

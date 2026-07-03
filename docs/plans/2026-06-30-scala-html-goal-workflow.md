@@ -21,6 +21,13 @@ Every resumed goal turn must restate this directive before choosing work:
   TSX. Translate those behaviors into React state/events/components plus
   TanStack Router navigation and TanStack Query mutations/cache updates while
   preserving the same output DOM/UX.
+- TanStack Router `Link` owns anchor semantics in route TSX. Use `Link to` for
+  internal app navigation, `Link to` plus `hash` for shareable in-page deep
+  links such as comments/vote sections, and `Link href` for real
+  external/download/mailto URLs. Legacy `href="#"` and `href="javascript:..."`
+  are behavior evidence only: do not preserve them as raw anchors or as
+  `Link href="#"`; translate non-navigation side effects to
+  `button type="button"` plus React `onClick`/state/mutation logic.
 - Frontend route TSX/E2E implementation for this goal must be delegated to a
   spawned subagent. The main agent selects the target, supplies the legacy
   sources and rules, reviews the patch, integrates only accepted work, runs
@@ -160,9 +167,14 @@ Rules:
 - Copy the Scala HTML into one large TSX skeleton before splitting components.
 - Convert template params, loops, and conditions to typed REST JSON plus
   TanStack Query.
-- Replace internal view-to-view anchors with TanStack Router Link components
-  while preserving the legacy href in the rendered anchor.
-- Keep external, download, mailto, and non-SPA anchors as normal anchors.
+- Replace navigation anchors with TanStack Router Link components: internal app
+  navigation uses `Link to`, shareable fragment/deep-link navigation uses
+  `Link to` plus `hash`, and external/download/mailto navigation uses
+  `Link href`.
+- Do not preserve legacy `href="#"` or `href="javascript:..."`. Treat those as
+  legacy JS behavior evidence only; use `button type="button"` for
+  non-navigation side effects and React/TanStack state, mutation, cache, or
+  navigation logic for the behavior.
 - After the E2E test is GREEN for the copied screen, split the large component
   along legacy partial or maintenance boundaries without changing rendered DOM.
 - End the turn only after the focused E2E remains GREEN after decomposition,
@@ -190,6 +202,12 @@ Rules:
   mutation, document.*, delegated native event handlers, classList/style.display
   control, HTML fragment fetch/insert flows, or dynamic dangerouslySetInnerHTML
   assembly into route TSX.
+- Route TSX must not add raw anchors. Use TanStack Router Link for all anchor
+  navigation: `to` for internal routes, `to` plus `hash` for shareable in-page
+  deep links, and `href` for external/download/mailto URLs. Treat legacy
+  `href="#"` and `href="javascript:..."` as behavior evidence only; convert
+  non-navigation side effects to `button type="button"` with React
+  `onClick`/state/mutation logic.
 - Frontend route TSX/E2E implementation must be delegated to spawned subagents.
 - Prefer multiple concurrent worker subagents whenever targets can be split into
   disjoint route/screen write scopes. Assign each worker explicit allowed files
@@ -226,6 +244,9 @@ The main agent must give the subagent:
 - related legacy JS/CSS/messages
 - the rule that legacy JS is behavior evidence only and must be translated to
   React state/events/components plus TanStack Router/Query
+- the rule that route TSX must not add raw anchors: use TanStack Router `Link`
+  for all navigation anchors and `button type="button"` for legacy
+  `href="#"`/`href="javascript:..."` non-navigation side effects
 - expected E2E file and required provenance row
 - exact verification command expected for the focused route
 
@@ -281,10 +302,15 @@ The test must not:
 - skip internal navigation by jumping directly to every page with `goto`
 - accept old React-only class names, layout wrappers, labels, or field names
 
-For internal navigation, assert both:
+For navigation, assert the React translation rather than blindly preserving
+legacy placeholder hrefs:
 
-- the rendered anchor has the legacy `href`
-- clicking it performs the SPA transition and renders the expected next DOM
+- `Link to`/`hash`/`href` renders the expected meaningful URL, including
+  base-path and fragment behavior when applicable
+- clicking it performs the SPA transition or hash scroll and renders the
+  expected next DOM/location
+- legacy `href="#"` or `href="javascript:..."` side-effect controls render as
+  buttons and do not expose placeholder hrefs
 
 ### 3. Copy Scala HTML Into One TSX Skeleton
 
@@ -326,8 +352,15 @@ Legacy dynamic behavior:
 TanStack Router:
 
 - route params and search params come from TanStack Router
-- internal view-to-view navigation uses `Link`
-- the rendered anchor must keep the legacy deep-link `href`
+- route TSX does not add raw `<a>` tags; anchor semantics go through `Link`
+- internal view-to-view navigation uses `Link to`
+- shareable in-page deep links use `Link to` plus `hash`, so opening
+  `/path#comments` loads the screen and scrolls to the target while clicking the
+  link in an already-open screen performs the same in-page movement
+- external, download, and mailto links use `Link href`
+- legacy `href="#"` and `href="javascript:..."` are never exact DOM targets;
+  translate them to `button type="button"` for non-navigation side effects or
+  to a real `Link to`/`hash`/`href` when the URL is meaningful and shareable
 - programmatic navigation is allowed only for legacy non-anchor flows such as
   post-submit redirect, modal choice, or imperative callback
 
@@ -394,7 +427,12 @@ A screen rebuild goal is complete only when all are true:
 - RED E2E existed before implementation
 - E2E compares the whole rendered screen, not isolated elements
 - Scala HTML skeleton was copied before component extraction
-- internal anchors render through TanStack Router `Link` with legacy `href`
+- anchor navigation renders through TanStack Router `Link`: internal routes use
+  `to`, shareable fragment links use `hash`, and external/download/mailto URLs
+  use `href`
+- legacy `href="#"` and `href="javascript:..."` anchors are removed or
+  translated to `button type="button"` side-effect controls rather than
+  preserved as placeholder links
 - server data flows through REST API client plus TanStack Query
 - forms account for React submit, REST mutation, and CSRF differences from the
   first test version

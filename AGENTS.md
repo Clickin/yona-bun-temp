@@ -12,11 +12,11 @@
 
 ### 우선순위 분리
 
-| 순위 | 범위 | 시기 |
-| --- | --- | --- |
-| 1순위 | 레거시 Yona 핵심 기능 동등 구현(인증, 프로젝트, 이슈, 보드, PR/리뷰, 검색, 알림, 관리) | 현재 |
+| 순위  | 범위                                                                                     | 시기         |
+| ----- | ---------------------------------------------------------------------------------------- | ------------ |
+| 1순위 | 레거시 Yona 핵심 기능 동등 구현(인증, 프로젝트, 이슈, 보드, PR/리뷰, 검색, 알림, 관리)   | 현재         |
 | 2순위 | SVN, LDAP, Import/Export, 마이그레이션 도구 등 구현 난이도가 높거나 우선순위가 낮은 기능 | 변환 완료 후 |
-| 3순위 | 아키텍처 개선, 성능 최적화, 새로운 기능 추가 | 개선 단계 |
+| 3순위 | 아키텍처 개선, 성능 최적화, 새로운 기능 추가                                             | 개선 단계    |
 
 > "변환 완료" 기준은 `SPEC.md` Section 8 Definition of Done이다.
 
@@ -67,6 +67,7 @@
 - 구현 전 대응 legacy route/test/model과 UI 기준을 `yona-original/`에서 식별한다.
 - `/goal` 또는 사용자가 `docs/plans/2026-06-30-scala-html-goal-workflow.md` 기반 frontend 작업을 지시한 turn에서는 **기존 React DOM을 기준으로 보정하지 않는다.** 반드시 대상 화면의 `yona-original/app/views/**/*.scala.html` 및 포함 partial/LESS/JS/messages를 먼저 식별하고, 그 legacy 구조를 TSX로 구현한다.
 - Scala HTML/legacy JS는 **출력 DOM/UX의 source of truth**이지 내부 구현 방식의 source of truth가 아니다. jQuery, inline script, `document.*`, `addEventListener`, `classList`, `style.display`, HTML fragment fetch/insert(htmx식 동작), `dangerouslySetInnerHTML` 기반 동적 조립, legacy template script tag는 React 구현으로 직역하지 않는다. 동일 DOM/UX가 렌더링되도록 React state/events/components와 TanStack Router/Query navigation, mutation, cache update로 번역 구현한다.
+- Route TSX에서 anchor 의미는 TanStack Router `Link`가 소유한다. 내부 라우팅은 `Link to`, 공유 가능한 화면 내 위치 이동은 `Link to` + `hash`, 외부/download/mailto URL은 `Link href`로 구현한다. Legacy `href="#"`와 `href="javascript:..."`는 exact DOM 보존 대상이 아니라 behavior evidence이므로 `Link href="#"`로 옮기지 말고, URL을 공유해야 하는 hash deep link는 `hash` prop으로, 라우팅이 아닌 side effect는 `button type="button"` + React `onClick`/mutation/state로 번역한다.
 - `/goal` 기반 frontend route TSX/E2E 구현은 main agent가 직접 개발하지 않고 subagent를 spawn해서 맡긴다. main agent의 역할은 대상 선정, legacy 근거와 지시문 전달, 산출물 검수, 필요한 최소 통합/검증/커밋이다. 사용자가 명시적으로 main agent 직접 구현을 지시하지 않는 한, main agent는 route TSX/E2E 구현 패치를 먼저 작성하지 않는다.
 - 독립적인 frontend target이 둘 이상이면 단일 subagent만 쓰지 말고 여러 worker subagent를 동시에 spawn한다. 각 worker에는 route/screen, 허용 파일, 금지 파일을 포함한 명시적 write scope를 부여하고, 같은 route/같은 파일/선후행 의존성이 있는 작업만 직렬화한다.
 - 같은 goal turn에서 E2E metric, CSS, provenance만 추가하고 TSX 화면 구현을 바꾸지 않는 작업은 금지한다. 단, 이미 해당 화면이 이번 turn에서 legacy Scala HTML 기준으로 재구축된 뒤 검증을 보강하는 경우는 허용한다.

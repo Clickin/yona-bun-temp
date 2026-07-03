@@ -23,6 +23,8 @@ const ADDED_ANCHOR_TAG_PATTERN =
   /^\+(?!\+\+).*(?:<a\b|(?:React\.)?createElement\s*\(\s*["']a["'])/imu;
 const ADDED_LINK_CUSTOM_ATTRIBUTE_PATTERN =
   /^\+(?!\+\+).*<Link\b(?=[^>]*(?:data-(?:url|type|action|href)|pjax-[\w-]*|data-request-(?:method|uri)|data-toggle=))/imu;
+const ADDED_LINK_PLACEHOLDER_HREF_PATTERN =
+  /^\+(?!\+\+).*<Link\b(?=[^>]*(?:(?:href|to)\s*=\s*["']#["']|href\s*=\s*["']javascript:))/imu;
 
 function fileStatus(file, changedFileStatuses) {
   return changedFileStatuses?.get(file) ?? "M";
@@ -129,6 +131,12 @@ function routeFilesWithLinkCustomAttributes(routePatches) {
     .map(([file]) => file);
 }
 
+function routeFilesWithLinkPlaceholderHrefs(routePatches) {
+  return [...routePatches.entries()]
+    .filter(([, patch]) => ADDED_LINK_PLACEHOLDER_HREF_PATTERN.test(patch))
+    .map(([file]) => file);
+}
+
 export function evaluateScalaHtmlGoalGuard({
   changedFiles,
   changedFileStatuses = new Map(),
@@ -191,7 +199,20 @@ export function evaluateScalaHtmlGoalGuard({
         blocked: true,
         frontendEvidenceFiles,
         frontendImplementationFiles,
-        message: `Scala HTML goal guard blocked anchor tag work. Route TSX must not add raw <a> tags; use TanStack Router Link for internal and external navigation so href rendering stays declarative. Form submits must use React form state plus TanStack Query useMutation/cache updates and perform redirects from mutation success side effects. Offending route files: ${addedAnchorTagFiles.join(", ")}.`,
+        message: `Scala HTML goal guard blocked anchor tag work. Route TSX must not add raw <a> tags; use TanStack Router Link for internal, external, download, mailto, and hash deep-link navigation so href rendering stays declarative. Legacy href="#" and href="javascript:..." anchors are behavior evidence only and must become button type="button" React side-effect controls, or Link with a real to/hash/href when the URL is shareable. Form submits must use React form state plus TanStack Query useMutation/cache updates and perform redirects from mutation success side effects. Offending route files: ${addedAnchorTagFiles.join(", ")}.`,
+      };
+    }
+  }
+
+  if (implementationTouchesRuntime && !allowReactDomEscape) {
+    const linkPlaceholderHrefFiles = routeFilesWithLinkPlaceholderHrefs(routePatches);
+
+    if (linkPlaceholderHrefFiles.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message: `Scala HTML goal guard blocked placeholder Link href work. Do not preserve legacy href="#" or href="javascript:..." through TanStack Router Link. Use Link to/hash for shareable in-page deep links, Link href for real external/download/mailto URLs, and button type="button" for non-navigation side effects. Offending route files: ${linkPlaceholderHrefFiles.join(", ")}.`,
       };
     }
   }
