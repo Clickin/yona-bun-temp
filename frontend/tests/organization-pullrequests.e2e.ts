@@ -102,9 +102,11 @@ test("organization pull request closed tab preserves legacy data-url with SPA tr
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationPullRequestNativeLinkAudit(page);
   await mockOrganizationPullRequests(page);
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+  await expect.poll(() => readOrganizationPullRequestNativeLinkAudit(page)).toEqual([]);
   const closedTab = page.locator(".pullrequeset-tab-menu a").filter({ hasText: "Closed" });
   await expect(closedTab).toHaveAttribute("href", "#");
   await expect(closedTab).toHaveAttribute(
@@ -130,15 +132,18 @@ test("organization pull request closed tab preserves legacy data-url with SPA tr
     "action",
     `${basePath}/organizations/weblabs/closedPullrequests`,
   );
+  expect(await readOrganizationPullRequestNativeLinkAudit(page)).toEqual([]);
 });
 
 test("organization pullrequests menu board link preserves legacy href with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationPullRequestNativeLinkAudit(page);
   await mockOrganizationPullRequests(page);
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+  await expect.poll(() => readOrganizationPullRequestNativeLinkAudit(page)).toEqual([]);
   const boardLink = page.locator(".project-menu-gruop a").filter({ hasText: "Board" });
   await expect(boardLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/boards`);
 
@@ -147,7 +152,9 @@ test("organization pullrequests menu board link preserves legacy href with SPA t
   });
   await boardLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(`${basePath}/organizations/weblabs/boards`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -157,7 +164,49 @@ test("organization pullrequests menu board link preserves legacy href with SPA t
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
   await expect(page.locator("#option_form")).toBeVisible();
+  expect(await readOrganizationPullRequestNativeLinkAudit(page)).toEqual([]);
 });
+
+async function installOrganizationPullRequestNativeLinkAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const auditedSelectors = [
+      ".project-menu-gruop",
+      ".project-menu-gruop a",
+      ".pullrequeset-tab-menu",
+      ".pullrequeset-tab-menu a",
+    ];
+    Object.defineProperty(window, "__organizationPullRequestNativeLinkListeners", {
+      configurable: true,
+      value: [],
+      writable: true,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithOrganizationPullRequestAudit(
+      type,
+      listener,
+      options,
+    ) {
+      const selector = auditedSelectors.find((candidate) => this.matches(candidate));
+      if (selector) {
+        (
+          window as Window &
+            typeof globalThis & { __organizationPullRequestNativeLinkListeners: string[] }
+        ).__organizationPullRequestNativeLinkListeners.push(`${selector}:${String(type)}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readOrganizationPullRequestNativeLinkAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __organizationPullRequestNativeLinkListeners?: string[] }
+      ).__organizationPullRequestNativeLinkListeners ?? [],
+  );
+}
 
 async function mockOrganizationPullRequests(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
