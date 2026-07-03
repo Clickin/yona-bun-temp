@@ -280,15 +280,12 @@ function ProjectPullRequestsBody({
               pushedBranches={pullRequests.recentlyPushedBranches}
             />
             <div className="pull-right">
-              <a
-                href={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `/${ownerName}/${projectName}/newPullRequestForm`,
-                )}
+              <Link
+                to={`/${ownerName}/${projectName}/newPullRequestForm` as never}
                 className="ybtn ybtn-success"
               >
                 {t("pullRequest.new")}
-              </a>
+              </Link>
             </div>
             <ul className="nav nav-tabs nm pullrequeset-tab-menu">
               <li className={requestType === "open" ? "active" : ""}>
@@ -404,14 +401,13 @@ function ProjectRecentlyPushedBranches({
                 {`${branch.ownerName}/${branch.projectName}:${branch.shortName} ( ${branch.pushedLabel} )`}
               </span>
               &nbsp;-&nbsp;
-              <a
-                href={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}`,
-                )}
+              <Link
+                to={
+                  `${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}` as never
+                }
               >
                 {t("pullRequest")}
-              </a>
+              </Link>
               {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy close hook keeps aria-hidden. */}
               <button
                 type="button"

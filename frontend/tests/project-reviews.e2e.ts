@@ -20,8 +20,11 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   await expect(page.locator(".review-list-wrap .post-item").nth(1).locator(".infos")).toContainText(
     "No author",
   );
-  await expect(page.locator('.pull-left a[href$="format=xls"]')).toHaveText(
-    "Download as Excel file",
+  const exportLink = page.locator('.pull-left a.ybtn.small[href$="format=xls"]');
+  await expect(exportLink).toHaveText("Download as Excel file");
+  await expect(exportLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/reviews?state=open&filter=comment&format=xls`,
   );
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
@@ -150,6 +153,20 @@ test("project review row source uses TanStack Link for internal row navigation",
   expect(rowSource).not.toContain("<a");
   expect(rowSource).not.toContain("threadHref");
   expect(rowSource).not.toContain("prefixBasePath(basePath");
+});
+
+test("project reviews export source uses TanStack Link href", () => {
+  const source = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
+  const exportSource = source.slice(
+    source.indexOf('<div className="pull-left"'),
+    source.indexOf("<ProjectReviewPagination"),
+  );
+
+  expect(exportSource).toContain("<Link");
+  expect(exportSource).toContain("href={`${action}${exportQuery}`}");
+  expect(exportSource).toContain("to={`${baseRoute}${exportQuery}`}");
+  expect(exportSource).toContain("reloadDocument");
+  expect(exportSource).not.toContain("<a");
 });
 
 async function mockProjectReviews(page: Page) {

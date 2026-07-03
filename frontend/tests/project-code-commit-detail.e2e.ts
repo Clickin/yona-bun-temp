@@ -182,6 +182,46 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("ComponentType");
 });
 
+test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests);
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await expect(page.locator("#code-browse-wrap > .nav-tabs a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code`,
+  );
+  await expect(page.locator("#code-browse-wrap > .nav-tabs a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits`,
+  );
+  await expect(page.locator("#code-browse-wrap > .nav-tabs a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/branches`,
+  );
+  await expect(page.locator(".project-page-wrap > .ybtn.pull-right")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/main`,
+  );
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "commit-route-link";
+  });
+
+  await page.locator("#code-browse-wrap > .nav-tabs a").nth(2).click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/branches`);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-route-link");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 test("project commit detail matches legacy code/diff.scala.html empty discussion state", async ({
   page,
 }) => {
@@ -192,6 +232,22 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator("#code-browse-wrap .codediff-wrap")).toBeVisible();
+  await expect(page.locator("#code-browse-wrap > .nav-tabs a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code`,
+  );
+  await expect(page.locator("#code-browse-wrap > .nav-tabs a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits`,
+  );
+  await expect(page.locator("#code-browse-wrap > .nav-tabs a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/branches`,
+  );
+  await expect(page.locator(".project-page-wrap > .ybtn.pull-right")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/main`,
+  );
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(
     page.locator("#review-form .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
@@ -355,6 +411,22 @@ index 1234567..abcdef1 100644
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".diff-partial-outer#src-main-rs")).toBeVisible();
+  await expect(page.locator("#src-main-rs .diff-partial-commit-id a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/1234567890abcdef/src/main.rs`,
+  );
+  await expect(page.locator("#src-main-rs .diff-partial-commit-id a").nth(0)).toHaveAttribute(
+    "target",
+    "_blank",
+  );
+  await expect(page.locator("#src-main-rs .diff-partial-commit-id a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/abcdef1234567890/src/main.rs`,
+  );
+  await expect(page.locator("#src-main-rs .diff-partial-commit-id a").nth(1)).toHaveAttribute(
+    "target",
+    "_blank",
+  );
   await expect(page.locator(".diff-container.show-comments tr.add")).toHaveCount(2);
   await expect(page.locator(".diff-container.show-comments tr.remove")).toHaveCount(1);
   expect(detailRequests).toEqual(["branch=main"]);
@@ -830,6 +902,14 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     /height:\s*100px/,
   );
   await expect(page.locator("#comment-601 .comment-avatar img")).toHaveAttribute("alt", "dev");
+  await expect(page.locator("#comment-601 .comment-avatar a")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator("#comment-601 .comment_author a")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
   await expect(page.locator('.board-comment-wrap a[href^="#comment-"]')).toHaveCount(0);
   await expect(page.locator('.review-list a[href^="#thread-"]')).toHaveCount(0);
   await expect(page.locator("#comment-601 .ago a")).toHaveAttribute(

@@ -150,6 +150,7 @@ function ProjectReviewsBody({
   const projectName = stringField(project.projectName);
   const baseRoute = `/${ownerName}/${projectName}/reviews`;
   const action = prefixBasePath(runtimeConfig.basePath, baseRoute);
+  const exportQuery = reviewsQuery(search, { format: "xls" });
   const currentUserId =
     numberField(project.viewerUserId) || numberField(project.currentUserId) || 1;
   const activeState = search.state || reviews.state || "open";
@@ -302,12 +303,14 @@ function ProjectReviewsBody({
               />
             </div>
             <div className="pull-left" style={{ padding: 10 }}>
-              <a
-                href={`${action}${reviewsQuery(search, { format: "xls" })}`}
+              <Link
+                href={`${action}${exportQuery}`}
+                to={`${baseRoute}${exportQuery}`}
+                reloadDocument
                 className="ybtn small"
               >
                 <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
-              </a>
+              </Link>
             </div>
             <ProjectReviewPagination
               action={action}

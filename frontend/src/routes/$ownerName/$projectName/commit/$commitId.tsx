@@ -262,20 +262,16 @@ function ProjectCommitDetailBody({
         <div id="code-browse-wrap" className="code-browse-wrap">
           <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
             <li>
-              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "code")}>
-                {t("code.files")}
-              </a>
+              <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
             </li>
             <li className="active">
-              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "commits")}>
-                {t("code.commits")}
-              </a>
+              <Link to={projectTo(ownerName, projectName, "commits")}>{t("code.commits")}</Link>
             </li>
             {project.vcs === "GIT" ? (
               <li>
-                <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "branches")}>
+                <Link to={projectTo(ownerName, projectName, "branches")}>
                   {t("title.branches")}
-                </a>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -382,7 +378,6 @@ function ProjectCommitDetailBody({
                     commitId,
                   )}
                   currentUser={currentUser}
-                  runtimeConfig={runtimeConfig}
                 />
               ) : null}
             </div>
@@ -439,19 +434,12 @@ function ProjectCommitDetailBody({
           {t("notification.watch")}
         </button>
 
-        <a
-          href={projectHref(
-            runtimeConfig.basePath,
-            ownerName,
-            projectName,
-            "commits",
-            encodedBranch,
-            path,
-          )}
+        <Link
+          to={projectTo(ownerName, projectName, "commits", encodedBranch, path)}
           className="ybtn pull-right"
         >
           {t("button.list")}
-        </a>
+        </Link>
       </div>
     </div>
   );
@@ -512,9 +500,8 @@ function SvnCommitDetailBody({
                   data-selected={branch.name === selectedBranch ? "true" : undefined}
                   key={branch.name}
                 >
-                  <a
-                    href={projectHref(
-                      runtimeConfig.basePath,
+                  <Link
+                    to={projectTo(
                       ownerName,
                       projectName,
                       "commits",
@@ -522,7 +509,7 @@ function SvnCommitDetailBody({
                     )}
                   >
                     {branch.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -530,14 +517,10 @@ function SvnCommitDetailBody({
 
           <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
             <li>
-              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "code")}>
-                {t("code.files")}
-              </a>
+              <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
             </li>
             <li className="active">
-              <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "commits")}>
-                {t("code.commits")}
-              </a>
+              <Link to={projectTo(ownerName, projectName, "commits")}>{t("code.commits")}</Link>
             </li>
           </ul>
 
@@ -583,18 +566,12 @@ function SvnCommitDetailBody({
           {t("notification.watch")}
         </button>
 
-        <a
-          href={projectHref(
-            runtimeConfig.basePath,
-            ownerName,
-            projectName,
-            "commits",
-            encodedBranch,
-          )}
+        <Link
+          to={projectTo(ownerName, projectName, "commits", encodedBranch)}
           className="ybtn pull-right"
         >
           {t("button.list")}
-        </a>
+        </Link>
 
         <div id="minimap" className="minimap-outer">
           <div className="minimap-wrap">
@@ -648,40 +625,26 @@ function FileDiffView({
           <div className="diff-partial-commit">
             <div className="diff-partial-commit-id">
               {commitA && parsed.pathA ? (
-                <a
-                  href={projectHref(
-                    runtimeConfig.basePath,
-                    ownerName,
-                    projectName,
-                    "code",
-                    commitA,
-                    parsed.pathA,
-                  )}
+                <Link
+                  to={projectTo(ownerName, projectName, "code", commitA, parsed.pathA)}
                   title={commitA}
                   target="_blank"
                 >
                   {commitAShort}
-                </a>
+                </Link>
               ) : (
                 "\u00a0"
               )}
             </div>
             <div className="diff-partial-commit-id">
               {commitB && parsed.pathB ? (
-                <a
-                  href={projectHref(
-                    runtimeConfig.basePath,
-                    ownerName,
-                    projectName,
-                    "code",
-                    commitB,
-                    parsed.pathB,
-                  )}
+                <Link
+                  to={projectTo(ownerName, projectName, "code", commitB, parsed.pathB)}
                   title={commitB}
                   target="_blank"
                 >
                   {commitBShort}
-                </a>
+                </Link>
               ) : (
                 "\u00a0"
               )}
@@ -950,8 +913,11 @@ function CodeCommentThreadView({
         {thread.comments.map((comment) => (
           <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
             <div className="comment-avatar">
-              <a
-                href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+              <Link
+                to="/$user"
+                params={{ user: comment.authorLoginId }}
+                search={{} as never}
+                activeOptions={{ exact: true }}
                 className="avatar-wrap"
                 data-toggle="tooltip"
                 data-placement="top"
@@ -963,19 +929,22 @@ function CodeCommentThreadView({
                   height="32"
                   alt={comment.authorLoginId}
                 />
-              </a>
+              </Link>
             </div>
             <div className="media-body">
               <div className="meta-info">
                 <span className="comment_author pull-left">
-                  <a
-                    href={prefixBasePath(runtimeConfig.basePath, `/${comment.authorLoginId}`)}
+                  <Link
+                    to="/$user"
+                    params={{ user: comment.authorLoginId }}
+                    search={{} as never}
+                    activeOptions={{ exact: true }}
                     data-toggle="tooltip"
                     data-placement="top"
                     title={comment.authorLabel}
                   >
                     <strong>{`${comment.authorLoginId} `}</strong>
-                  </a>
+                  </Link>
                 </span>
                 <span className="ago">
                   <CommitHashLink hash={`comment-${comment.id}`} title={comment.createdLabel}>
@@ -1057,15 +1026,18 @@ function CodeCommentThreadView({
           <input type="hidden" name="thread.id" value={thread.id} />
           <div className="author-info-wrap pull-left hide-in-mobile">
             <div className="author-info">
-              <a
-                href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+              <Link
+                to="/$user"
+                params={{ user: currentUser.loginId }}
+                search={{} as never}
+                activeOptions={{ exact: true }}
                 className="avatar-wrap medium"
                 title={currentUser.userLabel}
                 data-toggle="tooltip"
                 data-placement="top"
               >
                 <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
-              </a>
+              </Link>
             </div>
           </div>
           <div className="write-comment-box">
@@ -1253,23 +1225,18 @@ function formContents(form: HTMLFormElement) {
   return typeof value === "string" ? value : "";
 }
 
-function ReviewForm({
-  action,
-  currentUser,
-  runtimeConfig,
-}: {
-  action: string;
-  currentUser: CurrentUserSummary;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ReviewForm({ action, currentUser }: { action: string; currentUser: CurrentUserSummary }) {
   const { t } = useLegacyMessages();
   return (
     <div id="review-form" className="review-form">
       <form action={action} method="post" encType="multipart/form-data">
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, `/${currentUser.loginId}`)}
+            <Link
+              to="/$user"
+              params={{ user: currentUser.loginId }}
+              search={{} as never}
+              activeOptions={{ exact: true }}
               className="avatar-wrap medium"
               data-toggle="tooltip"
               data-placement="top"
@@ -1277,7 +1244,7 @@ function ReviewForm({
               data-original-title={currentUser.userLabel}
             >
               <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
-            </a>
+            </Link>
           </div>
         </div>
         <div className="write-comment-box">
@@ -1554,6 +1521,10 @@ function projectHref(basePath: string, ownerName: string, projectName: string, .
     basePath,
     `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`,
   );
+}
+
+function projectTo(ownerName: string, projectName: string, ...parts: string[]) {
+  return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }
 
 function commitCommentsHref(

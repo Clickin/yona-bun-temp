@@ -108,8 +108,9 @@ function ProjectPostDetailBody({
     projectName,
   });
   const basePath = runtimeConfig.basePath;
-  const postHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/post/${postNumber}`);
-  const editHref = `${postHref}/editform`;
+  const postRoutePath = `/${ownerName}/${projectName}/post/${postNumber}`;
+  const postHref = prefixBasePath(basePath, postRoutePath);
+  const editRoutePath = `${postRoutePath}/editform`;
   const canUpdate = booleanField(post.permissions.canUpdate);
   const canDelete = booleanField(post.permissions.canDelete);
   const canWatch = booleanField(post.permissions.canWatch);
@@ -216,7 +217,13 @@ function ProjectPostDetailBody({
         <div className="board-body row-fluid">
           <div className="span9 span-left-pane">
             <div className="author-info">
-              <a href={prefixBasePath(basePath, `/${post.authorLoginId}`)} className="usf-group">
+              <Link
+                to="/$user"
+                params={{ user: stringField(post.authorLoginId) }}
+                search={{} as never}
+                activeProps={{ className: undefined }}
+                className="usf-group"
+              >
                 <span className="avatar-wrap smaller">
                   <img
                     src={post.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
@@ -237,7 +244,7 @@ function ProjectPostDetailBody({
                 ) : (
                   <strong className="name">{t("common.noAuthor")}</strong>
                 )}
-              </a>
+              </Link>
               <PostingHistory historyMarkdown={post.historyMarkdown} />
             </div>
             {post.bodyMarkdown ? (
@@ -292,7 +299,7 @@ function ProjectPostDetailBody({
               <PostActionButtons
                 canDelete={canDelete}
                 canUpdate={canUpdate}
-                editHref={editHref}
+                editRoutePath={editRoutePath}
                 onDeleteClick={() => setDeleteModalOpen(true)}
               />
             </div>
@@ -320,18 +327,20 @@ function ProjectPostDetailBody({
               <dl>
                 {canCreate ? (
                   <dd className="project-btn-item">
-                    <a
-                      href={prefixBasePath(basePath, `/${ownerName}/${projectName}/postform`)}
+                    <Link
+                      to="/$ownerName/$projectName/postform"
+                      params={{ ownerName, projectName }}
+                      search={{} as never}
+                      activeProps={{ className: undefined }}
                       className="ybtn ybtn-success"
                     >
                       {t("post.write")}
-                    </a>
+                    </Link>
                   </dd>
                 ) : null}
               </dl>
               {!canUpdate ? (
                 <PostSelectedLabels
-                  basePath={basePath}
                   labels={post.labels}
                   ownerName={ownerName}
                   projectName={projectName}
@@ -341,7 +350,7 @@ function ProjectPostDetailBody({
                 <PostActionButtons
                   canDelete={canDelete}
                   canUpdate={canUpdate}
-                  editHref={editHref}
+                  editRoutePath={editRoutePath}
                   onDeleteClick={() => setDeleteModalOpen(true)}
                   wrap={false}
                 />
@@ -548,12 +557,10 @@ function CommentDeleteConfirm({
 }
 
 function PostSelectedLabels({
-  basePath,
   labels,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   labels: BoardLabel[];
   ownerName: string;
   projectName: string;
@@ -562,22 +569,22 @@ function PostSelectedLabels({
     return null;
   }
 
-  const listLink = prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`);
+  const listRoutePath = `/${ownerName}/${projectName}/posts`;
 
   return (
     <dl>
       <dt>Label</dt>
       <dd>
         {labels.map((label) => (
-          <a
-            href={`${listLink}?labelIds=${encodeURIComponent(label.id)}`}
+          <Link
+            to={`${listRoutePath}?labelIds=${encodeURIComponent(label.id)}` as never}
+            activeProps={{ className: undefined }}
             className="label issue-label active static"
-            data-label-id={label.id}
             key={label.id}
             style={{ background: label.color }}
           >
             {label.name}
-          </a>
+          </Link>
         ))}
       </dd>
     </dl>
@@ -587,13 +594,13 @@ function PostSelectedLabels({
 function PostActionButtons({
   canDelete,
   canUpdate,
-  editHref,
+  editRoutePath,
   onDeleteClick,
   wrap = true,
 }: {
   canDelete: boolean;
   canUpdate: boolean;
-  editHref: string;
+  editRoutePath: string;
   onDeleteClick: () => void;
   wrap?: boolean;
 }) {
@@ -610,16 +617,15 @@ function PostActionButtons({
           <i className="yobicon-edit-2"></i>
         </button>
       ) : (
-        <a href={editHref}>
+        <Link to={editRoutePath} activeProps={{ className: undefined }}>
           <button
             type="button"
             className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-            data-toggle="tooltip"
             title={t("button.show.original")}
           >
             <i className="yobicon-edit-2"></i>
           </button>
-        </a>
+        </Link>
       )}
       {canDelete ? (
         <button
@@ -836,7 +842,6 @@ function PostCommentRow({
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
-  const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
   const avatarUrl = "/assets/images/default-avatar-32.png";
   const isEditing = editingCommentId === commentId;
 
@@ -849,33 +854,38 @@ function PostCommentRow({
         ></div>
       ))}
       <div className="comment-avatar">
-        <a
-          href={authorHref}
-          className="avatar-wrap"
-          data-toggle="tooltip"
-          data-placement="top"
-          title={authorLabel}
+        <Link
+          to="/$user"
+          params={{ user: authorLoginId }}
+          search={{} as never}
+          activeProps={{ className: undefined }}
+          className={"avatar-wrap"}
         >
           <img src={avatarUrl} width="32" height="32" alt={authorLoginId} />
-        </a>
+        </Link>
       </div>
       <div className="media-body">
         <div className="meta-info">
           <span className="comment_author">
             <span className="resp-comment-avatar">
-              <a
-                href={authorHref}
-                className="avatar-wrap"
-                data-toggle="tooltip"
-                data-placement="top"
-                title={authorLabel}
+              <Link
+                to="/$user"
+                params={{ user: authorLoginId }}
+                search={{} as never}
+                activeProps={{ className: undefined }}
+                className={"avatar-wrap"}
               >
                 <img src={avatarUrl} width="32" height="32" alt={authorLabel} />
-              </a>
+              </Link>
             </span>
-            <a href={authorHref} data-toggle="tooltip" data-placement="top" title={authorLoginId}>
+            <Link
+              to="/$user"
+              params={{ user: authorLoginId }}
+              search={{} as never}
+              activeProps={{ className: undefined }}
+            >
               <strong>{authorLabel}</strong>
-            </a>
+            </Link>
           </span>
           <span className="ago-date">
             <CommentHashLink commentId={commentId} className="ago" title={comment.createdLabel}>
@@ -1222,10 +1232,8 @@ function PostChildComment({
           <Link
             to="/$user"
             params={{ user: authorLoginId }}
+            search={{} as never}
             className="usf-group"
-            data-toggle="tooltip"
-            data-placement="top"
-            title={authorLoginId}
             activeOptions={{ exact: true }}
             activeProps={{ className: undefined }}
           >

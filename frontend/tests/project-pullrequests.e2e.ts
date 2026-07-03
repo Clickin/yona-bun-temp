@@ -76,6 +76,7 @@ test("project pull request recently pushed branch prompt matches legacy partial 
     "href",
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
+  await expect(page.locator(".alert.alert-info a").first()).toHaveText("Pull request");
   await expect(page.locator('.alert.alert-info a.close[href="#"]')).toHaveCount(0);
   const closeControl = page.locator(".alert.alert-info button.close");
   await expect(closeControl).toHaveAttribute("type", "button");
@@ -105,6 +106,39 @@ test("project pull request recently pushed branch prompt matches legacy partial 
     ]);
   await expect(page.locator(".alert.alert-info")).toHaveCount(0);
   await expect(page.locator("#span10 > h5")).toHaveCount(0);
+  await expectPullRequestSpaSession(page);
+});
+
+test("project pull request create links use SPA navigation with legacy hrefs", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=empty`);
+  const newPullRequestLink = page.locator(".pull-right > a.ybtn-success");
+  await expect(newPullRequestLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/newPullRequestForm`,
+  );
+  await expect(newPullRequestLink).toHaveText("pull request");
+  await markPullRequestSpaSession(page);
+  await newPullRequestLink.click();
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath}/admin/sample/newPullRequestForm`);
+  await expectPullRequestSpaSession(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=pushed`);
+  const pushedBranchLink = page.locator(".alert.alert-info a").first();
+  await expect(pushedBranchLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
+  await expect(pushedBranchLink).toHaveText("Pull request");
+  await markPullRequestSpaSession(page);
+  await pushedBranchLink.click();
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
   await expectPullRequestSpaSession(page);
 });
 
@@ -241,6 +275,9 @@ test("project pull request populated row links use SPA navigation with legacy hr
 });
 
 test("project pull request row source uses TanStack Link for internal row navigation", () => {
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain(
+    "<a\n                href={prefixBasePath",
+  );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("const changesHref");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("const contributorHref");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("const receiverHref");
@@ -254,6 +291,12 @@ test("project pull request row source uses TanStack Link for internal row naviga
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "to={`/${ownerName}/${projectName}/newPullRequestForm` as never}",
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "`${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}` as never",
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('hash="reviewers"');
 });
@@ -757,6 +800,43 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
       }),
     });
   });
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/form-options?*",
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          fromBranches: [
+            { name: "feature/ui", selected: true },
+            { name: "main", selected: false },
+          ],
+          fromProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+          mode: "create",
+          selected: {
+            fromBranch: "feature/ui",
+            fromProjectId: 7,
+            toBranch: "main",
+            toProjectId: 7,
+          },
+          toBranches: [{ name: "main", selected: true }],
+          toProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+        }),
+      });
+    },
+  );
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/merge-result?*",
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          commits: [],
+          conflict: false,
+          noHead: false,
+        }),
+      });
+    },
+  );
   return { pushedBranchDeleteRequests };
 }
 
