@@ -18,7 +18,7 @@ const EXPECTED_PROJECT_FORK_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="admin"><fieldset><legend><h4 style="padding-top:10px">admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="/assets/images/fork-pull/fork.jpg"><br></div><div class="pull-left help-messages"><p class="lead">Fork this project's repository.</p><p>"Forking" is a great way to contribute to someone else's project even without write access to it.</p><p>Once you fork a project, you can contribute your code by sending pull requests.</p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option data-url="__BASE_PATH__/admin/sample/newFork/admin" value="admin">admin</option><option data-url="__BASE_PATH__/admin/sample/newFork/devs" value="devs">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
@@ -130,22 +130,30 @@ test("project fork submit renders legacy git/clone.scala.html progress state", a
 test("project fork header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installFavoriteSpanNativeListenerAudit(page);
   await mockProjectAdmin(page, { favoriteRequests });
 
   await page.goto(`${basePath}/admin/sample/newFork`);
-  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  const favoriteToggle = page.locator(".project-breadcrumb .user-project-list");
+  const favoriteStar = favoriteToggle.locator("i");
+  await expect(favoriteToggle).toHaveAttribute("data-project-id", "7");
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)star(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)material-icons(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)va-text-top(?:\s|$)/);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 
   const favoriteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteToggle.dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 test("project fork header favorite star removes starred class when unfavorited", async ({
@@ -168,12 +176,54 @@ test("project fork header favorite star removes starred class when unfavorited",
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).not.toHaveClass(/starred/);
 });
+
+test("project fork header favorite star has no route-local native listener", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installFavoriteSpanNativeListenerAudit(page);
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/newFork`);
+  await expect(page.locator(".project-breadcrumb .user-project-list")).toHaveAttribute(
+    "data-project-id",
+    "7",
+  );
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
+});
+
+async function installFavoriteSpanNativeListenerAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const favoriteListeners: string[] = [];
+    Object.defineProperty(window, "__yonaFavoriteSpanNativeListeners", {
+      configurable: true,
+      value: favoriteListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithFavoriteAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-breadcrumb .user-project-list")) {
+        favoriteListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function favoriteSpanNativeListeners(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
+        .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
 
 async function mockForkSubmit(page: Page) {
   await page.route("**/api/v1/session", async (route) => {

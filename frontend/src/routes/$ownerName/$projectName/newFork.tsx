@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
   readProjectForkOptionsQueryOptions,
@@ -396,7 +396,6 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   const isForked = booleanField(project.isForkedFromOrigin);
   const originalOwnerName = stringField(project.originalOwnerName, "");
   const originalProjectName = stringField(project.originalProjectName, "");
-  const favoriteToggleRef = useRef<HTMLSpanElement | null>(null);
   const [isFavoritedProject, setIsFavoritedProject] = useState(
     () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
   );
@@ -414,19 +413,6 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
       });
     },
   });
-
-  useEffect(() => {
-    const favoriteToggle = favoriteToggleRef.current;
-    if (!favoriteToggle) {
-      return;
-    }
-    const handleFavoriteToggle = (event: globalThis.MouseEvent) => {
-      event.stopPropagation();
-      favoriteMutation.mutate();
-    };
-    favoriteToggle.addEventListener("mousedown", handleFavoriteToggle);
-    return () => favoriteToggle.removeEventListener("mousedown", handleFavoriteToggle);
-  }, [favoriteMutation]);
 
   return (
     <div
@@ -450,7 +436,20 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
               <span
                 className="user-project-list"
                 data-project-id={projectId}
-                ref={favoriteToggleRef}
+                role="button"
+                tabIndex={0}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                  favoriteMutation.mutate();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+                  event.preventDefault();
+                  event.stopPropagation();
+                  favoriteMutation.mutate();
+                }}
               >
                 <i
                   className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
