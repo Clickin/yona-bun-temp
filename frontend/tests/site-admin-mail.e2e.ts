@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
@@ -32,9 +33,9 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -48,9 +49,9 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -144,6 +145,28 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   await page.goto(`${basePath}/sites/mail`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
+  await expect(page.locator(".site-setting-nav a")).toHaveText([
+    "Users",
+    "Posts",
+    "Issues",
+    "Projects",
+    "Send email",
+    "Send mass emails",
+    "Software Update",
+    "Diagnostics",
+  ]);
+  expect(await siteSettingSidebarHrefs(page)).toEqual([
+    `${basePath}/sites/userList`,
+    `${basePath}/sites/postList`,
+    `${basePath}/sites/issueList`,
+    `${basePath}/sites/projectList`,
+    `${basePath}/sites/mail`,
+    `${basePath}/sites/massmail`,
+    `${basePath}/sites/update`,
+    `${basePath}/sites/diagnostic`,
+  ]);
+  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(page.locator(".site-setting-nav li").nth(4)).toHaveClass("active");
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
   await expect(page.locator('input[name="from"]')).toHaveValue("noreply@example.com");
   const massMailLink = page.locator(".site-setting-nav a", { hasText: "Send mass emails" });
@@ -252,6 +275,25 @@ test("site admin mail renders legacy update notification badge", async ({ page }
   await expect(updateLink).toHaveText("Software Update1");
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
+
+test("site admin mail route source keeps direct typed sidebar links", async () => {
+  const source = await readFile("src/routes/sites/mail.tsx", "utf8");
+
+  expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("to={item.href}");
+});
+
+async function siteSettingSidebarHrefs(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.map((link) => {
+      const href = link.getAttribute("href");
+      if (!href) {
+        throw new Error("Missing site setting sidebar href");
+      }
+      return new URL(href, window.location.origin).pathname;
+    }),
+  );
+}
 
 async function mailErrorStateOrder(page: Page) {
   return page.evaluate(() =>
