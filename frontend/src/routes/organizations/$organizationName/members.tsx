@@ -1,13 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 import {
   acceptOrganizationEnrollmentRest,
   addOrganizationMemberRest,
@@ -24,6 +17,8 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+type LegacyOrganizationLinkProps = Parameters<typeof Link>[0];
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
@@ -357,7 +352,8 @@ function OrganizationMember({
                   className={selected ? "active" : undefined}
                   key={roleName}
                 >
-                  <LegacyVoidAnchor
+                  <button
+                    type="button"
                     data-action="apply"
                     data-href={prefixBasePath(
                       basePath,
@@ -367,13 +363,14 @@ function OrganizationMember({
                     onClick={() => onRole(userId, roleName)}
                   >
                     {roleLabel(organization, roleName)}
-                  </LegacyVoidAnchor>
+                  </button>
                 </li>
               );
             })}
           </ul>
         </div>
-        <LegacyVoidAnchor
+        <button
+          type="button"
           data-action="delete"
           data-href={prefixBasePath(
             basePath,
@@ -383,7 +380,7 @@ function OrganizationMember({
           onClick={() => onDelete(userId)}
         >
           {t("button.delete")}
-        </LegacyVoidAnchor>
+        </button>
       </div>
     </li>
   );
@@ -466,7 +463,6 @@ function OrganizationHeader({
 }
 
 function OrganizationMenu({
-  basePath,
   organizationName,
   viewerCanUpdate,
 }: {
@@ -475,64 +471,44 @@ function OrganizationMenu({
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.history.push(prefixBasePath(basePath, to));
-  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}`}
-            >
+            <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}`)}>
               {t("title.organizationHome")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/issues`}
-            >
+            <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/issues`)}>
               {t("menu.issue")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/boards`}
-            >
+            <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/boards`)}>
               {t("menu.board")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/pullrequests`}
+            <Link
+              {...legacyOrganizationLinkProps(`/organizations/${organizationName}/pullrequests`)}
             >
               {t("menu.pullRequest")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink
-                  basePath={basePath}
-                  onNavigate={navigate}
-                  to={`/organizations/${organizationName}/settingform`}
+                <Link
+                  {...legacyOrganizationLinkProps(`/organizations/${organizationName}/settingform`)}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </OrganizationRouteLink>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -544,7 +520,6 @@ function OrganizationMenu({
 
 function OrganizationSettingMenu({
   active,
-  basePath,
   organizationName,
 }: {
   active: "members";
@@ -552,75 +527,25 @@ function OrganizationSettingMenu({
   organizationName: string;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.navigate({ to });
-  };
 
   return (
     <ul className="nav nav-tabs">
       <li className="">
-        <OrganizationRouteLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/settingform`}
-        >
+        <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/settingform`)}>
           {t("organization.settingFrom")}
-        </OrganizationRouteLink>
+        </Link>
       </li>
       <li className={active === "members" ? "active" : ""}>
-        <OrganizationRouteLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/members`}
-        >
+        <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/members`)}>
           {t("organization.member")}
-        </OrganizationRouteLink>
+        </Link>
       </li>
       <li className="">
-        <OrganizationRouteLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/deleteForm`}
-        >
+        <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/deleteForm`)}>
           {t("organization.delete")}
-        </OrganizationRouteLink>
+        </Link>
       </li>
     </ul>
-  );
-}
-
-function OrganizationRouteLink({
-  basePath,
-  children,
-  onNavigate,
-  to,
-}: {
-  basePath: string;
-  children: ReactNode;
-  onNavigate: (to: string) => void;
-  to: string;
-}) {
-  const navigateWithinOrganization = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
-  return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganization}>
-      {children}
-    </a>
   );
 }
 
@@ -631,25 +556,13 @@ function roleLabel(organization: OrganizationAdminView, role: string) {
   return stringField(option?.label, role);
 }
 
-function LegacyVoidAnchor({
-  children,
-  className,
-  ...props
-}: {
-  children: ReactNode;
-  className?: string;
-} & Record<string, unknown>) {
-  const ref = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    ref.current?.setAttribute("href", "javascript:void(0)");
-  }, []);
-
-  return (
-    <a ref={ref} className={className} {...props}>
-      {children}
-    </a>
-  );
+function legacyOrganizationLinkProps(to: string): LegacyOrganizationLinkProps {
+  return {
+    activeOptions: { includeHash: true },
+    activeProps: { className: undefined },
+    search: () => undefined,
+    to,
+  } as unknown as LegacyOrganizationLinkProps;
 }
 
 function organizationHref(basePath: string, organizationName: string) {
