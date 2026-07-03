@@ -845,7 +845,40 @@ test("direct notifications route matches legacy Application.notifications empty 
     siteGuideOuterMargin: "40px 0px 0px",
   });
 
-  const myIssuesTab = page.locator('.main-stream > .nav-tabs a:has-text("My Issues")');
+  const mainStreamTabs = page.locator(".main-stream > .nav-tabs");
+  await expect(mainStreamTabs.locator("> li").nth(0)).toHaveClass("active");
+  await expect(mainStreamTabs.locator("> li").nth(1)).not.toHaveClass(/active/u);
+  await expect(mainStreamTabs.locator("> li").nth(2)).not.toHaveClass(/active/u);
+  await expect(mainStreamTabs.locator("> li > a")).toHaveText([
+    "Notification",
+    "My Issues",
+    "My Files",
+  ]);
+  await expect(mainStreamTabs.locator("> li > a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/notifications`,
+  );
+  await expect(mainStreamTabs.locator("> li > a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/user/issues`,
+  );
+  await expect(mainStreamTabs.locator("> li > a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/user/files`,
+  );
+  await expect(mainStreamTabs.locator("> li > a.active")).toHaveCount(0);
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const mainStreamTabSource = routeSource.slice(
+    routeSource.indexOf('<div className="span8 main-stream">'),
+    routeSource.indexOf('<ul className="activity-streams notification-wrap unstyled">'),
+  );
+  expect(mainStreamTabSource).not.toContain("LegacyInternalLink");
+  expect(mainStreamTabSource).toContain('to="/notifications"');
+  expect(mainStreamTabSource).toContain('to="/user/issues"');
+  expect(mainStreamTabSource).toContain('to="/user/files"');
+
+  const myIssuesTab = mainStreamTabs.locator('a:has-text("My Issues")');
   await expect(myIssuesTab).toHaveAttribute("href", `${basePath}/user/issues`);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -862,6 +895,24 @@ test("direct notifications route matches legacy Application.notifications empty 
       ),
     )
     .toBe("notifications-my-issues-tab");
+
+  await mockWorkspaceFiles(page);
+  await page.goto(`${basePath}/notifications`);
+  const myFilesTab = page.locator('.main-stream > .nav-tabs a:has-text("My Files")');
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "notifications-my-files-tab";
+  });
+  await myFilesTab.click();
+  await expect(page).toHaveURL(`${basePath}/user/files?filter=&pageNum=1`);
+  await expect(page.locator(".attachment-files")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("notifications-my-files-tab");
 });
 
 test("direct notifications route matches legacy populated notification row DOM", async ({
@@ -1776,6 +1827,22 @@ async function mockSiteUsers(page: Page) {
             state: "ACTIVE",
           },
         ],
+      }),
+    });
+  });
+}
+
+async function mockWorkspaceFiles(page: Page) {
+  await page.route("**/api/v1/workspace/files?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        files: [],
+        filter: "",
+        page: 1,
+        pageSize: 50,
+        total: 0,
+        totalPages: 0,
       }),
     });
   });

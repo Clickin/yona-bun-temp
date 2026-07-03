@@ -201,17 +201,19 @@ function HomeScreen({
                 <div className="span8 main-stream">
                   <ul className="nav nav-tabs">
                     <li className="active">
-                      <LegacyInternalLink to="/notifications">
+                      <Link activeProps={{ className: undefined }} to="/notifications">
                         {t("notification")}
-                      </LegacyInternalLink>
+                      </Link>
                     </li>
                     <li>
-                      <LegacyInternalLink to="/user/issues">
+                      <Link activeProps={{ className: undefined }} to="/user/issues">
                         {t("issue.myIssue")}
-                      </LegacyInternalLink>
+                      </Link>
                     </li>
                     <li>
-                      <LegacyInternalLink to="/user/files">{t("user.files")}</LegacyInternalLink>
+                      <Link activeProps={{ className: undefined }} to="/user/files">
+                        {t("user.files")}
+                      </Link>
                     </li>
                     <li>
                       {shouldShowDefaultLandingButton ? (
