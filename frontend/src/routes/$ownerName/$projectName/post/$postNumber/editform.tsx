@@ -189,15 +189,11 @@ function LegacyTabIndexButton({
 }
 
 function HistoryBackLink({ children }: { children: string }) {
-  const anchorRef = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    anchorRef.current?.setAttribute("href", "javascript:history.back();");
-    anchorRef.current?.setAttribute("tabindex", "4");
-  }, []);
   return (
-    <a ref={anchorRef} href="/" className="ybtn">
+    // oxlint-disable-next-line jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets tabindex="4" on Cancel.
+    <button type="button" className="ybtn" tabIndex={4} onClick={() => window.history.back()}>
       {children}
-    </a>
+    </button>
   );
 }
 
