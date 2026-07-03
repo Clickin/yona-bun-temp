@@ -246,7 +246,9 @@ function ProjectIssueEditFormBody({
                         {t("button.save")}
                       </button>
                     )}
-                    <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
+                    <button type="button" className="ybtn" onClick={() => window.history.back()}>
+                      {t("button.cancel")}
+                    </button>
                   </div>
                 </div>
 
@@ -508,18 +510,6 @@ function LegacyTabIndexInput({
     inputRef.current?.setAttribute("tabindex", tabIndexValue);
   }, [tabIndexValue]);
   return <input ref={inputRef} {...props} />;
-}
-
-function HistoryBackLink({ children }: { children: string }) {
-  const anchorRef = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    anchorRef.current?.setAttribute("href", "javascript:history.back();");
-  }, []);
-  return (
-    <a ref={anchorRef} href="/" className="ybtn">
-      {children}
-    </a>
-  );
 }
 
 function IssueEditMarkdownEditor({ value }: { value: string }) {
