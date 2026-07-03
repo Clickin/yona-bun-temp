@@ -68,7 +68,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
           <span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span>
           <span class="project-separator hide-in-mobile">/</span>
           <span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span>
-          <span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span>
+          <span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span>
         </div>
       </div>
       <div class="project-util-wrap"><ul class="project-util"></ul></div>
@@ -274,22 +274,30 @@ test("project delete menu settings link preserves legacy href with SPA transitio
 test("project delete header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installFavoriteSpanNativeListenerAudit(page);
   await mockProjectAdmin(page, { favoriteRequests });
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
-  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  const favoriteToggle = page.locator(".project-breadcrumb .user-project-list");
+  const favoriteStar = favoriteToggle.locator("i");
+  await expect(favoriteToggle).toHaveAttribute("data-project-id", "7");
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)star(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)material-icons(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)va-text-top(?:\s|$)/);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 
   const favoriteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteToggle.dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 test("project delete header favorite star removes starred class when unfavorited", async ({
@@ -304,7 +312,12 @@ test("project delete header favorite star removes starred class when unfavorited
   });
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
-  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  const favoriteToggle = page.locator(".project-breadcrumb .user-project-list");
+  const favoriteStar = favoriteToggle.locator("i");
+  await expect(favoriteToggle).toHaveAttribute("data-project-id", "7");
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)star(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)material-icons(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)va-text-top(?:\s|$)/);
   await expect(favoriteStar).toHaveClass(/starred/);
 
   const favoriteResponsePromise = page.waitForResponse(
@@ -312,11 +325,24 @@ test("project delete header favorite star removes starred class when unfavorited
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteToggle.dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
+test("project delete header favorite star has no route-local native listener", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installFavoriteSpanNativeListenerAudit(page);
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  await expect(page.locator(".project-breadcrumb .user-project-list")).toHaveAttribute(
+    "data-project-id",
+    "7",
+  );
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 async function readDesktopDeleteMetrics(page: Page) {
@@ -554,6 +580,35 @@ async function readDeleteNativeListenerAudit(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __deleteNativeListenerAudit?: string[] })
         .__deleteNativeListenerAudit ?? [],
+  );
+}
+
+async function installFavoriteSpanNativeListenerAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const favoriteListeners: string[] = [];
+    Object.defineProperty(window, "__yonaFavoriteSpanNativeListeners", {
+      configurable: true,
+      value: favoriteListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithFavoriteAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-breadcrumb .user-project-list")) {
+        favoriteListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function favoriteSpanNativeListeners(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
+        .__yonaFavoriteSpanNativeListeners ?? [],
   );
 }
 
