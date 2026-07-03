@@ -24,12 +24,24 @@ function HelpTocRoute() {
 
 function HelpTocScreen() {
   const { t } = useLegacyMessages();
-  const [openIndex, setOpenIndex] = React.useState<number | null>(null);
+  const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
   const appName = t("app.name");
   const toggleQuestion = (index: number) => {
-    setOpenIndex((current) => (current === index ? null : index));
+    setOpenQuestionIndexes((current) => {
+      const next = new Set(current);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
   };
-  const handleQuestionKeyDown = (event: React.KeyboardEvent<HTMLLIElement>, index: number) => {
+  const isQuestionOpen = (index: number) => openQuestionIndexes.has(index);
+  const handleQuestionRowKeyDown = (event: React.KeyboardEvent<HTMLLIElement>, index: number) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       toggleQuestion(index);
@@ -47,15 +59,15 @@ function HelpTocScreen() {
         <div className="page-wrap">
           <ul className="qas">
             <li
-              className={openIndex === 0 ? "qa open" : "qa"}
+              className={isQuestionOpen(0) ? "qa open" : "qa"}
               onClick={() => toggleQuestion(0)}
-              onKeyDown={(event) => handleQuestionKeyDown(event, 0)}
+              onKeyDown={(event) => handleQuestionRowKeyDown(event, 0)}
             >
               <div className="question-wrap">
                 <i className="yobicon-q q" />
-                <a href="#!/toggle" className="question">
+                <button type="button" className="question" style={questionButtonStyle}>
                   {appName}를 설치하고 싶어요.
-                </a>
+                </button>
                 <i className="ico icor" />
               </div>
               <div className="answer-wrap">
@@ -70,15 +82,15 @@ function HelpTocScreen() {
               </div>
             </li>
             <li
-              className={openIndex === 1 ? "qa open" : "qa"}
+              className={isQuestionOpen(1) ? "qa open" : "qa"}
               onClick={() => toggleQuestion(1)}
-              onKeyDown={(event) => handleQuestionKeyDown(event, 1)}
+              onKeyDown={(event) => handleQuestionRowKeyDown(event, 1)}
             >
               <div className="question-wrap">
                 <i className="yobicon-q q" />
-                <a href="#!/toggle" className="question">
+                <button type="button" className="question" style={questionButtonStyle}>
                   프로젝트를 새로 생성하고 싶어요.
-                </a>
+                </button>
                 <i className="ico icor" />
               </div>
               <div className="answer-wrap">
@@ -104,15 +116,15 @@ function HelpTocScreen() {
               </div>
             </li>
             <li
-              className={openIndex === 2 ? "qa open" : "qa"}
+              className={isQuestionOpen(2) ? "qa open" : "qa"}
               onClick={() => toggleQuestion(2)}
-              onKeyDown={(event) => handleQuestionKeyDown(event, 2)}
+              onKeyDown={(event) => handleQuestionRowKeyDown(event, 2)}
             >
               <div className="question-wrap">
                 <i className="yobicon-q q" />
-                <a href="#!/toggle" className="question">
+                <button type="button" className="question" style={questionButtonStyle}>
                   내가 참여하는 프로젝트들은 어디서 볼수 있나요?
-                </a>
+                </button>
                 <i className="ico icor" />
               </div>
               <div className="answer-wrap">
@@ -126,15 +138,15 @@ function HelpTocScreen() {
               </div>
             </li>
             <li
-              className={openIndex === 3 ? "qa open" : "qa"}
+              className={isQuestionOpen(3) ? "qa open" : "qa"}
               onClick={() => toggleQuestion(3)}
-              onKeyDown={(event) => handleQuestionKeyDown(event, 3)}
+              onKeyDown={(event) => handleQuestionRowKeyDown(event, 3)}
             >
               <div className="question-wrap">
                 <i className="yobicon-q q" />
-                <a href="#!/toggle" className="question">
+                <button type="button" className="question" style={questionButtonStyle}>
                   프로젝트 탈퇴는 어떻게 하나요.
-                </a>
+                </button>
                 <i className="ico icor" />
               </div>
               <div className="answer-wrap">
@@ -147,15 +159,15 @@ function HelpTocScreen() {
               </div>
             </li>
             <li
-              className={openIndex === 4 ? "qa open" : "qa"}
+              className={isQuestionOpen(4) ? "qa open" : "qa"}
               onClick={() => toggleQuestion(4)}
-              onKeyDown={(event) => handleQuestionKeyDown(event, 4)}
+              onKeyDown={(event) => handleQuestionRowKeyDown(event, 4)}
             >
               <div className="question-wrap">
                 <i className="yobicon-q q" />
-                <a href="#!/toggle" className="question">
+                <button type="button" className="question" style={questionButtonStyle}>
                   게시판에서는 어떠한 것들을 할수 있나요?
-                </a>
+                </button>
                 <i className="ico icor" />
               </div>
               <div className="answer-wrap">
@@ -174,15 +186,15 @@ function HelpTocScreen() {
               </div>
             </li>
             <li
-              className={openIndex === 5 ? "qa open" : "qa"}
+              className={isQuestionOpen(5) ? "qa open" : "qa"}
               onClick={() => toggleQuestion(5)}
-              onKeyDown={(event) => handleQuestionKeyDown(event, 5)}
+              onKeyDown={(event) => handleQuestionRowKeyDown(event, 5)}
             >
               <div className="question-wrap">
                 <i className="yobicon-q q" />
-                <a href="#!/toggle" className="question">
+                <button type="button" className="question" style={questionButtonStyle}>
                   {appName}의 버그를 발견했어요.
-                </a>
+                </button>
                 <i className="ico icor" />
               </div>
               <div className="answer-wrap">
@@ -203,14 +215,18 @@ function HelpTocScreen() {
   );
 }
 
+const questionButtonStyle = {
+  background: "transparent",
+  border: 0,
+  boxShadow: "none",
+  padding: 0,
+  textAlign: "left",
+} satisfies React.CSSProperties;
+
 function Answer({ children }: React.PropsWithChildren) {
   return (
-    <div className="answer" ref={setLegacyAnswerStyle}>
+    <div className="answer" style={{ width: "100%" }}>
       {children}
     </div>
   );
-}
-
-function setLegacyAnswerStyle(element: HTMLDivElement | null) {
-  element?.setAttribute("style", "width:100%");
 }

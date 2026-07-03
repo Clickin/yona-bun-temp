@@ -61,12 +61,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <a href="#!/toggle" class="question">Yona를 설치하고 싶어요.</a>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">Yona를 설치하고 싶어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width:100%">
+          <div class="answer" style="width: 100%;">
             Yona를 설치하고자 하면 <a href="https://github.com/doortts/yona#korean">https://github.com/doortts/yona#korean</a>를 참고해 주세요.
           </div>
         </div>
@@ -74,12 +74,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <a href="#!/toggle" class="question">프로젝트를 새로 생성하고 싶어요.</a>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">프로젝트를 새로 생성하고 싶어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width:100%">
+          <div class="answer" style="width: 100%;">
             <p>상단의 "새 프로젝트 시작"을 클릭하신후 필요한 정보를 입력하시면 됩니다.</p>
             <p>
               공개설정에서 공개를 택하게 되면 해당 프로젝트의 멤버가 아닌
@@ -104,12 +104,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <a href="#!/toggle" class="question">내가 참여하는 프로젝트들은 어디서 볼수 있나요?</a>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">내가 참여하는 프로젝트들은 어디서 볼수 있나요?</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width:100%">
+          <div class="answer" style="width: 100%;">
             <a href="/">메인화면</a>
             우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다.
             자물쇠가 있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다.
@@ -120,12 +120,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <a href="#!/toggle" class="question">프로젝트 탈퇴는 어떻게 하나요.</a>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">프로젝트 탈퇴는 어떻게 하나요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width:100%">
+          <div class="answer" style="width: 100%;">
             자신의 <a href="/info">정보 페이지</a>에서 참여하고 있는 프로젝트 목록을 볼 수있고
             탈퇴도 할수 있습니다. 자신이 프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를 할 수 없습니다.
           </div>
@@ -134,12 +134,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <a href="#!/toggle" class="question">게시판에서는 어떠한 것들을 할수 있나요?</a>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">게시판에서는 어떠한 것들을 할수 있나요?</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width:100%">
+          <div class="answer" style="width: 100%;">
             게시판에서는 다음과 같은 기능이 가능합니다.
             <ul>
               <li>게시물 읽기: 사용자는 게시물의 내용을 볼 수 있다.</li>
@@ -155,12 +155,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <a href="#!/toggle" class="question">Yona의 버그를 발견했어요.</a>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">Yona의 버그를 발견했어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width:100%">
+          <div class="answer" style="width: 100%;">
             Yona는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면
             <a href="https://github.com/nforge/yobi/issues">Yona 이슈트래커에 등록</a>해 주시거나 패치를 만들어 보내주시면 됩니다.
           </div>
@@ -181,10 +181,28 @@ const EXPECTED_HELP_SCREEN = `
 
 test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    (window as unknown as { __helpFaqNativeListenerTypes: string[] }).__helpFaqNativeListenerTypes =
+      [];
+    Element.prototype.addEventListener = function (type, listener, options) {
+      if (type === "click" && this instanceof HTMLElement) {
+        if (this.matches(".qas > .qa, .qas > .qa .question")) {
+          (
+            window as unknown as { __helpFaqNativeListenerTypes: string[] }
+          ).__helpFaqNativeListenerTypes.push(type);
+        }
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+
   await page.goto(`${basePath}/_help`);
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
+  await expect(page.locator('.qas > .qa .question[href="#!/toggle"]')).toHaveCount(0);
+  await expect(page.locator(".qas > .qa .question").first()).toHaveJSProperty("tagName", "BUTTON");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -224,11 +242,39 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     questionMarginBottomOpen: "16px",
     questionWidth: "892.5px",
   });
-  await expect(page.locator(".qas > .qa").first()).not.toHaveClass(/open/);
-  await page.locator(".qas > .qa").first().click();
-  await expect(page.locator(".qas > .qa").first()).toHaveClass(/open/);
-  await page.locator(".qas > .qa").first().click();
-  await expect(page.locator(".qas > .qa").first()).not.toHaveClass(/open/);
+
+  const faqItems = page.locator(".qas > .qa");
+  const questions = page.locator(".qas > .qa .question");
+  const initialHash = new URL(page.url()).hash;
+  await expect(faqItems.nth(0)).not.toHaveClass(/open/);
+  await expect(faqItems.nth(1)).not.toHaveClass(/open/);
+
+  await questions.nth(0).click();
+  expect(new URL(page.url()).hash).toBe(initialHash);
+  await expect(faqItems.nth(0)).toHaveClass(/open/);
+  await expect(faqItems.nth(1)).not.toHaveClass(/open/);
+
+  await questions.nth(1).click();
+  expect(new URL(page.url()).hash).toBe(initialHash);
+  await expect(faqItems.nth(0)).toHaveClass(/open/);
+  await expect(faqItems.nth(1)).toHaveClass(/open/);
+
+  await questions.nth(0).click();
+  expect(new URL(page.url()).hash).toBe(initialHash);
+  await expect(faqItems.nth(0)).not.toHaveClass(/open/);
+  await expect(faqItems.nth(1)).toHaveClass(/open/);
+
+  await faqItems.nth(0).locator(".icor").click();
+  expect(new URL(page.url()).hash).toBe(initialHash);
+  await expect(faqItems.nth(0)).toHaveClass(/open/);
+  await expect(faqItems.nth(1)).toHaveClass(/open/);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __helpFaqNativeListenerTypes: string[] })
+          .__helpFaqNativeListenerTypes,
+    ),
+  ).toEqual([]);
 });
 
 test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }) => {
