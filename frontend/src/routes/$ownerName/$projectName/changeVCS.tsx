@@ -1,4 +1,4 @@
-import { useState, type AnchorHTMLAttributes, type ComponentType, type ReactNode } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -16,13 +16,6 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
 type ProjectChangeVcsScreenData = ProjectChangeVcsResponse & ProjectContainer;
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    to: string;
-  }
->;
 
 export const Route = createFileRoute("/$ownerName/$projectName/changeVCS")({
   component: ProjectChangeVcsRoute,
@@ -425,65 +418,50 @@ function ProjectSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className="">
-        <ProjectSettingLink to={`/${ownerName}/${projectName}/setting`}>
+        <Link to="/$ownerName/$projectName/setting" params={{ ownerName, projectName }}>
           {t("project.setting")}
-        </ProjectSettingLink>
+        </Link>
       </li>
       <li id="subMenuProjectMember" className="">
-        <ProjectSettingLink to={`/${ownerName}/${projectName}/members`}>
+        <Link to="/$ownerName/$projectName/members" params={{ ownerName, projectName }}>
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </ProjectSettingLink>
+        </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <ProjectSettingLink to={`/${ownerName}/${projectName}/labels`}>
+        <Link to="/$ownerName/$projectName/labels" params={{ ownerName, projectName }}>
           {t("issue.label")}
-        </ProjectSettingLink>
+        </Link>
       </li>
       <li id="subMenuWebhook" className="">
-        <ProjectSettingLink to={`/${ownerName}/${projectName}/webhooks`}>
+        <Link to="/$ownerName/$projectName/webhooks" params={{ ownerName, projectName }}>
           {t("project.webhook")}
-        </ProjectSettingLink>
+        </Link>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <ProjectSettingLink to={`/${ownerName}/${projectName}/transfer`}>
+        <Link to="/$ownerName/$projectName/transfer" params={{ ownerName, projectName }}>
           {t("project.transfer")}
-        </ProjectSettingLink>
+        </Link>
       </li>
       <li id="subMenuProjectDelete" className="">
-        <ProjectSettingLink to={`/${ownerName}/${projectName}/deleteform`}>
+        <Link to="/$ownerName/$projectName/deleteform" params={{ ownerName, projectName }}>
           {t("project.delete")}
-        </ProjectSettingLink>
+        </Link>
       </li>
       <li
         id="subMenuProjectChangeVCS"
         className="active"
         style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
       >
-        <ProjectSettingLink
+        <Link
           activeProps={{ className: undefined }}
-          to={`/${ownerName}/${projectName}/changeVCS`}
+          to="/$ownerName/$projectName/changeVCS"
+          params={{ ownerName, projectName }}
         >
           {t("project.changeVCS")}
-        </ProjectSettingLink>
+        </Link>
       </li>
     </ul>
-  );
-}
-
-function ProjectSettingLink({
-  activeProps,
-  children,
-  to,
-}: {
-  activeProps?: { className?: string | undefined };
-  children: ReactNode;
-  to: string;
-}) {
-  return (
-    <LegacyInternalLink activeProps={activeProps} to={to}>
-      {children}
-    </LegacyInternalLink>
   );
 }
 

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
@@ -201,6 +202,18 @@ test("project change-VCS settings tab anchors keep legacy hrefs without route-lo
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project change-VCS settings tabs use direct TanStack Link targets", () => {
+  const source = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/changeVCS.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("ProjectSettingLink");
+  expect(source).toContain('to="/$ownerName/$projectName/changeVCS"');
+  expect(source).toContain("params={{ ownerName, projectName }}");
 });
 
 test("project change-VCS header favorite star posts and toggles starred class", async ({
