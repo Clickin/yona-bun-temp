@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 const NOTIFICATION_TYPES = [
   ["NEW_ISSUE", "New issue added"],
@@ -87,6 +88,28 @@ test("current-user notification settings page matches legacy user/edit_notificat
     tableDisplay: "table",
   });
 
+  const editTabs = page.locator(".page-wrap .nav.nav-tabs.mt20 > li");
+  await expect(editTabs).toHaveCount(5);
+  await expect(editTabs).toHaveText([
+    "Edit profile",
+    "Change password",
+    "Notification settings",
+    "Email settings",
+    "User Token",
+  ]);
+  expect(
+    await editTabs
+      .locator("a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/user/editform`,
+    `${basePath}/user/editform/password`,
+    `${basePath}/user/editform/notifications`,
+    `${basePath}/user/editform/emails`,
+    `${basePath}/user/editform/token`,
+  ]);
+  await expect(editTabs.nth(2)).toHaveClass("active");
+
   await expect(page.locator('.nav-tabs a:has-text("Email settings")')).toHaveAttribute(
     "href",
     `${basePath}/user/editform/emails`,
@@ -112,6 +135,15 @@ test("current-user notification settings page matches legacy user/edit_notificat
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("notifications-project-tab");
   await page.locator('[id="2"] input[data-href$="/noti/toggle/2/NEW_COMMENT"]').click();
+});
+
+test("current-user notification settings route uses typed tab Links without a route-local generic adapter", async () => {
+  const source = await readFile("src/routes/user/editform/notifications.tsx", "utf8");
+  expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("AnchorHTMLAttributes");
+  expect(source).not.toContain("ComponentType");
+  expect(source).not.toContain("to={href}");
+  expect(source).toContain('<Link to="/user/editform/notifications">');
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -186,8 +218,8 @@ function expectedScreen(basePath: string, activeProjectId: string) {
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="${basePath}/admin">Profile</a></span><span class="user-menu"><a href="${basePath}/user/editform">Account</a></span><a href="${basePath}/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul>
-        <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content"><div class="search-result"><div class="group"><input class="search-input org-search" type="text" placeholder="Type name" autocomplete="off"><span class="bar"></span></div><div id="organizations" class="no-result tab-pane user-ul">No results</div></div></div></div>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
+        <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
     <ul class="gnb-usermenu">
@@ -195,8 +227,8 @@ function expectedScreen(basePath: string, activeProjectId: string) {
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="${basePath}/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button class="gnb-dropdown-toggle" type="button" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button class="gnb-dropdown-toggle dropdwon-box-btn" type="button" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="${basePath}/user/issues/new">New issue</a></li><li><a href="${basePath}/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="${basePath}/projectform">Create new project</a></li><li><a href="${basePath}/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="${basePath}/user/issues/new">New issue</a></li><li><a href="${basePath}/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="${basePath}/projectform">Create new project</a></li><li><a href="${basePath}/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
