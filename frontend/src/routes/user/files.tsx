@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType } from "react";
 import {
   listWorkspaceFilesRest,
   type WorkspaceFileItem,
@@ -10,13 +9,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    search?: Record<string, unknown>;
-    to: string;
-  }
->;
 
 type UserFilesSearch = {
   filter?: string;
@@ -96,13 +88,19 @@ function UserFilesScreen({
       <div className="page-wrap">
         <ul className="nav nav-tabs">
           <li>
-            <LegacyInternalLink to="/notifications">{t("notification")}</LegacyInternalLink>
+            <Link activeProps={{ className: undefined }} to="/notifications">
+              {t("notification")}
+            </Link>
           </li>
           <li>
-            <LegacyInternalLink to="/user/issues">{t("issue.myIssue")}</LegacyInternalLink>
+            <Link activeProps={{ className: undefined }} to="/user/issues">
+              {t("issue.myIssue")}
+            </Link>
           </li>
           <li className="active">
-            <LegacyInternalLink to="/user/files">{t("user.files")}</LegacyInternalLink>
+            <Link activeProps={{ className: undefined }} to="/user/files">
+              {t("user.files")}
+            </Link>
           </li>
           <li></li>
         </ul>
@@ -199,14 +197,15 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
     <div id="pagination">
       {pages.map((page) => {
         return (
-          <LegacyInternalLink
+          <Link
+            activeProps={{ className: undefined }}
             key={page}
             to="/user/files"
             search={{ filter: files.filter, pageNum: page }}
             className={page === files.page ? "active" : undefined}
           >
             {page}
-          </LegacyInternalLink>
+          </Link>
         );
       })}
     </div>
