@@ -1702,6 +1702,20 @@ test("project issue two-column title click highlights row and changes history li
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    (
+      window as unknown as { __issueListNativeClickListenerTypes: string[] }
+    ).__issueListNativeClickListenerTypes = [];
+    Element.prototype.addEventListener = function (type, listener, options) {
+      if (type === "click" && this instanceof HTMLElement && this.id === "span10") {
+        (
+          window as unknown as { __issueListNativeClickListenerTypes: string[] }
+        ).__issueListNativeClickListenerTypes.push(type);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
   await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
@@ -1720,6 +1734,13 @@ test("project issue two-column title click highlights row and changes history li
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-two-column-title");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __issueListNativeClickListenerTypes: string[] })
+          .__issueListNativeClickListenerTypes,
+    ),
+  ).toEqual([]);
 });
 
 test("project issue two-column row click uses legacy post-item href branch", async ({ page }) => {
@@ -1764,6 +1785,7 @@ test("project issue two-column child label click uses legacy twoColumeModeTarget
 
   await page.locator(".child-issue-list .label.twoColumeModeTarget[data-label-id='8']").click();
 
+  await expect(page.locator("#issue-item-42")).toHaveClass(/highlightBg/);
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issues`);
   await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBeNull();
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("open");

@@ -414,7 +414,6 @@ function ProjectIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
-  const issueListRef = useRef<HTMLDivElement>(null);
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
@@ -434,6 +433,7 @@ function ProjectIssuesBody({
     () => new Set(),
   );
   const [selectedIssueIds, setSelectedIssueIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [highlightedIssueId, setHighlightedIssueId] = useState("");
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -501,6 +501,31 @@ function ProjectIssuesBody({
       }),
     });
   };
+  const applyTwoColumnLocation = (issueId: string, href: string, title: string) => {
+    const nextState = {
+      ...(history.state as Record<string, unknown> | null),
+      startPath: location.pathname,
+      yonaIssueListHighlightedIssueId: issueId,
+    };
+    if (!history.state) {
+      history.pushState(nextState, title, href);
+    } else {
+      history.replaceState(nextState, title, href);
+    }
+  };
+  const handleTwoColumnIssueTarget = (issueId: string, href: string, title: string) => {
+    applyTwoColumnLocation(issueId, href, title);
+    setHighlightedIssueId(issueId);
+  };
+  const handleIssueLabelSearch = (labelId: string) => {
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        labelIds: [...search.labelIds, labelId],
+        pageNum: 1,
+      }),
+    });
+  };
   const revealChildIssueList = (issueId: string) => {
     setRevealedChildIssueIds((previousIds) => {
       if (previousIds.has(issueId)) {
@@ -525,120 +550,6 @@ function ProjectIssuesBody({
   const toggleAllIssueSelection = (checked: boolean) => {
     setSelectedIssueIds(checked ? new Set(visibleMassUpdateIssueIds) : new Set());
   };
-  const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
-    const target =
-      event.target instanceof Element
-        ? event.target
-        : event.target instanceof Node
-          ? event.target.parentElement
-          : null;
-    if (!target) {
-      return;
-    }
-    if (target.closest(".mass-update-check")) {
-      return;
-    }
-
-    const twoColumnTarget = target.closest<HTMLAnchorElement>("a.title, a.twoColumeModeTarget");
-    if (useTwoColumnMode && twoColumnTarget) {
-      event.preventDefault();
-      issueListRef.current
-        ?.querySelectorAll(".post-item.highlightBg")
-        .forEach((row) => row.classList.remove("highlightBg"));
-      (
-        twoColumnTarget.closest(".post-item") ??
-        twoColumnTarget.closest(".child-issue-list")?.closest(".post-item")
-      )?.classList.add("highlightBg");
-      if (twoColumnTarget.href) {
-        if (!history.state) {
-          history.pushState(
-            { startPath: location.pathname },
-            twoColumnTarget.textContent ?? "",
-            twoColumnTarget.href,
-          );
-        } else {
-          history.replaceState(
-            history.state,
-            twoColumnTarget.textContent ?? "",
-            twoColumnTarget.href,
-          );
-        }
-      }
-      return;
-    }
-
-    const label = target.closest<HTMLAnchorElement>("a[data-label-id][data-category-id]");
-    if (label) {
-      event.preventDefault();
-      if (useTwoColumnMode && label.classList.contains("twoColumeModeTarget")) {
-        issueListRef.current
-          ?.querySelectorAll(".post-item.highlightBg")
-          .forEach((row) => row.classList.remove("highlightBg"));
-        (
-          label.closest(".post-item") ?? label.closest(".child-issue-list")?.closest(".post-item")
-        )?.classList.add("highlightBg");
-        if (label.href) {
-          if (!history.state) {
-            history.pushState(
-              { startPath: location.pathname },
-              label.textContent ?? "",
-              label.href,
-            );
-          } else {
-            history.replaceState(history.state, label.textContent ?? "", label.href);
-          }
-        }
-        return;
-      }
-
-      const labelId = label.dataset.labelId ?? "";
-      if (!labelId) {
-        return;
-      }
-
-      void navigate({
-        to: projectIssuesRoutePath(ownerName, projectName, {
-          ...search,
-          labelIds: [...search.labelIds, labelId],
-          pageNum: 1,
-        }),
-      });
-      return;
-    }
-
-    const twoColumnRow = target.closest<HTMLElement>(".post-item.title");
-    if (useTwoColumnMode && twoColumnRow) {
-      event.preventDefault();
-      issueListRef.current
-        ?.querySelectorAll(".post-item.highlightBg")
-        .forEach((row) => row.classList.remove("highlightBg"));
-      twoColumnRow.classList.add("highlightBg");
-      const href = twoColumnRow.getAttribute("href");
-      if (href) {
-        if (!history.state) {
-          history.pushState({ startPath: location.pathname }, twoColumnRow.textContent ?? "", href);
-        } else {
-          history.replaceState(history.state, twoColumnRow.textContent ?? "", href);
-        }
-      }
-      return;
-    }
-
-    if (target.closest(".title-wrap > .title")) {
-      return;
-    }
-  });
-  useEffect(() => {
-    const issueList = issueListRef.current;
-    if (!issueList) {
-      return;
-    }
-
-    issueList.addEventListener("click", handleIssueListClick);
-    return () => {
-      issueList.removeEventListener("click", handleIssueListClick);
-    };
-  }, []);
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
   const showLabelManagement = projectIssueLabelCreatable(project);
@@ -685,7 +596,7 @@ function ProjectIssuesBody({
               }}
             />
           </div>
-          <div className="span10 span-hard-wrap" id="span10" ref={issueListRef}>
+          <div className="span10 span-hard-wrap" id="span10">
             <div className="pull-right">
               <a
                 href={prefixBasePath(
@@ -718,9 +629,7 @@ function ProjectIssuesBody({
                   onToggle={(checked) => {
                     localStorage.setItem("useTwoColumnMode", String(checked));
                     if (!checked) {
-                      issueListRef.current
-                        ?.querySelectorAll(".post-item.highlightBg")
-                        .forEach((row) => row.classList.remove("highlightBg"));
+                      setHighlightedIssueId("");
                     }
                     setUseTwoColumnMode(checked);
                   }}
@@ -784,6 +693,9 @@ function ProjectIssuesBody({
                         )}
                         currentUserLoginId={currentUserLoginId}
                         draftNumberSource="draft-list"
+                        highlighted={
+                          highlightedIssueId === stringField(issue.id, String(issue.issueNumber))
+                        }
                         issue={issue}
                         issueSelected={selectedIssueIds.has(
                           stringField(issue.id, String(issue.issueNumber)),
@@ -799,7 +711,9 @@ function ProjectIssuesBody({
                         issueRowHoverStyle={issueRowHoverStyle}
                         onTitlePrefixHover={setHoveredTitlePrefix}
                         onIssueRowHover={setIssueRowHoverStyle}
+                        onIssueLabelSearch={handleIssueLabelSearch}
                         useTwoColumnMode={useTwoColumnMode}
+                        onTwoColumnIssueTarget={handleTwoColumnIssueTarget}
                         titlePrefixRoute={titlePrefixRoute}
                         onTitlePrefixSearch={handleTitlePrefixSearch}
                         onRevealChildIssueList={revealChildIssueList}
@@ -816,6 +730,9 @@ function ProjectIssuesBody({
                       )}
                       currentUserLoginId={currentUserLoginId}
                       draftNumberSource="normal-list"
+                      highlighted={
+                        highlightedIssueId === stringField(issue.id, String(issue.issueNumber))
+                      }
                       issue={issue}
                       issueSelected={selectedIssueIds.has(
                         stringField(issue.id, String(issue.issueNumber)),
@@ -831,7 +748,9 @@ function ProjectIssuesBody({
                       issueRowHoverStyle={issueRowHoverStyle}
                       onTitlePrefixHover={setHoveredTitlePrefix}
                       onIssueRowHover={setIssueRowHoverStyle}
+                      onIssueLabelSearch={handleIssueLabelSearch}
                       useTwoColumnMode={useTwoColumnMode}
+                      onTwoColumnIssueTarget={handleTwoColumnIssueTarget}
                       titlePrefixRoute={titlePrefixRoute}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
                       onRevealChildIssueList={revealChildIssueList}
@@ -1470,15 +1389,18 @@ function ProjectIssueItem({
   childIssueListRevealed,
   currentUserLoginId,
   draftNumberSource,
+  highlighted,
   hoveredTitlePrefix,
   issue,
   issueSelected,
   issueRowHoverStyle,
+  onIssueLabelSearch,
   onIssueRowHover,
   onIssueSelectedChange,
   onRevealChildIssueList,
   onTitlePrefixHover,
   onTitlePrefixSearch,
+  onTwoColumnIssueTarget,
   ownerName,
   projectName,
   showMassUpdateControls,
@@ -1491,6 +1413,7 @@ function ProjectIssueItem({
   childIssueListRevealed: boolean;
   currentUserLoginId: string;
   draftNumberSource: "draft-list" | "normal-list";
+  highlighted: boolean;
   hoveredTitlePrefix: string;
   issue: RestIssueListItem;
   issueSelected: boolean;
@@ -1504,10 +1427,12 @@ function ProjectIssueItem({
       issueId: string;
     } | null,
   ) => void;
+  onIssueLabelSearch: (labelId: string) => void;
   onIssueSelectedChange: (issueId: string, checked: boolean) => void;
   onRevealChildIssueList: (issueId: string) => void;
   onTitlePrefixHover: (prefix: string) => void;
   onTitlePrefixSearch: (filter: string) => void;
+  onTwoColumnIssueTarget: (issueId: string, href: string, title: string) => void;
   ownerName: string;
   projectName: string;
   showMassUpdateControls: boolean;
@@ -1557,8 +1482,33 @@ function ProjectIssueItem({
     }
     onRevealChildIssueList(issueId);
   };
+  const titleHistoryLabel = `${issueNumber} ${titleParts.title}`;
+  const handleTitleClick = (event: ReactMouseEvent<HTMLElement>) => {
+    if (useTwoColumnMode) {
+      onTwoColumnIssueTarget(issueId, issueHref, titleHistoryLabel);
+      event.preventDefault();
+    }
+  };
+  const handleIssueLabelClick = (event: ReactMouseEvent<HTMLElement>, labelId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onIssueLabelSearch(labelId);
+  };
+  const handleTitleWrapClick = (event: ReactMouseEvent<HTMLElement>) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(".title")) {
+      handleTitleClick(event);
+    }
+  };
   const handleIssueItemClick = (event: ReactMouseEvent<HTMLLIElement>) => {
-    revealChildIssueListFromRow(event.target instanceof Element ? event.target : null);
+    const target = event.target instanceof Element ? event.target : null;
+    revealChildIssueListFromRow(target);
+    if (!target?.closest(".mass-update-check") && !target?.closest(".title-wrap > .title")) {
+      if (useTwoColumnMode) {
+        onTwoColumnIssueTarget(issueId, issueHref, event.currentTarget.textContent ?? "");
+        event.preventDefault();
+      }
+    }
   };
   const handleIssueItemKeyDown = (event: ReactKeyboardEvent<HTMLLIElement>) => {
     if (event.key !== "Enter" && event.key !== " ") {
@@ -1569,7 +1519,7 @@ function ProjectIssueItem({
 
   return (
     <li
-      className={`post-item title${issueSelected ? " active" : ""}`}
+      className={`post-item title${issueSelected ? " active" : ""}${highlighted ? " highlightBg" : ""}`}
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
@@ -1597,7 +1547,7 @@ function ProjectIssueItem({
           </label>
         ) : null}
         <div {...legacyFor} className="issue-item-row">
-          <div className="title-wrap">
+          <div className="title-wrap" onClickCapture={handleTitleWrapClick}>
             <a href={issueHref} className="title">
               <span className="post-id">
                 {issue.isDraft && draftNumberSource === "draft-list" ? (
@@ -1731,6 +1681,7 @@ function ProjectIssueItem({
                 data-category-id={label.categoryId ?? ""}
                 data-label-id={label.id}
                 key={String(label.id)}
+                onClick={(event) => handleIssueLabelClick(event, String(label.id))}
               >
                 {label.name}
               </a>
@@ -1743,9 +1694,12 @@ function ProjectIssueItem({
                 basePath={basePath}
                 currentUserLoginId={currentUserLoginId}
                 issues={issue.childIssues ?? []}
+                onIssueLabelSearch={onIssueLabelSearch}
+                onTwoColumnIssueTarget={onTwoColumnIssueTarget}
                 ownerName={ownerName}
                 parentIssueId={issueId}
                 projectName={projectName}
+                useTwoColumnMode={useTwoColumnMode}
               />
             </div>
           </div>
@@ -1800,16 +1754,22 @@ function IssueChildRows({
   basePath,
   currentUserLoginId,
   issues,
+  onIssueLabelSearch,
+  onTwoColumnIssueTarget,
   ownerName,
   parentIssueId,
   projectName,
+  useTwoColumnMode,
 }: {
   basePath: string;
   currentUserLoginId: string;
   issues: RestIssueChildItem[];
+  onIssueLabelSearch: (labelId: string) => void;
+  onTwoColumnIssueTarget: (issueId: string, href: string, title: string) => void;
   ownerName: string;
   parentIssueId: string;
   projectName: string;
+  useTwoColumnMode: boolean;
 }) {
   const visibleIssues = issues.filter(
     (issue) => !issue.isDraft || stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -1825,9 +1785,12 @@ function IssueChildRows({
           basePath={basePath}
           issue={issue}
           key={`${issue.state}-${issue.issueNumber}`}
+          onIssueLabelSearch={onIssueLabelSearch}
+          onTwoColumnIssueTarget={onTwoColumnIssueTarget}
           ownerName={ownerName}
           parentIssueId={parentIssueId}
           projectName={projectName}
+          useTwoColumnMode={useTwoColumnMode}
         />
       ))}
     </div>
@@ -1837,28 +1800,66 @@ function IssueChildRows({
 function IssueChildRow({
   basePath,
   issue,
+  onIssueLabelSearch,
+  onTwoColumnIssueTarget,
   ownerName,
   parentIssueId,
   projectName,
+  useTwoColumnMode,
 }: {
   basePath: string;
   issue: RestIssueChildItem;
+  onIssueLabelSearch: (labelId: string) => void;
+  onTwoColumnIssueTarget: (issueId: string, href: string, title: string) => void;
   ownerName: string;
   parentIssueId: string;
   projectName: string;
+  useTwoColumnMode: boolean;
 }) {
   const issueNumber = stringField(issue.issueNumber, "");
   const issueId = stringField(issue.id, "");
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const isClosed = issue.state === "closed";
   const labels = issue.labels.slice().sort(compareIssueLabels);
+  const childLabelHref = (labelId: string) =>
+    `${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${labelId}`;
+  const handleChildTargetClick = (event: ReactMouseEvent<HTMLElement>) => {
+    if (useTwoColumnMode) {
+      onTwoColumnIssueTarget(parentIssueId, issueHref, event.currentTarget.textContent ?? "");
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+  const handleChildRowClick = (event: ReactMouseEvent<HTMLElement>) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(".issue-label")) {
+      return;
+    }
+    if (target?.closest(".twoColumeModeTarget")) {
+      handleChildTargetClick(event);
+    }
+  };
+  const handleChildLabelClick = (
+    event: ReactMouseEvent<HTMLElement>,
+    labelId: string,
+    href: string,
+  ) => {
+    if (useTwoColumnMode) {
+      onTwoColumnIssueTarget(parentIssueId, href, event.currentTarget.textContent ?? "");
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    event.preventDefault();
+    onIssueLabelSearch(labelId);
+  };
   const childClassName =
     issueId && issueId === parentIssueId
       ? "issue-item selected-child child-issue"
       : "issue-item  child-issue";
 
   return (
-    <div className={childClassName}>
+    <div className={childClassName} onClickCapture={handleChildRowClick}>
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
@@ -1876,11 +1877,14 @@ function IssueChildRow({
       </span>
       {labels.map((label) => (
         <a
-          href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
+          href={childLabelHref(String(label.id))}
           className="label issue-label list-label active twoColumeModeTarget"
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
           key={String(label.id)}
+          onClick={(event) =>
+            handleChildLabelClick(event, String(label.id), childLabelHref(String(label.id)))
+          }
           style={childIssueLabelStyle(label.color)}
         >
           {label.name}
