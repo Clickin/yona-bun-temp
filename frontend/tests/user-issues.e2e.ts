@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 test.use({ viewport: { width: 1100, height: 720 } });
@@ -310,6 +311,22 @@ test("current-user issues page matches legacy filtered empty search state", asyn
     EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP.replaceAll("__BASE_PATH__", basePath),
   );
   expect(actual).toEqual(expected);
+});
+
+test("current-user issues my-series tabs use direct TanStack Link targets", () => {
+  const routeSource = readFileSync(
+    new URL("../src/routes/user/issues.tsx", import.meta.url),
+    "utf8",
+  );
+  const tabsSource = routeSource.slice(
+    routeSource.indexOf("function MySeriesMenuTabs("),
+    routeSource.indexOf("function YobiToast("),
+  );
+
+  expect(tabsSource).not.toContain("LegacyInternalLink");
+  expect(tabsSource).toContain('to="/notifications"');
+  expect(tabsSource).toContain('to="/user/issues"');
+  expect(tabsSource).toContain('to="/user/files"');
 });
 
 test("current-user issues state tab uses button side-effect control with SPA transition", async ({

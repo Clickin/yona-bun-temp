@@ -527,13 +527,19 @@ function MySeriesMenuTabs({
   return (
     <ul className="nav nav-tabs">
       <li>
-        <LegacyInternalLink to="/notifications">{t("notification")}</LegacyInternalLink>
+        <Link activeProps={{ className: undefined }} to="/notifications">
+          {t("notification")}
+        </Link>
       </li>
       <li className="active">
-        <LegacyInternalLink to="/user/issues">{t("issue.myIssue")}</LegacyInternalLink>
+        <Link activeProps={{ className: undefined }} to="/user/issues">
+          {t("issue.myIssue")}
+        </Link>
       </li>
       <li>
-        <LegacyInternalLink to="/user/files">{t("user.files")}</LegacyInternalLink>
+        <Link activeProps={{ className: undefined }} to="/user/files">
+          {t("user.files")}
+        </Link>
       </li>
       <li>
         <button
