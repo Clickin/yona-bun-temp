@@ -82,19 +82,55 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   });
 });
 
-test("project settings menu member link preserves legacy href with SPA transition", async ({
-  page,
-}) => {
+test("project settings menu links preserve legacy hrefs with SPA transition", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__projectSettingsTabAnchorListeners", {
+      configurable: true,
+      value: [] as string[],
+    });
+    Element.prototype.addEventListener = function addEventListenerWithSettingsTabAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this.matches(".project-page-wrap > .nav.nav-tabs a")) {
+        (
+          window as Window & typeof globalThis & { __projectSettingsTabAnchorListeners: string[] }
+        ).__projectSettingsTabAnchorListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
   await mockProjectSettings(page);
 
   await page.goto(`${basePath}/admin/sample/setting`);
-  const memberLink = page.locator("#subMenuProjectMember a");
-  await expect(memberLink).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  const settingsTabs = page.locator(".project-page-wrap > .nav.nav-tabs a");
+  await expect(settingsTabs).toHaveCount(7);
+  expect(
+    await settingsTabs.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/admin/sample/setting`,
+    `${basePath}/admin/sample/members`,
+    `${basePath}/admin/sample/labels`,
+    `${basePath}/admin/sample/webhooks`,
+    `${basePath}/admin/sample/transfer`,
+    `${basePath}/admin/sample/deleteform`,
+    `${basePath}/admin/sample/changeVCS`,
+  ]);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __projectSettingsTabAnchorListeners?: string[] })
+          .__projectSettingsTabAnchorListeners ?? [],
+    ),
+  ).toEqual([]);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
+  const memberLink = page.locator("#subMenuProjectMember a");
   await memberLink.click();
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
