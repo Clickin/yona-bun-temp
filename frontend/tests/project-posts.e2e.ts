@@ -86,7 +86,7 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
     )
     .replace(
       EMPTY_CHILD_COMMENT_FORM,
-      '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3/#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/22" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
+      '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/22" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
     );
 
 function expectedProjectPostsEmpty() {
@@ -721,7 +721,12 @@ test("project board detail owns comment hash links through router", async ({ pag
   await expect(parentShare).toHaveAttribute("href", `${basePath}/admin/sample/post/3#comment-21`);
 
   const childAgo = page.locator("#comment-21 .subcomment-author .ago");
-  await expect(childAgo).toHaveAttribute("href", /\/admin\/sample\/post\/3\/?#comment-22$/u);
+  await expect(childAgo).toHaveText("Jul 4, 2026");
+  await expect(childAgo).toHaveAttribute("title", "Jul 4, 2026");
+  await expect(childAgo).toHaveAttribute("href", `${basePath}/admin/sample/post/3#comment-22`);
+  await expect(page.locator('#comment-21 .subcomment-author .ago[href^="#comment-"]')).toHaveCount(
+    0,
+  );
 
   await parentAgo.click();
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("#comment-21");
@@ -737,6 +742,14 @@ test("project board detail owns comment hash links through router", async ({ pag
   await expect(page.locator('.board-footer a[href="#helpKeys"][data-toggle="modal"]')).toHaveCount(
     1,
   );
+
+  await childAgo.dispatchEvent("click");
+  await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("#comment-22");
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("post-comment-hash");
 });
 
 test("project board detail renders legacy comment update form", async ({ page }) => {
@@ -973,7 +986,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     contentsBorderBottom: "1px dashed rgb(204, 204, 204)",
     authorClassName: "subcomment-author hide",
     authorDisplay: "none",
-    agoHref: `${basePath}/admin/sample/post/3/#comment-22`,
+    agoHref: `${basePath}/admin/sample/post/3#comment-22`,
     agoTitle: "Jul 4, 2026",
     deleteTagName: "button",
     deleteType: "button",

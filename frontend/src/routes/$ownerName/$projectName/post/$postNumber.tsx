@@ -1167,15 +1167,9 @@ function PostChildComment({
           >
             <strong>{authorLabel}</strong>
           </LegacyInternalLink>{" "}
-          <LegacyInternalLink
-            to={`#comment-${commentId}`}
-            className="ago"
-            title={comment.createdLabel}
-            activeOptions={{ includeHash: true }}
-            activeProps={{ className: undefined }}
-          >
+          <CommentHashLink commentId={commentId} className="ago" title={comment.createdLabel}>
             {comment.createdLabel}
-          </LegacyInternalLink>
+          </CommentHashLink>
           {canDelete ? (
             <button
               type="button"
