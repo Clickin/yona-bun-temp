@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_CREATE_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20">We are checking if the code is safe. Please wait for a while to complete this process.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><a href="javascript:history.back();" class="ybtn">Cancel</a></div></div><ul class="nav nav-tabs mt20"><li class="active"><a href="#__commits" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></a></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20">We are checking if the code is safe. Please wait for a while to complete this process.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><a href="#__commits" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></a></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -38,6 +38,7 @@ test("project pull request create form matches legacy git/create.scala.html core
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
+  const createFormUrl = page.url();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
@@ -52,6 +53,7 @@ test("project pull request create form matches legacy git/create.scala.html core
   ).toHaveText("Table");
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  const cancelButton = await expectModernCancelControl(page);
 
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(
@@ -98,6 +100,23 @@ test("project pull request create form matches legacy git/create.scala.html core
   await page.locator('[data-toggle="markdown-help"][data-target="markdownTables"]').click();
   await expect(page.locator('[data-target="markdownTables"]')).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-wrap > .markdownTables")).not.toHaveClass(/active/);
+
+  await page.evaluate((url) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+    window.history.pushState({ cancelTest: true }, "", url);
+  }, `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main&cancel-test=1`);
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main&cancel-test=1`,
+  );
+  await cancelButton.click();
+  await expect(page).toHaveURL(createFormUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
 
   await page.fill("#title", "Improve UI");
   await page.fill("#editor-body-body", "Body text");
@@ -306,6 +325,16 @@ async function mockProjectPullRequestCreateForm(page: Page, postRequests: unknow
     }
     await route.fallback();
   });
+}
+
+async function expectModernCancelControl(page: Page) {
+  await expect(page.locator('.actions a[href^="javascript:"]')).toHaveCount(0);
+  const cancel = page
+    .locator('.actions > button[type="button"].ybtn')
+    .filter({ hasText: /^Cancel$/u });
+  await expect(cancel).toHaveCount(1);
+  await expect(cancel).toHaveText("Cancel");
+  return cancel;
 }
 
 async function canonicalize(page: Page, selector: string) {
