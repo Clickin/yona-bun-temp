@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { deleteOrganizationRest, organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -91,16 +91,12 @@ function OrganizationDeleteFormBody({
         </div>
       </div>
       <OrganizationMenu
-        basePath={runtimeConfig.basePath}
         organizationName={organizationName}
         viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
       />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <OrganizationSettingMenu
-            basePath={runtimeConfig.basePath}
-            organizationName={organizationName}
-          />
+          <OrganizationSettingMenu organizationName={organizationName} />
           <div className="box-wrap bottom">
             <button
               id="btnDelete"
@@ -158,73 +154,77 @@ function OrganizationDeleteFormBody({
 }
 
 function OrganizationMenu({
-  basePath,
   organizationName,
   viewerCanUpdate,
 }: {
-  basePath: string;
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.history.push(prefixBasePath(basePath, to));
-  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: {},
+                to: `/organizations/${organizationName}`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("title.organizationHome")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/issues`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/issues`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("menu.issue")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/boards`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/boards`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("menu.board")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/pullrequests`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/pullrequests`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("menu.pullRequest")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink
-                  basePath={basePath}
-                  onNavigate={navigate}
-                  to={`/organizations/${organizationName}/settingform`}
+                <Link
+                  {...({
+                    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                    search: () => undefined,
+                    to: `/organizations/${organizationName}/settingform`,
+                  } as unknown as Parameters<typeof Link>[0])}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </OrganizationRouteLink>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -234,83 +234,50 @@ function OrganizationMenu({
   );
 }
 
-function OrganizationSettingMenu({
-  basePath,
-  organizationName,
-}: {
-  basePath: string;
-  organizationName: string;
-}) {
+function OrganizationSettingMenu({ organizationName }: { organizationName: string }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.navigate({ to });
-  };
 
   return (
     <ul className="nav nav-tabs">
       <li className="">
-        <OrganizationRouteLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/settingform`}
+        <Link
+          {...({
+            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+            search: () => undefined,
+            to: `/organizations/${organizationName}/settingform`,
+          } as unknown as Parameters<typeof Link>[0])}
         >
           {t("organization.settingFrom")}
-        </OrganizationRouteLink>
+        </Link>
       </li>
       <li className="">
-        <OrganizationRouteLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/members`}
+        <Link
+          {...({
+            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+            search: {},
+            to: `/organizations/${organizationName}/members`,
+          } as unknown as Parameters<typeof Link>[0])}
         >
           {t("organization.member")}
-        </OrganizationRouteLink>
+        </Link>
       </li>
       <li className="active">
-        <OrganizationRouteLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/deleteForm`}
+        <Link
+          {...({
+            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+            activeProps: {
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            },
+            search: {},
+            to: `/organizations/${organizationName}/deleteForm`,
+          } as unknown as Parameters<typeof Link>[0])}
         >
           {t("organization.delete")}
-        </OrganizationRouteLink>
+        </Link>
       </li>
     </ul>
-  );
-}
-
-function OrganizationRouteLink({
-  basePath,
-  children,
-  onNavigate,
-  to,
-}: {
-  basePath: string;
-  children: ReactNode;
-  onNavigate: (to: string) => void;
-  to: string;
-}) {
-  const navigateWithinOrganization = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
-  return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganization}>
-      {children}
-    </a>
   );
 }
 

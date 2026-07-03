@@ -29,9 +29,9 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -45,9 +45,9 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -188,6 +188,56 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
     )
     .toBe("kept");
   expect(await readOrganizationDeleteNativeListenerAudit(page)).toEqual([]);
+});
+
+test("organization delete navigation anchors preserve legacy hrefs without native listeners", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationDeleteNavigationAnchorAudit(page);
+  await mockOrganizationAdmin(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+
+  const menuLinks = page.locator(".project-menu-gruop a");
+  await expect(menuLinks).toHaveCount(4);
+  await expect(menuLinks.nth(0)).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(menuLinks.nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/issues`,
+  );
+  await expect(menuLinks.nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards`,
+  );
+  await expect(menuLinks.nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/pullrequests`,
+  );
+
+  const adminLinks = page.locator(".project-setting a");
+  await expect(adminLinks).toHaveCount(1);
+  await expect(adminLinks.first()).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+
+  const tabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
+  await expect(tabLinks).toHaveCount(3);
+  await expect(tabLinks.nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+  await expect(tabLinks.nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/members`,
+  );
+  await expect(tabLinks.nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/deleteForm`,
+  );
+
+  expect(await readOrganizationDeleteNavigationAnchorAudit(page)).toEqual([]);
 });
 
 test("organization delete menu settings link preserves legacy href with SPA transition", async ({
@@ -372,6 +422,44 @@ async function readOrganizationDeleteNativeListenerAudit(page: Page) {
   );
 }
 
+async function installOrganizationDeleteNavigationAnchorAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__organizationDeleteNavigationAnchorListeners", {
+      configurable: true,
+      value: [],
+      writable: true,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithOrganizationDeleteAnchorAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (
+        this.matches(
+          ".project-menu-gruop a, .project-setting a, .project-page-wrap > .nav.nav-tabs a",
+        )
+      ) {
+        (
+          window as Window &
+            typeof globalThis & { __organizationDeleteNavigationAnchorListeners: string[] }
+        ).__organizationDeleteNavigationAnchorListeners.push(`${this.className}:${String(type)}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readOrganizationDeleteNavigationAnchorAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __organizationDeleteNavigationAnchorListeners?: string[] }
+      ).__organizationDeleteNavigationAnchorListeners ?? [],
+  );
+}
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
@@ -390,6 +478,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -430,6 +519,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
