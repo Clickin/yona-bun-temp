@@ -527,25 +527,17 @@ function MassUpdateShell({
           </button>
           <ul className="dropdown-menu mass-update-list">
             <li data-value="0">
-              <LegacyInternalLink to={`${projectPath}/issues`} onClick={preventDefaultLink}>
-                {t("issue.noAssignee")}
-              </LegacyInternalLink>
+              <button type="button">{t("issue.noAssignee")}</button>
             </li>
             {currentUser.id ? (
               <li data-value={currentUser.id}>
-                <LegacyInternalLink to={`${projectPath}/issues`} onClick={preventDefaultLink}>
-                  {t("issue.assignToMe")}
-                </LegacyInternalLink>
+                <button type="button">{t("issue.assignToMe")}</button>
               </li>
             ) : null}
             {users.length ? <li className="divider"></li> : null}
             {users.map((user) => (
               <li data-value={user.id} key={user.id}>
-                <LegacyInternalLink
-                  to={`${projectPath}/issues`}
-                  className="usf-group"
-                  onClick={preventDefaultLink}
-                >
+                <button type="button" className="usf-group">
                   <span className="avatar-wrap smaller">
                     <img src={user.avatarUrl} width="20" height="20" alt="" />
                   </span>
@@ -555,7 +547,7 @@ function MassUpdateShell({
                     <strong>@</strong>
                     {user.loginId}
                   </span>
-                </LegacyInternalLink>
+                </button>
               </li>
             ))}
           </ul>
@@ -585,7 +577,6 @@ function MassUpdateShell({
               listId="attach-label-list"
               name="attachingLabelIds"
               options={labels}
-              projectPath={projectPath}
             />
             <LabelMassUpdateDropdown
               disabled={!hasCheckedIssues}
@@ -594,7 +585,6 @@ function MassUpdateShell({
               listId="delete-label-list"
               name="detachingLabelIds"
               options={labels}
-              projectPath={projectPath}
             />
           </>
         ) : null}
@@ -646,7 +636,6 @@ function LabelMassUpdateDropdown({
   listId,
   name,
   options,
-  projectPath,
 }: {
   disabled: boolean;
   id: string;
@@ -660,7 +649,6 @@ function LabelMassUpdateDropdown({
     id: string;
     name: string;
   }>;
-  projectPath: string;
 }) {
   return (
     <div id={id} className="btn-group" data-name={name}>
@@ -672,7 +660,7 @@ function LabelMassUpdateDropdown({
       </button>
       <ul id={listId} className="dropdown-menu mass-update-list">
         {groupLabels(options).map((group) => (
-          <LabelMassUpdateGroup group={group} key={group.categoryId} projectPath={projectPath} />
+          <LabelMassUpdateGroup group={group} key={group.categoryId} />
         ))}
       </ul>
     </div>
@@ -681,14 +669,12 @@ function LabelMassUpdateDropdown({
 
 function LabelMassUpdateGroup({
   group,
-  projectPath,
 }: {
   group: {
     categoryId: string;
     categoryName: string;
     labels: Array<{ color?: string; id: string; name: string }>;
   };
-  projectPath: string;
 }) {
   return (
     <>
@@ -697,11 +683,11 @@ function LabelMassUpdateGroup({
       </li>
       {group.labels.map((label) => (
         <li data-value={label.id} data-category={group.categoryId} key={label.id}>
-          <LegacyInternalLink to={`${projectPath}/issues`} onClick={preventDefaultLink}>
+          <button type="button">
             <span className="issue-label active list-label" data-label-id={label.id}>
               {label.name}
             </span>
-          </LegacyInternalLink>
+          </button>
         </li>
       ))}
       <li className="divider" data-category={group.categoryId}></li>
@@ -890,13 +876,12 @@ function MilestoneIssueRow({
                   </LegacyInternalLink>
                 ) : null}
                 {numberField(issue.sharerCount) ? (
-                  <LegacyInternalLink
-                    to={`${projectPath}/issue/${issueNumber}`}
+                  <button
+                    type="button"
                     className="sharer-color"
                     data-toggle="tooltip"
                     data-placement="bottom"
                     title={t("issue.sharer")}
-                    onClick={preventDefaultLink}
                   >
                     <span className="count-groups item-icon">
                       <i className="yobicon-friends"></i>
@@ -904,7 +889,7 @@ function MilestoneIssueRow({
                     <span className="count-groups item-count strong">
                       {numberField(issue.sharerCount)}
                     </span>
-                  </LegacyInternalLink>
+                  </button>
                 ) : null}
               </span>
             ) : null}
@@ -1213,10 +1198,6 @@ function booleanField(value: unknown) {
 function numberField(value: unknown) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function preventDefaultLink(event: { preventDefault(): void }) {
-  event.preventDefault();
 }
 
 function stringField(value: unknown, fallback = "") {

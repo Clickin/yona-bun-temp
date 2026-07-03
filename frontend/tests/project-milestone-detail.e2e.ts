@@ -67,10 +67,24 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator("#assignee[data-name='assignee.id'] .d-label")).toHaveText(
     "Update assignee",
   );
-  await expect(page.locator('#assignee li[data-value="0"] a')).toHaveText("No assignee");
-  await expect(page.locator('#assignee li[data-value="1"] > a').first()).toHaveText("Assign to me");
+  await expect(page.locator('#assignee li[data-value="0"] button')).toHaveText("No assignee");
+  await expect(page.locator('#assignee li[data-value="0"] button')).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator('#assignee li[data-value="1"] > button').first()).toHaveText(
+    "Assign to me",
+  );
+  await expect(page.locator('#assignee li[data-value="1"] > button').first()).toHaveAttribute(
+    "type",
+    "button",
+  );
   await expect(page.locator('#assignee li[data-value="2"] .usf-group')).toContainText(
     "Dev Member @dev",
+  );
+  await expect(page.locator('#assignee li[data-value="2"] .usf-group')).toHaveAttribute(
+    "type",
+    "button",
   );
   await expect(page.locator('#assignee li[data-value="2"] img')).toHaveAttribute(
     "src",
@@ -90,6 +104,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "button",
   );
   await expect(page.locator("#state .mass-update-list a[href='#']")).toHaveCount(0);
+  await expect(page.locator("#assignee .mass-update-list a")).toHaveCount(0);
   await expect(page.locator("#milestone .mass-update-list a[href='#']")).toHaveCount(0);
   await expect(page.locator("#attaching-label[data-name='attachingLabelIds'] .d-label")).toHaveText(
     "Attach label",
@@ -100,9 +115,13 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   for (const listId of ["attach-label-list", "delete-label-list"]) {
     await expect(page.locator(`#${listId} li.disabled[data-category="3"] span`)).toHaveText("type");
     await expect(
-      page.locator(`#${listId} li[data-value="8"][data-category="3"] a span`),
+      page.locator(`#${listId} li[data-value="8"][data-category="3"] button span`),
     ).toHaveText("bug");
+    await expect(
+      page.locator(`#${listId} li[data-value="8"][data-category="3"] button`),
+    ).toHaveAttribute("type", "button");
     await expect(page.locator(`#${listId} li.divider[data-category="3"]`)).toHaveCount(1);
+    await expect(page.locator(`#${listId} a`)).toHaveCount(0);
   }
   await expect(page.locator("#state > button")).toBeDisabled();
   await expect(page.locator('.search-bar input[data-toggle="item-search"]')).toHaveAttribute(
@@ -128,6 +147,12 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   const beforeMassUpdateOptionUrl = page.url();
   await page
     .locator('#state .mass-update-list li[data-value="OPEN"] button')
+    .dispatchEvent("click");
+  await page
+    .locator('#assignee .mass-update-list li[data-value="0"] button')
+    .dispatchEvent("click");
+  await page
+    .locator('#attach-label-list li[data-value="8"][data-category="3"] button')
     .dispatchEvent("click");
   await expect(page).toHaveURL(beforeMassUpdateOptionUrl);
   await expect(
@@ -162,11 +187,29 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     page.locator("#issue-item-41 .vote-count[href$='/issue/11#vote'] .item-count"),
   ).toHaveText("1");
   await expect(page.locator("#issue-item-41 .sharer-color .item-count")).toHaveText("1");
-  await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"]')).toHaveText(
-    "bug",
+  await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute("type", "button");
+  await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute(
+    "data-toggle",
+    "tooltip",
   );
+  await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute(
+    "title",
+    "Issue Sharer",
+  );
+  await page.locator("#issue-item-41 .sharer-color").dispatchEvent("click");
+  await expect(page).toHaveURL(beforeMassUpdateOptionUrl);
   await expect(
-    page.locator('.issue-label[data-category-id="3"][data-label-id="8"]'),
+    page.evaluate(() => window.sessionStorage.getItem("milestone-detail-spa-marker")),
+  ).resolves.toBe("kept");
+  await expect(
+    page.locator('#issue-item-41 .issue-label[data-category-id="3"][data-label-id="8"]'),
+  ).toHaveText("bug");
+  await expect(
+    page.locator('#issue-item-41 .issue-label[data-category-id="3"][data-label-id="8"]'),
   ).toHaveAttribute("href", `${basePath}/admin/sample/issues?state=open&labelIds=8`);
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).toHaveAttribute(
     "title",

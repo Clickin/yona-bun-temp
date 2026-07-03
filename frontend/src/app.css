@@ -1322,7 +1322,8 @@ pre code {
   outline: 0;
 }
 
-.milestone-detail .mass-update-list > li > button {
+.milestone-detail .mass-update-list > li > button,
+.milesion-wrap .mass-update-list > li > button {
   display: block;
   width: 100%;
   padding: 3px 20px;
@@ -1337,12 +1338,21 @@ pre code {
 }
 
 .milestone-detail .mass-update-list > li > button:hover,
-.milestone-detail .mass-update-list > li > button:focus {
+.milestone-detail .mass-update-list > li > button:focus,
+.milesion-wrap .mass-update-list > li > button:hover,
+.milesion-wrap .mass-update-list > li > button:focus {
   color: #fff;
   text-decoration: none;
   background-color: #0081c2;
   background-image: linear-gradient(to bottom, #08c, #0077b3);
   outline: 0;
+}
+
+.milesion-wrap .item-count-groups > button.sharer-color {
+  padding: 0;
+  color: #007fca;
+  background: transparent;
+  border: 0;
 }
 
 .members.project .guest {
