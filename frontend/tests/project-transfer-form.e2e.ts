@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_TRANSFER_FORM = `
@@ -139,6 +140,18 @@ test("project transfer settings tab anchors keep legacy hrefs without route-loca
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project transfer settings tabs use direct TanStack Link targets", () => {
+  const source = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("ProjectSettingLink");
+  expect(source).toContain('to="/$ownerName/$projectName/transfer"');
+  expect(source).toContain("params={{ ownerName, projectName }}");
 });
 
 test("project transfer confirmation follows legacy accept gate and REST redirect flow", async ({
