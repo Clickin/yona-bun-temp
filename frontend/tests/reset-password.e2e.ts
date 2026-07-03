@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const RESET_PASSWORD_ROUTE_SOURCE = readFileSync("src/routes/resetPassword.tsx", "utf8");
 
 const EXPECTED_RESET_PASSWORD_SCREEN = `
 <div class="unsupported hidden">
@@ -32,9 +35,9 @@ const EXPECTED_RESET_PASSWORD_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -116,9 +119,9 @@ const EXPECTED_RESET_BAD_REQUEST_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -139,7 +142,7 @@ const EXPECTED_RESET_BAD_REQUEST_SCREEN = `
     <div class="error-wrap">
       <i class="ico-404"></i>
       <p>Wrong url to reset password.</p>
-      <a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a>
+      <a href="__BASE_PATH__/" class="ybtn ybtn-info">Home</a>
     </div>
   </div>
 </div>
@@ -239,7 +242,7 @@ test("invalid reset password link matches legacy error/badrequest_default.scala.
     pageFooterOuterPadding: "10px 0px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
     providerFontSize: "9px",
   });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -258,6 +261,42 @@ test("invalid reset password link matches legacy error/badrequest_default.scala.
     projectPageWrapMarginTop: "5px",
     projectPageWrapWidth: 390,
   });
+});
+
+test("reset password error home link is SPA navigation with legacy rendered href", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/resetPassword?error=invalid&s=reset-token`);
+
+  const homeLink = page.locator(".error-wrap .ybtn-info", { hasText: "Home" });
+  await expect(homeLink).toHaveAttribute("href", `${basePath}/`);
+  await expect(homeLink).toHaveText("Home");
+
+  await page.evaluate(() => {
+    (window as typeof window & { __resetPasswordSpaMarker?: string }).__resetPasswordSpaMarker =
+      "home-link";
+  });
+  await homeLink.click();
+
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`, "u"));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __resetPasswordSpaMarker?: string })
+            .__resetPasswordSpaMarker,
+      ),
+    )
+    .toBe("home-link");
+});
+
+test("reset password route keeps route-local internal anchors on TanStack Link", () => {
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=\{?prefixBasePath/u);
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=(?:["'`]\s*\/|\{["'`]\s*\/)/u);
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('<Link to="/" className="ybtn ybtn-info">');
 });
 
 async function canonicalizeScreenRoots(page: Page) {
@@ -586,4 +625,8 @@ async function canonicalizeHtml(page: Page, html: string) {
     },
     { markup: html },
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

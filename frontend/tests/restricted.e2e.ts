@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const RESTRICTED_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/restricted.tsx", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_RESTRICTED_SCREEN = `
 <div class="unsupported hidden">
@@ -13,7 +19,7 @@ const EXPECTED_RESTRICTED_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -44,7 +50,10 @@ const EXPECTED_RESTRICTED_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Powered by <strong>Yona</strong></span>
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
   </div>
 </footer>
 `;
@@ -91,6 +100,31 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
     providerFontSize: "9px",
     providerMarginLeft: "4px",
   });
+});
+
+test("restricted logo link preserves SPA navigation to site home", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockRestrictedSession(page);
+  await page.addInitScript(() => {
+    const key = "__restricted_doc_loads";
+    sessionStorage.setItem(key, String(Number(sessionStorage.getItem(key) ?? "0") + 1));
+  });
+
+  await page.goto(`${basePath}/restricted`);
+  await expect(page.locator(".logo.logo-letter")).toHaveAttribute("href", `${basePath}/`);
+  await page.locator(".logo.logo-letter").click();
+
+  await expect
+    .poll(() => page.evaluate(() => `${location.pathname}${location.hash}`))
+    .toBe(`${basePath}/`);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem("__restricted_doc_loads")))
+    .toBe("1");
+});
+
+test("restricted route source keeps internal navigation out of raw anchors", async () => {
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('<Link to="/" className="logo logo-letter">');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
 });
 
 test("restricted page keeps legacy mobile shell and fixed iframe proportions", async ({ page }) => {
@@ -257,6 +291,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "autocomplete",
         "accesskey",
         "href",
+        "target",
         "title",
         "data-toggle",
         "data-placement",
@@ -312,6 +347,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "autocomplete",
           "accesskey",
           "href",
+          "target",
           "title",
           "data-toggle",
           "data-placement",

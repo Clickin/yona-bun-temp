@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import { prefixBasePath } from "../runtime-config";
 
 export const Route = createFileRoute("/restart")({
   component: RestartRoute,
@@ -13,16 +12,13 @@ function RestartRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <RestartScreen
-          basePath={runtimeConfig.basePath}
-          siteName={runtimeConfig.siteName ?? "Yona"}
-        />
+        <RestartScreen siteName={runtimeConfig.siteName ?? "Yona"} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function RestartScreen({ basePath, siteName }: { basePath: string; siteName: string }) {
+function RestartScreen({ siteName }: { siteName: string }) {
   const { t } = useLegacyMessages();
 
   return (
@@ -31,9 +27,9 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <a href={prefixBasePath(basePath, "/")} className="logo">
+              <Link to="/" className="logo">
                 <span>{siteName}</span>
-              </a>
+              </Link>
 
               <h3>{t("app.restart.welcome")}</h3>
               <p className="secret-box txt-center">{t("app.restart.notice")}</p>

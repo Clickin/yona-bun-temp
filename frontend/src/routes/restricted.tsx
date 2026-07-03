@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
 import type { YonaRecord } from "../api/types";
 import { YonaQueryProvider } from "../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { type RuntimeConfig, prefixBasePath } from "../runtime-config";
 
 export const Route = createFileRoute("/restricted")({
   component: RestrictedRoute,
@@ -46,9 +46,9 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
           <ul className="gnb-nav">
             <li>
-              <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="logo logo-letter">
+              <Link to="/" className="logo logo-letter">
                 Y
-              </a>
+              </Link>
             </li>
             <li>
               <form
@@ -58,6 +58,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               >
                 <input type="hidden" name="searchType" value="auto" />
                 <div className="search-box">
+                  {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy siteLayout.scala.html renders accesskey="S" on the GNB search input. */}
                   <input type="text" name="keyword" autoComplete="off" accessKey="S" />
                   <button type="submit">
                     <i className="yobicon-search" />
@@ -94,7 +95,41 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <footer className="page-footer-outer">
         <div className="page-footer">
           <span className="provider">
-            Powered by <strong>{runtimeConfig.siteName ?? "Yona"}</strong>
+            Copyright{" "}
+            <Link
+              to={"https://github.com/yona-projects/yona/blob/master/AUTHORS" as never}
+              target="_blank"
+              className="yona-author"
+              activeProps={{ className: undefined }}
+            >
+              Yona authors
+            </Link>{" "}
+            & ©{" "}
+            <Link
+              to={"https://navercorp.com" as never}
+              target="_blank"
+              activeProps={{ className: undefined }}
+            >
+              NAVER Corp.
+            </Link>{" "}
+            &{" "}
+            <Link
+              to={"https://naverlabs.com/" as never}
+              target="_blank"
+              className="naver-labs"
+              activeProps={{ className: undefined }}
+            >
+              NAVER LABS
+            </Link>{" "}
+            Supported by{" "}
+            <Link
+              to={"https://www.ncloud.com/?referer=yona" as never}
+              target="_blank"
+              className="naver-cloud-platform"
+              activeProps={{ className: undefined }}
+            >
+              NAVER CLOUD PLATFORM
+            </Link>
           </span>
         </div>
       </footer>

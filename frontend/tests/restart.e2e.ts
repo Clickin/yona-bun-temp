@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 const EXPECTED_RESTART_SCREEN = `
 <div class="page-wrap-outer">
@@ -30,7 +31,7 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_RESTART_SCREEN.replace("__BASE_PATH__", basePath),
+    EXPECTED_RESTART_SCREEN.replace("__BASE_PATH__", `${basePath}/`),
   );
 
   expect(actual).toEqual(expected);
@@ -55,6 +56,39 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
     secretWrapPaddingBottom: "50px",
     secretWrapPaddingTop: "50px",
   });
+});
+
+test("restart logo uses TanStack navigation for the internal home href", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/restart`);
+
+  const logo = page.locator(".secret-wrap .logo");
+  await expect(logo).toHaveAttribute("href", `${basePath}/`);
+
+  await page.evaluate(() => {
+    (window as Window & { __restartLogoSpaMarker?: string }).__restartLogoSpaMarker = "kept";
+  });
+  await logo.click({ noWaitAfter: true });
+
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname), { timeout: 5_000 })
+    .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`));
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __restartLogoSpaMarker?: string }).__restartLogoSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+test("restart route source keeps internal home navigation out of raw anchors", async () => {
+  const source = await readFile(new URL("../src/routes/restart.tsx", import.meta.url), "utf8");
+
+  expect(source).toContain('import { Link, createFileRoute } from "@tanstack/react-router";');
+  expect(source).toContain('<Link to="/" className="logo">');
+  expect(source).not.toMatch(/<a\s+[^>]*href=\{[^}]*prefixBasePath\([^}]*,\s*["']\/["'][^}]*\}/);
 });
 
 test("restart notice keeps legacy mobile standalone proportions", async ({ page }) => {
@@ -267,4 +301,8 @@ async function canonicalizeHtml(page: Page, html: string) {
     },
     { markup: html },
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

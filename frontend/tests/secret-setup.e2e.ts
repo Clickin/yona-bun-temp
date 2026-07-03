@@ -1,11 +1,17 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const SECRET_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/secret.tsx", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_SECRET_SCREEN = `
 <div class="page-wrap-outer">
   <div class="container page-wrap">
     <div class="page">
       <div class="secret-wrap">
-        <a href="__BASE_PATH__" class="logo"><span>Yona</span></a>
+        <a href="__ROOT_HREF__" class="logo"><span>Yona</span></a>
         <h3>Tada! Welcome to Yona!</h3>
         <div class="alert alert-block secret-box">
           <h4>Create website-admin account</h4>
@@ -54,7 +60,7 @@ const EXPECTED_SECRET_SCREEN = `
 const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <a href="__BASE_PATH__" class="logo"><h1 class="blind">Yona</h1></a>
+    <a href="__ROOT_HREF__" class="logo"><h1 class="blind">Yona</h1></a>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/projects">Project list</a></li>
       <li><a href="__BASE_PATH__/_help">Help</a></li>
@@ -67,7 +73,7 @@ const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
     <div class="error-wrap">
       <i class="ico ico-err2"></i>
       <p>Page not found</p>
-      <a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a>
+      <a href="__ROOT_HREF__" class="ybtn ybtn-info">Home</a>
     </div>
   </div>
 </div>
@@ -117,7 +123,7 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_SECRET_SCREEN.replace("__BASE_PATH__", basePath),
+    EXPECTED_SECRET_SCREEN.replace("__ROOT_HREF__", tanStackRootHref(basePath)),
   );
 
   expect(actual).toEqual(expected);
@@ -163,6 +169,39 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   await page.fill("#retypedPassword", "secret-pass");
   await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
   await expect(page).toHaveURL(`${basePath}/restart`);
+});
+
+test("first-run secret setup logo is SPA-owned internal navigation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await expect(page.locator(".secret-wrap .logo")).toHaveAttribute(
+    "href",
+    tanStackRootHref(basePath),
+  );
+  await expect(page.locator(".secret-wrap .logo span")).toHaveText("Yona");
+
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+
+  await page.locator(".secret-wrap .logo").click();
+  await page.waitForFunction((expectedBasePath) => {
+    const normalizedRoot = expectedBasePath === "/" ? "/" : `${expectedBasePath}/`;
+    return (
+      window.location.pathname === expectedBasePath || window.location.pathname === normalizedRoot
+    );
+  }, basePath);
+  expect(documentRequests).toEqual([]);
 });
 
 test("first-run secret setup keeps legacy mobile standalone form proportions", async ({ page }) => {
@@ -224,10 +263,23 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_SECRET_NOT_FOUND_SCREEN.replaceAll("__BASE_PATH__", basePath),
+    EXPECTED_SECRET_NOT_FOUND_SCREEN.replaceAll("__BASE_PATH__", basePath).replaceAll(
+      "__ROOT_HREF__",
+      tanStackRootHref(basePath),
+    ),
   );
 
   expect(actual).toEqual(expected);
+});
+
+test("secret route source keeps internal anchors owned by TanStack Link", async () => {
+  expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="logo">/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects">/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help">/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="ybtn ybtn-info">/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=["']\/(?!\/)/u);
 });
 
 async function readDesktopSecretMetrics(page: Page) {
@@ -356,6 +408,10 @@ async function readMobileSecretMetrics(page: Page) {
       secretBoxWidth: Math.round(secretBox.getBoundingClientRect().width),
     };
   });
+}
+
+function tanStackRootHref(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

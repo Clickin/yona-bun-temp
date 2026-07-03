@@ -1,11 +1,11 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { apiQueryKeys } from "../api/query-keys";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
@@ -68,7 +68,6 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     return (
       <BadRequestPage
         runtimeConfig={runtimeConfig}
-        basePath={runtimeConfig.basePath}
         message={t("site.resetPasswordEmail.wrongUrl")}
       />
     );
@@ -142,11 +141,9 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 }
 
 function BadRequestPage({
-  basePath,
   message,
   runtimeConfig,
 }: {
-  basePath: string;
   message: string;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -158,9 +155,9 @@ function BadRequestPage({
           <div className="error-wrap">
             <i className="ico-404" />
             <p>{message}</p>
-            <a href={prefixBasePath(basePath, "/")} className="ybtn ybtn-info">
+            <Link to="/" className="ybtn ybtn-info">
               {t("menu.home")}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

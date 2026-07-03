@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
@@ -72,9 +72,9 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="logo">
+              <Link to="/" className="logo">
                 <span>{siteName}</span>
-              </a>
+              </Link>
 
               <h3>{welcome}</h3>
 
@@ -195,22 +195,21 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 
 function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const basePath = runtimeConfig.basePath;
   const siteName = runtimeConfig.siteName ?? "Yona";
 
   return (
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <a href={prefixBasePath(basePath, "/")} className="logo">
+          <Link to="/" className="logo">
             <h1 className="blind">{siteName}</h1>
-          </a>
+          </Link>
           <ul className="gnb-nav">
             <li>
-              <a href={prefixBasePath(basePath, "/projects")}>{t("title.projectList")}</a>
+              <Link to="/projects">{t("title.projectList")}</Link>
             </li>
             <li>
-              <a href={prefixBasePath(basePath, "/_help")}>{t("title.help")}</a>
+              <Link to="/_help">{t("title.help")}</Link>
             </li>
             <li>
               <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
@@ -225,9 +224,9 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <div className="error-wrap">
             <i className="ico ico-err2" />
             <p>{t("error.notfound")}</p>
-            <a href={prefixBasePath(basePath, "/")} className="ybtn ybtn-info">
+            <Link to="/" className="ybtn ybtn-info">
               {t("menu.home")}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
