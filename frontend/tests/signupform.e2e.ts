@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_SIGNUP_SCREEN = `
@@ -307,6 +308,9 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
     signupDefinitionListTextAlign: "right",
   });
   await expect(page.locator(".go-login")).toHaveAttribute("href", `${basePath}/users/loginform`);
+  expect(readFileSync("src/routes/users/signupform.tsx", "utf8")).not.toContain(
+    "LegacyInternalLink",
+  );
 });
 
 test("signup confirmation contact matches legacy user/signup.scala.html screen DOM", async ({

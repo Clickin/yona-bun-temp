@@ -1,6 +1,6 @@
-import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import * as React from "react";
 import { readAuthUiCapabilitiesRest, registerWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
@@ -16,10 +16,6 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   signupRequireConfirm?: boolean;
   socialLoginOnly?: boolean;
 };
-
-const LegacyInternalLink = Link as React.ComponentType<
-  React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
->;
 
 export const Route = createFileRoute("/users/signupform")({
   component: SignupFormRoute,
@@ -195,9 +191,9 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
                 <div className="act-row">
                   {t("user.isAlreadySignupUser")}{" "}
-                  <LegacyInternalLink to="/users/loginform" className="go-login">
+                  <Link to="/users/loginform" className="go-login">
                     {t("title.login")}
-                  </LegacyInternalLink>
+                  </Link>
                 </div>
               </>
             )}
