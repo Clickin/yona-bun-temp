@@ -34,9 +34,7 @@ const POPULATED_PAGINATION = `<div id="pagination" class="page-navigation-wrap" 
 const SINGLE_PAGE_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>`;
 
 const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><a>No milestone</a></li><li class="divider"></li><li data-value="5"><a>v1.0</a></li></ul></div>`;
-const MASS_UPDATE_LABEL_TEMPLATES = `<script id="labelListItem" type="text/x-jquery-tmpl"><li data-value="\${id}" data-category="\${category}"> <a><span class="issue-label active list-label" data-label-id="\${id}">\${name}</span></a> </li></script><script id="labelCatetoryItem" type="text/x-jquery-tmpl"><li class="disabled" data-category="\${category}"><span>\${category}</span></li> <li data-value="\${id}" data-category="\${category}"> <a> <span class="issue-label active list-label" data-label-id="\${id}">\${name}</span> </a> </li> <li class="divider" data-category="\${category}"></li></script>`;
-const MASS_UPDATE_BOOTSTRAP = `<script type="text/javascript">$(document).ready(function(){ //issueList $yobi.loadModule("issue.MassUpdate", { "sURL": "__BASE_PATH__/admin/sample/issues", "welMassUpdateForm": $('#mass-update-form'), "welMassUpdateButtons": $('#mass-update-form button'), "welState": $("#state"), "welMilestone": $("#milestone"), "welAssignee": $("#assignee"), "welAttachingLabel": $("#attaching-label"), "welDetachingLabel": $("#detaching-label"), "welDeleteButton": $("#delete"), "sIssueCheckBoxesSelector": "[type=checkbox][name=checked-issue]", }); });</script>`;
-const MASS_UPDATE_TOOLBAR = `${MASS_UPDATE_LABEL_TEMPLATES}<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form pull-left" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all" data-target="checked-issue"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><a>Open</a></li><li data-value="CLOSED"><a>Closed</a></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><a>No assignee</a></li><li data-value="1"><a>Assign to me</a></li><li class="divider"></li><li data-value="1"><a class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li data-value="2"><a class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><a><span class="issue-label active list-label" data-label-id="8">bug</span></a></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><a><span class="issue-label active list-label" data-label-id="8">bug</span></a></li><li class="divider" data-category="3"></li></ul></div></form></div>${MASS_UPDATE_BOOTSTRAP}`;
+const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form pull-left" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all" data-target="checked-issue"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><a>Open</a></li><li data-value="CLOSED"><a>Closed</a></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><a>No assignee</a></li><li data-value="1"><a>Assign to me</a></li><li class="divider"></li><li data-value="1"><a class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li data-value="2"><a class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><a><span class="issue-label active list-label" data-label-id="8">bug</span></a></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><a><span class="issue-label active list-label" data-label-id="8">bug</span></a></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
 const POPULATED_SPAN10_WITH_TOOLBAR = POPULATED_SPAN10.replace(
   '<div class="filter-wrap board"></div>',
   `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}</div>`,
@@ -1229,7 +1227,7 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
   await expect(page.locator("#mass-update-form")).toBeVisible();
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
-  await expectMassUpdateRuntimePartial(page, basePath);
+  await expectMassUpdateReactRuntime(page);
   await expect(page.locator("#attach-label-list .issue-label").first()).not.toHaveAttribute(
     "style",
     /.+/u,
@@ -1266,32 +1264,16 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   );
 });
 
-async function expectMassUpdateRuntimePartial(page: Page, basePath: string) {
-  const labelListItem = page.locator('script#labelListItem[type="text/x-jquery-tmpl"]');
-  const labelCategoryItem = page.locator('script#labelCatetoryItem[type="text/x-jquery-tmpl"]');
-  await expect(labelListItem).toHaveCount(1);
-  await expect(labelCategoryItem).toHaveCount(1);
-  expect(await labelListItem.textContent()).toContain(
-    '<li data-value="${id}" data-category="${category}">',
+async function expectMassUpdateReactRuntime(page: Page) {
+  await expect(page.locator('script#labelListItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
+  await expect(page.locator('script#labelCatetoryItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
+  expect(await scriptTextContains(page, '$yobi.loadModule("issue.MassUpdate"')).toBe(false);
+  await expect(page.locator("#mass-update-form")).toHaveAttribute(
+    "action",
+    /\/admin\/sample\/issues$/u,
   );
-  expect(await labelListItem.textContent()).toContain('data-label-id="${id}">${name}</span>');
-  expect(await labelCategoryItem.textContent()).toContain(
-    '<li class="disabled" data-category="${category}">',
-  );
-  expect(await labelCategoryItem.textContent()).toContain(
-    '<li class="divider" data-category="${category}">',
-  );
-
-  expect(await scriptTextContains(page, '$yobi.loadModule("issue.MassUpdate"')).toBe(true);
-  expect(await scriptTextContains(page, `"sURL": "${basePath}/admin/sample/issues"`)).toBe(true);
-  expect(await scriptTextContains(page, `"welMassUpdateForm": $('#mass-update-form')`)).toBe(true);
-  expect(await scriptTextContains(page, `"welMilestone": $("#milestone")`)).toBe(true);
-  expect(
-    await scriptTextContains(
-      page,
-      `"sIssueCheckBoxesSelector": "[type=checkbox][name=checked-issue]"`,
-    ),
-  ).toBe(true);
+  await expect(page.locator("#attach-label-list li[data-value='8']")).toHaveCount(1);
+  await expect(page.locator("#delete-label-list li[data-value='8']")).toHaveCount(1);
 }
 
 test("project issue list mass update options come from project-wide legacy sources", async ({
@@ -1344,6 +1326,7 @@ test("project issue list mass update checkboxes enable legacy toolbar controls",
   await expect(page.locator("#issue-item-42")).not.toHaveClass(/active/);
 
   await page.locator("#check-all").check();
+  await expect(page.locator("#check-all")).toBeChecked();
   await expect(page.locator("#issue-42")).toBeChecked();
   await expect(page.locator("#issue-43")).toBeChecked();
   expect(await massUpdateButtonsDisabled(page)).toEqual([false, false, false, false, false]);
@@ -1389,21 +1372,64 @@ test("project issue list mass update label lists follow checked issue labels", a
   await expect(page.locator("#mass-update-form")).toBeVisible();
 
   const attachBug = page.locator('#attach-label-list li[data-value="8"]');
+  const attachBugCategory = page.locator('#attach-label-list li.disabled[data-category="3"]');
+  const attachBugDivider = page.locator('#attach-label-list li.divider[data-category="3"]');
+  const detachBug = page.locator('#delete-label-list li[data-value="8"]');
   const detachButton = page.locator("#detaching-label > button");
   expect(await displayValue(attachBug)).not.toBe("none");
+  await expect(attachBugCategory).not.toHaveAttribute("hidden", "");
+  await expect(attachBugDivider).not.toHaveAttribute("hidden", "");
   await expect(detachButton).toBeDisabled();
 
   await page.locator("#issue-42").check();
   expect(await displayValue(attachBug)).toBe("none");
+  await expect(attachBugCategory).toHaveAttribute("hidden", "");
+  await expect(attachBugDivider).toHaveAttribute("hidden", "");
+  await expect(detachBug).not.toHaveAttribute("hidden", "");
   await expect(detachButton).toBeEnabled();
 
   await page.locator("#issue-42").uncheck();
   expect(await displayValue(attachBug)).not.toBe("none");
+  await expect(attachBugCategory).not.toHaveAttribute("hidden", "");
+  await expect(attachBugDivider).not.toHaveAttribute("hidden", "");
   await expect(detachButton).toBeDisabled();
 
   await page.locator("#issue-43").check();
   expect(await displayValue(attachBug)).not.toBe("none");
+  await expect(page.locator("#delete-label-list li[data-value]")).toHaveCount(0);
   await expect(detachButton).toBeDisabled();
+});
+
+test("project issue list mass update label dropdowns post selected issue payloads", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await page.locator("#issue-42").check();
+
+  const detachRequest = page.waitForRequest((request) => {
+    return request.method() === "POST" && request.url().includes("/issues/mass-update");
+  });
+  await page.locator("#detaching-label > button").click();
+  await page.locator('#delete-label-list li[data-value="8"]').click();
+  expect((await detachRequest).postDataJSON()).toMatchObject({
+    issueNumbers: [11],
+    removeLabelIds: [8],
+  });
+
+  await page.locator("#issue-43").check();
+  const attachRequest = page.waitForRequest((request) => {
+    return request.method() === "POST" && request.url().includes("/issues/mass-update");
+  });
+  await page.locator("#attaching-label > button").click();
+  await page.locator('#attach-label-list li[data-value="8"]').click();
+  expect((await attachRequest).postDataJSON()).toMatchObject({
+    addLabelIds: [8],
+    issueNumbers: [11, 12],
+  });
 });
 
 test("project issue mass-update checkbox click does not reveal child list like legacy two-column guard", async ({

@@ -4,6 +4,7 @@ import {
   Fragment,
   useEffect,
   useEffectEvent,
+  useMemo,
   useRef,
   useState,
   type AnchorHTMLAttributes,
@@ -432,6 +433,7 @@ function ProjectIssuesBody({
   const [revealedChildIssueIds, setRevealedChildIssueIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [selectedIssueIds, setSelectedIssueIds] = useState<ReadonlySet<string>>(() => new Set());
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -439,6 +441,24 @@ function ProjectIssuesBody({
   const normalItems = issues.items.filter(
     (issue) => !issue.isDraft || stringField(issue.authorLoginId, "") === currentUserLoginId,
   );
+  const visibleMassUpdateIssues = useMemo(
+    () => [...draftItems, ...normalItems],
+    [draftItems, normalItems],
+  );
+  const visibleMassUpdateIssueIds = useMemo(
+    () => visibleMassUpdateIssues.map((issue) => stringField(issue.id, String(issue.issueNumber))),
+    [visibleMassUpdateIssues],
+  );
+  useEffect(() => {
+    const visibleIds = new Set(visibleMassUpdateIssueIds);
+    setSelectedIssueIds((previousIds) => {
+      const nextIds = new Set([...previousIds].filter((issueId) => visibleIds.has(issueId)));
+      return nextIds.size === previousIds.size &&
+        [...nextIds].every((issueId) => previousIds.has(issueId))
+        ? previousIds
+        : nextIds;
+    });
+  }, [visibleMassUpdateIssueIds]);
   const handleStateChange = (nextState: "closed" | "open") => {
     void navigate({
       to: projectIssuesRoutePath(ownerName, projectName, {
@@ -490,6 +510,20 @@ function ProjectIssuesBody({
       nextIds.add(issueId);
       return nextIds;
     });
+  };
+  const toggleIssueSelection = (issueId: string, checked: boolean) => {
+    setSelectedIssueIds((previousIds) => {
+      const nextIds = new Set(previousIds);
+      if (checked) {
+        nextIds.add(issueId);
+      } else {
+        nextIds.delete(issueId);
+      }
+      return nextIds;
+    });
+  };
+  const toggleAllIssueSelection = (checked: boolean) => {
+    setSelectedIssueIds(checked ? new Set(visibleMassUpdateIssueIds) : new Set());
   };
   const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
     const target =
@@ -720,13 +754,16 @@ function ProjectIssuesBody({
                     <MassUpdateToolbar
                       assignableUsers={assignableUsers}
                       currentUserId={currentUserId}
-                      issues={issues.items}
+                      issues={visibleMassUpdateIssues}
                       labels={labels}
                       milestones={milestones.open}
                       ownerName={ownerName}
                       projectName={projectName}
                       runtimeConfig={runtimeConfig}
+                      selectedIssueIds={selectedIssueIds}
                       showMilestone={showMilestone}
+                      visibleIssueIds={visibleMassUpdateIssueIds}
+                      onSelectAllIssues={toggleAllIssueSelection}
                     />
                   ) : null}
                   {issues.items.length > 1 ? (
@@ -748,9 +785,13 @@ function ProjectIssuesBody({
                         currentUserLoginId={currentUserLoginId}
                         draftNumberSource="draft-list"
                         issue={issue}
+                        issueSelected={selectedIssueIds.has(
+                          stringField(issue.id, String(issue.issueNumber)),
+                        )}
                         key={`draft-${issue.id || issue.issueNumber}`}
                         ownerName={ownerName}
                         projectName={projectName}
+                        onIssueSelectedChange={toggleIssueSelection}
                         showMassUpdateControls={showMassUpdateControls}
                         showMilestone={showMilestone}
                         showSubtasksAlways={showSubtasksAlways}
@@ -776,9 +817,13 @@ function ProjectIssuesBody({
                       currentUserLoginId={currentUserLoginId}
                       draftNumberSource="normal-list"
                       issue={issue}
+                      issueSelected={selectedIssueIds.has(
+                        stringField(issue.id, String(issue.issueNumber)),
+                      )}
                       key={issue.id || issue.issueNumber}
                       ownerName={ownerName}
                       projectName={projectName}
+                      onIssueSelectedChange={toggleIssueSelection}
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
                       showSubtasksAlways={showSubtasksAlways}
@@ -1031,7 +1076,10 @@ function MassUpdateToolbar({
   ownerName,
   projectName,
   runtimeConfig,
+  selectedIssueIds,
   showMilestone,
+  visibleIssueIds,
+  onSelectAllIssues,
 }: {
   assignableUsers: ProjectAssignableUserOptionSource[];
   currentUserId: string;
@@ -1041,14 +1089,30 @@ function MassUpdateToolbar({
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  selectedIssueIds: ReadonlySet<string>;
   showMilestone: boolean;
+  visibleIssueIds: string[];
+  onSelectAllIssues: (checked: boolean) => void;
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const formRef = useRef<HTMLFormElement>(null);
   const milestones = projectMilestoneOptions(openMilestones);
   const labels = projectIssueLabelOptions(projectLabels, issues);
   const users = projectAssignableUserOptions(assignableUsers, issues, currentUserId);
+  const selectedIssues = issues.filter((issue) =>
+    selectedIssueIds.has(stringField(issue.id, String(issue.issueNumber))),
+  );
+  const selectedIssueCount = selectedIssues.length;
+  const hasSelectedIssues = selectedIssueCount > 0;
+  const allVisibleIssuesSelected =
+    visibleIssueIds.length > 0 && visibleIssueIds.every((issueId) => selectedIssueIds.has(issueId));
+  const selectedLabelCounts = countSelectedIssueLabels(selectedIssues);
+  const selectedLabels = uniqueLabels(selectedIssues);
+  const attachHiddenLabelIds = hiddenLabelIdsForSelectedIssueCount(
+    selectedLabelCounts,
+    hasSelectedIssues ? selectedIssueCount : 0,
+  );
+  const detachDisabled = !hasSelectedIssues || selectedLabels.length === 0;
   const massUpdateAction = prefixBasePath(
     runtimeConfig.basePath,
     `/${ownerName}/${projectName}/issues`,
@@ -1064,293 +1128,206 @@ function MassUpdateToolbar({
       });
     },
   });
-
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) {
+  const submitMassUpdate = (name: string, value: string) => {
+    if (!hasSelectedIssues) {
       return;
     }
 
-    const checkAll = form.querySelector<HTMLInputElement>("#check-all");
-    const buttons = Array.from(form.querySelectorAll<HTMLButtonElement>("button"));
-    const detachButton = form.querySelector<HTMLButtonElement>("#detaching-label > button");
-    const rowCheckboxSelector = 'input[name="checked-issue"][data-toggle="issue-checkbox"]';
-    const rowCheckboxes = () =>
-      Array.from(document.querySelectorAll<HTMLInputElement>(rowCheckboxSelector));
-    const issueNumbersById = new Map(
-      issues.map((issue) => [
-        stringField(issue.id, String(issue.issueNumber)),
-        Number(stringField(issue.issueNumber, "0")),
-      ]),
-    );
+    const issueNumbers: number[] = [];
+    for (const issue of selectedIssues) {
+      const issueNumber = Number(stringField(issue.issueNumber, "0"));
+      if (issueNumber > 0) {
+        issueNumbers.push(issueNumber);
+      }
+    }
+    if (issueNumbers.length === 0) {
+      return;
+    }
+
     const userLoginById = new Map(users.map((user) => [user.id, user.loginId]));
-    const updateButtons = () => {
-      const checkboxes = rowCheckboxes();
-      const labelCounts = new Map<string, number>();
-      let checkedCount = 0;
-      for (const checkbox of checkboxes) {
-        document
-          .getElementById(`issue-item-${checkbox.dataset.issueId ?? ""}`)
-          ?.classList.toggle("active", checkbox.checked);
-        if (!checkbox.checked) {
-          continue;
+    const input: Record<string, unknown> = { issueNumbers, ownerName, projectName };
+    switch (name) {
+      case "state":
+        input.state = value;
+        break;
+      case "assignee.id":
+        input.assigneeUpdate = true;
+        input.assigneeLoginId = userLoginById.get(value) ?? "";
+        break;
+      case "milestone.id":
+        input.milestoneUpdate = true;
+        input.milestoneId = value === "-1" ? 0 : Number(value);
+        break;
+      case "attachingLabelIds": {
+        const attachingLabel = labels.find((label) => label.id === value);
+        input.addLabelIds = [Number(value)];
+        if (attachingLabel?.categoryIsExclusive) {
+          const exclusiveDetachLabelIds: number[] = [];
+          for (const label of selectedLabels) {
+            if (
+              label.id !== value &&
+              label.categoryId === attachingLabel.categoryId &&
+              label.categoryIsExclusive
+            ) {
+              exclusiveDetachLabelIds.push(Number(label.id));
+            }
+          }
+          if (exclusiveDetachLabelIds.length > 0) {
+            input.removeLabelIds = exclusiveDetachLabelIds;
+          }
         }
-        checkedCount += 1;
-        for (const labelId of issueLabelIds(checkbox.dataset.issueLabels ?? "")) {
-          labelCounts.set(labelId, (labelCounts.get(labelId) ?? 0) + 1);
-        }
+        break;
       }
-      buttons.forEach((button) => {
-        button.disabled = checkedCount === 0;
-      });
-      if (checkAll) {
-        checkAll.checked = checkedCount > 0 && checkedCount === checkboxes.length;
-      }
-      form
-        .querySelectorAll<HTMLElement>("#attach-label-list li, #delete-label-list li")
-        .forEach((item) => {
-          item.style.display = "";
-        });
-      if (checkedCount === 0) {
+      case "detachingLabelIds":
+        input.removeLabelIds = [Number(value)];
+        break;
+      default:
         return;
-      }
-      form.querySelectorAll<HTMLElement>("#attach-label-list li[data-value]").forEach((item) => {
-        if (labelCounts.get(item.dataset.value ?? "") === checkedCount) {
-          item.style.display = "none";
-        }
-      });
-      if (detachButton && labelCounts.size === 0) {
-        detachButton.disabled = true;
-      }
-    };
-    const onCheckAll = () => {
-      rowCheckboxes().forEach((checkbox) => {
-        checkbox.checked = checkAll?.checked ?? false;
-      });
-      updateButtons();
-    };
-    const onRowCheckboxChange = (event: Event) => {
-      if (event.target instanceof HTMLInputElement && event.target.matches(rowCheckboxSelector)) {
-        updateButtons();
-      }
-    };
-    const onDropdownItemClick = (event: Event) => {
-      const item = (event.target as Element | null)?.closest<HTMLElement>(
-        ".btn-group[data-name] li[data-value]",
-      );
-      const group = item?.closest<HTMLElement>(".btn-group[data-name]");
-      if (!item || !group || !form.contains(item)) {
-        return;
-      }
-      const issueNumbers: number[] = [];
-      for (const checkbox of rowCheckboxes()) {
-        if (!checkbox.checked) {
-          continue;
-        }
-        const issueNumber = issueNumbersById.get(checkbox.dataset.issueId ?? "");
-        if (issueNumber) {
-          issueNumbers.push(issueNumber);
-        }
-      }
-      if (issueNumbers.length === 0) {
-        return;
-      }
-
-      const value = item.dataset.value ?? "";
-      const input: Record<string, unknown> = { issueNumbers, ownerName, projectName };
-      switch (group.dataset.name) {
-        case "state":
-          input.state = value;
-          break;
-        case "assignee.id":
-          input.assigneeUpdate = true;
-          input.assigneeLoginId = userLoginById.get(value) ?? "";
-          break;
-        case "milestone.id":
-          input.milestoneUpdate = true;
-          input.milestoneId = value === "-1" ? 0 : Number(value);
-          break;
-        case "attachingLabelIds":
-          input.addLabelIds = [Number(value)];
-          break;
-        case "detachingLabelIds":
-          input.removeLabelIds = [Number(value)];
-          break;
-        default:
-          return;
-      }
-      mutateMassUpdate(input);
-    };
-
-    checkAll?.addEventListener("change", onCheckAll);
-    document.addEventListener("change", onRowCheckboxChange);
-    form.addEventListener("click", onDropdownItemClick);
-    updateButtons();
-
-    return () => {
-      checkAll?.removeEventListener("change", onCheckAll);
-      document.removeEventListener("change", onRowCheckboxChange);
-      form.removeEventListener("click", onDropdownItemClick);
-    };
-  }, [issues, mutateMassUpdate, ownerName, projectName, users]);
+    }
+    mutateMassUpdate(input);
+  };
 
   return (
-    <>
-      <MassUpdateLabelTemplates />
-      <div className="mass-update-wrap hide-in-mobile">
-        <form
-          id="mass-update-form"
-          className="mass-update-form pull-left"
-          action={massUpdateAction}
-          method="post"
-          ref={formRef}
-        >
-          <div className="btn-group check-all">
-            {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
-            <label htmlFor="check-all">
-              <input type="checkbox" id="check-all" data-target="checked-issue" />
-            </label>
-          </div>
-          <MassUpdateDropdown
-            id="state"
-            label={t("issue.update.state")}
-            name="state"
-            options={[
-              { label: t("issue.state.open"), value: "OPEN" },
-              { label: t("issue.state.closed"), value: "CLOSED" },
-            ]}
-          />
-          <div id="assignee" className="btn-group" data-name="assignee.id">
-            <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
-              <span className="d-label">{t("issue.update.assignee.id")}</span>
-              <span className="d-caret">
-                <span className="caret"></span>
-              </span>
-            </button>
-            <ul className="dropdown-menu mass-update-list">
-              <li data-value="0">
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-                <a>{t("issue.noAssignee")}</a>
-              </li>
-              <li data-value={currentUserId}>
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-                <a>{t("issue.assignToMe")}</a>
-              </li>
-              {users.length ? <li className="divider"></li> : null}
-              {users.map((user) => (
-                <li data-value={user.id} key={user.id}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-                  <a className="usf-group">
-                    <span className="avatar-wrap smaller">
-                      <img src={user.avatarUrl} width="20" height="20" alt="" />
-                    </span>
-                    <strong className="name">{user.label}</strong>
-                    <span className="loginid">
-                      {" "}
-                      <strong>@</strong>
-                      {user.loginId}
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {showMilestone && milestones.length ? (
-            <MassUpdateDropdown
-              id="milestone"
-              label={t("issue.update.milestone.id")}
-              name="milestone.id"
-              options={[
-                { label: t("issue.noMilestone"), value: "-1" },
-                { divider: true, value: "__divider" },
-                ...milestones.map((milestone) => ({
-                  label: milestone.title,
-                  value: milestone.id,
-                })),
-              ]}
+    <div className="mass-update-wrap hide-in-mobile">
+      <form
+        id="mass-update-form"
+        className="mass-update-form pull-left"
+        action={massUpdateAction}
+        method="post"
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <div className="btn-group check-all">
+          {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update wraps this checkbox in a label. */}
+          <label htmlFor="check-all">
+            <input
+              type="checkbox"
+              id="check-all"
+              data-target="checked-issue"
+              checked={allVisibleIssuesSelected}
+              onChange={(event) => onSelectAllIssues(event.currentTarget.checked)}
             />
-          ) : null}
-          {labels.length ? (
-            <>
-              <LabelMassUpdateDropdown
-                id="attaching-label"
-                label={t("issue.update.attachLabel")}
-                listId="attach-label-list"
-                name="attachingLabelIds"
-                options={labels}
-              />
-              <LabelMassUpdateDropdown
-                id="detaching-label"
-                label={t("issue.update.detachLabel")}
-                listId="delete-label-list"
-                name="detachingLabelIds"
-                options={labels}
-              />
-            </>
-          ) : null}
-        </form>
-      </div>
-      <script
-        type="text/javascript"
-        dangerouslySetInnerHTML={{
-          __html: `$(document).ready(function(){
-        //issueList
-        $yobi.loadModule("issue.MassUpdate", {
-            "sURL": "${massUpdateAction}",
-            "welMassUpdateForm": $('#mass-update-form'),
-            "welMassUpdateButtons": $('#mass-update-form button'),
-            "welState": $("#state"),
-            "welMilestone": $("#milestone"),
-            "welAssignee": $("#assignee"),
-            "welAttachingLabel": $("#attaching-label"),
-            "welDetachingLabel": $("#detaching-label"),
-            "welDeleteButton": $("#delete"),
-            "sIssueCheckBoxesSelector": "[type=checkbox][name=checked-issue]",
-        });
-    });`,
-        }}
-      />
-    </>
-  );
-}
-
-function MassUpdateLabelTemplates() {
-  return (
-    <>
-      <script
-        id="labelListItem"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<li data-value="${id}" data-category="${category}">\n    <a><span class="issue-label active list-label" data-label-id="${id}">${name}</span></a>\n</li>',
-        }}
-      />
-      <script
-        id="labelCatetoryItem"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<li class="disabled" data-category="${category}"><span>${category}</span></li>\n<li data-value="${id}" data-category="${category}">\n    <a>\n        <span class="issue-label active list-label" data-label-id="${id}">${name}</span>\n    </a>\n</li>\n<li class="divider" data-category="${category}"></li>',
-        }}
-      />
-    </>
+          </label>
+        </div>
+        <MassUpdateDropdown
+          disabled={!hasSelectedIssues}
+          id="state"
+          label={t("issue.update.state")}
+          name="state"
+          options={[
+            { label: t("issue.state.open"), value: "OPEN" },
+            { label: t("issue.state.closed"), value: "CLOSED" },
+          ]}
+          onSelect={submitMassUpdate}
+        />
+        <div id="assignee" className="btn-group" data-name="assignee.id">
+          <button
+            className="btn dropdown-toggle medium"
+            data-toggle="dropdown"
+            disabled={!hasSelectedIssues}
+          >
+            <span className="d-label">{t("issue.update.assignee.id")}</span>
+            <span className="d-caret">
+              <span className="caret"></span>
+            </span>
+          </button>
+          <ul className="dropdown-menu mass-update-list">
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- legacy dropdown item is an inert anchor inside a list item. */}
+            <li data-value="0" onClick={() => submitMassUpdate("assignee.id", "0")}>
+              <LegacyInertDropdownAnchor>{t("issue.noAssignee")}</LegacyInertDropdownAnchor>
+            </li>
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- legacy dropdown item is an inert anchor inside a list item. */}
+            <li
+              data-value={currentUserId}
+              onClick={() => submitMassUpdate("assignee.id", currentUserId)}
+            >
+              <LegacyInertDropdownAnchor>{t("issue.assignToMe")}</LegacyInertDropdownAnchor>
+            </li>
+            {users.length ? <li className="divider"></li> : null}
+            {users.map((user) => (
+              /* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- legacy dropdown item is an inert anchor inside a list item. */
+              <li
+                data-value={user.id}
+                key={user.id}
+                onClick={() => submitMassUpdate("assignee.id", user.id)}
+              >
+                <LegacyInertDropdownAnchor className="usf-group">
+                  <span className="avatar-wrap smaller">
+                    <img src={user.avatarUrl} width="20" height="20" alt="" />
+                  </span>
+                  <strong className="name">{user.label}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {user.loginId}
+                  </span>
+                </LegacyInertDropdownAnchor>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {showMilestone && milestones.length ? (
+          <MassUpdateDropdown
+            disabled={!hasSelectedIssues}
+            id="milestone"
+            label={t("issue.update.milestone.id")}
+            name="milestone.id"
+            options={[
+              { label: t("issue.noMilestone"), value: "-1" },
+              { divider: true, value: "__divider" },
+              ...milestones.map((milestone) => ({
+                label: milestone.title,
+                value: milestone.id,
+              })),
+            ]}
+            onSelect={submitMassUpdate}
+          />
+        ) : null}
+        {labels.length ? (
+          <>
+            <LabelMassUpdateDropdown
+              disabled={!hasSelectedIssues}
+              hiddenLabelIds={attachHiddenLabelIds}
+              id="attaching-label"
+              label={t("issue.update.attachLabel")}
+              listId="attach-label-list"
+              name="attachingLabelIds"
+              options={labels}
+              onSelect={submitMassUpdate}
+            />
+            <LabelMassUpdateDropdown
+              disabled={detachDisabled}
+              id="detaching-label"
+              label={t("issue.update.detachLabel")}
+              listId="delete-label-list"
+              name="detachingLabelIds"
+              options={hasSelectedIssues ? selectedLabels : labels}
+              onSelect={submitMassUpdate}
+            />
+          </>
+        ) : null}
+      </form>
+    </div>
   );
 }
 
 function MassUpdateDropdown({
+  disabled,
   id,
   label,
   name,
+  onSelect,
   options,
 }: {
+  disabled: boolean;
   id: string;
   label: string;
   name: string;
+  onSelect: (name: string, value: string) => void;
   options: Array<{ divider?: boolean; label?: string; value: string }>;
 }) {
   return (
     <div id={id} className="btn-group" data-name={name}>
-      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
+      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
         <span className="d-label">{label}</span>
         <span className="d-caret">
           <span className="caret"></span>
@@ -1361,7 +1338,14 @@ function MassUpdateDropdown({
           option.divider ? (
             <li className="divider" key={option.value}></li>
           ) : (
-            <li data-value={option.value} key={option.value}>
+            <li
+              data-value={option.value}
+              key={option.value}
+              onClick={() => onSelect(name, option.value)}
+              onKeyDown={(event) =>
+                submitMassUpdateFromOptionKey(event, () => onSelect(name, option.value))
+              }
+            >
               {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
               <a>{option.label}</a>
             </li>
@@ -1373,17 +1357,24 @@ function MassUpdateDropdown({
 }
 
 function LabelMassUpdateDropdown({
+  disabled,
+  hiddenLabelIds,
   id,
   label,
   listId,
   name,
+  onSelect,
   options,
 }: {
+  disabled: boolean;
+  hiddenLabelIds?: ReadonlySet<string>;
   id: string;
   label: string;
   listId: string;
   name: string;
+  onSelect: (name: string, value: string) => void;
   options: Array<{
+    categoryIsExclusive?: boolean;
     categoryId: string;
     categoryName: string;
     color?: string;
@@ -1393,7 +1384,7 @@ function LabelMassUpdateDropdown({
 }) {
   return (
     <div id={id} className="btn-group" data-name={name}>
-      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled>
+      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
         <span className="d-label">{label}</span>
         <span className="d-caret">
           <span className="caret"></span>
@@ -1401,7 +1392,13 @@ function LabelMassUpdateDropdown({
       </button>
       <ul id={listId} className="dropdown-menu mass-update-list">
         {groupLabels(options).map((group) => (
-          <LabelMassUpdateGroup group={group} key={group.categoryId} />
+          <LabelMassUpdateGroup
+            group={group}
+            hiddenLabelIds={hiddenLabelIds}
+            key={group.categoryId}
+            name={name}
+            onSelect={onSelect}
+          />
         ))}
       </ul>
     </div>
@@ -1410,20 +1407,37 @@ function LabelMassUpdateDropdown({
 
 function LabelMassUpdateGroup({
   group,
+  hiddenLabelIds,
+  name,
+  onSelect,
 }: {
   group: {
     categoryId: string;
     categoryName: string;
-    labels: Array<{ color?: string; id: string; name: string }>;
+    labels: Array<{ categoryIsExclusive?: boolean; color?: string; id: string; name: string }>;
   };
+  hiddenLabelIds?: ReadonlySet<string>;
+  name: string;
+  onSelect: (name: string, value: string) => void;
 }) {
+  const categoryHidden =
+    group.labels.length > 0 && group.labels.every((label) => hiddenLabelIds?.has(label.id));
   return (
     <>
-      <li className="disabled" data-category={group.categoryId}>
+      <li className="disabled" data-category={group.categoryId} hidden={categoryHidden}>
         <span>{group.categoryName}</span>
       </li>
       {group.labels.map((label) => (
-        <li data-value={label.id} data-category={group.categoryId} key={label.id}>
+        <li
+          data-value={label.id}
+          data-category={group.categoryId}
+          hidden={hiddenLabelIds?.has(label.id)}
+          key={label.id}
+          onClick={() => onSelect(name, label.id)}
+          onKeyDown={(event) =>
+            submitMassUpdateFromOptionKey(event, () => onSelect(name, label.id))
+          }
+        >
           {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
           <a>
             <span className="issue-label active list-label" data-label-id={label.id}>
@@ -1432,9 +1446,31 @@ function LabelMassUpdateGroup({
           </a>
         </li>
       ))}
-      <li className="divider" data-category={group.categoryId}></li>
+      <li className="divider" data-category={group.categoryId} hidden={categoryHidden}></li>
     </>
   );
+}
+
+function LegacyInertDropdownAnchor({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const Anchor = "a";
+  return <Anchor className={className}>{children}</Anchor>;
+}
+
+function submitMassUpdateFromOptionKey(
+  event: ReactKeyboardEvent<HTMLLIElement>,
+  submit: () => void,
+) {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+  event.preventDefault();
+  submit();
 }
 
 function ProjectIssueItem({
@@ -1444,8 +1480,10 @@ function ProjectIssueItem({
   draftNumberSource,
   hoveredTitlePrefix,
   issue,
+  issueSelected,
   issueRowHoverStyle,
   onIssueRowHover,
+  onIssueSelectedChange,
   onRevealChildIssueList,
   onTitlePrefixHover,
   onTitlePrefixSearch,
@@ -1463,6 +1501,7 @@ function ProjectIssueItem({
   draftNumberSource: "draft-list" | "normal-list";
   hoveredTitlePrefix: string;
   issue: RestIssueListItem;
+  issueSelected: boolean;
   issueRowHoverStyle: {
     backgroundColor: "#fafafa" | "#fff";
     issueId: string;
@@ -1473,6 +1512,7 @@ function ProjectIssueItem({
       issueId: string;
     } | null,
   ) => void;
+  onIssueSelectedChange: (issueId: string, checked: boolean) => void;
   onRevealChildIssueList: (issueId: string) => void;
   onTitlePrefixHover: (prefix: string) => void;
   onTitlePrefixSearch: (filter: string) => void;
@@ -1537,7 +1577,7 @@ function ProjectIssueItem({
 
   return (
     <li
-      className="post-item title"
+      className={`post-item title${issueSelected ? " active" : ""}`}
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
@@ -1559,6 +1599,8 @@ function ProjectIssueItem({
               data-toggle="issue-checkbox"
               data-issue-id={issueId}
               data-issue-labels={issueLabelData(issueLabels)}
+              checked={issueSelected}
+              onChange={(event) => onIssueSelectedChange(issueId, event.currentTarget.checked)}
             />
           </label>
         ) : null}
@@ -2928,20 +2970,6 @@ function issueLabelData(labels: RestIssueListItem["labels"]) {
     .concat(labels.length ? "|" : "");
 }
 
-function issueLabelIds(value: string) {
-  const labelIds: string[] = [];
-  for (const label of value.split("|")) {
-    if (!label) {
-      continue;
-    }
-    const [, labelId] = label.split(",");
-    if (labelId) {
-      labelIds.push(labelId);
-    }
-  }
-  return labelIds;
-}
-
 function projectMilestoneOptions(milestones: ProjectMilestone[]) {
   const options = [];
   for (const milestone of milestones) {
@@ -2965,6 +2993,7 @@ function projectIssueLabelOptions(
     if (id && name) {
       projectLabels.push({
         categoryId: stringField(label.categoryId, ""),
+        categoryIsExclusive: Boolean(label.categoryIsExclusive),
         categoryName: stringField(label.categoryName, stringField(label.category, "")),
         color: stringField(label.color, ""),
         id,
@@ -2980,7 +3009,14 @@ function projectIssueLabelOptions(
 function uniqueLabels(issues: RestIssueListItem[]) {
   const labels = new Map<
     string,
-    { categoryId: string; categoryName: string; color?: string; id: string; name: string }
+    {
+      categoryId: string;
+      categoryIsExclusive?: boolean;
+      categoryName: string;
+      color?: string;
+      id: string;
+      name: string;
+    }
   >();
   for (const issue of issues) {
     for (const label of issue.labels) {
@@ -2988,6 +3024,7 @@ function uniqueLabels(issues: RestIssueListItem[]) {
       if (id && !labels.has(id)) {
         labels.set(id, {
           categoryId: stringField(label.categoryId, ""),
+          categoryIsExclusive: Boolean(label.categoryIsExclusive),
           categoryName: stringField(label.categoryName, ""),
           color: label.color,
           id,
@@ -2999,8 +3036,38 @@ function uniqueLabels(issues: RestIssueListItem[]) {
   return Array.from(labels.values()).sort(compareIssueLabels);
 }
 
+function countSelectedIssueLabels(issues: RestIssueListItem[]) {
+  const labelCounts = new Map<string, number>();
+  for (const issue of issues) {
+    for (const label of issue.labels) {
+      const id = stringField(label.id, "");
+      if (id) {
+        labelCounts.set(id, (labelCounts.get(id) ?? 0) + 1);
+      }
+    }
+  }
+  return labelCounts;
+}
+
+function hiddenLabelIdsForSelectedIssueCount(
+  labelCounts: ReadonlyMap<string, number>,
+  selectedIssueCount: number,
+) {
+  const hiddenLabelIds = new Set<string>();
+  if (selectedIssueCount === 0) {
+    return hiddenLabelIds;
+  }
+  for (const [labelId, count] of labelCounts) {
+    if (count === selectedIssueCount) {
+      hiddenLabelIds.add(labelId);
+    }
+  }
+  return hiddenLabelIds;
+}
+
 function groupLabels(
   labels: Array<{
+    categoryIsExclusive?: boolean;
     categoryId: string;
     categoryName: string;
     color?: string;
@@ -3013,7 +3080,7 @@ function groupLabels(
     {
       categoryId: string;
       categoryName: string;
-      labels: Array<{ color?: string; id: string; name: string }>;
+      labels: Array<{ categoryIsExclusive?: boolean; color?: string; id: string; name: string }>;
     }
   >();
   for (const label of labels) {
@@ -3022,7 +3089,12 @@ function groupLabels(
       categoryName: label.categoryName,
       labels: [],
     };
-    group.labels.push({ color: label.color, id: label.id, name: label.name });
+    group.labels.push({
+      categoryIsExclusive: label.categoryIsExclusive,
+      color: label.color,
+      id: label.id,
+      name: label.name,
+    });
     groups.set(label.categoryId, group);
   }
   return Array.from(groups.values());
