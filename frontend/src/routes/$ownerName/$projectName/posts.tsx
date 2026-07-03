@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, type LiHTMLAttributes } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import {
+  Fragment,
+  useState,
+  type LiHTMLAttributes,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import {
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
@@ -102,6 +107,17 @@ function ProjectPostsBody({
   const projectName = stringField(project.projectName, posts.projectName);
   const action = projectPostsHref(runtimeConfig.basePath, ownerName, projectName);
   const hasPosts = posts.notices.length > 0 || posts.items.length > 0;
+  const router = useRouter();
+  const [hoveredTitlePrefix, setHoveredTitlePrefix] = useState("");
+  const handleTitlePrefixSearch = (filter: string) => {
+    router.history.push(
+      boardListHref(runtimeConfig.basePath, ownerName, projectName, {
+        ...search,
+        filter,
+        pageNum: 1,
+      }),
+    );
+  };
 
   return (
     <div className="page-wrap-outer">
@@ -112,6 +128,7 @@ function ProjectPostsBody({
             <input type="hidden" name="orderDir" value={search.orderDir} />
             <div className="search-bar">
               <input
+                key={search.filter}
                 name="filter"
                 className="textbox"
                 type="text"
@@ -163,7 +180,10 @@ function ProjectPostsBody({
                 {posts.notices.map((post) => (
                   <ProjectBoardPost
                     basePath={runtimeConfig.basePath}
+                    hoveredTitlePrefix={hoveredTitlePrefix}
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
+                    onTitlePrefixHover={setHoveredTitlePrefix}
+                    onTitlePrefixSearch={handleTitlePrefixSearch}
                     post={post}
                   />
                 ))}
@@ -173,7 +193,10 @@ function ProjectPostsBody({
               {posts.items.map((post) => (
                 <ProjectBoardPost
                   basePath={runtimeConfig.basePath}
+                  hoveredTitlePrefix={hoveredTitlePrefix}
                   key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
+                  onTitlePrefixHover={setHoveredTitlePrefix}
+                  onTitlePrefixSearch={handleTitlePrefixSearch}
                   post={post}
                 />
               ))}
@@ -331,7 +354,19 @@ function BoardFilters({
   );
 }
 
-function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
+function ProjectBoardPost({
+  basePath,
+  hoveredTitlePrefix,
+  onTitlePrefixHover,
+  onTitlePrefixSearch,
+  post,
+}: {
+  basePath: string;
+  hoveredTitlePrefix: string;
+  onTitlePrefixHover: (prefix: string) => void;
+  onTitlePrefixSearch: (filter: string) => void;
+  post: BoardPostListItem;
+}) {
   const { t } = useLegacyMessages();
   const titleParts = splitHeaderWordsInBrackets(post.title);
   const postHref = `${projectPostsHref(basePath, post.ownerName, post.projectName).replace(
@@ -366,7 +401,14 @@ function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPos
         {!post.readme ? <span className="post-id">{post.postNumber}</span> : null}
         {post.readme ? <span className="label label-important">README</span> : null}
         {titleParts.prefixes.map((prefix) => (
-          <LegacyTitlePrefixAnchor key={prefix}>{prefix}</LegacyTitlePrefixAnchor>
+          <LegacyTitlePrefixButton
+            active={hoveredTitlePrefix === prefix}
+            key={prefix}
+            onTitlePrefixHover={onTitlePrefixHover}
+            onTitlePrefixSearch={onTitlePrefixSearch}
+          >
+            {prefix}
+          </LegacyTitlePrefixButton>
         ))}
         <a href={postHref} className="title">
           {titleParts.title}
@@ -420,15 +462,31 @@ function ProjectBoardPost({ basePath, post }: { basePath: string; post: BoardPos
   );
 }
 
-function LegacyTitlePrefixAnchor({ children }: { children: string }) {
-  const anchorRef = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    anchorRef.current?.setAttribute("href", "javascript:void(0)");
-  }, []);
+function LegacyTitlePrefixButton({
+  active,
+  children,
+  onTitlePrefixHover,
+  onTitlePrefixSearch,
+}: {
+  active: boolean;
+  children: string;
+  onTitlePrefixHover: (prefix: string) => void;
+  onTitlePrefixSearch: (filter: string) => void;
+}) {
+  const submitTitlePrefixSearch = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    onTitlePrefixSearch(children);
+  };
   return (
-    <a ref={anchorRef} href="/" className="title-prefix">
+    <button
+      type="button"
+      className={active ? "title-prefix title-prefix-hover" : "title-prefix"}
+      onClick={submitTitlePrefixSearch}
+      onMouseEnter={() => onTitlePrefixHover(children)}
+      onMouseLeave={() => onTitlePrefixHover("")}
+    >
       {children}
-    </a>
+    </button>
   );
 }
 

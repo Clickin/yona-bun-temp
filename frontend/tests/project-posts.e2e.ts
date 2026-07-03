@@ -28,7 +28,7 @@ const EXPECTED_PROJECT_POSTS = `
 
 const EXPECTED_PROJECT_POSTS_PREFIX = EXPECTED_PROJECT_POSTS.replace(
   '<span class="post-id">3</span><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
-  '<span class="post-id">3</span><a href="javascript:void(0)" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
+  '<span class="post-id">3</span><button type="button" class="title-prefix">[P1]</button><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
 );
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
@@ -149,12 +149,34 @@ test("project board list empty state matches legacy board/list.scala.html DOM", 
 test("project board list bracketed title prefix matches legacy title helpers", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "prefix");
+  await page.addInitScript(() => {
+    const nativeAddEventListener = Element.prototype.addEventListener;
+    (window as typeof window & { __titlePrefixListeners: string[] }).__titlePrefixListeners = [];
+    Element.prototype.addEventListener = function patchedAddEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (this instanceof Element && this.matches(".title-prefix, .title-wrap, .post-list-wrap")) {
+        (
+          window as typeof window & { __titlePrefixListeners: string[] }
+        ).__titlePrefixListeners.push(`${this.tagName.toLowerCase()}.${this.className}:${type}`);
+      }
+      return nativeAddEventListener.call(this, type, listener, options);
+    };
+  });
 
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8&title=prefix`);
-  await expect(page.locator(".title-prefix")).toHaveText("[P1]");
+  await expect(page.locator(".title-prefix[href]")).toHaveCount(0);
+  await expect(page.locator('button.title-prefix[type="button"]')).toHaveText("[P1]");
   await expect(page.locator(".post-list-wrap:not(.notice-wrap) .title-wrap .title")).toHaveText(
     "Release note",
   );
+  expect(
+    await page.evaluate(
+      () => (window as typeof window & { __titlePrefixListeners: string[] }).__titlePrefixListeners,
+    ),
+  ).toEqual([]);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -162,6 +184,31 @@ test("project board list bracketed title prefix matches legacy title helpers", a
       EXPECTED_PROJECT_POSTS_PREFIX.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  const prefix = page.locator('button.title-prefix[type="button"]');
+  await prefix.hover();
+  await expect(prefix).toHaveClass("title-prefix title-prefix-hover");
+  await page.mouse.move(0, 0);
+  await expect(prefix).toHaveClass("title-prefix");
+
+  await page.goto(
+    `${basePath}/admin/sample/posts?filter=release&labelIds=8&title=prefix&pageNum=3`,
+  );
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-prefix";
+  });
+  await prefix.click();
+  await expect(page.locator('#option_form input[name="filter"]')).toHaveValue("[P1]");
+  await expect(page).toHaveURL(/\/admin\/sample\/posts\?/u);
+  const searchParams = new URL(page.url()).searchParams;
+  expect(searchParams.get("filter")).toBe("[P1]");
+  expect(searchParams.get("labelIds")).toBe("8");
+  expect(searchParams.get("orderBy")).toBe("updatedDate");
+  expect(searchParams.get("orderDir")).toBe("desc");
+  expect(searchParams.get("pageNum")).toBe("1");
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-prefix");
 });
 
 test("project board detail matches legacy board/view.scala.html DOM", async ({ page }) => {
@@ -1513,7 +1560,15 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            // TanStack Router annotates shared-shell active links; the legacy DOM comparison
+            // is scoped to board template parity.
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1554,7 +1609,15 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            // TanStack Router annotates shared-shell active links; the legacy DOM comparison
+            // is scoped to board template parity.
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
