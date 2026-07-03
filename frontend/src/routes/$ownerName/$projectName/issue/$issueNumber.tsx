@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   Fragment,
-  createElement,
   useRef,
   useState,
   type AnchorHTMLAttributes,
@@ -131,11 +130,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       <>
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectIssueNotFoundBody
-          basePath={runtimeConfig.basePath}
-          ownerName={ownerName}
-          projectName={projectName}
-        />
+        <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
       </>
     );
   }
@@ -392,11 +387,9 @@ function IssueDetailSelect2Partial({
 }
 
 function ProjectIssueNotFoundBody({
-  basePath,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   ownerName: string;
   projectName: string;
 }) {
@@ -408,12 +401,12 @@ function ProjectIssueNotFoundBody({
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
           <p>{t("error.notfound.issue_post")}</p>
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues?state=all`)}
+          <Link
+            to={`/${ownerName}/${projectName}/issues?state=all` as never}
             className="ybtn ybtn-primary"
           >
             {t("button.list")}
-          </a>
+          </Link>
         </div>
       </div>
     </div>
@@ -677,9 +670,10 @@ function IssueDetailBody({
         <div className="board-body row-fluid">
           <div className="span9 span-left-pane">
             <div className="author-info">
-              <a
-                href={prefixBasePath(basePath, `/${stringField(issue.authorLoginId)}`)}
+              <Link
+                to={`/${stringField(issue.authorLoginId)}` as never}
                 className="usf-group"
+                activeOptions={{ exact: true }}
               >
                 <span className="avatar-wrap smaller">
                   <img src={stringField(issue.authorAvatarUrl)} width="20" height="20" alt="" />
@@ -696,7 +690,7 @@ function IssueDetailBody({
                 ) : (
                   <strong className="name">No author</strong>
                 )}
-              </a>
+              </Link>
               <IssuePostingHistory
                 historyMarkdown={historyMarkdown}
                 loginTo={`/users/loginform?redirectUrl=/${ownerName}/${projectName}/issue/${issueNumber}`}
@@ -836,9 +830,13 @@ function IssueDetailBody({
                     const loginId = stringField(sharer.loginId);
                     return (
                       <div className="text-ellipsis sharer-item" key={loginId}>
-                        <a href={prefixBasePath(basePath, `/${loginId}`)} className="usf-group">
+                        <Link
+                          to={`/${loginId}` as never}
+                          className="usf-group"
+                          activeOptions={{ exact: true }}
+                        >
                           <strong className="name">{stringField(sharer.userLabel)}</strong>
-                        </a>
+                        </Link>
                       </div>
                     );
                   })
@@ -893,9 +891,10 @@ function IssueDetailBody({
                         title=""
                       />
                     ) : assigneeLoginId ? (
-                      <a
-                        href={prefixBasePath(basePath, `/${assigneeLoginId}`)}
+                      <Link
+                        to={`/${assigneeLoginId}` as never}
                         className="usf-group"
+                        activeOptions={{ exact: true }}
                       >
                         <span className="avatar-wrap smaller">
                           <img
@@ -914,7 +913,7 @@ function IssueDetailBody({
                           <strong>@</strong>
                           {assigneeLoginId}
                         </span>
-                      </a>
+                      </Link>
                     ) : (
                       <div>No assignee</div>
                     )}
@@ -1273,21 +1272,18 @@ function IssueVote({
     <>
       <div id="vote" className={`vote-wrap ${voters.length ? "voter-exists" : ""}`}>
         {canComment ? (
-          <a
-            href={voteHref}
+          <button
+            type="button"
             className={hasVoted ? "ybtn-watching" : ""}
             title={hasVoted ? "Unvote this issue" : "Vote this issue"}
-            data-request-method="post"
+            data-request-uri={voteHref}
             data-toggle="tooltip"
-            onClick={(event) => {
-              event.preventDefault();
-              onIssueVote();
-            }}
+            onClick={onIssueVote}
           >
             <span className="heart">
               <i className="yobicon-hearts"></i>
             </span>
-          </a>
+          </button>
         ) : (
           <span
             className="ybtn-disabled"
@@ -1812,7 +1808,7 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   const ctrlKey = isMac ? "⌘" : "CTRL";
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
-  const openKeymap = (event: MouseEvent<HTMLAnchorElement>) => {
+  const openKeymap = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setOpen(true);
@@ -1825,16 +1821,14 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
-      {createElement(
-        "a",
-        {
-          className: "ybtn ybtn-inverse ybtn-mini",
-          "data-toggle": "modal",
-          href: "#helpKeys",
-          onClick: openKeymap,
-        },
-        t("title.keymap"),
-      )}
+      <button
+        type="button"
+        className="ybtn ybtn-inverse ybtn-mini"
+        data-toggle="modal"
+        onClick={openKeymap}
+      >
+        {t("title.keymap")}
+      </button>
       <div
         id="helpKeys"
         className={open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
@@ -2996,28 +2990,26 @@ function MarkdownEditor({
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
-          {createElement(
-            "a",
-            {
-              "data-mode": "edit",
-              "data-toggle": "tab",
-              href: `#edit-${wrapId}`,
-              onClick: (event) => switchTab(event, "edit"),
-            },
-            "Edit",
-          )}
+          <button
+            type="button"
+            data-mode="edit"
+            data-toggle="tab"
+            data-target={`#edit-${wrapId}`}
+            onClick={(event) => switchTab(event, "edit")}
+          >
+            Edit
+          </button>
         </li>
         <li className={activeTab === "preview" ? "active" : undefined}>
-          {createElement(
-            "a",
-            {
-              "data-mode": "preview",
-              "data-toggle": "tab",
-              href: `#preview-${wrapId}`,
-              onClick: (event) => switchTab(event, "preview"),
-            },
-            "Preview",
-          )}
+          <button
+            type="button"
+            data-mode="preview"
+            data-toggle="tab"
+            data-target={`#preview-${wrapId}`}
+            onClick={(event) => switchTab(event, "preview")}
+          >
+            Preview
+          </button>
         </li>
         <li>
           <div className="task-list-button">
