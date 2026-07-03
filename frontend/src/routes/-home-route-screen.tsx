@@ -661,41 +661,28 @@ function AuthenticatedSiteUserMenu({
             </a>
           </div>
           <ul className="nav nav-tabs nm">
-            <li className="myOrganizationList active">
-              <a
-                href="#myOrganizationList"
+            <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
+              <button
+                type="button"
                 data-toggle="tab"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setActiveSidebarTab("favorite");
-                }}
+                onClick={() => setActiveSidebarTab("favorite")}
               >
                 {t("title.favorite")}
-              </a>
+              </button>
             </li>
-            <li className="myProjectList">
-              <a
-                href="#myProjectList"
+            <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
+              <button
+                type="button"
                 data-toggle="tab"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setActiveSidebarTab("project");
-                }}
+                onClick={() => setActiveSidebarTab("project")}
               >
                 {t("title.project")}
-              </a>
+              </button>
             </li>
-            <li className="myRecentIssueList">
-              <a
-                href="#myRecentIssueList"
-                data-toggle="tab"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setActiveSidebarTab("recent");
-                }}
-              >
+            <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
+              <button type="button" data-toggle="tab" onClick={() => setActiveSidebarTab("recent")}>
                 {t("title.recently.visited.issue")}
-              </a>
+              </button>
             </li>
           </ul>
           <div className="tab-content tab-box">

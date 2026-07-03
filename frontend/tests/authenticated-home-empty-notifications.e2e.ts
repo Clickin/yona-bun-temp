@@ -34,9 +34,9 @@ const EXPECTED_AUTHENTICATED_HOME = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -671,9 +671,46 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   await page.goto(`${basePath}/`);
   await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  await page.locator(".myProjectList a").click();
+  await expect(page.locator("#mySidenav .nav.nav-tabs.nm a[href^='#']")).toHaveCount(0);
+  await expect(page.locator("#mySidenav .nav.nav-tabs.nm button")).toHaveText([
+    "Favorite",
+    "Project",
+    "Recent History",
+  ]);
+  for (const tabButton of await page.locator("#mySidenav .nav.nav-tabs.nm button").all()) {
+    await expect(tabButton).toHaveAttribute("data-toggle", "tab");
+    await expect(tabButton).toHaveAttribute("type", "button");
+  }
+
+  const sidebarTabUrl = page.url();
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "home-sidebar-top-tabs";
+  });
+  await page.locator(".myProjectList button").click();
+  await expect(page.locator(".myProjectList")).toHaveClass(/active/);
   await expect(page.locator("#usermenu-tab-content-list .project-search")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(3);
+  expect(page.url()).toBe(sidebarTabUrl);
+  await page.locator(".myRecentIssueList button").click();
+  await expect(page.locator(".myRecentIssueList")).toHaveClass(/active/);
+  await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toHaveClass(
+    /active/,
+  );
+  expect(page.url()).toBe(sidebarTabUrl);
+  await page.locator(".myOrganizationList button").click();
+  await expect(page.locator(".myOrganizationList")).toHaveClass(/active/);
+  await expect(page.locator("#usermenu-tab-content-list #organizations")).toBeVisible();
+  expect(page.url()).toBe(sidebarTabUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("home-sidebar-top-tabs");
+
+  await page.locator(".myProjectList button").click();
   await expect(page.locator("#usermenu-tab-content-list .nav-subtab a[href^='#']")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list .nav-subtab button")).toHaveText([
     "Recently visited",
@@ -750,7 +787,7 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   await page.goto(`${basePath}/`);
   await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  await page.locator(".myRecentIssueList a").click();
+  await page.locator(".myRecentIssueList button").click();
   await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(2);
 
