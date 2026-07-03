@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useMemo, useState, type AnchorHTMLAttributes, type ComponentType } from "react";
+import {
+  createElement,
+  useMemo,
+  useState,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -258,17 +264,21 @@ function ProjectMilestoneDetailBody({
             >
               {t("button.list")}
             </LegacyInternalLink>
-            {booleanField(milestone.viewerCanDelete) ? (
-              <button
-                type="button"
-                className="ybtn ybtn-danger"
-                onClick={() => {
-                  setDeleteConfirmOpen(true);
-                }}
-              >
-                {t("button.delete")}
-              </button>
-            ) : null}
+            {booleanField(milestone.viewerCanDelete)
+              ? createElement(
+                  "a",
+                  {
+                    "data-toggle": "modal",
+                    className: "ybtn ybtn-danger",
+                    href: "#deleteConfirm",
+                    onClick: (event) => {
+                      event.preventDefault();
+                      setDeleteConfirmOpen(true);
+                    },
+                  },
+                  t("button.delete"),
+                )
+              : null}
             {booleanField(milestone.viewerCanUpdate) ? (
               <>
                 <LegacyInternalLink
@@ -442,16 +452,8 @@ function MassUpdateShell({
             </span>
           </button>
           <ul className="dropdown-menu mass-update-list">
-            <li data-value="OPEN">
-              <LegacyInternalLink to={`${projectPath}/issues`} search={{ state: "open" }}>
-                {t("issue.state.open")}
-              </LegacyInternalLink>
-            </li>
-            <li data-value="CLOSED">
-              <LegacyInternalLink to={`${projectPath}/issues`} search={{ state: "closed" }}>
-                {t("issue.state.closed")}
-              </LegacyInternalLink>
-            </li>
+            <li data-value="OPEN">{createElement("a", {}, t("issue.state.open"))}</li>
+            <li data-value="CLOSED">{createElement("a", {}, t("issue.state.closed"))}</li>
           </ul>
         </div>
       </form>
@@ -520,20 +522,20 @@ function MilestoneIssueRow({
             {stringField(issue.assigneeLabel) ? (
               <span className="infos-item">{stringField(issue.assigneeLabel)}</span>
             ) : null}
-            {labels.map((label) => (
-              <LegacyInternalLink
-                key={stringField(label.id)}
-                to={`${projectPath}/issues?state=open&labelIds=${encodeURIComponent(
-                  stringField(label.id),
-                )}`}
-                className="label issue-label list-label active"
-                data-category-id={stringField(label.categoryId)}
-                data-label-id={stringField(label.id)}
-                style={{ background: cssBackgroundColor(stringField(label.color)) }}
-              >
-                {stringField(label.name)}
-              </LegacyInternalLink>
-            ))}
+            {labels.map((label) =>
+              createElement(
+                "a",
+                {
+                  "data-category-id": stringField(label.categoryId),
+                  "data-label-id": stringField(label.id),
+                  className: "label issue-label list-label active",
+                  href: "#",
+                  key: stringField(label.id),
+                  style: { background: cssBackgroundColor(stringField(label.color)) },
+                },
+                stringField(label.name),
+              ),
+            )}
             <div className="child-issue-list hide"></div>
           </div>
         </div>
