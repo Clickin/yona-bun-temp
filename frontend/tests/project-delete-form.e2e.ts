@@ -254,13 +254,17 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   await page.goto(`${basePath}/admin/sample/deleteform`);
   const tabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(tabLinks).toHaveCount(7);
-  await expect(tabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
-  await expect(tabLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/members`);
-  await expect(tabLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/labels`);
-  await expect(tabLinks.nth(3)).toHaveAttribute("href", `${basePath}/admin/sample/webhooks`);
-  await expect(tabLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/transfer`);
-  await expect(tabLinks.nth(5)).toHaveAttribute("href", `${basePath}/admin/sample/deleteform`);
-  await expect(tabLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/changeVCS`);
+  expect(
+    await tabLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/admin/sample/setting`,
+    `${basePath}/admin/sample/members`,
+    `${basePath}/admin/sample/labels`,
+    `${basePath}/admin/sample/webhooks`,
+    `${basePath}/admin/sample/transfer`,
+    `${basePath}/admin/sample/deleteform`,
+    `${basePath}/admin/sample/changeVCS`,
+  ]);
   expect(await readProjectDeleteSettingsTabAnchorAudit(page)).toEqual([]);
 
   const settingsLink = page.locator("#subMenuProjectSetting a");
