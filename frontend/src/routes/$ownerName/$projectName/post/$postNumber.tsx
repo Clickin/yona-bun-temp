@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, type FormEvent, useState } from "react";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+  Fragment,
+  type AnchorHTMLAttributes,
+  type ComponentType,
+  type FormEvent,
+  useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -26,6 +32,14 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeOptions?: { exact?: boolean; includeHash?: boolean };
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
+>;
 
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
   .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
@@ -97,6 +111,7 @@ function ProjectPostDetailBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
   const ownerName = stringField(project.ownerName, post.ownerName);
   const projectName = stringField(project.projectName, post.projectName);
   const postNumber = stringField(post.postNumber);
@@ -153,14 +168,7 @@ function ProjectPostDetailBody({
     },
     onSuccess(updatedPost) {
       queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
-      const modal = document.getElementById("comment-delete-modal");
-      if (modal) {
-        modal.classList.add("hide");
-        modal.classList.remove("in");
-        modal.style.display = "none";
-        modal.setAttribute("aria-hidden", "true");
-      }
-      document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+      setCommentDeleteRequestUri(null);
     },
   });
   const commentCreateMutation = useMutation({
@@ -309,6 +317,7 @@ function ProjectPostDetailBody({
               onCreateComment={(contentsMarkdown) =>
                 commentCreateMutation.mutateAsync(contentsMarkdown)
               }
+              onCommentDeleteRequest={setCommentDeleteRequestUri}
               onUpdateComment={(commentId, contentsMarkdown) =>
                 commentUpdateMutation.mutateAsync({ commentId, contentsMarkdown })
               }
@@ -399,12 +408,15 @@ function ProjectPostDetailBody({
         cancelLabel={t("button.no")}
         confirmLabel={t("button.yes")}
         message={t("common.comment.delete.confirm")}
+        onCancel={() => setCommentDeleteRequestUri(null)}
         onConfirm={(requestUri) => {
           const commentId = requestUri.match(/\/comment\/(\d+)(?:\/delete)?(?:[?#].*)?$/u)?.[1];
           if (commentId) {
             commentDeleteMutation.mutate(commentId);
           }
         }}
+        open={commentDeleteRequestUri !== null}
+        requestUri={commentDeleteRequestUri}
         title={t("common.comment.delete")}
       />
     </div>
@@ -447,45 +459,60 @@ function CommentDeleteConfirm({
   cancelLabel,
   confirmLabel,
   message,
+  onCancel,
   onConfirm,
+  open,
+  requestUri,
   title,
 }: {
   cancelLabel: string;
   confirmLabel: string;
   message: string;
+  onCancel: () => void;
   onConfirm: (requestUri: string) => void;
+  open: boolean;
+  requestUri: string | null;
   title: string;
 }) {
   return (
-    <div id="comment-delete-modal" className="modal hide fade">
-      <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal">
-          ×
-        </button>
-        <h3>{title}</h3>
+    <>
+      <div
+        id="comment-delete-modal"
+        className={`modal ${open ? "in " : "hide "}fade`}
+        style={open ? { display: "block" } : undefined}
+        aria-hidden={open ? "false" : undefined}
+      >
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal" onClick={onCancel}>
+            ×
+          </button>
+          <h3>{title}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{message}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            id="comment-delete-confirm"
+            type="button"
+            className="ybtn ybtn-danger"
+            data-request-method={requestUri ? "delete" : undefined}
+            data-request-uri={requestUri ?? undefined}
+            onClick={() => {
+              if (requestUri) {
+                onConfirm(requestUri);
+              }
+            }}
+          >
+            {confirmLabel}
+          </button>
+          <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+        </div>
       </div>
-      <div className="modal-body">
-        <p>{message}</p>
-      </div>
-      <div className="modal-footer">
-        <button
-          id="comment-delete-confirm"
-          type="button"
-          className="ybtn ybtn-danger"
-          onClick={(event) => {
-            const requestUri = event.currentTarget.dataset.requestUri;
-            if (requestUri) {
-              onConfirm(requestUri);
-            }
-          }}
-        >
-          {confirmLabel}
-        </button>
-        <button type="button" className="ybtn" data-dismiss="modal">
-          {cancelLabel}
-        </button>
-      </div>
-    </div>
+      {open ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 
@@ -586,6 +613,7 @@ function PostComments({
   canDelete,
   canUpdate,
   onCreateComment,
+  onCommentDeleteRequest,
   onUpdateComment,
   ownerName,
   post,
@@ -596,6 +624,7 @@ function PostComments({
   canDelete: boolean;
   canUpdate: boolean;
   onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
+  onCommentDeleteRequest: (requestUri: string) => void;
   onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   post: BoardPostDetail;
@@ -626,6 +655,7 @@ function PostComments({
                 )}
                 comment={comment}
                 key={comment.id}
+                onCommentDeleteRequest={onCommentDeleteRequest}
                 onUpdateComment={onUpdateComment}
                 ownerName={ownerName}
                 postNumber={postNumber}
@@ -741,6 +771,7 @@ function PostCommentRow({
   canUpdate,
   childComments,
   comment,
+  onCommentDeleteRequest,
   onUpdateComment,
   ownerName,
   postNumber,
@@ -752,6 +783,7 @@ function PostCommentRow({
   canUpdate: boolean;
   childComments: BoardPostComment[];
   comment: BoardPostComment;
+  onCommentDeleteRequest: (requestUri: string) => void;
   onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
@@ -821,20 +853,26 @@ function PostCommentRow({
                 <i className="yobicon-edit-2"></i>
               </button>
             ) : null}
-            {canDelete ? (
-              <button
-                type="button"
-                className="btn-transparent ml6"
-                data-toggle="comment-delete"
-                data-request-uri={prefixBasePath(
-                  basePath,
-                  `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
-                )}
-                title={t("common.comment.delete")}
-              >
-                <i className="yobicon-trash"></i>
-              </button>
-            ) : null}
+            {canDelete
+              ? (() => {
+                  const deleteUri = prefixBasePath(
+                    basePath,
+                    `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
+                  );
+                  return (
+                    <button
+                      type="button"
+                      className="btn-transparent ml6"
+                      data-toggle="comment-delete"
+                      data-request-uri={deleteUri}
+                      title={t("common.comment.delete")}
+                      onClick={() => onCommentDeleteRequest(deleteUri)}
+                    >
+                      <i className="yobicon-trash"></i>
+                    </button>
+                  );
+                })()
+              : null}
           </span>
         </div>
 
@@ -870,6 +908,7 @@ function PostCommentRow({
         canComment={canComment}
         canDelete={canDelete}
         childComments={childComments}
+        onCommentDeleteRequest={onCommentDeleteRequest}
         ownerName={ownerName}
         parentCommentId={commentId}
         postNumber={postNumber}
@@ -985,6 +1024,7 @@ function PostChildComments({
   canComment,
   canDelete,
   childComments,
+  onCommentDeleteRequest,
   ownerName,
   parentCommentId,
   postNumber,
@@ -994,6 +1034,7 @@ function PostChildComments({
   canComment: boolean;
   canDelete: boolean;
   childComments: BoardPostComment[];
+  onCommentDeleteRequest: (requestUri: string) => void;
   ownerName: string;
   parentCommentId: string;
   postNumber: string;
@@ -1016,6 +1057,7 @@ function PostChildComments({
               canDelete={canDelete}
               comment={comment}
               key={stringField(comment.id)}
+              onCommentDeleteRequest={onCommentDeleteRequest}
               ownerName={ownerName}
               postNumber={postNumber}
               projectName={projectName}
@@ -1066,6 +1108,7 @@ function PostChildComment({
   basePath,
   canDelete,
   comment,
+  onCommentDeleteRequest,
   ownerName,
   postNumber,
   projectName,
@@ -1073,6 +1116,7 @@ function PostChildComment({
   basePath: string;
   canDelete: boolean;
   comment: BoardPostComment;
+  onCommentDeleteRequest: (requestUri: string) => void;
   ownerName: string;
   postNumber: string;
   projectName: string;
@@ -1081,32 +1125,50 @@ function PostChildComment({
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
-  const deleteLink = canDelete
-    ? `<a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="${escapeHtml(
-        prefixBasePath(
-          basePath,
-          `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
-        ),
-      )}" title="${escapeHtml(t("common.comment.delete"))}">x</a>`
-    : "";
-  const childMetaHtml = `- <a href="${escapeHtml(
-    prefixBasePath(basePath, `/${authorLoginId}`),
-  )}" class="usf-group" data-toggle="tooltip" data-placement="top" title="${escapeHtml(
-    authorLoginId,
-  )}"><strong>${escapeHtml(authorLabel)}</strong></a> <a href="#comment-${escapeHtml(
-    commentId,
-  )}" class="ago" title="${escapeHtml(comment.createdLabel)}">${escapeHtml(
-    comment.createdLabel,
-  )}</a>${deleteLink}`;
+  const deleteUri = prefixBasePath(
+    basePath,
+    `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
+  );
 
   return (
     <div className="one-line-comment">
       <div className="contents">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
-        <span
-          className="subcomment-author hide"
-          dangerouslySetInnerHTML={{ __html: childMetaHtml }}
-        ></span>
+        <span className="subcomment-author hide">
+          -{" "}
+          <LegacyInternalLink
+            to={`/${authorLoginId}`}
+            className="usf-group"
+            data-toggle="tooltip"
+            data-placement="top"
+            title={authorLoginId}
+            activeOptions={{ exact: true }}
+            activeProps={{ className: undefined }}
+          >
+            <strong>{authorLabel}</strong>
+          </LegacyInternalLink>{" "}
+          <LegacyInternalLink
+            to={`#comment-${commentId}`}
+            className="ago"
+            title={comment.createdLabel}
+            activeOptions={{ includeHash: true }}
+            activeProps={{ className: undefined }}
+          >
+            {comment.createdLabel}
+          </LegacyInternalLink>
+          {canDelete ? (
+            <button
+              type="button"
+              className="btn-transparent deleteButtonX"
+              data-toggle="comment-delete"
+              data-request-uri={deleteUri}
+              title={t("common.comment.delete")}
+              onClick={() => onCommentDeleteRequest(deleteUri)}
+            >
+              x
+            </button>
+          ) : null}
+        </span>
       </div>
     </div>
   );

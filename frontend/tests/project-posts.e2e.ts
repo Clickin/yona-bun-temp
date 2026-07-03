@@ -65,7 +65,7 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
     )
     .replace(
       EMPTY_CHILD_COMMENT_FORM,
-      '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a> <a href="#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/22" title="Delete comment">x</a></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
+      '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="admin"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3/#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/post/3/comment/22" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
     );
 
 function expectedProjectPostsEmpty() {
@@ -744,7 +744,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const contents = comment.querySelector(".one-line-comment .contents") as HTMLElement;
     const author = comment.querySelector(".subcomment-author") as HTMLElement;
     const ago = comment.querySelector(".subcomment-author .ago") as HTMLAnchorElement;
-    const deleteButton = comment.querySelector(".deleteButtonX") as HTMLAnchorElement;
+    const deleteButton = comment.querySelector(".deleteButtonX") as HTMLButtonElement;
     const formWrap = comment.querySelector(".child-comment-input-form") as HTMLElement;
     const form = formWrap.querySelector("form") as HTMLFormElement;
     const parentId = form.querySelector(".parentCommentId") as HTMLInputElement;
@@ -788,6 +788,8 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       authorDisplay: authorStyle.display,
       agoHref: ago.getAttribute("href"),
       agoTitle: ago.getAttribute("title"),
+      deleteTagName: deleteButton.tagName.toLowerCase(),
+      deleteType: deleteButton.type,
       deleteHref: deleteButton.getAttribute("href"),
       deleteToggle: deleteButton.getAttribute("data-toggle"),
       deleteUri: deleteButton.getAttribute("data-request-uri"),
@@ -851,9 +853,11 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     contentsBorderBottom: "1px dashed rgb(204, 204, 204)",
     authorClassName: "subcomment-author hide",
     authorDisplay: "none",
-    agoHref: "#comment-22",
+    agoHref: `${basePath}/admin/sample/post/3/#comment-22`,
     agoTitle: "Jul 4, 2026",
-    deleteHref: "javascript:void(0)",
+    deleteTagName: "button",
+    deleteType: "button",
+    deleteHref: null,
     deleteToggle: "comment-delete",
     deleteUri: `${basePath}/admin/sample/post/3/comment/22`,
     deleteTitle: "Delete comment",
@@ -898,6 +902,28 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       page,
       EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT.replaceAll("__BASE_PATH__", basePath),
     ),
+  );
+
+  const childAuthor = page.locator("#comment-21 .subcomment-author");
+  await expect(childAuthor.locator('a[href^="javascript:"]')).toHaveCount(0);
+  const childDeleteButton = childAuthor.locator(
+    'button[type="button"].deleteButtonX[data-toggle="comment-delete"]',
+  );
+  await expect(childDeleteButton).toHaveText("x");
+  await expect(childDeleteButton).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/post/3/comment/22`,
+  );
+  await childDeleteButton.dispatchEvent("click");
+  await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/post/3/comment/22`,
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-method",
+    "delete",
   );
 });
 
