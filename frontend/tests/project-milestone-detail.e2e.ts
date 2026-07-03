@@ -37,10 +37,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     `${basePath}/admin/sample/milestones`,
   );
   await expect(page.locator('.actrow .ybtn[href$="/milestone/5/editform"]')).toHaveText("Edit");
-  await expect(page.locator('.actrow a[href="#deleteConfirm"]')).toHaveAttribute(
-    "data-toggle",
-    "modal",
-  );
+  await expect(page.locator('.actrow button.ybtn-danger:has-text("Delete")')).toHaveCount(1);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
   await expect(page.locator('#issues .nav-tabs a:has-text("Closed")')).toHaveAttribute(
     "href",
@@ -50,12 +47,14 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "action",
     `${basePath}/admin/sample/issues`,
   );
-  await expect(
-    page.locator('#state .mass-update-list li[data-value="OPEN"] a'),
-  ).not.toHaveAttribute("href");
-  await expect(
-    page.locator('#state .mass-update-list li[data-value="CLOSED"] a'),
-  ).not.toHaveAttribute("href");
+  await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] a')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?state=open`,
+  );
+  await expect(page.locator('#state .mass-update-list li[data-value="CLOSED"] a')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?state=closed`,
+  );
   await expect(page.locator('.search-bar input[data-toggle="item-search"]')).toHaveAttribute(
     "data-items",
     "issue-item",
@@ -68,7 +67,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   );
   await expect(
     page.locator('.issue-label[data-category-id="3"][data-label-id="8"]'),
-  ).toHaveAttribute("href", "#");
+  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?state=open&labelIds=8`);
   expect(await milestoneDetailMetrics(page)).toEqual({
     descBackgroundColor: "rgb(247, 247, 247)",
     descBorderBottomWidth: "1px",
@@ -105,7 +104,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   expect(stateRequests).toEqual([{ state: "closed" }]);
 
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
-  await page.click('.actrow a[href="#deleteConfirm"]:has-text("Delete")');
+  await page.click('.actrow button.ybtn-danger:has-text("Delete")');
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await expect(page.locator("#deleteConfirm [data-request-method='delete']")).toHaveAttribute(
