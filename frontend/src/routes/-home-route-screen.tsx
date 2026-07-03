@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -9,13 +8,6 @@ import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    to: string;
-  }
->;
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -649,14 +641,14 @@ function AuthenticatedSiteUserMenu({
         <div className="span5 right-menu span-hard-wrap">
           <div className="row-fluid user-menu-wrap">
             <span className="user-menu">
-              <LegacyInternalLink activeProps={{ className: undefined }} to={`/${loginId}`}>
+              <Link activeProps={{ className: undefined }} to="/$user" params={{ user: loginId }}>
                 {t("userinfo.profile")}
-              </LegacyInternalLink>
+              </Link>
             </span>
             <span className="user-menu">
-              <LegacyInternalLink activeProps={{ className: undefined }} to="/user/editform">
+              <Link activeProps={{ className: undefined }} to="/user/editform">
                 {t("userinfo.accountSetting")}
-              </LegacyInternalLink>
+              </Link>
             </span>
             <a href={prefixBasePath(basePath, "/users/logout")}>
               <span className="user-menu logout label">{t("title.logout")}</span>
@@ -717,24 +709,17 @@ function AuthenticatedSiteUserMenu({
           data-placement="bottom"
           title={`${t("title.shortcut")} (A)`}
         >
-          <LegacyInternalLink to="/user/issues" className="user-item-btn loggged-in">
+          <Link to="/user/issues" className="user-item-btn loggged-in">
             {t("issue.myIssue")}
-          </LegacyInternalLink>
+          </Link>
         </li>
         <li className="divider"></li>
         {isSiteAdmin ? (
           <>
             <li className="gnb-usermenu-item">
-              <LegacyInternalLink
-                activeProps={{ className: undefined }}
-                to="/sites/userList"
-                data-toggle="tooltip"
-                title={t("menu.siteAdmin")}
-                data-placement="bottom"
-                className="usermenu-icon-button show-progress-bar"
-              >
+              <Link to="/sites/userList" className="usermenu-icon-button show-progress-bar">
                 <i className="yobicon-wrench" />
-              </LegacyInternalLink>
+              </Link>
             </li>
             <li className="divider"></li>
           </>
@@ -777,13 +762,11 @@ function AuthenticatedSiteUserMenu({
               <hr className="no-margin" />
             </li>
             <li>
-              <LegacyInternalLink to="/projectform">{t("button.newProject")}</LegacyInternalLink>
+              <Link to="/projectform">{t("button.newProject")}</Link>
             </li>
             {!isGuest ? (
               <li>
-                <LegacyInternalLink to="/organizations/new">
-                  {t("title.newOrganization")}
-                </LegacyInternalLink>
+                <Link to="/organizations/new">{t("title.newOrganization")}</Link>
               </li>
             ) : null}
           </ul>

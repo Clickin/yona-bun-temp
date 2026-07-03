@@ -49,7 +49,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -376,6 +376,14 @@ test("authenticated index redirects to the configured non-root default landing",
 
   await page.goto(`${basePath}/`);
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/me`);
+});
+
+test("authenticated home route has no generic LegacyInternalLink adapter", () => {
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).not.toContain("AnchorHTMLAttributes");
 });
 
 test("authenticated home empty notifications matches legacy index notifications screen DOM", async ({
