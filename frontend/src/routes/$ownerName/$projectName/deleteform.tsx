@@ -87,8 +87,8 @@ function ProjectDeleteFormBody({
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu basePath={runtimeConfig.basePath} project={project} />
+      <ProjectHeader project={project} />
+      <ProjectMenu project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
@@ -159,7 +159,7 @@ function ProjectDeleteFormBody({
   );
 }
 
-function ProjectHeader({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+function ProjectHeader({ project }: { project: ProjectContainer }) {
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
@@ -203,12 +203,26 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
           <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
-                <a href={prefixBasePath(basePath, `/${ownerName}`)}>{ownerName}</a>
+                <Link
+                  activeProps={{ className: undefined }}
+                  to="/$user"
+                  params={{ user: ownerName }}
+                  search={undefined as never}
+                >
+                  {ownerName}
+                </Link>
               </span>
               <span className="project-separator hide-in-mobile">/</span>
               <span className="project-name">
-                <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
+                <Link
+                  activeProps={{ className: undefined }}
+                  to="/$ownerName/$projectName"
+                  params={{ ownerName, projectName }}
+                >
+                  {projectName}
+                </Link>
               </span>
+              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
               <span
                 className="user-project-list"
                 data-project-id={projectId}
@@ -233,6 +247,7 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
                   star
                 </i>
               </span>
+              {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
               {booleanField(project.isPrivate) ? (
                 <span className="project-private">
                   <i className="yobicon-lock"></i>
@@ -247,12 +262,14 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
             {isForked ? (
               <div className="project-origin">
                 <span className="project-origin-title">{t("fork.original")}</span>
-                <a
-                  href={projectHref(basePath, originalOwnerName, originalProjectName)}
+                <Link
+                  activeProps={{ className: undefined }}
+                  to="/$ownerName/$projectName"
+                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
                   className="project-origin-name"
                 >
                   {originalOwnerName} / {originalProjectName}
-                </a>
+                </Link>
               </div>
             ) : null}
           </div>
@@ -265,7 +282,7 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   );
 }
 
-function ProjectMenu({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+function ProjectMenu({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
@@ -276,51 +293,58 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <ProjectMenuItem
-            href={projectHref(basePath, ownerName, projectName)}
+            to="/$ownerName/$projectName"
             label={t("title.projectHome")}
+            params={{ ownerName, projectName }}
             short="H"
           />
           {booleanField(menuSetting.code) ? (
             <ProjectMenuItem
               className="code-menu "
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/code`)}
               label={t("menu.code")}
+              params={{ ownerName, projectName }}
               short="C"
+              to="/$ownerName/$projectName/code"
             />
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
               label={t("menu.issue")}
+              params={{ ownerName, projectName }}
               short="I"
+              to="/$ownerName/$projectName/issues"
             />
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`)}
               label={t("menu.pullRequest")}
+              params={{ ownerName, projectName }}
               short="P"
+              to="/$ownerName/$projectName/pullRequests"
             />
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/reviews`)}
               label={t("menu.review")}
+              params={{ ownerName, projectName }}
               short="R"
+              to="/$ownerName/$projectName/reviews"
             />
           ) : null}
           {booleanField(menuSetting.milestone) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestones`)}
               label={t("milestone")}
+              params={{ ownerName, projectName }}
               short="M"
+              to="/$ownerName/$projectName/milestones"
             />
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`)}
               label={t("menu.board")}
+              params={{ ownerName, projectName }}
               short="B"
+              to="/$ownerName/$projectName/posts"
             />
           ) : null}
         </ul>
@@ -328,13 +352,17 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
           <div className="project-setting">
             <ul className="project-menu-nav">
               <li className="active">
-                <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+                <Link
+                  activeProps={{ className: undefined }}
+                  to="/$ownerName/$projectName/setting"
+                  params={{ ownerName, projectName }}
+                >
                   <i className="yobicon-cog"></i>
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
                   <CountBadge count={numberField(project.enrollmentRequestCount)} />
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -344,23 +372,34 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
   );
 }
 
+type ProjectMenuRoute =
+  | "/$ownerName/$projectName"
+  | "/$ownerName/$projectName/code"
+  | "/$ownerName/$projectName/issues"
+  | "/$ownerName/$projectName/pullRequests"
+  | "/$ownerName/$projectName/reviews"
+  | "/$ownerName/$projectName/milestones"
+  | "/$ownerName/$projectName/posts";
+
 function ProjectMenuItem({
   className = "",
-  href,
   label,
+  params,
   short,
+  to,
 }: {
   className?: string;
-  href: string;
   label: string;
+  params: { ownerName: string; projectName: string };
   short: string;
+  to: ProjectMenuRoute;
 }) {
   return (
     <li className={className}>
-      <a href={href}>
+      <Link activeProps={{ className: undefined }} to={to} params={params}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
-      </a>
+      </Link>
     </li>
   );
 }
@@ -391,7 +430,10 @@ function ProjectSettingMenu({
         </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <Link to="/$ownerName/$projectName/labels" params={{ ownerName, projectName }}>
+        <Link
+          activeProps={{ className: undefined }}
+          to={`/${ownerName}/${projectName}/labels` as never}
+        >
           {t("issue.label")}
         </Link>
       </li>
@@ -435,10 +477,6 @@ function CountBadge({
   count: number;
 }) {
   return count > 0 ? <span className={className}>{count}</span> : null;
-}
-
-function projectHref(basePath: string, ownerName: string, projectName: string) {
-  return prefixBasePath(basePath, `/${ownerName}/${projectName}`);
 }
 
 function recordField(value: unknown) {

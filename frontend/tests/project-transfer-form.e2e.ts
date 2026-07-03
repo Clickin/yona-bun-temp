@@ -13,7 +13,7 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -91,14 +91,43 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
   });
 });
 
-test("project transfer settings tab anchors keep legacy hrefs without route-local native listeners", async ({
+test("project transfer project navigation anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await installProjectSettingsTabNativeLinkAudit(page);
+  await installProjectNavigationNativeLinkAudit(page);
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+
+  const projectMenuLinks = page.locator(".project-menu-gruop > li > a");
+  await expect(projectMenuLinks).toHaveCount(7);
+  await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/code`);
+  await expect(projectMenuLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/issues`);
+  await expect(projectMenuLinks.nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests`,
+  );
+  await expect(projectMenuLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/reviews`);
+  await expect(projectMenuLinks.nth(5)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones`,
+  );
+  await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
+  await expect(page.locator(".project-setting a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/setting`,
+  );
+
   const settingsTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabLinks).toHaveCount(7);
   await expect(settingsTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
@@ -120,15 +149,15 @@ test("project transfer settings tab anchors keep legacy hrefs without route-loca
     "href",
     `${basePath}/admin/sample/changeVCS`,
   );
-  expect(await readProjectSettingsTabNativeLinkAudit(page)).toEqual([]);
+  expect(await readProjectNavigationNativeLinkAudit(page)).toEqual([]);
 
-  const settingsLink = page.locator("#subMenuProjectSetting a");
-  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  const projectSettingLink = page.locator(".project-setting a");
+  await expect(projectSettingLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
-  await settingsLink.click();
+  await projectSettingLink.click();
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
   await expect
@@ -150,6 +179,17 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ProjectSettingLink");
+  expect(source).not.toContain("<a href={prefixBasePath");
+  expect(source).not.toContain("<a href={projectHref");
+  expect(source).toContain('to="/$user"');
+  expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain('to="/$ownerName/$projectName/code"');
+  expect(source).toContain('to="/$ownerName/$projectName/issues"');
+  expect(source).toContain('to="/$ownerName/$projectName/pullRequests"');
+  expect(source).toContain('to="/$ownerName/$projectName/reviews"');
+  expect(source).toContain('to="/$ownerName/$projectName/milestones"');
+  expect(source).toContain('to="/$ownerName/$projectName/posts"');
+  expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/transfer"');
   expect(source).toContain("params={{ ownerName, projectName }}");
 });
@@ -552,38 +592,40 @@ async function readTransferNativeListenerCounts(page: Page) {
   });
 }
 
-async function installProjectSettingsTabNativeLinkAudit(page: Page) {
+async function installProjectNavigationNativeLinkAudit(page: Page) {
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
-    Object.defineProperty(window, "__projectSettingsTabNativeLinkListeners", {
+    Object.defineProperty(window, "__projectNavigationNativeLinkListeners", {
       configurable: true,
       value: [],
       writable: true,
     });
-    Element.prototype.addEventListener = function addEventListenerWithProjectSettingsTabAudit(
+    Element.prototype.addEventListener = function addEventListenerWithProjectNavigationAudit(
       type,
       listener,
       options,
     ) {
-      if (this.matches(".project-page-wrap > .nav.nav-tabs a")) {
+      if (
+        this.matches(
+          ".project-breadcrumb a, .project-menu-outer a, .project-page-wrap > .nav.nav-tabs a",
+        )
+      ) {
         const parentId = this.parentElement?.id ?? "";
         (
           window as Window &
-            typeof globalThis & { __projectSettingsTabNativeLinkListeners: string[] }
-        ).__projectSettingsTabNativeLinkListeners.push(`${parentId}:${String(type)}`);
+            typeof globalThis & { __projectNavigationNativeLinkListeners: string[] }
+        ).__projectNavigationNativeLinkListeners.push(`${parentId}:${String(type)}`);
       }
       return originalAddEventListener.call(this, type, listener, options);
     };
   });
 }
 
-async function readProjectSettingsTabNativeLinkAudit(page: Page) {
+async function readProjectNavigationNativeLinkAudit(page: Page) {
   return page.evaluate(
     () =>
-      (
-        window as Window &
-          typeof globalThis & { __projectSettingsTabNativeLinkListeners?: string[] }
-      ).__projectSettingsTabNativeLinkListeners ?? [],
+      (window as Window & typeof globalThis & { __projectNavigationNativeLinkListeners?: string[] })
+        .__projectNavigationNativeLinkListeners ?? [],
   );
 }
 

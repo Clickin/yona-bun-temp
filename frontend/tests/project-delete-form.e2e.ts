@@ -43,7 +43,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -284,6 +284,48 @@ test("project delete settings tab links preserve legacy hrefs without native lis
     )
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project delete header and project menu links preserve legacy hrefs and SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+
+  await expect(page.locator(".project-author a")).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(page.locator(".project-name a")).toHaveAttribute("href", `${basePath}/admin/sample`);
+  expect(
+    await page
+      .locator(".project-menu-gruop > li > a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/admin/sample`,
+    `${basePath}/admin/sample/code`,
+    `${basePath}/admin/sample/issues`,
+    `${basePath}/admin/sample/pullRequests`,
+    `${basePath}/admin/sample/reviews`,
+    `${basePath}/admin/sample/milestones`,
+    `${basePath}/admin/sample/posts`,
+  ]);
+
+  const settingsCog = page.locator(".project-setting a");
+  await expect(settingsCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await settingsCog.click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 

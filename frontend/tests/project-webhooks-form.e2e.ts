@@ -21,7 +21,7 @@ const EXPECTED_PROJECT_WEBHOOKS = `
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -115,7 +115,7 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
   });
 });
 
-test("project webhooks menu settings link preserves legacy href with SPA transition", async ({
+test("project webhooks internal project links preserve legacy hrefs with SPA transitions", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -123,6 +123,28 @@ test("project webhooks menu settings link preserves legacy href with SPA transit
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/webhooks`);
+  const headerOwnerLink = page.locator(".project-breadcrumb .project-author a");
+  const headerProjectLink = page.locator(".project-breadcrumb .project-name a");
+  await expect(headerOwnerLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(headerProjectLink).toHaveAttribute("href", `${basePath}/admin/sample`);
+
+  const projectMenuLinks = page.locator(".project-menu-outer a");
+  await expect(projectMenuLinks).toHaveCount(8);
+  await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/code`);
+  await expect(projectMenuLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/issues`);
+  await expect(projectMenuLinks.nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests`,
+  );
+  await expect(projectMenuLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/reviews`);
+  await expect(projectMenuLinks.nth(5)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones`,
+  );
+  await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
+  await expect(projectMenuLinks.nth(7)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+
   const settingsTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabLinks).toHaveCount(7);
   await expect(settingsTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
@@ -146,6 +168,21 @@ test("project webhooks menu settings link preserves legacy href with SPA transit
   );
   expect(await readProjectSettingsTabNativeLinkAudit(page)).toEqual([]);
 
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await projectMenuLinks.nth(0).click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
   const settingsLink = page.locator("#subMenuProjectSetting a");
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
