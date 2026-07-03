@@ -23,6 +23,8 @@ type PublicProfileSearch = {
   selected: "issues" | "projects" | "pullRequests";
 };
 
+type UsermenuTab = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
+
 export const Route = createFileRoute("/$user")({
   component: PublicProfileRoute,
   validateSearch(search: Record<string, unknown>): PublicProfileSearch {
@@ -103,6 +105,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
   const basePath = runtimeConfig.basePath;
   const homeHref = basePath === "/" ? "/" : `${basePath}/`;
   const siteName = runtimeConfig.siteName ?? "Yona";
+  const [activeUsermenuTab, setActiveUsermenuTab] = useState<UsermenuTab>("myOrganizationList");
 
   return (
     <>
@@ -139,23 +142,15 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
                   <span className="user-menu logout label">{t("title.logout")}</span>
                 </a>
               </div>
-              <ul className="nav nav-tabs nm">
-                <li className="myOrganizationList active">
-                  <a href="#myOrganizationList" data-toggle="tab">
-                    {t("title.favorite")}
-                  </a>
-                </li>
-                <li className="myProjectList">
-                  <a href="#myProjectList" data-toggle="tab">
-                    {t("title.project")}
-                  </a>
-                </li>
-                <li className="myRecentIssueList">
-                  <a href="#myRecentIssueList" data-toggle="tab">
-                    {t("title.recently.visited.issue")}
-                  </a>
-                </li>
-              </ul>
+              <PublicProfileUsermenuTabs
+                activeTab={activeUsermenuTab}
+                labels={{
+                  myOrganizationList: t("title.favorite"),
+                  myProjectList: t("title.project"),
+                  myRecentIssueList: t("title.recently.visited.issue"),
+                }}
+                onSelect={setActiveUsermenuTab}
+              />
               <div className="tab-content tab-box">
                 <div id="usermenu-tab-content-list" className="tab-content">
                   {"Loading..."}
@@ -209,6 +204,30 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
         </div>
       </footer>
     </>
+  );
+}
+
+function PublicProfileUsermenuTabs({
+  activeTab,
+  labels,
+  onSelect,
+}: {
+  activeTab: UsermenuTab;
+  labels: Record<UsermenuTab, string>;
+  onSelect: (tab: UsermenuTab) => void;
+}) {
+  const tabs: UsermenuTab[] = ["myOrganizationList", "myProjectList", "myRecentIssueList"];
+
+  return (
+    <ul className="nav nav-tabs nm">
+      {tabs.map((tab) => (
+        <li className={`${tab}${activeTab === tab ? " active" : ""}`} key={tab}>
+          <button type="button" data-toggle="tab" onClick={() => onSelect(tab)}>
+            {labels[tab]}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 

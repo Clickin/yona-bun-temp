@@ -81,9 +81,9 @@ const EXPECTED_MISSING_USER_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -294,6 +294,44 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
   await page.goto(`${basePath}/ghost`);
   await expect(page.locator(".error-wrap")).toBeVisible();
   await expect(page.locator(".error-wrap p")).toHaveText("User exists not");
+  await expect(page.locator('#mySidenav .right-menu > .nav-tabs.nm a[href^="#"]')).toHaveCount(0);
+  await expect(
+    page.locator('#mySidenav .right-menu > .nav-tabs.nm button[data-toggle="tab"]'),
+  ).toHaveText(["Favorite", "Project", "Recent History"]);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  const beforeUsermenuTabClickUrl = page.url();
+
+  await page
+    .locator("#mySidenav .right-menu > .nav-tabs.nm button", { hasText: "Project" })
+    .dispatchEvent("click");
+  await expect(
+    page.locator("#mySidenav .right-menu > .nav-tabs.nm > li.myProjectList"),
+  ).toHaveClass(/active/u);
+  await expect(
+    page.locator("#mySidenav .right-menu > .nav-tabs.nm > li.myOrganizationList"),
+  ).not.toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeUsermenuTabClickUrl);
+  await expect.poll(() => readSpaMarker(page)).toBe("kept");
+
+  await page
+    .locator("#mySidenav .right-menu > .nav-tabs.nm button", { hasText: "Recent History" })
+    .dispatchEvent("click");
+  await expect(
+    page.locator("#mySidenav .right-menu > .nav-tabs.nm > li.myRecentIssueList"),
+  ).toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeUsermenuTabClickUrl);
+
+  await page
+    .locator("#mySidenav .right-menu > .nav-tabs.nm button", { hasText: "Favorite" })
+    .dispatchEvent("click");
+  await expect(
+    page.locator("#mySidenav .right-menu > .nav-tabs.nm > li.myOrganizationList"),
+  ).toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeUsermenuTabClickUrl);
+  await expect.poll(() => readSpaMarker(page)).toBe("kept");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

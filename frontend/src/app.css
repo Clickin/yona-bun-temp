@@ -2472,6 +2472,7 @@ h1 {
 }
 
 .nav-tabs > li > a,
+#mySidenav .right-menu > .nav-tabs.nm > li > button,
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
 .board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button,
@@ -2489,6 +2490,7 @@ h1 {
   border-radius: 4px 4px 0 0;
 }
 
+#mySidenav .right-menu > .nav-tabs.nm > li > button,
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
 .board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button,
@@ -2519,6 +2521,8 @@ h1 {
 
 .nav-tabs > li > a:hover,
 .nav-tabs > li > a:focus,
+#mySidenav .right-menu > .nav-tabs.nm > li > button:hover,
+#mySidenav .right-menu > .nav-tabs.nm > li > button:focus,
 .user-stream-box .nav-tabs > li > button:hover,
 .user-stream-box .nav-tabs > li > button:focus,
 .issue-list-wrap .nav-tabs.nm > li > button:hover,
@@ -2548,6 +2552,9 @@ h1 {
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a:hover,
 .nav-tabs > li.active > a:focus,
+#mySidenav .right-menu > .nav-tabs.nm > li.active > button,
+#mySidenav .right-menu > .nav-tabs.nm > li.active > button:hover,
+#mySidenav .right-menu > .nav-tabs.nm > li.active > button:focus,
 .user-stream-box .nav-tabs > li.active > button,
 .user-stream-box .nav-tabs > li.active > button:hover,
 .user-stream-box .nav-tabs > li.active > button:focus,
