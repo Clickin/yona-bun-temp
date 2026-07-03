@@ -22,9 +22,6 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   passwordPlaceholder?: string;
   socialLoginOnly?: boolean;
 };
-const LegacyInternalLink = Link as React.ComponentType<
-  React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
->;
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
@@ -177,9 +174,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 </div>
 
                 <div className="links-wrap pull-right">
-                  <LegacyInternalLink to="/lostPassword">
-                    {t("title.forgotpassword")}
-                  </LegacyInternalLink>
+                  <Link to="/lostPassword">{t("title.forgotpassword")}</Link>
                 </div>
               </div>
             ) : null}

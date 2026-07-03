@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_LOGIN_SCREEN = `
@@ -32,9 +33,9 @@ const EXPECTED_LOGIN_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -218,6 +219,9 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
     width: "85%",
   });
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
+  expect(readFileSync("src/routes/users/loginform.tsx", "utf8")).not.toContain(
+    "LegacyInternalLink",
+  );
 });
 
 test("social-login-only form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
