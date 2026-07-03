@@ -136,11 +136,7 @@ function OrganizationPullRequestsBody({
 
   return (
     <>
-      <OrganizationHeader
-        basePath={runtimeConfig.basePath}
-        logoUrl={logoUrl}
-        organizationName={organizationName}
-      />
+      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         active="pullrequests"
         organizationName={organizationName}
@@ -357,11 +353,9 @@ function OrganizationPullRequestItem({
 }
 
 function OrganizationHeader({
-  basePath,
   logoUrl,
   organizationName,
 }: {
-  basePath: string;
   logoUrl: string;
   organizationName: string;
 }) {
@@ -376,7 +370,18 @@ function OrganizationHeader({
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
-                <a href={organizationHref(basePath, organizationName)}>{organizationName}</a>
+                <Link
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  search={{}}
+                  to={`/organizations/${organizationName}`}
+                >
+                  {organizationName}
+                </Link>
               </span>
             </div>
           </div>
@@ -472,10 +477,6 @@ function OrganizationMenu({
       </div>
     </div>
   );
-}
-
-function organizationHref(basePath: string, organizationName: string) {
-  return prefixBasePath(basePath, `/organizations/${organizationName}`);
 }
 
 function stringField(value: unknown, fallback: string) {

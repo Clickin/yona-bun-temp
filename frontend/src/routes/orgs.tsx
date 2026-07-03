@@ -54,14 +54,30 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <div className="title_area">
             <ul className="nav nav-tabs">
               <li>
-                <a href={prefixBasePath(runtimeConfig.basePath, "/projects")}>
+                <Link
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  to="/projects"
+                >
                   {t("project.public")} {t("title.projectList")}
-                </a>
+                </Link>
               </li>
               <li className="active">
-                <a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}>
+                <Link
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  to="/orgs"
+                >
                   {t("title.organization.list")}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

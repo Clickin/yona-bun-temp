@@ -170,14 +170,45 @@ test("organization directory card links keep legacy hrefs and use SPA navigation
     .toBe("kept");
 });
 
-test("organization directory item source uses Link for internal card anchors", () => {
+test("organization directory top tabs keep legacy hrefs without active marker leakage", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(page);
+
+  await page.goto(`${basePath}/orgs?filter=weblabs`);
+  const projectTab = page.locator(".title_area .nav-tabs > li").first();
+  const orgTab = page.locator(".title_area .nav-tabs > li").nth(1);
+  const projectLink = projectTab.locator("a");
+  const orgLink = orgTab.locator("a");
+
+  await expect(projectTab).not.toHaveClass(/active/u);
+  await expect(orgTab).toHaveClass("active");
+  await expect(projectLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(orgLink).toHaveAttribute("href", `${basePath}/orgs`);
+  await expect(projectLink).not.toHaveAttribute("aria-current");
+  await expect(projectLink).not.toHaveAttribute("data-status");
+  await expect(orgLink).not.toHaveAttribute("aria-current");
+  await expect(orgLink).not.toHaveAttribute("data-status");
+});
+
+test("organization directory source uses Link for internal route anchors", () => {
   const source = readFileSync("src/routes/orgs.tsx", "utf8");
 
+  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
+  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');
   expect(source).not.toContain("organizationHref");
   expect(source).not.toContain("href={organizationHref}");
   expect(source).not.toContain("prefixBasePath(basePath, `/organizations/${organizationName}`)");
+  expect(source).toContain('to="/projects"');
+  expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/organizations/$organizationName"');
   expect(source).toContain("params={{ organizationName }}");
+  expect(source).toContain(
+    "activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}",
+  );
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain('"data-status": undefined');
 });
 
 async function mockAuthenticatedOrganizations(page: Page) {

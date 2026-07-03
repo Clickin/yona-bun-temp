@@ -23,6 +23,17 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
 
   await page.goto(`${basePath}/organizations/weblabs/issues?state=open&filter=bug`);
   await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("weblabs");
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-author a")).not.toHaveAttribute(
+    "aria-current",
+  );
+  await expect(page.locator(".project-breadcrumb .project-author a")).not.toHaveAttribute(
+    "data-status",
+  );
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Issue");
   await expect(page.locator(".project-menu-gruop > li")).toHaveClass(["", "active", "", ""]);
   expect(await hrefs(page, ".project-menu-gruop > li > a")).toEqual([
@@ -164,7 +175,10 @@ test("organization issue row source uses Link for internal row anchors", () => {
 
 test("organization issues top menu source uses direct Link targets", () => {
   const source = readFileSync(ORGANIZATION_ISSUES_ROUTE_SOURCE, "utf8");
+  expect(source).not.toContain("<a ");
+  expect(source).not.toContain("organizationHref(");
   expect(source).not.toContain("OrganizationRouteLink");
+  expect(source).toContain("function OrganizationHeader");
   expect(source).toContain("to={`/organizations/${organizationName}`}");
   expect(source).toContain("to={`/organizations/${organizationName}/issues`}");
   expect(source).toContain("to={`/organizations/${organizationName}/boards`}");

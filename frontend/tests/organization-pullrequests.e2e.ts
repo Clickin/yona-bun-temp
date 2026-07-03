@@ -99,6 +99,36 @@ test("organization closed pull request aggregate matches legacy group_pullreques
   );
 });
 
+test("organization pull request breadcrumb organization link keeps legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+  const breadcrumbLink = page.locator(".project-breadcrumb .project-author > a");
+  await expect(breadcrumbLink).toHaveText("weblabs");
+  await expect(breadcrumbLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(breadcrumbLink).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(breadcrumbLink).not.toHaveAttribute("data-status", /.*/u);
+  await expect(breadcrumbLink).not.toHaveAttribute("class", /.*/u);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await breadcrumbLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#mylist-filter")).toBeVisible();
+});
+
 test("organization pull request closed tab preserves legacy data-url with SPA transition", async ({
   page,
 }) => {
@@ -251,9 +281,14 @@ test("organization pull request route source keeps direct typed row links", asyn
     "src/routes/organizations/$organizationName/pullrequests.tsx",
     "utf8",
   );
+  const headerBreadcrumb = source.match(
+    /<span className="project-author">[\s\S]*?<\/span>\s*<\/div>\s*<\/div>/u,
+  )?.[0];
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("OrganizationRouteLink");
+  expect(source).not.toContain("function organizationHref");
+  expect(source).not.toContain("href={organizationHref(basePath, organizationName)}");
   expect(source).not.toContain("projectHref");
   expect(source).not.toContain("pullRequestHref");
   expect(source).not.toContain("changesHref");
@@ -270,6 +305,8 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain("to: `/organizations/${organizationName}/pullrequests`");
   expect(source).toContain("to: `/organizations/${organizationName}/settingform`");
   expect(source).toContain('"data-status": undefined');
+  expect(headerBreadcrumb).toContain("<Link");
+  expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
 });
 
 async function installOrganizationPullRequestNativeLinkAudit(page: Page) {

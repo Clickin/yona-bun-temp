@@ -178,6 +178,32 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   });
 });
 
+test("project directory top tabs keep legacy hrefs without active marker leakage", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedProjects(page);
+
+  await page.goto(`${basePath}/projects?filter=sample`);
+  await expect(page.locator(".all-projects .project")).toBeVisible();
+
+  const projectTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(0);
+  const organizationTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(1);
+  const projectTabLink = projectTabItem.locator("a");
+  const organizationTabLink = organizationTabItem.locator("a");
+
+  await expect(projectTabItem).toHaveAttribute("class", "active");
+  await expect(organizationTabItem).not.toHaveAttribute("class", /active/);
+  await expect(projectTabLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(organizationTabLink).toHaveAttribute("href", `${basePath}/orgs`);
+  await expect(projectTabLink).not.toHaveAttribute("class", /active/);
+  await expect(projectTabLink).not.toHaveAttribute("data-status", /./);
+  await expect(projectTabLink).not.toHaveAttribute("aria-current", /./);
+  await expect(organizationTabLink).not.toHaveAttribute("class", /active/);
+  await expect(organizationTabLink).not.toHaveAttribute("data-status", /./);
+  await expect(organizationTabLink).not.toHaveAttribute("aria-current", /./);
+});
+
 test("project directory card links keep legacy hrefs while using SPA navigation", async ({
   page,
 }) => {
@@ -229,8 +255,13 @@ test("projects route source uses Link for project directory card navigation", ()
   const source = readFileSync(new URL("../src/routes/projects.tsx", import.meta.url), "utf8");
 
   expect(source).toContain("import { createFileRoute, Link } from");
+  expect(source).toContain('to="/projects"');
+  expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$user"');
+  expect(source).toContain('"data-status": undefined');
+  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
+  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');
   expect(source).not.toContain("const projectHref =");
   expect(source).not.toContain("const ownerHref =");
   expect(source).not.toContain("<a href={projectHref}");
