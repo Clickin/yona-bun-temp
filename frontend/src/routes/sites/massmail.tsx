@@ -117,11 +117,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         ["api", "v1", "site", "mail-list", mailingType, selectedProjects],
         data,
       );
-      const form = document.createElement("form");
-      form.setAttribute("method", "POST");
-      form.setAttribute("action", `mailto:${data.recipients.join(",")},`);
-      form.setAttribute("enctype", "text/plain");
-      form.submit();
+      window.open(`mailto:${data.recipients.join(",")},`, "_self");
     },
   });
 
@@ -207,10 +203,9 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           {selectedProjects.map((project) => (
             <span className="label label-info" style={{ marginRight: "5px" }} key={project.id}>
               {project.name}{" "}
-              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-              <a
-                href="#"
-                ref={(node) => node?.setAttribute("href", "javascript:void(0)")}
+              <button
+                type="button"
+                className="selected-project-remove"
                 onClick={(event) => {
                   event.preventDefault();
                   setSelectedProjects((current) =>
@@ -219,7 +214,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 }}
               >
                 x
-              </a>
+              </button>
             </span>
           ))}
         </div>

@@ -6596,6 +6596,17 @@ div.markdown-preview {
   border-color: #3e91af;
 }
 
+.site-admin-page .selected-project-remove {
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
 .site-admin-page .ybtn-danger {
   color: #b13427;
   border-color: #d98c82;

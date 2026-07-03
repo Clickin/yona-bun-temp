@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const EXPECTED_MASSMAIL_SCREEN = `
 <div class="unsupported hidden">
@@ -177,7 +178,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockMailList(page);
-  await captureSubmittedForms(page);
+  await captureWindowOpen(page);
 
   await page.goto(`${basePath}/sites/massmail`);
 
@@ -186,10 +187,12 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
-  await expect(page.locator("#selected-projects .label a")).toHaveAttribute(
-    "href",
-    "javascript:void(0)",
+  await expect(page.locator("#selected-projects .label a[href]")).toHaveCount(0);
+  await expect(page.locator("#selected-projects .label .selected-project-remove")).toHaveAttribute(
+    "type",
+    "button",
   );
+  await expect(page.locator("#selected-projects .label .selected-project-remove")).toHaveText("x");
   expect(await massMailProjectMetrics(page)).toEqual({
     addButtonHeight: 30,
     inputMarginBottom: 0,
@@ -210,14 +213,14 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
     "yona/docs x",
   ]);
 
-  await page.locator("#selected-projects .label a").first().click();
+  await page.locator("#selected-projects .label .selected-project-remove").first().click();
   await expect(page.locator("#selected-projects .label")).toHaveText("yona/docs x");
 
   await page.locator("#write-email").click();
   await expect.poll(() => requests.payloads).toEqual([{ all: false, projects: ["yona/docs"] }]);
   await expect
-    .poll(() => page.evaluate(() => window.__submittedForms ?? []))
-    .toEqual([{ action: "mailto:maintainer@example.com,writer@example.com,", method: "POST" }]);
+    .poll(() => page.evaluate(() => window.__openedWindows ?? []))
+    .toEqual([{ target: "_self", url: "mailto:maintainer@example.com,writer@example.com," }]);
 
   await page.locator("#mailtoAll").click();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
@@ -230,6 +233,13 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
       { all: false, projects: ["yona/docs"] },
       { all: true, projects: [] },
     ]);
+});
+
+test("site admin mass mail route keeps legacy JS behavior out of route-local DOM APIs", () => {
+  const routeSource = readFileSync("src/routes/sites/massmail.tsx", "utf8");
+
+  expect(routeSource).not.toContain("document.");
+  expect(routeSource).not.toContain("addEventListener");
 });
 
 test("site admin mass mail renders legacy update notification badge", async ({ page }) => {
@@ -403,21 +413,22 @@ async function mockMailOptions(page: Page) {
   });
 }
 
-async function captureSubmittedForms(page: Page) {
+async function captureWindowOpen(page: Page) {
   await page.addInitScript(() => {
-    window.__submittedForms = [];
-    HTMLFormElement.prototype.submit = function submit() {
-      window.__submittedForms?.push({
-        action: this.getAttribute("action") ?? "",
-        method: this.getAttribute("method") ?? "",
+    window.__openedWindows = [];
+    window.open = function open(url, target) {
+      window.__openedWindows?.push({
+        target: target?.toString() ?? "",
+        url: url?.toString() ?? "",
       });
+      return null;
     };
   });
 }
 
 declare global {
   interface Window {
-    __submittedForms?: Array<{ action: string; method: string }>;
+    __openedWindows?: Array<{ target: string; url: string }>;
   }
 }
 
