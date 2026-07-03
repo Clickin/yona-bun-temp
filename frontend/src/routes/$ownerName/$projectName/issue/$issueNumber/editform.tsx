@@ -307,39 +307,67 @@ function ProjectIssueEditFormBody({
 
 function StateOption({ state }: { state: string }) {
   const { t } = useLegacyMessages();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [selectedState, setSelectedState] = useState(() => normalizeIssueState(state));
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const options = [
+    { label: t("issue.state.open"), value: "OPEN" },
+    { label: t("issue.state.closed"), value: "CLOSED" },
+  ];
   return (
     <dl className="issue-option">
       <dt>{t("issue.state")}</dt>
       <dd>
-        <div id="state" className="btn-group auto" data-name="state">
-          <button className="btn dropdown-toggle auto" data-toggle="dropdown">
-            <span className="d-label">{t("issue.state")}</span>
+        <div id="state" className={`btn-group auto${isMenuOpen ? " open" : ""}`} data-name="state">
+          <button
+            type="button"
+            className="btn dropdown-toggle auto"
+            data-toggle="dropdown"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsMenuOpen((current) => !current);
+            }}
+          >
+            <span className="d-label">{selectedLabel ?? t("issue.state")}</span>
             <span className="d-caret">
               <span className="caret"></span>
             </span>
           </button>
           <ul className="dropdown-menu">
-            <li
-              data-value="OPEN"
-              data-selected={state === "open" ? "true" : undefined}
-              className={state === "open" ? "active" : undefined}
-            >
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-              <a>{t("issue.state.open")}</a>
-            </li>
-            <li
-              data-value="CLOSED"
-              data-selected={state === "closed" ? "true" : undefined}
-              className={state === "closed" ? "active" : undefined}
-            >
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-              <a>{t("issue.state.closed")}</a>
-            </li>
+            {options.map((option) => {
+              const selected = option.value === selectedState;
+              return (
+                <li
+                  key={option.value}
+                  data-value={option.value}
+                  data-selected={selected ? "true" : undefined}
+                  className={selected ? "active" : undefined}
+                >
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setSelectedState(option.value);
+                      setSelectedLabel(option.label);
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </dd>
     </dl>
   );
+}
+
+function normalizeIssueState(state: string) {
+  return state.toLowerCase() === "closed" ? "CLOSED" : "OPEN";
 }
 
 function MilestoneOption({ issue }: { issue: RestIssueDetailResponse }) {
