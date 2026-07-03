@@ -3,6 +3,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   useEffect,
   useRef,
+  useState,
   type AnchorHTMLAttributes,
   type ComponentType,
   type InputHTMLAttributes,
@@ -228,6 +229,7 @@ function LegacyTabIndexInput({
 
 function MilestoneMarkdownEditor() {
   const { t } = useLegacyMessages();
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const contentsRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     contentsRef.current?.setAttribute("tabindex", "2");
@@ -235,15 +237,25 @@ function MilestoneMarkdownEditor() {
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
-        <li className="active">
-          <a href="#edit-content-body" data-toggle="tab" data-mode="edit">
+        <li className={activeTab === "edit" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="edit"
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
-          </a>
+          </button>
         </li>
-        <li>
-          <a href="#preview-content-body" data-toggle="tab" data-mode="preview">
+        <li className={activeTab === "preview" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="preview"
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
-          </a>
+          </button>
         </li>
         <li>
           <div className="task-list-button">
@@ -277,7 +289,10 @@ function MilestoneMarkdownEditor() {
           className="markdown-help"
           dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
         />
-        <div id="edit-content-body" className="tab-pane active">
+        <div
+          id="edit-content-body"
+          className={activeTab === "edit" ? "tab-pane active" : "tab-pane"}
+        >
           <div className="textarea-box">
             <textarea
               ref={contentsRef}
@@ -289,7 +304,10 @@ function MilestoneMarkdownEditor() {
             ></textarea>
           </div>
         </div>
-        <div id="preview-content-body" className="tab-pane">
+        <div
+          id="preview-content-body"
+          className={activeTab === "preview" ? "tab-pane active" : "tab-pane"}
+        >
           <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
         </div>
         <div className="notification-receiver">
