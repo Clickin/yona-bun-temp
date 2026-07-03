@@ -147,10 +147,20 @@ export function LegacySearchBody({
                         }`}
                         key={menu.type}
                       >
-                        <Link to={searchPath} search={searchTarget(menu.type, keywordValue).search}>
+                        <button
+                          type="button"
+                          data-toggle="search-category"
+                          data-type={menu.type}
+                          onClick={() => {
+                            navigationMutation.mutate({
+                              keyword: keywordValue,
+                              searchType: menu.type,
+                            });
+                          }}
+                        >
                           {t(menu.labelKey)}
                           <span className="num-badge pull-right">{count}</span>
-                        </Link>
+                        </button>
                       </li>
                     );
                   })}

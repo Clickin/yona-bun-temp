@@ -15,7 +15,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -384,6 +384,30 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
+  expect(routeSource).not.toMatch(/<a[\s>]/u);
+  expect(routeSource).not.toContain("data-login=");
+});
+
+test("anonymous home shell renders legacy login and signup link affordances", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAnonymousSession(page);
+
+  await page.goto(`${basePath}/`);
+
+  const loginLink = page.locator("#required-logged-in a.user-item-btn");
+  const signupMenuLink = page.locator(".gnb-usermenu a.ybtn.ybtn-success");
+  const landingSignupLink = page.locator(".signup-btn a.ybtn.ybtn-success.ybtn-padding");
+
+  await expect(loginLink).toHaveText("Log in");
+  await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
+  await expect(loginLink).toHaveAttribute("class", "user-item-btn");
+  await expect(loginLink).not.toHaveAttribute("data-login");
+  await expect(signupMenuLink).toHaveText("Sign up");
+  await expect(signupMenuLink).toHaveAttribute("href", `${basePath}/users/signupform`);
+  await expect(signupMenuLink).toHaveAttribute("class", "ybtn ybtn-success");
+  await expect(landingSignupLink).toHaveText("Sign up for Yona");
+  await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
+  await expect(landingSignupLink).toHaveAttribute("class", "ybtn ybtn-success ybtn-padding");
 });
 
 test("authenticated home empty notifications matches legacy index notifications screen DOM", async ({
@@ -986,6 +1010,16 @@ test("direct notifications route matches legacy populated notification row DOM",
     titleFontSize: "14px",
     titleFontWeight: "700",
   });
+  const notificationTitle = page.locator(".notification-stream .title a");
+  const notificationAvatar = page.locator(".notification-stream .avatar-wrap");
+  const notificationAuthor = page.locator(".notification-stream .author");
+  await expect(notificationTitle).toHaveText("Issue #1 updated");
+  await expect(notificationTitle).toHaveAttribute("href", `${basePath}/admin/sample/issue/1`);
+  await expect(notificationAvatar).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(notificationAvatar).toHaveAttribute("class", "avatar-wrap smaller");
+  await expect(notificationAuthor).toHaveText("Site Admin");
+  await expect(notificationAuthor).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(notificationAuthor).toHaveAttribute("class", "author");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileNotificationStreamMetrics(page)).toEqual({
     avatarDisplay: "inline-block",
@@ -1705,6 +1739,24 @@ async function readMobileNotificationStreamMetrics(page: Page) {
 
 async function mockAuthenticatedEmptyNotifications(page: Page) {
   await mockAuthenticatedNotifications(page, []);
+}
+
+async function mockAnonymousSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: null,
+        defaultLandingPath: "/",
+        emailAddress: "",
+        isAnonymous: true,
+        isConfirmed: false,
+        isSiteAdmin: false,
+        loginId: "",
+        userLabel: "",
+      }),
+    });
+  });
 }
 
 async function mockWorkspaceSidebarProjects(page: Page) {

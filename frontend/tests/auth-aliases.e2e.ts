@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 test("auth aliases redirect to canonical legacy public routes", async ({ page }) => {
@@ -91,6 +92,27 @@ test("legacy GET /users/login keeps the public index mobile proportions", async 
   expect(await readMobileIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
 
+test("root not-found shell source uses Link semantics for legacy navigation anchors", async () => {
+  const source = readFileSync("src/routes/__root.tsx", "utf8");
+  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
+  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}');
+  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
+  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}');
+  expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}');
+  expect(source).toContain('href="https://github.com/nforge/yobi/issues?state=open"');
+  expect(source).toContain('href="http://navercorp.com/"');
+  expect(source).toContain('href="https://developers.naver.com/d2/"');
+  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
+  expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
+  expect(source).not.toContain(
+    '<a href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}',
+  );
+  expect(source).not.toContain(
+    '<a href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}',
+  );
+  expect(source).not.toContain('className="user-item-btn"\n                data-login="required"');
+});
+
 async function canonicalizeIndexRoots(page: Page) {
   return canonicalizeRoots(page, ".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer");
 }
@@ -127,7 +149,7 @@ async function canonicalizeRoots(page: Page, selector: string) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => `${name}=${JSON.stringify(normalizeAttribute(current, name))}`)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -146,6 +168,16 @@ async function canonicalizeRoots(page: Page, selector: string) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((value, index, values) => value && values.indexOf(value) === index)
+          .join(" ");
+      }
+      return current.getAttribute(name) ?? "";
     }
   }, selector);
 }

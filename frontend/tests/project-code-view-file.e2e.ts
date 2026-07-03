@@ -105,6 +105,24 @@ test("project code file internal links keep legacy hrefs and navigate through th
     "href",
     `${basePath}/admin/sample/files/main/README.txt`,
   );
+  const archiveDownloadLink = page.locator(".code-browse-header .pull-right a", {
+    hasText: "Download as .zip file",
+  });
+  const rawLink = page.locator(".file-header .pull-right a", { hasText: "Raw" });
+
+  await expect(archiveDownloadLink).toHaveAttribute("class", "ybtn");
+  await expect(archiveDownloadLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/archive/main.zip`,
+  );
+  await expect(archiveDownloadLink).not.toHaveAttribute("target", /.+/u);
+  await expect(archiveDownloadLink).toHaveText("Download as .zip file");
+  await expect(rawLink).toHaveAttribute("class", "ybtn");
+  await expect(rawLink).toHaveAttribute("target", "_blank");
+  await expect(rawLink).toContainText("Raw");
+  await expect(page.locator("#open-in-browser")).toHaveAttribute("class", "ybtn");
+  await expect(page.locator("#open-in-browser")).toHaveAttribute("target", "_blank");
+  await expect(page.locator("#open-in-browser")).toContainText("Open in browser");
 
   const documentRequests: string[] = [];
   page.on("request", (request) => {
@@ -126,16 +144,8 @@ test("project code file route source has no raw anchors for internal app navigat
     "utf8",
   );
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
-  const forbiddenRawInternalAnchors = rawAnchorBlocks.filter((block) => {
-    if (/href=\{(?:rawHref|openHref|projectHref\([^)]*"archive")/u.test(block)) {
-      return false;
-    }
-    return /href=\{[\s\S]*(?:projectHref|projectPath|prefixBasePath|authorHref|postform|commit|commits|code)/u.test(
-      block,
-    );
-  });
 
-  expect(forbiddenRawInternalAnchors).toEqual([]);
+  expect(rawAnchorBlocks).toEqual([]);
 });
 
 async function fileViewMetrics(page: Page) {
@@ -268,6 +278,12 @@ test("project code binary file matches legacy download branch", async ({ page })
     "href",
     `${basePath}/admin/sample/rawcode/main/dist/archive.zip`,
   );
+  await expect(page.locator("#showFile.file-wrap .filehref")).toHaveAttribute(
+    "class",
+    "filehref ybtn",
+  );
+  await expect(page.locator("#showFile.file-wrap .filehref")).not.toHaveAttribute("target", /.+/u);
+  await expect(page.locator("#showFile.file-wrap .filehref")).toHaveText("Download a file");
   await expect(page.locator("#showCode")).toHaveCount(0);
   await expect(page.locator("#codeVal")).toHaveCount(0);
   expect(codeRequests).toEqual(["branch=main&path=dist%2Farchive.zip"]);
@@ -290,6 +306,18 @@ test("project code too-large text file matches legacy raw fallback branch", asyn
 
   await page.goto(`${basePath}/admin/sample/code/main/logs/big.txt`);
   await expect(page.locator(".file-wrap[data-type=file] > p .filehref")).toHaveText("View Raw");
+  await expect(page.locator(".file-wrap[data-type=file] > p .filehref")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/rawcode/main/logs/big.txt`,
+  );
+  await expect(page.locator(".file-wrap[data-type=file] > p .filehref")).toHaveAttribute(
+    "class",
+    "filehref ybtn",
+  );
+  await expect(page.locator(".file-wrap[data-type=file] > p .filehref")).toHaveAttribute(
+    "target",
+    "_blank",
+  );
   await expect(page.locator("#showCode")).toHaveCount(0);
   await expect(page.locator("#codeVal")).toHaveCount(0);
   expect(codeRequests).toEqual(["branch=main&path=logs%2Fbig.txt"]);
@@ -433,7 +461,13 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -467,7 +501,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");

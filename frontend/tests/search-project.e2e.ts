@@ -78,10 +78,17 @@ test("project search category and form navigation stay inside the React SPA", as
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
   await markSearchSpaSession(page);
   await page.locator("#searchKeyword").fill("fresh");
-  await page.locator(".search-category-wrap a", { hasText: "Issues" }).click();
+  await expect(page.locator('.search-category-wrap a[href="#"]')).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
+  const issueCategory = page.locator(".search-category-wrap button", { hasText: "Issues" });
+  await expect(issueCategory).toHaveAttribute("type", "button");
+  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
+  await expect(issueCategory).toHaveAttribute("data-type", "issue");
+  await issueCategory.click();
   await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/search\\?`));
   expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");
   expect(new URL(page.url()).searchParams.get("searchType")).toBe("issue");
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues0");
   await expectSearchSpaSession(page);
 
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
@@ -208,17 +215,37 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
+            !isModernizedLegacySearchCategoryButtonType(attr) &&
+            !isModernizedLegacyTabButtonType(attr) &&
+            !isModernizedLegacyDropdownButtonType(attr) &&
+            !isModernizedSiteAdminTooltipAttr(attr) &&
+            attr.name !== "data-login" &&
+            attr.name !== "role" &&
+            attr.name !== "tabindex" &&
             attr.name !== "alt",
         )
-        .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .concat(isModernizedLegacySearchCategoryButton(node) ? [`href=${JSON.stringify("#")}`] : [])
+        .concat(
+          isModernizedLegacyTabButton(node) ? [`href=${JSON.stringify(legacyTabHref(node))}`] : [],
+        )
+        .concat(
+          isModernizedLegacyDropdownButton(node)
+            ? [`href=${JSON.stringify("javascript:void(0);")}`]
+            : [],
+        )
+        .sort()
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const tagName =
+        isModernizedLegacySearchCategoryButton(node) ||
+        isModernizedLegacyTabButton(node) ||
+        isModernizedLegacyDropdownButton(node)
+          ? "a"
+          : node.tagName.toLowerCase();
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${tagName}>`;
     }
 
     function normalizeText(text: string) {
@@ -231,6 +258,14 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (
+        attr.name === "href" &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("logo-letter") &&
+        attr.value.length > 1
+      ) {
+        return attr.value.replace(/\/$/u, "");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
@@ -248,7 +283,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-type") &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -256,7 +291,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedTanStackRouterHref(attr: Attr) {
       return (
         attr.name === "href" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -264,8 +299,63 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedTanStackRouterActiveClass(attr: Attr) {
       return (
         attr.name === "class" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedLegacySearchCategoryButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacySearchCategoryButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacyTabButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyTabButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacyDropdownButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyDropdownButton(attr.ownerElement);
+    }
+
+    function isModernizedSiteAdminTooltipAttr(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-placement" || attr.name === "title") &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("usermenu-icon-button")
+      );
+    }
+
+    function isModernizedLegacySearchCategoryButton(node: Element | null) {
+      return node instanceof HTMLButtonElement && node.closest(".search-category-wrap") !== null;
+    }
+
+    function isModernizedLegacySearchCategoryControl(node: Element | null) {
+      return node instanceof HTMLAnchorElement || isModernizedLegacySearchCategoryButton(node);
+    }
+
+    function isModernizedLegacyTabButton(node: Element | null) {
+      return (
+        node instanceof HTMLButtonElement &&
+        node.closest(".nav-tabs.nm") !== null &&
+        node.getAttribute("data-toggle") === "tab"
+      );
+    }
+
+    function legacyTabHref(node: Element) {
+      const item = node.closest("li");
+      if (item?.classList.contains("myOrganizationList")) {
+        return "#myOrganizationList";
+      }
+      if (item?.classList.contains("myProjectList")) {
+        return "#myProjectList";
+      }
+      return "#myRecentIssueList";
+    }
+
+    function isModernizedLegacyDropdownButton(node: Element | null) {
+      return (
+        node instanceof HTMLButtonElement &&
+        node.classList.contains("gnb-dropdown-toggle") &&
+        node.closest(".gnb-usermenu") !== null
       );
     }
 
@@ -306,17 +396,37 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
+            !isModernizedLegacySearchCategoryButtonType(attr) &&
+            !isModernizedLegacyTabButtonType(attr) &&
+            !isModernizedLegacyDropdownButtonType(attr) &&
+            !isModernizedSiteAdminTooltipAttr(attr) &&
+            attr.name !== "data-login" &&
+            attr.name !== "role" &&
+            attr.name !== "tabindex" &&
             attr.name !== "alt",
         )
-        .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .concat(isModernizedLegacySearchCategoryButton(node) ? [`href=${JSON.stringify("#")}`] : [])
+        .concat(
+          isModernizedLegacyTabButton(node) ? [`href=${JSON.stringify(legacyTabHref(node))}`] : [],
+        )
+        .concat(
+          isModernizedLegacyDropdownButton(node)
+            ? [`href=${JSON.stringify("javascript:void(0);")}`]
+            : [],
+        )
+        .sort()
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const tagName =
+        isModernizedLegacySearchCategoryButton(node) ||
+        isModernizedLegacyTabButton(node) ||
+        isModernizedLegacyDropdownButton(node)
+          ? "a"
+          : node.tagName.toLowerCase();
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${tagName}>`;
     }
 
     function normalizeText(text: string) {
@@ -329,6 +439,14 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (
+        attr.name === "href" &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("logo-letter") &&
+        attr.value.length > 1
+      ) {
+        return attr.value.replace(/\/$/u, "");
       }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
@@ -346,7 +464,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-type") &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -354,7 +472,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedTanStackRouterHref(attr: Attr) {
       return (
         attr.name === "href" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -362,8 +480,63 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedTanStackRouterActiveClass(attr: Attr) {
       return (
         attr.name === "class" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedLegacySearchCategoryButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacySearchCategoryButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacyTabButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyTabButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacyDropdownButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyDropdownButton(attr.ownerElement);
+    }
+
+    function isModernizedSiteAdminTooltipAttr(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-placement" || attr.name === "title") &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("usermenu-icon-button")
+      );
+    }
+
+    function isModernizedLegacySearchCategoryButton(node: Element | null) {
+      return node instanceof HTMLButtonElement && node.closest(".search-category-wrap") !== null;
+    }
+
+    function isModernizedLegacySearchCategoryControl(node: Element | null) {
+      return node instanceof HTMLAnchorElement || isModernizedLegacySearchCategoryButton(node);
+    }
+
+    function isModernizedLegacyTabButton(node: Element | null) {
+      return (
+        node instanceof HTMLButtonElement &&
+        node.closest(".nav-tabs.nm") !== null &&
+        node.getAttribute("data-toggle") === "tab"
+      );
+    }
+
+    function legacyTabHref(node: Element) {
+      const item = node.closest("li");
+      if (item?.classList.contains("myOrganizationList")) {
+        return "#myOrganizationList";
+      }
+      if (item?.classList.contains("myProjectList")) {
+        return "#myProjectList";
+      }
+      return "#myRecentIssueList";
+    }
+
+    function isModernizedLegacyDropdownButton(node: Element | null) {
+      return (
+        node instanceof HTMLButtonElement &&
+        node.classList.contains("gnb-dropdown-toggle") &&
+        node.closest(".gnb-usermenu") !== null
       );
     }
 

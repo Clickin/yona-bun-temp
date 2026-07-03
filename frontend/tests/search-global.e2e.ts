@@ -396,26 +396,32 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
     routeSource.indexOf("function SearchResultList"),
     routeSource.indexOf("function InternalResultLink"),
   );
+  const routeBodySource = routeSource.slice(0, routeSource.indexOf("function HighlightedText"));
   const internalLinkSource = routeSource.slice(
     routeSource.indexOf("function InternalResultLink"),
     routeSource.indexOf("function internalLinkTarget"),
   );
+  expect(routeBodySource).not.toMatch(/<a[\s>]/u);
+  expect(routeBodySource).not.toContain('href="#"');
+  expect(routeBodySource).not.toContain("<Link href");
   expect(resultListSource).not.toMatch(/<a[\s>]/u);
   expect(resultListSource).not.toContain("</a>");
   expect(resultListSource).toContain("<InternalResultLink");
+  expect(routeBodySource).toContain('<button\n                          type="button"');
   expect(internalLinkSource).toContain("<Link");
 });
 
-test("global search category link uses React SPA navigation", async ({ page }) => {
+test("global search category button uses React SPA navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=missing&searchType=project`);
-  const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
-  const issueCategoryHref = new URL((await issueCategory.getAttribute("href")) ?? "", page.url());
-  expect(issueCategoryHref.pathname).toBe(`${basePath}/search`);
-  expect(issueCategoryHref.searchParams.get("keyword")).toBe("missing");
-  expect(issueCategoryHref.searchParams.get("searchType")).toBe("issue");
+  await expect(page.locator('.search-category-wrap a[href="#"]')).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
+  const issueCategory = page.locator(".search-category-wrap button").filter({ hasText: "Issues" });
+  await expect(issueCategory).toHaveAttribute("type", "button");
+  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
+  await expect(issueCategory).toHaveAttribute("data-type", "issue");
   await page.locator("#searchKeyword").fill("fresh");
 
   await page.evaluate(() => {
@@ -435,7 +441,7 @@ test("global search category link uses React SPA navigation", async ({ page }) =
     .toBe("kept");
   await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
   await expect(page.locator("#searchKeyword")).toHaveValue("fresh");
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues0");
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues0");
 });
 
 test("global search without required query renders legacy badrequest_default.scala.html shell", async ({
@@ -1502,17 +1508,24 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
+            !isModernizedLegacySearchCategoryButtonType(attr) &&
+            !isModernizedLegacyTabButtonType(attr) &&
+            attr.name !== "data-login" &&
             attr.name !== "alt",
         )
-        .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
+        .concat(isModernizedLegacySearchCategoryButton(node) ? ['href="#"'] : [])
+        .concat(isModernizedLegacyTabButton(node) ? [`href="${legacyTabHref(node)}"`] : [])
+        .sort()
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const tagName =
+        isModernizedLegacySearchCategoryButton(node) || isModernizedLegacyTabButton(node)
+          ? "a"
+          : node.tagName.toLowerCase();
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${tagName}>`;
     }
 
     function normalizeText(text: string) {
@@ -1525,6 +1538,14 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (
+        attr.name === "href" &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("logo-letter") &&
+        attr.value.length > 1
+      ) {
+        return attr.value.replace(/\/$/u, "");
       }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
@@ -1540,7 +1561,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-type") &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -1548,7 +1569,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedTanStackRouterHref(attr: Attr) {
       return (
         attr.name === "href" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -1556,9 +1577,44 @@ async function canonicalizeScreenRoots(page: Page) {
     function isModernizedTanStackRouterActiveClass(attr: Attr) {
       return (
         attr.name === "class" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
+    }
+
+    function isModernizedLegacySearchCategoryButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacySearchCategoryButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacyTabButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyTabButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacySearchCategoryButton(node: Element | null) {
+      return node instanceof HTMLButtonElement && node.closest(".search-category-wrap") !== null;
+    }
+
+    function isModernizedLegacySearchCategoryControl(node: Element | null) {
+      return node instanceof HTMLAnchorElement || isModernizedLegacySearchCategoryButton(node);
+    }
+
+    function isModernizedLegacyTabButton(node: Element | null) {
+      return (
+        node instanceof HTMLButtonElement &&
+        node.closest(".nav-tabs.nm") !== null &&
+        node.getAttribute("data-toggle") === "tab"
+      );
+    }
+
+    function legacyTabHref(node: Element) {
+      const item = node.closest("li");
+      if (item?.classList.contains("myOrganizationList")) {
+        return "#myOrganizationList";
+      }
+      if (item?.classList.contains("myProjectList")) {
+        return "#myProjectList";
+      }
+      return "#myRecentIssueList";
     }
 
     function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
@@ -1598,17 +1654,24 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
+            !isModernizedLegacySearchCategoryButtonType(attr) &&
+            !isModernizedLegacyTabButtonType(attr) &&
+            attr.name !== "data-login" &&
             attr.name !== "alt",
         )
-        .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
+        .concat(isModernizedLegacySearchCategoryButton(node) ? ['href="#"'] : [])
+        .concat(isModernizedLegacyTabButton(node) ? [`href="${legacyTabHref(node)}"`] : [])
+        .sort()
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const tagName =
+        isModernizedLegacySearchCategoryButton(node) || isModernizedLegacyTabButton(node)
+          ? "a"
+          : node.tagName.toLowerCase();
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${tagName}>`;
     }
 
     function normalizeText(text: string) {
@@ -1621,6 +1684,14 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (
+        attr.name === "href" &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("logo-letter") &&
+        attr.value.length > 1
+      ) {
+        return attr.value.replace(/\/$/u, "");
       }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
@@ -1636,7 +1707,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedLegacySearchCategoryAttribute(attr: Attr) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-type") &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -1644,7 +1715,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedTanStackRouterHref(attr: Attr) {
       return (
         attr.name === "href" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
     }
@@ -1652,9 +1723,44 @@ async function canonicalizeHtml(page: Page, html: string) {
     function isModernizedTanStackRouterActiveClass(attr: Attr) {
       return (
         attr.name === "class" &&
-        attr.ownerElement instanceof HTMLAnchorElement &&
+        isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
       );
+    }
+
+    function isModernizedLegacySearchCategoryButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacySearchCategoryButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacyTabButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyTabButton(attr.ownerElement);
+    }
+
+    function isModernizedLegacySearchCategoryButton(node: Element | null) {
+      return node instanceof HTMLButtonElement && node.closest(".search-category-wrap") !== null;
+    }
+
+    function isModernizedLegacySearchCategoryControl(node: Element | null) {
+      return node instanceof HTMLAnchorElement || isModernizedLegacySearchCategoryButton(node);
+    }
+
+    function isModernizedLegacyTabButton(node: Element | null) {
+      return (
+        node instanceof HTMLButtonElement &&
+        node.closest(".nav-tabs.nm") !== null &&
+        node.getAttribute("data-toggle") === "tab"
+      );
+    }
+
+    function legacyTabHref(node: Element) {
+      const item = node.closest("li");
+      if (item?.classList.contains("myOrganizationList")) {
+        return "#myOrganizationList";
+      }
+      if (item?.classList.contains("myProjectList")) {
+        return "#myProjectList";
+      }
+      return "#myRecentIssueList";
     }
 
     function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {

@@ -107,6 +107,7 @@ function ProjectCodeFileBody({
   const encodedBranch = encodeURIComponent(selectedBranch);
   const newFilePath = directoryPath(filePath);
   const isGit = project.vcs === "GIT";
+  const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
 
   return (
     <div className="page-wrap-outer">
@@ -169,18 +170,14 @@ function ProjectCodeFileBody({
             {isGit ? (
               <>
                 <div className="pull-right">
-                  <a
-                    href={projectHref(
-                      runtimeConfig.basePath,
-                      ownerName,
-                      projectName,
-                      "archive",
-                      `${encodedBranch}.zip`,
-                    )}
+                  <Link
+                    to={archivePath as never}
+                    reloadDocument
                     className="ybtn"
+                    activeProps={{ className: "ybtn" }}
                   >
                     {t("code.download")}
-                  </a>
+                  </Link>
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
                   <div className="pull-right">
@@ -249,22 +246,10 @@ function FileView({
   const isBinary = booleanField(file.isBinary);
   const isTooLargeText = !isBinary && !hasViewableText && numberField(file.size) > 0;
   const mimeType = stringField(file.mimeType, "");
-  const rawHref = projectHref(
-    runtimeConfig.basePath,
-    ownerName,
-    projectName,
-    "rawcode",
-    encodeURIComponent(isGit ? selectedBranch : commitId),
-    filePath,
-  );
-  const openHref = projectHref(
-    runtimeConfig.basePath,
-    ownerName,
-    projectName,
-    "files",
-    encodeURIComponent(isGit ? selectedBranch : commitId),
-    filePath,
-  );
+  const rawRevision = encodeURIComponent(isGit ? selectedBranch : commitId);
+  const rawPath = projectPath(ownerName, projectName, "rawcode", rawRevision, filePath);
+  const rawHref = prefixBasePath(runtimeConfig.basePath, rawPath);
+  const openPath = projectPath(ownerName, projectName, "files", rawRevision, filePath);
 
   return (
     <div className="file-wrap" data-type="file">
@@ -325,9 +310,14 @@ function FileView({
         <div className="pull-right">
           {!isBinary ? (
             <>
-              <a href={rawHref} className="ybtn" target="_blank">
+              <Link
+                to={rawPath as never}
+                className="ybtn"
+                target="_blank"
+                activeProps={{ className: "ybtn" }}
+              >
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
-              </a>
+              </Link>
               {booleanField(project.viewerCanUpdate) ? (
                 <Link
                   to={
@@ -345,15 +335,16 @@ function FileView({
               ) : null}
             </>
           ) : null}
-          <a
+          <Link
             id="open-in-browser"
-            href={openHref}
+            to={openPath as never}
             className="ybtn"
             target="_blank"
             data-content={t("code.open.desc")}
+            activeProps={{ className: "ybtn" }}
           >
             <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
-          </a>
+          </Link>
           <Link
             to={
               projectPath(
@@ -383,10 +374,15 @@ function FileView({
               <br />
               <span className="filesize">{stringField(file.size, "")}</span>
               <br />
-              <a href={rawHref} className="filehref ybtn">
+              <Link
+                to={rawPath as never}
+                reloadDocument
+                className="filehref ybtn"
+                activeProps={{ className: "filehref ybtn" }}
+              >
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
                 {t("button.download")}
-              </a>
+              </Link>
             </p>
           </div>
         )
@@ -394,9 +390,14 @@ function FileView({
         <p>
           {t("code.tooBigFileForCodeBrowser", { args: [MAX_FILE_SIZE_CAN_BE_VIEWED] })}
           <br />
-          <a href={rawHref} target="_blank" className="filehref ybtn">
+          <Link
+            to={rawPath as never}
+            target="_blank"
+            className="filehref ybtn"
+            activeProps={{ className: "filehref ybtn" }}
+          >
             {t("code.viewRaw")}
-          </a>
+          </Link>
         </p>
       ) : isMarkdownPath(filePath) ? (
         <div id="codeVal" className="markdown-wrap codebrowser-markdown">

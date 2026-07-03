@@ -6883,23 +6883,34 @@ div.markdown-preview {
   border-bottom: 1px solid #e5e5e5;
 }
 
-.search-category-wrap a {
+.search-category-wrap a,
+.search-category-wrap button {
   display: flex;
+  width: 100%;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
   padding: 9px 8px;
   color: #333;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.search-category-wrap li.active a {
+.search-category-wrap li.active a,
+.search-category-wrap li.active button {
   color: #f36c22;
   font-weight: 600;
   background: #f8f8f8;
 }
 
-.search-category-wrap li.empty a {
+.search-category-wrap li.empty a,
+.search-category-wrap li.empty button {
   color: #999;
 }
 

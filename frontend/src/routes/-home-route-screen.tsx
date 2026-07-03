@@ -13,6 +13,39 @@ const LEGACY_USER_LINK_SEARCH = { daysAgo: undefined, selected: undefined } as u
   daysAgo: number;
   selected: "issues" | "projects" | "pullRequests";
 };
+const LEGACY_PROJECTS_LINK_SEARCH = { filter: undefined } as unknown as { filter: string };
+const LEGACY_PROJECT_FORM_LINK_SEARCH = { owner: undefined } as unknown as { owner?: string };
+const LEGACY_USER_ISSUES_LINK_SEARCH = {
+  filter: undefined,
+  orderBy: undefined,
+  orderDir: undefined,
+  pageNum: undefined,
+  query: undefined,
+  state: undefined,
+} as unknown as {
+  filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
+  orderBy: string;
+  orderDir: string;
+  pageNum: number;
+  query: string;
+  state: "closed" | "open";
+};
+const LEGACY_SITE_USER_LIST_LINK_SEARCH = {
+  pageNum: undefined,
+  query: undefined,
+  state: undefined,
+} as unknown as {
+  pageNum: number;
+  query: string;
+  state: "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN";
+};
+const LEGACY_LOGIN_FORM_LINK_SEARCH = {
+  password: undefined,
+  redirectUrl: undefined,
+} as unknown as {
+  password: string;
+  redirectUrl: string;
+};
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -149,34 +182,29 @@ function HomeScreen({
                 <tbody>
                   <tr>
                     <td>
-                      <a
-                        href={prefixBasePath(runtimeConfig.basePath, "/projects/new")}
-                        className="ybtn ybtn-success"
-                      >
+                      <Link to={"/projects/new" as never} className="ybtn ybtn-success">
                         {t("button.newProject")}
-                      </a>
+                      </Link>
                     </td>
                     <td>{t("app.welcome.project.desc")}</td>
                   </tr>
                   <tr>
                     <td>
-                      <a
-                        href={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}
-                        className="ybtn ybtn-success"
-                      >
+                      <Link to="/organizations/new" className="ybtn ybtn-success">
                         {t("title.newOrganization")}
-                      </a>
+                      </Link>
                     </td>
                     <td>{t("app.welcome.group.desc")}</td>
                   </tr>
                   <tr>
                     <td>
-                      <a
-                        href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+                      <Link
+                        to="/projects"
+                        search={LEGACY_PROJECTS_LINK_SEARCH}
                         className="ybtn ybtn-success"
                       >
                         {t("title.projectList")}
-                      </a>
+                      </Link>
                     </td>
                     <td>{t("app.welcome.searchProject.desc")}</td>
                   </tr>
@@ -203,7 +231,11 @@ function HomeScreen({
                       </Link>
                     </li>
                     <li>
-                      <Link activeProps={{ className: undefined }} to="/user/issues">
+                      <Link
+                        activeProps={{ className: undefined }}
+                        to="/user/issues"
+                        search={LEGACY_USER_ISSUES_LINK_SEARCH}
+                      >
                         {t("issue.myIssue")}
                       </Link>
                     </li>
@@ -327,7 +359,6 @@ function NotificationStreamItem({
   notification: NotificationItem;
   runtimeConfig: RuntimeConfig;
 }) {
-  const userHref = prefixBasePath(runtimeConfig.basePath, `/${notification.actor.loginId}`);
   const messageWrapRef = React.useRef<HTMLDivElement>(null);
   const messageRef = React.useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = React.useState(false);
@@ -399,9 +430,13 @@ function NotificationStreamItem({
         <div className="stream-info">
           <div className="title">
             {notification.targetHref ? (
-              <a href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}>
+              <Link
+                href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}
+                to={notification.targetHref as never}
+                activeProps={{ className: undefined }}
+              >
                 {notification.targetTitle}
-              </a>
+              </Link>
             ) : (
               notification.targetTitle
             )}
@@ -422,12 +457,34 @@ function NotificationStreamItem({
             </div>
           ) : null}
           <div className="meta">
-            <a className="avatar-wrap smaller" href={userHref}>
+            <Link
+              to="/$user"
+              params={{ user: notification.actor.loginId }}
+              search={LEGACY_USER_LINK_SEARCH}
+              className="avatar-wrap smaller"
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: "avatar-wrap smaller",
+                "data-status": undefined,
+              }}
+            >
               <img src={notification.actor.avatarUrl} alt="" />
-            </a>
-            <a href={userHref} className="author">
+            </Link>
+            <Link
+              to="/$user"
+              params={{ user: notification.actor.loginId }}
+              search={LEGACY_USER_LINK_SEARCH}
+              className="author"
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: "author",
+                "data-status": undefined,
+              }}
+            >
               {notification.actor.displayName}
-            </a>
+            </Link>
             @{notification.actor.loginId}
             <span className="ago pull-right" title={notification.createdAt}>
               {notification.createdLabel}
@@ -501,19 +558,28 @@ export function SiteLayoutShell({
           </div>
           <ul className="gnb-nav">
             <li>
-              <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="logo logo-letter">
+              <Link
+                to="/"
+                className="logo logo-letter"
+                activeProps={{
+                  "aria-current": undefined,
+                  className: "logo logo-letter",
+                  "data-status": undefined,
+                }}
+              >
                 Y
-              </a>
+              </Link>
             </li>
             {activeMenu === "projects" ? (
               <>
                 <li className="active">
-                  <a
-                    href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+                  <Link
+                    to="/projects"
+                    search={LEGACY_PROJECTS_LINK_SEARCH}
                     className="show-progress-bar"
                   >
                     {t("title.list")}
-                  </a>
+                  </Link>
                 </li>
                 <li className="divider"></li>
               </>
@@ -585,29 +651,44 @@ export function SiteLayoutShell({
         <div className="page-footer">
           <span className="provider">
             Copyright{" "}
-            <a
+            <Link
+              to={"https://github.com/yona-projects/yona/blob/master/AUTHORS" as never}
               href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+              reloadDocument
               target="_blank"
               className="yona-author"
             >
               Yona authors
-            </a>
+            </Link>
             {" & © "}
-            <a href="https://navercorp.com" target="_blank">
+            <Link
+              to={"https://navercorp.com" as never}
+              href="https://navercorp.com"
+              reloadDocument
+              target="_blank"
+            >
               NAVER Corp.
-            </a>
+            </Link>
             {" & "}
-            <a href="https://naverlabs.com/" target="_blank" className="naver-labs">
+            <Link
+              to={"https://naverlabs.com/" as never}
+              href="https://naverlabs.com/"
+              reloadDocument
+              target="_blank"
+              className="naver-labs"
+            >
               NAVER LABS
-            </a>{" "}
+            </Link>{" "}
             Supported by{" "}
-            <a
+            <Link
+              to={"https://www.ncloud.com/?referer=yona" as never}
               href="https://www.ncloud.com/?referer=yona"
+              reloadDocument
               target="_blank"
               className="naver-cloud-platform"
             >
               NAVER CLOUD PLATFORM
-            </a>
+            </Link>
           </span>
         </div>
       </footer>
@@ -674,9 +755,13 @@ function AuthenticatedSiteUserMenu({
                 {t("userinfo.accountSetting")}
               </Link>
             </span>
-            <a href={prefixBasePath(basePath, "/users/logout")}>
+            <Link
+              to={"/users/logout" as never}
+              href={prefixBasePath(basePath, "/users/logout")}
+              reloadDocument
+            >
               <span className="user-menu logout label">{t("title.logout")}</span>
-            </a>
+            </Link>
           </div>
           <ul className="nav nav-tabs nm">
             <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
@@ -722,9 +807,14 @@ function AuthenticatedSiteUserMenu({
       <ul className="gnb-usermenu">
         {navbarCustomLinkName ? (
           <li className="gnb-usermenu-item">
-            <a href={navbarCustomLinkUrl} className="user-item-btn loggged-in">
+            <Link
+              to={navbarCustomLinkUrl as never}
+              href={navbarCustomLinkUrl}
+              reloadDocument
+              className="user-item-btn loggged-in"
+            >
               {navbarCustomLinkName}
-            </a>
+            </Link>
           </li>
         ) : null}
         <li
@@ -733,7 +823,11 @@ function AuthenticatedSiteUserMenu({
           data-placement="bottom"
           title={`${t("title.shortcut")} (A)`}
         >
-          <Link to="/user/issues" className="user-item-btn loggged-in">
+          <Link
+            to="/user/issues"
+            search={LEGACY_USER_ISSUES_LINK_SEARCH}
+            className="user-item-btn loggged-in"
+          >
             {t("issue.myIssue")}
           </Link>
         </li>
@@ -741,7 +835,11 @@ function AuthenticatedSiteUserMenu({
         {isSiteAdmin ? (
           <>
             <li className="gnb-usermenu-item">
-              <Link to="/sites/userList" className="usermenu-icon-button show-progress-bar">
+              <Link
+                to="/sites/userList"
+                search={LEGACY_SITE_USER_LIST_LINK_SEARCH}
+                className="usermenu-icon-button show-progress-bar"
+              >
                 <i className="yobicon-wrench" />
               </Link>
             </li>
@@ -775,18 +873,18 @@ function AuthenticatedSiteUserMenu({
           </button>
           <ul className="dropdown-menu flat right">
             <li>
-              <a href={prefixBasePath(basePath, "/user/issues/new")}>{t("issue.menu.new")}</a>
+              <Link to={"/user/issues/new" as never}>{t("issue.menu.new")}</Link>
             </li>
             <li>
-              <a href={prefixBasePath(basePath, "/user/issues/new/mine")}>
-                {t("issue.menu.new.mine")}
-              </a>
+              <Link to={"/user/issues/new/mine" as never}>{t("issue.menu.new.mine")}</Link>
             </li>
             <li>
               <hr className="no-margin" />
             </li>
             <li>
-              <Link to="/projectform">{t("button.newProject")}</Link>
+              <Link to="/projectform" search={LEGACY_PROJECT_FORM_LINK_SEARCH}>
+                {t("button.newProject")}
+              </Link>
             </li>
             {!isGuest ? (
               <li>
@@ -812,16 +910,32 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
         <div className="span5 right-menu span-hard-wrap">
           <div className="row-fluid user-menu-wrap">
             <span className="user-menu">
-              <a href={prefixBasePath(basePath, "/user/anonymous")}>{t("userinfo.profile")}</a>
+              <Link
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+                to={"/user/anonymous" as never}
+              >
+                {t("userinfo.profile")}
+              </Link>
             </span>
             <span className="user-menu">
-              <a href={prefixBasePath(basePath, "/user/editform")}>
+              <Link
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+                to="/user/editform"
+              >
                 {t("userinfo.accountSetting")}
-              </a>
+              </Link>
             </span>
-            <a href={prefixBasePath(basePath, "/logout")}>
+            <Link to={"/logout" as never} href={prefixBasePath(basePath, "/logout")} reloadDocument>
               <span className="user-menu logout label">{t("title.logout")}</span>
-            </a>
+            </Link>
           </div>
           <ul className="nav nav-tabs nm">
             <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
@@ -857,19 +971,19 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
       </div>
       <ul className="gnb-usermenu">
         <li className="gnb-usermenu-item" id="required-logged-in">
-          <a
-            href={prefixBasePath(basePath, "/users/loginform")}
+          <Link
+            to="/users/loginform"
+            search={LEGACY_LOGIN_FORM_LINK_SEARCH}
             className="user-item-btn"
-            data-login="required"
           >
             {t("title.login")}
-          </a>
+          </Link>
         </li>
         <li className="divider"></li>
         <li>
-          <a href={prefixBasePath(basePath, "/users/signupform")} className="ybtn ybtn-success">
+          <Link to="/users/signupform" className="ybtn ybtn-success">
             {t("title.signup")}
-          </a>
+          </Link>
         </li>
       </ul>
     </>
@@ -1265,7 +1379,19 @@ function SidebarProjectItem({ basePath, project }: { basePath: string; project: 
               {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
             </div>
             <div className="project-owner flex-item">
-              <a href={prefixBasePath(basePath, `/${ownerName}`)}>{ownerName}</a>
+              <Link
+                to="/$user"
+                params={{ user: ownerName }}
+                search={LEGACY_USER_LINK_SEARCH}
+                activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+              >
+                {ownerName}
+              </Link>
             </div>
           </div>
         </div>

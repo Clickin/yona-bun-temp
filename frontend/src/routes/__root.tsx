@@ -668,9 +668,16 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   {t("title.rememberMe")}
                 </label>
               </div>
-              <a href={prefixBasePath(basePath, "/lostPassword")}>{t("title.resetPassword")}</a>
+              <Link to={"/lostPassword" as never} href={prefixBasePath(basePath, "/lostPassword")}>
+                {t("title.resetPassword")}
+              </Link>
               <span className="gray-txt ml10 mr10">|</span>
-              <a href={prefixBasePath(basePath, "/users/signupform")}>{t("title.signup")}</a>
+              <Link
+                to={"/users/signupform" as never}
+                href={prefixBasePath(basePath, "/users/signupform")}
+              >
+                {t("title.signup")}
+              </Link>
             </div>
           ) : null}
         </form>
@@ -686,9 +693,11 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
   }
 
   return (
-    <a
+    <Link
+      to={`/authenticate/${normalized}` as never}
       href={prefixBasePath(basePath, `/authenticate/${normalized}`)}
       className="ybtn oauth-login-btn"
+      reloadDocument
     >
       {normalized === "github" ? (
         <span className="auth-provider-logo">
@@ -711,7 +720,7 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
           Sign in with Google
         </span>
       )}
-    </a>
+    </Link>
   );
 }
 
@@ -761,35 +770,50 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           </Link>
           <ul className="gnb-nav">
             <li>
-              <a href={prefixBasePath(runtimeConfig.basePath, "/projects")}>
+              <Link
+                to={"/projects" as never}
+                href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+              >
                 {t("title.projectList")}
-              </a>
+              </Link>
             </li>
             <li>
               <Link to="/_help">{t("title.help")}</Link>
             </li>
             <li>
-              <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
+              <Link
+                to={"https://github.com/nforge/yobi/issues?state=open" as never}
+                href="https://github.com/nforge/yobi/issues?state=open"
+                target="_blank"
+              >
                 {t("title.yobi.feedback")}
-              </a>
+              </Link>
             </li>
           </ul>
           <div id="mySidenav" className="sidenav">
             <div className="span5 right-menu span-hard-wrap">
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
-                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}>
+                  <Link
+                    to={"/user/anonymous" as never}
+                    href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}
+                    reloadDocument
+                  >
                     {t("userinfo.profile")}
-                  </a>
+                  </Link>
                 </span>
                 <span className="user-menu">
-                  <a href={prefixBasePath(runtimeConfig.basePath, "/user/editform")}>
+                  <Link to="/user/editform" search={{}} reloadDocument>
                     {t("userinfo.accountSetting")}
-                  </a>
+                  </Link>
                 </span>
-                <a href={prefixBasePath(runtimeConfig.basePath, "/logout")}>
+                <Link
+                  to={"/logout" as never}
+                  href={prefixBasePath(runtimeConfig.basePath, "/logout")}
+                  reloadDocument
+                >
                   <span className="user-menu logout label">{t("title.logout")}</span>
-                </a>
+                </Link>
               </div>
               <ul className="nav nav-tabs nm">
                 <li
@@ -835,22 +859,23 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           </div>
           <ul className="gnb-usermenu">
             <li className="gnb-usermenu-item" id="required-logged-in">
-              <a
+              <Link
+                to={"/users/loginform" as never}
                 href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
                 className="user-item-btn"
-                data-login="required"
               >
                 {t("title.login")}
-              </a>
+              </Link>
             </li>
             <li className="divider"></li>
             <li>
-              <a
+              <Link
+                to={"/users/signupform" as never}
                 href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
                 className="ybtn ybtn-success"
               >
                 {t("title.signup")}
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -870,14 +895,23 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         <div className="page-footer">
           <span className="provider">
             Copyright ©{" "}
-            <a href="http://navercorp.com/" target="_blank">
+            <Link
+              to={"http://navercorp.com/" as never}
+              href="http://navercorp.com/"
+              target="_blank"
+            >
               NAVER Corp.
-            </a>{" "}
+            </Link>{" "}
             Supported by{" "}
-            <a href="https://developers.naver.com/d2/" target="_blank" className="d2-program">
+            <Link
+              to={"https://developers.naver.com/d2/" as never}
+              href="https://developers.naver.com/d2/"
+              target="_blank"
+              className="d2-program"
+            >
               <span className="d2">D2</span>
               <span className="program"> Program</span>
-            </a>
+            </Link>
           </span>
         </div>
       </footer>

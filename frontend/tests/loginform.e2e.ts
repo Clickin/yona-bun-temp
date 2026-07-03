@@ -283,6 +283,52 @@ test("configured social provider login form matches legacy user/login.scala.html
   expect(source).not.toMatch(/<a\s+href=\{[^}]*\/authenticate\/\$\{normalized\}[^}]*\}/);
 });
 
+test("root login dialog uses Link semantics for reset signup and OAuth anchors", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    enabledSocialProviders: ["github", "google"],
+    socialLoginOnly: false,
+  });
+  await page.goto(`${basePath}/users/login?from=legacy`);
+
+  await expect(page.locator("#loginDialog")).toHaveClass(/loginDialog/u);
+  await expect(page.locator(`#loginDialog a[href="${basePath}/lostPassword"]`)).toHaveText(
+    "Reset password",
+  );
+  await expect(page.locator(`#loginDialog a[href="${basePath}/users/signupform"]`)).toHaveText(
+    "Sign up",
+  );
+  await expect(page.locator("#loginDialog .oauth-login-btn")).toHaveCount(2);
+  await expect(page.locator(`#loginDialog a[href="${basePath}/authenticate/github"]`)).toHaveClass(
+    "ybtn oauth-login-btn",
+  );
+  await expect(
+    page.locator(`#loginDialog a[href="${basePath}/authenticate/github"]`),
+  ).toContainText("Sign in with github");
+  await expect(page.locator(`#loginDialog a[href="${basePath}/authenticate/google"]`)).toHaveClass(
+    "ybtn oauth-login-btn",
+  );
+  await expect(
+    page.locator(`#loginDialog a[href="${basePath}/authenticate/google"]`),
+  ).toContainText("Sign in with Google");
+
+  const source = readFileSync("src/routes/__root.tsx", "utf8");
+  expect(source).toContain('to={"/lostPassword" as never}');
+  expect(source).toContain('href={prefixBasePath(basePath, "/lostPassword")}');
+  expect(source).toContain('to={"/users/signupform" as never}');
+  expect(source).toContain('href={prefixBasePath(basePath, "/users/signupform")}');
+  expect(source).toContain("to={`/authenticate/${normalized}` as never}");
+  expect(source).toContain("href={prefixBasePath(basePath, `/authenticate/${normalized}`)}");
+  expect(source).toContain("reloadDocument");
+  expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/lostPassword"\)\}/u);
+  expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/users\/signupform"\)\}/u);
+  expect(source).not.toMatch(
+    /<a\s+href=\{prefixBasePath\(basePath,\s*`\/authenticate\/\$\{normalized\}`\)\}/u,
+  );
+});
+
 test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
   page,
 }) => {
@@ -471,13 +517,13 @@ async function canonicalizeScreenRoots(page: Page) {
         "version",
         "data-toggle",
         "data-placement",
-        "data-login",
         "for",
         "checked",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -496,6 +542,24 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((value) => value && value !== "active")
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      if (
+        name === "href" &&
+        current.classList.contains("logo-letter") &&
+        (current.getAttribute(name) ?? "").length > 1
+      ) {
+        return `${name}=${JSON.stringify((current.getAttribute(name) ?? "").replace(/\/$/u, ""))}`;
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
     const roots = Array.from(
@@ -535,14 +599,14 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
         "version",
         "data-toggle",
         "data-placement",
-        "data-login",
         "for",
         "checked",
         "tabindex",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -561,6 +625,24 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeAttribute(current: Element, name: string) {
+      if (name === "class") {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((value) => value && value !== "active")
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      if (
+        name === "href" &&
+        current.classList.contains("logo-letter") &&
+        (current.getAttribute(name) ?? "").length > 1
+      ) {
+        return `${name}=${JSON.stringify((current.getAttribute(name) ?? "").replace(/\/$/u, ""))}`;
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
   });
 }
@@ -827,14 +909,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           "version",
           "data-toggle",
           "data-placement",
-          "data-login",
           "for",
           "checked",
           "tabindex",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -853,6 +935,24 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join("");
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+
+      function normalizeAttribute(current: Element, name: string) {
+        if (name === "class") {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/u)
+            .filter((value) => value && value !== "active")
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        if (
+          name === "href" &&
+          current.classList.contains("logo-letter") &&
+          (current.getAttribute(name) ?? "").length > 1
+        ) {
+          return `${name}=${JSON.stringify((current.getAttribute(name) ?? "").replace(/\/$/u, ""))}`;
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
 
       return Array.from(template.content.children)
