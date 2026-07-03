@@ -76,6 +76,27 @@ test("organization boards menu issue link preserves legacy href with SPA transit
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__organizationBoardMenuNativeListeners", {
+      configurable: true,
+      value: [],
+      writable: true,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithOrganizationMenuAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof HTMLAnchorElement && this.matches(".project-menu-gruop a")) {
+        (
+          window as Window &
+            typeof globalThis & { __organizationBoardMenuNativeListeners: string[] }
+        ).__organizationBoardMenuNativeListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
   await mockOrganizationBoards(page);
 
   await page.goto(
@@ -83,13 +104,24 @@ test("organization boards menu issue link preserves legacy href with SPA transit
   );
   const issueLink = page.locator(".project-menu-gruop a").filter({ hasText: "Issue" });
   await expect(issueLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/issues`);
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as Window &
+            typeof globalThis & { __organizationBoardMenuNativeListeners?: string[] }
+        ).__organizationBoardMenuNativeListeners ?? [],
+    ),
+  ).toEqual([]);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
   await issueLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/issues`);
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath}/organizations/weblabs/issues`);
   await expect
     .poll(() =>
       page.evaluate(
