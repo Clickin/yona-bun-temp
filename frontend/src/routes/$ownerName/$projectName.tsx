@@ -1134,22 +1134,18 @@ export function ProjectHeader({
                         </div>
                         <div className="pop-content">{t("project.member.enrollment.help")}</div>
                         <div className="pop-content btn-wrap">
-                          <a
+                          <button
+                            type="button"
                             className="ybtn enrollBtn"
-                            href={prefixBasePath(
-                              basePath,
-                              `/${ownerName}/${projectName}/cancel/enroll`,
-                            )}
                             id="enrollBtn"
                             onClick={(event) => {
-                              event.preventDefault();
                               event.stopPropagation();
                               setProjectUtilDropdown(null);
                               enrollmentMutation.mutate(false);
                             }}
                           >
                             <i className="yobicon-removefriend"></i> {t("button.cancel.enrollment")}
-                          </a>
+                          </button>
                         </div>
                       </div>
                     </>
@@ -1175,19 +1171,18 @@ export function ProjectHeader({
                           {t("project.member.enrollment.will.help")}
                         </div>
                         <div className="pop-content btn-wrap">
-                          <a
+                          <button
+                            type="button"
                             className="ybtn ybtn-info enrollBtn"
-                            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/enroll`)}
                             id="enrollBtn"
                             onClick={(event) => {
-                              event.preventDefault();
                               event.stopPropagation();
                               setProjectUtilDropdown(null);
                               enrollmentMutation.mutate(true);
                             }}
                           >
                             <i className="yobicon-addfriend"></i> {t("button.new.enrollment")}
-                          </a>
+                          </button>
                         </div>
                       </div>
                     </>
@@ -1247,14 +1242,10 @@ export function ProjectHeader({
                         >
                           <i className="yobicon-alert2"></i> {t("userinfo.changeNotifications")}
                         </a>
-                        <a
+                        <button
+                          type="button"
                           className="ybtn ybtn-watching watchBtn"
-                          href={prefixBasePath(
-                            basePath,
-                            `/${ownerName}/${projectName}/${watchState.isWatching ? "unwatch" : "watch"}`,
-                          )}
                           onClick={(event) => {
-                            event.preventDefault();
                             event.stopPropagation();
                             setProjectUtilDropdown(null);
                             watchMutation.mutate(!watchState.isWatching);
@@ -1264,7 +1255,7 @@ export function ProjectHeader({
                             className={watchState.isWatching ? "yobicon-eye-off" : "yobicon-eye"}
                           ></i>{" "}
                           {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
-                        </a>
+                        </button>
                       </div>
                     </div>
                     <button
