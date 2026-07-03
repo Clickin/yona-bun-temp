@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { type FormEvent, type MouseEvent } from "react";
+import { type CSSProperties, type FormEvent } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectReviewsQueryOptions,
@@ -24,6 +24,47 @@ type ProjectReviewsSearch = {
   participantId: number;
   state: string;
 };
+
+const legacySideEffectButtonStyle: CSSProperties = {
+  background: "none",
+  border: 0,
+  color: "inherit",
+  cursor: "pointer",
+  display: "block",
+  font: "inherit",
+  margin: 0,
+  padding: 0,
+  textAlign: "inherit",
+  width: "100%",
+};
+
+const legacyInlineSideEffectButtonStyle: CSSProperties = {
+  ...legacySideEffectButtonStyle,
+  display: "inline",
+  width: "auto",
+};
+
+function legacyTabButtonStyle(active: boolean): CSSProperties {
+  return {
+    background: active ? "#fff" : "transparent",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderColor: active ? "#ddd #ddd transparent" : "transparent",
+    borderRadius: "4px 4px 0 0",
+    color: active ? "#555" : "#3592b5",
+    cursor: active ? "default" : "pointer",
+    display: "block",
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontWeight: "bold",
+    lineHeight: "20px",
+    margin: 0,
+    marginRight: 2,
+    padding: "8px 30px",
+    textAlign: "inherit",
+    width: "100%",
+  };
+}
 
 export const Route = createFileRoute("/$ownerName/$projectName/reviews")({
   component: ProjectReviewsRoute,
@@ -136,37 +177,41 @@ function ProjectReviewsBody({
             <div className="inner advanced">
               <ul className="lst-stacked unstyled">
                 <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy filter uses href="#" hooks. */}
-                  <a href="#" data-toggle="filter" onClick={(event) => filterClick(event, {})}>
+                  <button
+                    type="button"
+                    data-toggle="filter"
+                    onClick={() => filterClick({})}
+                    style={legacySideEffectButtonStyle}
+                  >
                     {t("review.allReview")}
                     <span className="num-badge pull-right">{reviews.allCount}</span>
-                  </a>
+                  </button>
                 </li>
                 <li className={search.participantId === currentUserId ? "active" : ""}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy filter uses href="#" hooks. */}
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     data-toggle="filter"
                     data-type="participantId"
                     data-value={currentUserId}
-                    onClick={(event) => filterClick(event, { participantId: currentUserId })}
+                    onClick={() => filterClick({ participantId: currentUserId })}
+                    style={legacySideEffectButtonStyle}
                   >
                     {t("review.involvingYou")}
                     <span className="num-badge pull-right">{reviews.participantCount}</span>
-                  </a>
+                  </button>
                 </li>
                 <li className={search.authorId === currentUserId ? "active" : ""}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy filter uses href="#" hooks. */}
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     data-toggle="filter"
                     data-type="authorId"
                     data-value={currentUserId}
-                    onClick={(event) => filterClick(event, { authorId: currentUserId })}
+                    onClick={() => filterClick({ authorId: currentUserId })}
+                    style={legacySideEffectButtonStyle}
                   >
                     {t("review.createdByYou")}
                     <span className="num-badge pull-right">{reviews.authorCount}</span>
-                  </a>
+                  </button>
                 </li>
               </ul>
               <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
@@ -192,9 +237,8 @@ function ProjectReviewsBody({
           </div>
           <div className="span10 span-hard-wrap">
             <div className="pull-right filters">
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort uses href="#" hooks. */}
-              <a
-                href="#"
+              <button
+                type="button"
                 data-field="createdDate"
                 data-value={
                   search.orderBy === "createdDate" && search.orderDir === "asc" ? "desc" : "asc"
@@ -202,13 +246,13 @@ function ProjectReviewsBody({
                 className="filter"
                 data-toggle="order"
                 onClick={(event) => {
-                  event.preventDefault();
                   pushReviews({
                     orderBy: "createdDate",
                     orderDir: event.currentTarget.dataset.value || "desc",
                     pageNum: 1,
                   });
                 }}
+                style={legacyInlineSideEffectButtonStyle}
               >
                 <i
                   className={`ico btn-gray-arrow ${
@@ -216,40 +260,38 @@ function ProjectReviewsBody({
                   }`}
                 ></i>
                 {t("common.order.date")}
-              </a>
+              </button>
             </div>
             <ul className="nav nav-tabs nm">
               <li className={activeState === "open" ? "active" : ""}>
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy state filter uses href="#" hooks. */}
-                <a
-                  href="#"
+                <button
+                  type="button"
                   data-type="state"
                   data-value="open"
                   data-toggle="filter"
-                  onClick={(event) => {
-                    event.preventDefault();
+                  onClick={() => {
                     pushReviews({ pageNum: 1, state: "open" });
                   }}
+                  style={legacyTabButtonStyle(activeState === "open")}
                 >
                   {t("issue.state.open")}
                   <span className="num-badge">{reviews.openCount}</span>
-                </a>
+                </button>
               </li>
               <li className={activeState === "closed" ? "active" : ""}>
-                {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy state filter uses href="#" hooks. */}
-                <a
-                  href="#"
+                <button
+                  type="button"
                   data-type="state"
                   data-value="closed"
                   data-toggle="filter"
-                  onClick={(event) => {
-                    event.preventDefault();
+                  onClick={() => {
                     pushReviews({ pageNum: 1, state: "closed" });
                   }}
+                  style={legacyTabButtonStyle(activeState === "closed")}
                 >
                   {t("issue.state.closed")}
                   <span className="num-badge">{reviews.closedCount}</span>
-                </a>
+                </button>
               </li>
             </ul>
             <div className="review-list-wrap">
@@ -275,8 +317,7 @@ function ProjectReviewsBody({
     </div>
   );
 
-  function filterClick(event: MouseEvent<HTMLAnchorElement>, next: Partial<ProjectReviewsSearch>) {
-    event.preventDefault();
+  function filterClick(next: Partial<ProjectReviewsSearch>) {
     pushReviews({
       authorId: next.authorId ?? 0,
       pageNum: 1,
