@@ -242,6 +242,70 @@ test("project board list row internal links are router-owned", async ({ page }) 
   expect(rowSource).toContain('hash="comments"');
 });
 
+test("project board list top navigation and filters are router-owned", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+
+  const newPost = page.locator(".search-wrap .pull-right .ybtn-success");
+  await expect(newPost).toHaveAttribute("href", `${basePath}/admin/sample/postform`);
+  await expect(newPost).toHaveText("New post");
+
+  const labelEdit = page.locator(".board-labels .label-edit");
+  await expect(labelEdit).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
+  await expect(labelEdit).toHaveAttribute("target", "_blank");
+  await expect(labelEdit).toHaveText("[Edit]");
+
+  await expect(page.locator(".filter-wrap.board .filters .filter")).toHaveCount(3);
+  await expect(page.locator(".filter-wrap.board .filters .filter").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=updatedDate&orderDir=asc`,
+  );
+  await expect(page.locator(".filter-wrap.board .filters .filter").nth(0)).toHaveClass(
+    "filter active",
+  );
+  await expect(page.locator(".filter-wrap.board .filters .filter").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=createdDate&orderDir=desc`,
+  );
+  await expect(page.locator(".filter-wrap.board .filters .filter").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=numOfComments&orderDir=desc`,
+  );
+
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-filter";
+  });
+  await page.locator(".filter-wrap.board .filters .filter").nth(1).click();
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=createdDate&orderDir=desc`,
+  );
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-filter");
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const bodySource = routeSource.slice(
+    routeSource.indexOf("function ProjectPostsBody"),
+    routeSource.indexOf("function BoardLabels"),
+  );
+  const labelsSource = routeSource.slice(
+    routeSource.indexOf("function BoardLabels"),
+    routeSource.indexOf("function groupLabels"),
+  );
+  const filtersSource = routeSource.slice(
+    routeSource.indexOf("function BoardFilters"),
+    routeSource.indexOf("function ProjectBoardPost"),
+  );
+  expect(bodySource).not.toContain("<a\n              href=");
+  expect(labelsSource).not.toContain("<a\n            href=");
+  expect(filtersSource).not.toContain("<a\n              href=");
+  expect(bodySource).toContain("<Link");
+  expect(labelsSource).toContain("<Link");
+  expect(filtersSource).toContain("<Link");
+});
+
 test("project board list empty state matches legacy board/list.scala.html DOM", async ({
   page,
 }) => {

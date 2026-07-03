@@ -141,7 +141,6 @@ function ProjectPostsBody({
             </div>
             {labels.length > 0 ? (
               <BoardLabels
-                basePath={runtimeConfig.basePath}
                 labels={labels}
                 ownerName={ownerName}
                 projectName={projectName}
@@ -151,12 +150,13 @@ function ProjectPostsBody({
             <TwoColumnModeCheckbox />
           </form>
           <div className="pull-right">
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/postform`)}
+            <Link
+              to={`/${ownerName}/${projectName}/postform`}
+              activeProps={{ className: undefined }}
               className="ybtn ybtn-success"
             >
               {t("post.write")}
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -168,12 +168,7 @@ function ProjectPostsBody({
         ) : (
           <>
             {posts.totalCount > 1 ? (
-              <BoardFilters
-                basePath={runtimeConfig.basePath}
-                ownerName={ownerName}
-                projectName={projectName}
-                search={search}
-              />
+              <BoardFilters ownerName={ownerName} projectName={projectName} search={search} />
             ) : null}
             {posts.notices.length > 0 ? (
               <ul className="post-list-wrap notice-wrap">
@@ -213,13 +208,11 @@ function ProjectPostsBody({
 }
 
 function BoardLabels({
-  basePath,
   labels,
   ownerName,
   projectName,
   search,
 }: {
-  basePath: string;
   labels: BoardLabel[];
   ownerName: string;
   projectName: string;
@@ -233,13 +226,14 @@ function BoardLabels({
       <dl className="">
         <dt>
           {t("label")}{" "}
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+          <Link
+            to={`/${ownerName}/${projectName}/issue/labelsform`}
+            activeProps={{ className: undefined }}
             target="_blank"
             className="label-edit"
           >
             [{t("button.edit")}]
-          </a>
+          </Link>
         </dt>
         <dd>
           <select
@@ -307,12 +301,10 @@ function groupLabels(labels: BoardLabel[]) {
 }
 
 function BoardFilters({
-  basePath,
   ownerName,
   projectName,
   search,
 }: {
-  basePath: string;
   ownerName: string;
   projectName: string;
   search: ProjectPostsSearch;
@@ -331,12 +323,13 @@ function BoardFilters({
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
           return (
-            <a
-              href={boardListHref(basePath, ownerName, projectName, {
+            <Link
+              to={boardListHref("", ownerName, projectName, {
                 ...search,
                 orderBy: filter.field,
                 orderDir: active ? nextDir : "desc",
               })}
+              activeProps={{ className: undefined }}
               className={active ? "filter active" : "filter"}
               key={filter.field}
             >
@@ -346,7 +339,7 @@ function BoardFilters({
                 }`}
               ></i>
               {filter.label}
-            </a>
+            </Link>
           );
         })}
       </div>

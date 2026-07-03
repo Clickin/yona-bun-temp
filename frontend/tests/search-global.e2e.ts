@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const EXPECTED_GLOBAL_SEARCH = `
 <div class="unsupported hidden">
@@ -351,6 +352,58 @@ test("global project search renders legacy partial_projects.scala.html populated
       EXPECTED_GLOBAL_PROJECT_SEARCH.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("global search result navigation keeps legacy hrefs through TanStack Router Link", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=sample&searchType=project`);
+  await expect(page.locator(".search-list-item.project .avatar-wrap")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".search-list-item.project .title.project-link")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".search-meta-info.nm.np .project-link")).toHaveAttribute(
+    "href",
+    `${basePath}/origin/base`,
+  );
+
+  await page.goto(`${basePath}/search?keyword=reply&searchType=issue_comment`);
+  await expect(page.locator(".title-wrap a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/42#comment-77`,
+  );
+  await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".search-meta-info a.meta-item[title='alice']")).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+
+  const routeSource = readFileSync(
+    new URL("../src/routes/-search-screen.tsx", import.meta.url),
+    "utf8",
+  );
+  const resultListSource = routeSource.slice(
+    routeSource.indexOf("function SearchResultList"),
+    routeSource.indexOf("function InternalResultLink"),
+  );
+  const internalLinkSource = routeSource.slice(
+    routeSource.indexOf("function InternalResultLink"),
+    routeSource.indexOf("function internalLinkTarget"),
+  );
+  expect(resultListSource).not.toMatch(/<a[\s>]/u);
+  expect(resultListSource).not.toContain("</a>");
+  expect(resultListSource).toContain("<InternalResultLink");
+  expect(internalLinkSource).toContain("<Link");
 });
 
 test("global search category link uses React SPA navigation", async ({ page }) => {
