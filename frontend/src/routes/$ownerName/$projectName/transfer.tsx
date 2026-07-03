@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
@@ -236,7 +236,6 @@ function ProjectHeader({
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectId = stringField(project.id, "");
-  const favoriteToggleRef = useRef<HTMLSpanElement | null>(null);
   const [isFavoritedProject, setIsFavoritedProject] = useState(
     () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
   );
@@ -260,21 +259,6 @@ function ProjectHeader({
       });
     },
   });
-  useEffect(() => {
-    const favoriteToggle = favoriteToggleRef.current;
-    if (!favoriteToggle) {
-      return;
-    }
-    const handleFavoriteToggle = (event: globalThis.MouseEvent) => {
-      event.stopPropagation();
-      favoriteMutation.mutate();
-    };
-    favoriteToggle.addEventListener("mousedown", handleFavoriteToggle);
-    return () => {
-      favoriteToggle.removeEventListener("mousedown", handleFavoriteToggle);
-    };
-  }, [favoriteMutation]);
-
   return (
     <div
       className="project-header-outer"
@@ -297,7 +281,20 @@ function ProjectHeader({
               <span
                 className="user-project-list"
                 data-project-id={projectId}
-                ref={favoriteToggleRef}
+                role="button"
+                tabIndex={0}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                  favoriteMutation.mutate();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+                  event.preventDefault();
+                  event.stopPropagation();
+                  favoriteMutation.mutate();
+                }}
               >
                 <i
                   className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
