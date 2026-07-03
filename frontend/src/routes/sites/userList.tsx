@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type AnchorHTMLAttributes, type ComponentType, type ReactNode } from "react";
+import { useState } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -30,15 +30,6 @@ type UserListSearch = {
 type UserToggleAction = "account-lock" | "guest" | "site-admin";
 
 const USER_STATES: SiteUserState[] = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"];
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    children?: ReactNode;
-    search?: Record<string, number | string | undefined>;
-    to: string;
-  }
->;
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -196,6 +187,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               </div>
               <UserStateTabs
                 currentState={search.state}
+                query={search.query}
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
               <div className="row-fluid listhead">
@@ -357,7 +349,7 @@ function UserListPagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={search(currentPage - 1)}
               to="/sites/userList"
@@ -365,7 +357,7 @@ function UserListPagination({
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -389,7 +381,7 @@ function UserListPagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={search(currentPage + 1)}
               to="/sites/userList"
@@ -397,7 +389,7 @@ function UserListPagination({
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <span className="off">NEXT</span>
@@ -460,9 +452,11 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 
 function UserStateTabs({
   currentState,
+  query,
   siteAdminCount,
 }: {
   currentState: SiteUserState;
+  query: string;
   siteAdminCount: number;
 }) {
   const legacySiteAdminBadgeCount = Math.max(siteAdminCount - 1, 0);
@@ -478,16 +472,16 @@ function UserStateTabs({
     <ul className="nav nav-tabs">
       {items.map((item) => (
         <li className={item.state === currentState ? "active" : ""} key={item.state}>
-          <LegacyInternalLink
+          <Link
             activeProps={{ className: undefined }}
-            search={{ state: item.state }}
+            search={{ query: query || undefined, state: item.state }}
             to="/sites/userList"
           >
             <LegacyMessage messageKey={item.labelKey} />
             {item.state === "SITE_ADMIN" ? (
               <span className="num-badge">{legacySiteAdminBadgeCount}</span>
             ) : null}
-          </LegacyInternalLink>
+          </Link>
         </li>
       ))}
     </ul>

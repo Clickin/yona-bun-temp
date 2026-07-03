@@ -231,6 +231,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(lockedTab).toHaveAttribute("href", `${basePath}/sites/userList?state=LOCKED`);
   await expect(page.locator(".nav-tabs .num-badge")).toHaveText("2");
   const routeSource = readFileSync("src/routes/sites/userList.tsx", "utf8");
+  expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
@@ -322,6 +323,27 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-users-search");
+  await expect(page.getByRole("link", { exact: true, name: "Unlocked user" })).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList?query=door&state=ACTIVE`,
+  );
+  const nextPageWithQueryLink = page.locator("#pagination a", { hasText: "NEXT" });
+  await expect(nextPageWithQueryLink).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList?pageNum=2&query=door&state=LOCKED`,
+  );
+  await expect(nextPageWithQueryLink).toHaveAttribute("pjax-page", "");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-users-pagination-query";
+  });
+  await nextPageWithQueryLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("query")).toBe("door");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("LOCKED");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-pagination-query");
 
   await mockPosts(page);
   const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
