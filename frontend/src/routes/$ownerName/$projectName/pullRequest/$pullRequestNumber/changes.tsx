@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { useState, type AnchorHTMLAttributes, type ComponentType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -33,6 +33,15 @@ const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
   .replace(/<\/div>\s*$/u, "");
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeOptions?: { includeHash?: boolean };
+    activeProps?: { className?: string | undefined };
+    hash?: string;
+    to: string;
+  }
+>;
 
 type CurrentUserSummary = {
   avatarUrl: string;
@@ -397,9 +406,15 @@ function NonRangedThreadComment({
             </a>
           </span>
           <span className="ago">
-            <a href={`#comment-${comment.id}`} title={comment.createdLabel}>
+            <LegacyInternalLink
+              to="."
+              hash={`comment-${comment.id}`}
+              activeOptions={{ includeHash: true }}
+              activeProps={{ className: undefined }}
+              title={comment.createdLabel}
+            >
               {comment.createdLabel}
-            </a>
+            </LegacyInternalLink>
           </span>
           {comment.canDelete ? (
             <span className="edit pull-right">

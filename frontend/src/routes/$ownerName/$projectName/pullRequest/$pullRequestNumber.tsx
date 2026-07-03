@@ -21,7 +21,9 @@ import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const LegacyInternalLink = Link as React.ComponentType<
   React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeOptions?: { includeHash?: boolean };
     activeProps?: { className?: string | undefined };
+    hash?: string;
     search?: Record<string, never>;
     to: string;
   }
@@ -429,9 +431,15 @@ function PullRequestEventUser({
 function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
   return (
     <span className="date">
-      <a href={`#event-${event.id}`} title={event.createdLabel}>
+      <LegacyInternalLink
+        to="."
+        hash={`event-${event.id}`}
+        activeOptions={{ includeHash: true }}
+        activeProps={{ className: undefined }}
+        title={event.createdLabel}
+      >
         {event.createdLabel}
-      </a>
+      </LegacyInternalLink>
     </span>
   );
 }
