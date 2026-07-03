@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import type { MouseEvent, ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { deleteOrganizationRest, organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -52,6 +52,9 @@ function OrganizationDeleteFormBody({
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const [deletionModalOpen, setDeletionModalOpen] = useState(false);
+  const openDeletionModal = () => setDeletionModalOpen(true);
+  const closeDeletionModal = () => setDeletionModalOpen(false);
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -60,7 +63,9 @@ function OrganizationDeleteFormBody({
     onSuccess(response) {
       queryClient.removeQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.list() });
-      router.history.push(stringField(response.redirectPath, "/"));
+      router.history.push(
+        prefixBasePath(runtimeConfig.basePath, stringField(response.redirectPath, "/")),
+      );
     },
   });
 
@@ -97,19 +102,28 @@ function OrganizationDeleteFormBody({
             organizationName={organizationName}
           />
           <div className="box-wrap bottom">
-            <a
+            <button
               id="btnDelete"
-              href="#alertDeletion"
+              type="button"
               className="ybtn ybtn-danger"
-              data-toggle="modal"
+              onClick={openDeletionModal}
             >
               {t("organization.delete.this")}
-            </a>
+            </button>
           </div>
 
-          <div id="alertDeletion" className="modal hide">
+          <div
+            id="alertDeletion"
+            className={`modal hide${deletionModalOpen ? " in" : ""}`}
+            style={deletionModalOpen ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={closeDeletionModal}
+              >
                 ×
               </button>
               <h3>{t("organization.delete.requestion")}</h3>
@@ -126,11 +140,17 @@ function OrganizationDeleteFormBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" data-dismiss="modal">
+              <button
+                type="button"
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={closeDeletionModal}
+              >
                 {t("button.no")}
               </button>
             </div>
           </div>
+          {deletionModalOpen ? <div className="modal-backdrop fade in"></div> : null}
         </div>
       </div>
     </>

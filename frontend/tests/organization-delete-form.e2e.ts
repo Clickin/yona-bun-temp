@@ -94,7 +94,7 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
       <li class="active"><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li>
     </ul>
     <div class="box-wrap bottom">
-      <a id="btnDelete" href="#alertDeletion" class="ybtn ybtn-danger" data-toggle="modal">Delete This Group</a>
+      <button id="btnDelete" type="button" class="ybtn ybtn-danger">Delete This Group</button>
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
@@ -135,6 +135,59 @@ test("organization delete form matches legacy organization/deleteForm.scala.html
       EXPECTED_ORGANIZATION_DELETE_FORM.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization delete confirmation modal opens, closes, deletes, and redirects through SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const deleteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await auditOrganizationDeleteNativeListeners(page);
+  await mockOrganizationAdmin(page, { deleteRequests });
+
+  await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+
+  await page.locator("#alertDeletion .modal-footer .ybtn").filter({ hasText: "No" }).click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await page.locator("#alertDeletion .close").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await page.locator("#btnDelete").click();
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/organizations/weblabs") &&
+      response.request().method() === "DELETE",
+  );
+  await page.locator("#btnDeleteExec").click();
+  await deleteResponsePromise;
+
+  expect(deleteRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(page).toHaveURL(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(await readOrganizationDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
 test("organization delete menu settings link preserves legacy href with SPA transition", async ({
@@ -196,7 +249,10 @@ test("organization delete menu home link preserves legacy href with SPA transiti
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
-async function mockOrganizationAdmin(page: Page) {
+async function mockOrganizationAdmin(
+  page: Page,
+  options: { deleteRequests?: { hasCsrfToken: boolean; method: string }[] } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -213,7 +269,33 @@ async function mockOrganizationAdmin(page: Page) {
       }),
     });
   });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-organization-delete" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
   await page.route("**/api/v1/organizations/weblabs", async (route) => {
+    if (route.request().method() === "DELETE") {
+      const request = route.request();
+      options.deleteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-organization-delete",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, redirectPath: "/" }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -252,6 +334,42 @@ async function mockOrganizationAdmin(page: Page) {
       }),
     });
   });
+}
+
+async function auditOrganizationDeleteNativeListeners(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    const records: string[] = [];
+    EventTarget.prototype.addEventListener = function (
+      this: EventTarget,
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (
+        this instanceof Element &&
+        (this.id === "btnDelete" ||
+          this.id === "alertDeletion" ||
+          Boolean(this.closest("#alertDeletion")))
+      ) {
+        records.push(`${this.id || this.className}:${type}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+    (
+      window as Window & typeof globalThis & { __organizationDeleteNativeListenerAudit?: string[] }
+    ).__organizationDeleteNativeListenerAudit = records;
+  });
+}
+
+async function readOrganizationDeleteNativeListenerAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __organizationDeleteNativeListenerAudit?: string[] }
+      ).__organizationDeleteNativeListenerAudit ?? [],
+  );
 }
 
 async function canonicalizeScreenRoots(page: Page) {
