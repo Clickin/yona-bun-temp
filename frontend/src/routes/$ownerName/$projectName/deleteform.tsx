@@ -1,6 +1,6 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useState, type AnchorHTMLAttributes, type ComponentType, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   deleteProjectRest,
   readProjectSettingsQueryOptions,
@@ -13,6 +13,13 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
+>;
 
 export const Route = createFileRoute("/$ownerName/$projectName/deleteform")({
   component: ProjectDeleteFormRoute,
@@ -91,12 +98,7 @@ function ProjectDeleteFormBody({
       <ProjectMenu basePath={runtimeConfig.basePath} project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <ProjectSettingMenu
-            basePath={runtimeConfig.basePath}
-            ownerName={ownerName}
-            project={project}
-            projectName={projectName}
-          />
+          <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
           <div className="bubble-wrap gray wp">
             <div className="cu-label">{t("project.delete")}</div>
             <div className="cu-desc">
@@ -371,75 +373,48 @@ function ProjectMenuItem({
 }
 
 function ProjectSettingMenu({
-  basePath,
   ownerName,
   project,
   projectName,
 }: {
-  basePath: string;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
   const menuSetting = recordField(project.menuSetting);
-  const navigate = (to: string) => {
-    router.navigate({ to });
-  };
 
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className="">
-        <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/${ownerName}/${projectName}/setting`}
-        >
+        <ProjectSettingLink to={`/${ownerName}/${projectName}/setting`}>
           {t("project.setting")}
         </ProjectSettingLink>
       </li>
       <li id="subMenuProjectMember" className="">
-        <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/${ownerName}/${projectName}/members`}
-        >
+        <ProjectSettingLink to={`/${ownerName}/${projectName}/members`}>
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
         </ProjectSettingLink>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/${ownerName}/${projectName}/labels`}
-        >
+        <ProjectSettingLink to={`/${ownerName}/${projectName}/labels`}>
           {t("issue.label")}
         </ProjectSettingLink>
       </li>
       <li id="subMenuWebhook" className="">
-        <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/${ownerName}/${projectName}/webhooks`}
-        >
+        <ProjectSettingLink to={`/${ownerName}/${projectName}/webhooks`}>
           {t("project.webhook")}
         </ProjectSettingLink>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/${ownerName}/${projectName}/transfer`}
-        >
+        <ProjectSettingLink to={`/${ownerName}/${projectName}/transfer`}>
           {t("project.transfer")}
         </ProjectSettingLink>
       </li>
       <li id="subMenuProjectDelete" className="active">
         <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
+          activeProps={{ className: undefined }}
           to={`/${ownerName}/${projectName}/deleteform`}
         >
           {t("project.delete")}
@@ -450,11 +425,7 @@ function ProjectSettingMenu({
         className=""
         style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
       >
-        <ProjectSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/${ownerName}/${projectName}/changeVCS`}
-        >
+        <ProjectSettingLink to={`/${ownerName}/${projectName}/changeVCS`}>
           {t("project.changeVCS")}
         </ProjectSettingLink>
       </li>
@@ -463,36 +434,18 @@ function ProjectSettingMenu({
 }
 
 function ProjectSettingLink({
-  basePath,
+  activeProps,
   children,
-  onNavigate,
   to,
 }: {
-  basePath: string;
+  activeProps?: { className?: string | undefined };
   children: ReactNode;
-  onNavigate: (to: string) => void;
   to: string;
 }) {
-  const navigateWithinProjectSettings = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
   return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinProjectSettings}>
+    <LegacyInternalLink activeProps={activeProps} to={to}>
       {children}
-    </a>
+    </LegacyInternalLink>
   );
 }
 

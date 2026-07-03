@@ -29,9 +29,9 @@ const EXPECTED_PROJECT_DELETE_FORM = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -45,9 +45,9 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -244,13 +244,25 @@ test("project delete confirmation modal opens, closes, deletes, and redirects th
   expect(await readDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
-test("project delete menu settings link preserves legacy href with SPA transition", async ({
+test("project delete settings tab links preserve legacy hrefs without native listeners", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installProjectDeleteSettingsTabAnchorAudit(page);
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
+  const tabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
+  await expect(tabLinks).toHaveCount(7);
+  await expect(tabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(tabLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  await expect(tabLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/labels`);
+  await expect(tabLinks.nth(3)).toHaveAttribute("href", `${basePath}/admin/sample/webhooks`);
+  await expect(tabLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/transfer`);
+  await expect(tabLinks.nth(5)).toHaveAttribute("href", `${basePath}/admin/sample/deleteform`);
+  await expect(tabLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/changeVCS`);
+  expect(await readProjectDeleteSettingsTabAnchorAudit(page)).toEqual([]);
+
   const settingsLink = page.locator("#subMenuProjectSetting a");
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
@@ -580,6 +592,37 @@ async function readDeleteNativeListenerAudit(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __deleteNativeListenerAudit?: string[] })
         .__deleteNativeListenerAudit ?? [],
+  );
+}
+
+async function installProjectDeleteSettingsTabAnchorAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const listeners: string[] = [];
+    Object.defineProperty(window, "__projectDeleteSettingsTabAnchorListeners", {
+      configurable: true,
+      value: listeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithDeleteSettingsTabAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-page-wrap > .nav.nav-tabs a")) {
+        listeners.push(`${this.id || this.textContent?.trim() || this.className}:${String(type)}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readProjectDeleteSettingsTabAnchorAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __projectDeleteSettingsTabAnchorListeners?: string[] }
+      ).__projectDeleteSettingsTabAnchorListeners ?? [],
   );
 }
 
