@@ -112,17 +112,16 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                     key={projectId}
                     className={projectId === activeProjectId ? "active" : undefined}
                   >
-                    <a
-                      href={`#${projectId}`}
+                    <button
+                      type="button"
                       data-toggle="tab"
-                      onClick={(event) => {
-                        event.preventDefault();
+                      onClick={() => {
                         setSelectedProjectId(projectId);
                         window.history.replaceState(null, "", `#${projectId}`);
                       }}
                     >
                       {`${stringValue(project.ownerName)} / ${stringValue(project.projectName)}`}
-                    </a>
+                    </button>
                   </li>
                 );
               })}

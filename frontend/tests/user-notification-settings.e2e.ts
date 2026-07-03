@@ -66,14 +66,17 @@ test("current-user notification settings page matches legacy user/edit_notificat
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(page, expectedScreen(basePath, "7"));
   expect(actual).toEqual(expected);
-  await expect(page.locator('#notification-projects a[href="#2"]')).toHaveText(
+  await expect(page.locator('#notification-projects a[href^="#"]')).toHaveCount(0);
+  await expect(page.locator("#notification-projects button")).toHaveCount(2);
+  await expect(page.locator('#notification-projects button[data-toggle="tab"]').first()).toHaveText(
     "admin / projectYobi",
   );
-  await expect(page.locator('#notification-projects a[href="#7"]')).toHaveText(
+  await expect(page.locator('#notification-projects button[data-toggle="tab"]').last()).toHaveText(
     "weblabs / projectAlpha",
   );
   await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveCount(1);
   await expect(page.locator('.tab-content > .tab-pane[id="7"]')).toHaveClass(/active/);
+  await expect(page).toHaveURL(`${basePath}/user/editform/notifications#7`);
 
   expect(await readNotificationSettingsMetrics(page)).toEqual({
     activePaneDisplay: "block",
@@ -98,8 +101,16 @@ test("current-user notification settings page matches legacy user/edit_notificat
   ).toBe("notifications-email-tab");
 
   await page.goto(`${basePath}/user/editform/notifications#7`);
-  await page.locator('#notification-projects a[href="#2"]').click();
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "notifications-project-tab";
+  });
+  await page.locator('#notification-projects button:has-text("admin / projectYobi")').click();
   await expect(page.locator("#notification-projects li").first()).toHaveClass(/active/);
+  await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveClass(/active/);
+  await expect(page).toHaveURL(`${basePath}/user/editform/notifications#2`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("notifications-project-tab");
   await page.locator('[id="2"] input[data-href$="/noti/toggle/2/NEW_COMMENT"]').click();
 });
 
@@ -184,8 +195,8 @@ function expectedScreen(basePath: string, activeProjectId: string) {
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="${basePath}/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
-      <li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="${basePath}/user/issues/new">New issue</a></li><li><a href="${basePath}/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="${basePath}/projectform">Create new project</a></li><li><a href="${basePath}/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button class="gnb-dropdown-toggle" type="button" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button class="gnb-dropdown-toggle dropdwon-box-btn" type="button" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="${basePath}/user/issues/new">New issue</a></li><li><a href="${basePath}/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="${basePath}/projectform">Create new project</a></li><li><a href="${basePath}/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -220,7 +231,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
 }
 
 function expectedProjectTab(id: string, owner: string, name: string, activeProjectId: string) {
-  return `<li${id === activeProjectId ? ' class="active"' : ""}><a href="#${id}" data-toggle="tab">${owner} / ${name}</a></li>`;
+  return `<li${id === activeProjectId ? ' class="active"' : ""}><button type="button" data-toggle="tab">${owner} / ${name}</button></li>`;
 }
 
 function expectedProjectPane(basePath: string, projectId: string, activeProjectId: string) {

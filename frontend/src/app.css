@@ -6848,9 +6848,32 @@ div.markdown-preview {
 }
 
 .lst-stacked li a,
-.issue-list-wrap .lst-stacked li button {
+.issue-list-wrap .lst-stacked li button,
+#notification-projects li button {
   display: block;
   width: 100%;
+}
+
+#notification-projects li button {
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: normal;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#notification-projects li button:hover,
+#notification-projects li button:focus {
+  color: #f36c22;
+  text-decoration: underline;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .lst-stacked li .num-badge {
@@ -6870,7 +6893,9 @@ div.markdown-preview {
 }
 
 .lst-stacked li.active a:hover,
-.issue-list-wrap .lst-stacked li.active button:hover {
+.issue-list-wrap .lst-stacked li.active button:hover,
+#notification-projects li.active button:hover,
+#notification-projects li.active button:focus {
   color: #fff;
 }
 
