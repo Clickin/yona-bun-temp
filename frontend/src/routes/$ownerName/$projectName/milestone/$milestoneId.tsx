@@ -470,6 +470,7 @@ function MassUpdateShell({
   const issueIds = allIssues.map((issue) => stringField(issue.id, stringField(issue.issueNumber)));
   const allChecked = issueIds.length > 0 && checkedIssueIds.length === issueIds.length;
   const hasCheckedIssues = checkedIssueIds.length > 0;
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const labels = projectIssueLabelOptions(recordArray(milestone.projectLabels), allIssues);
   const openMilestones = projectMilestoneOptions(
     recordArray(milestone.openMilestones).length
@@ -483,6 +484,15 @@ function MassUpdateShell({
     allIssues,
     currentUser,
   );
+  const toggleDropdown = (id: string, disabled: boolean) => {
+    if (disabled) {
+      return;
+    }
+    setOpenDropdownId((currentId) => (currentId === id ? null : id));
+  };
+  const closeDropdown = () => {
+    setOpenDropdownId(null);
+  };
   return (
     <div className="mass-update-wrap hide-in-mobile">
       <form
@@ -509,16 +519,28 @@ function MassUpdateShell({
           id="state"
           label={t("issue.update.state")}
           name="state"
+          onClose={closeDropdown}
+          onToggle={toggleDropdown}
+          open={openDropdownId === "state"}
           options={[
             { label: t("issue.state.open"), value: "OPEN" },
             { label: t("issue.state.closed"), value: "CLOSED" },
           ]}
         />
-        <div id="assignee" className="btn-group" data-name="assignee.id">
+        <div
+          id="assignee"
+          className={`btn-group${openDropdownId === "assignee" ? " open" : ""}`}
+          data-name="assignee.id"
+        >
           <button
+            type="button"
             className="btn dropdown-toggle medium"
             data-toggle="dropdown"
             disabled={!hasCheckedIssues}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleDropdown("assignee", !hasCheckedIssues);
+            }}
           >
             <span className="d-label">{t("issue.update.assignee.id")}</span>
             <span className="d-caret">
@@ -527,17 +549,40 @@ function MassUpdateShell({
           </button>
           <ul className="dropdown-menu mass-update-list">
             <li data-value="0">
-              <button type="button">{t("issue.noAssignee")}</button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  closeDropdown();
+                }}
+              >
+                {t("issue.noAssignee")}
+              </button>
             </li>
             {currentUser.id ? (
               <li data-value={currentUser.id}>
-                <button type="button">{t("issue.assignToMe")}</button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    closeDropdown();
+                  }}
+                >
+                  {t("issue.assignToMe")}
+                </button>
               </li>
             ) : null}
             {users.length ? <li className="divider"></li> : null}
             {users.map((user) => (
               <li data-value={user.id} key={user.id}>
-                <button type="button" className="usf-group">
+                <button
+                  type="button"
+                  className="usf-group"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    closeDropdown();
+                  }}
+                >
                   <span className="avatar-wrap smaller">
                     <img src={user.avatarUrl} width="20" height="20" alt="" />
                   </span>
@@ -558,6 +603,9 @@ function MassUpdateShell({
             id="milestone"
             label={t("issue.update.milestone.id")}
             name="milestone.id"
+            onClose={closeDropdown}
+            onToggle={toggleDropdown}
+            open={openDropdownId === "milestone"}
             options={[
               { label: t("issue.noMilestone"), value: "-1" },
               { divider: true, value: "__divider" },
@@ -576,6 +624,9 @@ function MassUpdateShell({
               label={t("issue.update.attachLabel")}
               listId="attach-label-list"
               name="attachingLabelIds"
+              onClose={closeDropdown}
+              onToggle={toggleDropdown}
+              open={openDropdownId === "attaching-label"}
               options={labels}
             />
             <LabelMassUpdateDropdown
@@ -584,6 +635,9 @@ function MassUpdateShell({
               label={t("issue.update.detachLabel")}
               listId="delete-label-list"
               name="detachingLabelIds"
+              onClose={closeDropdown}
+              onToggle={toggleDropdown}
+              open={openDropdownId === "detaching-label"}
               options={labels}
             />
           </>
@@ -598,17 +652,32 @@ function MassUpdateDropdown({
   id,
   label,
   name,
+  onClose,
+  onToggle,
+  open,
   options,
 }: {
   disabled: boolean;
   id: string;
   label: string;
   name: string;
+  onClose: () => void;
+  onToggle: (id: string, disabled: boolean) => void;
+  open: boolean;
   options: Array<{ divider?: boolean; label?: string; value: string }>;
 }) {
   return (
-    <div id={id} className="btn-group" data-name={name}>
-      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
+    <div id={id} className={`btn-group${open ? " open" : ""}`} data-name={name}>
+      <button
+        type="button"
+        className="btn dropdown-toggle medium"
+        data-toggle="dropdown"
+        disabled={disabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggle(id, disabled);
+        }}
+      >
         <span className="d-label">{label}</span>
         <span className="d-caret">
           <span className="caret"></span>
@@ -620,7 +689,15 @@ function MassUpdateDropdown({
             <li className="divider" key={option.value}></li>
           ) : (
             <li data-value={option.value} key={option.value}>
-              <button type="button">{option.label}</button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClose();
+                }}
+              >
+                {option.label}
+              </button>
             </li>
           ),
         )}
@@ -635,6 +712,9 @@ function LabelMassUpdateDropdown({
   label,
   listId,
   name,
+  onClose,
+  onToggle,
+  open,
   options,
 }: {
   disabled: boolean;
@@ -642,6 +722,9 @@ function LabelMassUpdateDropdown({
   label: string;
   listId: string;
   name: string;
+  onClose: () => void;
+  onToggle: (id: string, disabled: boolean) => void;
+  open: boolean;
   options: Array<{
     categoryId: string;
     categoryName: string;
@@ -651,8 +734,17 @@ function LabelMassUpdateDropdown({
   }>;
 }) {
   return (
-    <div id={id} className="btn-group" data-name={name}>
-      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
+    <div id={id} className={`btn-group${open ? " open" : ""}`} data-name={name}>
+      <button
+        type="button"
+        className="btn dropdown-toggle medium"
+        data-toggle="dropdown"
+        disabled={disabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggle(id, disabled);
+        }}
+      >
         <span className="d-label">{label}</span>
         <span className="d-caret">
           <span className="caret"></span>
@@ -660,7 +752,7 @@ function LabelMassUpdateDropdown({
       </button>
       <ul id={listId} className="dropdown-menu mass-update-list">
         {groupLabels(options).map((group) => (
-          <LabelMassUpdateGroup group={group} key={group.categoryId} />
+          <LabelMassUpdateGroup group={group} key={group.categoryId} onClose={onClose} />
         ))}
       </ul>
     </div>
@@ -669,12 +761,14 @@ function LabelMassUpdateDropdown({
 
 function LabelMassUpdateGroup({
   group,
+  onClose,
 }: {
   group: {
     categoryId: string;
     categoryName: string;
     labels: Array<{ color?: string; id: string; name: string }>;
   };
+  onClose: () => void;
 }) {
   return (
     <>
@@ -683,7 +777,13 @@ function LabelMassUpdateGroup({
       </li>
       {group.labels.map((label) => (
         <li data-value={label.id} data-category={group.categoryId} key={label.id}>
-          <button type="button">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
+          >
             <span className="issue-label active list-label" data-label-id={label.id}>
               {label.name}
             </span>

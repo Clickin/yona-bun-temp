@@ -6,6 +6,25 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const stateRequests: unknown[] = [];
   const deleteRequests: string[] = [];
+  await page.addInitScript(() => {
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const toggle = target.closest("[data-toggle='dropdown']");
+      if (!toggle) {
+        return;
+      }
+      const auditWindow = window as unknown as {
+        __massUpdateDropdownShimClicks?: string[];
+      };
+      auditWindow.__massUpdateDropdownShimClicks = [
+        ...(auditWindow.__massUpdateDropdownShimClicks ?? []),
+        toggle.closest(".btn-group")?.id ?? "",
+      ];
+    });
+  });
   await mockProjectMilestoneDetail(page, stateRequests, deleteRequests);
 
   await page.goto(`${basePath}/admin/sample/milestone/5?state=open`);
@@ -124,6 +143,10 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     await expect(page.locator(`#${listId} a`)).toHaveCount(0);
   }
   await expect(page.locator("#state > button")).toBeDisabled();
+  await page.locator("#state > button").evaluate((button) => {
+    (button as HTMLButtonElement).click();
+  });
+  await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
   await expect(page.locator('.search-bar input[data-toggle="item-search"]')).toHaveAttribute(
     "data-items",
     "issue-item",
@@ -145,15 +168,37 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     window.sessionStorage.setItem("milestone-detail-spa-marker", "kept");
   });
   const beforeMassUpdateOptionUrl = page.url();
-  await page
-    .locator('#state .mass-update-list li[data-value="OPEN"] button')
-    .dispatchEvent("click");
-  await page
-    .locator('#assignee .mass-update-list li[data-value="0"] button')
-    .dispatchEvent("click");
-  await page
-    .locator('#attach-label-list li[data-value="8"][data-category="3"] button')
-    .dispatchEvent("click");
+  await page.click("#state > button");
+  await expect(page.locator("#state")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await page.click("#assignee > button");
+  await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(page.locator("#assignee")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await page.click("#milestone > button");
+  await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(page.locator("#milestone")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(
+    page.evaluate(() => {
+      return (
+        (
+          window as unknown as {
+            __massUpdateDropdownShimClicks?: string[];
+          }
+        ).__massUpdateDropdownShimClicks ?? []
+      );
+    }),
+  ).resolves.toEqual([]);
+  await page.click('#milestone .mass-update-list li[data-value="5"] button');
+  await expect(page.locator("#milestone")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await page.click("#state > button");
+  await page.click('#state .mass-update-list li[data-value="OPEN"] button');
+  await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await page.click("#assignee > button");
+  await page.click('#assignee .mass-update-list li[data-value="0"] button');
+  await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await page.click("#attaching-label > button");
+  await page.click('#attach-label-list li[data-value="8"][data-category="3"] button');
+  await expect(page.locator("#attaching-label")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
   await expect(page).toHaveURL(beforeMassUpdateOptionUrl);
   await expect(
     page.evaluate(() => window.sessionStorage.getItem("milestone-detail-spa-marker")),
