@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouterState } from "@tanstack/react-router";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -463,6 +464,7 @@ function ReviewWrap({
   threads: ReviewThread[];
 }) {
   const { t } = useLegacyMessages();
+  const [reviewCardTab, setReviewCardTab] = useState<"open" | "closed">("open");
   const openThreads = threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = threads.filter((thread) => thread.state.toLowerCase() === "closed");
 
@@ -474,28 +476,29 @@ function ReviewWrap({
         </button>
 
         <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
-          <li className="active">
-            <a href="#reviewcards-open" data-toggle="tab">
+          <li className={reviewCardTab === "open" ? "active" : undefined}>
+            <button type="button" data-toggle="tab" onClick={() => setReviewCardTab("open")}>
               {t("issue.state.open")} {openThreads.length}
-            </a>
+            </button>
           </li>
-          <li>
-            <a href="#reviewcards-closed" data-toggle="tab">
+          <li className={reviewCardTab === "closed" ? "active" : undefined}>
+            <button type="button" data-toggle="tab" onClick={() => setReviewCardTab("closed")}>
               {t("issue.state.closed")} {closedThreads.length}
-            </a>
+            </button>
           </li>
         </ul>
 
         <div className="tab-content review-list">
           <ReviewCards
             id="reviewcards-open"
-            isActive
+            isActive={reviewCardTab === "open"}
             pullRequest={pullRequest}
             runtimeConfig={runtimeConfig}
             threads={openThreads}
           />
           <ReviewCards
             id="reviewcards-closed"
+            isActive={reviewCardTab === "closed"}
             pullRequest={pullRequest}
             runtimeConfig={runtimeConfig}
             threads={closedThreads}

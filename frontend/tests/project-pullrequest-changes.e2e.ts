@@ -157,7 +157,7 @@ const EXPECTED_PULL_REQUEST_REVIEW_CARD = EXPECTED_PULL_REQUEST_CHANGES.replace(
   )
   .replace(
     `</div></div></div></div></div></div>`,
-    `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><a href="#reviewcards-open" data-toggle="tab">Open1</a></li><li><a href="#reviewcards-closed" data-toggle="tab">Closed0</a></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
+    `</div></div><div class="review-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><button type="button" data-toggle="tab">Open1</button></li><li><button type="button" data-toggle="tab">Closed0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91" class="review-card open"><p class="content">Review note</p><p class="info"><span class="comments pull-left"><i class="yobicon-comments"></i>1</span><span class="outdated-label">Outdated</span><span class="date" title="Jul 5, 2026">Jul 5, 2026</span><span class="avatar-wrap smaller ml5"><img src="/assets/images/default-avatar-32.png"></span></p></a></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div></div></div>`,
   );
 
 const NON_RANGED_THREAD = {
@@ -329,6 +329,33 @@ test("project pull request changes renders legacy review cards when threads exis
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
   await expect(page.locator(".codediff-wrap")).not.toHaveClass(/diffs-only/u);
   await expect(page.locator(".btn-show-reviewcards")).toHaveCount(1);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "pull-request-review-tabs";
+  });
+  const reviewTabs = page.locator(".review-container .nav-tabs");
+  const urlBeforeReviewTabClick = page.url();
+  await expect(reviewTabs.locator('a[href^="#"]')).toHaveCount(0);
+  await expect(reviewTabs.locator('button[type="button"][data-toggle="tab"]')).toHaveCount(2);
+  await expect(reviewTabs.locator("button").nth(0)).toHaveText("Open 1");
+  await expect(reviewTabs.locator("button").nth(1)).toHaveText("Closed 0");
+  await reviewTabs.locator("button").nth(1).click();
+  await expect(reviewTabs.locator("li").nth(0)).not.toHaveClass(/active/);
+  await expect(reviewTabs.locator("li").nth(1)).toHaveClass(/active/);
+  await expect(page.locator("#reviewcards-open")).not.toHaveClass(/active/);
+  await expect(page.locator("#reviewcards-closed")).toHaveClass(/active/);
+  expect(page.url()).toBe(urlBeforeReviewTabClick);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("pull-request-review-tabs");
+  await reviewTabs.locator("button").nth(0).click();
+  await expect(reviewTabs.locator("li").nth(0)).toHaveClass(/active/);
+  await expect(reviewTabs.locator("li").nth(1)).not.toHaveClass(/active/);
+  await expect(page.locator("#reviewcards-open")).toHaveClass(/active/);
+  await expect(page.locator("#reviewcards-closed")).not.toHaveClass(/active/);
+  expect(page.url()).toBe(urlBeforeReviewTabClick);
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91`,
