@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   Fragment,
+  createElement,
   useRef,
   useState,
   type AnchorHTMLAttributes,
@@ -2926,19 +2927,39 @@ function MarkdownEditor({
   wrapId: string;
 }) {
   const [notificationVisible, setNotificationVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+  const switchTab = (event: MouseEvent<HTMLElement>, nextTab: "edit" | "preview") => {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveTab(nextTab);
+  };
 
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
-        <li className="active">
-          <a href={`#edit-${wrapId}`} data-toggle="tab" data-mode="edit">
-            Edit
-          </a>
+        <li className={activeTab === "edit" ? "active" : undefined}>
+          {createElement(
+            "a",
+            {
+              "data-mode": "edit",
+              "data-toggle": "tab",
+              href: `#edit-${wrapId}`,
+              onClick: (event) => switchTab(event, "edit"),
+            },
+            "Edit",
+          )}
         </li>
-        <li>
-          <a href={`#preview-${wrapId}`} data-toggle="tab" data-mode="preview">
-            Preview
-          </a>
+        <li className={activeTab === "preview" ? "active" : undefined}>
+          {createElement(
+            "a",
+            {
+              "data-mode": "preview",
+              "data-toggle": "tab",
+              href: `#preview-${wrapId}`,
+              onClick: (event) => switchTab(event, "preview"),
+            },
+            "Preview",
+          )}
         </li>
         <li>
           <div className="task-list-button">
@@ -2972,7 +2993,7 @@ function MarkdownEditor({
           className="markdown-help"
           dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
         />
-        <div id={`edit-${wrapId}`} className="tab-pane active">
+        <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               name={name}
@@ -2985,7 +3006,10 @@ function MarkdownEditor({
             ></textarea>
           </div>
         </div>
-        <div id={`preview-${wrapId}`} className="tab-pane">
+        <div
+          id={`preview-${wrapId}`}
+          className={`tab-pane${activeTab === "preview" ? " active" : ""}`}
+        >
           <div
             className={`markdown-preview markdown-wrap ${editorMode}`}
             data-via-email="false"

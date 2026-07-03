@@ -494,24 +494,42 @@ test("project issue detail switches legacy comment editor tabs through data-togg
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  await expect(page.locator('#comment-form a[href="#edit-contents"]')).toHaveAttribute(
-    "data-toggle",
-    "tab",
-  );
+  const editTab = page.locator('#comment-form a[href="#edit-contents"][data-toggle="tab"]');
+  const previewTab = page.locator('#comment-form a[href="#preview-contents"][data-toggle="tab"]');
+
+  await expect(editTab).toHaveAttribute("data-mode", "edit");
+  await expect(previewTab).toHaveAttribute("data-mode", "preview");
   await expect(page.locator("#comment-form li:has(> a[href='#edit-contents'])")).toHaveClass(
     /active/,
   );
+  await expect(page.locator("#comment-form li:has(> a[href='#preview-contents'])")).not.toHaveClass(
+    /active/,
+  );
   await expect(page.locator("#edit-contents")).toHaveClass(/active/);
+  await expect(page.locator("#preview-contents")).not.toHaveClass(/active/);
   await expect(page.locator("#comment-form .markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#comment-form .markdown-help-wrap > .markdown-help-item")).toHaveCount(
     10,
   );
-  await page.locator('#comment-form a[href="#preview-contents"][data-toggle="tab"]').click();
+  await previewTab.click();
   await expect(page.locator("#comment-form li:has(> a[href='#preview-contents'])")).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator("#comment-form li:has(> a[href='#edit-contents'])")).not.toHaveClass(
     /active/,
   );
   await expect(page.locator("#preview-contents")).toHaveClass(/active/);
   await expect(page.locator("#edit-contents")).not.toHaveClass(/active/);
+
+  await editTab.click();
+  await expect(page.locator("#comment-form li:has(> a[href='#edit-contents'])")).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator("#comment-form li:has(> a[href='#preview-contents'])")).not.toHaveClass(
+    /active/,
+  );
+  await expect(page.locator("#edit-contents")).toHaveClass(/active/);
+  await expect(page.locator("#preview-contents")).not.toHaveClass(/active/);
 });
 
 test("project issue detail shows notification receiver on editor focus", async ({ page }) => {
