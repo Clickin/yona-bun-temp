@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import type { HTMLAttributes, LiHTMLAttributes, ReactNode } from "react";
+import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { type HTMLAttributes, type LiHTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
 import {
@@ -60,7 +60,8 @@ function OrganizationIssuesRoute() {
 
 function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
-  const search = Route.useSearch();
+  const location = useLocation();
+  const search = organizationIssuesSearchFromString(location.searchStr);
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
@@ -123,11 +124,69 @@ function OrganizationIssuesBody({
   search: OrganizationIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
+  const navigate = useNavigate();
   const organizationName = stringField(organization.organizationName, issues.organizationName);
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
   const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
   const hasIssues = issues.items.length > 0;
+  const navigateToSearch = (
+    event: MouseEvent<HTMLButtonElement>,
+    nextSearch: OrganizationIssuesSearch,
+  ) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    void navigate({ to: organizationIssuesRoutePath(organizationName, nextSearch) });
+  };
+  const handleQuickSearch = (
+    event: MouseEvent<HTMLButtonElement>,
+    {
+      assigneeId,
+      authorId,
+      mentionId,
+    }: {
+      assigneeId: string;
+      authorId: string;
+      mentionId: string;
+    },
+  ) => {
+    navigateToSearch(event, {
+      ...search,
+      assigneeId,
+      authorId,
+      mentionId,
+      pageNum: 1,
+    });
+  };
+  const handleStateChange = (event: MouseEvent<HTMLButtonElement>, state: "closed" | "open") => {
+    navigateToSearch(event, {
+      ...search,
+      pageNum: 1,
+      state,
+    });
+  };
+  const handleSortChange = (
+    event: MouseEvent<HTMLButtonElement>,
+    orderBy: string,
+    orderDir: string,
+  ) => {
+    navigateToSearch(event, {
+      ...search,
+      orderBy,
+      orderDir,
+      pageNum: 1,
+    });
+  };
 
   return (
     <>
@@ -146,7 +205,11 @@ function OrganizationIssuesBody({
           <div {...pjaxContainer} className="row-fluid issue-list-wrap">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
-                <QuickSearch currentUserId={currentUserId} search={search} />
+                <QuickSearch
+                  currentUserId={currentUserId}
+                  onQuickSearch={handleQuickSearch}
+                  search={search}
+                />
                 <form
                   id="search"
                   name="search"
@@ -219,12 +282,14 @@ function OrganizationIssuesBody({
                   active={search.state === "open"}
                   count={issues.openIssueCount}
                   label={t("issue.state.open")}
+                  onStateChange={handleStateChange}
                   state="open"
                 />
                 <StateTab
                   active={search.state === "closed"}
                   count={issues.closedIssueCount}
                   label={t("issue.state.closed")}
+                  onStateChange={handleStateChange}
                   state="closed"
                 />
                 <li>
@@ -234,7 +299,11 @@ function OrganizationIssuesBody({
               {hasIssues ? (
                 <>
                   {issues.items.length > 1 ? (
-                    <IssueFilters orderBy={search.orderBy} orderDir={search.orderDir} />
+                    <IssueFilters
+                      onSortChange={handleSortChange}
+                      orderBy={search.orderBy}
+                      orderDir={search.orderDir}
+                    />
                   ) : null}
                   <ul className="post-list-wrap">
                     {issues.items.map((issue) => (
@@ -266,9 +335,14 @@ function OrganizationIssuesBody({
 
 function QuickSearch({
   currentUserId,
+  onQuickSearch,
   search,
 }: {
   currentUserId: string;
+  onQuickSearch: (
+    event: MouseEvent<HTMLButtonElement>,
+    filters: { assigneeId: string; authorId: string; mentionId: string },
+  ) => void;
   search: OrganizationIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
@@ -278,60 +352,66 @@ function QuickSearch({
   return (
     <ul className="lst-stacked unstyled">
       <li className={!search.assigneeId && !search.authorId && !search.mentionId ? "active" : ""}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter data attrs. */}
-        <a
+        <button
           {...pjaxFilter}
-          href="#"
+          type="button"
           data-assignee-id=""
           data-author-id=""
           data-mention-id=""
           data-project-names={projectNames}
           data-milestone-id=""
+          onClick={(event) => onQuickSearch(event, { assigneeId: "", authorId: "", mentionId: "" })}
         >
           {t("issue.list.all")}
-        </a>
+        </button>
       </li>
       <li className={search.assigneeId === currentUserId ? "active" : ""}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter data attrs. */}
-        <a
+        <button
           {...pjaxFilter}
-          href="#"
+          type="button"
           data-author-id=""
           data-assignee-id={currentUserId}
           data-project-names={projectNames}
           data-milestone-id=""
           data-mention-id=""
+          onClick={(event) =>
+            onQuickSearch(event, { assigneeId: currentUserId, authorId: "", mentionId: "" })
+          }
         >
           {t("issue.list.assignedToMe")}
-        </a>
+        </button>
       </li>
       <li className={search.authorId === currentUserId ? "active" : ""}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter data attrs. */}
-        <a
+        <button
           {...pjaxFilter}
-          href="#"
+          type="button"
           data-author-id={currentUserId}
           data-assignee-id=""
           data-milestone-id=""
           data-project-names={projectNames}
           data-mention-id=""
+          onClick={(event) =>
+            onQuickSearch(event, { assigneeId: "", authorId: currentUserId, mentionId: "" })
+          }
         >
           {t("issue.list.authoredByMe")}
-        </a>
+        </button>
       </li>
       <li className={search.mentionId === currentUserId ? "active" : ""}>
-        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy quick search uses href="#" plus pjax-filter data attrs. */}
-        <a
+        <button
           {...pjaxFilter}
-          href="#"
+          type="button"
           data-author-id=""
           data-assignee-id=""
           data-milestone-id=""
           data-project-names={projectNames}
           data-mention-id={currentUserId}
+          onClick={(event) =>
+            onQuickSearch(event, { assigneeId: "", authorId: "", mentionId: currentUserId })
+          }
         >
           {t("issue.list.mentionedOfMe")}
-        </a>
+        </button>
       </li>
     </ul>
   );
@@ -341,27 +421,36 @@ function StateTab({
   active,
   count,
   label,
+  onStateChange,
   state,
 }: {
   active: boolean;
   count: number;
   label: string;
+  onStateChange: (event: MouseEvent<HTMLButtonElement>, state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
   const legacyState: Record<"state", string> = { state };
 
   return (
     <li className={active ? "active" : ""}>
-      {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus state attr. */}
-      <a href="#" {...legacyState}>
+      <button type="button" {...legacyState} onClick={(event) => onStateChange(event, state)}>
         {label}
         <span className="num-badge">{count}</span>
-      </a>
+      </button>
     </li>
   );
 }
 
-function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string }) {
+function IssueFilters({
+  onSortChange,
+  orderBy,
+  orderDir,
+}: {
+  onSortChange: (event: MouseEvent<HTMLButtonElement>, orderBy: string, orderDir: string) => void;
+  orderBy: string;
+  orderDir: string;
+}) {
   const { t } = useLegacyMessages();
   const filters = [
     { field: "dueDate", label: t("common.order.dueDate") },
@@ -377,22 +466,22 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
           const active = orderBy === filter.field;
           const nextDir = active && orderDir === "desc" ? "asc" : "desc";
           const legacySort = {
-            orderBy: filter.field,
-            orderDir: active ? nextDir : "desc",
-          } satisfies Record<"orderBy" | "orderDir", string>;
+            orderby: filter.field,
+            orderdir: active ? nextDir : "desc",
+          } satisfies Record<"orderby" | "orderdir", string>;
           return (
-            /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs. */
-            <a
-              href="#"
+            <button
+              type="button"
               {...legacySort}
               className={active ? "filter active" : "filter"}
               key={filter.field}
+              onClick={(event) => onSortChange(event, filter.field, legacySort.orderdir)}
             >
               <i
                 className={`ico btn-gray-arrow${!active || orderDir === "desc" ? " down" : ""}`}
               ></i>
               {filter.label}
-            </a>
+            </button>
           );
         })}
       </div>
@@ -662,6 +751,45 @@ function totalPages(issues: OrganizationIssueListRestResponse) {
 
 function organizationHref(basePath: string, organizationName: string) {
   return prefixBasePath(basePath, `/organizations/${organizationName}`);
+}
+
+function organizationIssuesSearchFromString(searchString: string) {
+  const search = new URLSearchParams(searchString);
+  return {
+    assigneeId: stringSearch(search.get("assigneeId")),
+    authorId: stringSearch(search.get("authorId")),
+    filter: stringSearch(search.get("filter")),
+    mentionId: stringSearch(search.get("mentionId")),
+    orderBy: stringSearch(search.get("orderBy"), "createdDate"),
+    orderDir: stringSearch(search.get("orderDir"), "desc"),
+    pageNum: Number(search.get("pageNum")) || 1,
+    projectNames: [...search.getAll("projectNames"), ...search.getAll("projectNames[]")].filter(
+      (projectName) => projectName !== "[]",
+    ),
+    state: stringSearch(search.get("state"), "open") === "closed" ? "closed" : "open",
+  } satisfies OrganizationIssuesSearch;
+}
+
+function organizationIssuesRoutePath(organizationName: string, search: OrganizationIssuesSearch) {
+  const params = new URLSearchParams([
+    ...optionalSearchEntries({
+      assigneeId: search.assigneeId,
+      authorId: search.authorId,
+      filter: search.filter,
+      mentionId: search.mentionId,
+      orderBy: search.orderBy,
+      orderDir: search.orderDir,
+    }),
+    ["pageNum", String(search.pageNum)],
+    ...search.projectNames.map((projectName): [string, string] => ["projectNames[]", projectName]),
+    ["state", search.state],
+  ]);
+
+  return `/organizations/${organizationName}/issues?${params.toString()}`;
+}
+
+function optionalSearchEntries(values: Record<string, string>) {
+  return Object.entries(values).filter((entry): entry is [string, string] => entry[1] !== "");
 }
 
 function stringSearch(value: unknown, fallback = "") {

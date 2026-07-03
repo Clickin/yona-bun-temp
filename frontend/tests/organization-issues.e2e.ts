@@ -5,7 +5,7 @@ const EXPECTED_ORGANIZATION_ISSUES = `
 <header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="page-wrap"><div pjax-container="" class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><a pjax-filter="" href="#" data-assignee-id="" data-author-id="" data-mention-id="" data-project-names="" data-milestone-id="">All issues</a></li><li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="1" data-project-names="" data-milestone-id="" data-mention-id="">Assigned</a></li><li class=""><a pjax-filter="" href="#" data-author-id="1" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="">Created</a></li><li class=""><a pjax-filter="" href="#" data-author-id="" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="1">Mentioned</a></li></ul><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/issues" method="get"><select id="projects" name="projectNames[]" multiple="" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="sample" data-avatar-url="/assets/images/project_default_logo.png">sample</option><option value="playground" data-avatar-url="/assets/images/project_default_logo.png">playground</option></select><hr><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="assigneeId" value="" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="bug"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm"><li class="active"><a href="#" state="open">Open<span class="num-badge">1</span></a></li><li class=""><a href="#" state="closed">Closed<span class="num-badge">2</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><ul class="post-list-wrap"><li class="post-item title" id="issue-item-42" href="__BASE_PATH__/weblabs/sample/issue/11"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item mileston-tag"><a href="__BASE_PATH__/weblabs/sample/milestone/5" data-toggle="tooltip" data-placement="top" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/weblabs/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id margin-right-5">#11</span><a href="__BASE_PATH__/weblabs/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label" data-label-id="8" style="background:rgb(81,170,204)">bug</a></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2"></i>Overdue</div></div></li></ul><div id="pagination" data-total="3"></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="page-wrap"><div pjax-container="" class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button pjax-filter="" type="button" data-assignee-id="" data-author-id="" data-mention-id="" data-project-names="" data-milestone-id="">All issues</button></li><li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-project-names="" data-milestone-id="" data-mention-id="">Assigned</button></li><li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="">Created</button></li><li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="1">Mentioned</button></li></ul><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/issues" method="get"><select id="projects" name="projectNames[]" multiple="" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="sample" data-avatar-url="/assets/images/project_default_logo.png">sample</option><option value="playground" data-avatar-url="/assets/images/project_default_logo.png">playground</option></select><hr><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="assigneeId" value="" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="bug"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><ul class="post-list-wrap"><li class="post-item title" id="issue-item-42" href="__BASE_PATH__/weblabs/sample/issue/11"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item mileston-tag"><a href="__BASE_PATH__/weblabs/sample/milestone/5" data-toggle="tooltip" data-placement="top" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/weblabs/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id margin-right-5">#11</span><a href="__BASE_PATH__/weblabs/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label" data-label-id="8" style="background:rgb(81,170,204)">bug</a></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2"></i>Overdue</div></div></li></ul><div id="pagination" data-total="3"></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -27,6 +27,8 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
   await expect(page.locator('.lst-stacked [pjax-filter][data-assignee-id="1"]')).toHaveText(
     "Assigned",
   );
+  await expect(page.locator('.lst-stacked button[pjax-filter][type="button"]')).toHaveCount(4);
+  await expect(page.locator('.lst-stacked a[href="#"][pjax-filter]')).toHaveCount(0);
   await expect(page.locator('.lst-stacked [pjax-filter][data-assignee-id="1"]')).toHaveAttribute(
     "data-milestone-id",
     "",
@@ -37,6 +39,8 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
   await expect(page.locator('.lst-stacked [pjax-filter][data-mention-id="1"]')).toHaveText(
     "Mentioned",
   );
+  await expect(page.locator('.nav-tabs.nm > li > button[state][type="button"]')).toHaveCount(2);
+  await expect(page.locator('.nav-tabs.nm > li > a[href="#"][state]')).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -44,6 +48,70 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
       EXPECTED_ORGANIZATION_ISSUES.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization issue aggregate filter controls are React buttons with legacy search evidence", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationIssues(page, { itemCount: 2 });
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/issues?state=open&filter=bug&pageNum=3&orderBy=createdDate&orderDir=desc`,
+  );
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  const quickButtons = page.locator('.lst-stacked button[pjax-filter][type="button"]');
+  await expect(quickButtons).toHaveCount(4);
+  await expect(page.locator('.lst-stacked a[href="#"][pjax-filter]')).toHaveCount(0);
+  await expect(quickButtons.nth(0)).toHaveAttribute("data-assignee-id", "");
+  await expect(quickButtons.nth(1)).toHaveAttribute("data-assignee-id", "1");
+  await expect(quickButtons.nth(2)).toHaveAttribute("data-author-id", "1");
+  await expect(quickButtons.nth(3)).toHaveAttribute("data-mention-id", "1");
+
+  const stateButtons = page.locator(".nav-tabs.nm > li > button[state]");
+  await expect(stateButtons).toHaveCount(2);
+  await expect(stateButtons.nth(0)).toHaveAttribute("type", "button");
+  await expect(stateButtons.nth(0)).toHaveAttribute("state", "open");
+  await expect(stateButtons.nth(1)).toHaveAttribute("state", "closed");
+  await expect(page.locator('.nav-tabs.nm > li > a[href="#"][state]')).toHaveCount(0);
+
+  const sortButtons = page.locator(".filter-wrap .filters button.filter");
+  await expect(sortButtons).toHaveCount(4);
+  await expect(page.locator('.filter-wrap .filters a[href="#"].filter')).toHaveCount(0);
+  await expect(sortButtons.nth(0)).toHaveAttribute("orderby", "dueDate");
+  await expect(sortButtons.nth(0)).toHaveAttribute("orderdir", "desc");
+  await expect(sortButtons.nth(2)).toHaveClass(/active/);
+  await expect(sortButtons.nth(2)).toHaveAttribute("orderby", "createdDate");
+  await expect(sortButtons.nth(2)).toHaveAttribute("orderdir", "asc");
+  await expect(sortButtons.nth(2).locator("i")).toHaveClass(/down/);
+
+  await quickButtons.nth(1).click();
+  await expect
+    .poll(() => currentOrganizationIssueSearch(page))
+    .toMatchObject({ assigneeId: "1", filter: "bug", pageNum: "1", state: "open" });
+  await expect(page.locator('input[name="assigneeId"]')).toHaveValue("1");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await stateButtons.nth(1).click();
+  await expect
+    .poll(() => currentOrganizationIssueSearch(page))
+    .toMatchObject({ assigneeId: "1", filter: "bug", pageNum: "1", state: "closed" });
+  await expect(page.locator('input[name="state"]')).toHaveValue("closed");
+
+  await sortButtons.nth(0).click();
+  await expect
+    .poll(() => currentOrganizationIssueSearch(page))
+    .toMatchObject({ orderBy: "dueDate", orderDir: "desc", pageNum: "1", state: "closed" });
+  await expect(page.locator('input[name="orderBy"]')).toHaveValue("dueDate");
+  await expect(page.locator('input[name="orderDir"]')).toHaveValue("desc");
 });
 
 test("organization issues menu board link preserves legacy href with SPA transition", async ({
@@ -112,7 +180,21 @@ async function readOrganizationIssuesMenuNativeLinkAudit(page: Page) {
   );
 }
 
-async function mockOrganizationIssues(page: Page) {
+async function currentOrganizationIssueSearch(page: Page) {
+  return page.evaluate(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      assigneeId: params.get("assigneeId") ?? "",
+      filter: params.get("filter") ?? "",
+      orderBy: params.get("orderBy") ?? "",
+      orderDir: params.get("orderDir") ?? "",
+      pageNum: params.get("pageNum") ?? "",
+      state: params.get("state") ?? "",
+    };
+  });
+}
+
+async function mockOrganizationIssues(page: Page, options: { itemCount?: number } = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -144,6 +226,7 @@ async function mockOrganizationIssues(page: Page) {
     });
   });
   await page.route("**/api/v1/organizations/weblabs/issues**", async (route) => {
+    const itemCount = options.itemCount ?? 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -174,6 +257,34 @@ async function mockOrganizationIssues(page: Page) {
             updatedLabel: "Jul 1, 2026",
             voterCount: 1,
           },
+          ...(itemCount > 1
+            ? [
+                {
+                  assigneeAvatarUrl: "",
+                  assigneeLabel: "",
+                  assigneeLoginId: "",
+                  authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                  authorLabel: "Site Admin",
+                  authorLoginId: "admin",
+                  commentCount: 0,
+                  createdLabel: "Jul 2, 2026",
+                  dueDateLabel: "",
+                  dueDateOverdue: false,
+                  dueDateText: "",
+                  id: 43,
+                  issueNumber: 12,
+                  labels: [],
+                  milestoneId: null,
+                  milestoneTitle: "",
+                  ownerName: "weblabs",
+                  projectName: "playground",
+                  state: "open",
+                  title: "Add aggregate issue row",
+                  updatedLabel: "Jul 2, 2026",
+                  voterCount: 0,
+                },
+              ]
+            : []),
         ],
         openIssueCount: 1,
         orderBy: "createdDate",
@@ -182,7 +293,7 @@ async function mockOrganizationIssues(page: Page) {
         pageNum: 1,
         pageSize: 20,
         state: "open",
-        totalCount: 2,
+        totalCount: itemCount,
         totalPages: 3,
         viewerUserId: 1,
         visibleProjects: [
