@@ -41,6 +41,11 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator("#issue-form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+  const labelEdit = page.locator("dt .label-edit");
+  await expect(labelEdit).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
+  await expect(labelEdit).toHaveAttribute("target", "_blank");
+  await expect(labelEdit).toHaveAttribute("class", "label-edit");
+  await expect(labelEdit).toHaveText("[Edit]");
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
   await expect(page.locator("#labelIds optgroup")).toHaveAttribute(
     "data-category-is-exclusive",
@@ -152,6 +157,17 @@ test("project issue create form parent state matches legacy partial_select_subta
       ),
     ),
   );
+});
+
+test("project issue create form label edit source uses TanStack Link", () => {
+  const source = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(source).toContain("<Link");
+  expect(source).toContain('className="label-edit"');
+  expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
 });
 
 async function mockProjectIssueForm(page: Page) {

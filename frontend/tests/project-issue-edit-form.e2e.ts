@@ -13,6 +13,10 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>");
+const ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx", import.meta.url),
+  "utf8",
+);
 
 function withLegacyEditor(html: string) {
   return html.replace(
@@ -39,6 +43,16 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
   await expect(page.locator('#labelIds option[value="8"]')).toHaveJSProperty("selected", true);
+  const labelEditLink = page.locator("dl.issue-option dt .label-edit");
+  await expect(labelEditLink).toHaveCount(1);
+  await expect(labelEditLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
+  await expect(labelEditLink).toHaveAttribute("target", "_blank");
+  await expect(labelEditLink).toHaveClass("label-edit");
+  await expect(labelEditLink).toHaveText("[Edit]");
+  await expect(labelEditLink).not.toHaveAttribute("data-status", "active");
+  expect(ROUTE_SOURCE).toContain("<Link");
+  expect(ROUTE_SOURCE).toContain('className="label-edit"');
+  expect(ROUTE_SOURCE).not.toMatch(/<a\b[^>]*className="label-edit"/u);
   await expect(page.locator("#notificationMail")).toBeChecked();
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");

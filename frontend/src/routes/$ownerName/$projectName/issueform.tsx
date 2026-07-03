@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
@@ -255,7 +255,6 @@ function ProjectIssueFormBody({
                   </dl>
 
                   <IssueLabelSelect
-                    basePath={runtimeConfig.basePath}
                     labels={labels}
                     ownerName={ownerName}
                     projectName={projectName}
@@ -466,12 +465,10 @@ function SubtaskSelects({
 }
 
 function IssueLabelSelect({
-  basePath,
   labels,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   labels: YonaRecord[];
   ownerName: string;
   projectName: string;
@@ -485,13 +482,25 @@ function IssueLabelSelect({
     <dl className="issue-option">
       <dt>
         {t("label")}{" "}
-        <a
-          href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+        <Link
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          to="/$ownerName/$projectName/issue/labelsform"
+          params={{ ownerName, projectName }}
           target="_blank"
           className="label-edit"
         >
           [{t("button.edit")}]
-        </a>
+        </Link>
       </dt>
       <dd>
         <select
