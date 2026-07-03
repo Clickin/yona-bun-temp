@@ -55,6 +55,8 @@ function ProjectDeleteFormBody({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [acceptedDeletion, setAcceptedDeletion] = useState(false);
+  const [deletionModalOpen, setDeletionModalOpen] = useState(false);
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const deleteMutation = useMutation({
@@ -65,9 +67,23 @@ function ProjectDeleteFormBody({
     onSuccess(response) {
       queryClient.removeQueries({ queryKey: apiQueryKeys.project.base(ownerName, projectName) });
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.project.list() });
-      router.history.push(stringField(response.redirectPath, "/"));
+      setDeletionModalOpen(false);
+      router.history.push(
+        prefixBasePath(runtimeConfig.basePath, stringField(response.redirectPath, "/")),
+      );
+    },
+    onError() {
+      setDeletionModalOpen(false);
     },
   });
+  const openDeletionModal = () => {
+    if (!acceptedDeletion) {
+      window.alert(t("project.delete.alert"));
+      return;
+    }
+    setDeletionModalOpen(true);
+  };
+  const closeDeletionModal = () => setDeletionModalOpen(false);
 
   return (
     <>
@@ -88,7 +104,14 @@ function ProjectDeleteFormBody({
                 <strong className="notice">{t("project.delete.description")}</strong>
               </p>
               <p>
-                <input type="checkbox" className="checkbox" autoComplete="off" id="accept" />
+                <input
+                  type="checkbox"
+                  className="checkbox"
+                  autoComplete="off"
+                  id="accept"
+                  checked={acceptedDeletion}
+                  onChange={(event) => setAcceptedDeletion(event.currentTarget.checked)}
+                />
                 <label htmlFor="accept" className="bg-checkbox label-agreement">
                   {t("project.delete.accept")}
                 </label>
@@ -96,18 +119,22 @@ function ProjectDeleteFormBody({
             </div>
           </div>
           <div className="box-wrap bottom">
-            <a
+            <button
               id="btnDelete"
-              href="#alertDeletion"
+              type="button"
               className="ybtn ybtn-danger"
-              data-toggle="modal"
+              onClick={openDeletionModal}
             >
               <i className="yobicon-database-remove"></i> {t("project.delete.this")}
-            </a>
+            </button>
           </div>
-          <div id="alertDeletion" className="modal hide">
+          <div
+            id="alertDeletion"
+            className={`modal hide${deletionModalOpen ? " in" : ""}`}
+            style={deletionModalOpen ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal">
+              <button type="button" className="close" onClick={closeDeletionModal}>
                 ×
               </button>
               <h3>{t("project.delete.requestion")}</h3>
@@ -125,11 +152,12 @@ function ProjectDeleteFormBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" data-dismiss="modal">
+              <button type="button" className="ybtn" onClick={closeDeletionModal}>
                 {t("button.no")}
               </button>
             </div>
           </div>
+          {deletionModalOpen ? <div className="modal-backdrop fade in"></div> : null}
         </div>
       </div>
     </>

@@ -112,11 +112,11 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
     </div>
     <div class="box-wrap bottom">
-      <a id="btnDelete" href="#alertDeletion" class="ybtn ybtn-danger" data-toggle="modal"><i class="yobicon-database-remove"></i> Delete this project</a>
+      <button id="btnDelete" type="button" class="ybtn ybtn-danger"><i class="yobicon-database-remove"></i> Delete this project</button>
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
+        <button type="button" class="close">×</button>
         <h3>Do you want to delete this project?</h3>
       </div>
       <div class="modal-body">
@@ -125,7 +125,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
       <div class="modal-footer">
         <button id="btnDeleteExec" type="button" class="ybtn ybtn-danger">Yes</button>
-        <button type="button" class="ybtn" data-dismiss="modal">No</button>
+        <button type="button" class="ybtn">No</button>
       </div>
     </div>
   </div>
@@ -163,7 +163,7 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "21px",
+    buttonHeight: "31px",
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
@@ -176,10 +176,72 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
     tabsMarginBottom: "15px",
   });
+});
+
+test("project delete confirmation modal opens, closes, deletes, and redirects through SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const deleteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await auditDeleteNativeListeners(page);
+  await mockProjectAdmin(page, { deleteRequests });
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe("You should agree to delete this project.");
+    await dialog.accept();
+  });
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#accept").check();
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+
+  await page.locator("#alertDeletion .modal-footer .ybtn").filter({ hasText: "No" }).click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await page.locator("#alertDeletion .close").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await page.locator("#btnDelete").click();
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample") &&
+      response.request().method() === "DELETE",
+  );
+  await page.locator("#btnDeleteExec").click();
+  await deleteResponsePromise;
+
+  expect(deleteRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(page).toHaveURL(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(await readDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
 test("project delete menu settings link preserves legacy href with SPA transition", async ({
@@ -327,6 +389,7 @@ async function readDesktopDeleteMetrics(page: Page) {
 async function mockProjectAdmin(
   page: Page,
   options: {
+    deleteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     project?: Partial<ReturnType<typeof projectSettings>>;
@@ -383,6 +446,21 @@ async function mockProjectAdmin(
         projectName: "sample",
       }),
     });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample", async (route) => {
+    if (route.request().method() === "DELETE") {
+      const request = route.request();
+      options.deleteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-delete",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, redirectPath: "/" }),
+      });
+      return;
+    }
+    await route.fallback();
   });
   await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
     const request = route.request();
@@ -445,6 +523,40 @@ function projectSettings() {
   };
 }
 
+async function auditDeleteNativeListeners(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    const records: string[] = [];
+    EventTarget.prototype.addEventListener = function (
+      this: EventTarget,
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (
+        this instanceof Element &&
+        (this.id === "btnDelete" ||
+          this.id === "alertDeletion" ||
+          Boolean(this.closest("#alertDeletion")))
+      ) {
+        records.push(`${this.id || this.className}:${type}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+    (
+      window as Window & typeof globalThis & { __deleteNativeListenerAudit?: typeof records }
+    ).__deleteNativeListenerAudit = records;
+  });
+}
+
+async function readDeleteNativeListenerAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __deleteNativeListenerAudit?: string[] })
+        .__deleteNativeListenerAudit ?? [],
+  );
+}
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
@@ -463,6 +575,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -503,6 +616,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
