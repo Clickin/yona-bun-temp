@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  useEffect,
-  useRef,
   useState,
   type AnchorHTMLAttributes,
+  type ButtonHTMLAttributes,
   type ComponentType,
   type FormEvent,
   type ReactNode,
@@ -110,6 +109,9 @@ function ProjectSettingBody({
   const maxReviewerCount =
     numberField(recordField(project).maxReviewerCount) || defaultReviewerCount;
   const reviewerPoints = Array.from({ length: maxReviewerCount }, (_value, index) => index + 1);
+  const [selectedDefaultReviewerCount, setSelectedDefaultReviewerCount] =
+    useState(defaultReviewerCount);
+  const [reviewerCountDropdownOpen, setReviewerCountDropdownOpen] = useState(false);
   const [reviewerCountEnabled, setReviewerCountEnabled] = useState(() =>
     booleanField(recordField(project).isUsingReviewerCount),
   );
@@ -391,13 +393,26 @@ function ProjectSettingBody({
                       className="hide"
                       style={{ display: reviewerCountEnabled ? "block" : "none" }}
                     >
+                      <input
+                        type="hidden"
+                        name="defaultReviewerCount"
+                        value={selectedDefaultReviewerCount}
+                      />
                       <div
-                        className="btn-group branches"
+                        className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""}`}
                         data-id="project-reviewer-count"
                         data-name="defaultReviewerCount"
                       >
-                        <button className="btn dropdown-toggle large" data-toggle="dropdown">
-                          <span className="d-label">{defaultReviewerCount}</span>
+                        <button
+                          className="btn dropdown-toggle large"
+                          data-toggle="dropdown"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setReviewerCountDropdownOpen((open) => !open);
+                          }}
+                        >
+                          <span className="d-label">{selectedDefaultReviewerCount}</span>
                           <span className="d-caret">
                             <span className="caret"></span>
                           </span>
@@ -405,7 +420,16 @@ function ProjectSettingBody({
                         <ul className="dropdown-menu">
                           {reviewerPoints.map((point) => (
                             <li data-value={point} key={point}>
-                              <LegacyNoHrefAnchor>{point}</LegacyNoHrefAnchor>
+                              <LegacyDropdownButton
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setSelectedDefaultReviewerCount(point);
+                                  setReviewerCountDropdownOpen(false);
+                                }}
+                              >
+                                {point}
+                              </LegacyDropdownButton>
                             </li>
                           ))}
                         </ul>
@@ -555,17 +579,17 @@ function MenuCheckbox({
   );
 }
 
-function LegacyNoHrefAnchor({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    ref.current?.removeAttribute("href");
-  }, []);
-
+function LegacyDropdownButton({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick?: ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
+}) {
   return (
-    <a ref={ref} href="/">
+    <button type="button" onClick={onClick}>
       {children}
-    </a>
+    </button>
   );
 }
 
