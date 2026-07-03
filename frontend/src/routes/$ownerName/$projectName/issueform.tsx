@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -285,6 +285,7 @@ function LegacyTabIndexInput({
 
 function IssueMarkdownEditor() {
   const { t } = useLegacyMessages();
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     bodyRef.current?.setAttribute("tabindex", "2");
@@ -292,15 +293,25 @@ function IssueMarkdownEditor() {
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
-        <li className="active">
-          <a href="#edit-body" data-toggle="tab" data-mode="edit">
+        <li className={activeTab === "edit" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="edit"
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
-          </a>
+          </button>
         </li>
-        <li>
-          <a href="#preview-body" data-toggle="tab" data-mode="preview">
+        <li className={activeTab === "preview" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="preview"
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
-          </a>
+          </button>
         </li>
         <li>
           <div className="task-list-button">
@@ -334,7 +345,7 @@ function IssueMarkdownEditor() {
           className="markdown-help"
           dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
         />
-        <div id="edit-body" className="tab-pane active">
+        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               ref={bodyRef}
@@ -346,7 +357,7 @@ function IssueMarkdownEditor() {
             ></textarea>
           </div>
         </div>
-        <div id="preview-body" className="tab-pane">
+        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
           <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
         </div>
         <div className="notification-receiver">
