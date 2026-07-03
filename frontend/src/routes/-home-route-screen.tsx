@@ -793,6 +793,9 @@ function AuthenticatedSiteUserMenu({
 
 function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
   const { t } = useLegacyMessages();
+  const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
+    "favorite",
+  );
 
   return (
     <>
@@ -812,20 +815,28 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
             </a>
           </div>
           <ul className="nav nav-tabs nm">
-            <li className="myOrganizationList active">
-              <a href="#myOrganizationList" data-toggle="tab">
+            <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
+              <button
+                type="button"
+                data-toggle="tab"
+                onClick={() => setActiveSidebarTab("favorite")}
+              >
                 {t("title.favorite")}
-              </a>
+              </button>
             </li>
-            <li className="myProjectList">
-              <a href="#myProjectList" data-toggle="tab">
+            <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
+              <button
+                type="button"
+                data-toggle="tab"
+                onClick={() => setActiveSidebarTab("project")}
+              >
                 {t("title.project")}
-              </a>
+              </button>
             </li>
-            <li className="myRecentIssueList">
-              <a href="#myRecentIssueList" data-toggle="tab">
+            <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
+              <button type="button" data-toggle="tab" onClick={() => setActiveSidebarTab("recent")}>
                 {t("title.recently.visited.issue")}
-              </a>
+              </button>
             </li>
           </ul>
           <div className="tab-content tab-box">
