@@ -1311,18 +1311,29 @@ function Editor({
   wrapId: string;
 }) {
   const { t } = useLegacyMessages();
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
-        <li className="active">
-          <a href={`#edit-${wrapId}`} data-toggle="tab" data-mode="edit">
+        <li className={activeTab === "edit" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="edit"
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
-          </a>
+          </button>
         </li>
-        <li>
-          <a href={`#preview-${wrapId}`} data-toggle="tab" data-mode="preview">
+        <li className={activeTab === "preview" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="preview"
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
-          </a>
+          </button>
         </li>
         <li>
           <div className="task-list-button">
@@ -1356,7 +1367,7 @@ function Editor({
           className="markdown-help"
           dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
         />
-        <div id={`edit-${wrapId}`} className="tab-pane active">
+        <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               name={textareaName}
@@ -1369,7 +1380,10 @@ function Editor({
             ></textarea>
           </div>
         </div>
-        <div id={`preview-${wrapId}`} className="tab-pane">
+        <div
+          id={`preview-${wrapId}`}
+          className={`tab-pane${activeTab === "preview" ? " active" : ""}`}
+        >
           <div
             className={`markdown-preview markdown-wrap ${editorMode}`}
             data-via-email="false"

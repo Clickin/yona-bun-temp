@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -16,6 +16,18 @@ function withLegacyMarkdownHelp(html: string) {
     '<div class="tab-content" style="position:relative;overflow:visible"><div id="edit-',
     `<div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-`,
   );
+}
+
+function withReactEditorTabButtons(html: string) {
+  return html
+    .replaceAll(
+      /<a href="#edit-[^"]+" data-toggle="tab" data-mode="edit">Edit<\/a>/g,
+      '<button type="button" data-toggle="tab" data-mode="edit">Edit</button>',
+    )
+    .replaceAll(
+      /<a href="#preview-[^"]+" data-toggle="tab" data-mode="preview">Preview<\/a>/g,
+      '<button type="button" data-toggle="tab" data-mode="preview">Preview</button>',
+    );
 }
 
 const EXPECTED_COMMIT_DETAIL_BODY = `
@@ -101,6 +113,24 @@ function uploadForm(resourceType: string) {
   return `<div class="upload-wrap content-footer" data-resource-type="${resourceType}"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`;
 }
 
+async function expectEditorTabState(
+  editor: Locator,
+  wrapId: string,
+  activeMode: "edit" | "preview",
+) {
+  if (activeMode === "edit") {
+    await expect(editor.locator("li").nth(0)).toHaveClass(/active/);
+    await expect(editor.locator("li").nth(1)).not.toHaveClass(/active/);
+    await expect(editor.locator(`#edit-${wrapId}`)).toHaveClass(/active/);
+    await expect(editor.locator(`#preview-${wrapId}`)).not.toHaveClass(/active/);
+    return;
+  }
+  await expect(editor.locator("li").nth(0)).not.toHaveClass(/active/);
+  await expect(editor.locator("li").nth(1)).toHaveClass(/active/);
+  await expect(editor.locator(`#edit-${wrapId}`)).not.toHaveClass(/active/);
+  await expect(editor.locator(`#preview-${wrapId}`)).toHaveClass(/active/);
+}
+
 function withCommentUpdateForm(
   html: string,
   basePath: string,
@@ -160,6 +190,40 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   await expect(
     page.locator("#comment-form .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toHaveCount(1);
+  const editorTabs = page.locator('[data-toggle="markdown-editor"]');
+  await expect(editorTabs.locator('a[href^="#edit-"], a[href^="#preview-"]')).toHaveCount(0);
+  await expect(
+    editorTabs.locator('button[type="button"][data-toggle="tab"][data-mode="edit"]'),
+  ).toHaveCount(2);
+  await expect(
+    editorTabs.locator('button[type="button"][data-toggle="tab"][data-mode="preview"]'),
+  ).toHaveCount(2);
+  const commentEditor = page.locator('#comment-form [data-toggle="markdown-editor"]');
+  const reviewEditor = page.locator('#review-form [data-toggle="markdown-editor"]');
+  await expect(commentEditor.locator('button[data-mode="edit"]')).toHaveText("Edit");
+  await expect(commentEditor.locator('button[data-mode="preview"]')).toHaveText("Preview");
+  await expect(reviewEditor.locator('button[data-mode="edit"]')).toHaveText("Edit");
+  await expect(reviewEditor.locator('button[data-mode="preview"]')).toHaveText("Preview");
+  await expectEditorTabState(commentEditor, "comment", "edit");
+  await expectEditorTabState(reviewEditor, "review", "edit");
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "commit-editor-tabs";
+  });
+  const urlBeforeEditorTabClick = page.url();
+  await commentEditor.locator('button[data-mode="preview"]').click();
+  await expectEditorTabState(commentEditor, "comment", "preview");
+  await expectEditorTabState(reviewEditor, "review", "edit");
+  expect(page.url()).toBe(urlBeforeEditorTabClick);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-editor-tabs");
+  await commentEditor.locator('button[data-mode="edit"]').click();
+  await expectEditorTabState(commentEditor, "comment", "edit");
+  await expectEditorTabState(reviewEditor, "review", "edit");
+  expect(page.url()).toBe(urlBeforeEditorTabClick);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "commit-review-tabs";
@@ -785,6 +849,35 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await page.locator('[data-toggle="comment-edit"][data-comment-id="601"]').click();
   await expect(page.locator("#comment-editform-601")).toBeVisible();
   await expect(page.locator("#comment-body-601")).toBeHidden();
+  await expect(
+    page.locator(
+      '[data-toggle="markdown-editor"] a[href^="#edit-"], [data-toggle="markdown-editor"] a[href^="#preview-"]',
+    ),
+  ).toHaveCount(0);
+  const threadEditor = page.locator(
+    '#thread-88 .write-comment-form [data-toggle="markdown-editor"]',
+  );
+  const updateEditor = page.locator('#comment-editform-601 [data-toggle="markdown-editor"]');
+  await expectEditorTabState(threadEditor, "thread-88", "edit");
+  await expectEditorTabState(updateEditor, "601", "edit");
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "commit-thread-editor-tabs";
+  });
+  const urlBeforeThreadEditorTabs = page.url();
+  await threadEditor.locator('button[data-mode="preview"]').click();
+  await expectEditorTabState(threadEditor, "thread-88", "preview");
+  await expectEditorTabState(updateEditor, "601", "edit");
+  await updateEditor.locator('button[data-mode="preview"]').click();
+  await threadEditor.locator('button[data-mode="edit"]').click();
+  await expectEditorTabState(threadEditor, "thread-88", "edit");
+  await expectEditorTabState(updateEditor, "601", "preview");
+  expect(page.url()).toBe(urlBeforeThreadEditorTabs);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-thread-editor-tabs");
   await page.locator("#comment-editform-601 .ybtn-cancel").click();
   await expect(page.locator("#comment-editform-601")).toBeHidden();
   await expect(page.locator("#comment-body-601")).toBeVisible();
@@ -1134,35 +1227,40 @@ async function canonicalize(page: Page, selector: string) {
 }
 
 async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
+  return page.evaluate(
+    (input) => {
+      const template = document.createElement("template");
+      template.innerHTML = input;
+      return Array.from(template.content.children)
+        .map((root) => visit(root))
+        .join("");
 
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return (node.textContent ?? "").replace(/\s+/g, " ").trim();
+      function visit(node: Node): string {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return (node.textContent ?? "").replace(/\s+/g, " ").trim();
+        }
+        if (!(node instanceof Element)) {
+          return "";
+        }
+        const attrs = Array.from(node.attributes)
+          .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .join(" ");
+        const open = attrs
+          ? `<${node.tagName.toLowerCase()} ${attrs}>`
+          : `<${node.tagName.toLowerCase()}>`;
+        return `${open}${Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("")}</${node.tagName.toLowerCase()}>`;
       }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
 
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
-    }
-  }, withLegacyMarkdownHelp(html));
+      function normalizeAttr(attr: Attr) {
+        return attr.name === "style"
+          ? attr.value.replace(/\s+/g, "").replace(/;$/u, "")
+          : attr.value;
+      }
+    },
+    withReactEditorTabButtons(withLegacyMarkdownHelp(html)),
+  );
 }
