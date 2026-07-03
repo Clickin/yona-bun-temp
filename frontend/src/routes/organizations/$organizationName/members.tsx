@@ -106,6 +106,7 @@ function OrganizationMembersBody({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+  const [openRoleDropdownLoginId, setOpenRoleDropdownLoginId] = useState<string | null>(null);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
@@ -223,7 +224,14 @@ function OrganizationMembersBody({
                 organization={organization}
                 organizationName={organizationName}
                 onDelete={setDeleteUserId}
-                onRole={(userId, role) => updateRoleMutation.mutate({ role, userId })}
+                onRole={(userId, role) => {
+                  setOpenRoleDropdownLoginId(null);
+                  updateRoleMutation.mutate({ role, userId });
+                }}
+                onToggleRoleDropdown={(loginId) =>
+                  setOpenRoleDropdownLoginId((current) => (current === loginId ? null : loginId))
+                }
+                roleDropdownOpen={openRoleDropdownLoginId === stringField(member.loginId, "")}
               />
             ))}
           </ul>
@@ -305,6 +313,8 @@ function OrganizationMember({
   organizationName,
   onDelete,
   onRole,
+  onToggleRoleDropdown,
+  roleDropdownOpen,
 }: {
   basePath: string;
   member: YonaUserItem;
@@ -312,6 +322,8 @@ function OrganizationMember({
   organizationName: string;
   onDelete: (userId: number) => void;
   onRole: (userId: number, role: string) => void;
+  onToggleRoleDropdown: (loginId: string) => void;
+  roleDropdownOpen: boolean;
 }) {
   const { t } = useLegacyMessages();
   const loginId = stringField(member.loginId, "");
@@ -334,8 +346,19 @@ function OrganizationMember({
       <div className="member-name">{stringField(member.userLabel, loginId)}</div>
       <div className="member-id">@{loginId}</div>
       <div className="member-setting">
-        <div className="btn-group" data-name={`roleof-${loginId}`}>
-          <button className="btn dropdown-toggle large" data-toggle="dropdown">
+        <div
+          className={roleDropdownOpen ? "btn-group open" : "btn-group"}
+          data-name={`roleof-${loginId}`}
+        >
+          <button
+            className="btn dropdown-toggle large"
+            data-toggle="dropdown"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleRoleDropdown(loginId);
+            }}
+          >
             <span className="d-label">{roleLabel(organization, role)}</span>
             <span className="d-caret">
               <span className="caret"></span>
@@ -360,7 +383,11 @@ function OrganizationMember({
                       `/organizations/${organizationName}/members/${userId}`,
                     )}
                     data-loginid={loginId}
-                    onClick={() => onRole(userId, roleName)}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onRole(userId, roleName);
+                    }}
                   >
                     {roleLabel(organization, roleName)}
                   </button>
