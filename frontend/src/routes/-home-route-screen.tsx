@@ -130,14 +130,6 @@ function HomeScreen({
     }
   }
 
-  function handleLoadMoreKeyDown(event: React.KeyboardEvent<HTMLElement>) {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-    event.preventDefault();
-    void loadMoreNotifications();
-  }
-
   if (
     isAuthenticated &&
     routePath === "/" &&
@@ -255,17 +247,18 @@ function HomeScreen({
                       ))
                     )}
                     {notificationHasMore ? (
-                      <li
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void loadMoreNotifications();
-                        }}
-                        onKeyDown={handleLoadMoreKeyDown}
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            '<a href="javascript:void(0);" id="notification-more" class="ybtn">More</a>',
-                        }}
-                      />
+                      <li>
+                        <button
+                          id="notification-more"
+                          type="button"
+                          className="ybtn"
+                          onClick={() => {
+                            void loadMoreNotifications();
+                          }}
+                        >
+                          More
+                        </button>
+                      </li>
                     ) : null}
                   </ul>
                 </div>

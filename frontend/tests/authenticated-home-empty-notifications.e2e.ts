@@ -922,21 +922,28 @@ test("direct notifications route appends legacy notification-more rows", async (
 
   await page.goto(`${basePath}/notifications`);
   await expect(page.locator(".notification-stream")).toHaveCount(20);
-  await expect(page.locator("#notification-more")).toBeVisible();
+  const notificationMore = page.locator("button[type='button'].ybtn#notification-more");
+  await expect(notificationMore).toBeVisible();
+  await expect(notificationMore).toHaveText("More");
+  await expect(page.locator("a[href^='javascript:']#notification-more")).toHaveCount(0);
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_DIRECT_NOTIFICATIONS.replace(
         `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
-        `${expectedNotificationRows(firstPageItems, basePath)}<li><a href="javascript:void(0);" id="notification-more" class="ybtn">More</a></li>`,
+        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button" class="ybtn">More</button></li>`,
       ).replaceAll("__BASE_PATH__", basePath),
     ),
   );
 
   const beforeUrl = page.url();
-  await page.locator("#notification-more").click();
+  await notificationMore.click();
   await expect(page.locator(".notification-stream")).toHaveCount(21);
+  await expect(page.locator(".notification-stream", { hasText: "Issue #21 updated" })).toHaveCount(
+    1,
+  );
   await expect(page.locator("#notification-more")).toHaveCount(0);
+  await expect(page.locator("button[type='button'].ybtn#notification-more")).toHaveCount(0);
   expect(page.url()).toBe(beforeUrl);
   expect(requests).toContain(`${basePath}/api/v1/notifications?from=20&size=20`);
   expect(await canonicalizeScreenRoots(page)).toEqual(
