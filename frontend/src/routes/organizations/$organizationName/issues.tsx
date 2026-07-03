@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import type { HTMLAttributes, LiHTMLAttributes, MouseEvent, ReactNode } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { HTMLAttributes, LiHTMLAttributes, ReactNode } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
 import {
@@ -138,7 +138,6 @@ function OrganizationIssuesBody({
       />
       <OrganizationMenu
         active="issues"
-        basePath={runtimeConfig.basePath}
         organizationName={organizationName}
         viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
       />
@@ -273,7 +272,7 @@ function QuickSearch({
   search: OrganizationIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
-  const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  const pjaxFilter: Record<"pjax-filter", string> = { "pjax-filter": "" };
   const projectNames = search.projectNames.join(",");
 
   return (
@@ -349,7 +348,7 @@ function StateTab({
   label: string;
   state: "closed" | "open";
 }) {
-  const legacyState = { state } as unknown as HTMLAttributes<HTMLAnchorElement>;
+  const legacyState: Record<"state", string> = { state };
 
   return (
     <li className={active ? "active" : ""}>
@@ -380,7 +379,7 @@ function IssueFilters({ orderBy, orderDir }: { orderBy: string; orderDir: string
           const legacySort = {
             orderBy: filter.field,
             orderDir: active ? nextDir : "desc",
-          } as unknown as HTMLAttributes<HTMLAnchorElement>;
+          } satisfies Record<"orderBy" | "orderDir", string>;
           return (
             /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs. */
             <a
@@ -593,58 +592,36 @@ function OrganizationHeader({
 
 function OrganizationMenu({
   active,
-  basePath,
   organizationName,
   viewerCanUpdate,
 }: {
   active: "issues";
-  basePath: string;
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.history.push(prefixBasePath(basePath, to));
-  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}`}>
               {t("title.organizationHome")}
             </OrganizationRouteLink>
           </li>
           <li className={active === "issues" ? "active" : ""}>
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/issues`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}/issues`}>
               {t("menu.issue")}
             </OrganizationRouteLink>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/boards`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}/boards`}>
               {t("menu.board")}
             </OrganizationRouteLink>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/pullrequests`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}/pullrequests`}>
               {t("menu.pullRequest")}
             </OrganizationRouteLink>
           </li>
@@ -653,11 +630,7 @@ function OrganizationMenu({
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink
-                  basePath={basePath}
-                  onNavigate={navigate}
-                  to={`/organizations/${organizationName}/settingform`}
-                >
+                <OrganizationRouteLink to={`/organizations/${organizationName}/settingform`}>
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
                 </OrganizationRouteLink>
@@ -670,38 +643,13 @@ function OrganizationMenu({
   );
 }
 
-function OrganizationRouteLink({
-  basePath,
-  children,
-  onNavigate,
-  to,
-}: {
-  basePath: string;
-  children: ReactNode;
-  onNavigate: (to: string) => void;
-  to: string;
-}) {
-  const navigateWithinOrganization = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
-  return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganization}>
-      {children}
-    </a>
-  );
+function OrganizationRouteLink({ children, to }: { children: ReactNode; to: string }) {
+  const legacyLinkProps = {
+    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+    search: {},
+    to,
+  } as unknown as Parameters<typeof Link>[0];
+  return <Link {...legacyLinkProps}>{children}</Link>;
 }
 
 function totalPages(issues: OrganizationIssueListRestResponse) {

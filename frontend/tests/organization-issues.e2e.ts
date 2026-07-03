@@ -50,18 +50,22 @@ test("organization issues menu board link preserves legacy href with SPA transit
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationIssuesMenuNativeLinkAudit(page);
   await mockOrganizationIssues(page);
 
   await page.goto(`${basePath}/organizations/weblabs/issues?state=open&filter=bug`);
   const boardLink = page.locator(".project-menu-gruop a").filter({ hasText: "Board" });
   await expect(boardLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/boards`);
+  expect(await readOrganizationIssuesMenuNativeLinkAudit(page)).toEqual([]);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
   await boardLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(`${basePath}/organizations/weblabs/boards`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -71,7 +75,42 @@ test("organization issues menu board link preserves legacy href with SPA transit
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
   await expect(page.locator("#option_form")).toBeVisible();
+  expect(await readOrganizationIssuesMenuNativeLinkAudit(page)).toEqual([]);
 });
+
+async function installOrganizationIssuesMenuNativeLinkAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__organizationIssuesMenuNativeLinkListeners", {
+      configurable: true,
+      value: [],
+      writable: true,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithOrganizationIssuesMenuAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof HTMLAnchorElement && this.matches(".project-menu-gruop a")) {
+        (
+          window as Window &
+            typeof globalThis & { __organizationIssuesMenuNativeLinkListeners: string[] }
+        ).__organizationIssuesMenuNativeLinkListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readOrganizationIssuesMenuNativeLinkAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __organizationIssuesMenuNativeLinkListeners?: string[] }
+      ).__organizationIssuesMenuNativeLinkListeners ?? [],
+  );
+}
 
 async function mockOrganizationIssues(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
