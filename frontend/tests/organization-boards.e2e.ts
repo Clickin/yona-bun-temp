@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ORGANIZATION_BOARDS_ROUTE_SOURCE = readFileSync(
+  "src/routes/organizations/$organizationName/boards.tsx",
+  "utf8",
+);
 
 const EXPECTED_ORGANIZATION_BOARDS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -10,16 +16,40 @@ const EXPECTED_ORGANIZATION_BOARDS = `
 `;
 
 function expectedOrganizationBoardsEmpty() {
-  const listStart = EXPECTED_ORGANIZATION_BOARDS.indexOf('<div class="filter-wrap board">');
-  const listEnd = EXPECTED_ORGANIZATION_BOARDS.indexOf(
-    '<div class="write-btn-wrap"></div><div id="pagination"></div>',
-  );
-  return `${EXPECTED_ORGANIZATION_BOARDS.slice(0, listStart).replace(
-    'value="release"',
-    'value="empty"',
-  )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${EXPECTED_ORGANIZATION_BOARDS.slice(
+  const expected = expectedOrganizationBoards();
+  const listStart = expected.indexOf('<div class="filter-wrap board">');
+  const listEnd = expected.indexOf('<div class="write-btn-wrap"></div><div id="pagination"></div>');
+  return `${expected
+    .slice(0, listStart)
+    .replace(
+      'value="release"',
+      'value="empty"',
+    )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${expected.slice(
     listEnd,
   )}`;
+}
+
+function expectedOrganizationBoards() {
+  return EXPECTED_ORGANIZATION_BOARDS.replace(
+    '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
+    '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
+  )
+    .replace(
+      '<a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">',
+      '<a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">',
+    )
+    .replace(
+      '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
+      '<button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
+    )
+    .replace(
+      '</a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
+      '</button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
+    )
+    .replace(
+      '</a><ul class="dropdown-menu flat right">',
+      '</button><ul class="dropdown-menu flat right">',
+    );
 }
 
 test("organization board aggregate matches legacy group_board_list.scala.html DOM", async ({
@@ -45,7 +75,7 @@ test("organization board aggregate matches legacy group_board_list.scala.html DO
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_ORGANIZATION_BOARDS.replaceAll("__BASE_PATH__", basePath),
+      expectedOrganizationBoards().replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });
@@ -131,6 +161,64 @@ test("organization boards menu issue link preserves legacy href with SPA transit
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Issue");
   await expect(page.locator("#search")).toBeVisible();
+});
+
+test("organization board row links preserve legacy hrefs with SPA transitions", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page);
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+  );
+
+  const releaseRow = page.locator(".post-list-wrap:not(.notice-wrap) .post-item").first();
+  await expect(releaseRow.locator(".avatar-wrap")).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(releaseRow.locator(".title-wrap .title")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample/post/7`,
+  );
+  await expect(releaseRow.locator(".infos .infos-link-item").first()).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(releaseRow.locator(".group-project-name")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample`,
+  );
+  await expect(releaseRow.locator(".item-count-groups a")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample/post/7#comments`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await releaseRow.locator(".title-wrap .title").click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/weblabs/sample/post/7`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+test("organization board route source uses direct Links for row navigation", async () => {
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("const projectHref");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("const authorHref");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("href={projectHref}");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("href={authorHref}");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("href={`${postHref}#comments`}");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(
+    'to="/$ownerName/$projectName/post/$postNumber"',
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('to="/$ownerName/$projectName"');
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('to="/$user"');
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('hash="comments"');
 });
 
 async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "default") {

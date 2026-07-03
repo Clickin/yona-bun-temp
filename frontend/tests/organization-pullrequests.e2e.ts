@@ -1,8 +1,9 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_ORGANIZATION_PULLREQUESTS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div pjax-container="" class="row-fluid cb"><div class="left-menu span2 search-wrap hide-in-mobile" style="padding-top:0px"><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/pullrequests" method="get"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="fix"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm pullrequeset-tab-menu"><li class="active"><button type="button" data-url="__BASE_PATH__/organizations/weblabs/pullrequests" data-type="state">Open<span class="num-badge">1</span></button></li><li class=""><button type="button" data-url="__BASE_PATH__/organizations/weblabs/closedPullrequests" data-type="state">Closed<span class="num-badge">2</span></button></li></ul><div class="tab-content" style="clear:both;padding-top:15px"><div id="list" class="row-fluid tab-pane active"><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/weblabs/sample/pullRequest/3"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">3</span><a href="__BASE_PATH__/weblabs/sample/pullRequest/3" class="title ">Fix login redirect</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><div class="infos-item" style="margin-right:20px"><i class="infos-icon yobicon-post2 vmiddle"></i><div class="upload-progress"><div class="bar orange" style="width:50%"></div></div><a href="__BASE_PATH__/weblabs/sample/pullRequest/3/changes" data-toggle="tooltip" title="Closed review / Total review"><span>1</span><span class="gray-txt">/</span><span class="size total">2</span></a></div></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul></div></div></div></div></div></div>
@@ -170,6 +171,78 @@ test("organization pullrequests menu board link preserves legacy href with SPA t
   expect(await readOrganizationPullRequestNativeLinkAudit(page)).toEqual([]);
 });
 
+test("organization pull request row links preserve legacy hrefs with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+
+  await expect(page.locator(".post-item .avatar-wrap.mlarge")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator(".title-wrap a.title")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample/pullRequest/3`,
+  );
+  await expect(page.locator(".infos > a.infos-item")).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(page.locator(".group-project-name")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample`,
+  );
+  await expect(page.locator('.infos-item a[data-toggle="tooltip"]')).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/sample/pullRequest/3/changes`,
+  );
+  await expect(page.locator(".avatar-wrap.assinee")).toHaveAttribute("href", `${basePath}/admin`);
+
+  await expectOrganizationPullRequestSpaClick(
+    page,
+    ".title-wrap a.title",
+    `${basePath}/weblabs/sample/pullRequest/3`,
+    "organization-pr-title",
+  );
+  await expectOrganizationPullRequestSpaClick(
+    page,
+    ".infos > a.infos-item",
+    `${basePath}/dev`,
+    "organization-pr-contributor",
+  );
+  await expectOrganizationPullRequestSpaClick(
+    page,
+    ".group-project-name",
+    `${basePath}/weblabs/sample`,
+    "organization-pr-project",
+  );
+  await expectOrganizationPullRequestSpaClick(
+    page,
+    '.infos-item a[data-toggle="tooltip"]',
+    `${basePath}/weblabs/sample/pullRequest/3/changes`,
+    "organization-pr-changes",
+  );
+});
+
+test("organization pull request route source keeps direct typed row links", async () => {
+  const source = await readFile(
+    "src/routes/organizations/$organizationName/pullrequests.tsx",
+    "utf8",
+  );
+
+  expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("projectHref");
+  expect(source).not.toContain("pullRequestHref");
+  expect(source).not.toContain("changesHref");
+  expect(source).not.toContain("contributorHref");
+  expect(source).not.toContain("receiverHref");
+  expect(source).not.toContain("<a\n          href={");
+  expect(source).toContain('to="/$user"');
+  expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');
+  expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"');
+});
+
 async function installOrganizationPullRequestNativeLinkAudit(page: Page) {
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
@@ -209,6 +282,31 @@ async function readOrganizationPullRequestNativeLinkAudit(page: Page) {
           typeof globalThis & { __organizationPullRequestNativeLinkListeners?: string[] }
       ).__organizationPullRequestNativeLinkListeners ?? [],
   );
+}
+
+async function expectOrganizationPullRequestSpaClick(
+  page: Page,
+  selector: string,
+  expectedUrl: string,
+  marker: string,
+) {
+  await page.goto(
+    `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/organizations/weblabs/pullrequests?filter=fix`,
+  );
+  await expect(page.locator(selector).first()).toHaveAttribute("href", expectedUrl);
+  await page.evaluate((value) => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = value;
+  }, marker);
+  await page.locator(selector).first().click();
+  await expect
+    .poll(() => {
+      const actual = new URL(page.url());
+      return `${actual.pathname}${actual.hash}`;
+    })
+    .toBe(`${new URL(expectedUrl, page.url()).pathname}${new URL(expectedUrl, page.url()).hash}`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe(marker);
 }
 
 async function mockOrganizationPullRequests(page: Page) {

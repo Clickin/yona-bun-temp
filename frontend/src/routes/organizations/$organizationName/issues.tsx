@@ -499,41 +499,42 @@ function OrganizationIssueItem({
   state: string;
 }) {
   const { t } = useLegacyMessages();
-  const projectHref = prefixBasePath(basePath, `/${issue.ownerName}/${issue.projectName}`);
-  const issueHref = `${projectHref}/issue/${issue.issueNumber}`;
-  const authorHref = prefixBasePath(basePath, `/${issue.authorLoginId}`);
-  const assigneeHref = prefixBasePath(basePath, `/${issue.assigneeLoginId}`);
+  const projectRoutePath = `/${issue.ownerName}/${issue.projectName}`;
+  const issueRoutePath = `${projectRoutePath}/issue/${issue.issueNumber}`;
+  const authorRoutePath = `/${issue.authorLoginId}`;
+  const assigneeRoutePath = `/${issue.assigneeLoginId}`;
+  const issueHref = prefixBasePath(basePath, issueRoutePath);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
     <li className="post-item title" id={`issue-item-${issue.id}`} {...legacyHref}>
       <div className="span10 span-hard-wrap">
-        <a
-          href={authorHref}
+        <Link
+          to={authorRoutePath}
           className="avatar-wrap mlarge hide-in-mobile"
           data-toggle="tooltip"
           data-placement="top"
           title={issue.authorLoginId}
         >
           <img src={issue.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
-        </a>
+        </Link>
         <div className="title-wrap">
-          <a href={issueHref} className="title">
+          <Link to={issueRoutePath} className="title">
             {issue.title}
-          </a>
+          </Link>
         </div>
         <div className="infos">
           {issue.authorLabel ? (
-            <a
-              href={authorHref}
+            <Link
+              to={authorRoutePath}
               className="infos-item infos-link-item"
               data-toggle="tooltip"
               data-placement="top"
               title={issue.authorLoginId}
             >
               {issue.authorLabel}
-            </a>
+            </Link>
           ) : (
             <span className="infos-item">{t("issue.noAuthor")}</span>
           )}
@@ -542,58 +543,58 @@ function OrganizationIssueItem({
           </span>
           {issue.milestoneId ? (
             <span className="infos-item mileston-tag">
-              <a
-                href={`${projectHref}/milestone/${issue.milestoneId}`}
+              <Link
+                to={`${projectRoutePath}/milestone/${issue.milestoneId}`}
                 data-toggle="tooltip"
                 data-placement="top"
                 title={t("milestone")}
               >
                 {issue.milestoneTitle}
-              </a>
+              </Link>
             </span>
           ) : null}
           {issue.commentCount > 0 || issue.voterCount > 0 ? (
             <span className="infos-item item-count-groups">
               {issue.commentCount > 0 ? (
-                <a href={`${issueHref}#comments`}>
+                <Link to={issueRoutePath} hash="comments">
                   <span className="count-groups item-icon ">
                     <i className="yobicon-comments"></i>
                   </span>
                   <span className="count-groups item-count ">{issue.commentCount}</span>
-                </a>
+                </Link>
               ) : null}
               {issue.voterCount > 0 ? (
-                <a href={`${issueHref}#vote`}>
+                <Link to={issueRoutePath} hash="vote">
                   <span className="count-groups item-icon strong">
                     <i className="yobicon-hearts"></i>
                   </span>
                   <span className="count-groups item-count strong">{issue.voterCount}</span>
-                </a>
+                </Link>
               ) : null}
             </span>
           ) : null}
-          <a href={projectHref} className="infos-link-item group-project-name">
+          <Link to={projectRoutePath} className="infos-link-item group-project-name">
             {issue.projectName}
-          </a>
+          </Link>
           <span className="post-id margin-right-5">#{issue.issueNumber}</span>
           {issue.labels.map((label) => (
-            <a
-              href={`${projectHref}/issues?state=${state}&labelIds=${label.id}`}
+            <Link
+              to={`${projectRoutePath}/issues?state=${state}&labelIds=${label.id}`}
               className="label issue-label list-label"
               data-label-id={label.id}
               style={{ background: label.color }}
               key={String(label.id)}
             >
               {label.name}
-            </a>
+            </Link>
           ))}
         </div>
       </div>
       <div className="span2 hide-in-mobile">
         <div className="mt5 pull-right">
           {issue.assigneeLoginId ? (
-            <a
-              href={assigneeHref}
+            <Link
+              to={assigneeRoutePath}
               className="avatar-wrap assinee"
               data-toggle="tooltip"
               data-placement="top"
@@ -605,7 +606,7 @@ function OrganizationIssueItem({
                 height="32"
                 alt=""
               />
-            </a>
+            </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}

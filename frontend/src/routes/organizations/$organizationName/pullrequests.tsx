@@ -252,71 +252,87 @@ function OrganizationPullRequestItem({
   pullRequest: PullRequestListItem;
 }) {
   const { t } = useLegacyMessages();
-  const projectHref = prefixBasePath(
-    basePath,
-    `/${pullRequest.ownerName}/${pullRequest.projectName}`,
-  );
-  const pullRequestHref = `${projectHref}/pullRequest/${pullRequest.pullRequestNumber}`;
-  const changesHref = `${pullRequestHref}/changes`;
-  const contributorHref = prefixBasePath(basePath, `/${pullRequest.contributorLoginId}`);
-  const receiverHref = prefixBasePath(basePath, `/${pullRequest.receiverLoginId}`);
+  const projectParams = {
+    ownerName: pullRequest.ownerName,
+    projectName: pullRequest.projectName,
+  };
+  const pullRequestParams = {
+    ...projectParams,
+    pullRequestNumber: String(pullRequest.pullRequestNumber),
+  };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const legacyHref = { href: pullRequestHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const legacyHref = {
+    href: prefixBasePath(
+      basePath,
+      `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`,
+    ),
+  } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
     <li className="post-item title" {...legacyHref}>
       <div className="span10 span-hard-wrap">
-        <a
-          href={contributorHref}
+        <Link
+          params={{ user: pullRequest.contributorLoginId }}
+          to="/$user"
           className="avatar-wrap mlarge"
           data-toggle="tooltip"
           data-placement="top"
           title={pullRequest.contributorLoginId}
         >
           <img src="/assets/images/default-avatar-32.png" alt="" />
-        </a>
+        </Link>
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
-          <a href={pullRequestHref} className={`title ${pullRequest.conflict ? "conflict" : ""}`}>
+          <Link
+            params={pullRequestParams}
+            to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+            className={`title ${pullRequest.conflict ? "conflict" : ""}`}
+          >
             {pullRequest.title}
-          </a>
+          </Link>
         </div>
         <div className="infos">
           {pullRequest.contributorLabel ? (
-            <a
-              href={contributorHref}
+            <Link
+              params={{ user: pullRequest.contributorLoginId }}
+              to="/$user"
               className="infos-item infos-link-item"
               data-toggle="tooltip"
               data-placement="top"
               title={pullRequest.contributorLoginId}
             >
               {pullRequest.contributorLabel}
-            </a>
+            </Link>
           ) : (
             <span className="infos-item">{t("issue.noAuthor")}</span>
           )}
           <span className="infos-item" title={pullRequest.createdLabel}>
             {pullRequest.createdLabel}
           </span>
-          <a href={projectHref} className="infos-link-item group-project-name">
+          <Link
+            params={projectParams}
+            to="/$ownerName/$projectName"
+            className="infos-link-item group-project-name"
+          >
             {pullRequest.projectName}
-          </a>
+          </Link>
           {pullRequest.commentThreadCount > 0 ? (
             <div className="infos-item" style={{ marginRight: 20 }}>
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">
                 <div className="bar orange" style={{ width: `${percent}%` }}></div>
               </div>
-              <a
-                href={changesHref}
+              <Link
+                params={pullRequestParams}
+                to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
                 data-toggle="tooltip"
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
                 <span className="gray-txt">/</span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
-              </a>
+              </Link>
             </div>
           ) : null}
         </div>
@@ -324,8 +340,9 @@ function OrganizationPullRequestItem({
       <div className="span2 hide-in-mobile">
         <div className="mt5 pull-right hide-in-mobile">
           {pullRequest.receiverLoginId ? (
-            <a
-              href={receiverHref}
+            <Link
+              params={{ user: pullRequest.receiverLoginId }}
+              to="/$user"
               className="avatar-wrap assinee"
               data-toggle="tooltip"
               data-placement="top"
@@ -333,7 +350,7 @@ function OrganizationPullRequestItem({
               data-original-title={pullRequest.receiverLabel}
             >
               <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
-            </a>
+            </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}

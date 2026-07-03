@@ -242,56 +242,79 @@ function BoardFilters({
 }
 
 function OrganizationBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
-  const projectHref = prefixBasePath(basePath, `/${post.ownerName}/${post.projectName}`);
-  const postHref = `${projectHref}/post/${post.postNumber}`;
-  const authorHref = prefixBasePath(basePath, `/${post.authorLoginId}`);
+  const postHref = prefixBasePath(
+    basePath,
+    `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`,
+  );
   const legacyHref = { href: postHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
     <li className="post-item title" {...legacyHref}>
-      <a
-        href={authorHref}
+      <Link
+        to="/$user"
+        params={{ user: post.authorLoginId }}
         className="avatar-wrap mlarge hide-in-mobile"
         data-toggle="tooltip"
         data-placement="top"
         title={post.authorLoginId}
       >
         <img src={post.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
-      </a>
+      </Link>
       <div className="title-wrap">
-        <a href={postHref} className="title">
+        <Link
+          to="/$ownerName/$projectName/post/$postNumber"
+          params={{
+            ownerName: post.ownerName,
+            projectName: post.projectName,
+            postNumber: String(post.postNumber),
+          }}
+          className="title"
+        >
           {post.title}
-        </a>
+        </Link>
       </div>
       <div className="infos">
         {post.authorLabel ? (
-          <a
-            href={authorHref}
+          <Link
+            to="/$user"
+            params={{ user: post.authorLoginId }}
             className="infos-item infos-link-item"
             data-toggle="tooltip"
             data-placement="top"
             title={post.authorLoginId}
           >
             {post.authorLabel}
-          </a>
+          </Link>
         ) : (
           <span className="infos-item">No author</span>
         )}
-        <a href={projectHref} className="infos-link-item group-project-name">
+        <Link
+          to="/$ownerName/$projectName"
+          params={{ ownerName: post.ownerName, projectName: post.projectName }}
+          className="infos-link-item group-project-name"
+        >
           {post.projectName}
-        </a>
+        </Link>
         <span className="post-id">#{post.postNumber}</span>
         <span className="infos-item" title={post.createdLabel}>
           {post.createdLabel}
         </span>
         {post.commentCount > 0 ? (
           <span className="infos-item item-count-groups">
-            <a href={`${postHref}#comments`}>
+            <Link
+              to="/$ownerName/$projectName/post/$postNumber"
+              params={{
+                ownerName: post.ownerName,
+                projectName: post.projectName,
+                postNumber: String(post.postNumber),
+              }}
+              hash="comments"
+            >
               <span className="count-groups item-icon ">
                 <i className="yobicon-comments"></i>
               </span>
               <span className="count-groups item-count ">{post.commentCount}</span>
-            </a>
+            </Link>
           </span>
         ) : null}
       </div>
