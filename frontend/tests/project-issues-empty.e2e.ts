@@ -1528,6 +1528,15 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
     ),
   );
 
+  await page
+    .locator("#issue-item-42 .title-wrap > .title")
+    .first()
+    .evaluate((titleLink) => {
+      titleLink.addEventListener("click", (event) => event.preventDefault(), { once: true });
+      titleLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+  await expect(page.locator("#issue-item-42 .child-issue-list")).not.toBeVisible();
+
   await page.locator("#issue-item-42 .infos").click();
   await expect(page.locator("#issue-item-42 .child-issue-list")).toBeVisible();
   await expect(page.locator("#issue-item-42 .child-issue-list")).toHaveAttribute(
@@ -1566,6 +1575,9 @@ test("project issue show-subtasks toggle follows legacy yona.showSubtask localSt
   const childList = page.locator("#issue-item-42 .child-issue-list");
   await expect(toggle).not.toBeChecked();
   await expect(childList).not.toBeVisible();
+
+  await page.locator("#issue-item-42 .infos").click();
+  await expect(childList).toBeVisible();
 
   await toggle.click();
   await expect(toggle).toBeChecked();

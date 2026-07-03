@@ -429,6 +429,9 @@ function ProjectIssuesBody({
     backgroundColor: "#fafafa" | "#fff";
     issueId: string;
   } | null>(null);
+  const [revealedChildIssueIds, setRevealedChildIssueIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -476,6 +479,16 @@ function ProjectIssuesBody({
         ...search,
         pageNum,
       }),
+    });
+  };
+  const revealChildIssueList = (issueId: string) => {
+    setRevealedChildIssueIds((previousIds) => {
+      if (previousIds.has(issueId)) {
+        return previousIds;
+      }
+      const nextIds = new Set(previousIds);
+      nextIds.add(issueId);
+      return nextIds;
     });
   };
   const handleIssueListClick = useEffectEvent((event: MouseEvent) => {
@@ -579,11 +592,6 @@ function ProjectIssuesBody({
 
     if (target.closest(".title-wrap > .title")) {
       return;
-    }
-
-    const childList = target.closest(".post-item")?.querySelector<HTMLElement>(".child-issue-list");
-    if (childList) {
-      childList.style.display = "block";
     }
   });
   useEffect(() => {
@@ -689,6 +697,9 @@ function ProjectIssuesBody({
                   checked={showSubtasksAlways}
                   onToggle={(checked) => {
                     localStorage.setItem("showSubtasksAlways", String(checked));
+                    if (!checked) {
+                      setRevealedChildIssueIds(new Set());
+                    }
                     setShowSubtasksAlways(checked);
                   }}
                 />
@@ -731,6 +742,9 @@ function ProjectIssuesBody({
                     {draftItems.map((issue) => (
                       <ProjectIssueItem
                         basePath={runtimeConfig.basePath}
+                        childIssueListRevealed={revealedChildIssueIds.has(
+                          stringField(issue.id, String(issue.issueNumber)),
+                        )}
                         currentUserLoginId={currentUserLoginId}
                         draftNumberSource="draft-list"
                         issue={issue}
@@ -747,6 +761,7 @@ function ProjectIssuesBody({
                         useTwoColumnMode={useTwoColumnMode}
                         titlePrefixRoute={titlePrefixRoute}
                         onTitlePrefixSearch={handleTitlePrefixSearch}
+                        onRevealChildIssueList={revealChildIssueList}
                       />
                     ))}
                   </ul>
@@ -755,6 +770,9 @@ function ProjectIssuesBody({
                   {normalItems.map((issue) => (
                     <ProjectIssueItem
                       basePath={runtimeConfig.basePath}
+                      childIssueListRevealed={revealedChildIssueIds.has(
+                        stringField(issue.id, String(issue.issueNumber)),
+                      )}
                       currentUserLoginId={currentUserLoginId}
                       draftNumberSource="normal-list"
                       issue={issue}
@@ -771,6 +789,7 @@ function ProjectIssuesBody({
                       useTwoColumnMode={useTwoColumnMode}
                       titlePrefixRoute={titlePrefixRoute}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
+                      onRevealChildIssueList={revealChildIssueList}
                     />
                   ))}
                 </ul>
@@ -1420,12 +1439,14 @@ function LabelMassUpdateGroup({
 
 function ProjectIssueItem({
   basePath,
+  childIssueListRevealed,
   currentUserLoginId,
   draftNumberSource,
   hoveredTitlePrefix,
   issue,
   issueRowHoverStyle,
   onIssueRowHover,
+  onRevealChildIssueList,
   onTitlePrefixHover,
   onTitlePrefixSearch,
   ownerName,
@@ -1437,6 +1458,7 @@ function ProjectIssueItem({
   useTwoColumnMode,
 }: {
   basePath: string;
+  childIssueListRevealed: boolean;
   currentUserLoginId: string;
   draftNumberSource: "draft-list" | "normal-list";
   hoveredTitlePrefix: string;
@@ -1451,6 +1473,7 @@ function ProjectIssueItem({
       issueId: string;
     } | null,
   ) => void;
+  onRevealChildIssueList: (issueId: string) => void;
   onTitlePrefixHover: (prefix: string) => void;
   onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
@@ -1495,6 +1518,22 @@ function ProjectIssueItem({
           title: issue.dueDateLabel,
         }
       : {};
+  const childIssueListVisible = showSubtasksAlways || childIssueListRevealed;
+  const revealChildIssueListFromRow = (target: Element | null) => {
+    if (target?.closest(".mass-update-check") || target?.closest(".title-wrap > .title")) {
+      return;
+    }
+    onRevealChildIssueList(issueId);
+  };
+  const handleIssueItemClick = (event: ReactMouseEvent<HTMLLIElement>) => {
+    revealChildIssueListFromRow(event.target instanceof Element ? event.target : null);
+  };
+  const handleIssueItemKeyDown = (event: ReactKeyboardEvent<HTMLLIElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    revealChildIssueListFromRow(event.target instanceof Element ? event.target : null);
+  };
 
   return (
     <li
@@ -1502,6 +1541,8 @@ function ProjectIssueItem({
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
+      onClick={handleIssueItemClick}
+      onKeyDown={handleIssueItemKeyDown}
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
       onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
       style={issueRowStyle}
@@ -1662,7 +1703,7 @@ function ProjectIssueItem({
             ))}
             <div
               className="child-issue-list hide"
-              style={showSubtasksAlways ? { display: "block" } : undefined}
+              style={childIssueListVisible ? { display: "block" } : undefined}
             >
               <IssueChildRows
                 basePath={basePath}
