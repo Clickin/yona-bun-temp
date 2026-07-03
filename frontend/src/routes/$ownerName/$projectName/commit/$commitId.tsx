@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { type AnchorHTMLAttributes, type ComponentType, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -27,6 +27,16 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
+
+const LegacyInternalLink = Link as ComponentType<
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeOptions?: { includeHash?: boolean };
+    activeProps?: { className?: string | undefined };
+    hash?: string;
+    search?: { branch?: string; path?: string };
+    to: string;
+  }
+>;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
@@ -970,9 +980,9 @@ function CodeCommentThreadView({
                   </a>
                 </span>
                 <span className="ago">
-                  <a href={`#comment-${comment.id}`} title={comment.createdLabel}>
+                  <CommitHashLink hash={`comment-${comment.id}`} title={comment.createdLabel}>
                     {comment.createdLabel}
-                  </a>
+                  </CommitHashLink>
                 </span>
                 {comment.canUpdate ? (
                   <span className="edit pull-right">
@@ -1466,8 +1476,8 @@ function ReviewCards({
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
       {threads.map((thread) => (
-        <a
-          href={`#thread-${thread.id}`}
+        <CommitHashLink
+          hash={`thread-${thread.id}`}
           className={`review-card ${thread.state.toLowerCase()}`}
           key={thread.id}
         >
@@ -1488,9 +1498,31 @@ function ReviewCards({
             </span>
             {thread.createdLabel}
           </span>
-        </a>
+        </CommitHashLink>
       ))}
     </div>
+  );
+}
+
+function CommitHashLink({
+  hash,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { hash: string }) {
+  const { branch, path } = Route.useSearch();
+  const search = {
+    ...(branch ? { branch } : {}),
+    ...(path ? { path } : {}),
+  };
+
+  return (
+    <LegacyInternalLink
+      {...props}
+      to="."
+      hash={hash}
+      search={search}
+      activeOptions={{ includeHash: true }}
+      activeProps={{ className: undefined }}
+    />
   );
 }
 
