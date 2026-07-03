@@ -576,7 +576,6 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectIdValue = projectId(project);
-  const favoriteToggleRef = useRef<HTMLSpanElement | null>(null);
   const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
   const logoUrl = projectLogoUrl(project);
   const backgroundImageUrl =
@@ -606,20 +605,6 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
       });
     },
   });
-  useEffect(() => {
-    const favoriteToggle = favoriteToggleRef.current;
-    if (!favoriteToggle) {
-      return;
-    }
-    const handleFavoriteToggle = (event: MouseEvent) => {
-      event.stopPropagation();
-      favoriteMutation.mutate();
-    };
-    favoriteToggle.addEventListener("mousedown", handleFavoriteToggle);
-    return () => {
-      favoriteToggle.removeEventListener("mousedown", handleFavoriteToggle);
-    };
-  }, [favoriteMutation]);
 
   return (
     <div
@@ -640,10 +625,15 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
               <span className="project-name">
                 <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
               </span>
+              {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy project/header.scala.html renders this favorite toggle as a span. */}
+              {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy project/header.scala.html renders this favorite toggle as a span. */}
               <span
                 className="user-project-list"
                 data-project-id={projectIdValue}
-                ref={favoriteToggleRef}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  favoriteMutation.mutate();
+                }}
               >
                 <i
                   className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
@@ -651,6 +641,7 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
                   star
                 </i>
               </span>
+              {/* oxlint-enable jsx-a11y/click-events-have-key-events */}
               {booleanField(recordField(project).isPrivate) ? (
                 <span className="project-private">
                   <i className="yobicon-lock"></i>

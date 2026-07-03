@@ -141,10 +141,39 @@ test("project settings navbar search scope matches legacy projectLayout common n
 test("project settings header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__projectFavoriteSpanListeners", {
+      configurable: true,
+      value: [] as string[],
+    });
+    Element.prototype.addEventListener = function addEventListenerWithFavoriteSpanAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this.matches(".project-breadcrumb .user-project-list")) {
+        (
+          window as Window & typeof globalThis & { __projectFavoriteSpanListeners: string[] }
+        ).__projectFavoriteSpanListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
   await mockProjectSettings(page, { favoriteRequests });
 
   await page.goto(`${basePath}/admin/sample/setting`);
   await expect(page.locator(".project-breadcrumb .user-project-list i")).not.toHaveClass(/starred/);
+  await expect(
+    page.locator('.project-breadcrumb .user-project-list[data-project-id="7"]'),
+  ).toHaveCount(1);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __projectFavoriteSpanListeners?: string[] })
+          .__projectFavoriteSpanListeners ?? [],
+    ),
+  ).toEqual([]);
 
   const favoriteResponsePromise = page.waitForResponse(
     (response) =>
@@ -156,6 +185,13 @@ test("project settings header favorite star posts and toggles starred class", as
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(page.locator(".project-breadcrumb .user-project-list i")).toHaveClass(/starred/);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __projectFavoriteSpanListeners?: string[] })
+          .__projectFavoriteSpanListeners ?? [],
+    ),
+  ).toEqual([]);
 });
 
 test("project settings header favorite star removes starred class when unfavorited", async ({
