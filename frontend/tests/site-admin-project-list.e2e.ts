@@ -270,6 +270,25 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-project-pagination");
 
+  await page.goto(`${basePath}/sites/projectList?filter=road&pageNum=2`);
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  const prevPageLink = page.locator("#pagination a", { hasText: "PREV" });
+  await expect(prevPageLink).toHaveAttribute(
+    "href",
+    `${basePath}/sites/projectList?filter=road&pageNum=1`,
+  );
+  await expect(prevPageLink).toHaveAttribute("pjax-page", "");
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-project-pagination-prev";
+  });
+  await prevPageLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("road");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-project-pagination-prev");
+
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-search";
   });
@@ -359,11 +378,14 @@ test("site admin project list renders legacy update notification badge", async (
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
-test("site admin project list sidebar uses direct typed links", () => {
+test("site admin project list uses direct typed links", () => {
   const routeSource = readFileSync("src/routes/sites/projectList.tsx", "utf8");
 
+  expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain("navItems.map");
+  expect(routeSource).toContain('to="/sites/projectList"');
+  expect(routeSource).toContain('"pjax-page": ""');
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -393,7 +415,8 @@ async function mockProjects(page: Page) {
 
   await page.route("**/api/v1/site/projects?*", async (route) => {
     const url = new URL(route.request().url());
-    const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
+    const pageNum =
+      Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

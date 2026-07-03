@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type AnchorHTMLAttributes, type ComponentType, type ReactNode } from "react";
+import { useState } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
@@ -18,15 +18,6 @@ type ProjectListSearch = {
   filter: string;
   pageNum: number;
 };
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    children?: ReactNode;
-    search?: Record<string, number | string | undefined>;
-    to: string;
-  }
->;
 
 export const Route = createFileRoute("/sites/projectList")({
   component: SiteProjectListRoute,
@@ -254,7 +245,7 @@ function ProjectListPagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={search(currentPage - 1)}
               to="/sites/projectList"
@@ -262,7 +253,7 @@ function ProjectListPagination({
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -286,7 +277,7 @@ function ProjectListPagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={search(currentPage + 1)}
               to="/sites/projectList"
@@ -294,7 +285,7 @@ function ProjectListPagination({
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <span className="off">NEXT</span>
