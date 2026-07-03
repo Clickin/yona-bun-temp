@@ -1,4 +1,8 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ORGANIZATION_SETTINGS_ROUTE_SOURCE =
+  "src/routes/organizations/$organizationName/settingform.tsx";
 
 const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
 <div class="unsupported hidden">
@@ -29,9 +33,9 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -43,11 +47,11 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -248,6 +252,50 @@ test("organization settings navigation anchors keep legacy hrefs without route-l
     `${basePath}/organizations/weblabs/deleteForm`,
   );
   expect(await readOrganizationSettingsNativeLinkAudit(page)).toEqual([]);
+});
+
+test("organization settings breadcrumb organization link keeps legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSettings(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  const breadcrumbLink = page.locator(".project-breadcrumb .project-author > a");
+  await expect(breadcrumbLink).toHaveText("weblabs");
+  await expect(breadcrumbLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(breadcrumbLink).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(breadcrumbLink).not.toHaveAttribute("data-status", /.*/u);
+  await expect(breadcrumbLink).not.toHaveAttribute("class", /.*/u);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await breadcrumbLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#mylist-filter")).toBeVisible();
+});
+
+test("organization settings breadcrumb source uses direct Link instead of raw organizationHref anchor", () => {
+  const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
+  const headerBreadcrumb = source.match(
+    /<span className="project-author">[\s\S]*?<\/span>\s*<\/div>\s*<\/div>/u,
+  )?.[0];
+
+  expect(headerBreadcrumb).toContain("<Link");
+  expect(headerBreadcrumb).toContain("to: `/organizations/${organizationName}`");
+  expect(headerBreadcrumb).not.toContain("href={organizationHref(basePath, organizationName)}");
+  expect(source).not.toContain(
+    "<a href={organizationHref(basePath, organizationName)}>{organizationName}</a>",
+  );
 });
 
 test("organization settings menu members link preserves legacy href with SPA transition", async ({

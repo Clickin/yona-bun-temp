@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { leaveOrganizationRest, readOrganizationContainerRest } from "../../api/org-project";
@@ -83,11 +83,7 @@ function OrganizationHomeBody({
 
   return (
     <>
-      <OrganizationHeader
-        basePath={runtimeConfig.basePath}
-        logoUrl={logoUrl}
-        organizationName={organizationName}
-      />
+      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         active="home"
         organizationName={organizationName}
@@ -213,7 +209,6 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "");
   const projectName = stringField(project.projectName, "");
-  const projectPath = `/${ownerName}/${projectName}`;
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
@@ -229,25 +224,72 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
     >
       <div className="info-wrap">
         <div className="owner-avatar-wrap hide-in-mobile">
-          <OrganizationRouteLink to={projectPath}>
+          <Link
+            activeOptions={{
+              exact: true,
+              explicitUndefined: true,
+              includeHash: true,
+              includeSearch: true,
+            }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
+            params={{ ownerName, projectName }}
+            search={{}}
+            to="/$ownerName/$projectName"
+          >
             <img
               src={stringField(project.logoUrl, "/assets/images/project_default_logo.png")}
               alt={`${projectName}.name`}
             />
-          </OrganizationRouteLink>
+          </Link>
         </div>
         <div style={{ float: "left" }}>
           <div className="header">
-            <OrganizationRouteLink to={projectPath} className="black">
+            <Link
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              className="black"
+              params={{ ownerName, projectName }}
+              search={{}}
+              to="/$ownerName/$projectName"
+            >
               {projectName}
-            </OrganizationRouteLink>
+            </Link>
           </div>
           <div className="desc">{stringField(project.overview, "")}</div>
           <p className="name-tag">
             by{" "}
-            <OrganizationRouteLink to={`/${ownerName}`} className="owner-name-small">
+            <Link
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              className="owner-name-small"
+              params={{ user: ownerName }}
+              search={{}}
+              to="/$user"
+            >
               {ownerName}
-            </OrganizationRouteLink>{" "}
+            </Link>{" "}
             at{" "}
             <strong title={stringField(project.createdTitle, createdLabel)}>{createdLabel}</strong>{" "}
             {lastPushedLabel ? (
@@ -358,11 +400,9 @@ function MemberPanel({
 }
 
 export function OrganizationHeader({
-  basePath,
   logoUrl,
   organizationName,
 }: {
-  basePath: string;
   logoUrl: string;
   organizationName: string;
 }) {
@@ -377,7 +417,24 @@ export function OrganizationHeader({
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
-                <a href={organizationHref(basePath, organizationName)}>{organizationName}</a>
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  params={{ organizationName }}
+                  search={{ __legacyInactive: undefined }}
+                  to="/organizations/$organizationName"
+                >
+                  {organizationName}
+                </Link>
               </span>
             </div>
           </div>
@@ -403,34 +460,109 @@ export function OrganizationMenu({
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className={active === "home" ? "active" : ""}>
-            <OrganizationRouteLink to={`/organizations/${organizationName}`}>
+            <Link
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={{ __legacyInactive: undefined }}
+              to="/organizations/$organizationName"
+            >
               {t("title.organizationHome")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/issues`}>
+            <Link
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName/issues"
+            >
               {t("menu.issue")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/boards`}>
+            <Link
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName/boards"
+            >
               {t("menu.board")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/pullrequests`}>
+            <Link
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName/pullrequests"
+            >
               {t("menu.pullRequest")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink to={`/organizations/${organizationName}/settingform`}>
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  params={{ organizationName }}
+                  search={{}}
+                  to="/organizations/$organizationName/settingform"
+                >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </OrganizationRouteLink>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -438,33 +570,6 @@ export function OrganizationMenu({
       </div>
     </div>
   );
-}
-
-function OrganizationRouteLink({
-  children,
-  className,
-  to,
-}: {
-  children: ReactNode;
-  className?: string;
-  to: string;
-}) {
-  const legacyLinkProps = {
-    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-    activeProps: {
-      "aria-current": undefined,
-      className: undefined,
-      "data-status": undefined,
-    },
-    className,
-    search: {},
-    to,
-  } as unknown as Parameters<typeof Link>[0];
-  return <Link {...legacyLinkProps}>{children}</Link>;
-}
-
-function organizationHref(basePath: string, organizationName: string) {
-  return prefixBasePath(basePath, `/organizations/${organizationName}`);
 }
 
 function stringField(value: unknown, fallback: string) {

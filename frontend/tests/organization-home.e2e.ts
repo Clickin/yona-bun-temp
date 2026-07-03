@@ -119,6 +119,14 @@ test("organization home menu links keep legacy hrefs without route-local native 
     "href",
     `${basePath}/organizations/weblabs/settingform`,
   );
+  await expect(page.locator(".project-breadcrumb a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs`,
+  );
+  await expect(page.locator(".project-menu-gruop a").first()).not.toHaveAttribute("aria-current");
+  await expect(page.locator(".project-menu-gruop a").first()).not.toHaveAttribute("data-status");
+  await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("aria-current");
+  await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("data-status");
   expect(await readOrganizationHomeMenuNativeLinkAudit(page)).toEqual([]);
 });
 
@@ -175,14 +183,19 @@ test("organization home project card links preserve legacy hrefs with SPA transi
 test("organization home project card route source uses Link for internal card navigation", () => {
   const source = readFileSync(ORGANIZATION_HOME_ROUTE_SOURCE, "utf8");
 
+  expect(source).not.toContain("OrganizationRouteLink");
   expect(source).not.toContain("const projectHref");
   expect(source).not.toContain("<a href={projectHref}");
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${ownerName}`)}");
-  expect(source).toContain("<OrganizationRouteLink to={projectPath}>");
-  expect(source).toContain('<OrganizationRouteLink to={projectPath} className="black">');
-  expect(source).toContain(
-    '<OrganizationRouteLink to={`/${ownerName}`} className="owner-name-small">',
-  );
+  expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain("params={{ ownerName, projectName }}");
+  expect(source).toContain('to="/$user"');
+  expect(source).toContain("params={{ user: ownerName }}");
+  expect(source).toContain('to="/organizations/$organizationName"');
+  expect(source).toContain('to="/organizations/$organizationName/issues"');
+  expect(source).toContain('to="/organizations/$organizationName/boards"');
+  expect(source).toContain('to="/organizations/$organizationName/pullrequests"');
+  expect(source).toContain('to="/organizations/$organizationName/settingform"');
 });
 
 test("organization home filters projects like legacy item-search", async ({ page }) => {

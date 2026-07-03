@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ORGANIZATION_DELETE_FORM_ROUTE_SOURCE = new URL(
+  "../src/routes/organizations/$organizationName/deleteForm.tsx",
+  import.meta.url,
+);
 
 const EXPECTED_ORGANIZATION_DELETE_FORM = `
 <div class="unsupported hidden">
@@ -43,7 +49,7 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -297,6 +303,48 @@ test("organization delete menu home link preserves legacy href with SPA transiti
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
   await expect(page.locator("#mylist-filter")).toBeVisible();
+});
+
+test("organization delete breadcrumb organization link preserves legacy href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationAdmin(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+  const breadcrumbLink = page.locator(".project-breadcrumb .project-author > a");
+  await expect(breadcrumbLink).toHaveText("weblabs");
+  await expect(breadcrumbLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(breadcrumbLink).not.toHaveAttribute("aria-current");
+  await expect(breadcrumbLink).not.toHaveAttribute("data-status");
+  expect(await breadcrumbLink.getAttribute("class")).toBeNull();
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await breadcrumbLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#mylist-filter")).toBeVisible();
+});
+
+test("organization delete breadcrumb source uses direct Link", () => {
+  const source = readFileSync(ORGANIZATION_DELETE_FORM_ROUTE_SOURCE, "utf8");
+  expect(source).not.toContain("function organizationHref");
+  expect(source).not.toContain("organizationHref(");
+  expect(source).not.toContain("<a href={organizationHref");
+  expect(source).toMatch(
+    /<span className="project-author">[\s\S]*?<Link[\s\S]*?to: `\/organizations\/\$\{organizationName\}`/,
+  );
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain('"data-status": undefined');
 });
 
 async function mockOrganizationAdmin(

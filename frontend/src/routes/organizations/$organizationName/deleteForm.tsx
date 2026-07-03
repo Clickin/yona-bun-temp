@@ -81,9 +81,20 @@ function OrganizationDeleteFormBody({
               <div className="project-breadcrumb">
                 <span className="project-author">
                   <span className="group-title-head">group</span>
-                  <a href={organizationHref(runtimeConfig.basePath, organizationName)}>
+                  <Link
+                    {...({
+                      activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                      activeProps: {
+                        "aria-current": undefined,
+                        className: undefined,
+                        "data-status": undefined,
+                      },
+                      search: {},
+                      to: `/organizations/${organizationName}`,
+                    } as unknown as Parameters<typeof Link>[0])}
+                  >
                     {organizationName}
-                  </a>
+                  </Link>
                 </span>
               </div>
             </div>
@@ -279,10 +290,6 @@ function OrganizationSettingMenu({ organizationName }: { organizationName: strin
       </li>
     </ul>
   );
-}
-
-function organizationHref(basePath: string, organizationName: string) {
-  return prefixBasePath(basePath, `/organizations/${organizationName}`);
 }
 
 function stringField(value: unknown, fallback: string) {
