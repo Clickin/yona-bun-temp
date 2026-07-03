@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 
 export function SitePagination({
+  basePath,
   currentPage,
   pageHref,
   totalPages,
 }: {
+  basePath: string;
   currentPage: number;
   pageHref: (pageNum: number) => string;
   totalPages: number;
@@ -21,7 +23,7 @@ export function SitePagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <Link href={pageHref(currentPage - 1)}>
+            <Link to={stripBasePath(basePath, pageHref(currentPage - 1))}>
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
             </Link>
@@ -48,7 +50,7 @@ export function SitePagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <Link href={pageHref(currentPage + 1)}>
+            <Link to={stripBasePath(basePath, pageHref(currentPage + 1))}>
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>
             </Link>
@@ -62,4 +64,14 @@ export function SitePagination({
       </ul>
     </div>
   );
+}
+
+function stripBasePath(basePath: string, href: string) {
+  if (basePath === "/" || basePath === "") {
+    return href;
+  }
+  if (href === basePath) {
+    return "/";
+  }
+  return href.startsWith(`${basePath}/`) ? href.slice(basePath.length) : href;
 }

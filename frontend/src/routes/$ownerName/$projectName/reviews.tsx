@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { type CSSProperties, type FormEvent } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -296,7 +296,6 @@ function ProjectReviewsBody({
             </ul>
             <div className="review-list-wrap">
               <ProjectReviewRows
-                basePath={runtimeConfig.basePath}
                 ownerName={ownerName}
                 projectName={projectName}
                 reviews={reviews}
@@ -310,7 +309,12 @@ function ProjectReviewsBody({
                 <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
               </a>
             </div>
-            <ProjectReviewPagination action={action} reviews={reviews} search={search} />
+            <ProjectReviewPagination
+              action={action}
+              basePath={runtimeConfig.basePath}
+              reviews={reviews}
+              search={search}
+            />
           </div>
         </div>
       </div>
@@ -327,12 +331,10 @@ function ProjectReviewsBody({
 }
 
 function ProjectReviewRows({
-  basePath,
   ownerName,
   projectName,
   reviews,
 }: {
-  basePath: string;
   ownerName: string;
   projectName: string;
   reviews: ReviewThreadListResponse;
@@ -351,7 +353,6 @@ function ProjectReviewRows({
     <ul className="post-list-wrap">
       {reviews.items.map((thread) => (
         <ProjectReviewRow
-          basePath={basePath}
           key={thread.id}
           ownerName={ownerName}
           projectName={projectName}
@@ -363,12 +364,10 @@ function ProjectReviewRows({
 }
 
 function ProjectReviewRow({
-  basePath,
   ownerName,
   projectName,
   thread,
 }: {
-  basePath: string;
   ownerName: string;
   projectName: string;
   thread: ReviewThread;
@@ -379,12 +378,13 @@ function ProjectReviewRow({
   const authorLabel = firstComment?.authorLabel || thread.authorLabel;
   const contents = firstComment?.contentsMarkdown || firstComment?.contentsHtml || "";
   const commentCount = Math.max(thread.comments.length - 1, 0);
-  const threadHref = reviewThreadHref(basePath, ownerName, projectName, thread);
+  const authorRoute = `/${authorLoginId}`;
+  const threadRoute = reviewThreadRoute(ownerName, projectName, thread);
 
   return (
     <li className="post-item">
-      <a
-        href={prefixBasePath(basePath, `/${authorLoginId}`)}
+      <Link
+        to={authorRoute}
         className="avatar-wrap mlarge hide-in-mobile"
         data-toggle="tooltip"
         data-placement="top"
@@ -400,24 +400,24 @@ function ProjectReviewRow({
           width="32"
           height="32"
         />
-      </a>
+      </Link>
       <div className="title-wrap">
         <span className="post-id">{thread.id}</span>
-        <a href={threadHref} className="title">
+        <Link to={threadRoute.to} hash={threadRoute.hash} className="title">
           {contents}
-        </a>
+        </Link>
       </div>
       <div className="infos">
         {authorLabel ? (
-          <a
-            href={prefixBasePath(basePath, `/${authorLoginId}`)}
+          <Link
+            to={authorRoute}
             className="infos-item infos-link-item"
             data-toggle="tooltip"
             data-placement="top"
             title={authorLoginId}
           >
             {authorLabel}
-          </a>
+          </Link>
         ) : (
           <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
@@ -426,12 +426,12 @@ function ProjectReviewRow({
         </span>
         {commentCount > 0 ? (
           <span className="infos-item item-count-groups">
-            <a href={threadHref} className="comments-count">
+            <Link to={threadRoute.to} hash={threadRoute.hash} className="comments-count">
               <span className="count-groups item-icon">
                 <i className="yobicon-comment2"></i>
               </span>
               <span className="count-groups item-count">{commentCount}</span>
-            </a>
+            </Link>
           </span>
         ) : null}
       </div>
@@ -441,10 +441,12 @@ function ProjectReviewRow({
 
 function ProjectReviewPagination({
   action,
+  basePath,
   reviews,
   search,
 }: {
   action: string;
+  basePath: string;
   reviews: ReviewThreadListResponse;
   search: ProjectReviewsSearch;
 }) {
@@ -454,6 +456,7 @@ function ProjectReviewPagination({
   }
   return (
     <SitePagination
+      basePath={basePath}
       currentPage={reviews.pageNum}
       pageHref={(pageNum) => `${action}${reviewsQuery(search, { pageNum })}`}
       totalPages={pages}
@@ -461,22 +464,18 @@ function ProjectReviewPagination({
   );
 }
 
-function reviewThreadHref(
-  basePath: string,
-  ownerName: string,
-  projectName: string,
-  thread: ReviewThread,
-) {
+function reviewThreadRoute(ownerName: string, projectName: string, thread: ReviewThread) {
+  const hash = `thread-${thread.id}`;
   if (thread.pullRequestNumber) {
-    return prefixBasePath(
-      basePath,
-      `/${ownerName}/${projectName}/pullRequest/${thread.pullRequestNumber}/changes#thread-${thread.id}`,
-    );
+    return {
+      hash,
+      to: `/${ownerName}/${projectName}/pullRequest/${thread.pullRequestNumber}/changes`,
+    };
   }
-  return prefixBasePath(
-    basePath,
-    `/${ownerName}/${projectName}/commit/${thread.commitId}#thread-${thread.id}`,
-  );
+  return {
+    hash,
+    to: `/${ownerName}/${projectName}/commit/${thread.commitId}`,
+  };
 }
 
 function reviewsQuery(

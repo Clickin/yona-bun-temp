@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const PROJECT_PULLREQUESTS_ROUTE_SOURCE = readFileSync(
+  "src/routes/$ownerName/$projectName/pullRequests.tsx",
+  "utf8",
+);
 
 const EXPECTED_PROJECT_PULLREQUESTS_EMPTY = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -8,6 +14,36 @@ const EXPECTED_PROJECT_PULLREQUESTS_EMPTY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div pjax-container="" class="row-fluid cb"><div class="left-menu span2 search-wrap hide-in-mobile" style="padding-top:0px"><form id="search" name="search" action="__BASE_PATH__/admin/sample/pullRequests" method="get"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="empty"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div><div id="advanced-search-form" class="srch-advanced"><dl class="issue-option"><dt>Sender</dt><dd><select id="contributors" name="contributorId" data-format="user"><option value="" selected="">All</option><option value="1">Sent by me</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option><option value="2" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="dev">Dev Member</option></select></dd></dl></div></form></div><div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div><ul class="nav nav-tabs nm pullrequeset-tab-menu"><li class="active"><a href="#" data-url="__BASE_PATH__/admin/sample/pullRequests" data-type="state">Open<span class="num-badge">0</span></a></li><li class=""><a href="#" data-url="__BASE_PATH__/admin/sample/closedPullRequests" data-type="state">Closed<span class="num-badge">0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><div class="tab-content" style="clear:both;padding-top:15px"><div id="list" class="row-fluid tab-pane active"><ul class="post-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No pull requests have been received</p></div></ul></div></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
+
+function expectedProjectPullRequestsEmpty(basePath: string) {
+  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+    .replace(
+      '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
+      '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
+    )
+    .replace(
+      '<a href="' +
+        basePath +
+        '/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">',
+      '<a href="' + basePath + '/sites/userList" class="usermenu-icon-button show-progress-bar">',
+    )
+    .replace(
+      '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
+      '<button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
+    )
+    .replace(
+      '</a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
+      '</button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
+    )
+    .replace(
+      '</a><ul class="dropdown-menu flat right">',
+      '</button><ul class="dropdown-menu flat right">',
+    )
+    .replace(
+      '<span class="user-project-list" data-project-id="7">',
+      '<span class="user-project-list" data-project-id="7" role="button" tabindex="0">',
+    );
+}
 
 test("project pull request empty list matches legacy git/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -23,10 +59,7 @@ test("project pull request empty list matches legacy git/list.scala.html DOM", a
   await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath),
-    ),
+    await canonicalizeHtml(page, expectedProjectPullRequestsEmpty(basePath)),
   );
 });
 
@@ -157,6 +190,74 @@ test("project pull request populated list matches legacy git/partial_list.scala.
   });
 });
 
+test("project pull request populated row links use SPA navigation with legacy hrefs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  const titleLink = page.locator(".post-list-wrap .title-wrap > a.title");
+  const changesLink = page.locator(".post-list-wrap .upload-progress + a");
+  await expect(page.locator(".post-list-wrap .avatar-wrap.mlarge")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(page.locator(".post-list-wrap .infos-link-item")).toHaveAttribute(
+    "href",
+    `${basePath}/dev`,
+  );
+  await expect(titleLink).toHaveAttribute("href", `${basePath}/admin/sample/pullRequest/7`);
+  await expect(changesLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/7/changes`,
+  );
+  await expect(page.locator(".post-list-wrap .avatar-wrap.assinee")).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+
+  await markPullRequestSpaSession(page);
+  await titleLink.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/7`);
+  await expectPullRequestSpaSession(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await markPullRequestSpaSession(page);
+  await page.locator(".post-list-wrap .upload-progress + a").click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/7/changes`);
+  await expectPullRequestSpaSession(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=reviewer`);
+  const reviewersLink = page.locator(".post-list-wrap .infos a[href$='#reviewers']");
+  await expect(reviewersLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/8#reviewers`,
+  );
+  await markPullRequestSpaSession(page);
+  await reviewersLink.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/8#reviewers`);
+  await expectPullRequestSpaSession(page);
+});
+
+test("project pull request row source uses TanStack Link for internal row navigation", () => {
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("const changesHref");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("const contributorHref");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("const receiverHref");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={contributorHref}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={changesHref}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={receiverHref}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={`${pullRequestHref}#reviewers`}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('to="/$user"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"',
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('hash="reviewers"');
+});
+
 test("project pull request reviewer-count row matches legacy git/partial_list.scala.html DOM", async ({
   page,
 }) => {
@@ -265,7 +366,7 @@ test("project pull request multi-page list matches legacy pagination DOM", async
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
-  await expect(page.locator("#pagination a")).toHaveAttribute(
+  await expect(page.locator("#pagination a").filter({ hasText: "NEXT" })).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequests?filter=pages&pageNum=2`,
   );
@@ -276,7 +377,7 @@ test("project pull request multi-page list matches legacy pagination DOM", async
 });
 
 function expectedClosedPullRequestsEmpty(basePath: string) {
-  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+  return expectedProjectPullRequestsEmpty(basePath)
     .replace(
       `action="${basePath}/admin/sample/pullRequests"`,
       `action="${basePath}/admin/sample/closedPullRequests"`,
@@ -300,18 +401,18 @@ function expectedClosedPullRequestsEmpty(basePath: string) {
 }
 
 function expectedSentPullRequestsEmpty(basePath: string) {
-  const withSentTab = EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+  const withSentTab = expectedProjectPullRequestsEmpty(basePath)
     .replace(
       '<div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="' +
         basePath +
         '/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="' +
         basePath +
-        '/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div>',
+        '/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div>',
       '<div class="project-breadcrumb-wrap fork"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="' +
         basePath +
         '/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="' +
         basePath +
-        '/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div><div class="project-origin"><span class="project-origin-title">Forked from</span><a href="' +
+        '/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div><div class="project-origin"><span class="project-origin-title">Forked from</span><a href="' +
         basePath +
         '/origin/upstream" class="project-origin-name">origin/upstream</a></div></div>',
     )
@@ -341,7 +442,7 @@ function expectedSentPullRequestsEmpty(basePath: string) {
 }
 
 function expectedRecentlyPushedPullRequests(basePath: string) {
-  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+  return expectedProjectPullRequestsEmpty(basePath)
     .replace('value="empty"', 'value="pushed"')
     .replace(
       '<div class="pull-right"><a href="' +
@@ -358,7 +459,7 @@ function expectedRecentlyPushedPullRequests(basePath: string) {
 }
 
 function expectedPopulatedPullRequests(basePath: string) {
-  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+  return expectedProjectPullRequestsEmpty(basePath)
     .replace('value="empty"', 'value="row"')
     .replace('<span class="num-badge">0</span>', '<span class="num-badge">1</span>')
     .replace(
@@ -380,7 +481,7 @@ function expectedPopulatedPullRequests(basePath: string) {
 }
 
 function expectedReviewerPullRequests(basePath: string) {
-  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+  return expectedProjectPullRequestsEmpty(basePath)
     .replace('value="empty"', 'value="reviewer"')
     .replace('<span class="num-badge">0</span>', '<span class="num-badge">1</span>')
     .replace(
@@ -402,7 +503,7 @@ function expectedReviewerPullRequests(basePath: string) {
 }
 
 function expectedConflictPullRequests(basePath: string) {
-  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+  return expectedProjectPullRequestsEmpty(basePath)
     .replace('value="empty"', 'value="conflict"')
     .replace('<span class="num-badge">0</span>', '<span class="num-badge">1</span>')
     .replace(
@@ -429,7 +530,7 @@ function expectedPagedPullRequests(basePath: string) {
       '<div id="pagination"></div>',
       '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" readonly="" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
         basePath +
-        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2" pjax-page=""><span>NEXT</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
+        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
     );
 }
 

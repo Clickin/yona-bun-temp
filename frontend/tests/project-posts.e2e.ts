@@ -33,6 +33,10 @@ function modernizeBoardListExpected(html: string) {
       '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
     )
     .replace(
+      '<a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">',
+      '<a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">',
+    )
+    .replace(
       '<li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>',
       '<li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>',
     )
@@ -184,6 +188,58 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).toBe("board-list-keymap");
+});
+
+test("project board list row internal links are router-owned", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  const row = page.locator(".post-list-wrap:not(.notice-wrap) .post-item").first();
+  await expect(row).toHaveAttribute("href", `${basePath}/admin/sample/post/3`);
+  await expect(row.locator(".avatar-wrap.mlarge")).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(row.locator(".title-wrap .title")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/post/3`,
+  );
+  await expect(row.locator(".infos-link-item")).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(row.locator(".item-count-groups a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/post/3#comments`,
+  );
+
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-row-title";
+  });
+  await row.locator(".title-wrap .title").click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-row-title");
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  const freshRow = page.locator(".post-list-wrap:not(.notice-wrap) .post-item").first();
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-row-comments";
+  });
+  await freshRow.locator(".item-count-groups a").click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3#comments`);
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-row-comments");
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const rowSource = routeSource.slice(
+    routeSource.indexOf("function ProjectBoardPost"),
+    routeSource.indexOf("function LegacyTitlePrefixButton"),
+  );
+  expect(rowSource).not.toContain("const postHref");
+  expect(rowSource).not.toContain("const authorHref");
+  expect(rowSource).not.toContain("<a\n        href={authorHref}");
+  expect(rowSource).not.toContain('<a href={postHref} className="title">');
+  expect(rowSource).not.toContain("`${postHref}#comments`");
+  expect(rowSource).toContain("<Link");
+  expect(rowSource).toContain('hash="comments"');
 });
 
 test("project board list empty state matches legacy board/list.scala.html DOM", async ({

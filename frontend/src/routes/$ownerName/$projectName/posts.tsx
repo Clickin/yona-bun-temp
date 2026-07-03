@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   useState,
@@ -369,17 +369,17 @@ function ProjectBoardPost({
 }) {
   const { t } = useLegacyMessages();
   const titleParts = splitHeaderWordsInBrackets(post.title);
-  const postHref = `${projectPostsHref(basePath, post.ownerName, post.projectName).replace(
-    /\/posts$/u,
-    "",
-  )}/post/${post.postNumber}`;
-  const authorHref = prefixBasePath(basePath, `/${post.authorLoginId}`);
-  const legacyHref = { href: postHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const postRoutePath = `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`;
+  const authorRoutePath = `/${post.authorLoginId}`;
+  const legacyHref = {
+    href: prefixBasePath(basePath, postRoutePath),
+  } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
     <li className="post-item title" {...legacyHref}>
-      <a
-        href={authorHref}
+      <Link
+        to={authorRoutePath}
+        activeProps={{ className: undefined }}
         className="avatar-wrap mlarge hide-in-mobile"
         data-toggle="tooltip"
         data-placement="bottom"
@@ -391,7 +391,7 @@ function ProjectBoardPost({
           width="32"
           height="32"
         />
-      </a>
+      </Link>
       <div className="title-wrap">
         {post.notice ? (
           <>
@@ -410,21 +410,22 @@ function ProjectBoardPost({
             {prefix}
           </LegacyTitlePrefixButton>
         ))}
-        <a href={postHref} className="title">
+        <Link to={postRoutePath} activeProps={{ className: undefined }} className="title">
           {titleParts.title}
-        </a>
+        </Link>
       </div>
       <div className="infos">
         {post.authorLabel ? (
-          <a
-            href={authorHref}
+          <Link
+            to={authorRoutePath}
+            activeProps={{ className: undefined }}
             className="infos-item infos-link-item"
             data-toggle="tooltip"
             data-placement="bottom"
             title={post.authorLoginId}
           >
             {post.authorLabel}
-          </a>
+          </Link>
         ) : (
           <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
@@ -437,12 +438,12 @@ function ProjectBoardPost({
           {post.createdLabel}
         </span>
         <span className="infos-item item-count-groups">
-          <a href={`${postHref}#comments`}>
+          <Link to={postRoutePath} hash="comments" activeProps={{ className: undefined }}>
             <span className="count-groups item-icon ">
               <i className="yobicon-comments"></i>
             </span>
             <span className="count-groups item-count ">{post.commentCount}</span>
-          </a>
+          </Link>
         </span>
         {post.labels.map((label) => (
           <button

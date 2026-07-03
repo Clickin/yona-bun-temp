@@ -492,6 +492,7 @@ function ProjectPullRequestRows({
         />
       ))}
       <ProjectPullRequestPagination
+        basePath={basePath}
         listAction={listAction}
         pullRequests={pullRequests}
         search={search}
@@ -501,10 +502,12 @@ function ProjectPullRequestRows({
 }
 
 function ProjectPullRequestPagination({
+  basePath,
   listAction,
   pullRequests,
   search,
 }: {
+  basePath: string;
   listAction: string;
   pullRequests: PullRequestListResponse;
   search: ProjectPullRequestsSearch;
@@ -515,6 +518,7 @@ function ProjectPullRequestPagination({
   }
   return (
     <SitePagination
+      basePath={basePath}
       currentPage={pullRequests.pageNum}
       pageHref={(pageNum) => pullRequestPageHref(listAction, search, pageNum)}
       totalPages={pages}
@@ -547,9 +551,11 @@ function ProjectPullRequestRow({
     `/${pullRequest.ownerName}/${pullRequest.projectName}`,
   );
   const pullRequestHref = `${projectHref}/pullRequest/${pullRequest.pullRequestNumber}`;
-  const changesHref = `${pullRequestHref}/changes`;
-  const contributorHref = prefixBasePath(basePath, `/${pullRequest.contributorLoginId}`);
-  const receiverHref = prefixBasePath(basePath, `/${pullRequest.receiverLoginId}`);
+  const pullRequestParams = {
+    ownerName: pullRequest.ownerName,
+    projectName: pullRequest.projectName,
+    pullRequestNumber: String(pullRequest.pullRequestNumber),
+  };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const legacyHref = { href: pullRequestHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
@@ -563,15 +569,16 @@ function ProjectPullRequestRow({
   return (
     <li className="post-item title" {...legacyHref}>
       <div className="span10 span-hard-wrap">
-        <a
-          href={contributorHref}
+        <Link
+          to="/$user"
+          params={{ user: pullRequest.contributorLoginId }}
           className="avatar-wrap mlarge"
           data-toggle="tooltip"
           data-placement="top"
           title={pullRequest.contributorLoginId}
         >
           <img src="/assets/images/default-avatar-32.png" alt="" />
-        </a>
+        </Link>
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
           {titleParts.prefixes.map((prefix) => (
@@ -584,21 +591,26 @@ function ProjectPullRequestRow({
               {prefix}
             </LegacyTitlePrefixLink>
           ))}
-          <a href={pullRequestHref} className={`title ${pullRequest.conflict ? "conflict" : ""}`}>
+          <Link
+            to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+            params={pullRequestParams}
+            className={`title ${pullRequest.conflict ? "conflict" : ""}`}
+          >
             {titleParts.title}
-          </a>
+          </Link>
         </div>
         <div className="infos">
           {pullRequest.contributorLabel ? (
-            <a
-              href={contributorHref}
+            <Link
+              to="/$user"
+              params={{ user: pullRequest.contributorLoginId }}
               className="infos-item infos-link-item"
               data-toggle="tooltip"
               data-placement="top"
               title={pullRequest.contributorLoginId}
             >
               {pullRequest.contributorLabel}
-            </a>
+            </Link>
           ) : (
             <span className="infos-item">{t("issue.noAuthor")}</span>
           )}
@@ -611,28 +623,31 @@ function ProjectPullRequestRow({
               <div className="upload-progress">
                 <div className="bar orange" style={{ width: `${percent}%` }}></div>
               </div>
-              <a
-                href={changesHref}
+              <Link
+                to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
+                params={pullRequestParams}
                 data-toggle="tooltip"
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
                 <span className="gray-txt">/</span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
-              </a>
+              </Link>
             </div>
           ) : null}
           {showReviewerCount ? (
             <div className={reviewerClass} style={{ marginTop: -1 }}>
               <i className="infos-icon yobicon-preview vmiddle"></i>
-              <a
-                href={`${pullRequestHref}#reviewers`}
+              <Link
+                to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+                params={pullRequestParams}
+                hash="reviewers"
                 data-toggle="tooltip"
                 data-html="true"
                 data-title={pullRequest.reviewerNames.join("<br>")}
               >
                 <span className="vmiddle">{pullRequest.reviewerCount}</span>
-              </a>
+              </Link>
             </div>
           ) : null}
           <span className={toBranchClass}>{pullRequest.toBranch}</span>
@@ -641,8 +656,9 @@ function ProjectPullRequestRow({
       <div className="span2 hide-in-mobile">
         <div className="mt5 pull-right hide-in-mobile">
           {pullRequest.receiverLoginId ? (
-            <a
-              href={receiverHref}
+            <Link
+              to="/$user"
+              params={{ user: pullRequest.receiverLoginId }}
               className="avatar-wrap assinee"
               data-toggle="tooltip"
               data-placement="top"
@@ -650,7 +666,7 @@ function ProjectPullRequestRow({
               data-original-title={pullRequest.receiverLabel}
             >
               <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
-            </a>
+            </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
