@@ -1230,7 +1230,7 @@ function IssuePostingHistory({
 
   return (
     <div className="posting-history">
-      <a href="#-yona-posting-history" data-toggle="modal">
+      <button type="button" data-toggle="modal" data-target="#-yona-posting-history">
         {updatedByAuthorLabel || updatedLabel ? (
           <span className="lastUpdatedBy">
             <span>{updatedByAuthorLabel}</span>
@@ -1238,7 +1238,7 @@ function IssuePostingHistory({
           </span>
         ) : null}
         <span>{t("change.edited")}</span>
-      </a>
+      </button>
       <div id="-yona-posting-history" className="modal hide">
         <div className="modal-header">
           <button type="button" className="close" data-dismiss="modal">
@@ -1355,9 +1355,9 @@ function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: Vot
         ))}
         {overflowVoters.length ? (
           <li data-toggle="tooltip" data-html="true" title={overflowTitle}>
-            <a href="#voters" data-toggle="modal">
+            <button type="button" data-toggle="modal" data-target="#voters">
               {`and ${overflowVoters.length} others`}
-            </a>
+            </button>
           </li>
         ) : null}
       </ul>
@@ -1969,17 +1969,16 @@ function IssueActionButtons({
         </a>
       )}
       {canBeDeleted && canDelete ? (
-        <a href="#deleteConfirm" data-toggle="modal">
-          <button
-            type="button"
-            className="icon btn-transparent-with-fontsize-lineheight ml6"
-            data-toggle="tooltip"
-            title="Delete"
-            onClick={onDeleteClick}
-          >
-            <i className="yobicon-trash"></i>
-          </button>
-        </a>
+        <button
+          type="button"
+          className="icon btn-transparent-with-fontsize-lineheight ml6"
+          data-toggle="modal"
+          data-target="#deleteConfirm"
+          title="Delete"
+          onClick={onDeleteClick}
+        >
+          <i className="yobicon-trash"></i>
+        </button>
       ) : null}
       {!canBeDeleted ? (
         <button
@@ -3142,9 +3141,14 @@ function CommentVoters({
             .map((voter) => stringField(voter.userLabel))
             .join("\n")}\n…`}
         >
-          <a className="vote-description-people" href={`#voters-${commentId}`} data-toggle="modal">
+          <button
+            type="button"
+            className="vote-description-people"
+            data-toggle="modal"
+            data-target={`#voters-${commentId}`}
+          >
             {voters.length} Agreements
-          </a>
+          </button>
         </span>
         <IssueVoterListDialog basePath={basePath} id={`voters-${commentId}`} voters={voters} />
       </>
