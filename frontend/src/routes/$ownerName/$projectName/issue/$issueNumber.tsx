@@ -8,6 +8,7 @@ import {
   type AnchorHTMLAttributes,
   type ComponentType,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -44,9 +45,28 @@ const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeOptions?: { includeHash?: boolean };
     activeProps?: { className?: string | undefined };
+    hash?: string;
     to: string;
   }
 >;
+
+function IssueHashLink({
+  children,
+  hash,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; hash: string }) {
+  return (
+    <LegacyInternalLink
+      {...props}
+      to="."
+      hash={hash}
+      activeOptions={{ includeHash: true }}
+      activeProps={{ className: undefined }}
+    >
+      {children}
+    </LegacyInternalLink>
+  );
+}
 
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
   .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
@@ -2153,6 +2173,7 @@ function IssueEventRow({
   }
 
   const eventId = stringField(event.id);
+  const eventHash = `event-${eventId}`;
   const newValue = stringField(event.newValue).toLowerCase();
   const senderLoginId = stringField(event.senderLoginId);
   const senderLabel = stringField(event.senderLabel, senderLoginId);
@@ -2174,7 +2195,7 @@ function IssueEventRow({
         {sender}
         {issueStateEventText(newValue)}
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2197,7 +2218,7 @@ function IssueEventRow({
           />
         )}
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2226,7 +2247,7 @@ function IssueEventRow({
         <span className="state milestone-changed">Update milestone</span>
         {sender} changed milestone to {milestone}
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2245,7 +2266,7 @@ function IssueEventRow({
           </a>
         </strong>
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2267,7 +2288,7 @@ function IssueEventRow({
           </a>
         </strong>
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2293,7 +2314,7 @@ function IssueEventRow({
           </a>
         </strong>
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2327,7 +2348,7 @@ function IssueEventRow({
         {added ? " shared current issue to " : " cancelled issue sharing with "}
         {target}
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2353,7 +2374,7 @@ function IssueEventRow({
         {added ? " added " : " removed "}
         {label} label
         <span className="date">
-          <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
         </span>
       </li>
     );
@@ -2363,7 +2384,7 @@ function IssueEventRow({
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
       <span className="date">
-        <a href={`#event-${eventId}`}>{stringField(event.createdLabel)}</a>
+        <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
       </span>
     </li>
   );
@@ -2415,6 +2436,7 @@ function IssueCommentRow({
   runtimeConfig: RuntimeConfig;
 }) {
   const commentId = stringField(comment.id);
+  const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel);
   const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
@@ -2513,16 +2535,16 @@ function IssueCommentRow({
             </a>
           </span>
           <span className="ago-date">
-            <a
-              href={`#comment-${commentId}`}
+            <IssueHashLink
+              hash={commentHash}
               className="ago"
               title={stringField(comment.createdLabel)}
             >
               {stringField(comment.createdLabel)}
-            </a>
-            <a href={`#comment-${commentId}`} className="share-link" style={{ display: "none" }}>
+            </IssueHashLink>
+            <IssueHashLink hash={commentHash} className="share-link" style={{ display: "none" }}>
               [Link]
-            </a>
+            </IssueHashLink>
           </span>
           <span className="act-row pull-right">
             <span className="new-issue-by">
@@ -2781,6 +2803,7 @@ function ChildComment({
   onCommentDeleteRequest: (requestUri: string) => void;
 }) {
   const commentId = stringField(comment.id);
+  const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
   const ownerName = stringField(issue.ownerName);
@@ -2809,15 +2832,9 @@ function ChildComment({
           >
             <strong>{authorLabel}</strong>
           </LegacyInternalLink>
-          <LegacyInternalLink
-            to={`#comment-${commentId}`}
-            className="ago"
-            title={createdLabel}
-            activeOptions={{ includeHash: true }}
-            activeProps={{ className: undefined }}
-          >
+          <IssueHashLink hash={commentHash} className="ago" title={createdLabel}>
             {createdLabel}
-          </LegacyInternalLink>
+          </IssueHashLink>
           {booleanField(comment.viewerCanDelete) ? (
             <button
               type="button"
@@ -3199,6 +3216,7 @@ function IssueIndexComment({
   currentUserLoginId: string;
 }) {
   const commentId = stringField(comment.id);
+  const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel);
   const childComments = Array.isArray(comment.childComments)
@@ -3218,9 +3236,9 @@ function IssueIndexComment({
       <div>
         <div id={`comment-body-${commentId}`}>
           <div className="comment-body">
-            <a href={`#comment-${commentId}`}>
+            <IssueHashLink hash={commentHash}>
               {ellipsisMarkdown(stringField(comment.contentsMarkdown))}
-            </a>
+            </IssueHashLink>
           </div>
         </div>
         <div className="index-comment-author">
@@ -3241,16 +3259,16 @@ function IssueIndexComment({
             </a>
           </span>
           <span className="ago-date">
-            <a
-              href={`#comment-${commentId}`}
+            <IssueHashLink
+              hash={commentHash}
               className="ago"
               title={stringField(comment.createdLabel)}
             >
               {stringField(comment.createdLabel)}
-            </a>
-            <a href={`#comment-${commentId}`} className="share-link" style={{ display: "none" }}>
+            </IssueHashLink>
+            <IssueHashLink hash={commentHash} className="share-link" style={{ display: "none" }}>
               [Link]
-            </a>
+            </IssueHashLink>
           </span>
         </div>
       </div>
