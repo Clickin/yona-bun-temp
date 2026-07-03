@@ -32,6 +32,10 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#project-default-branch")).toHaveValue("main");
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+  await expect(page.locator('.user-menu-wrap .user-menu a[href$="/admin"]')).not.toHaveAttribute(
+    "class",
+    /(?:^|\s)active(?:\s|$)/,
+  );
   expect(
     await page
       .locator(

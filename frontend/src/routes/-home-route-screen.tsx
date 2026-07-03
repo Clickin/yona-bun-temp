@@ -632,10 +632,12 @@ function AuthenticatedSiteUserMenu({
         <div className="span5 right-menu span-hard-wrap">
           <div className="row-fluid user-menu-wrap">
             <span className="user-menu">
-              <LegacyInternalLink to={`/${loginId}`}>{t("userinfo.profile")}</LegacyInternalLink>
+              <LegacyInternalLink activeProps={{ className: undefined }} to={`/${loginId}`}>
+                {t("userinfo.profile")}
+              </LegacyInternalLink>
             </span>
             <span className="user-menu">
-              <LegacyInternalLink to="/user/editform">
+              <LegacyInternalLink activeProps={{ className: undefined }} to="/user/editform">
                 {t("userinfo.accountSetting")}
               </LegacyInternalLink>
             </span>
