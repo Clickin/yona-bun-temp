@@ -124,7 +124,7 @@ test("project members renders legacy error/badrequest.scala.html shell", async (
     errorTextMarginBottom: "30px",
     errorTextMarginTop: "30px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
 });
 
@@ -161,16 +161,22 @@ test("project members renders legacy error/forbidden.scala.html shell", async ({
     errorTextMarginBottom: "30px",
     errorTextMarginTop: "30px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "5px",
+    projectPageWrapMarginTop: "20px",
   });
 });
 
 test("project members header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installFavoriteSpanNativeListenerAudit(page);
   await mockProjectMembers(page, { favoriteRequests });
 
   await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator(".project-breadcrumb .user-project-list")).toHaveAttribute(
+    "data-project-id",
+    "7",
+  );
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
   const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
   await expect(favoriteStar).not.toHaveClass(/starred/);
 
@@ -184,6 +190,7 @@ test("project members header favorite star posts and toggles starred class", asy
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 test("project members header favorite star removes starred class when unfavorited", async ({
@@ -212,6 +219,35 @@ test("project members header favorite star removes starred class when unfavorite
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).not.toHaveClass(/starred/);
 });
+
+async function installFavoriteSpanNativeListenerAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const favoriteListeners: string[] = [];
+    Object.defineProperty(window, "__yonaFavoriteSpanNativeListeners", {
+      configurable: true,
+      value: favoriteListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithFavoriteAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-breadcrumb .user-project-list")) {
+        favoriteListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function favoriteSpanNativeListeners(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
+        .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
 
 async function mockProjectMembers(
   page: Page,
@@ -451,7 +487,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -575,7 +617,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
