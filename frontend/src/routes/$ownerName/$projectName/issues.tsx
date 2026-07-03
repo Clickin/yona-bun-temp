@@ -425,6 +425,10 @@ function ProjectIssuesBody({
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
   );
   const [hoveredTitlePrefix, setHoveredTitlePrefix] = useState("");
+  const [issueRowHoverStyle, setIssueRowHoverStyle] = useState<{
+    backgroundColor: "#fafafa" | "#fff";
+    issueId: string;
+  } | null>(null);
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -582,22 +586,6 @@ function ProjectIssuesBody({
       childList.style.display = "block";
     }
   });
-  const handleIssueListMouseOver = useEffectEvent((event: MouseEvent) => {
-    const row =
-      event.target instanceof Element ? event.target.closest<HTMLElement>(".post-item") : null;
-    if (!row || row.contains(event.relatedTarget as Node | null)) {
-      return;
-    }
-    row.style.backgroundColor = "#fafafa";
-  });
-  const handleIssueListMouseOut = useEffectEvent((event: MouseEvent) => {
-    const row =
-      event.target instanceof Element ? event.target.closest<HTMLElement>(".post-item") : null;
-    if (!row || row.contains(event.relatedTarget as Node | null)) {
-      return;
-    }
-    row.style.backgroundColor = "#fff";
-  });
   useEffect(() => {
     const issueList = issueListRef.current;
     if (!issueList) {
@@ -605,12 +593,8 @@ function ProjectIssuesBody({
     }
 
     issueList.addEventListener("click", handleIssueListClick);
-    issueList.addEventListener("mouseover", handleIssueListMouseOver);
-    issueList.addEventListener("mouseout", handleIssueListMouseOut);
     return () => {
       issueList.removeEventListener("click", handleIssueListClick);
-      issueList.removeEventListener("mouseover", handleIssueListMouseOver);
-      issueList.removeEventListener("mouseout", handleIssueListMouseOut);
     };
   }, []);
   const showMilestone = projectMilestoneMenuEnabled(project);
@@ -757,7 +741,9 @@ function ProjectIssuesBody({
                         showMilestone={showMilestone}
                         showSubtasksAlways={showSubtasksAlways}
                         hoveredTitlePrefix={hoveredTitlePrefix}
+                        issueRowHoverStyle={issueRowHoverStyle}
                         onTitlePrefixHover={setHoveredTitlePrefix}
+                        onIssueRowHover={setIssueRowHoverStyle}
                         useTwoColumnMode={useTwoColumnMode}
                         titlePrefixRoute={titlePrefixRoute}
                         onTitlePrefixSearch={handleTitlePrefixSearch}
@@ -779,7 +765,9 @@ function ProjectIssuesBody({
                       showMilestone={showMilestone}
                       showSubtasksAlways={showSubtasksAlways}
                       hoveredTitlePrefix={hoveredTitlePrefix}
+                      issueRowHoverStyle={issueRowHoverStyle}
                       onTitlePrefixHover={setHoveredTitlePrefix}
+                      onIssueRowHover={setIssueRowHoverStyle}
                       useTwoColumnMode={useTwoColumnMode}
                       titlePrefixRoute={titlePrefixRoute}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
@@ -1436,6 +1424,8 @@ function ProjectIssueItem({
   draftNumberSource,
   hoveredTitlePrefix,
   issue,
+  issueRowHoverStyle,
+  onIssueRowHover,
   onTitlePrefixHover,
   onTitlePrefixSearch,
   ownerName,
@@ -1451,6 +1441,16 @@ function ProjectIssueItem({
   draftNumberSource: "draft-list" | "normal-list";
   hoveredTitlePrefix: string;
   issue: RestIssueListItem;
+  issueRowHoverStyle: {
+    backgroundColor: "#fafafa" | "#fff";
+    issueId: string;
+  } | null;
+  onIssueRowHover: (
+    style: {
+      backgroundColor: "#fafafa" | "#fff";
+      issueId: string;
+    } | null,
+  ) => void;
   onTitlePrefixHover: (prefix: string) => void;
   onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
@@ -1473,6 +1473,17 @@ function ProjectIssueItem({
   const issueLabels = sortedIssueLabels(issue);
   const titleParts = splitHeaderWordsInBrackets(issue.title);
   const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const currentIssueRowHoverStyle =
+    issueRowHoverStyle?.issueId === issueId ? issueRowHoverStyle : null;
+  const issueRowStyle: CSSProperties | undefined =
+    currentIssueRowHoverStyle || useTwoColumnMode
+      ? {
+          ...(currentIssueRowHoverStyle
+            ? { backgroundColor: currentIssueRowHoverStyle.backgroundColor }
+            : {}),
+          ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
+        }
+      : undefined;
   const legacyFor = {
     htmlFor: `issue-${issueId}`,
   } as unknown as HTMLAttributes<HTMLDivElement>;
@@ -1491,7 +1502,9 @@ function ProjectIssueItem({
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
-      style={useTwoColumnMode ? { cursor: "pointer" } : undefined}
+      onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
+      onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
+      style={issueRowStyle}
       {...legacyHref}
     >
       <div className="span9 span-hard-wrap">
@@ -3196,7 +3209,7 @@ function LegacyTitlePrefixAnchor({
   onTitlePrefixSearch: (filter: string) => void;
   to: string;
 }) {
-  const submitTitlePrefixSearch = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+  const submitTitlePrefixSearch = (event: ReactMouseEvent) => {
     event.preventDefault();
     onTitlePrefixSearch(children);
   };

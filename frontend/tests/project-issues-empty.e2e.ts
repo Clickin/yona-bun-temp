@@ -799,6 +799,22 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
 test("project issue row hover matches legacy issue.List hover effect", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    (
+      window as unknown as { __issueListNativeHoverListenerTypes: string[] }
+    ).__issueListNativeHoverListenerTypes = [];
+    Element.prototype.addEventListener = function (type, listener, options) {
+      if ((type === "mouseover" || type === "mouseout") && this instanceof HTMLElement) {
+        if (this.id === "span10") {
+          (
+            window as unknown as { __issueListNativeHoverListenerTypes: string[] }
+          ).__issueListNativeHoverListenerTypes.push(type);
+        }
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
   const row = page.locator("#issue-item-42");
@@ -808,6 +824,12 @@ test("project issue row hover matches legacy issue.List hover effect", async ({ 
   await expect(row).toHaveCSS("background-color", "rgb(250, 250, 250)");
   await page.mouse.move(0, 0);
   await expect(row).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  const nativeHoverListenerTypes = await page.evaluate(
+    () =>
+      (window as unknown as { __issueListNativeHoverListenerTypes: string[] })
+        .__issueListNativeHoverListenerTypes,
+  );
+  expect(nativeHoverListenerTypes).toEqual([]);
 });
 
 test("project issue search button submits route like legacy partial_searchform.scala.html", async ({
