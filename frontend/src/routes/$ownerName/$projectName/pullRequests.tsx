@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
+  deleteProjectPushedBranchRest,
   projectPullRequestListQueryOptions,
   type PullRequestListCategory,
   type PullRequestListItem,
@@ -268,7 +270,13 @@ function ProjectPullRequestsBody({
           </div>
           <div className="span10 span-hard-wrap" id="span10">
             <ProjectRecentlyPushedBranches
-              basePath={runtimeConfig.basePath}
+              runtimeConfig={runtimeConfig}
+              listQueryKey={apiQueryKeys.project.pullRequestList(ownerName, projectName, {
+                category: requestType,
+                contributorId: search.contributorId,
+                filter: search.filter,
+                pageNum: search.pageNum,
+              })}
               pushedBranches={pullRequests.recentlyPushedBranches}
             />
             <div className="pull-right">
@@ -345,13 +353,40 @@ function ProjectPullRequestsBody({
 }
 
 function ProjectRecentlyPushedBranches({
-  basePath,
+  listQueryKey,
   pushedBranches,
+  runtimeConfig,
 }: {
-  basePath: string;
+  listQueryKey: ReturnType<typeof apiQueryKeys.project.pullRequestList>;
   pushedBranches: PullRequestPushedBranch[];
+  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: async (branch: PullRequestPushedBranch) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      await deleteProjectPushedBranchRest(runtimeConfig, csrfToken, {
+        ownerName: branch.ownerName,
+        projectName: branch.projectName,
+        pushedBranchId: branch.id,
+      });
+      return branch.id;
+    },
+    onSuccess(deletedBranchId) {
+      queryClient.setQueryData<PullRequestListResponse>(listQueryKey, (current) =>
+        current
+          ? {
+              ...current,
+              recentlyPushedBranches: current.recentlyPushedBranches.filter(
+                (branch) => branch.id !== deletedBranchId,
+              ),
+            }
+          : current,
+      );
+    },
+  });
+
   if (pushedBranches.length === 0) {
     return null;
   }
@@ -371,27 +406,31 @@ function ProjectRecentlyPushedBranches({
               &nbsp;-&nbsp;
               <a
                 href={prefixBasePath(
-                  basePath,
+                  runtimeConfig.basePath,
                   `${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}`,
                 )}
               >
                 {t("pullRequest")}
               </a>
               {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy close hook keeps aria-hidden. */}
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy close hook is an href="#" request anchor. */}
-              <a
-                href="#"
+              <button
+                type="button"
                 className="close"
                 data-dismiss="alert"
                 aria-hidden="true"
                 data-request-method="delete"
                 data-request-uri={prefixBasePath(
-                  basePath,
+                  runtimeConfig.basePath,
                   `${projectPath}/pushedBranch/${branch.id}/delete`,
                 )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  deleteMutation.mutate(branch);
+                }}
               >
                 &times;
-              </a>
+              </button>
               {/* oxlint-enable jsx-a11y/no-aria-hidden-on-focusable */}
             </div>
           );

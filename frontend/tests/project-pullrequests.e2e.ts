@@ -34,7 +34,7 @@ test("project pull request recently pushed branch prompt matches legacy partial 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectPullRequests(page);
+  const { pushedBranchDeleteRequests } = await mockProjectPullRequests(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequests?filter=pushed`);
   await expect(page.locator("#span10 > h5")).toHaveText("Recently pushed branch");
@@ -43,7 +43,14 @@ test("project pull request recently pushed branch prompt matches legacy partial 
     "href",
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
-  await expect(page.locator(".alert.alert-info a.close")).toHaveAttribute(
+  await expect(page.locator('.alert.alert-info a.close[href="#"]')).toHaveCount(0);
+  const closeControl = page.locator(".alert.alert-info button.close");
+  await expect(closeControl).toHaveAttribute("type", "button");
+  await expect(closeControl).toHaveAttribute("class", "close");
+  await expect(closeControl).toHaveAttribute("data-dismiss", "alert");
+  await expect(closeControl).toHaveAttribute("aria-hidden", "true");
+  await expect(closeControl).toHaveAttribute("data-request-method", "delete");
+  await expect(closeControl).toHaveAttribute(
     "data-request-uri",
     `${basePath}/admin/sample/pushedBranch/17/delete`,
   );
@@ -51,6 +58,21 @@ test("project pull request recently pushed branch prompt matches legacy partial 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedRecentlyPushedPullRequests(basePath)),
   );
+
+  await markPullRequestSpaSession(page);
+  await closeControl.click();
+  await expect
+    .poll(() => pushedBranchDeleteRequests)
+    .toEqual([
+      {
+        hasCsrfToken: true,
+        method: "DELETE",
+        url: `${basePath}/api/v1/owners/admin/projects/sample/pushed-branches/17`,
+      },
+    ]);
+  await expect(page.locator(".alert.alert-info")).toHaveCount(0);
+  await expect(page.locator("#span10 > h5")).toHaveCount(0);
+  await expectPullRequestSpaSession(page);
 });
 
 test("project closed pull request empty list matches legacy git/list.scala.html DOM", async ({
@@ -327,9 +349,9 @@ function expectedRecentlyPushedPullRequests(basePath: string) {
         '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
       '<h5>Recently pushed branch</h5><div class="alert alert-info"><div><i class="yobicon-split"></i><span style="margin-left:5px;font-weight:bold">admin/sample:feature/ui ( Jul 1, 2026 )</span>&nbsp;-&nbsp;<a href="' +
         basePath +
-        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><a href="#" class="close" data-dismiss="alert" aria-hidden="true" data-request-method="delete" data-request-uri="' +
+        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><button type="button" class="close" data-dismiss="alert" aria-hidden="true" data-request-method="delete" data-request-uri="' +
         basePath +
-        '/admin/sample/pushedBranch/17/delete">×</a></div></div><div class="pull-right"><a href="' +
+        '/admin/sample/pushedBranch/17/delete">×</button></div></div><div class="pull-right"><a href="' +
         basePath +
         '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
     );
@@ -412,6 +434,14 @@ function expectedPagedPullRequests(basePath: string) {
 }
 
 async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin?: boolean } = {}) {
+  const pushedBranchDeleteRequests: { hasCsrfToken: boolean; method: string; url: string }[] = [];
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-pull-requests" },
+      body: JSON.stringify({ csrfToken: "csrf-pull-requests" }),
+    });
+  });
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -427,6 +457,19 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
         userLabel: "Site Admin",
       }),
     });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/pushed-branches/17", async (route) => {
+    const request = route.request();
+    if (request.method() === "DELETE") {
+      pushedBranchDeleteRequests.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-pull-requests",
+        method: request.method(),
+        url: request.url().replace(/^https?:\/\/[^/]+/u, ""),
+      });
+      await route.fulfill({ status: 204 });
+      return;
+    }
+    await route.fallback();
   });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
@@ -613,6 +656,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
       }),
     });
   });
+  return { pushedBranchDeleteRequests };
 }
 
 async function canonicalizeScreenRoots(page: Page) {
