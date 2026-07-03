@@ -329,20 +329,11 @@ function NotificationStreamItem({
   runtimeConfig: RuntimeConfig;
 }) {
   const userHref = prefixBasePath(runtimeConfig.basePath, `/${notification.actor.loginId}`);
-  const streamDescRef = React.useRef<HTMLDivElement>(null);
   const messageWrapRef = React.useRef<HTMLDivElement>(null);
+  const messageRef = React.useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = React.useState(false);
-  const [isMoreVisible, setIsMoreVisible] = React.useState(false);
-
-  React.useEffect(() => {
-    const streamDesc = streamDescRef.current;
-    if (!streamDesc) {
-      return;
-    }
-
-    streamDesc.addEventListener("click", handleLearnMoreClick);
-    return () => streamDesc.removeEventListener("click", handleLearnMoreClick);
-  });
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [expandedMinHeight, setExpandedMinHeight] = React.useState<string | undefined>();
 
   React.useLayoutEffect(() => {
     const messageWrap = messageWrapRef.current;
@@ -359,28 +350,36 @@ function NotificationStreamItem({
       messageWrap.clientHeight < messageWrap.scrollHeight;
     messageWrap.style.overflow = currentOverflow;
     setHasOverflow(isOverflowing);
-    setIsMoreVisible(isOverflowing);
+    setIsExpanded(false);
+    setExpandedMinHeight(undefined);
   }, [notification.message]);
 
-  function handleLearnMoreClick(event: MouseEvent) {
+  function toggleLearnMore() {
+    setIsExpanded((wasExpanded) => {
+      const nextExpanded = !wasExpanded;
+      setExpandedMinHeight(
+        nextExpanded ? `${messageRef.current?.getBoundingClientRect().height ?? 0}px` : undefined,
+      );
+      return nextExpanded;
+    });
+  }
+
+  function handleLearnMoreClick(event: React.MouseEvent<HTMLDivElement>) {
     const target = event.target;
     if (!(target instanceof Element) || target.closest("a, img")) {
       return;
     }
 
-    const messageWrap = document.getElementById(`message-${notification.id}`);
-    if (!messageWrap) {
+    toggleLearnMore();
+  }
+
+  function handleLearnMoreKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") {
       return;
     }
 
-    messageWrap.classList.toggle("nowrap");
-    const message = messageWrap.querySelector<HTMLElement>(".message");
-    messageWrap.style.minHeight = messageWrap.classList.contains("nowrap")
-      ? ""
-      : `${message?.getBoundingClientRect().height ?? 0}px`;
-    if (hasOverflow) {
-      setIsMoreVisible(messageWrap.classList.contains("nowrap"));
-    }
+    event.preventDefault();
+    toggleLearnMore();
   }
 
   return (
@@ -392,7 +391,10 @@ function NotificationStreamItem({
         className="stream-desc"
         data-target={`message-${notification.id}`}
         data-toggle="learnmore"
-        ref={streamDescRef}
+        onClick={handleLearnMoreClick}
+        onKeyDown={handleLearnMoreKeyDown}
+        role="button"
+        tabIndex={0}
       >
         <div className="stream-info">
           <div className="title">
@@ -405,14 +407,17 @@ function NotificationStreamItem({
             )}
           </div>
           <div
-            className="message-wrap nowrap"
+            className={isExpanded ? "message-wrap" : "message-wrap nowrap"}
             id={`message-${notification.id}`}
             ref={messageWrapRef}
+            style={expandedMinHeight ? { minHeight: expandedMinHeight } : undefined}
           >
-            <div className="message">{notification.message}</div>
+            <div className="message" ref={messageRef}>
+              {notification.message}
+            </div>
           </div>
           {hasOverflow ? (
-            <div className="more" style={isMoreVisible ? undefined : { display: "none" }}>
+            <div className="more" style={isExpanded ? { display: "none" } : undefined}>
               ...
             </div>
           ) : null}

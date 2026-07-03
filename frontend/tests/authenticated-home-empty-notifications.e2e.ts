@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_AUTHENTICATED_HOME = `
@@ -138,7 +139,7 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
   `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc" data-target="message-42" data-toggle="learnmore">
+    <div class="stream-desc" data-target="message-42" data-toggle="learnmore" role="button" tabindex="0">
       <div class="stream-info">
         <div class="title"><a href="__BASE_PATH__/admin/sample/issue/1">Issue #1 updated</a></div>
         <div class="message-wrap nowrap" id="message-42">
@@ -864,6 +865,34 @@ test("direct notifications route preserves legacy notification row expand target
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    (
+      window as Window &
+        typeof globalThis & {
+          __streamDescClickListenerTargets?: string[];
+        }
+    ).__streamDescClickListenerTargets = [];
+    EventTarget.prototype.addEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (
+        type === "click" &&
+        this instanceof Element &&
+        this.matches(".notification-stream .stream-desc")
+      ) {
+        (
+          window as Window &
+            typeof globalThis & {
+              __streamDescClickListenerTargets: string[];
+            }
+        ).__streamDescClickListenerTargets.push(this.getAttribute("data-target") ?? "");
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
   await mockAuthenticatedNotifications(page, [
     {
       actor: {
@@ -885,9 +914,28 @@ test("direct notifications route preserves legacy notification row expand target
   await page.goto(`${basePath}/notifications`);
   await expect(page.locator(".notification-stream")).toHaveCount(1);
   const beforeUrl = page.url();
+  const streamDesc = page.locator(".notification-stream .stream-desc");
   const messageWrap = page.locator("#message-42");
 
+  await expect(streamDesc).toHaveAttribute("data-target", "message-42");
+  await expect(streamDesc).toHaveAttribute("data-toggle", "learnmore");
+  await expect(streamDesc).toHaveAttribute("role", "button");
+  await expect(streamDesc).toHaveAttribute("tabindex", "0");
   await expect(messageWrap).toHaveClass(/nowrap/);
+  await expect(messageWrap).not.toHaveAttribute("style", /min-height/u);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window &
+              typeof globalThis & {
+                __streamDescClickListenerTargets?: string[];
+              }
+          ).__streamDescClickListenerTargets ?? [],
+      ),
+    )
+    .toEqual([]);
   await page.locator(".notification-stream .title a").evaluate((anchor) => {
     anchor.addEventListener("click", (event) => event.preventDefault(), { once: true });
     anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
@@ -910,6 +958,17 @@ test("direct notifications route preserves legacy notification row expand target
   await expect(messageWrap).toHaveClass(/nowrap/);
   await expect.poll(() => messageWrap.evaluate((element) => element.style.minHeight)).toBe("");
   expect(page.url()).toBe(beforeUrl);
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const notificationStreamItemSource = routeSource.slice(
+    routeSource.indexOf("function NotificationStreamItem"),
+    routeSource.indexOf("export function SiteLayoutShell"),
+  );
+  expect(notificationStreamItemSource).not.toContain("addEventListener");
+  expect(notificationStreamItemSource).not.toContain("removeEventListener");
+  expect(notificationStreamItemSource).not.toContain("document.getElementById");
+  expect(notificationStreamItemSource).not.toContain("classList");
+  expect(notificationStreamItemSource).not.toContain("style.minHeight");
 });
 
 test("direct notifications route shows legacy overflowing row more marker", async ({ page }) => {
@@ -1024,7 +1083,7 @@ function expectedNotificationRows(
     .map(
       (item) => `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc" data-target="message-${item.id}" data-toggle="learnmore">
+    <div class="stream-desc" data-target="message-${item.id}" data-toggle="learnmore" role="button" tabindex="0">
       <div class="stream-info">
         <div class="title"><a href="${basePath}/admin/sample/issue/1">${item.targetTitle}</a></div>
         <div class="message-wrap nowrap" id="message-${item.id}">
