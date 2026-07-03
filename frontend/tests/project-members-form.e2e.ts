@@ -20,7 +20,7 @@ const EXPECTED_PROJECT_MEMBERS = `
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID"><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="manager"><a href="javascript:void(0)" data-action="apply" data-href="__BASE_PATH__/admin/sample/members/2" data-loginid="alice">Manager</a></li><li data-value="member" data-selected="true" class="active"><a href="javascript:void(0)" data-action="apply" data-href="__BASE_PATH__/admin/sample/members/2" data-loginid="alice">Member</a></li></ul></div><a href="javascript:void(0)" data-action="delete" data-href="__BASE_PATH__/admin/sample/members/2" class="ybtn ybtn-danger ybtn-small">Delete</a></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID"><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="manager"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/members/2" data-loginid="alice">Manager</button></li><li data-value="member" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/members/2" data-loginid="alice">Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/admin/sample/members/2" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -90,6 +90,104 @@ test("project members enrollment Add posts selected login like legacy member mod
 
   await expect.poll(() => requests.addedLoginIds).toEqual(["bob"]);
 });
+
+test("project members role and delete side effects use React buttons", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockProjectMembers(page);
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+
+  const roleApply = page
+    .locator('.members.project [data-name="roleof-alice"] [data-action="apply"]')
+    .first();
+  await expect(roleApply).toHaveJSProperty("tagName", "BUTTON");
+  await expect(roleApply).toHaveAttribute("type", "button");
+  await expect(roleApply).not.toHaveAttribute("href", /.+/);
+  await expect(roleApply).toHaveAttribute("data-href", `${basePath}/admin/sample/members/2`);
+  await expect(roleApply).toHaveAttribute("data-loginid", "alice");
+  await expect(roleApply).toHaveText("Manager");
+  await expect(page.locator('[data-action="apply"][href="javascript:void(0)"]')).toHaveCount(0);
+  await page.locator('[data-name="roleof-alice"] .dropdown-toggle').click();
+  await expect
+    .poll(() => roleButtonMetrics(roleApply))
+    .toEqual({
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      borderTopWidth: "0px",
+      color: "rgb(51, 51, 51)",
+      display: "block",
+      lineHeight: "20px",
+      padding: "3px 20px",
+      textAlign: "left",
+      width: 160,
+    });
+
+  const deleteControl = page.locator('.members.project [data-action="delete"]');
+  await expect(deleteControl).toHaveJSProperty("tagName", "BUTTON");
+  await expect(deleteControl).toHaveAttribute("type", "button");
+  await expect(deleteControl).not.toHaveAttribute("href", /.+/);
+  await expect(deleteControl).toHaveAttribute("data-href", `${basePath}/admin/sample/members/2`);
+  await expect(deleteControl).toHaveAttribute("class", "ybtn ybtn-danger ybtn-small");
+  await expect(deleteControl).toHaveText("Delete");
+  await expect(page.locator('[data-action="delete"][href="javascript:void(0)"]')).toHaveCount(0);
+
+  const roleResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/members/2") &&
+      response.request().method() === "PATCH",
+  );
+  await roleApply.dispatchEvent("click");
+  await roleResponse;
+
+  await expect
+    .poll(() => requests.roleUpdates)
+    .toEqual([{ hasCsrfToken: true, method: "PATCH", role: "manager", userId: "2" }]);
+  await expect(page.locator('[data-name="roleof-alice"] .d-label')).toHaveText("Manager");
+  await expect(page.locator('[data-name="roleof-alice"] li[data-value="manager"]')).toHaveClass(
+    "active",
+  );
+  await expect(page.locator('[data-name="roleof-alice"] li[data-value="manager"]')).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+
+  const deleteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/members/2") &&
+      response.request().method() === "DELETE",
+  );
+  await deleteControl.click();
+  await deleteResponse;
+
+  await expect.poll(() => requests.deletedUserIds).toEqual(["2"]);
+  await expect(page.locator(".members.project .member")).toHaveCount(1);
+  await expect(page.locator(".members.project .member-id", { hasText: "@alice" })).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+async function roleButtonMetrics(locator: ReturnType<Page["locator"]>) {
+  return locator.evaluate((button) => {
+    const style = getComputedStyle(button);
+    return {
+      backgroundColor: style.backgroundColor,
+      borderTopWidth: style.borderTopWidth,
+      color: style.color,
+      display: style.display,
+      lineHeight: style.lineHeight,
+      padding: style.padding,
+      textAlign: style.textAlign,
+      width: Math.round(button.getBoundingClientRect().width),
+    };
+  });
+}
 
 test("project members renders legacy error/badrequest.scala.html shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -260,7 +358,50 @@ async function mockProjectMembers(
 ) {
   const requests = {
     addedLoginIds: [] as string[],
+    deletedUserIds: [] as string[],
+    roleUpdates: [] as {
+      hasCsrfToken: boolean;
+      method: string;
+      role: string;
+      userId: string;
+    }[],
   };
+  let currentMembers = [
+    {
+      avatarUrl: "/assets/images/default-avatar-32.png",
+      isOwner: true,
+      loginId: "admin",
+      role: "manager",
+      userId: 1,
+      userLabel: "Site Admin",
+    },
+    {
+      avatarUrl: "/assets/images/default-avatar-32.png",
+      isOwner: false,
+      loginId: "alice",
+      role: "member",
+      userId: 2,
+      userLabel: "Alice Doe",
+    },
+  ];
+  const memberDirectoryResponse = () => ({
+    enrollmentRequests: [
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "bob",
+        userId: 3,
+        userLabel: "Bob Smith",
+      },
+    ],
+    members: currentMembers,
+    ownerName: "admin",
+    projectName: "sample",
+    roleOptions: [
+      { label: "Manager", role: "manager" },
+      { label: "Member", role: "member" },
+    ],
+    viewerCanUpdate: true,
+  });
 
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -298,6 +439,30 @@ async function mockProjectMembers(
       body: JSON.stringify({ ...projectContainer(), ...options.project }),
     });
   });
+  await page.route("**/api/v1/owners/admin/projects/sample/members/*", async (route) => {
+    const request = route.request();
+    const userId = new URL(request.url()).pathname.split("/").pop() ?? "";
+    if (request.method() === "PATCH") {
+      const body = request.postDataJSON() as { role?: string };
+      requests.roleUpdates.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-members",
+        method: request.method(),
+        role: body.role ?? "",
+        userId,
+      });
+      currentMembers = currentMembers.map((member) =>
+        String(member.userId) === userId ? { ...member, role: body.role ?? member.role } : member,
+      );
+    }
+    if (request.method() === "DELETE") {
+      requests.deletedUserIds.push(userId);
+      currentMembers = currentMembers.filter((member) => String(member.userId) !== userId);
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(memberDirectoryResponse()),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
     if (route.request().method() === "GET" && options.membersStatus) {
       await route.fulfill({
@@ -322,41 +487,7 @@ async function mockProjectMembers(
     }
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        enrollmentRequests: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            loginId: "bob",
-            userId: 3,
-            userLabel: "Bob Smith",
-          },
-        ],
-        members: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            isOwner: true,
-            loginId: "admin",
-            role: "manager",
-            userId: 1,
-            userLabel: "Site Admin",
-          },
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            isOwner: false,
-            loginId: "alice",
-            role: "member",
-            userId: 2,
-            userLabel: "Alice Doe",
-          },
-        ],
-        ownerName: "admin",
-        projectName: "sample",
-        roleOptions: [
-          { label: "Manager", role: "manager" },
-          { label: "Member", role: "member" },
-        ],
-        viewerCanUpdate: true,
-      }),
+      body: JSON.stringify(memberDirectoryResponse()),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {

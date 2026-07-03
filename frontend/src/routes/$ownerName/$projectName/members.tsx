@@ -1,14 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type AnchorHTMLAttributes,
-  type ComponentType,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useState, type AnchorHTMLAttributes, type ComponentType, type FormEvent } from "react";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -317,7 +309,8 @@ function ProjectMemberListItem({
                       className={selected ? "active" : undefined}
                       key={roleName}
                     >
-                      <LegacyVoidAnchor
+                      <button
+                        type="button"
                         data-action="apply"
                         data-href={prefixBasePath(
                           basePath,
@@ -327,20 +320,21 @@ function ProjectMemberListItem({
                         onClick={() => updateRoleMutation.mutate(roleName)}
                       >
                         {stringField(role.label, roleName)}
-                      </LegacyVoidAnchor>
+                      </button>
                     </li>
                   );
                 })}
               </ul>
             </div>
-            <LegacyVoidAnchor
+            <button
+              type="button"
               data-action="delete"
               data-href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members/${userId}`)}
               className="ybtn ybtn-danger ybtn-small"
               onClick={() => deleteMutation.mutate()}
             >
               {t("button.delete")}
-            </LegacyVoidAnchor>
+            </button>
           </>
         ) : (
           <span className="label owner">{t("user.role.owner")}</span>
@@ -398,27 +392,6 @@ function EnrollmentRequest({
 
 function roleLabel(members: ProjectMembersResponse, role: string) {
   return members.roleOptions.find((option) => stringField(option.role, "") === role)?.label ?? role;
-}
-
-function LegacyVoidAnchor({
-  children,
-  className,
-  ...props
-}: {
-  children: ReactNode;
-  className?: string;
-} & Record<string, unknown>) {
-  const ref = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    ref.current?.setAttribute("href", "javascript:void(0)");
-  }, []);
-
-  return (
-    <a ref={ref} href="/" className={className} {...props}>
-      {children}
-    </a>
-  );
 }
 
 function ProjectHeader({ basePath, project }: { basePath: string; project: ProjectContainer }) {
