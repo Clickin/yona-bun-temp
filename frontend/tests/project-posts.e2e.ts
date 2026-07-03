@@ -807,6 +807,28 @@ test("project board detail renders legacy comment update form", async ({ page })
         parentCommentId: null,
       },
     ]);
+  await expect(page.locator("#comment-editform-21")).toBeHidden();
+  await expect(page.locator("#comment-body-21")).toBeVisible();
+  await expect(page.locator("#comment-body-21 .comment-body.markdown-wrap")).toContainText(
+    "Updated board comment",
+  );
+  await expect(page).toHaveURL(editorUrl);
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-update-editor");
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const updateFormSource = routeSource.slice(
+    routeSource.indexOf("function PostCommentUpdateForm"),
+    routeSource.indexOf("function MarkdownEditor"),
+  );
+  expect(updateFormSource).not.toContain("document.getElementById");
+  expect(updateFormSource).not.toContain("setAttribute");
+  expect(updateFormSource).not.toContain("removeAttribute");
+  expect(updateFormSource).not.toContain("style.display");
 });
 
 test("project board detail renders legacy post and comment attachments", async ({ page }) => {

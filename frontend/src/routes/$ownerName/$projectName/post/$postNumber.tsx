@@ -635,6 +635,7 @@ function PostComments({
   const { t } = useLegacyMessages();
   const comments = post.comments.filter((comment) => !stringField(comment.parentCommentId));
   const canComment = booleanField(post.permissions.canComment);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   return (
     <div id="comments" className="board-comment-wrap">
       <div id="timeline">
@@ -655,9 +656,14 @@ function PostComments({
                   (childComment) => stringField(childComment.parentCommentId) === comment.id,
                 )}
                 comment={comment}
+                editingCommentId={editingCommentId}
                 key={comment.id}
+                onCommentEditRequest={setEditingCommentId}
                 onCommentDeleteRequest={onCommentDeleteRequest}
-                onUpdateComment={onUpdateComment}
+                onUpdateComment={async (commentId, contentsMarkdown) => {
+                  await onUpdateComment(commentId, contentsMarkdown);
+                  setEditingCommentId(null);
+                }}
                 ownerName={ownerName}
                 postNumber={postNumber}
                 projectName={projectName}
@@ -772,6 +778,8 @@ function PostCommentRow({
   canUpdate,
   childComments,
   comment,
+  editingCommentId,
+  onCommentEditRequest,
   onCommentDeleteRequest,
   onUpdateComment,
   ownerName,
@@ -784,6 +792,8 @@ function PostCommentRow({
   canUpdate: boolean;
   childComments: BoardPostComment[];
   comment: BoardPostComment;
+  editingCommentId: string | null;
+  onCommentEditRequest: (commentId: string | null) => void;
   onCommentDeleteRequest: (requestUri: string) => void;
   onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
@@ -796,6 +806,7 @@ function PostCommentRow({
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
   const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
   const avatarUrl = "/assets/images/default-avatar-32.png";
+  const isEditing = editingCommentId === commentId;
 
   return (
     <li className="comment" id={`comment-${commentId}`}>
@@ -854,6 +865,11 @@ function PostCommentRow({
                 data-toggle="comment-edit"
                 data-comment-id={commentId}
                 title={t("common.comment.edit")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCommentEditRequest(commentId);
+                }}
               >
                 <i className="yobicon-edit-2"></i>
               </button>
@@ -885,12 +901,14 @@ function PostCommentRow({
           basePath={basePath}
           canUpdate={canUpdate}
           comment={comment}
+          isEditing={isEditing}
+          onCancel={() => onCommentEditRequest(null)}
           onUpdateComment={onUpdateComment}
           ownerName={ownerName}
           postNumber={postNumber}
           projectName={projectName}
         />
-        <div id={`comment-body-${commentId}`}>
+        <div id={`comment-body-${commentId}`} style={isEditing ? { display: "none" } : undefined}>
           <TasklistBar />
           <div
             className="comment-body markdown-wrap"
@@ -942,6 +960,8 @@ function PostCommentUpdateForm({
   basePath,
   canUpdate,
   comment,
+  isEditing,
+  onCancel,
   onUpdateComment,
   ownerName,
   postNumber,
@@ -950,6 +970,8 @@ function PostCommentUpdateForm({
   basePath: string;
   canUpdate: boolean;
   comment: BoardPostComment;
+  isEditing: boolean;
+  onCancel: () => void;
   onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
@@ -961,14 +983,14 @@ function PostCommentUpdateForm({
     event.preventDefault();
     const contents = new FormData(event.currentTarget).get("contents");
     await onUpdateComment(commentId, typeof contents === "string" ? contents : "");
-    document
-      .getElementById(`comment-editform-${commentId}`)
-      ?.setAttribute("style", "display: none;");
-    document.getElementById(`comment-body-${commentId}`)?.removeAttribute("style");
   }
 
   return (
-    <div id={`comment-editform-${commentId}`} className="comment-update-form">
+    <div
+      id={`comment-editform-${commentId}`}
+      className="comment-update-form"
+      style={isEditing ? { display: "block" } : undefined}
+    >
       <form
         action={prefixBasePath(
           basePath,
@@ -1005,7 +1027,16 @@ function PostCommentUpdateForm({
                   multiple
                 />
               </span>
-              <button type="button" className="ybtn ybtn-cancel" data-comment-id={commentId}>
+              <button
+                type="button"
+                className="ybtn ybtn-cancel"
+                data-comment-id={commentId}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCancel();
+                }}
+              >
                 Cancel
               </button>
               {canUpdate ? (
