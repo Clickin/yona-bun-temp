@@ -19,6 +19,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
 type LegacyOrganizationLinkProps = Parameters<typeof Link>[0];
+type LegacyUserLinkProps = Parameters<typeof Link>[0];
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
@@ -59,11 +60,7 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
     return (
       <>
-        <OrganizationHeader
-          basePath={runtimeConfig.basePath}
-          logoUrl={logoUrl}
-          organizationName={detailOrganizationName}
-        />
+        <OrganizationHeader logoUrl={logoUrl} organizationName={detailOrganizationName} />
         <OrganizationMenu
           basePath={runtimeConfig.basePath}
           organizationName={detailOrganizationName}
@@ -168,11 +165,7 @@ function OrganizationMembersBody({
 
   return (
     <>
-      <OrganizationHeader
-        basePath={runtimeConfig.basePath}
-        logoUrl={logoUrl}
-        organizationName={organizationName}
-      />
+      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         basePath={runtimeConfig.basePath}
         organizationName={organizationName}
@@ -291,7 +284,6 @@ function OrganizationMembersBody({
               <div className="row-fluid">
                 {organization.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
-                    basePath={runtimeConfig.basePath}
                     key={stringField(user.loginId, "")}
                     onAccept={(userId) => acceptMutation.mutate(userId)}
                     user={user}
@@ -332,17 +324,14 @@ function OrganizationMember({
 
   return (
     <li className="member span6 span-hard-wrap">
-      <a
-        href={prefixBasePath(basePath, `/${loginId}`)}
-        className="avatar-wrap mlarge pull-left mr10"
-      >
+      <Link {...legacyUserLinkProps(loginId)} className="avatar-wrap mlarge pull-left mr10">
         <img
           src={stringField(member.avatarUrl, "/assets/images/default-avatar-64.png")}
           width="64"
           height="64"
           alt=""
         />
-      </a>
+      </Link>
       <div className="member-name">{stringField(member.userLabel, loginId)}</div>
       <div className="member-id">@{loginId}</div>
       <div className="member-setting">
@@ -414,11 +403,9 @@ function OrganizationMember({
 }
 
 function EnrollmentRequest({
-  basePath,
   onAccept,
   user,
 }: {
-  basePath: string;
   onAccept: (userId: number) => void;
   user: YonaUserItem;
 }) {
@@ -428,7 +415,7 @@ function EnrollmentRequest({
   return (
     <div className="span2">
       <div className="pull-left mr10">
-        <a href={prefixBasePath(basePath, `/${loginId}`)}>
+        <Link {...legacyUserLinkProps(loginId)}>
           <img
             src={stringField(user.avatarUrl, "/assets/images/default-avatar-64.png")}
             height="65"
@@ -436,13 +423,13 @@ function EnrollmentRequest({
             className="img-circle"
             alt=""
           />
-        </a>
+        </Link>
       </div>
       <div className="pull-left" style={{ width: "60px" }}>
         <span>
-          <a href={prefixBasePath(basePath, `/${loginId}`)}>
+          <Link {...legacyUserLinkProps(loginId)}>
             <strong>{stringField(user.userLabel, loginId)}</strong>
-          </a>
+          </Link>
         </span>
         <span>({loginId})</span>
         <button
@@ -460,11 +447,9 @@ function EnrollmentRequest({
 }
 
 function OrganizationHeader({
-  basePath,
   logoUrl,
   organizationName,
 }: {
-  basePath: string;
   logoUrl: string;
   organizationName: string;
 }) {
@@ -479,7 +464,9 @@ function OrganizationHeader({
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
-                <a href={organizationHref(basePath, organizationName)}>{organizationName}</a>
+                <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}`)}>
+                  {organizationName}
+                </Link>
               </span>
             </div>
           </div>
@@ -586,14 +573,19 @@ function roleLabel(organization: OrganizationAdminView, role: string) {
 function legacyOrganizationLinkProps(to: string): LegacyOrganizationLinkProps {
   return {
     activeOptions: { includeHash: true },
-    activeProps: { className: undefined },
+    activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
     search: () => undefined,
     to,
   } as unknown as LegacyOrganizationLinkProps;
 }
 
-function organizationHref(basePath: string, organizationName: string) {
-  return prefixBasePath(basePath, `/organizations/${organizationName}`);
+function legacyUserLinkProps(loginId: string): LegacyUserLinkProps {
+  return {
+    activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+    params: { user: loginId },
+    search: () => undefined,
+    to: "/$user",
+  } as unknown as LegacyUserLinkProps;
 }
 
 function stringField(value: unknown, fallback: string) {

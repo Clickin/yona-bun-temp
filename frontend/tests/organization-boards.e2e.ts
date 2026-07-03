@@ -163,6 +163,55 @@ test("organization boards menu issue link preserves legacy href with SPA transit
   await expect(page.locator("#search")).toBeVisible();
 });
 
+test("organization boards filter and breadcrumb links preserve legacy hrefs with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page);
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+  );
+
+  const breadcrumbLink = page.locator(".project-breadcrumb .project-author a");
+  await expect(breadcrumbLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+
+  const updatedFilter = page.locator(".filter-wrap.board .filter").filter({ hasText: "Updated" });
+  const createdFilter = page.locator(".filter-wrap.board .filter").filter({ hasText: "Created" });
+  const commentsFilter = page.locator(".filter-wrap.board .filter").filter({ hasText: "Comments" });
+  await expect(updatedFilter).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards?orderBy=updatedDate&orderDir=desc`,
+  );
+  await expect(createdFilter).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards?orderBy=createdDate&orderDir=desc`,
+  );
+  await expect(commentsFilter).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards?orderBy=numOfComments&orderDir=asc`,
+  );
+  await expect(commentsFilter).toHaveClass("filter active");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await updatedFilter.click();
+
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath}/organizations/weblabs/boards`);
+  await expect.poll(() => new URL(page.url()).search).toBe("?orderBy=updatedDate&orderDir=desc");
+  await expect(updatedFilter).toHaveClass("filter active");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
 test("organization board row links preserve legacy hrefs with SPA transitions", async ({
   page,
 }) => {
@@ -221,7 +270,10 @@ test("organization board route source uses direct Links for row navigation", asy
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('hash="comments"');
 });
 
-test("organization board route source uses direct Links for organization top menu", async () => {
+test("organization board route source uses direct Links for organization top, filter, and header navigation", async () => {
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toMatch(/<a\b/u);
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("boardListHref");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("organizationHref");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("OrganizationRouteLink");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('to="/organizations/$organizationName"');
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(

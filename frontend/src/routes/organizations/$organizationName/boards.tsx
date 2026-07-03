@@ -94,11 +94,7 @@ function OrganizationBoardsBody({
 
   return (
     <>
-      <OrganizationHeader
-        basePath={runtimeConfig.basePath}
-        logoUrl={logoUrl}
-        organizationName={organizationName}
-      />
+      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         active="boards"
         organizationName={organizationName}
@@ -159,11 +155,7 @@ function OrganizationBoardsBody({
           ) : (
             <>
               {boards.totalCount > 1 ? (
-                <BoardFilters
-                  basePath={runtimeConfig.basePath}
-                  organizationName={organizationName}
-                  search={search}
-                />
+                <BoardFilters organizationName={organizationName} search={search} />
               ) : null}
               {hasNotices ? (
                 <ul className="post-list-wrap notice-wrap">
@@ -197,11 +189,9 @@ function OrganizationBoardsBody({
 }
 
 function BoardFilters({
-  basePath,
   organizationName,
   search,
 }: {
-  basePath: string;
   organizationName: string;
   search: OrganizationBoardsSearch;
 }) {
@@ -219,13 +209,18 @@ function BoardFilters({
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
           return (
-            <a
-              href={boardListHref(basePath, organizationName, {
-                orderBy: filter.field,
-                orderDir: active ? nextDir : "desc",
-              })}
+            <Link
+              activeOptions={{ exact: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               className={active ? "filter active" : "filter"}
               key={filter.field}
+              to={`/organizations/${organizationName}/boards?orderBy=${filter.field}&orderDir=${
+                active ? nextDir : "desc"
+              }`}
             >
               <i
                 className={`ico btn-gray-arrow ${
@@ -233,7 +228,7 @@ function BoardFilters({
                 }`}
               ></i>
               {filter.label}
-            </a>
+            </Link>
           );
         })}
       </div>
@@ -344,11 +339,9 @@ function TwoColumnModeCheckbox() {
 }
 
 function OrganizationHeader({
-  basePath,
   logoUrl,
   organizationName,
 }: {
-  basePath: string;
   logoUrl: string;
   organizationName: string;
 }) {
@@ -363,7 +356,17 @@ function OrganizationHeader({
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
-                <a href={organizationHref(basePath, organizationName)}>{organizationName}</a>
+                <Link
+                  activeOptions={{ exact: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  to={`/organizations/${organizationName}`}
+                >
+                  {organizationName}
+                </Link>
               </span>
             </div>
           </div>
@@ -474,21 +477,6 @@ function OrganizationMenu({
       </div>
     </div>
   );
-}
-
-function boardListHref(
-  basePath: string,
-  organizationName: string,
-  search: Pick<OrganizationBoardsSearch, "orderBy" | "orderDir">,
-) {
-  const params = new URLSearchParams();
-  params.set("orderBy", search.orderBy);
-  params.set("orderDir", search.orderDir);
-  return `${prefixBasePath(basePath, `/organizations/${organizationName}/boards`)}?${params.toString()}`;
-}
-
-function organizationHref(basePath: string, organizationName: string) {
-  return prefixBasePath(basePath, `/organizations/${organizationName}`);
 }
 
 function stringSearch(value: unknown, fallback = "") {

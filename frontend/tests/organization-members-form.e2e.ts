@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ORGANIZATION_MEMBERS_ROUTE_SOURCE = readFileSync(
+  "src/routes/organizations/$organizationName/members.tsx",
+  "utf8",
+);
 
 const EXPECTED_ORGANIZATION_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -174,6 +180,16 @@ test("organization members anchors preserve legacy navigation and action boundar
 
   await expect(page.locator(".project-menu-gruop a")).toHaveCount(4);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(3);
+  await expect(page.locator(".project-breadcrumb a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs`,
+  );
+  await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("data-status");
+  await expect(page.locator('.members.project .avatar-wrap[href$="/admin"]')).toHaveCount(1);
+  await expect(page.locator('.members.project .avatar-wrap[href$="/dev"]')).toHaveCount(1);
+  await expect(page.locator('.row-fluid .span2 a[href$="/pending"]')).toHaveCount(2);
+  await expect(page.locator(".members.project .avatar-wrap[data-status]")).toHaveCount(0);
+  await expect(page.locator(".row-fluid .span2 a[data-status]")).toHaveCount(0);
   expect(await organizationMembersAnchorNativeListeners(page)).toEqual([]);
   await expect(page.locator(".project-menu-gruop a").filter({ hasText: "Board" })).toHaveAttribute(
     "href",
@@ -205,6 +221,63 @@ test("organization members anchors preserve legacy navigation and action boundar
     `${basePath}/organizations/weblabs/members/1`,
   );
   await expect(deleteControl).toHaveClass(/ybtn-danger/);
+});
+
+test("organization members profile and breadcrumb links use SPA navigation with legacy hrefs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  const memberProfileLink = page.locator('.members.project .avatar-wrap[href$="/dev"]');
+  await expect(memberProfileLink).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(memberProfileLink.locator("img")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-64.png",
+  );
+  await expect(memberProfileLink.locator("img")).toHaveAttribute("width", "64");
+  await expect(memberProfileLink.locator("img")).toHaveAttribute("height", "64");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await memberProfileLink.click();
+  await expect(page).toHaveURL(`${basePath}/dev`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  const breadcrumbLink = page.locator(".project-breadcrumb a");
+  await expect(breadcrumbLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "breadcrumb";
+  });
+  await breadcrumbLink.click();
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("breadcrumb");
+  await expect(page.locator(".project-menu-gruop li").first()).toHaveClass("active");
+});
+
+test("organization members route source keeps internal navigation out of raw anchors", () => {
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("Link");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('to: "/$user"');
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("<a ");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("</a>");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("organizationHref(");
 });
 
 test("organization members delete waits for legacy confirmation modal", async ({ page }) => {
@@ -385,6 +458,29 @@ async function mockOrganizationMembers(page: Page, options: { adminStatus?: numb
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(organizationContainerPayload()),
+    });
+  });
+  await page.route("**/api/v1/users/dev/profile**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        issueItems: [],
+        memberProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-64.png",
+          connectedSocialProviders: [],
+          displayName: "Dev Member",
+          englishName: "",
+          isBlocked: false,
+          isGuest: false,
+          isSiteAdmin: false,
+          loginId: "dev",
+          primaryEmailAddress: "",
+          sinceLabel: "",
+        },
+        pullRequestItems: [],
+        viewerCanEditProfile: false,
+      }),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/boards**", async (route) => {

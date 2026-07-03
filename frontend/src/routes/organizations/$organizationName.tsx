@@ -119,15 +119,24 @@ function OrganizationHomeBody({
                 </div>
                 {booleanField(organization.viewerCanCreateProject) ? (
                   <div className="pull-right">
-                    <a
-                      href={prefixBasePath(
-                        runtimeConfig.basePath,
-                        `/projectform?owner=${organizationName}`,
-                      )}
+                    <Link
+                      activeOptions={{
+                        exact: true,
+                        explicitUndefined: true,
+                        includeHash: true,
+                        includeSearch: true,
+                      }}
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: undefined,
+                        "data-status": undefined,
+                      }}
                       className="ybtn ybtn-primary"
+                      search={{ owner: organizationName }}
+                      to="/projectform"
                     >
                       {t("button.newProject")}
-                    </a>
+                    </Link>
                   </div>
                 ) : null}
               </div>
@@ -368,12 +377,25 @@ function MemberPanel({
           >
             {members.map((member) => (
               <li className="member" key={stringField(member.loginId, "")}>
-                <a
-                  href={prefixBasePath(basePath, `/${stringField(member.loginId, "")}`)}
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                   className="avatar-wrap"
                   data-toggle="tooltip"
                   data-placement="top"
+                  params={{ user: stringField(member.loginId, "") }}
+                  search={{}}
                   title={stringField(member.loginId, "")}
+                  to="/$user"
                 >
                   <img
                     src={stringField(member.avatarUrl, "/assets/images/default-avatar-45.png")}
@@ -381,15 +403,28 @@ function MemberPanel({
                     width="45"
                     alt=""
                   />
-                </a>
-                <a
-                  href={prefixBasePath(basePath, `/${stringField(member.loginId, "")}`)}
+                </Link>
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                   data-toggle="tooltip"
                   data-placement="top"
+                  params={{ user: stringField(member.loginId, "") }}
+                  search={{}}
                   title={stringField(member.loginId, "")}
+                  to="/$user"
                 >
                   {stringField(member.userLabel, stringField(member.loginId, ""))}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

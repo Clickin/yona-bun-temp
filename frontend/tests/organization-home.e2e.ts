@@ -130,6 +130,42 @@ test("organization home menu links keep legacy hrefs without route-local native 
   expect(await readOrganizationHomeMenuNativeLinkAudit(page)).toEqual([]);
 });
 
+test("organization home create-project and member profile links preserve legacy hrefs with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page);
+  await mockOrganizationHomeCreateProjectNavigation(page);
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+  const createProjectLink = page.locator(".project-search-wrap .pull-right a.ybtn-primary");
+  const adminAvatarLink = page.locator(".project-members .member").first().locator("a.avatar-wrap");
+  const adminProfileLink = page.locator(".project-members .member").first().locator("a").nth(1);
+  const devProfileLink = page.locator(".project-members .member").nth(1).locator("a").nth(1);
+
+  await expect(createProjectLink).toHaveAttribute("href", `${basePath}/projectform?owner=weblabs`);
+  await expect(adminAvatarLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(adminProfileLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(devProfileLink).toHaveAttribute("href", `${basePath}/dev`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await createProjectLink.click();
+
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname + window.location.search))
+    .toBe(`${basePath}/projectform?owner=weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#newProjectForm")).toBeVisible();
+});
+
 test("organization home project card links preserve legacy hrefs with SPA transitions", async ({
   page,
 }) => {
@@ -186,11 +222,17 @@ test("organization home project card route source uses Link for internal card na
   expect(source).not.toContain("OrganizationRouteLink");
   expect(source).not.toContain("const projectHref");
   expect(source).not.toContain("<a href={projectHref}");
+  expect(source).not.toMatch(/<a\b/);
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${ownerName}`)}");
+  expect(source).not.toContain("href={prefixBasePath(basePath, `/${stringField(member.loginId");
+  expect(source).not.toContain("href={prefixBasePath(runtimeConfig.basePath");
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain("params={{ ownerName, projectName }}");
   expect(source).toContain('to="/$user"');
   expect(source).toContain("params={{ user: ownerName }}");
+  expect(source).toContain('params={{ user: stringField(member.loginId, "") }}');
+  expect(source).toContain('to="/projectform"');
+  expect(source).toContain("search={{ owner: organizationName }}");
   expect(source).toContain('to="/organizations/$organizationName"');
   expect(source).toContain('to="/organizations/$organizationName/issues"');
   expect(source).toContain('to="/organizations/$organizationName/boards"');
@@ -560,6 +602,33 @@ async function mockOrganizationHomeProjectNavigation(page: Page) {
         projectItems: [],
         pullRequestItems: [],
         selected: "issues",
+      }),
+    });
+  });
+}
+
+async function mockOrganizationHomeCreateProjectNavigation(page: Page) {
+  await page.route("**/api/v1/projects/form-options?owner=weblabs", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ownerOptions: [
+          {
+            avatarUrl: "/assets/images/organization_default_logo.png",
+            displayName: "weblabs",
+            organization: true,
+            ownerName: "weblabs",
+            selected: true,
+          },
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            displayName: "Site Admin",
+            organization: false,
+            ownerName: "admin",
+            selected: false,
+          },
+        ],
+        selectedOwnerName: "weblabs",
       }),
     });
   });
