@@ -116,9 +116,9 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
       {response.versionToUpdate ? (
         <p>
           <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>{" "}
-          <a href={response.releaseUrl ?? ""} className="ybtn ybtn-success">
+          <Link to={(response.releaseUrl ?? "") as never} className="ybtn ybtn-success">
             {t("site.update.download")}
-          </a>
+          </Link>
         </p>
       ) : null}
       {response.currentVersion ? (

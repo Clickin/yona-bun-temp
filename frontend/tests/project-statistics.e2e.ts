@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const STATISTICS_ROUTE_SOURCE = readFileSync(
+  "src/routes/$ownerName/$projectName/statistics.tsx",
+  "utf8",
+);
 
 const EXPECTED_PROJECT_STATISTICS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -48,6 +54,69 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     projectPageMarginTop: "5px",
     projectPageWidth: 1260,
   });
+});
+
+test("project statistics header and menu links keep legacy hrefs without TanStack active markers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+
+  expect(await attributes(page, ".project-breadcrumb a", "href")).toEqual([
+    `${basePath}/admin`,
+    `${basePath}/admin/sample`,
+  ]);
+  await expect(page.locator(".project-menu-gruop > li")).toHaveClass([
+    "",
+    "code-menu ",
+    "active",
+    "",
+    "",
+    "",
+    "",
+  ]);
+  expect(await attributes(page, ".project-menu-gruop > li > a", "href")).toEqual([
+    `${basePath}/admin/sample`,
+    `${basePath}/admin/sample/code`,
+    `${basePath}/admin/sample/issues`,
+    `${basePath}/admin/sample/pullRequests`,
+    `${basePath}/admin/sample/reviews`,
+    `${basePath}/admin/sample/milestones`,
+    `${basePath}/admin/sample/posts`,
+  ]);
+  await expect(page.locator(".project-setting a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/setting`,
+  );
+  await expect(page.locator(".project-header-outer a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".project-header-outer a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer a[data-status]")).toHaveCount(0);
+});
+
+test("project statistics header and menu links navigate through the SPA history marker", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installPushStateAudit(page);
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  await page.locator(".project-menu-gruop > li > a").filter({ hasText: "Code" }).click();
+
+  await expect.poll(() => pushStateCalls(page)).toBeGreaterThan(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code`);
+});
+
+test("project statistics route TSX has no route-local raw anchor elements", () => {
+  expect(STATISTICS_ROUTE_SOURCE).toContain("Link");
+  expect(STATISTICS_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("<a ");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("</a>");
 });
 
 test("project statistics header favorite star posts and toggles starred class", async ({
@@ -163,6 +232,15 @@ async function readDesktopStatisticsMetrics(page: Page) {
   });
 }
 
+async function attributes(page: Page, selector: string, name: string) {
+  return page
+    .locator(selector)
+    .evaluateAll(
+      (elements, attrName) => elements.map((element) => element.getAttribute(attrName)),
+      name,
+    );
+}
+
 async function installFavoriteSpanNativeListenerAudit(page: Page) {
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
@@ -189,6 +267,30 @@ async function favoriteSpanNativeListeners(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
         .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
+
+async function installPushStateAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalPushState = history.pushState;
+    Object.defineProperty(window, "__yonaPushStateCalls", {
+      configurable: true,
+      value: [] as string[],
+    });
+    history.pushState = function pushStateWithAudit(data, unused, url) {
+      (
+        window as Window & typeof globalThis & { __yonaPushStateCalls: string[] }
+      ).__yonaPushStateCalls.push(String(url ?? ""));
+      return originalPushState.call(this, data, unused, url);
+    };
+  });
+}
+
+async function pushStateCalls(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaPushStateCalls?: string[] })
+        .__yonaPushStateCalls?.length ?? 0,
   );
 }
 

@@ -131,10 +131,10 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   await expect(
     page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  await expect(page.locator("a.ybtn.ybtn-primary")).toHaveAttribute(
-    "href",
-    `${basePath}/sites/export`,
-  );
+  const exportLink = page.locator("a.ybtn.ybtn-primary", { hasText: "Export" });
+  await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
+  await expect(exportLink).toHaveAttribute("class", "ybtn ybtn-primary");
+  await expect(exportLink).toHaveText("Export");
   await expect(page.locator('form[action$="/sites/import"]')).toHaveAttribute(
     "enctype",
     "multipart/form-data",
@@ -201,6 +201,19 @@ test("site admin data renders legacy update notification badge", async ({ page }
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin data export link preserves legacy download href", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page);
+
+  await page.goto(`${basePath}/sites/data`);
+  const exportLink = page.locator("a.ybtn.ybtn-primary", { hasText: "Export" });
+
+  await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
+  await expect(exportLink).toHaveAttribute("class", "ybtn ybtn-primary");
+  await expect(exportLink).toHaveText("Export");
+});
+
 test("site admin data sidebar uses typed TanStack links without route-local adapter", () => {
   const routeSource = readFileSync("src/routes/sites/data.tsx", "utf8");
 
@@ -208,6 +221,9 @@ test("site admin data sidebar uses typed TanStack links without route-local adap
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("to={item.href}");
+  expect(routeSource).toContain("<Link");
+  expect(routeSource).toContain("to={exportPath as never}");
+  expect(routeSource).not.toMatch(/<a\b[\s\S]*\/sites\/export/u);
 });
 
 async function expectSiteAdminSidebar(page: Page, basePath: string) {
