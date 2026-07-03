@@ -41,7 +41,11 @@ import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
+  AnchorHTMLAttributes<HTMLAnchorElement> & {
+    activeOptions?: { includeHash?: boolean };
+    activeProps?: { className?: string | undefined };
+    to: string;
+  }
 >;
 
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
@@ -2639,6 +2643,7 @@ function IssueCommentRow({
         }}
         formOpen={childFormOpen}
         issue={issue}
+        onCommentDeleteRequest={onCommentDeleteRequest}
         parentCommentId={commentId}
         replyVisible={replyVisible}
         toggleForm={() => {
@@ -2666,6 +2671,7 @@ function ChildComments({
   closeForm,
   formOpen,
   issue,
+  onCommentDeleteRequest,
   parentCommentId,
   replyVisible,
   toggleForm,
@@ -2675,6 +2681,7 @@ function ChildComments({
   closeForm: () => void;
   formOpen: boolean;
   issue: RestIssueDetailResponse;
+  onCommentDeleteRequest: (requestUri: string) => void;
   parentCommentId: string;
   replyVisible: boolean;
   toggleForm: () => void;
@@ -2712,6 +2719,7 @@ function ChildComments({
               comment={comment}
               issue={issue}
               key={stringField(comment.id)}
+              onCommentDeleteRequest={onCommentDeleteRequest}
             />
           ))}
         </div>
@@ -2765,10 +2773,12 @@ function ChildComment({
   basePath,
   comment,
   issue,
+  onCommentDeleteRequest,
 }: {
   basePath: string;
   comment: IssueChildComment;
   issue: RestIssueDetailResponse;
+  onCommentDeleteRequest: (requestUri: string) => void;
 }) {
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
@@ -2780,20 +2790,7 @@ function ChildComment({
     basePath,
     `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}`,
   );
-  const deleteLink = booleanField(comment.viewerCanDelete)
-    ? `<a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="${escapeHtml(
-        deleteUri,
-      )}" title="Delete comment">x</a>`
-    : "";
-  const childMetaHtml = `- <a href="${escapeHtml(
-    prefixBasePath(basePath, `/${authorLoginId}`),
-  )}" class="usf-group" data-toggle="tooltip" data-placement="top" title="${escapeHtml(
-    authorLoginId,
-  )}"><strong>${escapeHtml(authorLabel)}</strong></a> <a href="#comment-${escapeHtml(
-    commentId,
-  )}" class="ago" title="${escapeHtml(stringField(comment.createdLabel))}">${escapeHtml(
-    stringField(comment.createdLabel),
-  )}</a>${deleteLink}`;
+  const createdLabel = stringField(comment.createdLabel);
 
   return (
     <div className="one-line-comment">
@@ -2801,10 +2798,43 @@ function ChildComment({
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
           {stringField(comment.contentsMarkdown)}
         </ReactMarkdown>
-        <span
-          className="subcomment-author hide"
-          dangerouslySetInnerHTML={{ __html: childMetaHtml }}
-        ></span>
+        <span className="subcomment-author hide">
+          -{" "}
+          <LegacyInternalLink
+            to={`/${authorLoginId}`}
+            className="usf-group"
+            data-toggle="tooltip"
+            data-placement="top"
+            title={authorLoginId}
+          >
+            <strong>{authorLabel}</strong>
+          </LegacyInternalLink>
+          <LegacyInternalLink
+            to={`#comment-${commentId}`}
+            className="ago"
+            title={createdLabel}
+            activeOptions={{ includeHash: true }}
+            activeProps={{ className: undefined }}
+          >
+            {createdLabel}
+          </LegacyInternalLink>
+          {booleanField(comment.viewerCanDelete) ? (
+            <button
+              type="button"
+              className="btn-transparent deleteButtonX"
+              data-toggle="comment-delete"
+              data-request-uri={deleteUri}
+              title="Delete comment"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onCommentDeleteRequest(deleteUri);
+              }}
+            >
+              x
+            </button>
+          ) : null}
+        </span>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ const COMMENT_UPDATE_FORM = `<div id="comment-editform-77" class="comment-update
 const COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-contents" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-contents" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="ISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form><script defer="" type="text/javascript" src="__BASE_PATH__/assets/javascripts/common/yobi.CommentForm.js"></script>`;
 const COMMENT_FORM_UNAUTHORIZED = `<div class="write-comment-box mt20" title="You need to log in to add comments." data-login="required"><div class="write-comment-wrap"><div class="textarea-box"><textarea class="comment disabled" disabled="" style="cursor:text"></textarea></div><div class="right-txt mt10"><span class="ybtn ybtn-disabled">Add a comment</span></div></div></div>`;
 const CHILD_COMMENT_ANCHORS = `<div id="comment-78"></div>`;
-const CHILD_COMMENTS = `<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Child <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><a href="#comment-78" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="javascript:void(0)" type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/78" title="Delete comment">x</a></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="77"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (CTRL + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>`;
+const CHILD_COMMENTS = `<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Child <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/qa1" class="usf-group" data-toggle="tooltip" data-placement="top" title="qa1"><strong>QA One</strong></a><a href="__BASE_PATH__/admin/sample/issue/11/#comment-78" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><button type="button" class="btn-transparent deleteButtonX" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/78" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="77"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (CTRL + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>`;
 const LEFT_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment " id="comment-77">${CHILD_COMMENT_ANCHORS}<div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Dev Member"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="dev"></a></span><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="#comment-77" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><span class="new-issue-by"><a href="__BASE_PATH__/user/issues/new?commentId=77">New issue by this comment</a></span><button type="button" class="btn-transparent-with-fontsize-lineheight" title="Agree" data-request-type="comment-vote" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/77/vote"><i class="yobicon-hearts vote-heart-off"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml10" data-toggle="comment-edit" data-comment-id="77" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml6" data-toggle="comment-delete" data-request-uri="__BASE_PATH__/admin/sample/issue/11/comment/77" title="Delete comment"><i class="yobicon-trash"></i></button></span></div>${COMMENT_UPDATE_FORM}<div id="comment-body-77">${TASKLIST}<div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>Comment <strong>markdown</strong></p></div><div class="attachments pull-left" data-attachments="[]"></div></div></div>${CHILD_COMMENTS}</li></ul></div></div>${COMMENT_FORM}</div>`;
 const RIGHT_INDEX_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><strong>Comment</strong> <strong class="num">1</strong></div><ul class="comments"><li class="comment index-comment  " id="comment-77" data-location="#comment-77"><div><div id="comment-body-77"><div class="comment-body"><a href="#comment-77">Comment markdown</a></div></div><div class="index-comment-author"><span class="comment-exists"><i class="yobicon-comment2"></i></span><span class="comment_author"><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="#comment-77" class="share-link" style="display:none">[Link]</a></span></div></div></li></ul></div></div></div>`;
 const LEFT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-88"><span class="state closed">Closed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> closed this issue<span class="date"><a href="#event-88">Jul 3, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
@@ -681,14 +681,16 @@ test("project issue detail preserves legacy child comment anchor divs", async ({
   const childAnchor = comment.locator(":scope > #comment-78");
   await expect(childAnchor).toHaveCount(1);
   await expect(comment.locator(".one-line-comment #comment-78")).toHaveCount(0);
-  await expect(comment.locator('.subcomment-author a[href="#comment-78"].ago')).toHaveText(
-    "Jul 2, 2026",
-  );
+  await expect(
+    comment.locator(
+      `.subcomment-author a[href="${basePath}/admin/sample/issue/11/#comment-78"].ago`,
+    ),
+  ).toHaveText("Jul 2, 2026");
 
   expect(await childCommentAnchorMetrics(page)).toEqual({
     anchorHeight: 0,
     anchorNextClass: "comment-avatar",
-    childHref: "#comment-78",
+    childHref: `${basePath}/admin/sample/issue/11/#comment-78`,
     inlineChildAnchorCount: 0,
   });
 });
@@ -1222,6 +1224,35 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   });
   expect(commentDeleteRequests).toEqual([]);
 
+  await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(commentDeleteRequests).toEqual([]);
+
+  const childAuthor = page.locator("#comment-77 .subcomment-author");
+  await expect(childAuthor.locator('a[href^="javascript:"]')).toHaveCount(0);
+  const childDeleteButton = childAuthor.locator(
+    'button[type="button"].deleteButtonX[data-toggle="comment-delete"]',
+  );
+  await expect(childDeleteButton).toHaveText("x");
+  await expect(childDeleteButton).toHaveClass("btn-transparent deleteButtonX");
+  await expect(childDeleteButton).toHaveAttribute("title", "Delete comment");
+  await expect(childDeleteButton).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/issue/11/comment/78`,
+  );
+
+  await childDeleteButton.dispatchEvent("click");
+  await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-uri",
+    `${basePath}/admin/sample/issue/11/comment/78`,
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-method",
+    "delete",
+  );
   await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -2371,9 +2402,7 @@ async function commentUpdateFormMetrics(page: Page) {
 async function childCommentAnchorMetrics(page: Page) {
   return page.locator(".span-left-pane #comment-77").evaluate((comment) => {
     const anchor = comment.querySelector<HTMLElement>(":scope > #comment-78");
-    const childAnchor = comment.querySelector<HTMLAnchorElement>(
-      '.subcomment-author a[href="#comment-78"].ago',
-    );
+    const childAnchor = comment.querySelector<HTMLAnchorElement>(".subcomment-author a.ago");
     return {
       anchorHeight: anchor ? anchor.getBoundingClientRect().height : null,
       anchorNextClass: anchor?.nextElementSibling?.className ?? null,
