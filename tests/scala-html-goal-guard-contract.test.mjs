@@ -232,8 +232,8 @@ test("blocks frontend route TSX work that creates anchor tags through createElem
   });
 
   assert.equal(result.blocked, true);
-  assert.match(formatScalaHtmlGoalGuardSummary(result), /anchor tag work/u);
-  assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Router Link/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /createElement work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /express UI as TSX/u);
 });
 
 test("blocks frontend route TSX work that creates script or style tags through createElement", () => {
@@ -257,7 +257,8 @@ test("blocks frontend route TSX work that creates script or style tags through c
   });
 
   assert.equal(result.blocked, true);
-  assert.match(formatScalaHtmlGoalGuardSummary(result), /legacy jQuery\/DOM escape work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /createElement work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /document\.createElement/u);
 });
 
 test("blocks frontend route TSX work that mutates DOM attributes through refs", () => {
@@ -347,7 +348,7 @@ test("allows frontend route TSX work that uses Link href for external navigation
   assert.equal(result.blocked, false);
 });
 
-test("allows frontend route TSX work that uses createElement for React components", () => {
+test("blocks frontend route TSX work that uses createElement for React components", () => {
   const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [
@@ -363,7 +364,30 @@ test("allows frontend route TSX work that uses createElement for React component
     env: {},
   });
 
-  assert.equal(result.blocked, false);
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /createElement work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /express UI as TSX/u);
+});
+
+test("blocks frontend route TSX work that imperatively creates DOM nodes", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [routeFile, '+  const form = document.createElement("form");\n'],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /createElement work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /imperative DOM creation/u);
 });
 
 test("blocks frontend route TSX work that adds legacy custom attributes to Link", () => {

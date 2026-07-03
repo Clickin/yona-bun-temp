@@ -16,7 +16,9 @@ const SCALA_HTML_SOURCE_PATTERN =
   /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
 const LEGACY_VIEW_ROOT = "yona-original/app/views";
 const ADDED_REACT_DOM_ESCAPE_PATTERN =
-  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|window\.location|<script\b|(?:React\.)?createElement\s*\(\s*["'](?:script|style)["']|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:addEventListener|removeEventListener|classList|style)\b|\.(?:setAttribute|removeAttribute|toggleAttribute|html|append|prepend|before|after)\s*\()/imu;
+  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|window\.location|<script\b|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:addEventListener|removeEventListener|classList|style)\b|\.(?:setAttribute|removeAttribute|toggleAttribute|html|append|prepend|before|after)\s*\()/imu;
+const ADDED_CREATE_ELEMENT_PATTERN =
+  /^\+(?!\+\+).*(?:(?:React\.)?createElement|document\.createElement)\s*\(/imu;
 const ADDED_ANCHOR_TAG_PATTERN =
   /^\+(?!\+\+).*(?:<a\b|(?:React\.)?createElement\s*\(\s*["']a["'])/imu;
 const ADDED_LINK_CUSTOM_ATTRIBUTE_PATTERN =
@@ -109,6 +111,12 @@ function routeFilesWithReactDomEscapes(routePatches) {
     .map(([file]) => file);
 }
 
+function routeFilesWithCreateElement(routePatches) {
+  return [...routePatches.entries()]
+    .filter(([, patch]) => ADDED_CREATE_ELEMENT_PATTERN.test(patch))
+    .map(([file]) => file);
+}
+
 function routeFilesWithAddedAnchorTags(routePatches) {
   return [...routePatches.entries()]
     .filter(([, patch]) => ADDED_ANCHOR_TAG_PATTERN.test(patch))
@@ -148,6 +156,19 @@ export function evaluateScalaHtmlGoalGuard({
   const allowReactDomEscape = env.YONA_ALLOW_REACT_DOM_ESCAPE === "1";
   const enforceSingleAuditRow = env.YONA_ENFORCE_SCALA_HTML_SINGLE_ROW === "1";
   const auditRows = auditPatch === null ? [] : addedAuditRows(auditPatch);
+
+  if (implementationTouchesRuntime && !allowReactDomEscape) {
+    const routeFilesWithCreateElementCalls = routeFilesWithCreateElement(routePatches);
+
+    if (routeFilesWithCreateElementCalls.length > 0) {
+      return {
+        blocked: true,
+        frontendEvidenceFiles,
+        frontendImplementationFiles,
+        message: `Scala HTML goal guard blocked createElement work. Route TSX must not add createElement, React.createElement, or document.createElement calls; express UI as TSX and keep imperative DOM creation out of screen conversions. The initial React root mount is the only allowed source exception and it lives outside route TSX. Offending route files: ${routeFilesWithCreateElementCalls.join(", ")}.`,
+      };
+    }
+  }
 
   if (implementationTouchesRuntime && !allowReactDomEscape) {
     const routeFilesWithDomEscapes = routeFilesWithReactDomEscapes(routePatches);
