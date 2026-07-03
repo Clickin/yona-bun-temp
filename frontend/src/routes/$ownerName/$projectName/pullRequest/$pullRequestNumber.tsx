@@ -177,25 +177,27 @@ function PullRequestOverviewBody({
                   {t("button.edit")}
                 </Link>
               ) : null}
-              {/* Legacy data-request-method anchors below are POST actions, not navigation. */}
+              {/* Legacy data-request-method controls below are POST actions, not navigation. */}
               {isOpenState(pullRequest.state) && pullRequest.permissions.canUpdateState ? (
-                <a
+                <button
+                  type="button"
                   data-request-method="post"
-                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/close`)}
+                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/close`)}
                   className="ybtn"
                 >
                   {t("pullRequest.close")}
-                </a>
+                </button>
               ) : null}
               {pullRequest.state.toLowerCase() === "closed" &&
               pullRequest.permissions.canUpdateState ? (
-                <a
+                <button
+                  type="button"
                   data-request-method="post"
-                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/open`)}
+                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/open`)}
                   className="ybtn"
                 >
                   {t("pullRequest.reopen")}
-                </a>
+                </button>
               ) : null}
             </div>
           </div>
@@ -549,40 +551,44 @@ export function PullRequestHeader({
                 </Link>
               ))}
             </div>
-            {/* Review/unreview links are legacy POST actions, not navigation. */}
+            {/* Review/unreview controls are legacy POST actions, not navigation. */}
             {isOpen ? (
               pullRequest.reviewed ? (
-                <a
+                <button
+                  type="button"
                   data-request-method="post"
                   className="ybtn ybtn-default"
-                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/unreview`)}
+                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/unreview`)}
                 >
                   {t("pullRequest.unreview")}
-                </a>
+                </button>
               ) : (
-                <a
+                <button
+                  type="button"
                   data-request-method="post"
                   className={`ybtn ${pullRequest.reviewers.length > 0 ? "ybtn-default" : "ybtn-success"}`}
-                  href={prefixBasePath(runtimeConfig.basePath, `${prPath}/review`)}
+                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/review`)}
                 >
                   {t("pullRequest.review")}
-                </a>
+                </button>
               )
             ) : null}
           </>
         ) : null}
         {pullRequest.permissions.canReview ? (
           isAcceptable ? (
-            <a
+            <button
               id="btnAccept"
-              href={prefixBasePath(runtimeConfig.basePath, `${prPath}/accept`)}
+              type="button"
               data-request-method="post"
+              data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/accept`)}
               className="ybtn ybtn-success"
             >
               {t("pullRequest.merge")}
-            </a>
+            </button>
           ) : (
             <button
+              type="button"
               className="ybtn ybtn-disabled"
               data-toggle="tooltip"
               data-placement="top"
@@ -732,6 +738,7 @@ export function PullRequestStateInfo({
           <>
             <code>{pullRequest.fromBranch}</code> {t("pullRequest.delete.frombranch.message")}
             <button
+              type="button"
               className="ybtn ybtn-danger ybtn-mini pull-right"
               data-request-method="delete"
               data-request-uri={prefixBasePath(
@@ -747,13 +754,17 @@ export function PullRequestStateInfo({
           <>
             <code>{pullRequest.fromBranch}</code> {t("pullRequest.restore.frombranch.message")}
             {/* Restore branch is a legacy POST action, not navigation. */}
-            <a
-              href={prefixBasePath(runtimeConfig.basePath, `${prPath}/restorefrombranch`)}
+            <button
+              type="button"
               className="ybtn ybtn-info ybtn-mini pull-right"
               data-request-method="post"
+              data-request-uri={prefixBasePath(
+                runtimeConfig.basePath,
+                `${prPath}/restorefrombranch`,
+              )}
             >
               {t("pullRequest.restore.branch")}
-            </a>
+            </button>
           </>
         ) : null}
       </div>

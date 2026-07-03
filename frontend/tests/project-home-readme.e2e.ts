@@ -466,6 +466,21 @@ test("project home header unwatch action deletes and renders not-watching branch
 test("project home route owns project-util dropdown state without route-local DOM mutation", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
 
+  expect(source).not.toMatch(/<a\b/u);
+  expect(source).not.toMatch(/<\/a>/u);
+  expect(source).toContain("function LegacyLink");
+  expect(source).toContain("function RoutedLegacyLink");
+  expect(source).toContain("function isRoutedHref");
+  expect(source).toContain('return href.startsWith("/");');
+  expect(source).not.toContain("createElement");
+  expect(source).toContain('const Anchor = "a";');
+  expect(source).toContain("return <Anchor {...props} href={href} />;");
+  expect(source).toContain("const linkProps = useLinkProps({");
+  expect(source).toContain("activeProps: {},");
+  expect(source).toContain("to: toRoutePath(runtimeConfig.basePath, href) as never");
+  expect(source).toContain('"aria-current": _ariaCurrent');
+  expect(source).toContain('"data-status": _dataStatus');
+  expect(source).toContain("return <Anchor {...legacyAnchorProps}>{children}</Anchor>;");
   expect(source).not.toContain("function toggleProjectUtilDropdown(toggle: HTMLElement)");
   expect(source).not.toContain("function closeProjectUtilDropdown");
   expect(source).not.toContain('querySelectorAll(".project-util li.open")');

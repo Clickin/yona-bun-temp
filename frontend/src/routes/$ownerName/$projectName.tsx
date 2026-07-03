@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import {
+  createFileRoute,
+  Outlet,
+  useLinkProps,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
+import { type ComponentProps, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -162,11 +168,15 @@ function ProjectHomeBody({
       <div className="project-page-wrap">
         <div className="project-breadcrumb hide show-in-mobile">
           <span className="project-author">
-            <a href={prefixBasePath(runtimeConfig.basePath, `/${ownerName}`)}>{ownerName}</a>
+            <LegacyLink href={prefixBasePath(runtimeConfig.basePath, `/${ownerName}`)}>
+              {ownerName}
+            </LegacyLink>
           </span>
           <span className="project-separator">/</span>
           <span className="project-name">
-            <a href={projectHref(runtimeConfig.basePath, ownerName, projectName)}>{projectName}</a>
+            <LegacyLink href={projectHref(runtimeConfig.basePath, ownerName, projectName)}>
+              {projectName}
+            </LegacyLink>
           </span>
           {booleanField(projectRecord.isPrivate) ? (
             <span className="project-private">
@@ -282,27 +292,29 @@ function ProjectHomeBody({
           <div className="span9 span-left-pane">
             <ul className="nav nav-tabs">
               <li className={tabId === "readme" ? "active" : ""}>
-                <a href={projectHref(runtimeConfig.basePath, ownerName, projectName)}>README</a>
+                <LegacyLink href={projectHref(runtimeConfig.basePath, ownerName, projectName)}>
+                  README
+                </LegacyLink>
               </li>
               <li className={tabId === "history" ? "active" : ""}>
-                <a
+                <LegacyLink
                   href={prefixBasePath(
                     runtimeConfig.basePath,
                     `/${ownerName}/${projectName}?tabId=history`,
                   )}
                 >
                   {t("project.history.recent")}
-                </a>
+                </LegacyLink>
               </li>
               <li className={tabId === "dashboard" ? "active" : ""}>
-                <a
+                <LegacyLink
                   href={prefixBasePath(
                     runtimeConfig.basePath,
                     `/${ownerName}/${projectName}?tabId=dashboard`,
                   )}
                 >
                   {t("project.dashboard")}
-                </a>
+                </LegacyLink>
               </li>
             </ul>
 
@@ -334,7 +346,7 @@ function ProjectHomeBody({
               <div className="project-btn-wrap">
                 {booleanField(menuSetting.issue) ? (
                   <span className="project-btn-item">
-                    <a
+                    <LegacyLink
                       href={prefixBasePath(
                         runtimeConfig.basePath,
                         `/${ownerName}/${projectName}/issueform`,
@@ -342,12 +354,12 @@ function ProjectHomeBody({
                       className="ybtn ybtn-success"
                     >
                       {t("button.newIssue")}
-                    </a>
+                    </LegacyLink>
                   </span>
                 ) : null}
                 {booleanField(menuSetting.code) && stringField(project.vcs, "GIT") === "GIT" ? (
                   <span className="project-btn-item">
-                    <a
+                    <LegacyLink
                       href={prefixBasePath(
                         runtimeConfig.basePath,
                         `/${ownerName}/${projectName}/newFork`,
@@ -355,7 +367,7 @@ function ProjectHomeBody({
                       className="ybtn ybtn-inverse"
                     >
                       {t("fork")}
-                    </a>
+                    </LegacyLink>
                   </span>
                 ) : null}
               </div>
@@ -363,7 +375,7 @@ function ProjectHomeBody({
                 <header>
                   <h3>{t("project.members")}</h3>
                   {booleanField(project.viewerCanUpdate) ? (
-                    <a
+                    <LegacyLink
                       href={prefixBasePath(
                         runtimeConfig.basePath,
                         `/${ownerName}/${projectName}/members`,
@@ -372,7 +384,7 @@ function ProjectHomeBody({
                       id="member-add-link"
                     >
                       <i className="yobicon-addfriend"></i> {t("button.add")}
-                    </a>
+                    </LegacyLink>
                   ) : null}
                 </header>
                 <div className="member-wrap">
@@ -478,12 +490,12 @@ function ReadmePane({
             <i className="yobicon-book-open vmiddle"></i>
             <strong className="vmiddle"> {readmeName}</strong>
             {stringField(project.vcs, "GIT") === "GIT" && canCreateReadme ? (
-              <a
+              <LegacyLink
                 href={prefixBasePath(basePath, `/${ownerName}/${projectName}/postform?readme=true`)}
                 className="ybtn vmiddle ml5"
               >
                 {t("button.edit")}
-              </a>
+              </LegacyLink>
             ) : null}
           </header>
           <div className="readme-body markdown-wrap">
@@ -498,7 +510,7 @@ function ReadmePane({
               <br />
               <br />
               {canCreateReadme ? (
-                <a
+                <LegacyLink
                   href={prefixBasePath(
                     basePath,
                     `/${ownerName}/${projectName}/postform?readme=true`,
@@ -506,7 +518,7 @@ function ReadmePane({
                   className="ybtn"
                 >
                   {t("project.readme.create")}
-                </a>
+                </LegacyLink>
               ) : null}
             </>
           ) : (
@@ -537,7 +549,7 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
             const createdLabel = stringField(itemRecord.createdLabel, "");
             return (
               <li className="activity-stream" key={`${itemUrl}-${shortTitle}-${createdLabel}`}>
-                <a href={actorUrl} className="avatar-wrap pull-left mr10">
+                <LegacyLink href={actorUrl} className="avatar-wrap pull-left mr10">
                   <img
                     src={stringField(
                       itemRecord.actorAvatarUrl,
@@ -547,20 +559,20 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                     height="32"
                     alt=""
                   />
-                </a>
+                </LegacyLink>
                 <div className="activity-desc">
                   <p className="header-text" style={{ marginBottom: "5px" }}>
-                    <a href={actorUrl} className="actor">
+                    <LegacyLink href={actorUrl} className="actor">
                       {stringField(itemRecord.actorName, "")}
-                    </a>{" "}
+                    </LegacyLink>{" "}
                     {t(`project.history.type.${itemType}`)}{" "}
                     <span className="whereis">
-                      <a href={itemUrl} className="where">
+                      <LegacyLink href={itemUrl} className="where">
                         {shortTitle}
-                      </a>{" "}
-                      <a href={itemUrl} className="title">
+                      </LegacyLink>{" "}
+                      <LegacyLink href={itemUrl} className="title">
                         {title}
-                      </a>
+                      </LegacyLink>
                     </span>
                   </p>
                   <p className="others" style={{ paddingLeft: "0" }}>
@@ -635,7 +647,7 @@ function DashboardPane({
                       return (
                         <div className="row-fluid" key={`${userId}-${loginId}`}>
                           <div className="span6">
-                            <a
+                            <LegacyLink
                               href={issueHref(
                                 basePath,
                                 ownerName,
@@ -662,7 +674,7 @@ function DashboardPane({
                                 <strong>@</strong>
                                 {loginId}
                               </span>
-                            </a>
+                            </LegacyLink>
                           </div>
                           <div className="span3 num">
                             <strong>{count}</strong>
@@ -675,7 +687,7 @@ function DashboardPane({
                     })}
                     <div className="row-fluid">
                       <div className="span6">
-                        <a
+                        <LegacyLink
                           href={issueHref(basePath, ownerName, projectName, "assigneeId=-1")}
                           className="usf-group"
                         >
@@ -683,7 +695,7 @@ function DashboardPane({
                             <i className="yobicon-blankstare"></i>
                           </span>
                           <span className="name">{t("issue.noAssignee")}</span>
-                        </a>
+                        </LegacyLink>
                       </div>
                       <div className="span3 num">
                         <strong>{unassignedCount}</strong>
@@ -722,7 +734,7 @@ function DashboardPane({
                       return (
                         <div className="row-fluid" key={milestoneId}>
                           <div className="span6">
-                            <a
+                            <LegacyLink
                               href={issueHref(
                                 basePath,
                                 ownerName,
@@ -731,7 +743,7 @@ function DashboardPane({
                               )}
                             >
                               {stringField(record.title, "")}
-                            </a>
+                            </LegacyLink>
                           </div>
                           <div className="span3 num">
                             <strong>{count}</strong>
@@ -744,9 +756,11 @@ function DashboardPane({
                     })}
                     <div className="row-fluid">
                       <div className="span6">
-                        <a href={issueHref(basePath, ownerName, projectName, "milestoneId=-1")}>
+                        <LegacyLink
+                          href={issueHref(basePath, ownerName, projectName, "milestoneId=-1")}
+                        >
                           {t("issue.noMilestone")}
-                        </a>
+                        </LegacyLink>
                       </div>
                       <div className="span3 num">
                         <strong>{noMilestoneCount}</strong>
@@ -771,7 +785,7 @@ function DashboardPane({
                     return (
                       <div className="row-fluid" key={number}>
                         <div className="span9 title">
-                          <a
+                          <LegacyLink
                             href={prefixBasePath(
                               basePath,
                               `/${ownerName}/${projectName}/pullRequests?contributorId=${numberField(record.contributorUserId)}`,
@@ -793,15 +807,15 @@ function DashboardPane({
                                 alt=""
                               />
                             </span>
-                          </a>
-                          <a
+                          </LegacyLink>
+                          <LegacyLink
                             href={prefixBasePath(
                               basePath,
                               `/${ownerName}/${projectName}/pullRequest/${number}`,
                             )}
                           >
                             {stringField(record.title, "")}
-                          </a>
+                          </LegacyLink>
                         </div>
                         <div className="span3 num right-txt" style={{ color: "#999" }}>
                           {stringField(record.createdLabel, "")}
@@ -869,11 +883,13 @@ function DashboardLabels({
               return (
                 <div className="row-fluid" key={labelId}>
                   <div className="span10">
-                    <a href={issueHref(basePath, ownerName, projectName, `labelIds=${labelId}`)}>
+                    <LegacyLink
+                      href={issueHref(basePath, ownerName, projectName, `labelIds=${labelId}`)}
+                    >
                       <span className="issue-label list-label active" data-label-id={labelId}>
                         {stringField(label.name, "")}
                       </span>
-                    </a>
+                    </LegacyLink>
                   </div>
                   <div className="span2 num">
                     <strong>{numberField(label.openIssueCount)}</strong>
@@ -900,9 +916,9 @@ function DashboardEmpty({
   return (
     <div className="empty">
       <p>{message}</p>
-      <a href={actionHref} target="_blank" className="ybtn ybtn-small">
+      <LegacyLink href={actionHref} target="_blank" className="ybtn ybtn-small">
         {actionText}
-      </a>
+      </LegacyLink>
     </div>
   );
 }
@@ -933,7 +949,7 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
 
   return (
     <li className="member">
-      <a
+      <LegacyLink
         href={prefixBasePath(basePath, `/${loginId}`)}
         className="avatar-wrap img-rounded pull-left small"
       >
@@ -943,10 +959,10 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
           width="24"
           height="24"
         />
-      </a>
-      <a href={prefixBasePath(basePath, `/${loginId}`)} className="name">
+      </LegacyLink>
+      <LegacyLink href={prefixBasePath(basePath, `/${loginId}`)} className="name">
         <strong>{`${userLabel} (${loginId})`}</strong>
-      </a>
+      </LegacyLink>
     </li>
   );
 }
@@ -1058,11 +1074,15 @@ export function ProjectHeader({
           <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
-                <a href={prefixBasePath(basePath, `/${ownerName}`)}>{ownerName}</a>
+                <LegacyLink href={prefixBasePath(basePath, `/${ownerName}`)}>
+                  {ownerName}
+                </LegacyLink>
               </span>
               <span className="project-separator hide-in-mobile">/</span>
               <span className="project-name">
-                <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
+                <LegacyLink href={projectHref(basePath, ownerName, projectName)}>
+                  {projectName}
+                </LegacyLink>
               </span>
               <span
                 className="user-project-list"
@@ -1102,12 +1122,12 @@ export function ProjectHeader({
             {isForked ? (
               <div className="project-origin">
                 <span className="project-origin-title">{t("fork.original")}</span>
-                <a
+                <LegacyLink
                   href={projectHref(basePath, originalOwnerName, originalProjectName)}
                   className="project-origin-name"
                 >
                   {originalOwnerName} / {originalProjectName}
-                </a>
+                </LegacyLink>
               </div>
             ) : null}
           </div>
@@ -1194,14 +1214,14 @@ export function ProjectHeader({
                   <div
                     className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
                   >
-                    <a
+                    <LegacyLink
                       className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
                       data-toggle="tooltip"
                       title={t("project.watcher.number")}
                       href={prefixBasePath(basePath, `/${ownerName}/${projectName}/watchers`)}
                     >
                       {watchState.count}
-                    </a>
+                    </LegacyLink>
                     <div className="dropdown-menu flat right title">
                       <div className="pop-title">
                         {t(
@@ -1233,7 +1253,7 @@ export function ProjectHeader({
                         </ul>
                       </div>
                       <div className="pop-content btn-wrap">
-                        <a
+                        <LegacyLink
                           className="ybtn"
                           href={prefixBasePath(
                             basePath,
@@ -1241,7 +1261,7 @@ export function ProjectHeader({
                           )}
                         >
                           <i className="yobicon-alert2"></i> {t("userinfo.changeNotifications")}
-                        </a>
+                        </LegacyLink>
                         <button
                           type="button"
                           className="ybtn ybtn-watching watchBtn"
@@ -1358,13 +1378,13 @@ export function ProjectMenu({
           <div className="project-setting">
             <ul className="project-menu-nav">
               <li className="">
-                <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+                <LegacyLink href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
                   <i className="yobicon-cog"></i>
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
                   <CountBadge count={numberField(project.enrollmentRequestCount)} />
-                </a>
+                </LegacyLink>
               </li>
             </ul>
           </div>
@@ -1394,10 +1414,10 @@ function ProjectMenuItem({
       : "";
   return (
     <li className={itemClassName}>
-      <a href={href}>
+      <LegacyLink href={href}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
-      </a>
+      </LegacyLink>
     </li>
   );
 }
@@ -1410,6 +1430,43 @@ function CountBadge({
   count: number;
 }) {
   return count > 0 ? <span className={className}>{count}</span> : null;
+}
+
+type LegacyLinkProps = Omit<ComponentProps<"a">, "href"> & { href: string };
+
+function LegacyLink({ href, ...props }: LegacyLinkProps) {
+  if (!isRoutedHref(href)) {
+    const Anchor = "a";
+    return <Anchor {...props} href={href} />;
+  }
+
+  return <RoutedLegacyLink href={href} {...props} />;
+}
+
+function RoutedLegacyLink({ children, href, ...props }: LegacyLinkProps) {
+  const { runtimeConfig } = Route.useRouteContext();
+  const linkProps = useLinkProps({
+    ...props,
+    activeOptions: {
+      exact: true,
+      explicitUndefined: true,
+      includeHash: true,
+      includeSearch: true,
+    },
+    activeProps: {},
+    to: toRoutePath(runtimeConfig.basePath, href) as never,
+  });
+  const {
+    "aria-current": _ariaCurrent,
+    "data-status": _dataStatus,
+    ...legacyAnchorProps
+  } = linkProps as ComponentProps<"a"> & {
+    "aria-current"?: unknown;
+    "data-status"?: unknown;
+  };
+
+  const Anchor = "a";
+  return <Anchor {...legacyAnchorProps}>{children}</Anchor>;
 }
 
 function projectMenuSetting(project: ProjectContainer) {
@@ -1498,6 +1555,20 @@ function normalizeHistoryHref(basePath: string, href: string) {
 
 function issueHref(basePath: string, ownerName: string, projectName: string, query: string) {
   return prefixBasePath(basePath, `/${ownerName}/${projectName}/issues?${query}`);
+}
+
+function isRoutedHref(href: string) {
+  return href.startsWith("/");
+}
+
+function toRoutePath(basePath: string, href: string) {
+  if (basePath === "" || basePath === "/") {
+    return href;
+  }
+  if (href === basePath) {
+    return "/";
+  }
+  return href.startsWith(`${basePath}/`) ? href.slice(basePath.length) : href;
 }
 
 function percentOf(value: number, total: number) {

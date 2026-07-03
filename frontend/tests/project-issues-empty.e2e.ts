@@ -341,6 +341,8 @@ test("project issue list route source has no generic LegacyInternalLink adapter"
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"pjax-page": ""');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("pjax-page");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("<Link\n                    href={excelHref");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("<a\n                    href={excelHref");
 });
 
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {

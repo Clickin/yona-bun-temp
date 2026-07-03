@@ -587,15 +587,13 @@ function ProjectIssuesBody({
           </div>
           <div className="span10 span-hard-wrap" id="span10">
             <div className="pull-right">
-              <a
-                href={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `/${ownerName}/${projectName}/issueform`,
-                )}
+              <Link
+                activeProps={{ className: undefined }}
+                to={`/${ownerName}/${projectName}/issueform` as never}
                 className="ybtn ybtn-success"
               >
                 {t("issue.menu.new")}
-              </a>
+              </Link>
             </div>
             <ul className="nav nav-tabs nm">
               <StateTab
@@ -1407,12 +1405,16 @@ function massUpdateDropdownGroupClassName(isOpen: boolean) {
 function LegacyInertDropdownAnchor({
   children,
   className,
-}: {
+  ...attrs
+}: HTMLAttributes<HTMLAnchorElement> & {
   children: ReactNode;
-  className?: string;
 }) {
   const Anchor = "a";
-  return <Anchor className={className}>{children}</Anchor>;
+  return (
+    <Anchor className={className} {...attrs}>
+      {children}
+    </Anchor>
+  );
 }
 
 function submitMassUpdateFromOptionKey(
@@ -1700,8 +1702,7 @@ function ProjectIssueItem({
                   </a>
                 ) : null}
                 {(issue.sharerCount ?? 0) > 0 ? (
-                  /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sharerCount.scala.html renders an anchor without href. */
-                  <a
+                  <LegacyInertDropdownAnchor
                     className="sharer-color"
                     data-toggle="tooltip"
                     data-placement="bottom"
@@ -1711,7 +1712,7 @@ function ProjectIssueItem({
                       <i className="yobicon-friends"></i>
                     </span>
                     <span className="count-groups item-count strong">{issue.sharerCount}</span>
-                  </a>
+                  </LegacyInertDropdownAnchor>
                 ) : null}
               </span>
             ) : null}
