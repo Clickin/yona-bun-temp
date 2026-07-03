@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const NEW_COLORS = [
@@ -120,19 +121,43 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
   });
 });
 
-test("project labels settings-tab links preserve legacy hrefs with SPA transition", async ({
+test("project labels route TSX has no route-local raw anchor elements", () => {
+  const routeSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(routeSource).not.toMatch(/<a\b/);
+});
+
+test("project labels internal links preserve legacy hrefs with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await installSettingsTabAnchorNativeListenerAudit(page);
+  await installProjectLabelsInternalLinkNativeListenerAudit(page);
   await mockProjectLabels(page);
 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+  const headerLinks = page.locator(".project-header-outer a");
+  await expect(headerLinks).toHaveCount(2);
+  await expect(headerLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(headerLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample`);
+
+  const projectMenuLinks = page.locator(".project-menu-outer a");
+  await expect(projectMenuLinks).toHaveCount(8);
+  expect(await hrefs(page, ".project-menu-outer a")).toEqual([
+    `${basePath}/admin/sample`,
+    `${basePath}/admin/sample/code`,
+    `${basePath}/admin/sample/issues`,
+    `${basePath}/admin/sample/pullRequests`,
+    `${basePath}/admin/sample/reviews`,
+    `${basePath}/admin/sample/milestones`,
+    `${basePath}/admin/sample/posts`,
+    `${basePath}/admin/sample/setting`,
+  ]);
+
   const settingsTabs = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabs).toHaveCount(7);
-  expect(
-    await settingsTabs.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
-  ).toEqual([
+  expect(await hrefs(page, ".project-page-wrap > .nav.nav-tabs a")).toEqual([
     `${basePath}/admin/sample/setting`,
     `${basePath}/admin/sample/members`,
     `${basePath}/admin/sample/issue/labelsform`,
@@ -141,9 +166,15 @@ test("project labels settings-tab links preserve legacy hrefs with SPA transitio
     `${basePath}/admin/sample/deleteform`,
     `${basePath}/admin/sample/changeVCS`,
   ]);
-  await expect.poll(() => settingsTabAnchorNativeListeners(page)).toEqual([]);
+  await expect(page.locator(".project-header-outer a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".project-header-outer a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a[data-status]")).toHaveCount(0);
+  await expect.poll(() => projectLabelsInternalLinkNativeListeners(page)).toEqual([]);
 
-  const settingsLink = page.locator("#subMenuProjectSetting a");
+  const settingsLink = page.locator(".project-setting .project-menu-nav a");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -315,33 +346,43 @@ async function installFavoriteSpanNativeListenerAudit(page: Page) {
   });
 }
 
-async function installSettingsTabAnchorNativeListenerAudit(page: Page) {
+async function installProjectLabelsInternalLinkNativeListenerAudit(page: Page) {
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
-    const settingsTabListeners: string[] = [];
-    Object.defineProperty(window, "__yonaSettingsTabAnchorNativeListeners", {
+    const internalLinkListeners: string[] = [];
+    Object.defineProperty(window, "__yonaProjectLabelsInternalLinkNativeListeners", {
       configurable: true,
-      value: settingsTabListeners,
+      value: internalLinkListeners,
     });
-    Element.prototype.addEventListener = function addEventListenerWithSettingsTabAudit(
-      type,
-      listener,
-      options,
-    ) {
-      if (this instanceof Element && this.matches(".project-page-wrap > .nav.nav-tabs a")) {
-        settingsTabListeners.push(String(type));
-      }
-      return originalAddEventListener.call(this, type, listener, options);
-    };
+    Element.prototype.addEventListener =
+      function addEventListenerWithProjectLabelsInternalLinkAudit(type, listener, options) {
+        if (
+          this instanceof Element &&
+          this.matches(
+            ".project-header-outer a, .project-menu-outer a, .project-page-wrap > .nav.nav-tabs a",
+          )
+        ) {
+          internalLinkListeners.push(`${this.getAttribute("href") ?? ""}:${String(type)}`);
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
   });
 }
 
-async function settingsTabAnchorNativeListeners(page: Page) {
+async function projectLabelsInternalLinkNativeListeners(page: Page) {
   return page.evaluate(
     () =>
-      (window as Window & typeof globalThis & { __yonaSettingsTabAnchorNativeListeners?: string[] })
-        .__yonaSettingsTabAnchorNativeListeners ?? [],
+      (
+        window as Window &
+          typeof globalThis & { __yonaProjectLabelsInternalLinkNativeListeners?: string[] }
+      ).__yonaProjectLabelsInternalLinkNativeListeners ?? [],
   );
+}
+
+async function hrefs(page: Page, selector: string) {
+  return page
+    .locator(selector)
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
 }
 
 async function favoriteSpanNativeListeners(page: Page) {

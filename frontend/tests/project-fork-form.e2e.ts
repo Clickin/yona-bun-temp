@@ -1,4 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+const PROJECT_FORK_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/newFork.tsx";
 
 const EXPECTED_PROJECT_FORK_FORM = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -57,6 +60,54 @@ test("project fork owner route renders legacy existing-fork state", async ({ pag
       EXPECTED_PROJECT_FORK_EXISTING_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("project fork route-local links preserve legacy hrefs and navigate in the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdminWithExistingFork(page);
+  await mockPullRequestsDestination(page);
+
+  await page.goto(`${basePath}/admin/sample/newFork/devs`);
+
+  const existingForkLink = page.locator("#helpMessage a.vmiddle.primary-txt", {
+    hasText: "devs / sample",
+  });
+  await expect(existingForkLink).toHaveAttribute("href", `${basePath}/devs/sample`);
+  await expect(existingForkLink).toHaveClass("vmiddle primary-txt");
+  await expect(existingForkLink).toHaveText("devs / sample");
+
+  const cancelLink = page.locator(".content-wrap.frm-wrap a.ybtn", { hasText: "Cancel" });
+  await expect(cancelLink).toHaveAttribute("href", `${basePath}/admin/sample/pullRequests`);
+  await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).toHaveText("Cancel");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "fork-link";
+  });
+  await cancelLink.click();
+
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath}/admin/sample/pullRequests`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("fork-link");
+});
+
+test("project fork route has no raw route-local internal anchors", async () => {
+  const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
+
+  expect(source).not.toMatch(/<a(?:\s|>)/u);
+  expect(source).not.toContain("</a>");
+  expect(source).not.toContain("href={prefixBasePath");
+  expect(source).not.toContain("href={projectHref");
 });
 
 test("project fork owner select navigates by legacy data-url without full reload", async ({
@@ -278,6 +329,34 @@ async function mockProjectAdminWithExistingFork(page: Page) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(existingProjectForkOptions()),
+    });
+  });
+}
+
+async function mockPullRequestsDestination(page: Page) {
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(sourceProject()),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/pull-requests**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        acceptedCount: 0,
+        category: "open",
+        closedCount: 0,
+        contributors: [],
+        currentUserId: 1,
+        items: [],
+        openCount: 0,
+        pageNum: 1,
+        pageSize: 25,
+        recentlyPushedBranches: [],
+        sentCount: 0,
+        totalCount: 0,
+      }),
     });
   });
 }

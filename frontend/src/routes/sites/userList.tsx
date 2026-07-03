@@ -511,20 +511,35 @@ function UserListItem({
   return (
     <li className="row-fluid listitem">
       <div className="span3 listitem-col">
-        <a href={userPath} className="avatar-wrap list-avatar">
+        <Link
+          activeProps={{ className: undefined }}
+          className="avatar-wrap list-avatar"
+          params={{ user: user.loginId }}
+          to="/$user"
+        >
           {isDefaultUserAvatar(user.avatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
             <img src={user.avatarUrl} />
           ) : (
             <img src={user.avatarUrl} alt={user.displayName} width="32" height="32" />
           )}
-        </a>
-        <a href={userPath} className="user-name">
+        </Link>
+        <Link
+          activeProps={{ className: undefined }}
+          className="user-name"
+          params={{ user: user.loginId }}
+          to="/$user"
+        >
           {user.displayName}
-        </a>
-        <a href={userPath} className="user-id">
+        </Link>
+        <Link
+          activeProps={{ className: undefined }}
+          className="user-id"
+          params={{ user: user.loginId }}
+          to="/$user"
+        >
           @{user.loginId}
-        </a>
+        </Link>
       </div>
       <div className="span3 listitem-col">
         <span className="email">{user.emailAddress}</span>

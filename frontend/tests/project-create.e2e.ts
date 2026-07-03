@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const EXPECTED_PROJECT_CREATE = `
 <div class="unsupported hidden">
@@ -139,7 +141,7 @@ const EXPECTED_PROJECT_CREATE = `
         </div>
         <div class="actions mt20">
           <button class="ybtn ybtn-success">Create a project</button>
-          <a href="__BASE_PATH__" class="ybtn">Cancel</a>
+          <a href="__BASE_PATH__/" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -218,6 +220,59 @@ test("project create form mirrors legacy owner, VCS, and menu dependencies", asy
 
   await page.locator("#menuSettingReview").check();
   await expect(page.locator("#menuSettingCode")).toBeChecked();
+});
+
+test("project create import link keeps legacy href and navigates through the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCreate(page);
+
+  await page.goto(`${basePath}/projectform`);
+  const importLink = page.locator("#newProjectForm legend a.ybtn-small");
+
+  await expect(importLink).toHaveAttribute("href", `${basePath}/_import?owner=admin`);
+  await expect(importLink).toHaveClass("ybtn ybtn-small nm");
+  await expect(importLink).toHaveText("Import Git repository.");
+
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+  await page.evaluate(() => {
+    (window as Window & { __projectCreateSpaMarker?: string }).__projectCreateSpaMarker = "kept";
+  });
+
+  await importLink.click({ noWaitAfter: true });
+
+  await expect(page).toHaveURL(`${basePath}/_import?owner=admin`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectCreateSpaMarker?: string }).__projectCreateSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(documentRequests).toEqual([]);
+});
+
+test("project create route source keeps form internal navigation out of raw anchors", () => {
+  const routeSource = readFileSync(
+    fileURLToPath(new URL("../src/routes/projectform.tsx", import.meta.url)),
+    "utf8",
+  );
+  const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
+
+  expect(routeSource).toContain(
+    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
+  );
+  expect(routeSource).toContain('to="/_import"');
+  expect(routeSource).toContain('to="/" className="ybtn"');
+  expect(
+    rawAnchorBlocks.filter((block) => /(?:_import|prefixBasePath\([^)]*"\/")/u.test(block)),
+  ).toEqual([]);
 });
 
 async function mockProjectCreate(page: Page) {

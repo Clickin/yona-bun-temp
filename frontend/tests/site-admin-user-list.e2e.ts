@@ -234,6 +234,16 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain('"pjax-page": ""');
+  expect(routeSource).not.toContain("<a href={userPath}");
+  expect(routeSource).toMatch(
+    /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="avatar-wrap list-avatar"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
+  );
+  expect(routeSource).toMatch(
+    /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="user-name"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
+  );
+  expect(routeSource).toMatch(
+    /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="user-id"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
+  );
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -359,6 +369,45 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-posts-nav");
+});
+
+test("site admin user profile links preserve legacy hrefs and use SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
+  await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
+
+  const avatarLink = page.locator(".user-list-wrap .list-avatar");
+  const userNameLink = page.locator(".user-list-wrap .user-name");
+  const userIdLink = page.locator(".user-list-wrap .user-id");
+  await expect(avatarLink).toHaveAttribute("href", `${basePath}/doortts`);
+  await expect(avatarLink).toHaveClass("avatar-wrap list-avatar");
+  await expect(userNameLink).toHaveAttribute("href", `${basePath}/doortts`);
+  await expect(userNameLink).toHaveClass("user-name");
+  await expect(userNameLink).toHaveText("Door TTS");
+  await expect(userIdLink).toHaveAttribute("href", `${basePath}/doortts`);
+  await expect(userIdLink).toHaveClass("user-id");
+  await expect(userIdLink).toHaveText("@doortts");
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-profile";
+  });
+  await userNameLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/doortts`);
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-profile");
 });
 
 test("site admin user actions follow legacy confirmation and alert flow", async ({ page }) => {

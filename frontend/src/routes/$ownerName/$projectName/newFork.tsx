@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
@@ -90,8 +90,8 @@ function ProjectForkScreen({
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu basePath={runtimeConfig.basePath} project={project} />
+      <ProjectHeader project={project} />
+      <ProjectMenu project={project} />
       <ProjectForkBody
         forkOwnerName={forkOwnerName}
         ownerName={ownerName}
@@ -235,16 +235,13 @@ function ProjectForkBody({
                           <p key={`${forkOwnerName}/${forkProjectName}`}>
                             <strong className="vmiddle">{`${ownerName} / ${projectName}`}</strong>
                             <i className="yobicon-right vmiddle"></i>
-                            <a
-                              href={projectHref(
-                                runtimeConfig.basePath,
-                                forkOwnerName,
-                                forkProjectName,
-                              )}
+                            <Link
+                              to={projectPath(forkOwnerName, forkProjectName)}
                               className="vmiddle primary-txt"
+                              activeProps={{ className: undefined }}
                             >
                               {`${forkOwnerName} / ${forkProjectName}`}
-                            </a>
+                            </Link>
                           </p>
                         );
                       })}
@@ -339,15 +336,13 @@ function ProjectForkBody({
                   <button type="submit" className="ybtn ybtn-info">
                     {t("fork")}
                   </button>
-                  <a
-                    href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${ownerName}/${projectName}/pullRequests`,
-                    )}
+                  <Link
+                    to={pullRequestsPath(ownerName, projectName)}
                     className="ybtn"
+                    activeProps={{ className: undefined }}
                   >
                     {t("button.cancel")}
-                  </a>
+                  </Link>
                 </div>
               </div>
             </fieldset>
@@ -383,7 +378,7 @@ function ProjectForkCloneProgress({ progress }: { progress: ForkCloneProgress })
   );
 }
 
-function ProjectHeader({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+function ProjectHeader({ project }: { project: ProjectContainer }) {
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
@@ -427,11 +422,18 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
           <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
-                <a href={prefixBasePath(basePath, `/${ownerName}`)}>{ownerName}</a>
+                <Link to={userPath(ownerName)} activeProps={{ className: undefined }}>
+                  {ownerName}
+                </Link>
               </span>
               <span className="project-separator hide-in-mobile">/</span>
               <span className="project-name">
-                <a href={projectHref(basePath, ownerName, projectName)}>{projectName}</a>
+                <Link
+                  to={projectPath(ownerName, projectName)}
+                  activeProps={{ className: undefined }}
+                >
+                  {projectName}
+                </Link>
               </span>
               <span
                 className="user-project-list"
@@ -471,12 +473,13 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
             {isForked ? (
               <div className="project-origin">
                 <span className="project-origin-title">{t("fork.original")}</span>
-                <a
-                  href={projectHref(basePath, originalOwnerName, originalProjectName)}
+                <Link
+                  to={projectPath(originalOwnerName, originalProjectName)}
                   className="project-origin-name"
+                  activeProps={{ className: undefined }}
                 >
                   {originalOwnerName} / {originalProjectName}
-                </a>
+                </Link>
               </div>
             ) : null}
           </div>
@@ -489,7 +492,7 @@ function ProjectHeader({ basePath, project }: { basePath: string; project: Proje
   );
 }
 
-function ProjectMenu({ basePath, project }: { basePath: string; project: ProjectContainer }) {
+function ProjectMenu({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
@@ -500,21 +503,21 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <ProjectMenuItem
-            href={projectHref(basePath, ownerName, projectName)}
+            to={projectPath(ownerName, projectName)}
             label={t("title.projectHome")}
             short="H"
           />
           {booleanField(menuSetting.code) ? (
             <ProjectMenuItem
               className="code-menu "
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/code`)}
+              to={projectSubPath(ownerName, projectName, "code")}
               label={t("menu.code")}
               short="C"
             />
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
+              to={projectSubPath(ownerName, projectName, "issues")}
               label={t("menu.issue")}
               short="I"
             />
@@ -522,28 +525,28 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
               className="active"
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`)}
+              to={pullRequestsPath(ownerName, projectName)}
               label={t("menu.pullRequest")}
               short="P"
             />
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/reviews`)}
+              to={projectSubPath(ownerName, projectName, "reviews")}
               label={t("menu.review")}
               short="R"
             />
           ) : null}
           {booleanField(menuSetting.milestone) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestones`)}
+              to={projectSubPath(ownerName, projectName, "milestones")}
               label={t("milestone")}
               short="M"
             />
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/posts`)}
+              to={projectSubPath(ownerName, projectName, "posts")}
               label={t("menu.board")}
               short="B"
             />
@@ -553,13 +556,16 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
           <div className="project-setting">
             <ul className="project-menu-nav">
               <li className="">
-                <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`)}>
+                <Link
+                  to={projectSubPath(ownerName, projectName, "setting")}
+                  activeProps={{ className: undefined }}
+                >
                   <i className="yobicon-cog"></i>
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
                   <CountBadge count={numberField(project.enrollmentRequestCount)} />
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -571,21 +577,21 @@ function ProjectMenu({ basePath, project }: { basePath: string; project: Project
 
 function ProjectMenuItem({
   className = "",
-  href,
   label,
   short,
+  to,
 }: {
   className?: string;
-  href: string;
   label: string;
   short: string;
+  to: string;
 }) {
   return (
     <li className={className}>
-      <a href={href}>
+      <Link to={to} activeProps={{ className: undefined }}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
-      </a>
+      </Link>
     </li>
   );
 }
@@ -600,8 +606,20 @@ function CountBadge({
   return count > 0 ? <span className={className}>{count}</span> : null;
 }
 
-function projectHref(basePath: string, ownerName: string, projectName: string) {
-  return prefixBasePath(basePath, `/${ownerName}/${projectName}`);
+function userPath(ownerName: string) {
+  return `/${ownerName}`;
+}
+
+function projectPath(ownerName: string, projectName: string) {
+  return `/${ownerName}/${projectName}`;
+}
+
+function pullRequestsPath(ownerName: string, projectName: string) {
+  return projectSubPath(ownerName, projectName, "pullRequests");
+}
+
+function projectSubPath(ownerName: string, projectName: string, subPath: string) {
+  return `${projectPath(ownerName, projectName)}/${subPath}`;
 }
 
 function recordField(value: unknown) {
