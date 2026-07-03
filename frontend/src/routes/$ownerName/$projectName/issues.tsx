@@ -1012,6 +1012,7 @@ function MassUpdateToolbar({
   );
   const selectedIssueCount = selectedIssues.length;
   const hasSelectedIssues = selectedIssueCount > 0;
+  const [openMassUpdateDropdown, setOpenMassUpdateDropdown] = useState<string | null>(null);
   const allVisibleIssuesSelected =
     visibleIssueIds.length > 0 && visibleIssueIds.every((issueId) => selectedIssueIds.has(issueId));
   const selectedLabelCounts = countSelectedIssueLabels(selectedIssues);
@@ -1036,7 +1037,21 @@ function MassUpdateToolbar({
       });
     },
   });
+  useEffect(() => {
+    if (!hasSelectedIssues) {
+      setOpenMassUpdateDropdown(null);
+    }
+  }, [hasSelectedIssues]);
+  const toggleMassUpdateDropdown = (dropdownId: string) => {
+    if (!hasSelectedIssues) {
+      return;
+    }
+    setOpenMassUpdateDropdown((currentDropdownId) =>
+      currentDropdownId === dropdownId ? null : dropdownId,
+    );
+  };
   const submitMassUpdate = (name: string, value: string) => {
+    setOpenMassUpdateDropdown(null);
     if (!hasSelectedIssues) {
       return;
     }
@@ -1125,13 +1140,24 @@ function MassUpdateToolbar({
             { label: t("issue.state.open"), value: "OPEN" },
             { label: t("issue.state.closed"), value: "CLOSED" },
           ]}
+          isOpen={openMassUpdateDropdown === "state"}
           onSelect={submitMassUpdate}
+          onToggle={toggleMassUpdateDropdown}
         />
-        <div id="assignee" className="btn-group" data-name="assignee.id">
+        <div
+          id="assignee"
+          className={massUpdateDropdownGroupClassName(openMassUpdateDropdown === "assignee")}
+          data-name="assignee.id"
+        >
           <button
             className="btn dropdown-toggle medium"
             data-toggle="dropdown"
             disabled={!hasSelectedIssues}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleMassUpdateDropdown("assignee");
+            }}
           >
             <span className="d-label">{t("issue.update.assignee.id")}</span>
             <span className="d-caret">
@@ -1187,7 +1213,9 @@ function MassUpdateToolbar({
                 value: milestone.id,
               })),
             ]}
+            isOpen={openMassUpdateDropdown === "milestone"}
             onSelect={submitMassUpdate}
+            onToggle={toggleMassUpdateDropdown}
           />
         ) : null}
         {labels.length ? (
@@ -1200,7 +1228,9 @@ function MassUpdateToolbar({
               listId="attach-label-list"
               name="attachingLabelIds"
               options={labels}
+              isOpen={openMassUpdateDropdown === "attaching-label"}
               onSelect={submitMassUpdate}
+              onToggle={toggleMassUpdateDropdown}
             />
             <LabelMassUpdateDropdown
               disabled={detachDisabled}
@@ -1209,7 +1239,9 @@ function MassUpdateToolbar({
               listId="delete-label-list"
               name="detachingLabelIds"
               options={hasSelectedIssues ? selectedLabels : labels}
+              isOpen={openMassUpdateDropdown === "detaching-label"}
               onSelect={submitMassUpdate}
+              onToggle={toggleMassUpdateDropdown}
             />
           </>
         ) : null}
@@ -1221,21 +1253,34 @@ function MassUpdateToolbar({
 function MassUpdateDropdown({
   disabled,
   id,
+  isOpen,
   label,
   name,
   onSelect,
+  onToggle,
   options,
 }: {
   disabled: boolean;
   id: string;
+  isOpen: boolean;
   label: string;
   name: string;
   onSelect: (name: string, value: string) => void;
+  onToggle: (id: string) => void;
   options: Array<{ divider?: boolean; label?: string; value: string }>;
 }) {
   return (
-    <div id={id} className="btn-group" data-name={name}>
-      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
+    <div id={id} className={massUpdateDropdownGroupClassName(isOpen)} data-name={name}>
+      <button
+        className="btn dropdown-toggle medium"
+        data-toggle="dropdown"
+        disabled={disabled}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onToggle(id);
+        }}
+      >
         <span className="d-label">{label}</span>
         <span className="d-caret">
           <span className="caret"></span>
@@ -1268,19 +1313,23 @@ function LabelMassUpdateDropdown({
   disabled,
   hiddenLabelIds,
   id,
+  isOpen,
   label,
   listId,
   name,
   onSelect,
+  onToggle,
   options,
 }: {
   disabled: boolean;
   hiddenLabelIds?: ReadonlySet<string>;
   id: string;
+  isOpen: boolean;
   label: string;
   listId: string;
   name: string;
   onSelect: (name: string, value: string) => void;
+  onToggle: (id: string) => void;
   options: Array<{
     categoryIsExclusive?: boolean;
     categoryId: string;
@@ -1291,8 +1340,17 @@ function LabelMassUpdateDropdown({
   }>;
 }) {
   return (
-    <div id={id} className="btn-group" data-name={name}>
-      <button className="btn dropdown-toggle medium" data-toggle="dropdown" disabled={disabled}>
+    <div id={id} className={massUpdateDropdownGroupClassName(isOpen)} data-name={name}>
+      <button
+        className="btn dropdown-toggle medium"
+        data-toggle="dropdown"
+        disabled={disabled}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onToggle(id);
+        }}
+      >
         <span className="d-label">{label}</span>
         <span className="d-caret">
           <span className="caret"></span>
@@ -1357,6 +1415,10 @@ function LabelMassUpdateGroup({
       <li className="divider" data-category={group.categoryId} hidden={categoryHidden}></li>
     </>
   );
+}
+
+function massUpdateDropdownGroupClassName(isOpen: boolean) {
+  return isOpen ? "btn-group open" : "btn-group";
 }
 
 function LegacyInertDropdownAnchor({

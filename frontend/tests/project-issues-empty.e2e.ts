@@ -1440,6 +1440,45 @@ test("project issue list mass update checkboxes enable legacy toolbar controls",
   await expect(page.locator("#issue-item-43")).not.toHaveClass(/active/);
 });
 
+test("project issue list mass update dropdown opens through route-local React state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await page.locator("#issue-42").check();
+
+  const initialUrl = page.url();
+  await page.evaluate(() => {
+    window.sessionStorage.setItem("mass-update-dropdown-marker", "alive");
+  });
+
+  await page.locator("#state > button").click();
+  await expect(page.locator("#state")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  expect(page.url()).toBe(initialUrl);
+  await expect(page.locator('#state .mass-update-list a[href="#"]')).toHaveCount(0);
+  await expect(
+    page.locator('#state .mass-update-list li[data-value="CLOSED"] a'),
+  ).not.toHaveAttribute("href", /.+/u);
+  expect(
+    await page.evaluate(() => window.sessionStorage.getItem("mass-update-dropdown-marker")),
+  ).toBe("alive");
+
+  const massUpdateRequest = page.waitForRequest((request) => {
+    return request.method() === "POST" && request.url().includes("/issues/mass-update");
+  });
+  await page.locator('#state .mass-update-list li[data-value="CLOSED"]').click();
+  await massUpdateRequest;
+  await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(() => window.sessionStorage.getItem("mass-update-dropdown-marker")),
+  ).toBe("alive");
+});
+
 test("project issue list mass update state posts selected issues through REST", async ({
   page,
 }) => {
