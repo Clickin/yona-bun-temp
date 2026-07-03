@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const EXPECTED_ORGANIZATION_NEW = `
 <div class="unsupported hidden">
@@ -87,7 +89,7 @@ const EXPECTED_ORGANIZATION_NEW = `
         </dl>
         <div class="actions">
           <button class="ybtn ybtn-success"><i class="yobicon-friends"></i>Create Group</button>
-          <a href="__BASE_PATH__" class="ybtn">Cancel</a>
+          <a href="__BASE_ROOT_HREF__" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -107,15 +109,27 @@ test("organization create form matches legacy organization/create.scala.html DOM
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const cancelHref = rootHref(basePath);
   await mockAuthenticatedSession(page);
 
   await page.goto(`${basePath}/organizations/new`);
   await expect(page.locator('form[name="new-org"]')).toBeVisible();
   await expect(page.locator(".n-alert")).toHaveAttribute("data-errType", "name");
   await expect(page.locator(".wrongName")).toBeHidden();
+  const cancelLink = page.locator('form[name="new-org"] .actions a.ybtn', { hasText: "Cancel" });
+  await expect(cancelLink).toHaveAttribute("href", cancelHref);
+  await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).toHaveText("Cancel");
+  await expect(cancelLink).not.toHaveAttribute("data-status", "active");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_ORGANIZATION_NEW.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_ORGANIZATION_NEW.replaceAll("__BASE_ROOT_HREF__", cancelHref).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
+    ),
   );
   expect(await organizationCreateMetrics(page)).toEqual({
     actionsOffsetTop: 4,
@@ -158,6 +172,62 @@ test("organization create form validates name and posts REST payload", async ({ 
       },
     ]);
   await expect(page).toHaveURL(`${basePath}/organizations/team-alpha`);
+});
+
+test("organization create cancel keeps legacy href and navigates through the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const cancelHref = rootHref(basePath);
+  await mockAuthenticatedSession(page);
+
+  await page.goto(`${basePath}/organizations/new`);
+  const cancelLink = page.locator('form[name="new-org"] .actions a.ybtn', { hasText: "Cancel" });
+
+  await expect(cancelLink).toHaveAttribute("href", cancelHref);
+  await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).toHaveText("Cancel");
+
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+  await page.evaluate(() => {
+    (window as Window & { __organizationCreateSpaMarker?: string }).__organizationCreateSpaMarker =
+      "kept";
+  });
+
+  await cancelLink.click({ noWaitAfter: true });
+
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(cancelHref);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __organizationCreateSpaMarker?: string })
+            .__organizationCreateSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(documentRequests).toEqual([]);
+});
+
+test("organization create route source keeps cancel navigation out of raw anchors", () => {
+  const routeSource = readFileSync(
+    fileURLToPath(new URL("../src/routes/organizations/new.tsx", import.meta.url)),
+    "utf8",
+  );
+  const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
+
+  expect(routeSource).toContain(
+    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
+  );
+  expect(routeSource).toContain('to="/" activeOptions={{ exact: true }} className="ybtn"');
+  expect(
+    rawAnchorBlocks.filter((block) => /Cancel|button\.cancel|prefixBasePath/u.test(block)),
+  ).toEqual([]);
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -212,6 +282,10 @@ async function mockAuthenticatedSession(page: Page) {
   });
 
   return requests;
+}
+
+function rootHref(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

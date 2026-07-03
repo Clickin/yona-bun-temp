@@ -154,37 +154,37 @@ function UserFileRow({
   attachment: WorkspaceFileItem;
   basePath: string;
 }) {
-  const fileUrl = prefixBasePath(basePath, attachment.url);
+  const fileTo = attachment.url as never;
   const previewUrl = prefixBasePath(basePath, attachment.previewUrl);
-  const downloadUrl = prefixBasePath(basePath, attachment.downloadUrl);
-  const locationHref = prefixBasePath(basePath, attachment.locationHref);
+  const downloadTo = attachment.downloadUrl as never;
+  const locationTo = attachment.locationHref as never;
 
   return (
     <div className="attachment-file-detail row">
       <div className="file-preview span1">
-        <a href={fileUrl} target="_blank">
+        <Link activeProps={{ className: undefined }} to={fileTo} target="_blank">
           {attachment.mimeType.startsWith("image/") ? <img src={previewUrl} alt="" /> : null}
-        </a>
+        </Link>
       </div>
       <div className="span5 file-name">
-        <a href={fileUrl} target="_blank">
+        <Link activeProps={{ className: undefined }} to={fileTo} target="_blank">
           <i className={`icon ${fileIconClass(attachment.name)}`}></i>
           {attachment.name}
-        </a>
+        </Link>
       </div>
       <div className="span1 file-size">{attachment.sizeLabel}</div>
       <div className="span1 file-download">
-        <a href={downloadUrl}>
+        <Link activeProps={{ className: undefined }} to={downloadTo}>
           <button type="button" className="ybtn">
             <i className="yobicon-cloud-download"></i>
           </button>
-        </a>
+        </Link>
       </div>
       <div className="span2 file-date">{attachment.createdLabel}</div>
       <div className="span4 file-location">
-        <a href={locationHref} target="_blank">
+        <Link activeProps={{ className: undefined }} to={locationTo} target="_blank">
           {attachment.locationLabel}
-        </a>
+        </Link>
       </div>
     </div>
   );

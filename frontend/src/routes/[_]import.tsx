@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   importProjectRest,
   projectCreateFormOptionsQueryOptions,
@@ -136,15 +136,14 @@ function ProjectImportScreen({
                 {t("project.import.from.git")}
                 <span>
                   <small>{t("project.import.or")} &nbsp; </small>
-                  <a
-                    href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/projectform?owner=${encodeURIComponent(ownerName || selectedOwner)}`,
-                    )}
+                  <Link
+                    to="/projectform"
+                    search={{ owner: ownerName || selectedOwner }}
                     className="ybtn ybtn-small nm"
+                    activeProps={{ className: undefined }}
                   >
                     <strong>{t("title.newProject")}</strong>
-                  </a>
+                  </Link>
                 </span>
               </legend>
 
@@ -406,9 +405,9 @@ function ProjectImportScreen({
                 <button className="ybtn ybtn-primary" disabled={importMutation.isPending}>
                   {t("project.create")}
                 </button>
-                <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="ybtn">
+                <Link to="/" className="ybtn" activeProps={{ className: undefined }}>
                   {t("button.cancel")}
-                </a>
+                </Link>
               </div>
             </form>
           </div>

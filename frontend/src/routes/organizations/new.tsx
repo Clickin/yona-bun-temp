@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { createOrganizationRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -120,9 +120,9 @@ function OrganizationNewScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   <i className="yobicon-friends" /> {t("organization.create")}
                 </button>
-                <a href={prefixBasePath(runtimeConfig.basePath, "/")} className="ybtn">
+                <Link to="/" activeOptions={{ exact: true }} className="ybtn">
                   {t("button.cancel")}
-                </a>
+                </Link>
               </div>
             </form>
           </div>

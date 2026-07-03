@@ -120,6 +120,35 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await expect(page.locator(".attachment-files")).toBeVisible();
   await expect(page.locator(".attachment-file-detail")).toHaveCount(1);
 
+  const previewLink = page.locator(".attachment-file-detail .file-preview > a");
+  await expect(previewLink).toHaveAttribute("href", `${basePath}/files/7`);
+  await expect(previewLink).toHaveAttribute("target", "_blank");
+  await expect(previewLink).not.toHaveAttribute("class", /./);
+  await expect(previewLink).not.toHaveAttribute("data-status", /./);
+  await expect(previewLink.locator("img")).toHaveAttribute("src", `${basePath}/files/7`);
+
+  const fileNameLink = page.locator(".attachment-file-detail .file-name > a");
+  await expect(fileNameLink).toHaveAttribute("href", `${basePath}/files/7`);
+  await expect(fileNameLink).toHaveAttribute("target", "_blank");
+  await expect(fileNameLink).not.toHaveAttribute("class", /./);
+  await expect(fileNameLink).not.toHaveAttribute("data-status", /./);
+  await expect(fileNameLink).toHaveText("avatar.png");
+  await expect(fileNameLink.locator("i")).toHaveClass("icon png-icon font-larger");
+
+  const downloadLink = page.locator(".attachment-file-detail .file-download > a");
+  await expect(downloadLink).toHaveAttribute("href", `${basePath}/files/7?action=download`);
+  await expect(downloadLink).not.toHaveAttribute("target", /./);
+  await expect(downloadLink).not.toHaveAttribute("class", /./);
+  await expect(downloadLink).not.toHaveAttribute("data-status", /./);
+  await expect(downloadLink.locator("button")).toHaveClass("ybtn");
+
+  const locationLink = page.locator(".attachment-file-detail .file-location > a");
+  await expect(locationLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/1`);
+  await expect(locationLink).toHaveAttribute("target", "_blank");
+  await expect(locationLink).not.toHaveAttribute("class", /./);
+  await expect(locationLink).not.toHaveAttribute("data-status", /./);
+  await expect(locationLink).toHaveText("/admin/sample/issue/1");
+
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
@@ -193,6 +222,18 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
 test("current-user files route uses direct typed links for tabs and pagination", () => {
   const routeSource = readFileSync("src/routes/user/files.tsx", "utf8");
   expect(routeSource).not.toContain("LegacyInternalLink");
+});
+
+test("current-user files row uses TanStack Link for file URLs", () => {
+  const routeSource = readFileSync("src/routes/user/files.tsx", "utf8");
+  const rowSource = routeSource.match(
+    /function UserFileRow[\s\S]*?\n}\n\nfunction Pagination/,
+  )?.[0];
+  expect(rowSource).toBeTruthy();
+  expect(rowSource).not.toContain("<a ");
+  expect(rowSource?.match(/<Link activeProps=\{\{ className: undefined \}\} to=\{/g)).toHaveLength(
+    4,
+  );
 });
 
 async function readUserFilesMetrics(page: Page) {

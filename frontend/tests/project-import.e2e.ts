@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const PROJECT_IMPORT_ROUTE_SOURCE = "src/routes/[_]import.tsx";
 
 const EXPECTED_PROJECT_IMPORT = `
 <div class="unsupported hidden">
@@ -233,6 +236,66 @@ test("project import form mirrors legacy auth, owner, and menu dependencies", as
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project import form links preserve legacy hrefs and navigate in the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectImport(page);
+
+  await page.goto(`${basePath}/_import?owner=admin`);
+
+  const createProjectLink = page.locator("legend a.ybtn.ybtn-small.nm");
+  await expect(createProjectLink).toHaveText("Create new project");
+  await expect(createProjectLink).toHaveAttribute("href", `${basePath}/projectform?owner=admin`);
+  await expect(createProjectLink).toHaveClass("ybtn ybtn-small nm");
+
+  await page.evaluate(() => {
+    (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
+  });
+  await createProjectLink.click();
+  await page.waitForURL(`**${basePath}/projectform?owner=admin`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker,
+      ),
+    )
+    .toBe("alive");
+
+  await page.goto(`${basePath}/_import?owner=admin`);
+
+  const cancelLink = page.locator("#importGit .actions a.ybtn");
+  await expect(cancelLink).toHaveText("Cancel");
+  await expect(cancelLink).toHaveAttribute("href", rootHref(basePath));
+  await expect(cancelLink).toHaveClass("ybtn");
+
+  await page.evaluate(() => {
+    (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
+  });
+  await cancelLink.click();
+  await page.waitForURL((url) => url.pathname === rootHref(basePath));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker,
+      ),
+    )
+    .toBe("alive");
+});
+
+test("project import form navigation links use TanStack Router Link in route source", () => {
+  const routeSource = readFileSync(PROJECT_IMPORT_ROUTE_SOURCE, "utf8");
+
+  expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
+  expect(routeSource).toContain('<Link\n                    to="/projectform"');
+  expect(routeSource).toContain('<Link to="/" className="ybtn"');
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("LegacyHrefLink");
+  expect(routeSource).not.toMatch(/<a\b/);
+  expect(routeSource).not.toContain("<a\n                    href={prefixBasePath(");
+  expect(routeSource).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/")}');
+});
+
 async function mockProjectImport(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -272,6 +335,10 @@ async function mockProjectImport(page: Page) {
       }),
     });
   });
+}
+
+function rootHref(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {
