@@ -8,6 +8,8 @@ import {
 
 const DEFAULT_RANGE = "HEAD~50..HEAD";
 const AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
+const ADDED_MANUAL_MULTI_SCREEN_EXCEPTION_PATTERN =
+  /^\+Manual multi-screen exception note\b/mu;
 
 function parseArgs(argv) {
   const options = {
@@ -74,6 +76,10 @@ function auditPatchForCommit(sha) {
   return git(["show", "--format=", "--unified=0", sha, "--", AUDIT_FILE]);
 }
 
+function hasManualMultiScreenException(auditPatch) {
+  return ADDED_MANUAL_MULTI_SCREEN_EXCEPTION_PATTERN.test(auditPatch);
+}
+
 export function evaluateCommit({ changedFiles, changedFileStatuses = new Map(), auditPatch }) {
   return evaluateScalaHtmlGoalGuard({
     auditPatch,
@@ -81,6 +87,9 @@ export function evaluateCommit({ changedFiles, changedFileStatuses = new Map(), 
     changedFileStatuses,
     env: {
       YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",
+      ...(hasManualMultiScreenException(auditPatch)
+        ? { YONA_ALLOW_SCALA_HTML_MULTI_SCREEN: "1" }
+        : {}),
     },
   });
 }

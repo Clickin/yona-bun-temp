@@ -49,6 +49,28 @@ test("scala html goal history audit rejects multi-screen route commits", () => {
   assert.match(result.message, /multi-screen frontend goal work/u);
 });
 
+test("scala html goal history audit accepts documented manual multi-screen exceptions", () => {
+  const result = evaluateCommit({
+    changedFiles: [
+      "frontend/src/routes/organizations/$organizationName/issues.tsx",
+      "frontend/src/routes/organizations/$organizationName/boards.tsx",
+      "frontend/tests/organization-issues.e2e.ts",
+      "frontend/tests/organization-boards.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+Manual multi-screen exception note, 2026-07-04:\n" +
+      "+\n" +
+      "+- Routes: `/organizations/weblabs/issues`, `/organizations/weblabs/boards`.\n" +
+      "+- Reason: user explicitly requested parallel subagent execution for independent legacy Scala HTML page translation work.\n" +
+      "+- Follow-up: keep future unattended goal commits to one screen state unless the user again requests a coordinated parallel slice.\n" +
+      "+| 2026-07-04 | `/organizations/weblabs/issues` | `organization/group_issue_list.scala.html` | `frontend/src/routes/organizations/$organizationName/issues.tsx` rebuild | `frontend/tests/organization-issues.e2e.ts` focused E2E |\n" +
+      "+| 2026-07-04 | `/organizations/weblabs/boards` | `organization/group_board_list.scala.html` | `frontend/src/routes/organizations/$organizationName/boards.tsx` rebuild | `frontend/tests/organization-boards.e2e.ts` focused E2E |\n",
+  });
+
+  assert.equal(result.blocked, false);
+});
+
 test("scala html goal history audit rejects memo rows naming E2E files not changed in the commit", () => {
   const result = evaluateCommit({
     changedFiles: [
