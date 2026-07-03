@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../../api/code-browser";
@@ -18,6 +18,12 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$fil
 type CodeFile = Record<string, unknown>;
 
 const MAX_FILE_SIZE_CAN_BE_VIEWED = 1024 * 1024;
+const legacyLinkProps = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+const legacyEmptySearch = {} as never;
+const legacyInactiveSearch = { __legacyInactive: undefined } as never;
 
 export type ProjectCodeFileRouteParams = {
   branch: string;
@@ -139,31 +145,25 @@ function ProjectCodeFileBody({
               ))}
             </select>
             <div id="breadcrumbs" className="code-breadcrumb-wrap ml10 pull-left">
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "code",
-                  encodedBranch,
-                )}
+              <Link
+                to="/$ownerName/$projectName/code/$branch"
+                params={{ branch: selectedBranch, ownerName, projectName }}
+                search={legacyInactiveSearch}
+                {...legacyLinkProps}
               >
                 {projectName}
-              </a>
+              </Link>
               {code.breadcrumbs.map((item) => (
-                <a
-                  href={projectHref(
-                    runtimeConfig.basePath,
-                    ownerName,
-                    projectName,
-                    "code",
-                    encodedBranch,
-                    item.path,
-                  )}
+                <Link
                   key={item.path}
+                  to={
+                    projectPath(ownerName, projectName, "code", encodedBranch, item.path) as never
+                  }
+                  search={legacyInactiveSearch}
+                  {...legacyLinkProps}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
             </div>
             {isGit ? (
@@ -184,13 +184,20 @@ function ProjectCodeFileBody({
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
                   <div className="pull-right">
-                    <a
+                    <Link
                       id="new-file-link"
-                      href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${newFilePath}&branch=${encodedBranch}`}
+                      to={
+                        `${projectPath(
+                          ownerName,
+                          projectName,
+                          "postform",
+                        )}?path=${newFilePath}&branch=${encodedBranch}` as never
+                      }
+                      {...legacyLinkProps}
                       className="ybtn"
                     >
                       {t("code.new.file")}
-                    </a>
+                    </Link>
                   </div>
                 ) : null}
               </>
@@ -237,7 +244,6 @@ function FileView({
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
   const authorLoginId = stringField(file.userLoginId, "");
-  const authorHref = prefixBasePath(runtimeConfig.basePath, `/${authorLoginId}`);
   const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
   const fileText = stringField(file.data, "") || stringField(file.text, "");
   const isBinary = booleanField(file.isBinary);
@@ -265,31 +271,43 @@ function FileView({
       <div className="file-header nm">
         <div id="fileInfo" className="file-info">
           <span id="commiter" className="commiter">
-            <a
-              href={authorHref}
+            <Link
+              to="/$user"
+              params={{ user: authorLoginId }}
+              search={legacyEmptySearch}
+              {...legacyLinkProps}
               className="avatar-wrap"
               data-toggle="tooltip"
               data-placement="top"
               title={authorLoginId}
             >
               <img src={stringField(file.avatarUrl, "")} alt="" width="32" height="32" />
-            </a>
-            <a href={authorHref} className="ml5">
+            </Link>
+            <Link
+              to="/$user"
+              params={{ user: authorLoginId }}
+              search={legacyEmptySearch}
+              {...legacyLinkProps}
+              className="ml5"
+            >
               {stringField(file.author, "")}
-            </a>
+            </Link>
           </span>
           <span id="commitDate" className="commitDate">
             {stringField(file.createdDate, "")}
           </span>
           <span id="revisionNo" className="revision">
-            <a
-              href={`${projectHref(
-                runtimeConfig.basePath,
-                ownerName,
-                projectName,
-                "commit",
-                commitId,
-              )}?branch=${encodeURIComponent(selectedBranch)}#${filePath}`}
+            <Link
+              to={
+                `${projectPath(
+                  ownerName,
+                  projectName,
+                  "commit",
+                  commitId,
+                )}?branch=${encodeURIComponent(selectedBranch)}` as never
+              }
+              hash={filePath}
+              {...legacyLinkProps}
             >
               {isGit ? shortCommitId : `Revision ${commitId}`}
               {numberField(file.commentCount) > 0 ? (
@@ -297,7 +315,7 @@ function FileView({
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}
                 </span>
               ) : null}
-            </a>
+            </Link>
           </span>
           <span id="commitMessage" className="commitMsg">
             {stringField(file.commitMessage, "")}
@@ -311,12 +329,19 @@ function FileView({
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
               </a>
               {booleanField(project.viewerCanUpdate) ? (
-                <a
-                  href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true`}
+                <Link
+                  to={
+                    `${projectPath(
+                      ownerName,
+                      projectName,
+                      "postform",
+                    )}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true` as never
+                  }
+                  {...legacyLinkProps}
                   className="ybtn"
                 >
                   Edit
-                </a>
+                </Link>
               ) : null}
             </>
           ) : null}
@@ -329,19 +354,21 @@ function FileView({
           >
             <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
           </a>
-          <a
-            href={projectHref(
-              runtimeConfig.basePath,
-              ownerName,
-              projectName,
-              "commits",
-              encodeURIComponent(selectedBranch),
-              filePath,
-            )}
+          <Link
+            to={
+              projectPath(
+                ownerName,
+                projectName,
+                "commits",
+                encodeURIComponent(selectedBranch),
+                filePath,
+              ) as never
+            }
+            {...legacyLinkProps}
             className="ybtn"
           >
             {t("code.history")}
-          </a>
+          </Link>
         </div>
       </div>
       {isBinary ? (
@@ -388,10 +415,11 @@ function FileView({
 }
 
 function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {
-  return prefixBasePath(
-    basePath,
-    `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`,
-  );
+  return prefixBasePath(basePath, projectPath(ownerName, projectName, ...parts));
+}
+
+function projectPath(ownerName: string, projectName: string, ...parts: string[]) {
+  return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }
 
 function directoryPath(filePath: string) {

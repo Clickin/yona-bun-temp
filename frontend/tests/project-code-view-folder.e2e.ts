@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/code/$branch.tsx", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_CODE_FOLDER_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap" data-type="folder"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem" data-path="src"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src" data-type="folder" data-targetpath="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem" data-path="README.md"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md" data-targetpath="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div><script id="tplFileListItem" type="text/x-jquery-tmpl"><div id="cb-\${listPath}\${fileName}" class="row-fluid listitem" data-path="\${targetPath}"><div class="span6 filename"><a href="\${path}" class="\${fileClass}" title="\${fileName}" data-targetPath="\${targetPath}" data-type="\${type}"><span class="dynatree-icon vmiddle"></span>\${fileName}</a></div><div class="span5 commitMsg">\${avatarImg}<span class="ml5"><a href="\${commitUrl}">\${commitMsg}</a></span></div><div class="span1 commitDate">\${commitDate}</div></div></script></div></div></div></div></div>
@@ -17,6 +23,27 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await page.goto(`${basePath}/admin/sample/code/main`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
+  await expect(page.locator(".code-browse-wrap a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs a").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main`,
+  );
+  await expect(page.locator(".code-breadcrumb-wrap a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main`,
+  );
+  await expect(page.locator("#new-file-link")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?path=&branch=main`,
+  );
+  await expect(page.locator('.listitem[data-path="src"] .filename a')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src#cb-src`,
+  );
+  await expect(page.locator('.listitem[data-path="README.md"] .commitMsg a')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/1234567?branch=main`,
+  );
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)),
@@ -75,6 +102,56 @@ test("project SVN code branch root folder matches legacy code/view.scala.html DO
     listWidth: 1260,
     rowLineHeight: "40px",
   });
+});
+
+test("project code branch folder links navigate with TanStack Router without document reload", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    (
+      window as typeof window & { __yonaCodeFolderDocumentMarker: string }
+    ).__yonaCodeFolderDocumentMarker = Math.random().toString(36);
+  });
+  await mockProjectCodeFolder(page);
+
+  await page.goto(`${basePath}/admin/sample/code/main`);
+  const markerBefore = await page.evaluate(
+    () =>
+      (window as typeof window & { __yonaCodeFolderDocumentMarker: string })
+        .__yonaCodeFolderDocumentMarker,
+  );
+  await page.locator('.listitem[data-path="src"] .filename a').click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/main/src#cb-src`);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __yonaCodeFolderDocumentMarker: string })
+            .__yonaCodeFolderDocumentMarker,
+      ),
+    )
+    .toBe(markerBefore);
+});
+
+test("project code branch route source converts internal raw anchors to Link", async () => {
+  const sourceOutsideLegacyTemplate = ROUTE_SOURCE.replace(
+    /const FILE_LIST_ITEM_TEMPLATE =[\s\S]*?;\n\nfunction projectHref/u,
+    "function projectHref",
+  );
+
+  expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute, Outlet, useRouterState }");
+  expect(ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(ROUTE_SOURCE).toContain('<a href="${path}"');
+  expect(ROUTE_SOURCE).toContain('<span class="ml5"><a href="${commitUrl}">${commitMsg}</a>');
+  expect(sourceOutsideLegacyTemplate).not.toContain("function commitHref");
+  expect(sourceOutsideLegacyTemplate).not.toContain("href={commitHref(");
+  expect(sourceOutsideLegacyTemplate).not.toContain("href={`${projectHref(");
+  expect(sourceOutsideLegacyTemplate).not.toContain(
+    'id="new-file-link"\n                      href=',
+  );
 });
 
 async function folderViewMetrics(page: Page) {

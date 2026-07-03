@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -12,6 +12,12 @@ import { ProjectHeader, ProjectMenu } from "../../$projectName";
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
   component: ProjectCodeBranchRoute,
 });
+
+const legacyLinkProps = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+const legacyInactiveSearch = { __legacyInactive: undefined } as unknown as Record<string, never>;
 
 function ProjectCodeBranchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -82,36 +88,32 @@ function ProjectCodeFolderBody({
         <div className="code-browse-wrap">
           <ul className="nav nav-tabs">
             <li className="active">
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "code",
-                  encodedBranch,
-                )}
+              <Link
+                {...legacyLinkProps}
+                to={projectRoute(ownerName, projectName, "code", encodedBranch)}
+                search={legacyInactiveSearch}
               >
                 {t("code.files")}
-              </a>
+              </Link>
             </li>
             <li>
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "commits",
-                  encodedBranch,
-                )}
+              <Link
+                {...legacyLinkProps}
+                to={projectRoute(ownerName, projectName, "commits", encodedBranch)}
+                search={legacyInactiveSearch}
               >
                 {t("code.commits")}
-              </a>
+              </Link>
             </li>
             {isGit ? (
               <li>
-                <a href={projectHref(runtimeConfig.basePath, ownerName, projectName, "branches")}>
+                <Link
+                  {...legacyLinkProps}
+                  to={projectRoute(ownerName, projectName, "branches")}
+                  search={legacyInactiveSearch}
+                >
                   {t("title.branches")}
-                </a>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -147,17 +149,13 @@ function ProjectCodeFolderBody({
               ))}
             </select>
             <div id="breadcrumbs" className="code-breadcrumb-wrap ml10 pull-left">
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "code",
-                  encodedBranch,
-                )}
+              <Link
+                {...legacyLinkProps}
+                to={projectRoute(ownerName, projectName, "code", encodedBranch)}
+                search={legacyInactiveSearch}
               >
                 {projectName}
-              </a>
+              </Link>
             </div>
             {isGit ? (
               <>
@@ -177,13 +175,15 @@ function ProjectCodeFolderBody({
                 </div>
                 {booleanField(project.viewerCanUpdate) ? (
                   <div className="pull-right">
-                    <a
+                    <Link
+                      {...legacyLinkProps}
                       id="new-file-link"
-                      href={`${projectHref(runtimeConfig.basePath, ownerName, projectName, "postform")}?path=&branch=${encodedBranch}`}
+                      to={projectRoute(ownerName, projectName, "postform")}
+                      search={{ path: "", branch: selectedBranch }}
                       className="ybtn"
                     >
                       {t("code.new.file")}
-                    </a>
+                    </Link>
                   </div>
                 ) : null}
               </>
@@ -192,7 +192,7 @@ function ProjectCodeFolderBody({
 
           <div className="code-viewer-wrap">
             <div id="spin" style={{ position: "fixed", top: "50%", left: "50%" }}></div>
-            <FolderList code={code} runtimeConfig={runtimeConfig} />
+            <FolderList code={code} />
           </div>
         </div>
       </div>
@@ -200,13 +200,7 @@ function ProjectCodeFolderBody({
   );
 }
 
-function FolderList({
-  code,
-  runtimeConfig,
-}: {
-  code: CodeBrowserResponse;
-  runtimeConfig: RuntimeConfig;
-}) {
+function FolderList({ code }: { code: CodeBrowserResponse }) {
   const { t } = useLegacyMessages();
   const { branch, ownerName, projectName } = Route.useParams();
   const selectedBranch = code.selectedBranch || branch;
@@ -241,15 +235,17 @@ function FolderList({
           key={entry.path}
         >
           <div className="span6 filename">
-            <a
-              href={`${projectHref(
-                runtimeConfig.basePath,
+            <Link
+              {...legacyLinkProps}
+              to={projectRoute(
                 ownerName,
                 projectName,
                 "code",
                 encodeBranch(selectedBranch),
                 entry.path,
-              )}${entry.kind === "folder" ? `#cb-${entry.path}` : ""}`}
+              )}
+              hash={entry.kind === "folder" ? `cb-${entry.path}` : undefined}
+              search={legacyInactiveSearch}
               className={entry.kind === "folder" ? "folder" : "file"}
               title={entry.name}
               {...(entry.kind === "folder" ? { "data-type": "folder" } : {})}
@@ -257,21 +253,17 @@ function FolderList({
             >
               <span className="dynatree-icon vmiddle"></span>
               {entry.name}
-            </a>
+            </Link>
           </div>
           <div className="span5 commitMsg">
             <span className="ml5">
-              <a
-                href={commitHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  entry.commitShortId,
-                  selectedBranch,
-                )}
+              <Link
+                {...legacyLinkProps}
+                to={projectRoute(ownerName, projectName, "commit", entry.commitShortId)}
+                search={{ branch: selectedBranch }}
               >
                 {entry.commitMessage}
-              </a>
+              </Link>
             </span>
           </div>
           <div className="span1 commitDate">{entry.commitDate}</div>
@@ -301,21 +293,15 @@ const FILE_LIST_ITEM_TEMPLATE =
   '<div class="span1 commitDate">${commitDate}</div>' +
   "</div>";
 
-function commitHref(
-  basePath: string,
-  ownerName: string,
-  projectName: string,
-  commitId: string,
-  branch: string,
-) {
-  return `${projectHref(basePath, ownerName, projectName, "commit", commitId)}?branch=${encodeURIComponent(branch)}`;
-}
-
 function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {
   return prefixBasePath(
     basePath,
     `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`,
   );
+}
+
+function projectRoute(ownerName: string, projectName: string, ...parts: string[]) {
+  return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }
 
 function encodeBranch(branch: string) {
