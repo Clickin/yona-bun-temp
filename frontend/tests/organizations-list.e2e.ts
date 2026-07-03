@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_ORGANIZATIONS_LIST = `
@@ -34,9 +35,9 @@ const EXPECTED_ORGANIZATIONS_LIST = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -49,20 +50,20 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img alt="" src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </a>
+        </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
           <i class="yobicon-plus"></i><span class="caret"></span>
-        </a>
+        </button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -141,6 +142,44 @@ test("organizations list matches legacy organization/list.scala.html DOM", async
   expect(actual).toEqual(expected);
 });
 
+test("organization directory card links keep legacy hrefs and use SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(page);
+
+  await page.goto(`${basePath}/orgs?filter=weblabs`);
+  const logoLink = page.locator(".all-projects .owner-avatar-wrap a");
+  const nameLink = page.locator(".all-projects .header a.black");
+
+  await expect(logoLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(nameLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await nameLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+test("organization directory item source uses Link for internal card anchors", () => {
+  const source = readFileSync("src/routes/orgs.tsx", "utf8");
+
+  expect(source).not.toContain("organizationHref");
+  expect(source).not.toContain("href={organizationHref}");
+  expect(source).not.toContain("prefixBasePath(basePath, `/organizations/${organizationName}`)");
+  expect(source).toContain('to="/organizations/$organizationName"');
+  expect(source).toContain("params={{ organizationName }}");
+});
+
 async function mockAuthenticatedOrganizations(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -154,6 +193,22 @@ async function mockAuthenticatedOrganizations(page: Page) {
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        adminMembers: [],
+        description: "Web labs group",
+        logoUrl: "/assets/images/organization_default_logo.png",
+        memberMembers: [],
+        organizationName: "weblabs",
+        viewerCanCreateProject: false,
+        viewerCanLeave: false,
+        viewerCanUpdate: false,
+        visibleProjects: [],
       }),
     });
   });

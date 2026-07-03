@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const EXPECTED_PROJECTS_LIST = `
 <div class="unsupported hidden">
@@ -34,9 +35,9 @@ const EXPECTED_PROJECTS_LIST = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -49,20 +50,20 @@ const EXPECTED_PROJECTS_LIST = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img alt="" src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </a>
+        </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
           <i class="yobicon-plus"></i><span class="caret"></span>
-        </a>
+        </button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -177,6 +178,65 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   });
 });
 
+test("project directory card links keep legacy hrefs while using SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedProjects(page);
+  await mockProjectCardDestinations(page);
+
+  await page.goto(`${basePath}/projects?filter=sample`);
+  await expect(page.locator(".all-projects .project")).toBeVisible();
+
+  const projectLogoLink = page.locator(".all-projects .owner-avatar-wrap a");
+  const projectNameLink = page.locator(".all-projects .header a.black");
+  const ownerNameLink = page.locator(".all-projects .name-tag a.owner-name-small");
+
+  await expect(projectLogoLink).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(projectNameLink).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(ownerNameLink).toHaveAttribute("href", `${basePath}/admin`);
+
+  await page.evaluate(() => {
+    (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "project";
+  });
+  await projectNameLink.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker,
+      ),
+    )
+    .toBe("project");
+
+  await page.goto(`${basePath}/projects?filter=sample`);
+  await expect(page.locator(".all-projects .project")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "owner";
+  });
+  await ownerNameLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker,
+      ),
+    )
+    .toBe("owner");
+});
+
+test("projects route source uses Link for project directory card navigation", () => {
+  const source = readFileSync(new URL("../src/routes/projects.tsx", import.meta.url), "utf8");
+
+  expect(source).toContain("import { createFileRoute, Link } from");
+  expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain('to="/$user"');
+  expect(source).not.toContain("const projectHref =");
+  expect(source).not.toContain("const ownerHref =");
+  expect(source).not.toContain("<a href={projectHref}");
+  expect(source).not.toContain("<a href={ownerHref}");
+});
+
 async function mockAuthenticatedProjects(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -211,6 +271,62 @@ async function mockAuthenticatedProjects(page: Page) {
             watchCount: 3,
           },
         ],
+      }),
+    });
+  });
+}
+
+async function mockProjectCardDestinations(page: Page) {
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        allowEnroll: false,
+        allowLeave: false,
+        allowManage: false,
+        allowWatch: true,
+        codeBrowserUrl: "/admin/sample/code",
+        createdLabel: "just now",
+        createdTitle: "2026-06-30",
+        isFavorite: false,
+        isWatching: false,
+        lastPushedLabel: "just now",
+        lastPushedTitle: "2026-06-30",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        members: [],
+        ownerName: "admin",
+        projectName: "sample",
+        projectScope: "public",
+        readme: "",
+        repositoryUrl: "",
+      }),
+    });
+  });
+  await page.route("**/api/v1/users/admin/profile?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        daysAgo: 14,
+        issueItems: [],
+        memberProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          loginId: "admin",
+          primaryEmailAddress: "admin@example.com",
+          sinceLabel: "just now",
+        },
+        pullRequestItems: [],
+        selected: "issues",
+        viewerCanEditProfile: true,
       }),
     });
   });

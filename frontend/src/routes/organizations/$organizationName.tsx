@@ -138,7 +138,6 @@ function OrganizationHomeBody({
               <ul className="all-projects">
                 {organization.visibleProjects.map((project) => (
                   <OrganizationProject
-                    basePath={runtimeConfig.basePath}
                     filter={projectFilter}
                     key={`${stringField(project.ownerName, "")}/${stringField(project.projectName, "")}`}
                     project={project}
@@ -210,19 +209,11 @@ function OrganizationHomeBody({
   );
 }
 
-function OrganizationProject({
-  basePath,
-  filter,
-  project,
-}: {
-  basePath: string;
-  filter: string;
-  project: YonaRecord;
-}) {
+function OrganizationProject({ filter, project }: { filter: string; project: YonaRecord }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "");
   const projectName = stringField(project.projectName, "");
-  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
+  const projectPath = `/${ownerName}/${projectName}`;
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
@@ -238,25 +229,25 @@ function OrganizationProject({
     >
       <div className="info-wrap">
         <div className="owner-avatar-wrap hide-in-mobile">
-          <a href={projectHref}>
+          <OrganizationRouteLink to={projectPath}>
             <img
               src={stringField(project.logoUrl, "/assets/images/project_default_logo.png")}
               alt={`${projectName}.name`}
             />
-          </a>
+          </OrganizationRouteLink>
         </div>
         <div style={{ float: "left" }}>
           <div className="header">
-            <a href={projectHref} className="black">
+            <OrganizationRouteLink to={projectPath} className="black">
               {projectName}
-            </a>
+            </OrganizationRouteLink>
           </div>
           <div className="desc">{stringField(project.overview, "")}</div>
           <p className="name-tag">
             by{" "}
-            <a href={prefixBasePath(basePath, `/${ownerName}`)} className="owner-name-small">
+            <OrganizationRouteLink to={`/${ownerName}`} className="owner-name-small">
               {ownerName}
-            </a>{" "}
+            </OrganizationRouteLink>{" "}
             at{" "}
             <strong title={stringField(project.createdTitle, createdLabel)}>{createdLabel}</strong>{" "}
             {lastPushedLabel ? (
@@ -449,7 +440,15 @@ export function OrganizationMenu({
   );
 }
 
-function OrganizationRouteLink({ children, to }: { children: ReactNode; to: string }) {
+function OrganizationRouteLink({
+  children,
+  className,
+  to,
+}: {
+  children: ReactNode;
+  className?: string;
+  to: string;
+}) {
   const legacyLinkProps = {
     activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
     activeProps: {
@@ -457,6 +456,7 @@ function OrganizationRouteLink({ children, to }: { children: ReactNode; to: stri
       className: undefined,
       "data-status": undefined,
     },
+    className,
     search: {},
     to,
   } as unknown as Parameters<typeof Link>[0];

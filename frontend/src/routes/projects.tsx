@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { listProjectsQueryOptions } from "../api/org-project";
 import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
@@ -103,7 +103,6 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <ul className="all-projects">
                 {projects.map((project) => (
                   <ProjectListItem
-                    basePath={runtimeConfig.basePath}
                     key={`${project.ownerName ?? ""}/${project.projectName ?? ""}`}
                     project={project}
                   />
@@ -118,18 +117,10 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   );
 }
 
-function ProjectListItem({
-  basePath,
-  project,
-}: {
-  basePath: string;
-  project: ProjectDirectoryItem;
-}) {
+function ProjectListItem({ project }: { project: ProjectDirectoryItem }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project, "ownerName", "");
   const projectName = stringField(project, "projectName", "");
-  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
-  const ownerHref = prefixBasePath(basePath, `/${ownerName}`);
   const logoUrl = stringField(project, "logoUrl", "/assets/images/project_default_logo.png");
   const createdLabel = stringField(project, "createdLabel", "");
   const createdTitle = stringField(project, "createdTitle", createdLabel);
@@ -141,15 +132,24 @@ function ProjectListItem({
     <li className="project">
       <div className="info-wrap">
         <div className="owner-avatar-wrap">
-          <a href={projectHref}>
+          <Link
+            to="/$ownerName/$projectName"
+            params={{ ownerName, projectName }}
+            activeProps={{ className: undefined }}
+          >
             <img src={logoUrl} alt={projectName} />
-          </a>
+          </Link>
         </div>
         <div style={{ float: "left" }}>
           <div className="header">
-            <a href={projectHref} className="black">
+            <Link
+              to="/$ownerName/$projectName"
+              params={{ ownerName, projectName }}
+              className="black"
+              activeProps={{ className: undefined }}
+            >
               {projectName}
-            </a>
+            </Link>
             {stringField(project, "projectScope", "public") === "private" ? (
               <i className="yobicon-lock yobicon-small"></i>
             ) : null}
@@ -157,9 +157,14 @@ function ProjectListItem({
           <div className="desc">{stringField(project, "overview", "")}</div>
           <p className="name-tag">
             by{" "}
-            <a href={ownerHref} className="owner-name-small">
+            <Link
+              to="/$user"
+              params={{ user: ownerName }}
+              className="owner-name-small"
+              activeProps={{ className: undefined }}
+            >
               {ownerName}
-            </a>{" "}
+            </Link>{" "}
             at <strong title={createdTitle}>{createdLabel}</strong>{" "}
             {lastPushedLabel ? (
               <span className="small-font">

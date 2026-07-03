@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { listOrganizationsQueryOptions } from "../api/org-project";
 import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
@@ -98,7 +98,6 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <ul className="all-projects">
                 {organizations.map((organization) => (
                   <OrganizationListItem
-                    basePath={runtimeConfig.basePath}
                     key={organization.organizationName ?? ""}
                     organization={organization}
                   />
@@ -113,15 +112,8 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   );
 }
 
-function OrganizationListItem({
-  basePath,
-  organization,
-}: {
-  basePath: string;
-  organization: OrganizationDirectoryItem;
-}) {
+function OrganizationListItem({ organization }: { organization: OrganizationDirectoryItem }) {
   const organizationName = stringField(organization, "organizationName", "");
-  const organizationHref = prefixBasePath(basePath, `/organizations/${organizationName}`);
   const logoUrl = stringField(
     organization,
     "logoUrl",
@@ -134,15 +126,24 @@ function OrganizationListItem({
     <li className="project">
       <div className="info-wrap">
         <div className="owner-avatar-wrap">
-          <a href={organizationHref}>
+          <Link
+            to="/organizations/$organizationName"
+            params={{ organizationName }}
+            activeProps={{ className: undefined }}
+          >
             <img src={logoUrl} alt={organizationName} />
-          </a>
+          </Link>
         </div>
         <div style={{ float: "left" }}>
           <div className="header">
-            <a href={organizationHref} className="black">
+            <Link
+              to="/organizations/$organizationName"
+              params={{ organizationName }}
+              activeProps={{ className: undefined }}
+              className="black"
+            >
               {organizationName}
-            </a>
+            </Link>
           </div>
           <div className="desc">{stringField(organization, "description", "")}</div>
           <p className="name-tag">
