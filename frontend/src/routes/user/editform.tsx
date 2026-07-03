@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   readWorkspaceOverviewRest,
@@ -11,10 +10,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
->;
 
 export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
@@ -209,21 +204,24 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
 function EditTabMenu({ active }: { active: string }) {
   const { t } = useLegacyMessages();
-  const tabs = [
-    ["/user/editform", "profile", "userinfo.editProfile"],
-    ["/user/editform/password", "password", "userinfo.changePassword"],
-    ["/user/editform/notifications", "notifications", "userinfo.changeNotifications"],
-    ["/user/editform/emails", "emails", "userinfo.changeEmails"],
-    ["/user/editform/token", "token", "userinfo.token"],
-  ] as const;
 
   return (
     <ul className="nav nav-tabs mt20">
-      {tabs.map(([href, id, messageKey]) => (
-        <li key={id} className={active === id ? "active" : undefined}>
-          <LegacyInternalLink to={href}>{t(messageKey)}</LegacyInternalLink>
-        </li>
-      ))}
+      <li className={active === "profile" ? "active" : undefined}>
+        <Link to="/user/editform">{t("userinfo.editProfile")}</Link>
+      </li>
+      <li className={active === "password" ? "active" : undefined}>
+        <Link to="/user/editform/password">{t("userinfo.changePassword")}</Link>
+      </li>
+      <li className={active === "notifications" ? "active" : undefined}>
+        <Link to="/user/editform/notifications">{t("userinfo.changeNotifications")}</Link>
+      </li>
+      <li className={active === "emails" ? "active" : undefined}>
+        <Link to="/user/editform/emails">{t("userinfo.changeEmails")}</Link>
+      </li>
+      <li className={active === "token" ? "active" : undefined}>
+        <Link to="/user/editform/token">{t("userinfo.token")}</Link>
+      </li>
     </ul>
   );
 }

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
@@ -14,7 +15,7 @@ const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
         <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
@@ -23,8 +24,8 @@ const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
-      <li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -129,6 +130,8 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     pageWrapMarginTop: "10px",
   });
 
+  await expectProfileEditTabs(page, basePath);
+
   await expect(page.locator('.nav-tabs a:has-text("Change password")')).toHaveAttribute(
     "href",
     `${basePath}/user/editform/password`,
@@ -149,6 +152,13 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   await expect(page.locator('#frmBasic input[name="name"]')).toHaveValue("Changed User");
 
   await page.locator(".reset-user-visited-list button[type=submit]").click();
+});
+
+test("current-user profile settings tabs use typed TanStack links without route-local adapter", () => {
+  const source = readFileSync("src/routes/user/editform.tsx", "utf8");
+  expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("AnchorHTMLAttributes");
+  expect(source).not.toContain("ComponentType");
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -211,6 +221,30 @@ async function readProfileSettingsMetrics(page: Page) {
       pageWrapMarginTop: getComputedStyle(pageWrapOuter).marginTop,
     };
   });
+}
+
+async function expectProfileEditTabs(page: Page, basePath: string) {
+  const tabs = page.locator(".page-wrap > .nav.nav-tabs.mt20");
+  await expect(tabs).toBeAttached();
+  await expect(tabs.locator("a")).toHaveText([
+    "Edit profile",
+    "Change password",
+    "Notification settings",
+    "Email settings",
+    "User Token",
+  ]);
+  expect(
+    await tabs
+      .locator("a")
+      .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/user/editform`,
+    `${basePath}/user/editform/password`,
+    `${basePath}/user/editform/notifications`,
+    `${basePath}/user/editform/emails`,
+    `${basePath}/user/editform/token`,
+  ]);
+  await expect(tabs.locator("li")).toHaveClass(["active", "", "", "", ""]);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
