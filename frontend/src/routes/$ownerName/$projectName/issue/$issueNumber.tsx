@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type AnchorHTMLAttributes,
-  type ComponentType,
   type MouseEvent,
   type ReactNode,
 } from "react";
@@ -41,22 +40,13 @@ import {
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeOptions?: { includeHash?: boolean };
-    activeProps?: { className?: string | undefined };
-    hash?: string;
-    to: string;
-  }
->;
-
 function IssueHashLink({
   children,
   hash,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; hash: string }) {
   return (
-    <LegacyInternalLink
+    <Link
       {...props}
       to="."
       hash={hash}
@@ -64,7 +54,7 @@ function IssueHashLink({
       activeProps={{ className: undefined }}
     >
       {children}
-    </LegacyInternalLink>
+    </Link>
   );
 }
 
@@ -775,9 +765,9 @@ function IssueDetailBody({
                     </button>
                   ) : null}
                   <span className="project-btn-item hide show-in-mobile-inline ml4">
-                    <LegacyInternalLink to={newSubtaskPath} className="ybtn ybtn-success">
+                    <Link to={newSubtaskPath} className="ybtn ybtn-success">
                       New subtask
-                    </LegacyInternalLink>
+                    </Link>
                   </span>
                   <IssueWeight
                     issueNumber={issueNumber}
@@ -884,9 +874,9 @@ function IssueDetailBody({
                 <dl>
                   {showIssue ? (
                     <dd className="project-btn-item">
-                      <LegacyInternalLink to={newSubtaskPath} className="ybtn ybtn-success">
+                      <Link to={newSubtaskPath} className="ybtn ybtn-success">
                         New subtask
-                      </LegacyInternalLink>
+                      </Link>
                     </dd>
                   ) : null}
                   <dt>Assignee</dt>
@@ -1221,9 +1211,7 @@ function IssuePostingHistory({
   if (isAnonymous) {
     return (
       <div className="posting-history">
-        <LegacyInternalLink to={loginTo} data-toggle="modal">
-          {t("change.history")}
-        </LegacyInternalLink>
+        <Link to={loginTo}>{t("change.history")}</Link>
       </div>
     );
   }
@@ -2822,15 +2810,9 @@ function ChildComment({
         </ReactMarkdown>
         <span className="subcomment-author hide">
           -{" "}
-          <LegacyInternalLink
-            to={`/${authorLoginId}`}
-            className="usf-group"
-            data-toggle="tooltip"
-            data-placement="top"
-            title={authorLoginId}
-          >
+          <Link to={`/${authorLoginId}`} className="usf-group" title={authorLoginId}>
             <strong>{authorLabel}</strong>
-          </LegacyInternalLink>
+          </Link>
           <IssueHashLink hash={commentHash} className="ago" title={createdLabel}>
             {createdLabel}
           </IssueHashLink>
