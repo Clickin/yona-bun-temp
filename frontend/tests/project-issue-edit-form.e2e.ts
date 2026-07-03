@@ -17,7 +17,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-body" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-body" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -41,11 +41,52 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(page.locator('#labelIds option[value="8"]')).toHaveJSProperty("selected", true);
   await expect(page.locator("#notificationMail")).toBeChecked();
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
+  await expect(page.locator("#editor-body-body")).toHaveValue("Editable body");
+  await expect(
+    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-body"]'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
+  ).toHaveCount(0);
+  const editTab = page.locator(
+    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-toggle="tab"][data-mode="edit"]',
+  );
+  const previewTab = page.locator(
+    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-toggle="tab"][data-mode="preview"]',
+  );
+  await expect(editTab).toHaveText("Edit");
+  await expect(previewTab).toHaveText("Preview");
+  await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(page.locator("#edit-body")).toHaveClass(/active/);
+  await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
   const cancelButton = await expectModernCancelControl(page);
   const issueEditFormUrl = page.url();
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "tab-kept";
+  });
+  await previewTab.click();
+  await expect(page).toHaveURL(issueEditFormUrl);
+  await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(page.locator("#preview-body")).toHaveClass(/active/);
+  await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("tab-kept");
+  await editTab.click();
+  await expect(page).toHaveURL(issueEditFormUrl);
+  await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(page.locator("#edit-body")).toHaveClass(/active/);
+  await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
 
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(
