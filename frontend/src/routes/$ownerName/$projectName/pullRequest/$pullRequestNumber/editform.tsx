@@ -161,18 +161,9 @@ function ProjectPullRequestEditBody({
                 <button type="submit" className="ybtn ybtn-success">
                   {t("button.save")}
                 </button>
-                <a
-                  href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/${ownerName}/${projectName}/pullRequests`,
-                  )}
-                  ref={(node) => {
-                    node?.setAttribute("href", "javascript:history.back();");
-                  }}
-                  className="ybtn"
-                >
+                <button type="button" className="ybtn" onClick={() => window.history.back()}>
                   {t("button.cancel")}
-                </a>
+                </button>
               </div>
             </div>
             <ul className="nav nav-tabs mt20">
