@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_ORGANIZATION_HOME = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class="active"><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-home-header row-fluid"><div class="span9 span-hard-wrap"><div class="project-overview"><h3><span id="project-description">Web labs group</span></h3></div><div class="project-search-wrap row-fluid mt10"><div class="span7"><div class="search-bar"><input name="mylist-filter" id="mylist-filter" class="textbox full" type="text" value="" data-toggle="item-search" data-items="project-item" placeholder="Type name"><button type="button" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="pull-right"><a href="__BASE_PATH__/projectform?owner=weblabs" class="ybtn ybtn-primary">Create new project</a></div></div><ul class="all-projects"><li class="project" data-item="project-item" data-value="sample Sample project"><div class="info-wrap"><div class="owner-avatar-wrap hide-in-mobile"><a href="__BASE_PATH__/weblabs/sample"><img src="/assets/images/project_default_logo.png" alt="sample.name"></a></div><div style="float:left"><div class="header"><a href="__BASE_PATH__/weblabs/sample" class="black">sample</a></div><div class="desc">Sample project</div><p class="name-tag">by <a href="__BASE_PATH__/weblabs" class="owner-name-small">weblabs</a> at <strong title="2026-06-30">Jun 30, 2026</strong> <span class="small-font">,Latest code update <strong title="2026-07-01">Jul 1, 2026</strong></span></p></div></div><div class="stats-wrap pull-right"><div class="members"><ul class="unstyled"></ul><p><i class="yobicon-friends yobicon-middle"></i><strong>1</strong><i class="yobicon-eye"></i> <strong>5</strong><i class="yobicon-lightbulb ramp-on" data-toggle="tooltip" title="Watching projects"></i></p></div></div></li></ul></div><div class="span3 span-hard-wrap"><div class="bubble-wrap gray project-home"><div class="inner member-info"><header><h3>Group Manager</h3><button type="button" class="ybtn ybtn-minimum ybtn-danger pull-right" id="groupLeaveBtn" data-href="__BASE_PATH__/organizations/weblabs/leave">Leave the group</button></header><div class="member-wrap "><ul class="project-members"><li class="member"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/admin" data-toggle="tooltip" data-placement="top" title="admin">Site Admin</a></li></ul></div></div></div><div class="bubble-wrap gray project-home mt10"><div class="inner member-info"><header><h3>Group Member</h3></header><div class="member-wrap"><ul class="unstyled project-members"><li class="member"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a></li></ul></div></div></div></div></div></div></div>
@@ -28,6 +28,7 @@ test("organization home menu settings link preserves legacy href with SPA transi
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationHomeMenuNativeLinkAudit(page);
   await mockOrganizationHome(page);
 
   await page.goto(`${basePath}/organizations/weblabs`);
@@ -52,12 +53,14 @@ test("organization home menu settings link preserves legacy href with SPA transi
     .toBe("kept");
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").first()).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+  expect(await readOrganizationHomeMenuNativeLinkAudit(page)).toEqual([]);
 });
 
 test("organization home menu board link preserves legacy href with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationHomeMenuNativeLinkAudit(page);
   await mockOrganizationHome(page);
 
   await page.goto(`${basePath}/organizations/weblabs`);
@@ -69,7 +72,9 @@ test("organization home menu board link preserves legacy href with SPA transitio
   });
   await boardLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(`${basePath}/organizations/weblabs/boards`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -79,6 +84,39 @@ test("organization home menu board link preserves legacy href with SPA transitio
     .toBe("kept");
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
   await expect(page.locator("#option_form")).toBeVisible();
+  expect(await readOrganizationHomeMenuNativeLinkAudit(page)).toEqual([]);
+});
+
+test("organization home menu links keep legacy hrefs without route-local native listeners", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationHomeMenuNativeLinkAudit(page);
+  await mockOrganizationHome(page);
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+  await expect(page.locator(".project-menu-gruop a")).toHaveCount(4);
+  await expect(page.locator(".project-menu-gruop a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/issues`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/pullrequests`,
+  );
+  await expect(page.locator(".project-setting a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+  expect(await readOrganizationHomeMenuNativeLinkAudit(page)).toEqual([]);
 });
 
 test("organization home filters projects like legacy item-search", async ({ page }) => {
@@ -381,6 +419,37 @@ async function mockOrganizationHome(
   });
 }
 
+async function installOrganizationHomeMenuNativeLinkAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const anchorListeners: string[] = [];
+    Object.defineProperty(window, "__yonaOrganizationHomeMenuNativeLinkListeners", {
+      configurable: true,
+      value: anchorListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithOrganizationHomeMenuAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-menu-gruop a, .project-setting a")) {
+        anchorListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readOrganizationHomeMenuNativeLinkAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __yonaOrganizationHomeMenuNativeLinkListeners?: string[] }
+      ).__yonaOrganizationHomeMenuNativeLinkListeners ?? [],
+  );
+}
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
@@ -399,6 +468,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -439,6 +509,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");

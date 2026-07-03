@@ -1,6 +1,6 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { leaveOrganizationRest, readOrganizationContainerRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { OrganizationContainer, YonaRecord, YonaUserItem } from "../../api/types";
@@ -90,7 +90,6 @@ function OrganizationHomeBody({
       />
       <OrganizationMenu
         active="home"
-        basePath={runtimeConfig.basePath}
         organizationName={organizationName}
         viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
       />
@@ -399,58 +398,36 @@ export function OrganizationHeader({
 
 export function OrganizationMenu({
   active,
-  basePath,
   organizationName,
   viewerCanUpdate,
 }: {
   active?: "home";
-  basePath: string;
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.history.push(prefixBasePath(basePath, to));
-  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className={active === "home" ? "active" : ""}>
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}`}>
               {t("title.organizationHome")}
             </OrganizationRouteLink>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/issues`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}/issues`}>
               {t("menu.issue")}
             </OrganizationRouteLink>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/boards`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}/boards`}>
               {t("menu.board")}
             </OrganizationRouteLink>
           </li>
           <li className="">
-            <OrganizationRouteLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/pullrequests`}
-            >
+            <OrganizationRouteLink to={`/organizations/${organizationName}/pullrequests`}>
               {t("menu.pullRequest")}
             </OrganizationRouteLink>
           </li>
@@ -459,11 +436,7 @@ export function OrganizationMenu({
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink
-                  basePath={basePath}
-                  onNavigate={navigate}
-                  to={`/organizations/${organizationName}/settingform`}
-                >
+                <OrganizationRouteLink to={`/organizations/${organizationName}/settingform`}>
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
                 </OrganizationRouteLink>
@@ -476,38 +449,18 @@ export function OrganizationMenu({
   );
 }
 
-function OrganizationRouteLink({
-  basePath,
-  children,
-  onNavigate,
-  to,
-}: {
-  basePath: string;
-  children: ReactNode;
-  onNavigate: (to: string) => void;
-  to: string;
-}) {
-  const navigateWithinOrganization = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
-  return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganization}>
-      {children}
-    </a>
-  );
+function OrganizationRouteLink({ children, to }: { children: ReactNode; to: string }) {
+  const legacyLinkProps = {
+    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+    activeProps: {
+      "aria-current": undefined,
+      className: undefined,
+      "data-status": undefined,
+    },
+    search: {},
+    to,
+  } as unknown as Parameters<typeof Link>[0];
+  return <Link {...legacyLinkProps}>{children}</Link>;
 }
 
 function organizationHref(basePath: string, organizationName: string) {
