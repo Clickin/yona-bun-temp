@@ -19,16 +19,6 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
-const LegacyInternalLink = Link as React.ComponentType<
-  React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeOptions?: { includeHash?: boolean };
-    activeProps?: { className?: string | undefined };
-    hash?: string;
-    search?: Record<string, never>;
-    to: string;
-  }
->;
-
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
 });
@@ -436,7 +426,7 @@ function PullRequestEventUser({
 function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
   return (
     <span className="date">
-      <LegacyInternalLink
+      <Link
         to="."
         hash={`event-${event.id}`}
         activeOptions={{ includeHash: true }}
@@ -444,7 +434,7 @@ function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
         title={event.createdLabel}
       >
         {event.createdLabel}
-      </LegacyInternalLink>
+      </Link>
     </span>
   );
 }
@@ -624,32 +614,31 @@ export function PullRequestHeader({
 
       <ul className="nav nav-tabs nm">
         <li className={activeTab === "overview" ? "active" : undefined}>
-          {activeTab === "overview" ? (
-            <a href={prefixBasePath(runtimeConfig.basePath, prPath)}>
-              {t("pullRequest.menu.overview")}
-            </a>
-          ) : (
-            <LegacyInternalLink activeProps={{ className: undefined }} search={{}} to={prPath}>
-              {t("pullRequest.menu.overview")}
-            </LegacyInternalLink>
-          )}
+          <Link
+            to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+            params={{
+              ownerName: pullRequest.ownerName,
+              projectName: pullRequest.projectName,
+              pullRequestNumber: String(pullRequest.pullRequestNumber),
+            }}
+            activeProps={{ className: undefined }}
+          >
+            {t("pullRequest.menu.overview")}
+          </Link>
         </li>
         <li className={activeTab === "changes" ? "active" : undefined}>
-          {activeTab === "changes" ? (
-            <a href={prefixBasePath(runtimeConfig.basePath, `${prPath}/changes`)}>
-              {t("pullRequest.menu.changes")}
-              {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
-            </a>
-          ) : (
-            <LegacyInternalLink
-              activeProps={{ className: undefined }}
-              search={{}}
-              to={`${prPath}/changes`}
-            >
-              {t("pullRequest.menu.changes")}
-              {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
-            </LegacyInternalLink>
-          )}
+          <Link
+            to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
+            params={{
+              ownerName: pullRequest.ownerName,
+              projectName: pullRequest.projectName,
+              pullRequestNumber: String(pullRequest.pullRequestNumber),
+            }}
+            activeProps={{ className: undefined }}
+          >
+            {t("pullRequest.menu.changes")}
+            {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
+          </Link>
         </li>
       </ul>
     </>

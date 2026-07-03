@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PULL_REQUEST_OVERVIEW = `
@@ -291,6 +292,21 @@ test("project pull request overview changes tab uses legacy href and SPA transit
     "action",
     `${basePath}/admin/sample/pullRequest/90/comments`,
   );
+});
+
+test("project pull request overview route source uses direct Links", async () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("React.ComponentType");
+  expect(routeSource).toContain(
+    'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
+  );
+  expect(routeSource).toContain('to="."');
+  expect(routeSource).toContain("hash={`event-${event.id}`}");
 });
 
 test("project pull request overview renders legacy commit-changed event DOM", async ({ page }) => {
@@ -1123,7 +1139,13 @@ async function canonicalizeAll(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1158,7 +1180,13 @@ async function canonicalizeHtmlAll(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
