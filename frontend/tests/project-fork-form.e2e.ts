@@ -59,6 +59,38 @@ test("project fork owner route renders legacy existing-fork state", async ({ pag
   );
 });
 
+test("project fork owner select navigates by legacy data-url without full reload", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let forkOptionsRequests = 0;
+  await mockProjectAdmin(page, {
+    forkOptionsResponse: () =>
+      forkOptionsRequests++ === 0 ? projectForkOptions() : existingProjectForkOptions(),
+  });
+
+  await page.goto(`${basePath}/admin/sample/newFork`);
+  await expect(page.locator("#project-owner")).toHaveValue("admin");
+  const devsOption = page.locator("#project-owner option[value=devs]");
+  await expect(devsOption).toHaveAttribute("data-url", `${basePath}/admin/sample/newFork/devs`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+
+  await page.selectOption("#project-owner", "devs");
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newFork/devs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(page.locator("#project-owner")).toHaveValue("devs");
+  await expect(page.locator("#helpMessage")).toContainText("Same forked project already exists.");
+});
+
 test("project fork submit renders legacy git/clone.scala.html progress state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
@@ -91,7 +123,7 @@ test("project fork submit renders legacy git/clone.scala.html progress state", a
     legendMarginBottom: "20px",
     legendText: "Forking admin / sample project into admin / sample-fork project",
     outerMinHeight: "450px",
-    projectWrapMarginTop: "5px",
+    projectWrapMarginTop: "20px",
   });
 });
 
@@ -195,42 +227,7 @@ async function mockProjectAdminWithExistingFork(page: Page) {
   await page.route("**/api/v1/owners/admin/projects/sample/fork-options", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        canFork: true,
-        existingForks: [{ ownerName: "devs", projectName: "sample" }],
-        ownerOptions: [
-          { organization: false, ownerName: "admin", selected: false },
-          { organization: true, ownerName: "devs", selected: true },
-        ],
-        selected: {
-          ownerName: "devs",
-          projectName: "sample",
-          projectScope: "PUBLIC",
-        },
-        source: {
-          backgroundImageUrl: "/assets/images/bg-default-project.png",
-          enrollmentRequestCount: 0,
-          id: 7,
-          isFavorite: false,
-          isForkedFromOrigin: false,
-          isPrivate: false,
-          isProtected: false,
-          logoUrl: "/assets/images/project_default_logo.png",
-          menuSetting: {
-            board: true,
-            code: true,
-            issue: true,
-            milestone: true,
-            pullRequest: true,
-            review: true,
-          },
-          ownerName: "admin",
-          projectName: "sample",
-          projectScope: "PUBLIC",
-          vcs: "GIT",
-          viewerCanUpdate: true,
-        },
-      }),
+      body: JSON.stringify(existingProjectForkOptions()),
     });
   });
 }
@@ -240,6 +237,7 @@ async function mockProjectAdmin(
   options: {
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
+    forkOptionsResponse?: () => unknown;
     source?: Partial<ReturnType<typeof sourceProject>>;
   } = {},
 ) {
@@ -276,20 +274,7 @@ async function mockProjectAdmin(
   await page.route("**/api/v1/owners/admin/projects/sample/fork-options", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        canFork: true,
-        existingForks: [],
-        ownerOptions: [
-          { organization: false, ownerName: "admin", selected: true },
-          { organization: true, ownerName: "devs", selected: false },
-        ],
-        selected: {
-          ownerName: "admin",
-          projectName: "sample",
-          projectScope: "PUBLIC",
-        },
-        source: { ...sourceProject(), ...options.source },
-      }),
+      body: JSON.stringify(options.forkOptionsResponse?.() ?? projectForkOptions(options.source)),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
@@ -303,6 +288,39 @@ async function mockProjectAdmin(
       body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
+}
+
+function projectForkOptions(source: Partial<ReturnType<typeof sourceProject>> = {}) {
+  return {
+    canFork: true,
+    existingForks: [],
+    ownerOptions: [
+      { organization: false, ownerName: "admin", selected: true },
+      { organization: true, ownerName: "devs", selected: false },
+    ],
+    selected: {
+      ownerName: "admin",
+      projectName: "sample",
+      projectScope: "PUBLIC",
+    },
+    source: { ...sourceProject(), ...source },
+  };
+}
+
+function existingProjectForkOptions() {
+  return {
+    ...projectForkOptions(),
+    existingForks: [{ ownerName: "devs", projectName: "sample" }],
+    ownerOptions: [
+      { organization: false, ownerName: "admin", selected: false },
+      { organization: true, ownerName: "devs", selected: true },
+    ],
+    selected: {
+      ownerName: "devs",
+      projectName: "sample",
+      projectScope: "PUBLIC",
+    },
+  };
 }
 
 function sourceProject() {
@@ -349,7 +367,7 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => !isModernizedTanStackRouterAttr(attr) && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -369,6 +387,14 @@ async function canonicalizeScreenRoots(page: Page) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
     }
   });
 }
@@ -385,7 +411,7 @@ async function canonicalizePageWrap(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => !isModernizedTanStackRouterAttr(attr) && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -405,6 +431,14 @@ async function canonicalizePageWrap(page: Page) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
     }
   });
 }
@@ -459,7 +493,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => !isModernizedTanStackRouterAttr(attr) && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -479,6 +513,14 @@ async function canonicalizeHtml(page: Page, html: string) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
     }
   }, html);
 }

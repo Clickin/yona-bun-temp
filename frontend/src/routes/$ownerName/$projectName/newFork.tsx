@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
   readProjectForkOptionsQueryOptions,
@@ -179,6 +179,17 @@ function ProjectForkBody({
     });
   }
 
+  function onChangeOwner(event: ChangeEvent<HTMLSelectElement>) {
+    const url = event.currentTarget.selectedOptions.item(0)?.dataset.url;
+    if (!url) {
+      return;
+    }
+    queryClient.invalidateQueries({
+      queryKey: apiQueryKeys.project.forkOptions(ownerName, projectName),
+    });
+    router.history.push(url);
+  }
+
   if (cloneProgress) {
     return <ProjectForkCloneProgress progress={cloneProgress} />;
   }
@@ -246,7 +257,12 @@ function ProjectForkBody({
                   {t("project.owner")}
                 </label>
                 <div className="controls">
-                  <select id="project-owner" name="owner" {...selectedOwnerProps}>
+                  <select
+                    id="project-owner"
+                    name="owner"
+                    onChange={onChangeOwner}
+                    {...selectedOwnerProps}
+                  >
                     {options.ownerOptions.map((ownerOption) => {
                       const optionOwnerName = stringField(ownerOption.ownerName, "");
                       return (
