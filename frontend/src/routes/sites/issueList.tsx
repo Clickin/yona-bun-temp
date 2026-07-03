@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType, ReactNode } from "react";
 import {
   siteIssuesQueryOptions,
   siteUpdateQueryOptions,
@@ -16,15 +15,6 @@ type IssueListSearch = {
   pageNum: number;
   state: SiteIssueState;
 };
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    children?: ReactNode;
-    search?: Record<string, number | string | undefined>;
-    to: string;
-  }
->;
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
@@ -122,7 +112,7 @@ function IssueListPagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage - 1, state }}
               to="/sites/issueList"
@@ -130,7 +120,7 @@ function IssueListPagination({
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -154,7 +144,7 @@ function IssueListPagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage + 1, state }}
               to="/sites/issueList"
@@ -162,7 +152,7 @@ function IssueListPagination({
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <span className="off">NEXT</span>
@@ -228,13 +218,9 @@ function IssueStateTab({ selected, state }: { selected: SiteIssueState; state: S
 
   return (
     <li className={selected === state ? "active" : ""}>
-      <LegacyInternalLink
-        activeProps={{ className: undefined }}
-        search={{ state }}
-        to="/sites/issueList"
-      >
+      <Link activeProps={{ className: undefined }} search={{ state }} to="/sites/issueList">
         {t(`issue.state.${state}`)}
-      </LegacyInternalLink>
+      </Link>
     </li>
   );
 }

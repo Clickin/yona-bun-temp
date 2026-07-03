@@ -180,6 +180,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(page.locator(".site-setting-nav li").nth(2)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
+  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveAttribute(
+    "href",
+    `${basePath}/sites/issueList?state=open`,
+  );
   const closedTab = page.getByRole("link", { exact: true, name: "Closed" });
   await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
@@ -287,6 +291,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-posts-nav");
 
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
+  expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
 });
 
