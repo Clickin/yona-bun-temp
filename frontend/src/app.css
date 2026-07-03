@@ -2474,7 +2474,9 @@ h1 {
 .nav-tabs > li > a,
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
-.codediff-wrap .review-container .nav-tabs > li > button {
+.codediff-wrap .review-container .nav-tabs > li > button,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button {
   display: block;
   padding: 8px 30px;
   margin-right: 2px;
@@ -2487,7 +2489,9 @@ h1 {
 
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
-.codediff-wrap .review-container .nav-tabs > li > button {
+.codediff-wrap .review-container .nav-tabs > li > button,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button {
   font: inherit;
   cursor: pointer;
   appearance: none;
@@ -2516,7 +2520,11 @@ h1 {
 .issue-list-wrap .nav-tabs.nm > li > button:hover,
 .issue-list-wrap .nav-tabs.nm > li > button:focus,
 .codediff-wrap .review-container .nav-tabs > li > button:hover,
-.codediff-wrap .review-container .nav-tabs > li > button:focus {
+.codediff-wrap .review-container .nav-tabs > li > button:focus,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li > button:hover,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li > button:focus,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:focus {
   border-color: #eee #eee #ddd;
   text-decoration: none;
   background-color: #f2f2f2;
@@ -2540,7 +2548,13 @@ h1 {
 .issue-list-wrap .nav-tabs.nm > li.active > button:focus,
 .codediff-wrap .review-container .nav-tabs > li.active > button,
 .codediff-wrap .review-container .nav-tabs > li.active > button:hover,
-.codediff-wrap .review-container .nav-tabs > li.active > button:focus {
+.codediff-wrap .review-container .nav-tabs > li.active > button:focus,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li.active > button,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li.active > button:hover,
+.content-wrap.frm-wrap form.nm > .nav-tabs > li.active > button:focus,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:hover,
+.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:focus {
   color: #555;
   cursor: default;
   background-color: #fff;

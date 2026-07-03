@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
+import { useState } from "react";
 import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import {
   createPullRequestRest,
@@ -174,14 +175,14 @@ function ProjectNewPullRequestBody({
             </div>
             <ul className="nav nav-tabs mt20">
               <li className="active">
-                <a href="#__commits" data-toggle="tab">
+                <button type="button" data-toggle="tab">
                   <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
                   <span id="numOfCommits" className="num-badge vmiddle-inline">
                     {mergeResultQuery.data?.commits.length
                       ? String(mergeResultQuery.data.commits.length)
                       : ""}
                   </span>
-                </a>
+                </button>
               </li>
             </ul>
             <div className="tab-content">
@@ -301,18 +302,29 @@ function PullRequestMarkdownEditor({
 }) {
   const { t } = useLegacyMessages();
   const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
-        <li className="active">
-          <a href="#edit-body" data-toggle="tab" data-mode="edit">
+        <li className={activeTab === "edit" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="edit"
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
-          </a>
+          </button>
         </li>
-        <li>
-          <a href="#preview-body" data-toggle="tab" data-mode="preview">
+        <li className={activeTab === "preview" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="preview"
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
-          </a>
+          </button>
         </li>
         <li>
           <div className="task-list-button">
@@ -346,7 +358,7 @@ function PullRequestMarkdownEditor({
           className="markdown-help"
           dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
         />
-        <div id="edit-body" className="tab-pane active">
+        <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               name="body"
@@ -359,7 +371,7 @@ function PullRequestMarkdownEditor({
             ></textarea>
           </div>
         </div>
-        <div id="preview-body" className="tab-pane">
+        <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
           <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
         </div>
         <div className="notification-receiver">
