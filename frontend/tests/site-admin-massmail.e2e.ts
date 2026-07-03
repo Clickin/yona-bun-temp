@@ -33,9 +33,9 @@ const EXPECTED_MASSMAIL_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -49,9 +49,9 @@ const EXPECTED_MASSMAIL_SCREEN = `
       <li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -131,6 +131,42 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   await page.goto(`${basePath}/sites/massmail`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
+  await expect(page.locator(".site-setting-nav a")).toHaveText([
+    "Users",
+    "Posts",
+    "Issues",
+    "Projects",
+    "Send email",
+    "Send mass emails",
+    "Software Update",
+    "Diagnostics",
+  ]);
+  await expect
+    .poll(() =>
+      page
+        .locator(".site-setting-nav a")
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+    )
+    .toEqual([
+      `${basePath}/sites/userList`,
+      `${basePath}/sites/postList`,
+      `${basePath}/sites/issueList`,
+      `${basePath}/sites/projectList`,
+      `${basePath}/sites/mail`,
+      `${basePath}/sites/massmail`,
+      `${basePath}/sites/update`,
+      `${basePath}/sites/diagnostic`,
+    ]);
+  await expect(page.locator(".site-setting-nav li")).toHaveClass([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "active",
+    "",
+    "",
+  ]);
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
   const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
@@ -240,6 +276,8 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
 
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("addEventListener");
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("to={item.href}");
 });
 
 test("site admin mass mail renders legacy update notification badge", async ({ page }) => {
