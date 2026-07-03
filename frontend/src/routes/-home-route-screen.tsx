@@ -465,6 +465,21 @@ export function SiteLayoutShell({
         `/${projectSearchScope.ownerName}/${projectSearchScope.projectName}/search`,
       )
     : null;
+  const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
+  const [selectedSearchScope, setSelectedSearchScope] = React.useState<"project" | "all">(
+    "project",
+  );
+  React.useEffect(() => {
+    setSelectedSearchScope("project");
+  }, [projectSearchAction]);
+  const gnbSearchAction =
+    projectSearchAction && selectedSearchScope === "project"
+      ? projectSearchAction
+      : allProjectsSearchAction;
+  const gnbSearchScopeTitle =
+    projectSearchAction && selectedSearchScope === "project"
+      ? t("search.scope.project")
+      : t("search.scope.all");
 
   return (
     <>
@@ -506,7 +521,7 @@ export function SiteLayoutShell({
             ) : null}
             <li>
               <form
-                action={projectSearchAction ?? prefixBasePath(runtimeConfig.basePath, "/search")}
+                action={gnbSearchAction}
                 className="input-prepend gnb-search-form"
                 name="gnb-search-form"
               >
@@ -519,24 +534,28 @@ export function SiteLayoutShell({
                       type="button"
                       id="gnb-search-scope-title"
                     >
-                      {t("search.scope.project")}
+                      {gnbSearchScopeTitle}
                     </button>
                     <ul className="dropdown-menu flat right">
                       <li>
-                        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy search scope options use href="#" plus data-action. */}
-                        <a href="#" data-toggle="search-scope" data-action={projectSearchAction}>
+                        <button
+                          type="button"
+                          data-toggle="search-scope"
+                          data-action={projectSearchAction}
+                          onClick={() => setSelectedSearchScope("project")}
+                        >
                           {t("search.scope.project")}
-                        </a>
+                        </button>
                       </li>
                       <li>
-                        {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy search scope options use href="#" plus data-action. */}
-                        <a
-                          href="#"
+                        <button
+                          type="button"
                           data-toggle="search-scope"
-                          data-action={prefixBasePath(runtimeConfig.basePath, "/search")}
+                          data-action={allProjectsSearchAction}
+                          onClick={() => setSelectedSearchScope("all")}
                         >
                           {t("search.scope.all")}
-                        </a>
+                        </button>
                       </li>
                     </ul>
                   </div>

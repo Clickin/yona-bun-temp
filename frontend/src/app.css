@@ -736,9 +736,23 @@ button[type="submit"]:focus {
   float: none;
 }
 
-.gnb-search-form .dropdown-menu > li > a {
+.gnb-search-form .dropdown-menu > li > a,
+.gnb-search-form .dropdown-menu > li > button {
+  display: block;
+  width: 100%;
   padding: 5px 10px;
   line-height: 20px;
+  color: #333;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+
+.gnb-search-form .dropdown-menu > li > button:hover,
+.gnb-search-form .dropdown-menu > li > button:focus {
+  color: #fff;
+  text-decoration: none;
+  background-color: #51aacc;
 }
 
 .gnb-search-form .search-box button {
@@ -2264,7 +2278,13 @@ h1 {
   word-break: break-all;
 }
 
-.content-container .main-stream .activity-streams .activity-stream .activity-desc .header-text .actor {
+.content-container
+  .main-stream
+  .activity-streams
+  .activity-stream
+  .activity-desc
+  .header-text
+  .actor {
   font-weight: bold;
 }
 
