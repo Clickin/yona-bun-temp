@@ -37,6 +37,7 @@ const LegacyInternalLink = Link as ComponentType<
   AnchorHTMLAttributes<HTMLAnchorElement> & {
     activeOptions?: { exact?: boolean; includeHash?: boolean };
     activeProps?: { className?: string | undefined };
+    hash?: string;
     to: string;
   }
 >;
@@ -834,12 +835,16 @@ function PostCommentRow({
             </a>
           </span>
           <span className="ago-date">
-            <a href={`#comment-${commentId}`} className="ago" title={comment.createdLabel}>
+            <CommentHashLink commentId={commentId} className="ago" title={comment.createdLabel}>
               {comment.createdLabel}
-            </a>
-            <a href={`#comment-${commentId}`} className="share-link" style={{ display: "none" }}>
+            </CommentHashLink>
+            <CommentHashLink
+              commentId={commentId}
+              className="share-link"
+              style={{ display: "none" }}
+            >
               [Link]
-            </a>
+            </CommentHashLink>
           </span>
           <span className="act-row pull-right">
             {canUpdate ? (
@@ -915,6 +920,21 @@ function PostCommentRow({
         projectName={projectName}
       />
     </li>
+  );
+}
+
+function CommentHashLink({
+  commentId,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { commentId: string }) {
+  return (
+    <LegacyInternalLink
+      {...props}
+      to="."
+      hash={`comment-${commentId}`}
+      activeOptions={{ includeHash: true }}
+      activeProps={{ className: undefined }}
+    />
   );
 }
 
