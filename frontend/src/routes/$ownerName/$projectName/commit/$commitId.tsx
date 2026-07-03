@@ -490,6 +490,7 @@ function SvnCommitDetailBody({
   const { commitId } = Route.useParams();
   const commit = detail.commit;
   const patch = detail.files[0]?.patch ?? "";
+  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
 
   return (
     <div className="page-wrap-outer">
@@ -497,11 +498,18 @@ function SvnCommitDetailBody({
         <div id="code-browse-wrap" className="code-browse-wrap">
           <div
             id="branches"
-            className="btn-group branches pull-right"
+            className={`btn-group branches pull-right${branchDropdownOpen ? " open" : ""}`}
             data-name="branch"
             data-activate="manual"
           >
-            <button className="btn dropdown-toggle large" data-toggle="dropdown">
+            <button
+              className="btn dropdown-toggle large"
+              data-toggle="dropdown"
+              onClick={(event) => {
+                event.stopPropagation();
+                setBranchDropdownOpen((isOpen) => !isOpen);
+              }}
+            >
               <span className="d-label">{selectedBranch || "HEAD"}</span>
               <span className="d-caret">
                 <span className="caret"></span>

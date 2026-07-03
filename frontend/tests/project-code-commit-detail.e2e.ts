@@ -956,6 +956,76 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
   );
 });
 
+test("project SVN commit detail branch dropdown uses route-local state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(
+    page,
+    detailRequests,
+    {
+      branches: [{ name: "trunk" }, { name: "branches/release" }],
+      files: [{ path: "README.md", patch: SVN_PATCH }],
+      selectedBranch: "trunk",
+    },
+    { vcs: "SVN" },
+  );
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=trunk`);
+  const branches = page.locator("#branches");
+  const toggle = branches.locator(".dropdown-toggle[data-toggle='dropdown']");
+  await expect(branches).toHaveClass("btn-group branches pull-right");
+  await expect(branches.locator(".d-label")).toHaveText("trunk");
+  await expect(branches.locator(".dropdown-menu li")).toHaveCount(2);
+  await expect(branches.locator("li").nth(0)).toHaveAttribute("data-value", "trunk");
+  await expect(branches.locator("li").nth(0)).toHaveAttribute("data-selected", "true");
+  await expect(branches.locator("li").nth(0).locator("a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/trunk`,
+  );
+  await expect(branches.locator("li").nth(1)).toHaveAttribute("data-value", "branches/release");
+  await expect(branches.locator("li").nth(1).locator("a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/branches%2Frelease`,
+  );
+
+  await page.evaluate(() => {
+    const testWindow = window as Window &
+      typeof globalThis & {
+        __yonaBranchDropdownDocumentBubble?: boolean;
+        __yonaSpaMarker?: string;
+      };
+    testWindow.__yonaSpaMarker = "commit-branch-dropdown";
+    testWindow.__yonaBranchDropdownDocumentBubble = false;
+    document.addEventListener(
+      "click",
+      (event) => {
+        if ((event.target as Element | null)?.closest?.("#branches .dropdown-toggle")) {
+          testWindow.__yonaBranchDropdownDocumentBubble = true;
+        }
+      },
+      { once: true },
+    );
+  });
+  const urlBeforeOpen = page.url();
+
+  await toggle.click();
+  await expect(branches).toHaveClass("btn-group branches pull-right open");
+  expect(page.url()).toBe(urlBeforeOpen);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-branch-dropdown");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __yonaBranchDropdownDocumentBubble?: boolean })
+          .__yonaBranchDropdownDocumentBubble,
+    ),
+  ).toBe(false);
+  expect(detailRequests).toEqual(["branch=trunk"]);
+});
+
 async function readCommitDiffShellMetrics(page: Page) {
   return page.evaluate(() => {
     const codediff = document.querySelector<HTMLElement>(".codediff-wrap");
