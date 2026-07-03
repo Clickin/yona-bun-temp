@@ -16,8 +16,9 @@ const SCALA_HTML_SOURCE_PATTERN =
   /\b(?:yona-original\/app\/views\/)?([A-Za-z0-9_.$/-]+\.scala\.html)\b/gu;
 const LEGACY_VIEW_ROOT = "yona-original/app/views";
 const ADDED_REACT_DOM_ESCAPE_PATTERN =
-  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|window\.location|<script\b|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:addEventListener|removeEventListener|classList|style)\b|\.(?:html|append|prepend|before|after)\s*\()/imu;
-const ADDED_ANCHOR_TAG_PATTERN = /^\+(?!\+\+).*<a\b/imu;
+  /^\+(?!\+\+).*(?:\$\s*\(|jQuery\s*\(|window\.\$|window\.location|<script\b|(?:React\.)?createElement\s*\(\s*["'](?:script|style)["']|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.(?:querySelector|getElementById|getElementsByClassName|getElementsByTagName)|\.(?:addEventListener|removeEventListener|classList|style)\b|\.(?:setAttribute|removeAttribute|toggleAttribute|html|append|prepend|before|after)\s*\()/imu;
+const ADDED_ANCHOR_TAG_PATTERN =
+  /^\+(?!\+\+).*(?:<a\b|(?:React\.)?createElement\s*\(\s*["']a["'])/imu;
 const ADDED_LINK_CUSTOM_ATTRIBUTE_PATTERN =
   /^\+(?!\+\+).*<Link\b(?=[^>]*(?:data-(?:url|type|action|href)|pjax-[\w-]*|data-request-(?:method|uri)|data-toggle=))/imu;
 

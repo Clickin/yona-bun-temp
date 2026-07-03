@@ -211,6 +211,81 @@ test("blocks frontend route TSX work that adds raw anchor tags", () => {
   assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Query useMutation/u);
 });
 
+test("blocks frontend route TSX work that creates anchor tags through createElement", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  return createElement("a", { href: `/admin/sample/pullRequests` }, "Open");\n' +
+          "+  return React.createElement('a', { href: '#', onClick: handleClick }, 'Open');\n",
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /anchor tag work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /TanStack Router Link/u);
+});
+
+test("blocks frontend route TSX work that creates script or style tags through createElement", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/issues.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/issues` | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  return createElement("script", { dangerouslySetInnerHTML: { __html: legacyScript } });\n' +
+          "+  return React.createElement('style', null, '.filter { display: none }');\n",
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /legacy jQuery\/DOM escape work/u);
+});
+
+test("blocks frontend route TSX work that mutates DOM attributes through refs", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [
+        routeFile,
+        '+  ref.current?.setAttribute("href", `/admin/sample/pullRequests`);\n' +
+          '+  ref.current?.removeAttribute("data-toggle");\n' +
+          '+  ref.current?.toggleAttribute("hidden", true);\n',
+      ],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /legacy jQuery\/DOM escape work/u);
+  assert.match(formatScalaHtmlGoalGuardSummary(result), /direct DOM mutation/u);
+});
+
 test("blocks frontend route TSX work that adds direct window navigation", () => {
   const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
   const result = evaluateScalaHtmlGoalGuard({
@@ -265,6 +340,25 @@ test("allows frontend route TSX work that uses Link href for external navigation
       "+| 2026-07-02 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
     routePatches: new Map([
       [routeFile, '+  return <Link href="https://example.com/docs">Docs</Link>;\n'],
+    ]),
+    env: {},
+  });
+
+  assert.equal(result.blocked, false);
+});
+
+test("allows frontend route TSX work that uses createElement for React components", () => {
+  const routeFile = "frontend/src/routes/$ownerName/$projectName/pullRequests.tsx";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      routeFile,
+      "frontend/tests/project-pullrequests.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-03 | `/admin/sample/pullRequests` | `git/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/pullRequests.tsx` rebuild | `frontend/tests/project-pullrequests.e2e.ts` E2E |\n",
+    routePatches: new Map([
+      [routeFile, "+  return createElement(ProjectPullRequestList, { items: pullRequests });\n"],
     ]),
     env: {},
   });
