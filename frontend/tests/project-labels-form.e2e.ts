@@ -60,12 +60,12 @@ const EXPECTED_PROJECT_LABELS = `
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
       <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
-      <li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -114,21 +114,36 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     pageWrapMinWidth: "1100px",
     presetColorHeight: "24px",
     presetColorWidth: "auto",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
     tabsMarginBottom: "15px",
   });
 });
 
-test("project labels menu settings link preserves legacy href with SPA transition", async ({
+test("project labels settings-tab links preserve legacy hrefs with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installSettingsTabAnchorNativeListenerAudit(page);
   await mockProjectLabels(page);
 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+  const settingsTabs = page.locator(".project-page-wrap > .nav.nav-tabs a");
+  await expect(settingsTabs).toHaveCount(7);
+  expect(
+    await settingsTabs.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/admin/sample/setting`,
+    `${basePath}/admin/sample/members`,
+    `${basePath}/admin/sample/issue/labelsform`,
+    `${basePath}/admin/sample/webhooks`,
+    `${basePath}/admin/sample/transfer`,
+    `${basePath}/admin/sample/deleteform`,
+    `${basePath}/admin/sample/changeVCS`,
+  ]);
+  await expect.poll(() => settingsTabAnchorNativeListeners(page)).toEqual([]);
+
   const settingsLink = page.locator("#subMenuProjectSetting a");
-  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -298,6 +313,35 @@ async function installFavoriteSpanNativeListenerAudit(page: Page) {
       return originalAddEventListener.call(this, type, listener, options);
     };
   });
+}
+
+async function installSettingsTabAnchorNativeListenerAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const settingsTabListeners: string[] = [];
+    Object.defineProperty(window, "__yonaSettingsTabAnchorNativeListeners", {
+      configurable: true,
+      value: settingsTabListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithSettingsTabAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-page-wrap > .nav.nav-tabs a")) {
+        settingsTabListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function settingsTabAnchorNativeListeners(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaSettingsTabAnchorNativeListeners?: string[] })
+        .__yonaSettingsTabAnchorNativeListeners ?? [],
+  );
 }
 
 async function favoriteSpanNativeListeners(page: Page) {

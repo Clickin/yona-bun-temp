@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type AnchorHTMLAttributes, type ComponentType, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   copyProjectLabelsRest,
   createProjectLabelRest,
@@ -17,13 +17,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    to: string;
-  }
->;
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -786,47 +779,48 @@ function ProjectSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/setting`}>
+        <Link to="/$ownerName/$projectName/setting" params={{ ownerName, projectName }}>
           {t("project.setting")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuProjectMember" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/members`}>
+        <Link to="/$ownerName/$projectName/members" params={{ ownerName, projectName }}>
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuIssueLabel" className={active === "labels" ? "active" : ""}>
-        <LegacyInternalLink
+        <Link
           activeProps={{ className: undefined }}
-          to={`/${ownerName}/${projectName}/issue/labelsform`}
+          to="/$ownerName/$projectName/issue/labelsform"
+          params={{ ownerName, projectName }}
         >
           {t("issue.label")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuWebhook" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/webhooks`}>
+        <Link to="/$ownerName/$projectName/webhooks" params={{ ownerName, projectName }}>
           {t("project.webhook")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/transfer`}>
+        <Link to="/$ownerName/$projectName/transfer" params={{ ownerName, projectName }}>
           {t("project.transfer")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuProjectDelete" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/deleteform`}>
+        <Link to="/$ownerName/$projectName/deleteform" params={{ ownerName, projectName }}>
           {t("project.delete")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li
         id="subMenuProjectChangeVCS"
         className=""
         style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
       >
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/changeVCS`}>
+        <Link to="/$ownerName/$projectName/changeVCS" params={{ ownerName, projectName }}>
           {t("project.changeVCS")}
-        </LegacyInternalLink>
+        </Link>
       </li>
     </ul>
   );
