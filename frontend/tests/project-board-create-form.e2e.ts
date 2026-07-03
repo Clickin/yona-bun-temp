@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_CREATE_FORM_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/posts" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dd><input type="text" id="title" autocomplete="off" name="title" class="zen-mode text title " maxlength="250" tabindex="1" value="" placeholder="Title"></dd><dd></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="right-txt mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><input type="hidden" id="issueTemplate" name="issueTemplate" value=""><input type="hidden" id="branch" name="branch" value=""><input type="hidden" id="path" name="path" value=""><input type="hidden" id="lineEnding" name="lineEnding" value=""></div><div class="actions"><button class="ybtn ybtn-success" tabindex="3">Save</button><a href="javascript:history.back();" class="ybtn" tabindex="4">Cancel</a></div></div></form></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/posts" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dd><input type="text" id="title" autocomplete="off" name="title" class="zen-mode text title " maxlength="250" tabindex="1" value="" placeholder="Title"></dd><dd></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="right-txt mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><input type="hidden" id="issueTemplate" name="issueTemplate" value=""><input type="hidden" id="branch" name="branch" value=""><input type="hidden" id="path" name="path" value=""><input type="hidden" id="lineEnding" name="lineEnding" value=""></div><div class="actions"><button class="ybtn ybtn-success" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -74,6 +74,30 @@ test("project board create form matches legacy board/create.scala.html core form
     uploadPadding: "10px 20px",
   });
 
+  await expect(page.locator('.actions a[href^="javascript:"]')).toHaveCount(0);
+  const cancelButton = page.locator(".actions button.ybtn", { hasText: "Cancel" });
+  await expect(cancelButton).toHaveAttribute("type", "button");
+  await expect(cancelButton).toHaveAttribute("class", "ybtn");
+  await expect(cancelButton).toHaveAttribute("tabindex", "4");
+  await expect(cancelButton).toHaveText("Cancel");
+
+  await page.evaluate((url) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+    window.history.pushState({ cancelTest: true }, "", url);
+  }, `${basePath}/admin/sample/postform?cancel-test=1`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform?cancel-test=1`);
+  await cancelButton.click();
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/postform?branch=&edit=false&issueTemplate=false&path=&readme=false`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
   await page.fill("#title", "Board draft");
   await page.fill("#editor-body-body", "Body **markdown**");
   await page.check("#notice");
@@ -82,7 +106,7 @@ test("project board create form matches legacy board/create.scala.html core form
       response.url().includes("/api/v1/projects/admin/sample/posts") &&
       response.request().method() === "POST",
   );
-  await page.click("form.nm .actions button");
+  await page.click("form.nm .actions .ybtn-success");
   await postResponsePromise;
   expect(postRequests).toEqual([
     {
