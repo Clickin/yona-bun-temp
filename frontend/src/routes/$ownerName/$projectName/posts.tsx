@@ -539,9 +539,14 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
-      <a href="#helpKeys" data-toggle="modal" className="ybtn ybtn-inverse ybtn-mini">
+      <button
+        type="button"
+        data-toggle="modal"
+        data-target="#helpKeys"
+        className="ybtn ybtn-inverse ybtn-mini"
+      >
         {t("title.keymap")}
-      </a>
+      </button>
       <div id="helpKeys" className="modal hide fade keymap-help" tabIndex={-1} role="dialog">
         <div className="row-fluid">
           <div className="span3">
