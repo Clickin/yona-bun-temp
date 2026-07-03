@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import type { FormEvent, MouseEvent, ReactNode } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { FormEvent } from "react";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationDetail } from "../../../api/types";
@@ -214,7 +214,6 @@ function OrganizationHeader({
 }
 
 function OrganizationMenu({
-  basePath,
   organizationName,
   viewerCanUpdate,
 }: {
@@ -223,64 +222,75 @@ function OrganizationMenu({
   viewerCanUpdate: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.history.push(prefixBasePath(basePath, to));
-  };
 
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <OrganizationMenuLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: {},
+                to: `/organizations/${organizationName}`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("title.organizationHome")}
-            </OrganizationMenuLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationMenuLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/issues`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/issues`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("menu.issue")}
-            </OrganizationMenuLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationMenuLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/boards`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/boards`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("menu.board")}
-            </OrganizationMenuLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationMenuLink
-              basePath={basePath}
-              onNavigate={navigate}
-              to={`/organizations/${organizationName}/pullrequests`}
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/pullrequests`,
+              } as unknown as Parameters<typeof Link>[0])}
             >
               {t("menu.pullRequest")}
-            </OrganizationMenuLink>
+            </Link>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationMenuLink
-                  basePath={basePath}
-                  onNavigate={navigate}
-                  to={`/organizations/${organizationName}/settingform`}
+                <Link
+                  {...({
+                    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                    activeProps: {
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    },
+                    search: () => undefined,
+                    to: `/organizations/${organizationName}/settingform`,
+                  } as unknown as Parameters<typeof Link>[0])}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </OrganizationMenuLink>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -290,43 +300,8 @@ function OrganizationMenu({
   );
 }
 
-function OrganizationMenuLink({
-  basePath,
-  children,
-  onNavigate,
-  to,
-}: {
-  basePath: string;
-  children: ReactNode;
-  onNavigate: (to: string) => void;
-  to: string;
-}) {
-  const navigateWithinOrganizationMenu = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
-  return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganizationMenu}>
-      {children}
-    </a>
-  );
-}
-
 function OrganizationSettingMenu({
   active,
-  basePath,
   organizationName,
 }: {
   active: "setting";
@@ -334,75 +309,48 @@ function OrganizationSettingMenu({
   organizationName: string;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const navigate = (to: string) => {
-    router.navigate({ to });
-  };
 
   return (
     <ul className="nav nav-tabs">
       <li className={active === "setting" ? "active" : ""}>
-        <OrganizationSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/settingform`}
+        <Link
+          {...({
+            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+            activeProps: {
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            },
+            search: () => undefined,
+            to: `/organizations/${organizationName}/settingform`,
+          } as unknown as Parameters<typeof Link>[0])}
         >
           {t("organization.settingFrom")}
-        </OrganizationSettingLink>
+        </Link>
       </li>
       <li className="">
-        <OrganizationSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/members`}
+        <Link
+          {...({
+            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+            search: {},
+            to: `/organizations/${organizationName}/members`,
+          } as unknown as Parameters<typeof Link>[0])}
         >
           {t("organization.member")}
-        </OrganizationSettingLink>
+        </Link>
       </li>
       <li className="">
-        <OrganizationSettingLink
-          basePath={basePath}
-          onNavigate={navigate}
-          to={`/organizations/${organizationName}/deleteForm`}
+        <Link
+          {...({
+            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+            search: {},
+            to: `/organizations/${organizationName}/deleteForm`,
+          } as unknown as Parameters<typeof Link>[0])}
         >
           {t("organization.delete")}
-        </OrganizationSettingLink>
+        </Link>
       </li>
     </ul>
-  );
-}
-
-function OrganizationSettingLink({
-  basePath,
-  children,
-  onNavigate,
-  to,
-}: {
-  basePath: string;
-  children: ReactNode;
-  onNavigate: (to: string) => void;
-  to: string;
-}) {
-  const navigateWithinOrganizationSettings = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    onNavigate(to);
-  };
-
-  return (
-    <a href={prefixBasePath(basePath, to)} onClick={navigateWithinOrganizationSettings}>
-      {children}
-    </a>
   );
 }
 

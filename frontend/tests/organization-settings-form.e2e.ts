@@ -207,6 +207,49 @@ test("organization settings form keeps legacy setting.scala.html layout metrics"
   expect(metrics.saveButton.height).toBeGreaterThanOrEqual(30);
 });
 
+test("organization settings navigation anchors keep legacy hrefs without route-local native listeners", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installOrganizationSettingsNativeLinkAudit(page);
+  await mockOrganizationSettings(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+
+  await expect(page.locator(".project-menu-gruop a")).toHaveCount(4);
+  await expect(page.locator(".project-menu-gruop a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/issues`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/pullrequests`,
+  );
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(3);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/members`,
+  );
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/deleteForm`,
+  );
+  expect(await readOrganizationSettingsNativeLinkAudit(page)).toEqual([]);
+});
+
 test("organization settings menu members link preserves legacy href with SPA transition", async ({
   page,
 }) => {
@@ -289,6 +332,40 @@ test("organization settings menu board link preserves legacy href with SPA trans
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
   await expect(page.locator("#option_form")).toBeVisible();
 });
+
+async function installOrganizationSettingsNativeLinkAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__organizationSettingsNativeLinkListeners", {
+      configurable: true,
+      value: [],
+      writable: true,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithOrganizationSettingsAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this.matches(".project-menu-gruop a, .project-page-wrap > .nav.nav-tabs a")) {
+        (
+          window as Window &
+            typeof globalThis & { __organizationSettingsNativeLinkListeners: string[] }
+        ).__organizationSettingsNativeLinkListeners.push(`${this.className}:${String(type)}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readOrganizationSettingsNativeLinkAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __organizationSettingsNativeLinkListeners?: string[] }
+      ).__organizationSettingsNativeLinkListeners ?? [],
+  );
+}
 
 async function organizationSettingsMetrics(page: Page) {
   return page.evaluate(() => {
