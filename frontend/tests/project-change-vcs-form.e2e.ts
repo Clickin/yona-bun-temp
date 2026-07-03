@@ -18,7 +18,7 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer">
   <div class="project-page-wrap">
@@ -190,22 +190,30 @@ test("project change-VCS header favorite star posts and toggles starred class", 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installFavoriteSpanNativeListenerAudit(page);
   await mockProjectAdmin(page, { favoriteRequests });
 
   await page.goto(`${basePath}/admin/sample/changeVCS`);
-  const favoriteStar = page.locator(".project-breadcrumb .user-project-list i");
+  const favoriteToggle = page.locator(".project-breadcrumb .user-project-list");
+  const favoriteStar = favoriteToggle.locator("i");
+  await expect(favoriteToggle).toHaveAttribute("data-project-id", "7");
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)star(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)material-icons(?:\s|$)/);
+  await expect(favoriteStar).toHaveClass(/(?:^|\s)va-text-top(?:\s|$)/);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 
   const favoriteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await favoriteToggle.dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).toHaveClass(/starred/);
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 test("project change-VCS header favorite star removes starred class when unfavorited", async ({
@@ -228,11 +236,27 @@ test("project change-VCS header favorite star removes starred class when unfavor
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").click();
+  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(favoriteStar).not.toHaveClass(/starred/);
+});
+
+test("project change-VCS header favorite star has no route-local native listener", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installFavoriteSpanNativeListenerAudit(page);
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+
+  await expect(page.locator(".project-breadcrumb .user-project-list")).toHaveAttribute(
+    "data-project-id",
+    "7",
+  );
+  await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
 async function readDesktopChangeVcsMetrics(page: Page) {
@@ -430,6 +454,35 @@ async function readChangeVcsNativeListenerAudit(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __changeVcsNativeListenerAudit?: string[] })
         .__changeVcsNativeListenerAudit ?? [],
+  );
+}
+
+async function installFavoriteSpanNativeListenerAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const favoriteListeners: string[] = [];
+    Object.defineProperty(window, "__yonaFavoriteSpanNativeListeners", {
+      configurable: true,
+      value: favoriteListeners,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithFavoriteAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this instanceof Element && this.matches(".project-breadcrumb .user-project-list")) {
+        favoriteListeners.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function favoriteSpanNativeListeners(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
+        .__yonaFavoriteSpanNativeListeners ?? [],
   );
 }
 
