@@ -353,33 +353,26 @@ test("global project search renders legacy partial_projects.scala.html populated
   );
 });
 
-test("global search category menu keeps legacy anchors and uses React SPA navigation", async ({
-  page,
-}) => {
+test("global search category link uses React SPA navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockGlobalSearch(page);
 
-  await page.goto(`${basePath}/search?keyword=missing&searchType=issue`);
-  const issueCategory = page.locator('.search-category-wrap a[data-type="issue"]');
-  await expect(issueCategory).toHaveAttribute("href", "#");
-  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
-  await expect(issueCategory).toHaveAttribute("data-type", "issue");
-  await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
-
-  const userCategory = page.locator('.search-category-wrap a[data-type="user"]');
-  await expect(userCategory).toHaveAttribute("href", "#");
-  await expect(userCategory).toHaveAttribute("data-toggle", "search-category");
-  await expect(userCategory).toHaveAttribute("data-type", "user");
+  await page.goto(`${basePath}/search?keyword=missing&searchType=project`);
+  const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
+  const issueCategoryHref = new URL((await issueCategory.getAttribute("href")) ?? "", page.url());
+  expect(issueCategoryHref.pathname).toBe(`${basePath}/search`);
+  expect(issueCategoryHref.searchParams.get("keyword")).toBe("missing");
+  expect(issueCategoryHref.searchParams.get("searchType")).toBe("issue");
+  await page.locator("#searchKeyword").fill("fresh");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
-  await userCategory.click();
+  await issueCategory.click();
 
-  const origin = await page.evaluate(() => window.location.origin);
-  await expect(page).toHaveURL(
-    `${origin}${basePath}/search?keyword=missing&pageNum=1&searchType=user`,
-  );
+  await expect(page).toHaveURL(new RegExp(`${basePath}/search\\?`));
+  expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");
+  expect(new URL(page.url()).searchParams.get("searchType")).toBe("issue");
   await expect
     .poll(() =>
       page.evaluate(
@@ -387,9 +380,9 @@ test("global search category menu keeps legacy anchors and uses React SPA naviga
       ),
     )
     .toBe("kept");
-  await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("user");
-  await expect(page.locator("#searchKeyword")).toHaveValue("missing");
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Users0");
+  await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
+  await expect(page.locator("#searchKeyword")).toHaveValue("fresh");
+  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues0");
 });
 
 test("global search without required query renders legacy badrequest_default.scala.html shell", async ({
