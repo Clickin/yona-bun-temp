@@ -445,9 +445,8 @@ function ProjectBoardPost({
           </a>
         </span>
         {post.labels.map((label) => (
-          // oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy board labels render inert filter anchors.
-          <a
-            href="#"
+          <button
+            type="button"
             className="label issue-label list-label active"
             data-category-id={label.categoryId}
             data-label-id={label.id}
@@ -455,7 +454,7 @@ function ProjectBoardPost({
             style={issueLabelStyle(label.color)}
           >
             {label.name}
-          </a>
+          </button>
         ))}
       </div>
     </li>
@@ -611,16 +610,13 @@ function boardListHref(
   projectName: string,
   search: ProjectPostsSearch,
 ) {
-  const query = new URLSearchParams();
-  query.set("pageNum", String(search.pageNum));
+  const queryEntries: [string, string][] = [["pageNum", String(search.pageNum)]];
   if (search.filter) {
-    query.set("filter", search.filter);
+    queryEntries.push(["filter", search.filter]);
   }
-  for (const labelId of search.labelIds) {
-    query.append("labelIds", labelId);
-  }
-  query.set("orderBy", search.orderBy);
-  query.set("orderDir", search.orderDir);
+  queryEntries.push(...search.labelIds.map((labelId): [string, string] => ["labelIds", labelId]));
+  queryEntries.push(["orderBy", search.orderBy], ["orderDir", search.orderDir]);
+  const query = new URLSearchParams(queryEntries);
   return `${projectPostsHref(basePath, ownerName, projectName)}?${query.toString()}`;
 }
 

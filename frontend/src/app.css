@@ -1402,6 +1402,12 @@ pre code {
   font-weight: normal;
 }
 
+.post-list-wrap .infos > button.issue-label.list-label {
+  font-family: inherit;
+  cursor: pointer;
+  border: 0;
+}
+
 .issue-label.active {
   border-radius: 1px;
 }
