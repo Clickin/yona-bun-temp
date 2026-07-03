@@ -462,6 +462,7 @@ function ReadmePane({
   const { t } = useLegacyMessages();
   const projectRecord = recordField(project);
   const readmeFile = recordField(projectRecord.readmeFile);
+  const hasReadmeFile = projectRecord.readmeFile != null;
   const readmeBody = stringField(readmeFile.bodyMarkdown, "");
   const readmeName = stringField(readmeFile.name, "");
   const canCreateReadme =
@@ -471,7 +472,7 @@ function ReadmePane({
 
   return (
     <div className="bubble-wrap gray readme">
-      {readmeBody ? (
+      {hasReadmeFile ? (
         <div className="readme-wrap">
           <header>
             <i className="yobicon-book-open vmiddle"></i>

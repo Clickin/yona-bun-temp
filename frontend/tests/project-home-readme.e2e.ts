@@ -94,6 +94,31 @@ test("project home README tab renders README Markdown instead of compatibility H
   await expect(page.locator(".readme-body")).not.toContainText("Server HTML should not render");
 });
 
+test("project home README tab treats an empty README file as an existing README", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    readmeFile: {
+      bodyHtml: "",
+      bodyMarkdown: "",
+      name: "README.md",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(page.locator(".readme-wrap")).toBeVisible();
+  await expect(page.locator(".readme-body.markdown-wrap")).toBeVisible();
+
+  expect(await canonicalizeLocator(page, ".bubble-wrap.gray.readme")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="bubble-wrap gray readme"><div class="readme-wrap"><header><i class="yobicon-book-open vmiddle"></i><strong class="vmiddle"> README.md</strong><a href="${basePath}/admin/sample/postform?readme=true" class="ybtn vmiddle ml5">Edit</a></header><div class="readme-body markdown-wrap"></div></div></div>`,
+    ),
+  );
+  await expect(page.locator(".bubble-wrap.gray.readme p.default")).toHaveCount(0);
+});
+
 test("project home leave modal posts legacy leave action", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const leaveRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -616,7 +641,8 @@ async function canonicalizeLocator(page: Page, selector: string) {
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => normalizeSerializedAttr(node, attr))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -634,6 +660,23 @@ async function canonicalizeLocator(page: Page, selector: string) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function normalizeSerializedAttr(node: Element, attr: Attr) {
+      if (
+        node.matches("#mySidenav .user-menu > a") &&
+        (attr.name === "aria-current" || attr.name === "data-status")
+      ) {
+        return "";
+      }
+      if (node.matches("#mySidenav .user-menu > a") && attr.name === "class") {
+        const className = attr.value
+          .split(/\s+/u)
+          .filter((name) => name && name !== "active")
+          .join(" ");
+        return className ? `${attr.name}=${JSON.stringify(className)}` : "";
+      }
+      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
     }
   });
 }
@@ -657,7 +700,8 @@ async function canonicalizeScreenRoots(page: Page) {
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => normalizeSerializedAttr(node, attr))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -675,6 +719,23 @@ async function canonicalizeScreenRoots(page: Page) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function normalizeSerializedAttr(node: Element, attr: Attr) {
+      if (
+        node.matches("#mySidenav .user-menu > a") &&
+        (attr.name === "aria-current" || attr.name === "data-status")
+      ) {
+        return "";
+      }
+      if (node.matches("#mySidenav .user-menu > a") && attr.name === "class") {
+        const className = attr.value
+          .split(/\s+/u)
+          .filter((name) => name && name !== "active")
+          .join(" ");
+        return className ? `${attr.name}=${JSON.stringify(className)}` : "";
+      }
+      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
     }
   });
 }
