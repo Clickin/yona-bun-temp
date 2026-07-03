@@ -148,6 +148,28 @@ test("organization pullrequests menu board link preserves legacy href with SPA t
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
   await expect.poll(() => readOrganizationPullRequestNativeLinkAudit(page)).toEqual([]);
+  await expect(page.locator(".project-menu-gruop a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".project-setting a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/issues`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/boards`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/pullrequests`,
+  );
+  await expect(page.locator(".project-setting a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
   const boardLink = page.locator(".project-menu-gruop a").filter({ hasText: "Board" });
   await expect(boardLink).toHaveAttribute("href", `${basePath}/organizations/weblabs/boards`);
 
@@ -231,6 +253,7 @@ test("organization pull request route source keeps direct typed row links", asyn
   );
 
   expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("OrganizationRouteLink");
   expect(source).not.toContain("projectHref");
   expect(source).not.toContain("pullRequestHref");
   expect(source).not.toContain("changesHref");
@@ -241,6 +264,12 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');
   expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"');
+  expect(source).toContain("to: `/organizations/${organizationName}`");
+  expect(source).toContain("to: `/organizations/${organizationName}/issues`");
+  expect(source).toContain("to: `/organizations/${organizationName}/boards`");
+  expect(source).toContain("to: `/organizations/${organizationName}/pullrequests`");
+  expect(source).toContain("to: `/organizations/${organizationName}/settingform`");
+  expect(source).toContain('"data-status": undefined');
 });
 
 async function installOrganizationPullRequestNativeLinkAudit(page: Page) {

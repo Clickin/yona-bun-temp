@@ -24,6 +24,26 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
   await page.goto(`${basePath}/organizations/weblabs/issues?state=open&filter=bug`);
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Issue");
+  await expect(page.locator(".project-menu-gruop > li")).toHaveClass(["", "active", "", ""]);
+  expect(await hrefs(page, ".project-menu-gruop > li > a")).toEqual([
+    `${basePath}/organizations/weblabs`,
+    `${basePath}/organizations/weblabs/issues`,
+    `${basePath}/organizations/weblabs/boards`,
+    `${basePath}/organizations/weblabs/pullrequests`,
+  ]);
+  expect(await attributes(page, ".project-menu-gruop > li > a", "data-status")).toEqual([
+    null,
+    null,
+    null,
+    null,
+  ]);
+  await expect(page.locator(".project-setting .project-menu-nav > li > a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/settingform`,
+  );
+  await expect(page.locator(".project-setting .project-menu-nav > li > a")).not.toHaveAttribute(
+    "data-status",
+  );
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator("#issue-item-42")).toHaveAttribute(
     "href",
@@ -140,6 +160,18 @@ test("organization issue row source uses Link for internal row anchors", () => {
   expect(source).toContain("to={projectRoutePath}");
   expect(source).toContain("to={authorRoutePath}");
   expect(source).toContain("to={assigneeRoutePath}");
+});
+
+test("organization issues top menu source uses direct Link targets", () => {
+  const source = readFileSync(ORGANIZATION_ISSUES_ROUTE_SOURCE, "utf8");
+  expect(source).not.toContain("OrganizationRouteLink");
+  expect(source).toContain("to={`/organizations/${organizationName}`}");
+  expect(source).toContain("to={`/organizations/${organizationName}/issues`}");
+  expect(source).toContain("to={`/organizations/${organizationName}/boards`}");
+  expect(source).toContain("to={`/organizations/${organizationName}/pullrequests`}");
+  expect(source).toContain("to={`/organizations/${organizationName}/settingform`}");
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain('"data-status": undefined');
 });
 
 test("organization issue aggregate filter controls are React buttons with legacy search evidence", async ({
@@ -297,6 +329,23 @@ async function spaMarker(page: Page) {
   return page.evaluate(
     () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
   );
+}
+
+async function hrefs(page: Page, selector: string) {
+  return page
+    .locator(selector)
+    .evaluateAll((links) =>
+      links.map((link) => (link instanceof HTMLAnchorElement ? link.getAttribute("href") : null)),
+    );
+}
+
+async function attributes(page: Page, selector: string, name: string) {
+  return page
+    .locator(selector)
+    .evaluateAll(
+      (elements, attributeName) => elements.map((element) => element.getAttribute(attributeName)),
+      name,
+    );
 }
 
 async function mockOrganizationIssues(page: Page, options: { itemCount?: number } = {}) {

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { type HTMLAttributes, type LiHTMLAttributes, type MouseEvent, type ReactNode } from "react";
+import { type HTMLAttributes, type LiHTMLAttributes, type MouseEvent } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
 import {
@@ -696,34 +696,79 @@ function OrganizationMenu({
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}`}>
+            <Link
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              search={{}}
+              to={`/organizations/${organizationName}`}
+            >
               {t("title.organizationHome")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className={active === "issues" ? "active" : ""}>
-            <OrganizationRouteLink to={`/organizations/${organizationName}/issues`}>
+            <Link
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              search={{}}
+              to={`/organizations/${organizationName}/issues`}
+            >
               {t("menu.issue")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/boards`}>
+            <Link
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              search={{}}
+              to={`/organizations/${organizationName}/boards`}
+            >
               {t("menu.board")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/pullrequests`}>
+            <Link
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              search={{}}
+              to={`/organizations/${organizationName}/pullrequests`}
+            >
               {t("menu.pullRequest")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink to={`/organizations/${organizationName}/settingform`}>
+                <Link
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  search={{}}
+                  to={`/organizations/${organizationName}/settingform`}
+                >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </OrganizationRouteLink>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -731,15 +776,6 @@ function OrganizationMenu({
       </div>
     </div>
   );
-}
-
-function OrganizationRouteLink({ children, to }: { children: ReactNode; to: string }) {
-  const legacyLinkProps = {
-    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-    search: {},
-    to,
-  } as unknown as Parameters<typeof Link>[0];
-  return <Link {...legacyLinkProps}>{children}</Link>;
 }
 
 function totalPages(issues: OrganizationIssueListRestResponse) {

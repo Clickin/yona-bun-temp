@@ -221,6 +221,23 @@ test("organization board route source uses direct Links for row navigation", asy
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('hash="comments"');
 });
 
+test("organization board route source uses direct Links for organization top menu", async () => {
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("OrganizationRouteLink");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('to="/organizations/$organizationName"');
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(
+    'to="/organizations/$organizationName/issues"',
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(
+    'to="/organizations/$organizationName/boards"',
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(
+    'to="/organizations/$organizationName/pullrequests"',
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(
+    'to="/organizations/$organizationName/settingform"',
+  );
+});
+
 async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "default") {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

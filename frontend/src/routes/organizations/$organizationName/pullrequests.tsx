@@ -1,11 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import type {
-  HTMLAttributes,
-  LiHTMLAttributes,
-  MouseEvent as ReactMouseEvent,
-  ReactNode,
-} from "react";
+import type { HTMLAttributes, LiHTMLAttributes, MouseEvent as ReactMouseEvent } from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
@@ -407,34 +402,69 @@ function OrganizationMenu({
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}`}>
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: {},
+                to: `/organizations/${organizationName}`,
+              } as unknown as Parameters<typeof Link>[0])}
+            >
               {t("title.organizationHome")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/issues`}>
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/issues`,
+              } as unknown as Parameters<typeof Link>[0])}
+            >
               {t("menu.issue")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className="">
-            <OrganizationRouteLink to={`/organizations/${organizationName}/boards`}>
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/boards`,
+              } as unknown as Parameters<typeof Link>[0])}
+            >
               {t("menu.board")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
           <li className={active === "pullrequests" ? "active" : ""}>
-            <OrganizationRouteLink to={`/organizations/${organizationName}/pullrequests`}>
+            <Link
+              {...({
+                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                search: () => undefined,
+                to: `/organizations/${organizationName}/pullrequests`,
+              } as unknown as Parameters<typeof Link>[0])}
+            >
               {t("menu.pullRequest")}
-            </OrganizationRouteLink>
+            </Link>
           </li>
         </ul>
         <div className="project-setting">
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">
-                <OrganizationRouteLink to={`/organizations/${organizationName}/settingform`}>
+                <Link
+                  {...({
+                    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+                    activeProps: {
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    },
+                    search: () => undefined,
+                    to: `/organizations/${organizationName}/settingform`,
+                  } as unknown as Parameters<typeof Link>[0])}
+                >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
-                </OrganizationRouteLink>
+                </Link>
               </li>
             ) : null}
           </ul>
@@ -442,15 +472,6 @@ function OrganizationMenu({
       </div>
     </div>
   );
-}
-
-function OrganizationRouteLink({ children, to }: { children: ReactNode; to: string }) {
-  const legacyLinkProps = {
-    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-    search: {},
-    to,
-  } as unknown as Parameters<typeof Link>[0];
-  return <Link {...legacyLinkProps}>{children}</Link>;
 }
 
 function organizationHref(basePath: string, organizationName: string) {
