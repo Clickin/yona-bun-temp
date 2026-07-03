@@ -23,6 +23,7 @@
 - 대상 화면의 `yona-original/app/views/**/*.scala.html`, 포함 partial, 관련 LESS/JS/messages를 먼저 식별하고 그 legacy 구조를 TSX로 구현한다.
 - Scala HTML/legacy JS는 출력 DOM/UX와 동작 근거이지 내부 구현 방식의 근거가 아니다. jQuery, inline script, `document.*`, `addEventListener`, `classList`, `style.display`, HTML fragment fetch/insert, dynamic `dangerouslySetInnerHTML` 조립은 route TSX 내부 구현으로 복사하지 않고 React state/events/components와 TanStack Router/Query로 번역한다.
 - `/goal` 기반 frontend route TSX/E2E 구현은 main agent가 직접 개발하지 않고 subagent를 먼저 spawn해서 맡긴다. main agent는 대상 선정, legacy 근거와 지시문 전달, 산출물 검수, 필요한 최소 통합/검증/커밋을 담당한다. subagent tool이 없으면 사용자가 main agent 직접 구현을 명시적으로 허용할 때까지 구현을 진행하지 않는다.
+- 독립적인 frontend target이 둘 이상이면 여러 worker subagent를 동시에 spawn한다. 각 worker에는 route/screen, 허용 파일, 금지 파일을 포함한 명시적 write scope를 부여하고, 같은 route/같은 파일/선후행 의존성이 있는 작업만 직렬화한다.
 - E2E metric, CSS, provenance만 추가하고 TSX 화면 구현을 바꾸지 않는 작업은 금지한다. 단, 같은 turn에서 해당 화면을 legacy Scala HTML 기준으로 재구축한 뒤 검증을 보강하는 경우는 허용한다.
 - frontend route TSX를 바꾸는 goal turn은 같은 staged change에서 `docs/provenance/frontend-scala-html-goal-violation-audit.md`에 대상 route/screen state, legacy Scala HTML root, 포함 partial, TSX write scope, focused verification을 남긴다. `tools/scala-html-goal-guard.mjs`가 이 memo 갱신을 강제한다.
 - 기존 TSX가 legacy Scala HTML과 다르면 기존 구현을 보존하려고 부분 패치하지 말고 화면 단위로 legacy template skeleton을 다시 만든다.

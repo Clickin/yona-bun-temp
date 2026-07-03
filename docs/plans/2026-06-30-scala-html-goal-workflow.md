@@ -26,6 +26,10 @@ Every resumed goal turn must restate this directive before choosing work:
   sources and rules, reviews the patch, integrates only accepted work, runs
   verification, and commits. Unless the user explicitly requests main-agent
   implementation, the main agent must not author the route TSX/E2E patch first.
+- If two or more independent frontend targets are available, spawn multiple
+  worker subagents concurrently instead of using only one. Assign each worker an
+  explicit route/screen write scope, allowed files, and forbidden files.
+  Serialize only same-route, same-file, or dependency-ordered work.
 - If a prior implementation was built by patching the existing DOM instead of
   porting the owning Scala template, delete or replace that screen path.
 - Every frontend route TSX change must update
@@ -140,6 +144,9 @@ Rules:
 - Spawn a subagent for route TSX/E2E implementation. Main agent work is target
   selection, instruction handoff, review, integration, verification, and commit
   unless the user explicitly asks the main agent to implement directly.
+- Prefer multiple concurrent worker subagents for disjoint route/screen write
+  scopes. Give each worker explicit allowed files and forbidden files; serialize
+  same-route, same-file, or dependency-ordered work.
 - Do not create or use view-model layers for page shape.
 - Keep REST API clients, TanStack Query setup, i18n helpers, runtime config, and
   generated router plumbing only when they are DOM-neutral support boundaries.
@@ -162,6 +169,41 @@ Rules:
   provenance is updated, and the turn commit hook succeeds.
 ```
 
+## Fresh Conversation Directive
+
+Paste this into a new `/goal` conversation when the current context should be
+cleared:
+
+```text
+Continue the Yona Scala HTML frontend parity goal in a fresh context.
+
+Use AGENTS.md and docs/plans/2026-06-30-scala-html-goal-workflow.md as binding
+instructions.
+
+Rules:
+- Legacy yona-original/app/views/**/*.scala.html plus included partials,
+  LESS/JS/messages, and rendered legacy HTML are the UI DOM/UX source of truth.
+- Existing/deleted/archived React TSX is not UI evidence.
+- Legacy JS is behavior evidence only. Render the same DOM and UX through React
+  state/events/components plus TanStack Router navigation and TanStack Query
+  mutations/cache updates. Do not copy jQuery, inline scripts, direct DOM
+  mutation, document.*, delegated native event handlers, classList/style.display
+  control, HTML fragment fetch/insert flows, or dynamic dangerouslySetInnerHTML
+  assembly into route TSX.
+- Frontend route TSX/E2E implementation must be delegated to spawned subagents.
+- Prefer multiple concurrent worker subagents whenever targets can be split into
+  disjoint route/screen write scopes. Assign each worker explicit allowed files
+  and forbidden files. Serialize only same-route, same-file, or dependency-ordered
+  work.
+- Main agent selects targets, supplies legacy sources/rules, reviews and
+  integrates accepted patches, runs verification, and commits.
+- If no subagent tool is available, stop and ask before main-agent implementation.
+- Every route TSX change must include focused frontend/tests/*.e2e.ts coverage
+  and a row in docs/provenance/frontend-scala-html-goal-violation-audit.md.
+- Start resumed unattended turns with pnpm agent:scala-html-goal-automation.
+- End turns with pnpm agent:turn-commit -- -m "<summary>".
+```
+
 ## Required Work Loop
 
 ### 0. Delegate The Implementation
@@ -169,9 +211,17 @@ Rules:
 For frontend route TSX/E2E implementation work, the main agent must spawn a
 subagent before authoring implementation edits.
 
+When choosing work for a goal turn, first look for independent targets that can
+be assigned to two or more workers without overlapping files. Spawn those worker
+subagents concurrently. Do not assign multiple workers to the same route, same
+test file, same provenance row, or dependent slice unless the work is explicitly
+serialized.
+
 The main agent must give the subagent:
 
 - target route and screen/user/session/data state
+- explicit write scope: allowed files, forbidden files, and expected unchanged
+  ownership boundaries
 - legacy root Scala template and included partials
 - related legacy JS/CSS/messages
 - the rule that legacy JS is behavior evidence only and must be translated to
