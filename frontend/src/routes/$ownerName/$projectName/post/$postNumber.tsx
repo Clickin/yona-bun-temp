@@ -1185,18 +1185,30 @@ function MarkdownEditor({
   value: string;
   wrapId: string;
 }) {
+  const [activeMode, setActiveMode] = useState<"edit" | "preview">("edit");
+
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
-        <li className="active">
-          <a href={`#edit-${wrapId}`} data-toggle="tab" data-mode="edit">
+        <li className={activeMode === "edit" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="edit"
+            onClick={() => setActiveMode("edit")}
+          >
             Edit
-          </a>
+          </button>
         </li>
-        <li>
-          <a href={`#preview-${wrapId}`} data-toggle="tab" data-mode="preview">
+        <li className={activeMode === "preview" ? "active" : undefined}>
+          <button
+            type="button"
+            data-toggle="tab"
+            data-mode="preview"
+            onClick={() => setActiveMode("preview")}
+          >
             Preview
-          </a>
+          </button>
         </li>
         <li>
           <div className="task-list-button">
@@ -1230,7 +1242,7 @@ function MarkdownEditor({
           className="markdown-help"
           dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
         />
-        <div id={`edit-${wrapId}`} className="tab-pane active">
+        <div id={`edit-${wrapId}`} className={`tab-pane${activeMode === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
               name={name}
@@ -1242,7 +1254,10 @@ function MarkdownEditor({
             ></textarea>
           </div>
         </div>
-        <div id={`preview-${wrapId}`} className="tab-pane">
+        <div
+          id={`preview-${wrapId}`}
+          className={`tab-pane${activeMode === "preview" ? " active" : ""}`}
+        >
           <div
             className={`markdown-preview markdown-wrap ${editorMode}`}
             data-via-email="false"

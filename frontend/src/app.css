@@ -2474,6 +2474,7 @@ h1 {
 .nav-tabs > li > a,
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button,
 .codediff-wrap .review-container .nav-tabs > li > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
 .content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button {
@@ -2489,6 +2490,7 @@ h1 {
 
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button,
 .codediff-wrap .review-container .nav-tabs > li > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
 .content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button {
@@ -2519,6 +2521,8 @@ h1 {
 .user-stream-box .nav-tabs > li > button:focus,
 .issue-list-wrap .nav-tabs.nm > li > button:hover,
 .issue-list-wrap .nav-tabs.nm > li > button:focus,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button:focus,
 .codediff-wrap .review-container .nav-tabs > li > button:hover,
 .codediff-wrap .review-container .nav-tabs > li > button:focus,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button:hover,
@@ -2546,6 +2550,9 @@ h1 {
 .issue-list-wrap .nav-tabs.nm > li.active > button,
 .issue-list-wrap .nav-tabs.nm > li.active > button:hover,
 .issue-list-wrap .nav-tabs.nm > li.active > button:focus,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li.active > button,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:hover,
+.board-view [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:focus,
 .codediff-wrap .review-container .nav-tabs > li.active > button,
 .codediff-wrap .review-container .nav-tabs > li.active > button:hover,
 .codediff-wrap .review-container .nav-tabs > li.active > button:focus,
