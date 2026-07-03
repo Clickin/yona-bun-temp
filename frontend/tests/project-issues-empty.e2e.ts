@@ -150,7 +150,7 @@ const PREFIX_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
 )
   .replace(
     '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
-    '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="javascript:void(0)" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
+    '<div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issues?filter=[P1]&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=1&amp;state=open" class="title-prefix">[P1]</a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div>',
   )
   .replaceAll("filter=bug", "filter=prefix");
 
@@ -1030,6 +1030,10 @@ test("project issue list bracketed title prefix matches legacy title helpers", a
   await page.goto(`${basePath}/admin/sample/issues?filter=prefix`);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator(".title-prefix")).toHaveText("[P1]");
+  await expect(page.locator(".title-prefix")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?filter=[P1]&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
+  );
   await expect(page.locator(".title-wrap > a.title").last()).toHaveText("Fix flaky issue");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -1059,9 +1063,30 @@ test("project issue title prefix updates route like legacy issue.List implicit p
 
   await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("[P1]");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  await expect(page.locator("#search input[name='filter']")).toHaveValue("[P1]");
+  await expect(page.locator("#issue-item-42")).toBeVisible();
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-title-prefix");
+});
+
+test("project issue title prefix hover follows legacy issue/list.scala.html highlight", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "prefix");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=prefix`);
+  const prefix = page.locator(".title-prefix");
+  await expect(prefix).toHaveText("[P1]");
+
+  await prefix.hover();
+  await expect(prefix).toHaveClass("title-prefix title-prefix-hover");
+  await expect(page.locator(".title-prefix-hover")).toHaveCount(1);
+
+  await page.mouse.move(0, 0);
+  await expect(prefix).toHaveClass("title-prefix");
+  await expect(page.locator(".title-prefix-hover")).toHaveCount(0);
 });
 
 test("project issue list open due date shows legacy relative until text", async ({ page }) => {

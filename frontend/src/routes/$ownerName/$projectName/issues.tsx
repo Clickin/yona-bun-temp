@@ -299,14 +299,6 @@ $(function(){
   yobi.ShortcutKey.setKeymapLink({
     "N": "${prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`)}"
   });
-  var $titlePrefix = $(".title-prefix");
-  $titlePrefix
-    .on("mouseover", function (e) {
-      $(".title-prefix:contains('" + e.target.innerText + "')").addClass("title-prefix-hover");
-    })
-    .on("mouseleave", function () {
-      $titlePrefix.removeClass("title-prefix-hover");
-    });
 });
 `,
         }}
@@ -432,6 +424,7 @@ function ProjectIssuesBody({
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
   );
+  const [hoveredTitlePrefix, setHoveredTitlePrefix] = useState("");
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -467,6 +460,12 @@ function ProjectIssuesBody({
       }),
     });
   };
+  const titlePrefixRoute = (filter: string) =>
+    projectIssuesRoutePath(ownerName, projectName, {
+      ...search,
+      filter,
+      pageNum: 1,
+    });
   const handlePageChange = (pageNum: number) => {
     void navigate({
       to: projectIssuesRoutePath(ownerName, projectName, {
@@ -757,7 +756,10 @@ function ProjectIssuesBody({
                         showMassUpdateControls={showMassUpdateControls}
                         showMilestone={showMilestone}
                         showSubtasksAlways={showSubtasksAlways}
+                        hoveredTitlePrefix={hoveredTitlePrefix}
+                        onTitlePrefixHover={setHoveredTitlePrefix}
                         useTwoColumnMode={useTwoColumnMode}
+                        titlePrefixRoute={titlePrefixRoute}
                         onTitlePrefixSearch={handleTitlePrefixSearch}
                       />
                     ))}
@@ -776,7 +778,10 @@ function ProjectIssuesBody({
                       showMassUpdateControls={showMassUpdateControls}
                       showMilestone={showMilestone}
                       showSubtasksAlways={showSubtasksAlways}
+                      hoveredTitlePrefix={hoveredTitlePrefix}
+                      onTitlePrefixHover={setHoveredTitlePrefix}
                       useTwoColumnMode={useTwoColumnMode}
+                      titlePrefixRoute={titlePrefixRoute}
                       onTitlePrefixSearch={handleTitlePrefixSearch}
                     />
                   ))}
@@ -1429,25 +1434,31 @@ function ProjectIssueItem({
   basePath,
   currentUserLoginId,
   draftNumberSource,
+  hoveredTitlePrefix,
   issue,
+  onTitlePrefixHover,
   onTitlePrefixSearch,
   ownerName,
   projectName,
   showMassUpdateControls,
   showMilestone,
   showSubtasksAlways,
+  titlePrefixRoute,
   useTwoColumnMode,
 }: {
   basePath: string;
   currentUserLoginId: string;
   draftNumberSource: "draft-list" | "normal-list";
+  hoveredTitlePrefix: string;
   issue: RestIssueListItem;
+  onTitlePrefixHover: (prefix: string) => void;
   onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
   projectName: string;
   showMassUpdateControls: boolean;
   showMilestone: boolean;
   showSubtasksAlways: boolean;
+  titlePrefixRoute: (filter: string) => string;
   useTwoColumnMode: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -1534,7 +1545,10 @@ function ProjectIssueItem({
             ) : null}
             {titleParts.prefixes.map((prefix) => (
               <LegacyTitlePrefixAnchor
+                active={hoveredTitlePrefix === prefix}
                 key={`${issueId}-${prefix}`}
+                to={titlePrefixRoute(prefix)}
+                onTitlePrefixHover={onTitlePrefixHover}
                 onTitlePrefixSearch={onTitlePrefixSearch}
               >
                 {prefix}
@@ -2212,6 +2226,7 @@ function IssueSearchForm({
       <div className="search">
         <div className="search-bar">
           <input
+            key={search.filter}
             name="filter"
             className="textbox full"
             type="text"
@@ -3169,33 +3184,33 @@ function numberField(value: unknown) {
 }
 
 function LegacyTitlePrefixAnchor({
+  active,
   children,
+  onTitlePrefixHover,
   onTitlePrefixSearch,
+  to,
 }: {
+  active: boolean;
   children: string;
+  onTitlePrefixHover: (prefix: string) => void;
   onTitlePrefixSearch: (filter: string) => void;
+  to: string;
 }) {
-  const anchorRef = useRef<HTMLAnchorElement>(null);
-  const handleClick = useEffectEvent((event: MouseEvent) => {
+  const submitTitlePrefixSearch = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     onTitlePrefixSearch(children);
-  });
-  useEffect(() => {
-    const anchor = anchorRef.current;
-    if (!anchor) {
-      return;
-    }
-
-    anchor.setAttribute("href", "javascript:void(0)");
-    anchor.addEventListener("click", handleClick);
-    return () => {
-      anchor.removeEventListener("click", handleClick);
-    };
-  }, []);
+  };
   return (
-    <a ref={anchorRef} href="/" className="title-prefix">
+    <LegacyInternalLink
+      activeProps={{ className: undefined }}
+      className={active ? "title-prefix title-prefix-hover" : "title-prefix"}
+      to={to}
+      onClick={submitTitlePrefixSearch}
+      onMouseEnter={() => onTitlePrefixHover(children)}
+      onMouseLeave={() => onTitlePrefixHover("")}
+    >
       {children}
-    </a>
+    </LegacyInternalLink>
   );
 }
 
