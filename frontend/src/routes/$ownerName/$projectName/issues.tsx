@@ -431,7 +431,7 @@ function ProjectIssuesBody({
     () => new Set(),
   );
   const [selectedIssueIds, setSelectedIssueIds] = useState<ReadonlySet<string>>(() => new Set());
-  const [highlightedIssueId, setHighlightedIssueId] = useState("");
+  const [highlightedIssueId, setHighlightedIssueId] = useState(readTwoColumnHighlightedIssueId);
   const rawDraftItems = shouldShowDraftItems(search) ? (issues.draftItems ?? []) : [];
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
@@ -3238,6 +3238,16 @@ function stringSearch(value: unknown, fallback = "") {
     return String(value);
   }
   return fallback;
+}
+
+function readTwoColumnHighlightedIssueId() {
+  if (typeof history === "undefined" || !history.state || typeof history.state !== "object") {
+    return "";
+  }
+  return stringField(
+    (history.state as Record<string, unknown>).yonaIssueListHighlightedIssueId,
+    "",
+  );
 }
 
 function stringField(value: unknown, fallback: string) {

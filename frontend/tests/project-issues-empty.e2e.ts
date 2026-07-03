@@ -1804,7 +1804,15 @@ test("project issue two-column child label click uses legacy twoColumeModeTarget
       "issue-two-column-child-label";
   });
 
-  await page.locator(".child-issue-list .label.twoColumeModeTarget[data-label-id='8']").click();
+  const childLabel = page.locator(
+    ".child-issue-list .label.twoColumeModeTarget[data-label-id='8']",
+  );
+  await expect(childLabel).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?state=open&labelIds=8`,
+  );
+
+  await childLabel.click();
 
   await expect(page.locator("#issue-item-42")).toHaveClass(/highlightBg/);
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issues`);
