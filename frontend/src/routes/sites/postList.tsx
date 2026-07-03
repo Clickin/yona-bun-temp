@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import type { AnchorHTMLAttributes, ComponentType, ReactNode } from "react";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -10,15 +9,6 @@ import { SiteLayoutShell } from "../-home-route-screen";
 type PostListSearch = {
   pageNum: number;
 };
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    children?: ReactNode;
-    search?: Record<string, number | string | undefined>;
-    to: string;
-  }
->;
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -108,7 +98,7 @@ function PostListPagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage - 1 }}
               to="/sites/postList"
@@ -116,7 +106,7 @@ function PostListPagination({
             >
               <i className="ico btn-pg-prev"></i>
               <span>PREV</span>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -140,7 +130,7 @@ function PostListPagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
@@ -148,7 +138,7 @@ function PostListPagination({
             >
               <span>NEXT</span>
               <i className="ico btn-pg-next"></i>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <span className="off">NEXT</span>

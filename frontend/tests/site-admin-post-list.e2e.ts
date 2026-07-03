@@ -246,6 +246,12 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  const previousPageLink = page.locator("#pagination a", { hasText: "PREV" });
+  await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
+  await expect(previousPageLink).toHaveAttribute("pjax-page", "");
+  await previousPageLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-posts-pagination");
@@ -285,10 +291,14 @@ test("site admin post list renders legacy update notification badge", async ({ p
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
-test("site admin post list route source keeps direct typed sidebar links", async () => {
+test("site admin post list route source keeps direct typed links", async () => {
   const source = await readFile("src/routes/sites/postList.tsx", "utf8");
 
+  expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("to={item.href}");
+  expect(source).toContain('to="/sites/postList"');
+  expect(source).toContain("search={{ pageNum: currentPage - 1 }}");
+  expect(source).toContain("search={{ pageNum: currentPage + 1 }}");
 });
 
 async function mockSiteAdminSession(page: Page) {
@@ -321,7 +331,8 @@ async function mockPosts(page: Page) {
 
   await page.route("**/api/v1/site/posts?*", async (route) => {
     const url = new URL(route.request().url());
-    const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
+    const pageNum =
+      Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
