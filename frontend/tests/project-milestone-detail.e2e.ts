@@ -52,10 +52,18 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "checked-issue",
   );
   await expect(page.locator("#state[data-name='state'] .d-label")).toHaveText("Update status");
-  await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] a')).toHaveText("Open");
-  await expect(page.locator('#state .mass-update-list li[data-value="CLOSED"] a')).toHaveText(
+  await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] button')).toHaveText(
+    "Open",
+  );
+  await expect(
+    page.locator('#state .mass-update-list li[data-value="OPEN"] button'),
+  ).toHaveAttribute("type", "button");
+  await expect(page.locator('#state .mass-update-list li[data-value="CLOSED"] button')).toHaveText(
     "Closed",
   );
+  await expect(
+    page.locator('#state .mass-update-list li[data-value="CLOSED"] button'),
+  ).toHaveAttribute("type", "button");
   await expect(page.locator("#assignee[data-name='assignee.id'] .d-label")).toHaveText(
     "Update assignee",
   );
@@ -71,8 +79,18 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator("#milestone[data-name='milestone.id'] .d-label")).toHaveText(
     "Update milestone",
   );
-  await expect(page.locator('#milestone li[data-value="-1"] a')).toHaveText("No milestone");
-  await expect(page.locator('#milestone li[data-value="5"] a')).toHaveText("v1.0");
+  await expect(page.locator('#milestone li[data-value="-1"] button')).toHaveText("No milestone");
+  await expect(page.locator('#milestone li[data-value="-1"] button')).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator('#milestone li[data-value="5"] button')).toHaveText("v1.0");
+  await expect(page.locator('#milestone li[data-value="5"] button')).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator("#state .mass-update-list a[href='#']")).toHaveCount(0);
+  await expect(page.locator("#milestone .mass-update-list a[href='#']")).toHaveCount(0);
   await expect(page.locator("#attaching-label[data-name='attachingLabelIds'] .d-label")).toHaveText(
     "Attach label",
   );
@@ -104,6 +122,17 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   );
   await page.check("#issue-41");
   await expect(page.locator("#state > button")).toBeEnabled();
+  await page.evaluate(() => {
+    window.sessionStorage.setItem("milestone-detail-spa-marker", "kept");
+  });
+  const beforeMassUpdateOptionUrl = page.url();
+  await page
+    .locator('#state .mass-update-list li[data-value="OPEN"] button')
+    .dispatchEvent("click");
+  await expect(page).toHaveURL(beforeMassUpdateOptionUrl);
+  await expect(
+    page.evaluate(() => window.sessionStorage.getItem("milestone-detail-spa-marker")),
+  ).resolves.toBe("kept");
   await expect(page.locator("#issue-item-41")).toContainText("#11[UI]Open milestone issue");
   await expect(page.locator('#issue-item-41 .title[href$="/issue/11"]')).toHaveCount(2);
   await expect(page.locator("#issue-item-41 .weight-up-arrow")).toHaveAttribute(

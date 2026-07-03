@@ -1322,6 +1322,29 @@ pre code {
   outline: 0;
 }
 
+.milestone-detail .mass-update-list > li > button {
+  display: block;
+  width: 100%;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: normal;
+  line-height: 20px;
+  color: #333;
+  text-align: left;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+}
+
+.milestone-detail .mass-update-list > li > button:hover,
+.milestone-detail .mass-update-list > li > button:focus {
+  color: #fff;
+  text-decoration: none;
+  background-color: #0081c2;
+  background-image: linear-gradient(to bottom, #08c, #0077b3);
+  outline: 0;
+}
+
 .members.project .guest {
   padding: 0 4px;
   color: #fff;

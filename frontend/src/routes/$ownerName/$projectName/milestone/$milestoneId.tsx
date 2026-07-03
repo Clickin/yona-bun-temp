@@ -630,9 +630,7 @@ function MassUpdateDropdown({
             <li className="divider" key={option.value}></li>
           ) : (
             <li data-value={option.value} key={option.value}>
-              <LegacyInternalLink to="#" onClick={preventDefaultLink}>
-                {option.label}
-              </LegacyInternalLink>
+              <button type="button">{option.label}</button>
             </li>
           ),
         )}
