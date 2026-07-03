@@ -841,6 +841,13 @@ test("project board detail owns comment hash links through router", async ({ pag
       page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
     )
     .toBe("post-comment-hash");
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("ComponentType");
 });
 
 test("project board detail renders legacy comment update form", async ({ page }) => {

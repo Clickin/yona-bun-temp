@@ -1,12 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import {
-  Fragment,
-  type AnchorHTMLAttributes,
-  type ComponentType,
-  type FormEvent,
-  useState,
-} from "react";
+import { Fragment, type AnchorHTMLAttributes, type FormEvent, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
@@ -32,15 +26,6 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeOptions?: { exact?: boolean; includeHash?: boolean };
-    activeProps?: { className?: string | undefined };
-    hash?: string;
-    to: string;
-  }
->;
 
 const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
   .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
@@ -993,7 +978,7 @@ function CommentHashLink({
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & { commentId: string }) {
   return (
-    <LegacyInternalLink
+    <Link
       {...props}
       to="."
       hash={`comment-${commentId}`}
@@ -1234,8 +1219,9 @@ function PostChildComment({
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
         <span className="subcomment-author hide">
           -{" "}
-          <LegacyInternalLink
-            to={`/${authorLoginId}`}
+          <Link
+            to="/$user"
+            params={{ user: authorLoginId }}
             className="usf-group"
             data-toggle="tooltip"
             data-placement="top"
@@ -1244,7 +1230,7 @@ function PostChildComment({
             activeProps={{ className: undefined }}
           >
             <strong>{authorLabel}</strong>
-          </LegacyInternalLink>{" "}
+          </Link>{" "}
           <CommentHashLink commentId={commentId} className="ago" title={comment.createdLabel}>
             {comment.createdLabel}
           </CommentHashLink>
