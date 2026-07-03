@@ -5,9 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
-  type AnchorHTMLAttributes,
   type CSSProperties,
-  type ComponentType,
   type FormEvent as ReactFormEvent,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -34,13 +32,6 @@ import {
 } from "../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & {
-    activeProps?: { className?: string | undefined };
-    to: string;
-  }
->;
 
 type ProjectIssuesSearch = {
   assigneeId: string;
@@ -828,14 +819,14 @@ function IssuePagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               to={pageRoutePath(currentPage - 1)}
               {...{ "pjax-page": "" }}
             >
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
@@ -862,14 +853,14 @@ function IssuePagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <LegacyInternalLink
+            <Link
               activeProps={{ className: undefined }}
               to={pageRoutePath(currentPage + 1)}
               {...{ "pjax-page": "" }}
             >
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
-            </LegacyInternalLink>
+            </Link>
           ) : (
             <>
               <span className="off">{t("button.nextPage")}</span>
@@ -3376,7 +3367,7 @@ function LegacyTitlePrefixAnchor({
     onTitlePrefixSearch(children);
   };
   return (
-    <LegacyInternalLink
+    <Link
       activeProps={{ className: undefined }}
       className={active ? "title-prefix title-prefix-hover" : "title-prefix"}
       to={to}
@@ -3385,7 +3376,7 @@ function LegacyTitlePrefixAnchor({
       onMouseLeave={() => onTitlePrefixHover("")}
     >
       {children}
-    </LegacyInternalLink>
+    </Link>
   );
 }
 
