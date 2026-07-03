@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_HISTORY_FILE_BODY = `
@@ -22,6 +23,32 @@ test("project code file history matches legacy code/history.scala.html path DOM"
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_HISTORY_FILE_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+
+  await expect(page.locator("#breadcrumbs a").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits/main`,
+  );
+  await expect(page.locator("#history .commit-id a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef1234567890?branch=main&path=README.md#README-md`,
+  );
+  await expect(page.locator("#history .browse a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/abcdef1/README.md`,
+  );
+
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "code-history-file";
+  });
+  await page.locator(".actrow a", { hasText: "Older" }).click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/commits/main/README.md?page=3`);
+  await expect(
+    page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).resolves.toBe("code-history-file");
+  expect(historyRequests).toEqual([
+    "branch=main&page=2&path=README.md",
+    "branch=main&page=3&path=README.md",
+  ]);
 });
 
 test("project code file history keeps nested legacy path segments", async ({ page }) => {
@@ -38,6 +65,18 @@ test("project code file history keeps nested legacy path segments", async ({ pag
       EXPECTED_HISTORY_NESTED_FILE_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("project code file history route uses TanStack Link for internal anchors", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).not.toMatch(/<a\s+href=/u);
+  expect(routeSource).not.toContain("commitHref(");
+  expect(routeSource).not.toContain("projectHref(");
+  expect(routeSource).toContain('import { Link, createFileRoute } from "@tanstack/react-router"');
 });
 
 async function mockProjectCodeFileHistory(page: Page, historyRequests: string[], filePath: string) {

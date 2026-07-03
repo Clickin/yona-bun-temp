@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import { type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
 
@@ -93,11 +93,7 @@ function ProjectCodeFileHistoryScreen({
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectCodeFileHistoryBody
-        history={historyQuery.data}
-        routeParams={routeParams}
-        runtimeConfig={runtimeConfig}
-      />
+      <ProjectCodeFileHistoryBody history={historyQuery.data} routeParams={routeParams} />
     </>
   );
 }
@@ -105,24 +101,15 @@ function ProjectCodeFileHistoryScreen({
 function ProjectCodeFileHistoryBody({
   history,
   routeParams,
-  runtimeConfig,
 }: {
   history: CodeHistoryResponse;
   routeParams: ProjectCodeFileHistoryRouteParams;
-  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
   const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = history.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
-  const historyHref = projectHref(
-    runtimeConfig.basePath,
-    ownerName,
-    projectName,
-    "commits",
-    encodedBranch,
-    filePath,
-  );
+  const historyPath = projectRoutePath(ownerName, projectName, "commits", encodedBranch, filePath);
 
   return (
     <div className="page-wrap-outer">
@@ -130,31 +117,22 @@ function ProjectCodeFileHistoryBody({
         <div className="bubble-wrap dark-gray repo-wrap">
           <div className="code-browse-wrap">
             <div id="breadcrumbs" className="code-breadcrumb-wrap">
-              <a
-                href={projectHref(
-                  runtimeConfig.basePath,
-                  ownerName,
-                  projectName,
-                  "commits",
-                  encodedBranch,
-                )}
+              <Link
+                to={projectRoutePath(ownerName, projectName, "commits", encodedBranch)}
+                activeOptions={legacyInactiveLinkOptions}
+                activeProps={{ className: undefined }}
               >
                 {projectName}
-              </a>
+              </Link>
               {history.breadcrumbs.map((item) => (
-                <a
-                  href={projectHref(
-                    runtimeConfig.basePath,
-                    ownerName,
-                    projectName,
-                    "commits",
-                    encodedBranch,
-                    item.path,
-                  )}
+                <Link
+                  to={projectRoutePath(ownerName, projectName, "commits", encodedBranch, item.path)}
+                  activeOptions={legacyInactiveLinkOptions}
+                  activeProps={{ className: undefined }}
                   key={item.path}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
             </div>
 
@@ -186,14 +164,14 @@ function ProjectCodeFileHistoryBody({
                     </tr>
                   ) : (
                     history.commits.map((commit) => {
-                      const showCommitHref = commitHref(
-                        runtimeConfig.basePath,
+                      const showCommitPath = projectRoutePath(
                         ownerName,
                         projectName,
+                        "commit",
                         commit.commitId,
-                        selectedBranch,
-                        filePath,
                       );
+                      const showCommitSearch = { branch: selectedBranch, path: filePath };
+                      const showCommitHash = codePathHash(filePath);
                       return (
                         <tr key={commit.commitId}>
                           <td className="commit-id">
@@ -205,9 +183,16 @@ function ProjectCodeFileHistoryBody({
                             >
                               <i className="yobicon-copy"></i>
                             </button>
-                            <a href={showCommitHref} title={t("code.showCommit")}>
+                            <Link
+                              to={showCommitPath}
+                              search={showCommitSearch}
+                              hash={showCommitHash}
+                              activeOptions={legacyInactiveLinkOptions}
+                              activeProps={{ className: undefined }}
+                              title={t("code.showCommit")}
+                            >
                               {commit.commitShortId}
-                            </a>
+                            </Link>
                           </td>
                           <td className="messages">
                             {commit.commentCount > 0 ? (
@@ -216,15 +201,16 @@ function ProjectCodeFileHistoryBody({
                               </span>
                             ) : null}
                             <CommitMessage
-                              href={showCommitHref}
+                              hash={showCommitHash}
                               message={commit.message}
+                              search={showCommitSearch}
                               shortMessage={commit.shortMessage}
+                              to={showCommitPath}
                             />
                           </td>
                           <td className="browse">
-                            <a
-                              href={projectHref(
-                                runtimeConfig.basePath,
+                            <Link
+                              to={projectRoutePath(
                                 ownerName,
                                 projectName,
                                 "code",
@@ -233,13 +219,15 @@ function ProjectCodeFileHistoryBody({
                               )}
                               title={t("code.showCodeAtThisCommit")}
                               className="ybtn"
+                              activeOptions={legacyInactiveLinkOptions}
+                              activeProps={{ className: undefined }}
                             >
                               {t("code.showCode")}
-                            </a>
+                            </Link>
                           </td>
                           <td className="date">{commit.authorDate}</td>
                           <td className="author">
-                            <CommitAuthor commit={commit} runtimeConfig={runtimeConfig} />
+                            <CommitAuthor commit={commit} />
                           </td>
                         </tr>
                       );
@@ -252,17 +240,26 @@ function ProjectCodeFileHistoryBody({
 
           <div className="actrow margin-top-20">
             {history.hasNewer ? (
-              <a
-                href={`${historyHref}?page=${Math.max(0, history.page - 1)}`}
+              <Link
+                to={historyPath}
+                search={{ page: Math.max(0, history.page - 1) }}
                 className="ybtn pull-left"
+                activeOptions={legacyInactiveLinkOptions}
+                activeProps={{ className: undefined }}
               >
                 {t("code.newer")}
-              </a>
+              </Link>
             ) : null}
             {history.hasOlder ? (
-              <a href={`${historyHref}?page=${history.page + 1}`} className="ybtn pull-left">
+              <Link
+                to={historyPath}
+                search={{ page: history.page + 1 }}
+                className="ybtn pull-left"
+                activeOptions={legacyInactiveLinkOptions}
+                activeProps={{ className: undefined }}
+              >
                 {t("code.older")}
-              </a>
+              </Link>
             ) : null}
           </div>
         </div>
@@ -272,13 +269,17 @@ function ProjectCodeFileHistoryBody({
 }
 
 function CommitMessage({
-  href,
+  hash,
   message,
+  search,
   shortMessage,
+  to,
 }: {
-  href: string;
+  hash: string;
   message: string;
+  search: { branch: string; path: string };
   shortMessage: string;
+  to: string;
 }) {
   const { t } = useLegacyMessages();
   const lines = message.split("\n");
@@ -286,9 +287,16 @@ function CommitMessage({
 
   return (
     <>
-      <a href={href} className="commitMsg short">
+      <Link
+        to={to}
+        search={search}
+        hash={hash}
+        className="commitMsg short"
+        activeOptions={legacyInactiveLinkOptions}
+        activeProps={{ className: undefined }}
+      >
         {summary}
-      </a>
+      </Link>
       {lines.length > 1 ? (
         <>
           <button type="button" className="commitMsg moreBtn">
@@ -301,20 +309,17 @@ function CommitMessage({
   );
 }
 
-function CommitAuthor({
-  commit,
-  runtimeConfig,
-}: {
-  commit: CodeHistoryResponse["commits"][number];
-  runtimeConfig: RuntimeConfig;
-}) {
+function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][number] }) {
   const avatarUrl = commit.authorAvatarUrl || "/assets/images/default-avatar-32.png";
 
   if (commit.authorLoginId) {
+    const authorPath = `/${commit.authorLoginId}` as "/";
     return (
-      <a
-        href={prefixBasePath(runtimeConfig.basePath, `/${commit.authorLoginId}`)}
+      <Link
+        to={authorPath}
         className="avatar-wrap"
+        activeOptions={legacyInactiveLinkOptions}
+        activeProps={{ className: undefined }}
         data-toggle="tooltip"
         data-placement="top"
         title={commit.authorLoginId}
@@ -325,7 +330,7 @@ function CommitAuthor({
           width="32"
           height="32"
         />
-      </a>
+      </Link>
     );
   }
 
@@ -345,21 +350,16 @@ function CommitAuthor({
   return <span>{commit.authorName || "Anonymous"}</span>;
 }
 
-function commitHref(
-  basePath: string,
-  ownerName: string,
-  projectName: string,
-  commitId: string,
-  branch: string,
-  filePath: string,
-) {
-  const hash = filePath.replace(/\//gu, "-").replace(/\./gu, "-");
-  return `${projectHref(basePath, ownerName, projectName, "commit", commitId)}?branch=${encodeURIComponent(branch)}&path=${encodeURIComponent(filePath)}#${hash}`;
+function codePathHash(filePath: string) {
+  return filePath.replace(/\//gu, "-").replace(/\./gu, "-");
 }
 
-function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {
-  return prefixBasePath(
-    basePath,
-    `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`,
-  );
+function projectRoutePath(ownerName: string, projectName: string, ...parts: string[]) {
+  return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }
+
+const legacyInactiveLinkOptions = {
+  exact: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;

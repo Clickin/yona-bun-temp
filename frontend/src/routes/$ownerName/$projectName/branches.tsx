@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   codeBranchesQueryOptions,
   deleteCodeBranchRest,
@@ -19,6 +19,13 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 export const Route = createFileRoute("/$ownerName/$projectName/branches")({
   component: ProjectBranchesRoute,
 });
+
+const legacyLinkProps = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+const legacyCommitSearch = { page: undefined } as unknown as { page: number };
+const legacyInactiveSearch = { __legacyInactive: undefined } as unknown as Record<string, never>;
 
 function ProjectBranchesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -73,7 +80,6 @@ function ProjectBranchesBody({
       .slice(0, 1),
     ...branches.branches.filter((branch) => branch.name !== defaultBranch && !branch.isDefault),
   ];
-  const defaultBranchPath = encodeBranch(defaultBranch);
 
   return (
     <div className="page-wrap-outer">
@@ -82,34 +88,33 @@ function ProjectBranchesBody({
           <div className="code-browse-wrap">
             <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
               <li>
-                <a
-                  href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/${ownerName}/${projectName}/code/${defaultBranchPath}`,
-                  )}
+                <Link
+                  to="/$ownerName/$projectName/code/$branch"
+                  params={{ branch: defaultBranch, ownerName, projectName }}
+                  {...legacyLinkProps}
                 >
                   {t("code.files")}
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/${ownerName}/${projectName}/commits/${defaultBranchPath}`,
-                  )}
+                <Link
+                  to="/$ownerName/$projectName/commits/$branch"
+                  params={{ branch: defaultBranch, ownerName, projectName }}
+                  search={legacyCommitSearch}
+                  {...legacyLinkProps}
                 >
                   {t("code.commits")}
-                </a>
+                </Link>
               </li>
               <li className="active">
-                <a
-                  href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/${ownerName}/${projectName}/branches`,
-                  )}
+                <Link
+                  to="/$ownerName/$projectName/branches"
+                  params={{ ownerName, projectName }}
+                  search={legacyInactiveSearch}
+                  {...legacyLinkProps}
                 >
                   {t("title.branches")}
-                </a>
+                </Link>
               </li>
             </ul>
 
@@ -187,47 +192,49 @@ function BranchRow({
   return (
     <tr className={isHead ? "head" : undefined}>
       <td className="branchName">
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${ownerName}/${projectName}/code/${encodedBranch}`,
-          )}
+        <Link
+          to="/$ownerName/$projectName/code/$branch"
+          params={{ branch: branch.name, ownerName, projectName }}
+          {...legacyLinkProps}
         >
           {branch.shortName}
-        </a>
+        </Link>
         {isHead ? (
           <span className="headBranch ml10">{t("code.branches.defaultBranch")}</span>
         ) : null}
       </td>
       <td className="commit">
-        <a
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${ownerName}/${projectName}/commits/${encodedBranch}`,
-          )}
+        <Link
+          to="/$ownerName/$projectName/commits/$branch"
+          params={{ branch: branch.name, ownerName, projectName }}
+          search={legacyCommitSearch}
+          {...legacyLinkProps}
           className="commitId"
           title={branch.commitId}
         >
           {branch.commitShortId}
-        </a>
+        </Link>
         <span className="date" data-toggle="tooltip" data-placement="top" title={branch.commitDate}>
           {branch.commitDate}
         </span>
       </td>
       <td className="pullRequest">
         {branch.pullRequest ? (
-          <a
-            href={prefixBasePath(
-              runtimeConfig.basePath,
-              `/${branch.pullRequest.ownerName}/${branch.pullRequest.projectName}/pullRequest/${branch.pullRequest.pullRequestNumber}`,
-            )}
+          <Link
+            to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+            params={{
+              ownerName: branch.pullRequest.ownerName,
+              projectName: branch.pullRequest.projectName,
+              pullRequestNumber: String(branch.pullRequest.pullRequestNumber),
+            }}
+            {...legacyLinkProps}
             className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
             data-toggle="tooltip"
             data-placement="top"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >
             pullRequest-{branch.pullRequest.pullRequestNumber}
-          </a>
+          </Link>
         ) : (
           <span className="disabled">{t("code.branches.noPullRequest")}</span>
         )}
@@ -249,11 +256,8 @@ function BranchRow({
             </button>
           ) : null}
           {branches.permissions.canDelete && !isHead ? (
-            <a
-              href={prefixBasePath(
-                runtimeConfig.basePath,
-                `/${ownerName}/${projectName}/code/${encodedBranch}/`,
-              )}
+            <button
+              type="button"
               className="ybtn ybtn-danger ybtn-small"
               data-request-method="delete"
               onClick={(event) => {
@@ -262,7 +266,7 @@ function BranchRow({
               }}
             >
               {t("button.delete")}
-            </a>
+            </button>
           ) : null}
         </td>
       ) : null}
