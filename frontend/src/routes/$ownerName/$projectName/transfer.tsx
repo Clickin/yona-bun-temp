@@ -66,6 +66,8 @@ function ProjectTransferBody({
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const destinationInputRef = useRef<HTMLInputElement>(null);
+  const acceptInputRef = useRef<HTMLInputElement>(null);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const transferMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -83,10 +85,31 @@ function ProjectTransferBody({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
       });
       if (typeof response.redirectPath === "string") {
-        router.history.push(response.redirectPath);
+        router.history.push(prefixBasePath(runtimeConfig.basePath, response.redirectPath));
       }
     },
+    onError() {
+      setIsTransferModalOpen(false);
+      // oxlint-disable-next-line no-alert -- legacy project.Transfer.js uses $yobi.alert for request failures.
+      window.alert(t("project.transfer.error"));
+    },
   });
+  const openTransferModal = () => {
+    if (!acceptInputRef.current?.checked) {
+      // oxlint-disable-next-line no-alert -- legacy project.Transfer.js uses $yobi.alert before opening the modal.
+      window.alert(t("project.transfer.alert"));
+      return;
+    }
+    setIsTransferModalOpen(true);
+  };
+  const closeTransferModal = () => {
+    setIsTransferModalOpen(false);
+  };
+  const dismissTransferModal = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeTransferModal();
+  };
 
   return (
     <>
@@ -130,7 +153,13 @@ function ProjectTransferBody({
                   </li>
                 </ul>
                 <p>
-                  <input type="checkbox" className="checkbox" autoComplete="off" id="accept" />
+                  <input
+                    type="checkbox"
+                    className="checkbox"
+                    autoComplete="off"
+                    id="accept"
+                    ref={acceptInputRef}
+                  />
                   <label htmlFor="accept" className="bg-checkbox label-agreement">
                     {t("project.transfer.accept")}
                   </label>
@@ -139,18 +168,27 @@ function ProjectTransferBody({
             </div>
           </div>
           <div className="box-wrap bottom">
-            <a
+            <button
+              type="button"
               id="btnTransfer"
-              href="#alertTransfer"
               className="ybtn ybtn-danger"
-              data-toggle="modal"
+              onClick={openTransferModal}
             >
               <i className="yobicon-database"></i> {t("project.transfer.this")}
-            </a>
+            </button>
           </div>
-          <div id="alertTransfer" className="modal hide">
+          <div
+            id="alertTransfer"
+            className={isTransferModalOpen ? "modal in" : "modal hide"}
+            style={isTransferModalOpen ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
-              <button type="button" className="close" data-dismiss="modal">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={dismissTransferModal}
+              >
                 ×
               </button>
               <h3>{t("project.transfer.requestion")}</h3>
@@ -168,11 +206,17 @@ function ProjectTransferBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" data-dismiss="modal">
+              <button
+                type="button"
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={dismissTransferModal}
+              >
                 {t("button.no")}
               </button>
             </div>
           </div>
+          {isTransferModalOpen ? <div className="modal-backdrop in"></div> : null}
         </div>
       </div>
     </>

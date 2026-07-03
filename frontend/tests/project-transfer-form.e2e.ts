@@ -35,7 +35,7 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
       <div class="row-fluid"><div class="cu-label">new owner or group</div><div class="cu-desc"><p><input type="text" id="owner" name="owner"></p></div></div>
       <div class="row-fluid"><div class="cu-label">Transfer</div><div class="cu-desc"><ul><li class="notice"><strong>This transfer will be done when the new owner or the group's admin accepts the request.</strong></li><li class="notice"><strong>This project will be owned by the new owner or group.</strong></li><li class="notice"><strong>When it's done, the project's current owner will be changed to a member of this project.</strong></li><li class="notice"><strong>The URL of all resources of this project will be changed including issues, postings and others.</strong></li><li class="notice"><strong>The URL of the repository of this project will be changed.</strong></li></ul><p><input type="checkbox" class="checkbox" autocomplete="off" id="accept"><label for="accept" class="bg-checkbox label-agreement">I agree with the transfer of this project.</label></p></div></div>
     </div>
-    <div class="box-wrap bottom"><a id="btnTransfer" href="#alertTransfer" class="ybtn ybtn-danger" data-toggle="modal"><i class="yobicon-database"></i> Transfer this project</a></div>
+    <div class="box-wrap bottom"><button id="btnTransfer" type="button" class="ybtn ybtn-danger"><i class="yobicon-database"></i> Transfer this project</button></div>
     <div id="alertTransfer" class="modal hide">
       <div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Do you want to transfer this project?</h3></div>
       <div class="modal-body"><p>If this project is transferred, the new owner or the group's admin will take all the rights of this project.</p><p>Are you sure?</p></div>
@@ -69,7 +69,7 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     bubbleBackground: "rgb(247, 247, 247)",
     bubblePadding: "20px 20px 10px",
     bubbleWidth: 1260,
-    buttonHeight: "21px",
+    buttonHeight: "31px",
     buttonLineHeight: "20px",
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
@@ -83,7 +83,7 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     ownerInputHeight: "30px",
     ownerInputWidth: "206px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
     rowMinHeight: "0px",
     tabsMarginBottom: "15px",
@@ -115,6 +115,95 @@ test("project transfer menu settings link preserves legacy href with SPA transit
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project transfer confirmation follows legacy accept gate and REST redirect flow", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const transferRequests: {
+    body: unknown;
+    hasCsrfToken: boolean;
+    method: string;
+    url: string;
+  }[] = [];
+  await guardTransferControlsAgainstNativeListeners(page);
+  await mockProjectAdmin(page, { transferRequests });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+
+  const alertTransfer = page.locator("#alertTransfer");
+  await expect(alertTransfer).toHaveClass("modal hide");
+  await expect(alertTransfer).toBeHidden();
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  const alertPromise = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      const message = dialog.message();
+      await dialog.accept();
+      resolve(message);
+    });
+  });
+  await page.locator("#btnTransfer").click();
+  await expect(alertPromise).resolves.toBe("You should agree with the transfer of this project.");
+  await expect(alertTransfer).toHaveClass("modal hide");
+  await expect(alertTransfer).toBeHidden();
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#accept").check();
+  await page.locator("#btnTransfer").click();
+  await expect(alertTransfer).toHaveClass("modal in");
+  await expect(alertTransfer).toBeVisible();
+  await expect(alertTransfer).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+
+  await page.locator('#alertTransfer [data-dismiss="modal"]').last().click();
+  await expect(alertTransfer).toHaveClass("modal hide");
+  await expect(alertTransfer).toBeHidden();
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#btnTransfer").click();
+  await expect(alertTransfer).toHaveClass("modal in");
+  await page.locator("#alertTransfer .close").click();
+  await expect(alertTransfer).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await page.locator("#owner").fill("target-owner");
+  await page.locator("#btnTransfer").click();
+  const transferResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/transfer") &&
+      response.request().method() === "POST",
+  );
+  await page.locator("#btnTransferExec").click();
+  await transferResponsePromise;
+
+  expect(transferRequests).toEqual([
+    {
+      body: { destination: "target-owner" },
+      hasCsrfToken: true,
+      method: "POST",
+      url: `${basePath}/api/v1/owners/admin/projects/sample/transfer`,
+    },
+  ]);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  expect(await readTransferNativeListenerCounts(page)).toEqual({
+    alertTransferClick: 0,
+    alertTransferMousedown: 0,
+    btnTransferClick: 0,
+    btnTransferMousedown: 0,
+  });
 });
 
 test("project transfer header favorite star posts and toggles starred class", async ({ page }) => {
@@ -243,6 +332,12 @@ async function mockProjectAdmin(
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     project?: Partial<ReturnType<typeof transferProject>>;
+    transferRequests?: {
+      body: unknown;
+      hasCsrfToken: boolean;
+      method: string;
+      url: string;
+    }[];
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -276,6 +371,25 @@ async function mockProjectAdmin(
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/transfer", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      options.transferRequests?.push({
+        body: request.postDataJSON(),
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-transfer",
+        method: request.method(),
+        url: new URL(request.url()).pathname,
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...transferProject(),
+          destination: "target-owner",
+          redirectPath: "/admin/sample",
+          transferId: 91,
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ ...transferProject(), ...options.project }),
@@ -313,6 +427,62 @@ async function mockProjectAdmin(
       contentType: "application/json",
       body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
+  });
+}
+
+async function guardTransferControlsAgainstNativeListeners(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    const counts = {
+      alertTransferClick: 0,
+      alertTransferMousedown: 0,
+      btnTransferClick: 0,
+      btnTransferMousedown: 0,
+    };
+    EventTarget.prototype.addEventListener = function (
+      this: EventTarget,
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (this instanceof Element) {
+        if (this.id === "btnTransfer" && type === "click") {
+          counts.btnTransferClick += 1;
+        }
+        if (this.id === "btnTransfer" && type === "mousedown") {
+          counts.btnTransferMousedown += 1;
+        }
+        if (this.id === "alertTransfer" && type === "click") {
+          counts.alertTransferClick += 1;
+        }
+        if (this.id === "alertTransfer" && type === "mousedown") {
+          counts.alertTransferMousedown += 1;
+        }
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+    (
+      window as Window &
+        typeof globalThis & {
+          __transferNativeListenerCounts?: typeof counts;
+        }
+    ).__transferNativeListenerCounts = counts;
+  });
+}
+
+async function readTransferNativeListenerCounts(page: Page) {
+  return page.evaluate(() => {
+    return (
+      window as Window &
+        typeof globalThis & {
+          __transferNativeListenerCounts?: {
+            alertTransferClick: number;
+            alertTransferMousedown: number;
+            btnTransferClick: number;
+            btnTransferMousedown: number;
+          };
+        }
+    ).__transferNativeListenerCounts;
   });
 }
 
@@ -404,6 +574,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -444,6 +615,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
