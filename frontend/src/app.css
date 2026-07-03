@@ -2472,6 +2472,7 @@ h1 {
 }
 
 .nav-tabs > li > a,
+.user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button {
   display: block;
   padding: 8px 30px;
@@ -2483,6 +2484,7 @@ h1 {
   border-radius: 4px 4px 0 0;
 }
 
+.user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button {
   font: inherit;
   cursor: pointer;
@@ -2507,6 +2509,8 @@ h1 {
 
 .nav-tabs > li > a:hover,
 .nav-tabs > li > a:focus,
+.user-stream-box .nav-tabs > li > button:hover,
+.user-stream-box .nav-tabs > li > button:focus,
 .issue-list-wrap .nav-tabs.nm > li > button:hover,
 .issue-list-wrap .nav-tabs.nm > li > button:focus {
   border-color: #eee #eee #ddd;
@@ -2524,6 +2528,9 @@ h1 {
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a:hover,
 .nav-tabs > li.active > a:focus,
+.user-stream-box .nav-tabs > li.active > button,
+.user-stream-box .nav-tabs > li.active > button:hover,
+.user-stream-box .nav-tabs > li.active > button:focus,
 .issue-list-wrap .nav-tabs.nm > li.active > button,
 .issue-list-wrap .nav-tabs.nm > li.active > button:hover,
 .issue-list-wrap .nav-tabs.nm > li.active > button:focus {

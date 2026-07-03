@@ -22,16 +22,16 @@ const EXPECTED_PROFILE_SCREEN = `
       <div class="user-stream-box">
         <div class="pull-right">recently<input id="daysAgoBtn" name="daysAgo" type="number" min="1" max="99" class="input-mini-min" value="14" style="margin:0px 5px; vertical-align:bottom;">days ago</div>
         <ul class="nav nav-tabs">
-          <li class="active"><a href="#issues" data-toggle="tab">Issue <span class="num-badge">2</span></a></li>
-          <li class=""><a href="#pullRequests" data-toggle="tab">Pull request <span class="num-badge">1</span></a></li>
-          <li class=""><a href="#projects" data-toggle="tab">projects <span class="num-badge">1</span></a></li>
+          <li class="active"><button type="button" data-toggle="tab">Issue <span class="num-badge">2</span></button></li>
+          <li class=""><button type="button" data-toggle="tab">Pull request <span class="num-badge">1</span></button></li>
+          <li class=""><button type="button" data-toggle="tab">projects <span class="num-badge">1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
         </ul>
         <div class="tab-content">
           <div id="issues" class="tab-pane active">
             <ul class="nav nav-tabs nm">
-              <li class="active"><a href="#openIssues" data-toggle="tab">Open<span class="num-badge">1</span></a></li>
-              <li><a href="#closedIssues" data-toggle="tab">Closed<span class="num-badge">1</span></a></li>
+              <li class="active"><button type="button" data-toggle="tab">Open<span class="num-badge">1</span></button></li>
+              <li class=""><button type="button" data-toggle="tab">Closed<span class="num-badge">1</span></button></li>
               <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
             </ul>
             <div class="tab-content">
@@ -48,7 +48,7 @@ const EXPECTED_PROFILE_SCREEN = `
                   </li>
                 </ul>
               </div>
-              <div id="closedIssues" class="tab-pane"><ul class="post-list-wrap my-issues row-fluid"><li class="post-item title" id="issue-item-12" href="__BASE_PATH__/door/sample/issue/8"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#8</span></div><div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/8" class="title">Closed profile issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item"></span></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><span class="infos-item"></span></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-06-29">2026-06-29</span><span class="mileston-tag"><a href="__BASE_PATH__/door/sample/milestone/3" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right " data-toggle="tooltip" data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>2026-08-01</span></span></div></div></li></ul></div>
+              <div id="closedIssues" class="tab-pane "><ul class="post-list-wrap my-issues row-fluid"><li class="post-item title" id="issue-item-12" href="__BASE_PATH__/door/sample/issue/8"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#8</span></div><div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/8" class="title">Closed profile issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="door">Door User</a></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item"></span></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><span class="infos-item"></span></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="2026-06-29">2026-06-29</span><span class="mileston-tag"><a href="__BASE_PATH__/door/sample/milestone/3" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right " data-toggle="tooltip" data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>2026-08-01</span></span></div></div></li></ul></div>
             </div>
           </div>
           <div id="pullRequests" class="tab-pane ">
@@ -120,6 +120,12 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   await page.goto(`${basePath}/door`);
   await expect(page.locator(".user-box")).toBeVisible();
   await expect(page.locator("#openIssues .post-item")).toHaveCount(1);
+  await expect(page.locator('.user-stream-box > .nav-tabs a[href^="#"]')).toHaveCount(0);
+  await expect(page.locator('#issues > .nav-tabs.nm a[href^="#"]')).toHaveCount(0);
+  await expect(page.locator('.user-stream-box > .nav-tabs button[data-toggle="tab"]')).toHaveCount(
+    3,
+  );
+  await expect(page.locator('#issues > .nav-tabs.nm button[data-toggle="tab"]')).toHaveCount(2);
 
   expect(await canonicalizeProfileRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)),
@@ -168,16 +174,37 @@ test("public user profile matches legacy selected projects tab and click switchi
     ),
   );
 
-  await page.locator('.user-stream-box > .nav-tabs a[href="#pullRequests"]').click();
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  const beforeTabClickUrl = page.url();
+
+  await page.locator(".user-stream-box > .nav-tabs button", { hasText: "Pull request" }).click();
   await expect(page.locator(".user-stream-box > .nav-tabs > li").nth(1)).toHaveClass("active");
   await expect(page.locator("#pullRequests")).toHaveClass(/active/u);
   await expect(page.locator("#projects")).not.toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeTabClickUrl);
+  await expect.poll(() => readSpaMarker(page)).toBe("kept");
   expect(new URL(page.url()).searchParams.get("daysAgo")).toBe("7");
   expect(new URL(page.url()).searchParams.get("selected")).toBe("projects");
 
-  await page.locator('.user-stream-box > .nav-tabs a[href="#issues"]').click();
+  await page.locator(".user-stream-box > .nav-tabs button", { hasText: "Issue" }).click();
   await expect(page.locator(".user-stream-box > .nav-tabs > li").first()).toHaveClass("active");
   await expect(page.locator("#issues")).toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeTabClickUrl);
+
+  await page.locator("#issues > .nav-tabs.nm button", { hasText: "Closed" }).click();
+  await expect(page.locator("#issues > .nav-tabs.nm > li").nth(1)).toHaveClass("active");
+  await expect(page.locator("#closedIssues")).toHaveClass(/active/u);
+  await expect(page.locator("#openIssues")).not.toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeTabClickUrl);
+
+  await page.locator("#issues > .nav-tabs.nm button", { hasText: "Open" }).click();
+  await expect(page.locator("#issues > .nav-tabs.nm > li").first()).toHaveClass("active");
+  await expect(page.locator("#openIssues")).toHaveClass(/active/u);
+  await expect(page.locator("#closedIssues")).not.toHaveClass(/active/u);
+  expect(page.url()).toBe(beforeTabClickUrl);
+  await expect.poll(() => readSpaMarker(page)).toBe("kept");
 });
 
 test("public user profile matches legacy selected pull-request tab", async ({ page }) => {
@@ -483,6 +510,12 @@ async function readProfileMetrics(page: Page) {
   });
 }
 
+async function readSpaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+  );
+}
+
 async function canonicalizeProfileRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(document.querySelectorAll(".site-breadcrumb-outer, .page-wrap-outer"));
@@ -649,20 +682,22 @@ function expectedProfileScreen({
       stats,
     )
     .replace(
-      '<li class="active"><a href="#issues" data-toggle="tab">Issue',
-      `<li class="${selected === "issues" ? "active" : ""}"><a href="#issues" data-toggle="tab">Issue`,
+      '<li class="active"><button type="button" data-toggle="tab">Issue',
+      `<li class="${selected === "issues" ? "active" : ""}"><button type="button" data-toggle="tab">Issue`,
     )
     .replace(
-      '<li class=""><a href="#pullRequests" data-toggle="tab">Pull request',
-      `<li class="${selected === "pullRequests" ? "active" : ""}"><a href="#pullRequests" data-toggle="tab">Pull request`,
+      '<li class=""><button type="button" data-toggle="tab">Pull request',
+      `<li class="${selected === "pullRequests" ? "active" : ""}"><button type="button" data-toggle="tab">Pull request`,
     )
     .replace(
-      'Pull request <span class="num-badge">1</span></a>',
-      pullRequestsEmpty ? "Pull request </a>" : 'Pull request <span class="num-badge">1</span></a>',
+      'Pull request <span class="num-badge">1</span></button>',
+      pullRequestsEmpty
+        ? "Pull request </button>"
+        : 'Pull request <span class="num-badge">1</span></button>',
     )
     .replace(
-      '<li class=""><a href="#projects" data-toggle="tab">projects',
-      `<li class="${selected === "projects" ? "active" : ""}"><a href="#projects" data-toggle="tab">projects`,
+      '<li class=""><button type="button" data-toggle="tab">projects',
+      `<li class="${selected === "projects" ? "active" : ""}"><button type="button" data-toggle="tab">projects`,
     )
     .replace(
       '<div id="issues" class="tab-pane active">',

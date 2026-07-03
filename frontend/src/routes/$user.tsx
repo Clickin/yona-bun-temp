@@ -227,6 +227,7 @@ function PublicProfileBody({
 }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState(selected);
+  const [activeIssueTab, setActiveIssueTab] = useState<"closedIssues" | "openIssues">("openIssues");
   const profile = profileResponse.profile;
   if (!profile) {
     return null;
@@ -315,21 +316,18 @@ function PublicProfileBody({
                   <ProfileTab
                     active={activeTab === "issues"}
                     badge={issues.length}
-                    href="#issues"
                     label={t("menu.issue")}
                     onSelect={() => setActiveTab("issues")}
                   />
                   <ProfileTab
                     active={activeTab === "pullRequests"}
                     badge={profileResponse.pullRequestItems.length}
-                    href="#pullRequests"
                     label={t("menu.pullRequest")}
                     onSelect={() => setActiveTab("pullRequests")}
                   />
                   <ProfileTab
                     active={activeTab === "projects"}
                     badge={profileResponse.memberProjects.length}
-                    href="#projects"
                     label={t("project.projects")}
                     onSelect={() => setActiveTab("projects")}
                   />
@@ -341,24 +339,35 @@ function PublicProfileBody({
                 <div className="tab-content">
                   <div id="issues" className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}>
                     <ul className="nav nav-tabs nm">
-                      <li className="active">
-                        <a href="#openIssues" data-toggle="tab">
+                      <li className={activeIssueTab === "openIssues" ? "active" : ""}>
+                        <button
+                          type="button"
+                          data-toggle="tab"
+                          onClick={() => setActiveIssueTab("openIssues")}
+                        >
                           {t("issue.state.open")}
                           <span className="num-badge">{openIssues.length}</span>
-                        </a>
+                        </button>
                       </li>
-                      <li>
-                        <a href="#closedIssues" data-toggle="tab">
+                      <li className={activeIssueTab === "closedIssues" ? "active" : ""}>
+                        <button
+                          type="button"
+                          data-toggle="tab"
+                          onClick={() => setActiveIssueTab("closedIssues")}
+                        >
                           {t("issue.state.closed")}
                           <span className="num-badge">{closedIssues.length}</span>
-                        </a>
+                        </button>
                       </li>
                       <li>
                         <ShowSubtasksCheckbox />
                       </li>
                     </ul>
                     <div className="tab-content">
-                      <div id="openIssues" className="tab-pane active">
+                      <div
+                        id="openIssues"
+                        className={`tab-pane ${activeIssueTab === "openIssues" ? "active" : ""}`}
+                      >
                         {issues.length === 0 ? (
                           <div className="error-wrap">
                             <p>{`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}</p>
@@ -374,7 +383,10 @@ function PublicProfileBody({
                           ))}
                         </ul>
                       </div>
-                      <div id="closedIssues" className="tab-pane">
+                      <div
+                        id="closedIssues"
+                        className={`tab-pane ${activeIssueTab === "closedIssues" ? "active" : ""}`}
+                      >
                         {issues.length === 0 ? (
                           <div className="error-wrap">
                             <p>{`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}</p>
@@ -446,28 +458,19 @@ function PublicProfileBody({
 function ProfileTab({
   active,
   badge,
-  href,
   label,
   onSelect,
 }: {
   active: boolean;
   badge: number;
-  href: string;
   label: string;
   onSelect: () => void;
 }) {
   return (
     <li className={active ? "active" : ""}>
-      <a
-        href={href}
-        data-toggle="tab"
-        onClick={(event) => {
-          event.preventDefault();
-          onSelect();
-        }}
-      >
+      <button type="button" data-toggle="tab" onClick={onSelect}>
         {label} {badge > 0 ? <span className="num-badge">{badge}</span> : null}
-      </a>
+      </button>
     </li>
   );
 }
