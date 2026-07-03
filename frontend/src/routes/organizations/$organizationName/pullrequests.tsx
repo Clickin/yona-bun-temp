@@ -123,7 +123,7 @@ function OrganizationPullRequestsBody({
     `/organizations/${organizationName}/closedPullrequests`,
   );
   const searchAction = selectedCategory === "closed" ? closedAction : openAction;
-  const navigateTab = (event: ReactMouseEvent, to: string) => {
+  const navigateTab = (event: ReactMouseEvent<HTMLButtonElement>, to: string) => {
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -174,28 +174,26 @@ function OrganizationPullRequestsBody({
             <div className="span10 span-hard-wrap" id="span10">
               <ul className="nav nav-tabs nm pullrequeset-tab-menu">
                 <li className={selectedCategory === "open" ? "active" : ""}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     data-url={openAction}
                     data-type="state"
                     onClick={(event) => navigateTab(event, openAction)}
                   >
                     {t("pullRequest.state.open")}
                     <span className="num-badge">{pullRequests.openCount}</span>
-                  </a>
+                  </button>
                 </li>
                 <li className={selectedCategory === "closed" ? "active" : ""}>
-                  {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy tab uses href="#" plus data-url. */}
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     data-url={closedAction}
                     data-type="state"
                     onClick={(event) => navigateTab(event, closedAction)}
                   >
                     {t("pullRequest.state.closed")}
                     <span className="num-badge">{pullRequests.closedCount}</span>
-                  </a>
+                  </button>
                 </li>
               </ul>
               <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>

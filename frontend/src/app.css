@@ -2448,8 +2448,30 @@ h1 {
   border-radius: 4px 4px 0 0;
 }
 
+.pullrequeset-tab-menu > li > button {
+  display: block;
+  padding: 8px 30px;
+  margin-right: 2px;
+  color: #3592b5;
+  font: inherit;
+  font-weight: bold;
+  line-height: 20px;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+}
+
 .nav-tabs > li > a:hover,
 .nav-tabs > li > a:focus {
+  border-color: #eee #eee #ddd;
+  text-decoration: none;
+  background-color: #f2f2f2;
+}
+
+.pullrequeset-tab-menu > li > button:hover,
+.pullrequeset-tab-menu > li > button:focus {
   border-color: #eee #eee #ddd;
   text-decoration: none;
   background-color: #f2f2f2;
@@ -2458,6 +2480,16 @@ h1 {
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a:hover,
 .nav-tabs > li.active > a:focus {
+  color: #555;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+}
+
+.pullrequeset-tab-menu > li.active > button,
+.pullrequeset-tab-menu > li.active > button:hover,
+.pullrequeset-tab-menu > li.active > button:focus {
   color: #555;
   cursor: default;
   background-color: #fff;
