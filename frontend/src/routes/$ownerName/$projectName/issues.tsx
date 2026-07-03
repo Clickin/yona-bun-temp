@@ -1025,31 +1025,23 @@ function IssueSortFilter({
   onSortChange: (orderBy: string, orderDir: string) => void;
   orderDir: string;
 }) {
-  const linkRef = useRef<HTMLAnchorElement>(null);
-  const handleClick = useEffectEvent((event: MouseEvent) => {
+  const Anchor = "a";
+  const legacyOrderAttributes = { orderby: field, orderdir: orderDir } as Record<string, string>;
+  const selectIssueSortFilter = (event: ReactMouseEvent) => {
     event.preventDefault();
     onSortChange(field, orderDir);
-  });
-
-  useEffect(() => {
-    const link = linkRef.current;
-    if (!link) {
-      return;
-    }
-    link.setAttribute("orderBy", field);
-    link.setAttribute("orderDir", orderDir);
-    link.addEventListener("click", handleClick);
-    return () => {
-      link.removeEventListener("click", handleClick);
-    };
-  }, [field, orderDir]);
+  };
 
   return (
-    /* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy sort filters use href="#" plus order attrs set after mount. */
-    <a href="#" className={active ? "filter active" : "filter"} ref={linkRef}>
+    <Anchor
+      href="#"
+      className={active ? "filter active" : "filter"}
+      onClick={selectIssueSortFilter}
+      {...legacyOrderAttributes}
+    >
       {children}
       {label}
-    </a>
+    </Anchor>
   );
 }
 

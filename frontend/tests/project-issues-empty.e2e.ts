@@ -932,25 +932,61 @@ test("project issue sort filter updates route like legacy partial_list_wrap.scal
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "bulk");
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    (
+      window as unknown as { __issueSortFilterNativeListeners: string[] }
+    ).__issueSortFilterNativeListeners = [];
+    Element.prototype.addEventListener = function (type, listener, options) {
+      if (type === "click" && this instanceof HTMLElement) {
+        if (this.matches(".filter-wrap .filter[orderBy]")) {
+          (
+            window as unknown as { __issueSortFilterNativeListeners: string[] }
+          ).__issueSortFilterNativeListeners.push(this.getAttribute("orderBy") ?? "");
+        }
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bulk&pageNum=3`);
   await expect(page.locator(".filter-wrap .filters")).toBeVisible();
+  const dueDateFilter = page.locator('.filter-wrap .filter[orderBy="dueDate"]');
+  const updatedFilter = page.locator('.filter-wrap .filter[orderBy="updatedDate"]');
+  await expect(dueDateFilter).toHaveAttribute("href", "#");
+  await expect(dueDateFilter).toHaveAttribute("orderDir", "desc");
+  await expect(dueDateFilter).toHaveClass("filter");
+  await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
+  await expect(updatedFilter).toHaveAttribute("href", "#");
+  await expect(updatedFilter).toHaveAttribute("orderDir", "asc");
+  await expect(updatedFilter).toHaveClass("filter active");
+  await expect(updatedFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-sort-filter";
   });
 
-  await page.locator('.filter-wrap .filter[orderBy="dueDate"]').click();
+  await dueDateFilter.click();
 
   await expect.poll(() => new URL(page.url()).searchParams.get("orderBy") ?? "").toBe("dueDate");
   await expect.poll(() => new URL(page.url()).searchParams.get("orderDir") ?? "").toBe("desc");
   await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bulk");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
-  await expect(page.locator('.filter-wrap .filter[orderBy="dueDate"]')).toHaveClass(
-    "filter active",
-  );
+  await expect(dueDateFilter).toHaveClass("filter active");
+  await expect(dueDateFilter).toHaveAttribute("href", "#");
+  await expect(dueDateFilter).toHaveAttribute("orderDir", "asc");
+  await expect(dueDateFilter.locator("i")).toHaveClass("ico btn-gray-arrow down");
+  await expect(updatedFilter).toHaveClass("filter");
+  await expect(updatedFilter).toHaveAttribute("orderDir", "desc");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-sort-filter");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __issueSortFilterNativeListeners: string[] })
+          .__issueSortFilterNativeListeners,
+    ),
+  ).toEqual([]);
 });
 
 test("project issue row label updates route like legacy partial_list.scala.html label filter", async ({
