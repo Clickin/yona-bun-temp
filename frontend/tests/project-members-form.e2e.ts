@@ -52,13 +52,37 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   });
 });
 
-test("project members menu settings link preserves legacy href with SPA transition", async ({
+test("project members settings tab anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installProjectSettingsTabNativeLinkAudit(page);
   await mockProjectMembers(page);
 
   await page.goto(`${basePath}/admin/sample/members`);
+  const settingsTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
+  await expect(settingsTabLinks).toHaveCount(7);
+  await expect(settingsTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(settingsTabLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  await expect(settingsTabLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/labels`);
+  await expect(settingsTabLinks.nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/webhooks`,
+  );
+  await expect(settingsTabLinks.nth(4)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/transfer`,
+  );
+  await expect(settingsTabLinks.nth(5)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/deleteform`,
+  );
+  await expect(settingsTabLinks.nth(6)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/changeVCS`,
+  );
+  expect(await readProjectSettingsTabNativeLinkAudit(page)).toEqual([]);
+
   const settingsLink = page.locator("#subMenuProjectSetting a");
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 
@@ -376,6 +400,41 @@ async function favoriteSpanNativeListeners(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
         .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
+
+async function installProjectSettingsTabNativeLinkAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    Object.defineProperty(window, "__projectSettingsTabNativeLinkListeners", {
+      configurable: true,
+      value: [],
+      writable: true,
+    });
+    Element.prototype.addEventListener = function addEventListenerWithProjectSettingsTabAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (this.matches(".project-page-wrap > .nav.nav-tabs a")) {
+        const parentId = this.parentElement?.id ?? "";
+        (
+          window as Window &
+            typeof globalThis & { __projectSettingsTabNativeLinkListeners: string[] }
+        ).__projectSettingsTabNativeLinkListeners.push(`${parentId}:${String(type)}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
+async function readProjectSettingsTabNativeLinkAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __projectSettingsTabNativeLinkListeners?: string[] }
+      ).__projectSettingsTabNativeLinkListeners ?? [],
   );
 }
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type AnchorHTMLAttributes, type ComponentType, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -22,10 +22,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-
-const LegacyInternalLink = Link as ComponentType<
-  AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }
->;
 
 export const Route = createFileRoute("/$ownerName/$projectName/members")({
   component: ProjectMembersRoute,
@@ -144,7 +140,6 @@ function ProjectMembersBody({
       <div className="project-page-wrap">
         <ProjectSettingMenu
           active="members"
-          basePath={runtimeConfig.basePath}
           ownerName={ownerName}
           project={project}
           projectName={projectName}
@@ -621,13 +616,11 @@ function ProjectMenuItem({
 
 function ProjectSettingMenu({
   active,
-  basePath,
   ownerName,
   project,
   projectName,
 }: {
   active: "members";
-  basePath: string;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -638,44 +631,48 @@ function ProjectSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/setting`}>
+        <Link to="/$ownerName/$projectName/setting" params={{ ownerName, projectName }}>
           {t("project.setting")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuProjectMember" className={active === "members" ? "active" : ""}>
-        <a href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members`)}>
+        <Link
+          activeProps={{ className: undefined }}
+          to="/$ownerName/$projectName/members"
+          params={{ ownerName, projectName }}
+        >
           {t("project.member")}
           <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
-        </a>
+        </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/labels`}>
+        <Link to="/$ownerName/$projectName/labels" params={{ ownerName, projectName }}>
           {t("issue.label")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuWebhook" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/webhooks`}>
+        <Link to="/$ownerName/$projectName/webhooks" params={{ ownerName, projectName }}>
           {t("project.webhook")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuProjectTransfer" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/transfer`}>
+        <Link to="/$ownerName/$projectName/transfer" params={{ ownerName, projectName }}>
           {t("project.transfer")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li id="subMenuProjectDelete" className="">
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/deleteform`}>
+        <Link to="/$ownerName/$projectName/deleteform" params={{ ownerName, projectName }}>
           {t("project.delete")}
-        </LegacyInternalLink>
+        </Link>
       </li>
       <li
         id="subMenuProjectChangeVCS"
         className=""
         style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
       >
-        <LegacyInternalLink to={`/${ownerName}/${projectName}/changeVCS`}>
+        <Link to="/$ownerName/$projectName/changeVCS" params={{ ownerName, projectName }}>
           {t("project.changeVCS")}
-        </LegacyInternalLink>
+        </Link>
       </li>
     </ul>
   );
