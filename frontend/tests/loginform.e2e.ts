@@ -233,6 +233,7 @@ test("social-login-only form matches legacy user/login.scala.html screen DOM", a
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
 
   await expect(page.locator(".oauth-login-btn")).toHaveCount(2);
+  await assertOAuthProviderLinks(page, basePath);
   await expect(page.locator("#loginIdOrEmailD")).toHaveCount(0);
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -254,6 +255,7 @@ test("configured social provider login form matches legacy user/login.scala.html
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
 
   await expect(page.locator(".oauth-login-btn")).toHaveCount(2);
+  await assertOAuthProviderLinks(page, basePath);
   await expect(page.locator(".social-login-title-line")).toHaveText("or");
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -275,6 +277,10 @@ test("configured social provider login form matches legacy user/login.scala.html
     socialTitleMarginTop: "12px",
     svgVerticalAlign: "middle",
   });
+  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
+  expect(source).toContain("to={`/authenticate/${normalized}`}");
+  expect(source).toContain("reloadDocument");
+  expect(source).not.toMatch(/<a\s+href=\{[^}]*\/authenticate\/\$\{normalized\}[^}]*\}/);
 });
 
 test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
@@ -428,6 +434,18 @@ async function mockCapabilities(
       },
     });
   });
+}
+
+async function assertOAuthProviderLinks(page: Page, basePath: string) {
+  const github = page.locator(".oauth-login-btn").nth(0);
+  const google = page.locator(".oauth-login-btn").nth(1);
+
+  await expect(github).toHaveAttribute("href", `${basePath}/authenticate/github`);
+  await expect(github).toHaveClass("ybtn oauth-login-btn");
+  await expect(github).toContainText("Sign in with github");
+  await expect(google).toHaveAttribute("href", `${basePath}/authenticate/google`);
+  await expect(google).toHaveClass("ybtn oauth-login-btn");
+  await expect(google).toContainText("Sign in with Google");
 }
 
 async function canonicalizeScreenRoots(page: Page) {

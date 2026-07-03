@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
@@ -162,15 +162,14 @@ function ProjectMilestoneEditFormBody({
                     <button type="submit" className="ybtn ybtn-info">
                       {t("button.save")}
                     </button>
-                    <a
-                      href={prefixBasePath(
-                        runtimeConfig.basePath,
-                        `/${ownerName}/${projectName}/milestones`,
-                      )}
+                    <Link
+                      to="/$ownerName/$projectName/milestones"
+                      params={{ ownerName, projectName }}
+                      activeProps={{ className: undefined }}
                       className="ybtn"
                     >
                       {t("button.cancel")}
-                    </a>
+                    </Link>
                   </div>
                 </div>
                 <div className="span3 span-hard-wrap">

@@ -55,6 +55,10 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  const cancelLink = page.locator('.actrow a.ybtn:has-text("Cancel")');
+  await expect(cancelLink).toHaveAttribute("href", `${basePath}/admin/sample/milestones`);
+  await expect(cancelLink).toHaveAttribute("class", "ybtn");
+  await expect(cancelLink).toHaveText("Cancel");
   expect(await readMilestoneEditFormMetrics(page)).toEqual({
     actionRowDisplay: "block",
     actionRowMarginTop: "20px",
@@ -117,6 +121,17 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
       title: "v1.0 patched",
     },
   ]);
+});
+
+test("project milestone edit form route uses direct typed Link for cancel navigation", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/milestone/$milestoneId/editform.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
+  expect(routeSource).toContain("activeProps={{ className: undefined }}");
+  expect(routeSource).not.toContain("<a\n                      href={prefixBasePath");
 });
 
 async function mockProjectMilestoneEditForm(page: Page, patchRequests: unknown[]) {

@@ -121,10 +121,10 @@ const EXPECTED_USER_LIST_SCREEN = `
               <span>2026-06-28 12:00:00</span>
             </div>
             <div class="span5 listitem-col action-buttons">
-              <a class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/guest/toggle?state=ACTIVE">Make Guest</a>
-              <a class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/account-lock/toggle?state=ACTIVE">Lock account</a>
+              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/guest/toggle?state=ACTIVE">Make Guest</button>
+              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/account-lock/toggle?state=ACTIVE">Lock account</button>
               <button id="doortts" class="ybtn ybtn-small" data-toggle="reset-password" data-href="__BASE_PATH__/doortts?action=resetPassword">Reset password</button>
-              <a class="ybtn ybtn-small label-info" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/site-admin/toggle">Upgrade to Site admin</a>
+              <button type="button" class="ybtn ybtn-small label-info" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/site-admin/toggle">Upgrade to Site admin</button>
               <button class="ybtn ybtn-small ybtn-danger" data-toggle="account-delete" data-href="__BASE_PATH__/sites/user/42" data-user-id="doortts" data-user-name="Door TTS">Delete</button>
             </div>
           </li>
@@ -148,7 +148,7 @@ const EXPECTED_USER_LIST_SCREEN = `
             <p>Are you sure you want this user to leave?</p>
           </div>
           <div class="modal-footer">
-            <a id="accountToggleBtn" class="ybtn ybtn-danger">Yes</a>
+            <button type="button" id="accountToggleBtn" class="ybtn ybtn-danger">Yes</button>
             <button type="button" class="ybtn" data-dismiss="modal">No</button>
           </div>
         </div>
@@ -211,6 +211,23 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
   await expect(page.locator('.site-setting-nav a[href$="/sites/setting"]')).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
+  await expect(page.locator(".action-buttons a[data-request-method]")).toHaveCount(0);
+  await expect(page.locator(".action-buttons button")).toHaveCount(5);
+  const guestToggleButton = page.locator(
+    '.action-buttons button[data-request-uri$="/guest/toggle?state=ACTIVE"]',
+  );
+  await expect(guestToggleButton).toHaveAttribute("type", "button");
+  await expect(guestToggleButton).toHaveClass("ybtn ybtn-small");
+  await expect(guestToggleButton).toHaveAttribute("data-request-method", "post");
+  await expect(
+    page.locator('.action-buttons button[data-request-uri$="/account-lock/toggle?state=ACTIVE"]'),
+  ).toHaveAttribute("type", "button");
+  await expect(
+    page.locator('.action-buttons button[data-request-uri$="/site-admin/toggle"]'),
+  ).toHaveClass("ybtn ybtn-small label-info");
+  await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
+  await expect(page.locator("#accountToggleBtn")).toHaveAttribute("type", "button");
+  await expect(page.locator("#accountToggleBtn")).toHaveClass("ybtn ybtn-danger");
   await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("alt", "Door TTS");
   await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("width", "32");
   await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("height", "32");
@@ -235,6 +252,11 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain('"pjax-page": ""');
   expect(routeSource).not.toContain("<a href={userPath}");
+  expect(routeSource).not.toMatch(
+    /<a[\s\S]*?(?:accountToggleBtn|data-request-method|data-request-uri)/u,
+  );
+  expect(routeSource).toMatch(/<button\s+type="button"\s+id="accountToggleBtn"/u);
+  expect(routeSource).toMatch(/<button\s+type="button"[\s\S]*?data-request-method="post"/u);
   expect(routeSource).toMatch(
     /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="avatar-wrap list-avatar"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
   );

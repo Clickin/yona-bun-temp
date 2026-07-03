@@ -280,8 +280,8 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   </p>
                 </div>
                 <div className="modal-footer">
-                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-                  <a
+                  <button
+                    type="button"
                     id="accountToggleBtn"
                     className="ybtn ybtn-danger"
                     onClick={() => {
@@ -291,7 +291,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     }}
                   >
                     <LegacyMessage messageKey="button.yes" />
-                  </a>
+                  </button>
                   <button
                     type="button"
                     className="ybtn"
@@ -549,8 +549,8 @@ function UserListItem({
       </div>
       {state !== "DELETED" ? (
         <div className="span5 listitem-col action-buttons">
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-          <a
+          <button
+            type="button"
             className={user.isGuest ? "ybtn ybtn-small ybtn-success" : "ybtn ybtn-small"}
             data-request-method="post"
             data-request-uri={legacyUserMutationPath(
@@ -563,9 +563,9 @@ function UserListItem({
             onClick={() => onToggleClick(user.loginId, "guest")}
           >
             {user.isGuest ? t("button.user.make.normal.mode") : t("button.user.make.guest.mode")}
-          </a>
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-          <a
+          </button>
+          <button
+            type="button"
             className="ybtn ybtn-small"
             data-request-method="post"
             data-request-uri={legacyUserMutationPath(
@@ -578,7 +578,7 @@ function UserListItem({
             onClick={() => onToggleClick(user.loginId, "account-lock")}
           >
             {t(`button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
-          </a>
+          </button>
           <button
             id={user.loginId}
             className="ybtn ybtn-small"
@@ -592,8 +592,8 @@ function UserListItem({
           {passwordReset && passwordReset !== "pending" ? (
             <PasswordResetAlert newPassword={passwordReset.newPassword ?? ""} />
           ) : null}
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-          <a
+          <button
+            type="button"
             className={
               user.isSiteAdmin ? "ybtn ybtn-small ybtn-info" : "ybtn ybtn-small label-info"
             }
@@ -607,7 +607,7 @@ function UserListItem({
             {user.isSiteAdmin
               ? t("button.user.revoke.site.admin.role")
               : t("button.user.upgrade.to.site.admin")}
-          </a>
+          </button>
           <button
             className="ybtn ybtn-small ybtn-danger"
             data-toggle="account-delete"

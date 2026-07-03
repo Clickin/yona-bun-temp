@@ -212,9 +212,13 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <Link to="/_help">{t("title.help")}</Link>
             </li>
             <li>
-              <a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
+              <Link
+                to={"https://github.com/nforge/yobi/issues?state=open" as never}
+                target="_blank"
+                activeProps={{ className: undefined }}
+              >
                 {t("title.yobi.feedback")}
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -234,14 +238,23 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         <div className="page-footer">
           <span className="provider">
             {"Copyright © "}
-            <a href="http://navercorp.com/" target="_blank">
+            <Link
+              to={"http://navercorp.com/" as never}
+              target="_blank"
+              activeProps={{ className: undefined }}
+            >
               NAVER Corp.
-            </a>{" "}
+            </Link>{" "}
             Supported by{" "}
-            <a href="https://developers.naver.com/d2/" target="_blank" className="d2-program">
+            <Link
+              to={"https://developers.naver.com/d2/" as never}
+              target="_blank"
+              className="d2-program"
+              activeProps={{ className: undefined }}
+            >
               <span className="d2">D2</span>
               <span className="program"> Program</span>
-            </a>
+            </Link>
           </span>
         </div>
       </footer>

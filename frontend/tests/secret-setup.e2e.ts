@@ -270,14 +270,52 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
   );
 
   expect(actual).toEqual(expected);
+  await expect(page.locator(".gnb-nav a").nth(2)).toHaveAttribute(
+    "href",
+    "https://github.com/nforge/yobi/issues?state=open",
+  );
+  await expect(page.locator(".gnb-nav a").nth(2)).toHaveAttribute("target", "_blank");
+  await expect(page.locator(".gnb-nav a").nth(2)).toHaveText("Feedback");
+  await expect(page.locator(".page-footer .provider > a").nth(0)).toHaveAttribute(
+    "href",
+    "http://navercorp.com/",
+  );
+  await expect(page.locator(".page-footer .provider > a").nth(0)).toHaveAttribute(
+    "target",
+    "_blank",
+  );
+  await expect(page.locator(".page-footer .provider > a").nth(0)).toHaveText("NAVER Corp.");
+  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveAttribute(
+    "href",
+    "https://developers.naver.com/d2/",
+  );
+  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveAttribute(
+    "target",
+    "_blank",
+  );
+  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveAttribute(
+    "class",
+    "d2-program",
+  );
+  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveText("D2 Program");
 });
 
-test("secret route source keeps internal anchors owned by TanStack Link", async () => {
+test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="logo">/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects">/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help">/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="ybtn ybtn-info">/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /to=\{"https:\/\/github\.com\/nforge\/yobi\/issues\?state=open" as never\}\s+target="_blank"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /to=\{"http:\/\/navercorp\.com\/" as never\}\s+target="_blank"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /to=\{"https:\/\/developers\.naver\.com\/d2\/" as never\}\s+target="_blank"\s+className="d2-program"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=["']\/(?!\/)/u);
 });
