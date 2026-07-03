@@ -9,6 +9,11 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
+const LEGACY_USER_LINK_SEARCH = { daysAgo: undefined, selected: undefined } as unknown as {
+  daysAgo: number;
+  selected: "issues" | "projects" | "pullRequests";
+};
+
 export function HomeRouteScreen({
   flashMessageKey = "",
   runtimeConfig,
@@ -381,6 +386,7 @@ function NotificationStreamItem({
       <div className={`stream-type ${notification.typeIcon}`}>
         <i className={`yobicon-${notification.typeIcon}`} />
       </div>
+      {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy notification row uses a div as the learn-more activator. */}
       <div
         className="stream-desc"
         data-target={`message-${notification.id}`}
@@ -429,6 +435,7 @@ function NotificationStreamItem({
           </div>
         </div>
       </div>
+      {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
     </li>
   );
 }
@@ -641,12 +648,29 @@ function AuthenticatedSiteUserMenu({
         <div className="span5 right-menu span-hard-wrap">
           <div className="row-fluid user-menu-wrap">
             <span className="user-menu">
-              <Link activeProps={{ className: undefined }} to="/$user" params={{ user: loginId }}>
+              <Link
+                activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+                to="/$user"
+                params={{ user: loginId }}
+                search={LEGACY_USER_LINK_SEARCH}
+              >
                 {t("userinfo.profile")}
               </Link>
             </span>
             <span className="user-menu">
-              <Link activeProps={{ className: undefined }} to="/user/editform">
+              <Link
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+                to="/user/editform"
+              >
                 {t("userinfo.accountSetting")}
               </Link>
             </span>

@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_SETTINGS = `
@@ -12,7 +13,7 @@ const EXPECTED_PROJECT_SETTINGS = `
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -143,6 +144,63 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
     .toBe("kept");
   await expect(page.locator("#subMenuProjectMember")).toHaveClass("active");
   await expect(page.locator(".members.project .member")).toHaveCount(2);
+});
+
+test("project settings project links render legacy hrefs and navigate through SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".project-menu-gruop a").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".project-setting li.active a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/setting`,
+  );
+  await expect(page.locator('.cu-desc .ybtn[target="_blank"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?issueTemplate=true`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await page.locator(".project-menu-gruop a", { hasText: "Board" }).click();
+
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(`${basePath}/admin/sample/posts`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+test("project settings route source keeps internal navigation on Link", async () => {
+  const source = await readFile(
+    new URL("../src/routes/$ownerName/$projectName/setting.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(source).not.toMatch(/<a\b[^>]*href=\{?(?:prefixBasePath|projectHref)/);
+  expect(source).not.toMatch(/<a\b[^>]*href=["']\/[^"']*["']/);
+  expect(source).not.toMatch(/href=["'](?:#|javascript:)/);
+  expect(source).toContain('target="_blank"');
 });
 
 test("project settings navbar search scope matches legacy projectLayout common navbar", async ({

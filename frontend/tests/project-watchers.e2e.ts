@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const PROJECT_WATCHERS_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/watchers.tsx";
 
 const EXPECTED_PROJECT_WATCHERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -9,12 +12,12 @@ const EXPECTED_PROJECT_WATCHERS = `
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
-      <li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
@@ -50,10 +53,62 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     memberListMarginLeft: "0px",
     memberNameLineHeight: "20px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     titleLineHeight: "30px",
     titlePadding: "10px 0px",
   });
+});
+
+test("project watchers internal links render legacy hrefs and navigate through the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+  await expect(page.getByText("This projects watcher list.")).toBeVisible();
+
+  await expect(page.locator(".project-author a")).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(page.locator(".project-name a")).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(page.locator(".project-menu-gruop a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code`,
+  );
+  await expect(page.locator(".members.project .avatar-wrap").first()).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __watchersSpaMarker?: string }).__watchersSpaMarker =
+      "kept";
+  });
+  await page.locator(".project-name a").click();
+  await page.waitForURL(`${basePath}/admin/sample`);
+
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __watchersSpaMarker?: string })
+          .__watchersSpaMarker,
+    ),
+  ).toBe("kept");
+});
+
+test("project watchers route source uses Link for internal app navigation", () => {
+  const source = readFileSync(PROJECT_WATCHERS_ROUTE_SOURCE, "utf8");
+
+  expect(source).toContain("import { Link, createFileRoute }");
+  expect(source).toContain('to="/$user"');
+  expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain('to="/$ownerName/$projectName/code"');
+  expect(source).toContain('to="/$ownerName/$projectName/setting"');
+  expect(source).toContain('"data-status": undefined');
+  expect(source).not.toContain("<a ");
+  expect(source).not.toContain("<a\n");
+  expect(source).not.toContain("href={prefixBasePath");
+  expect(source).not.toContain("href={projectHref");
+  expect(source).not.toContain("function projectHref");
 });
 
 test("project watchers header favorite star posts and toggles starred class", async ({ page }) => {

@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const PROJECT_MEMBERS_ROUTE_SOURCE = new URL(
+  "../src/routes/$ownerName/$projectName/members.tsx",
+  import.meta.url,
+);
 
 const EXPECTED_PROJECT_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -12,7 +18,7 @@ const EXPECTED_PROJECT_MEMBERS = `
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -101,6 +107,74 @@ test("project members settings tab anchors keep legacy hrefs without route-local
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project members converted internal links render legacy hrefs and navigate in the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page);
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample`,
+  );
+  await expect(page.locator(".project-menu-gruop a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code`,
+  );
+  await expect(page.locator(".project-setting .project-menu-nav a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/setting`,
+  );
+  await expect(page.locator(".members.project .avatar-wrap").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator(".members.project .avatar-wrap").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+  await expect(page.locator(".row-fluid .span2 .pull-left a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/bob`,
+  );
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await page.locator(".project-breadcrumb .project-name a").click();
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+test("project members route source keeps navigation in Link and mutation URLs in data-href", () => {
+  const source = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
+
+  expect(source).not.toMatch(/<a\b/);
+  expect(source).not.toMatch(/(?<!data-)\bhref=\{prefixBasePath/);
+  expect(source).not.toMatch(/(?<!data-)\bhref=\{projectHref/);
+  expect(source).not.toContain('href="javascript:void(0)"');
+  expect(source).not.toContain('href="#"');
+  expect(source).toContain("data-href={prefixBasePath(");
+  expect(source).toContain('to="/$ownerName/$projectName/setting"');
+  expect(source).toContain('to="/$user"');
 });
 
 test("project members enrollment Add posts selected login like legacy member module", async ({
