@@ -3,9 +3,7 @@ import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react
 import {
   Fragment,
   useEffect,
-  useEffectEvent,
   useMemo,
-  useRef,
   useState,
   type AnchorHTMLAttributes,
   type CSSProperties,
@@ -2253,7 +2251,6 @@ function IssueSearchForm({
   showCurrentUserOptions: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const formRef = useRef<HTMLFormElement>(null);
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
@@ -2272,29 +2269,10 @@ function IssueSearchForm({
 
     onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
   };
-  const handleSearchFieldChange = useEffectEvent((event: Event) => {
-    const target = event.target;
-    if (
-      !(target instanceof Element) ||
-      !target.matches("[data-search], [data-toggle='calendar']")
-    ) {
-      return;
-    }
+  const submitSearchControlForm = (control: HTMLSelectElement | HTMLInputElement) => {
+    control.form?.requestSubmit();
+  };
 
-    formRef.current?.requestSubmit();
-  });
-
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) {
-      return;
-    }
-
-    form.addEventListener("change", handleSearchFieldChange);
-    return () => {
-      form.removeEventListener("change", handleSearchFieldChange);
-    };
-  }, []);
   return (
     <form
       id="search"
@@ -2302,7 +2280,6 @@ function IssueSearchForm({
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
       method="get"
       onSubmit={handleSubmit}
-      ref={formRef}
     >
       <YobiToast noticeKey={invalidDueDateNoticeKey} message={t("issue.error.invalid.duedate")} />
       <input type="hidden" name="orderBy" value={search.orderBy} />
@@ -2324,6 +2301,7 @@ function IssueSearchForm({
             type="text"
             defaultValue={search.filter}
             data-search="filter"
+            onBlur={(event) => submitSearchControlForm(event.currentTarget)}
           />
           <button
             type="button"
@@ -2348,6 +2326,7 @@ function IssueSearchForm({
               data-format="user"
               data-container-css-class="fullsize"
               defaultValue={search.authorId}
+              onChange={(event) => submitSearchControlForm(event.currentTarget)}
             >
               <option value="">{t("common.order.all")}</option>
               {!isAnonymous && showCurrentUserOptions ? (
@@ -2377,6 +2356,7 @@ function IssueSearchForm({
               data-format="user"
               data-container-css-class="fullsize"
               defaultValue={search.assigneeId}
+              onChange={(event) => submitSearchControlForm(event.currentTarget)}
             >
               <option value="">{t("common.order.all")}</option>
               <option value="0">{t("issue.noAssignee")}</option>
@@ -2411,6 +2391,7 @@ function IssueSearchForm({
                 data-format="milestone"
                 data-container-css-class="fullsize"
                 defaultValue={search.milestoneId}
+                onChange={(event) => submitSearchControlForm(event.currentTarget)}
               >
                 <option value="">{t("milestone.state.all")}</option>
                 <option value="-1">{t("issue.noMilestone")}</option>
@@ -2461,6 +2442,7 @@ function IssueSearchForm({
               className="textbox full"
               defaultValue={search.dueDate}
               data-toggle="calendar"
+              onBlur={(event) => submitSearchControlForm(event.currentTarget)}
             />
             <button type="button" className="search-btn btn-calendar">
               <i className="yobicon-calendar2"></i>
@@ -2617,6 +2599,7 @@ function IssueSearchLabelSelect({
           data-placeholder={t("label.select")}
           className="hide"
           defaultValue={search.labelIds}
+          onChange={(event) => event.currentTarget.form?.requestSubmit()}
         >
           <option></option>
           {groupedLabels.map((category) => (

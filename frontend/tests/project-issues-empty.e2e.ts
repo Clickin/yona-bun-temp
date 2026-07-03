@@ -882,6 +882,20 @@ test("project issue search field change submits route like legacy issue.List dat
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    (
+      window as unknown as { __issueSearchNativeChangeListenerTypes: string[] }
+    ).__issueSearchNativeChangeListenerTypes = [];
+    Element.prototype.addEventListener = function (type, listener, options) {
+      if (type === "change" && this instanceof HTMLFormElement && this.id === "search") {
+        (
+          window as unknown as { __issueSearchNativeChangeListenerTypes: string[] }
+        ).__issueSearchNativeChangeListenerTypes.push(type);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3&orderBy=createdDate`);
   await expect(page.locator("#search #authorId")).toBeVisible();
@@ -900,6 +914,13 @@ test("project issue search field change submits route like legacy issue.List dat
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-search-change");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __issueSearchNativeChangeListenerTypes: string[] })
+          .__issueSearchNativeChangeListenerTypes,
+    ),
+  ).toEqual([]);
 });
 
 test("project issue state tab updates route like legacy partial_list_wrap.scala.html pjax tab", async ({
