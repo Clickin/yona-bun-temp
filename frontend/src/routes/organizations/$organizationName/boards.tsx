@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import type { HTMLAttributes } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import type { HTMLAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   listOrganizationBoardsQueryOptions,
   type BoardPostListItem,
@@ -182,7 +182,7 @@ function OrganizationBoardsBody({
           )}
 
           <div className="write-btn-wrap"></div>
-          <div id="pagination"></div>
+          <BoardPagination boards={boards} organizationName={organizationName} search={search} />
         </div>
       </div>
     </>
@@ -233,6 +233,115 @@ function BoardFilters({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function BoardPagination({
+  boards,
+  organizationName,
+  search,
+}: {
+  boards: OrganizationBoardsResponse;
+  organizationName: string;
+  search: OrganizationBoardsSearch;
+}) {
+  const router = useRouter();
+  const { t } = useLegacyMessages();
+  const pages = totalPages(boards);
+  if (pages <= 1) {
+    return <div id="pagination"></div>;
+  }
+
+  const currentPage = clampPageNum(boards.pageNum || search.pageNum, pages);
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < pages;
+  const pageSearch = (pageNum: number) => ({
+    ...search,
+    pageNum,
+    projectNames: [...search.projectNames],
+  });
+  const navigateToPage = (pageNum: number) => {
+    void router.navigate({
+      params: { organizationName },
+      search: pageSearch(pageNum),
+      to: "/organizations/$organizationName/boards",
+    });
+  };
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    if (!/^\d+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
+    const pageNum = clampPageNum(Number.parseInt(event.currentTarget.value, 10), pages);
+    event.currentTarget.value = String(pageNum);
+    navigateToPage(pageNum);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ className: undefined }}
+              params={{ organizationName }}
+              search={pageSearch(currentPage - 1)}
+              to="/organizations/$organizationName/boards"
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            key={currentPage}
+            max={pages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            type="number"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{pages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ className: undefined }}
+              params={{ organizationName }}
+              search={pageSearch(currentPage + 1)}
+              to="/organizations/$organizationName/boards"
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
     </div>
   );
 }
@@ -506,4 +615,19 @@ function stringField(value: unknown, fallback: string) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function totalPages(boards: OrganizationBoardsResponse) {
+  const providedTotalPages = Number((boards as Record<string, unknown>).totalPages);
+  if (Number.isFinite(providedTotalPages) && providedTotalPages >= 0) {
+    return providedTotalPages;
+  }
+  return Math.ceil(boards.totalCount / Math.max(boards.pageSize, 1));
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }

@@ -102,6 +102,60 @@ test("organization board aggregate empty state matches legacy group_board_list.s
   );
 });
 
+test("organization board aggregate renders legacy pagination and input behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page, "paginated");
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc&pageNum=1`,
+  );
+
+  const pagination = page.locator("#pagination");
+  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination.locator("ul.page-nums > li.page-num")).toHaveCount(5);
+  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  await expect(pagination.locator(".page-num.ikon").first()).toHaveText("Previous page");
+  await expect(pagination.locator(".page-num.delimiter")).toHaveText("/");
+  await expect(pagination.locator("li.page-num").nth(3)).toHaveText("3");
+
+  const input = pagination.locator('input[name="pageNum"]');
+  await expect(input).toHaveAttribute("type", "number");
+  await expect(input).toHaveAttribute("pattern", "[0-9]*");
+  await expect(input).toHaveAttribute("min", "1");
+  await expect(input).toHaveAttribute("max", "3");
+  await expect(input).toHaveValue("1");
+
+  const nextLink = pagination.locator(".page-num.ikon a").last();
+  await expect(nextLink).toHaveText("Next page");
+  const nextHref = await nextLink.getAttribute("href");
+  expect(nextHref).toContain(`${basePath}/organizations/weblabs/boards`);
+  expect(nextHref).toContain("filter=release");
+  expect(nextHref).toContain("orderBy=numOfComments");
+  expect(nextHref).toContain("orderDir=desc");
+  expect(nextHref).toContain("pageNum=2");
+  expect(nextHref).toContain("sample");
+
+  await input.evaluate((element) => {
+    element.setAttribute("type", "text");
+    element.value = "abc";
+  });
+  await input.press("Enter");
+  await expect(input).toHaveValue("1");
+  expect(new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+
+  await input.evaluate((element) => {
+    element.setAttribute("type", "number");
+    element.value = "99";
+  });
+  await input.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
+  await expect(input).toHaveValue("3");
+  await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
+  await expect(pagination.locator(".page-num.ikon").last()).toHaveText("Next page");
+});
+
 test("organization boards menu issue link preserves legacy href with SPA transition", async ({
   page,
 }) => {
@@ -299,7 +353,10 @@ test("organization board route source uses direct Links for organization top, fi
   );
 });
 
-async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "default") {
+async function mockOrganizationBoards(
+  page: Page,
+  state: "default" | "empty" | "paginated" = "default",
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -332,6 +389,9 @@ async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "
   });
   await page.route("**/api/v1/organizations/weblabs/boards**", async (route) => {
     const isEmpty = state === "empty";
+    const isPaginated = state === "paginated";
+    const url = new URL(route.request().url());
+    const pageNum = Number(url.searchParams.get("pageNum")) || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -374,9 +434,10 @@ async function mockOrganizationBoards(page: Page, state: "default" | "empty" = "
               },
             ],
         organizationName: "weblabs",
-        pageNum: 1,
+        pageNum,
         pageSize: 20,
-        totalCount: isEmpty ? 0 : 2,
+        totalCount: isEmpty ? 0 : isPaginated ? 45 : 2,
+        totalPages: isEmpty ? 0 : isPaginated ? 3 : 1,
         visibleProjects: [
           { ownerName: "weblabs", projectName: "sample" },
           { ownerName: "weblabs", projectName: "playground" },
