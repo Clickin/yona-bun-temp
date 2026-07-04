@@ -503,8 +503,10 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).not.toContain("function toggleProjectUtilDropdown(toggle: HTMLElement)");
   expect(source).not.toContain("function closeProjectUtilDropdown");
   expect(source).not.toContain('querySelectorAll(".project-util li.open")');
+  expect(source).not.toMatch(/querySelector(?:<[^>]+>)?\(\s*["']#project-description-input/u);
   expect(source).not.toContain(".classList");
   expect(source).toContain('useState<"enrollment" | "watch" | null>');
+  expect(source).toContain('overviewMutation.mutate(descriptionInputRef.current?.value ?? "")');
   expect(source).toContain('className={projectUtilDropdown === "enrollment" ? "open" : undefined}');
   expect(source).toContain('className={projectUtilDropdown === "watch" ? "open" : undefined}');
   expect(source).not.toMatch(/<a\s+className="ybtn enrollBtn"/u);

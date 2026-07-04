@@ -238,13 +238,7 @@ function ProjectHomeBody({
                   type="button"
                   className="ybtn ybtn-success"
                   id="descriptionSaveBtn"
-                  onClick={(event) => {
-                    const form = event.currentTarget.form;
-                    const input = form?.querySelector<HTMLInputElement>(
-                      "#project-description-input",
-                    );
-                    overviewMutation.mutate(input?.value ?? "");
-                  }}
+                  onClick={() => overviewMutation.mutate(descriptionInputRef.current?.value ?? "")}
                 >
                   {t("button.save")}
                 </button>{" "}
