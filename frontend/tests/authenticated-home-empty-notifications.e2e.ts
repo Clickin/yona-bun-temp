@@ -387,6 +387,8 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toMatch(/<a[\s>]/u);
   expect(routeSource).not.toContain("data-login=");
+  expect(routeSource).not.toContain("document.dispatchEvent");
+  expect(routeSource).not.toContain('data-toggle="yobi-notify"');
 });
 
 test("anonymous home shell renders legacy login and signup link affordances", async ({ page }) => {
@@ -553,6 +555,29 @@ test("authenticated home empty notifications matches legacy index notifications 
       ),
     )
     .toBe("gnb-new-group");
+});
+
+test("authenticated home flash renders legacy toast without route-local notify scan", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/?signup=requested`);
+  await expect(page.locator(".activity-streams.notification-wrap .warning-none")).toContainText(
+    "No notification has been received.",
+  );
+
+  const toast = page.locator(".yobiToasts .toast", {
+    hasText:
+      "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
+  });
+  await expect(toast).toBeVisible();
+  await expect(toast.locator(".msg")).toHaveText(
+    "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
+  );
+  await toast.locator("button.btn-transparent").click();
+  await expect(toast).toHaveCount(0);
 });
 
 test("authenticated shell renders legacy custom navbar link before my issues", async ({ page }) => {

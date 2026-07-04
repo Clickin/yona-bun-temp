@@ -126,18 +126,7 @@ function HomeScreen({
   const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);
   const [notificationHasMore, setNotificationHasMore] = React.useState(false);
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!flashMessageKey) {
-      return;
-    }
-    document.dispatchEvent(new Event("yobi:notify-scan"));
-    const timeoutId = window.setTimeout(
-      () => document.dispatchEvent(new Event("yobi:notify-scan")),
-      0,
-    );
-    return () => window.clearTimeout(timeoutId);
-  }, [flashMessageKey]);
+  const flashMessage = flashMessageKey ? t(flashMessageKey) : "";
 
   React.useEffect(() => {
     if (!notificationsQuery.data) {
@@ -186,6 +175,7 @@ function HomeScreen({
   if (isAuthenticated) {
     return (
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <HomeFlashToast message={flashMessage} />
         <div className="page-wrap-outer">
           <div className="page-wrap">
             <div className={isIntroVisible ? "site-guide-outer" : "site-guide-outer hide"}>
@@ -318,11 +308,7 @@ function HomeScreen({
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      {flashMessageKey ? (
-        <span data-toggle="yobi-notify" data-message={t(flashMessageKey)} hidden>
-          {t(flashMessageKey)}
-        </span>
-      ) : null}
+      <HomeFlashToast message={flashMessage} />
       <div className="siteintro-bg row">
         <div className="siteintro">
           <div className="siteintro-cover">
@@ -363,6 +349,39 @@ function HomeScreen({
         </div>
       </div>
     </SiteLayoutShell>
+  );
+}
+
+function HomeFlashToast({ message }: { message: string }) {
+  const [isVisible, setIsVisible] = React.useState(Boolean(message));
+
+  React.useEffect(() => {
+    setIsVisible(Boolean(message));
+    if (!message) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => setIsVisible(false), 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [message]);
+
+  if (!message || !isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="yobiToasts">
+      <div className="toast" tabIndex={-1}>
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent" onClick={() => setIsVisible(false)}>
+            &times;
+          </button>
+        </div>
+        <div className="center-text">
+          <span className="v" />
+          <div className="msg">{message}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
