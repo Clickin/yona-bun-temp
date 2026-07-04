@@ -91,6 +91,7 @@ function ProjectChangeVcsBody({
     },
     onError() {
       setChangeVcsModalOpen(false);
+      window.alert(t("project.changeVCS.error"));
     },
   });
   const openChangeVcsModal = () => {

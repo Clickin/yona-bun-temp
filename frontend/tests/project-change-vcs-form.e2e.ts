@@ -7,7 +7,7 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -157,6 +157,41 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
     )
     .toBe("kept");
   expect(await readChangeVcsNativeListenerAudit(page)).toEqual([]);
+});
+
+test("project change-VCS POST failure hides modal and alerts the legacy error", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const changeVcsRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, { changeVcsPostStatus: 500, changeVcsRequests });
+
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+  await page.locator("#acceptChangeVCS").check();
+  await page.locator("#btnChangeVCS").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+
+  const postResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/change-vcs") &&
+      response.request().method() === "POST",
+  );
+  const dialogPromise = new Promise<void>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toBe("Can't change repository type");
+      await dialog.accept();
+      resolve();
+    });
+  });
+  await page.locator("#btnChangeVCSExec").click();
+  await postResponsePromise;
+  await dialogPromise;
+
+  expect(changeVcsRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
 });
 
 test("project change-VCS internal project links keep legacy hrefs without route-local native listeners", async ({
@@ -388,6 +423,7 @@ async function readDesktopChangeVcsMetrics(page: Page) {
 async function mockProjectAdmin(
   page: Page,
   options: {
+    changeVcsPostStatus?: number;
     changeVcsRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
@@ -431,6 +467,14 @@ async function mockProjectAdmin(
         hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-change-vcs",
         method: request.method(),
       });
+      if (options.changeVcsPostStatus && options.changeVcsPostStatus >= 400) {
+        await route.fulfill({
+          contentType: "application/json",
+          status: options.changeVcsPostStatus,
+          body: JSON.stringify({ message: "change VCS failed" }),
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
