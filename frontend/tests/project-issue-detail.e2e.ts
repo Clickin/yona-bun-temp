@@ -225,6 +225,9 @@ test("project issue detail route uses shared markdown help and has no generic Le
   expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
   expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
   expect(routeSource).not.toMatch(/markdown-help[\s\S]{0,160}dangerouslySetInnerHTML/u);
+  expect(routeSource).not.toContain("labelSelectOptionsHtml");
+  expect(routeSource).not.toContain("optionsHtml");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML={{ __html: optionsHtml }}");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("createElement");

@@ -1477,7 +1477,27 @@ function IssueLabelSelect({
   projectName: string;
   selectedLabelIds: Set<string>;
 }) {
-  const optionsHtml = labelSelectOptionsHtml(labels, selectedLabelIds);
+  const categoryGroups = new Map<
+    string,
+    {
+      categoryId: string;
+      categoryIsExclusive: string;
+      categoryName: string;
+      labels: YonaRecord[];
+    }
+  >();
+  for (const label of labels) {
+    const categoryName = stringField(label.categoryName);
+    if (!categoryGroups.has(categoryName)) {
+      categoryGroups.set(categoryName, {
+        categoryId: stringField(label.categoryId),
+        categoryIsExclusive: String(booleanField(label.categoryIsExclusive)),
+        categoryName,
+        labels: [],
+      });
+    }
+    categoryGroups.get(categoryName)?.labels.push(label);
+  }
 
   return (
     <dl>
@@ -1508,8 +1528,43 @@ function IssueLabelSelect({
           data-placeholder="Select label"
           data-close-on-select="false"
           className="hide"
-          dangerouslySetInnerHTML={{ __html: optionsHtml }}
-        />
+        >
+          <option></option>
+          {Array.from(categoryGroups.values()).map((group) => (
+            <optgroup
+              key={`${group.categoryId}:${group.categoryName}`}
+              label={group.categoryName}
+              data-category-id={group.categoryId}
+              data-category-is-exclusive={group.categoryIsExclusive}
+            >
+              {group.labels.map((label) => {
+                const labelId = stringField(label.id);
+                const categoryId = stringField(label.categoryId);
+                const categoryIsExclusive = String(booleanField(label.categoryIsExclusive));
+                const isSelected = selectedLabelIds.has(labelId);
+                return (
+                  <option
+                    key={labelId}
+                    value={labelId}
+                    data-category-id={categoryId}
+                    data-category-is-exclusive={categoryIsExclusive}
+                    ref={
+                      isSelected
+                        ? (option) => {
+                            if (option) {
+                              option.defaultSelected = true;
+                            }
+                          }
+                        : undefined
+                    }
+                  >
+                    {stringField(label.name)}
+                  </option>
+                );
+              })}
+            </optgroup>
+          ))}
+        </select>
       </dd>
     </dl>
   );
@@ -3248,42 +3303,6 @@ function compareLabels(
   return categoryOrder || stringField(left.name).localeCompare(stringField(right.name));
 }
 
-function labelSelectOptionsHtml(labels: YonaRecord[], selectedLabelIds: Set<string>) {
-  const categoryGroups = new Map<
-    string,
-    {
-      categoryId: string;
-      categoryIsExclusive: string;
-      categoryName: string;
-      labels: YonaRecord[];
-    }
-  >();
-  for (const label of labels) {
-    const categoryName = stringField(label.categoryName);
-    if (!categoryGroups.has(categoryName)) {
-      categoryGroups.set(categoryName, {
-        categoryId: stringField(label.categoryId),
-        categoryIsExclusive: String(booleanField(label.categoryIsExclusive)),
-        categoryName,
-        labels: [],
-      });
-    }
-    categoryGroups.get(categoryName)?.labels.push(label);
-  }
-  return [
-    "<option></option>",
-    ...Array.from(categoryGroups.values()).map(
-      (group) =>
-        `<optgroup label="${escapeHtml(group.categoryName)}" data-category-id="${escapeHtml(group.categoryId)}" data-category-is-exclusive="${escapeHtml(group.categoryIsExclusive)}">${group.labels
-          .map(
-            (label) =>
-              `<option value="${escapeHtml(stringField(label.id))}" data-category-id="${escapeHtml(stringField(label.categoryId))}" data-category-is-exclusive="${escapeHtml(String(booleanField(label.categoryIsExclusive)))}"${selectedLabelIds.has(stringField(label.id)) ? " selected" : ""}>${escapeHtml(stringField(label.name))}</option>`,
-          )
-          .join("")}</optgroup>`,
-    ),
-  ].join("");
-}
-
 function AttachedFiles({
   attachments,
 }: {
@@ -3337,14 +3356,6 @@ function attachmentItems(value: unknown): Array<Record<string, unknown>> {
     }
   }
   return [];
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
 }
 
 function ellipsisMarkdown(markdown: string) {
