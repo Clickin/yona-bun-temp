@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { Fragment, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { Fragment, useState, type HTMLAttributes, type MouseEvent as ReactMouseEvent } from "react";
 import {
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
@@ -17,12 +17,6 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
-declare module "react" {
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
-
 type ProjectPostsSearch = {
   filter: string;
   labelIds: string[];
@@ -30,6 +24,8 @@ type ProjectPostsSearch = {
   orderDir: string;
   pageNum: number;
 };
+
+type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export const Route = createFileRoute("/$ownerName/$projectName/posts")({
   component: ProjectPostsRoute,
@@ -366,9 +362,13 @@ function ProjectBoardPost({
   const postRoutePath = `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`;
   const authorRoutePath = `/${post.authorLoginId}`;
   const postHref = prefixBasePath(basePath, postRoutePath);
+  const legacyPostItemAttrs = {
+    className: "post-item title",
+    href: postHref,
+  } satisfies LegacyPostItemAttrs;
 
   return (
-    <li className="post-item title" href={postHref}>
+    <li {...legacyPostItemAttrs}>
       <Link
         to={authorRoutePath}
         activeProps={{ className: undefined }}

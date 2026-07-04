@@ -227,12 +227,20 @@ test("project board list row internal links are router-owned", async ({ page }) 
   ).toBe("board-row-comments");
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  expect(routeSource).not.toContain('declare module "react"');
+  expect(routeSource).not.toContain("interface LiHTMLAttributes");
+  expect(routeSource).toContain(
+    "type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
+  );
   const rowSource = routeSource.slice(
     routeSource.indexOf("function ProjectBoardPost"),
     routeSource.indexOf("function LegacyTitlePrefixButton"),
   );
   expect(rowSource).toContain("const postHref");
-  expect(rowSource).toContain("href={postHref}");
+  expect(rowSource).toContain("const legacyPostItemAttrs");
+  expect(rowSource).toContain("href: postHref");
+  expect(rowSource).toContain("satisfies LegacyPostItemAttrs");
+  expect(rowSource).toContain("<li {...legacyPostItemAttrs}>");
   expect(rowSource).not.toContain("legacyHref");
   expect(rowSource).not.toContain("as unknown as LiHTMLAttributes<HTMLLIElement>");
   expect(rowSource).not.toContain("const authorHref");
