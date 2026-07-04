@@ -115,6 +115,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   const canShowNotice = Boolean(options?.canMarkNotice) && !issueTemplate && !isOnlineCommit;
   const canShowUploader = Boolean(options?.canAttachFiles) && !issueTemplate && !isOnlineCommit;
   const canShowReadme = Boolean(options?.canMarkReadme) && search.readme && !issueTemplate;
+  const [titleHasError, setTitleHasError] = useState(false);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -160,6 +161,11 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
           className="nm"
           onSubmit={(event) => {
             event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            if (stringFormValue(formData, "title").trim() === "") {
+              setTitleHasError(true);
+              return;
+            }
             mutation.mutate(event.currentTarget);
           }}
         >
@@ -172,11 +178,21 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   id="title"
                   autoComplete="off"
                   name="title"
-                  className="zen-mode text title "
+                  className={`zen-mode text title ${titleHasError ? "error" : ""}`}
                   maxLength={250}
                   defaultValue={title}
+                  onChange={(event) => {
+                    if (event.currentTarget.value.trim() !== "") {
+                      setTitleHasError(false);
+                    }
+                  }}
                   placeholder={isOnlineCommit ? t("code.commitMsg") : t("title")}
                 />
+                {titleHasError ? (
+                  <div className="message">
+                    <div>{t("validation.required")}</div>
+                  </div>
+                ) : null}
               </dd>
               <dd>
                 {issueTemplate ? (

@@ -32,6 +32,10 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("document.");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("classList");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("style.display");
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
@@ -144,7 +148,14 @@ test("project board create form matches legacy board/create.scala.html core form
     )
     .toBe("kept");
 
+  await page.click("form.nm .actions .ybtn-success");
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
+  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  expect(postRequests).toEqual([]);
+
   await page.fill("#title", "Board draft");
+  await expect(page.locator("#title")).not.toHaveClass(/error/);
+  await expect(page.locator("#title + .message")).toHaveCount(0);
   await page.fill("#editor-body-body", "Body **markdown**");
   await page.check("#notice");
   const postResponsePromise = page.waitForResponse(
