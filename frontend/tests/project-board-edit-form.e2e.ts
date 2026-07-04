@@ -44,6 +44,8 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("classList");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("style.display");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
+  expect(EDITFORM_ROUTE_SOURCE).toContain("router.history.back()");
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const patchRequests: unknown[] = [];

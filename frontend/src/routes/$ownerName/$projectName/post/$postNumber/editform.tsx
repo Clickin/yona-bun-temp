@@ -204,9 +204,11 @@ function LegacyTabIndexButton({
 }
 
 function HistoryBackLink({ children }: { children: string }) {
+  const router = useRouter();
+
   return (
     // oxlint-disable-next-line jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets tabindex="4" on Cancel.
-    <button type="button" className="ybtn" tabIndex={4} onClick={() => window.history.back()}>
+    <button type="button" className="ybtn" tabIndex={4} onClick={() => router.history.back()}>
       {children}
     </button>
   );
