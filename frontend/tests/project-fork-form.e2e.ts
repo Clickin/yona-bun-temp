@@ -113,6 +113,7 @@ test("project fork route has no raw route-local internal anchors", async () => {
   expect(source).not.toContain("href={prefixBasePath");
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("as unknown as ProjectContainer");
+  expect(source).not.toContain("onMouseDown=");
 });
 
 test("project fork owner select navigates by legacy data-url without full reload", async ({
@@ -204,7 +205,7 @@ test("project fork header favorite star posts and toggles starred class", async 
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -232,7 +233,7 @@ test("project fork header favorite star removes starred class when unfavorited",
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
+  await page.locator(".project-breadcrumb .user-project-list").click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);

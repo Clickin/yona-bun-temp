@@ -445,7 +445,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                 data-project-id={projectId}
                 role="button"
                 tabIndex={0}
-                onMouseDown={(event) => {
+                onClick={(event) => {
                   event.stopPropagation();
                   favoriteMutation.mutate();
                 }}

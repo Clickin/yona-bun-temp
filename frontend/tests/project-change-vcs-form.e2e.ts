@@ -283,6 +283,8 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).not.toContain("mask={{ to:");
   expect(source).toContain('to="/$ownerName/$projectName/changeVCS"');
   expect(source).toContain("params={{ ownerName, projectName }}");
+  expect(source).not.toContain("onMouseDown=");
+  expect(source).toContain("onClick=");
 });
 
 test("project change-VCS header favorite star posts and toggles starred class", async ({
@@ -308,7 +310,7 @@ test("project change-VCS header favorite star posts and toggles starred class", 
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -336,7 +338,7 @@ test("project change-VCS header favorite star removes starred class when unfavor
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
+  await page.locator(".project-breadcrumb .user-project-list").click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);

@@ -108,6 +108,8 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain('to="/$ownerName/$projectName/code"');
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain("toggleProjectWatchRest");
+  expect(source).toContain("onClick={(event) =>");
+  expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("legacyUserSearch");
   expect(source).not.toContain("daysAgo: undefined");
   expect(source).not.toContain("selected: undefined");
@@ -147,7 +149,7 @@ test("project watchers header favorite star posts and toggles starred class", as
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -175,7 +177,7 @@ test("project watchers header favorite star removes starred class when unfavorit
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
+  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("click");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
