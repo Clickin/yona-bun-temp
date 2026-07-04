@@ -59,6 +59,11 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator('.actrow .ybtn[href$="/milestone/5/editform"]')).toHaveText("Edit");
   await expect(page.locator('.actrow button.ybtn-danger:has-text("Delete")')).toHaveCount(1);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
+  expect(
+    await page
+      .locator("#issues .nav-tabs li:not(.active)")
+      .evaluateAll((tabs) => tabs.map((tab) => tab.getAttribute("class"))),
+  ).toEqual([null, null]);
   await expect(page.locator('#issues .nav-tabs a:has-text("Closed")')).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/milestone/5?state=closed#issues`,
@@ -295,6 +300,11 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await page.click('#issues .nav-tabs a:has-text("Closed")');
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=closed#issues`);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Closed1");
+  expect(
+    await page
+      .locator("#issues .nav-tabs li:not(.active)")
+      .evaluateAll((tabs) => tabs.map((tab) => tab.getAttribute("class"))),
+  ).toEqual([null, null]);
   await expect(page.locator("#issue-item-42")).toContainText("#12Closed milestone issue");
   await page.click('#issues .nav-tabs a:has-text("Open")');
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=open#issues`);

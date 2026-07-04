@@ -318,7 +318,7 @@ function ProjectMilestoneDetailBody({
           <div id="issues">
             <ul className="nav nav-tabs">
               {(["open", "closed", "all"] as const).map((state) => (
-                <li key={state} className={search.state === state ? "active" : ""}>
+                <li key={state} className={search.state === state ? "active" : undefined}>
                   <Link
                     to="/$ownerName/$projectName/milestone/$milestoneId"
                     params={{ ownerName, projectName, milestoneId }}
