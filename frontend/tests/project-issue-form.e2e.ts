@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_ISSUE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap "><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize" disabled=""><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize" disabled=""><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" data-toggle="calendar" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value=""><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap "><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize" disabled=""><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize" disabled=""><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-toggle="select2" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" data-toggle="calendar" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value=""><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
 `;
 
 const EXPECTED_PARENT_ISSUE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="">??? Select parent issue ???</option><option value="42" selected="">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" data-toggle="calendar" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value="55"><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="">??? Select parent issue ???</option><option value="42" selected="">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-toggle="select2" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" data-toggle="calendar" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value="55"><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -59,6 +59,20 @@ test("project issue create form matches legacy issue/create.scala.html core form
     "style",
     "width: 100%;",
   );
+  await expect(page.locator("#milestoneOption > dt")).toHaveText("Milestone");
+  await expect(page.locator("#milestoneId")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#milestoneId")).toHaveAttribute("data-format", "milestone");
+  await expect(page.locator("#milestoneId")).toHaveAttribute(
+    "data-container-css-class",
+    "fullsize",
+  );
+  await expect(page.locator("#milestoneId")).toHaveValue("-1");
+  await expect(page.locator("#milestoneId option").first()).toHaveText("No milestone");
+  await expect(page.locator('#milestoneId option[value="5"]')).toHaveAttribute(
+    "data-state",
+    "open",
+  );
+  await expect(page.locator('#milestoneId option[value="5"]')).toHaveText("Sprint 1");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
   await expect(
@@ -207,6 +221,22 @@ test("project issue create form empty title submit renders legacy required error
   await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
 });
 
+test("project issue create form renders legacy new milestone button when no open milestones exist", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueForm(page, { milestones: [] });
+
+  await page.goto(`${basePath}/admin/sample/issueform`);
+
+  await expect(page.locator("#milestoneOption > dt")).toHaveText("Milestone");
+  await expect(page.locator("#milestoneId")).toHaveCount(0);
+  const newMilestone = page.locator("#milestoneOption .ybtn.ybtn-small.ybtn-fullsize");
+  await expect(newMilestone).toHaveText("New milestone");
+  await expect(newMilestone).toHaveAttribute("href", `${basePath}/admin/sample/newMilestoneForm`);
+  await expect(newMilestone).toHaveAttribute("target", "_blank");
+});
+
 test("project issue create form source uses TanStack Link and no uploader template remnants", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
@@ -243,7 +273,12 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(sharedMarkdownHelpSource).toContain('<Link to="http://demo.yobi.io/yobi/yobi/issue/2">');
 });
 
-async function mockProjectIssueForm(page: Page) {
+async function mockProjectIssueForm(
+  page: Page,
+  options: {
+    milestones?: Array<Record<string, unknown>>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -309,6 +344,31 @@ async function mockProjectIssueForm(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({
         items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        milestones: options.milestones ?? [
+          {
+            attachments: [],
+            closedIssueCount: 0,
+            closedIssues: [],
+            completionPercent: 0,
+            contentsHtml: "",
+            contentsMarkdown: "",
+            dueDateLabel: "",
+            id: "5",
+            openIssueCount: 0,
+            openIssues: [],
+            state: "open",
+            title: "Sprint 1",
+            viewerCanDelete: true,
+            viewerCanUpdate: true,
+          },
+        ],
       }),
     });
   });

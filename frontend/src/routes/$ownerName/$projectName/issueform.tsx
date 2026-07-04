@@ -3,9 +3,10 @@ import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/reac
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
-import type { ProjectContainer, YonaRecord } from "../../../api/types";
+import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../api/types";
 import {
   createIssue,
+  listProjectMilestones,
   listIssueParentOptions,
   readSessionBootstrap,
 } from "../../../auth-workspace-client";
@@ -62,8 +63,22 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
     queryFn: () => listIssueParentOptions(runtimeConfig, ownerName, projectName),
     queryKey: ["project", ownerName, projectName, "issues", "parent-options"],
   });
+  const openMilestonesQuery = useQuery({
+    queryFn: () =>
+      listProjectMilestones(runtimeConfig, ownerName, projectName, {
+        orderBy: "dueDate",
+        orderDir: "asc",
+        state: "open",
+      }),
+    queryKey: ["project", ownerName, projectName, "milestones", "open", "issue-form"],
+  });
 
-  if (!projectQuery.data || !labelsQuery.data || !parentOptionsQuery.data) {
+  if (
+    !projectQuery.data ||
+    !labelsQuery.data ||
+    !parentOptionsQuery.data ||
+    !openMilestonesQuery.data
+  ) {
     return null;
   }
 
@@ -73,6 +88,7 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectIssueFormBody
         labels={labelsQuery.data.labels}
+        milestones={openMilestonesQuery.data.milestones}
         parentIssueId={parentIssueId}
         parentOptions={parentOptionsQuery.data.items}
         project={projectQuery.data}
@@ -85,6 +101,7 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
 
 function ProjectIssueFormBody({
   labels,
+  milestones,
   parentIssueId,
   parentOptions,
   project,
@@ -92,6 +109,7 @@ function ProjectIssueFormBody({
   runtimeConfig,
 }: {
   labels: YonaRecord[];
+  milestones: ProjectMilestone[];
   parentIssueId: string;
   parentOptions: Array<{
     id: bigint | number;
@@ -107,6 +125,11 @@ function ProjectIssueFormBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { ownerName, projectName } = Route.useParams();
+  const menuSetting = (project as YonaRecord).menuSetting;
+  const showMilestoneOption =
+    typeof menuSetting === "object" &&
+    menuSetting !== null &&
+    booleanField((menuSetting as YonaRecord).milestone);
   const [titleErrors, setTitleErrors] = useState<string[]>([]);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
@@ -248,6 +271,14 @@ function ProjectIssueFormBody({
                       />
                     </dd>
                   </dl>
+
+                  {showMilestoneOption ? (
+                    <IssueMilestoneSelect
+                      milestones={milestones}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                    />
+                  ) : null}
 
                   <dl className="issue-option">
                     <dt>{t("issue.dueDate")}</dt>
@@ -400,6 +431,56 @@ function IssuePostFileUploader() {
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>
+  );
+}
+
+function IssueMilestoneSelect({
+  milestones,
+  ownerName,
+  projectName,
+}: {
+  milestones: ProjectMilestone[];
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <dl id="milestoneOption" className="issue-option">
+      <dt>{t("milestone")}</dt>
+      <dd>
+        {milestones.length === 0 ? (
+          <Link
+            to="/$ownerName/$projectName/newMilestoneForm"
+            params={{ ownerName, projectName }}
+            className="ybtn ybtn-small ybtn-fullsize"
+            target="_blank"
+          >
+            {t("milestone.menu.new")}
+          </Link>
+        ) : (
+          <select
+            id="milestoneId"
+            name="milestoneId"
+            data-toggle="select2"
+            data-format="milestone"
+            data-container-css-class="fullsize"
+            defaultValue="-1"
+          >
+            <option value="-1">{t("issue.noMilestone")}</option>
+            {milestones.map((milestone) => (
+              <option
+                key={stringField(milestone.id, "")}
+                value={stringField(milestone.id, "")}
+                data-state={stringField(milestone.state, "")}
+              >
+                {stringField(milestone.title, "")}
+              </option>
+            ))}
+          </select>
+        )}
+      </dd>
+    </dl>
   );
 }
 
