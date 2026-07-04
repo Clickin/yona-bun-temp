@@ -139,8 +139,48 @@ test("project code branch folder links navigate with TanStack Router without doc
     .toBe(markerBefore);
 });
 
+test("project code branch selector navigates slash branch in the SPA", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page);
+  await page.addInitScript(() => {
+    (
+      window as typeof window & { __yonaCodeFolderBranchDocumentMarker: string }
+    ).__yonaCodeFolderBranchDocumentMarker = Math.random().toString(36);
+  });
+
+  await page.goto(`${basePath}/admin/sample/code/main`);
+  const markerBefore = await page.evaluate(
+    () =>
+      (window as typeof window & { __yonaCodeFolderBranchDocumentMarker: string })
+        .__yonaCodeFolderBranchDocumentMarker,
+  );
+  await expect(page.locator("#branches")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#branches")).toHaveAttribute("data-format", "branch");
+  await expect(page.locator("#branches")).toHaveAttribute("data-dropdown-css-class", "branches");
+  await expect(
+    page.locator('#branches option[value$="/admin/sample/code/feature%2Frelease"]'),
+  ).toHaveText("feature/release");
+
+  await page.locator("#branches").selectOption(`${basePath}/admin/sample/code/feature%2Frelease`);
+
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/code/feature%2Frelease$`));
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __yonaCodeFolderBranchDocumentMarker: string })
+            .__yonaCodeFolderBranchDocumentMarker,
+      ),
+    )
+    .toBe(markerBefore);
+});
+
 test("project code branch route source converts internal raw anchors to Link", async () => {
-  expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute, Outlet, useRouterState }");
+  expect(ROUTE_SOURCE).toContain(
+    "import { Link, createFileRoute, Outlet, useRouter, useRouterState }",
+  );
+  expect(ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
   expect(ROUTE_SOURCE).toContain("activeOptions={{");
   expect(ROUTE_SOURCE).toContain("activeProps={{");
   expect(ROUTE_SOURCE).toContain('"data-status": undefined');

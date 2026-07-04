@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -71,6 +71,7 @@ function ProjectCodeFolderBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const { branch, ownerName, projectName } = Route.useParams();
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeBranch(selectedBranch);
@@ -155,6 +156,9 @@ function ProjectCodeFolderBody({
                 "code",
                 encodedBranch,
               )}
+              onChange={(event) => {
+                router.history.push(event.currentTarget.value);
+              }}
             >
               {code.branches.map((item) => (
                 <option
