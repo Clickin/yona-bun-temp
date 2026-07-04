@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -53,6 +53,7 @@ function OrganizationSettingsBody({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [wrongNameMessage, setWrongNameMessage] = useState("");
   const organizationName = stringField(organization.organizationName, "organization");
   const organizationId = stringField(organization.id, "");
   const logoUrl =
@@ -83,7 +84,13 @@ function OrganizationSettingsBody({
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    updateMutation.mutate(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    if (!isLegacyOrganizationName(String(formData.get("name") ?? ""))) {
+      setWrongNameMessage(t("organization.name.alert"));
+      return;
+    }
+    setWrongNameMessage("");
+    updateMutation.mutate(formData);
   }
 
   function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
@@ -167,7 +174,12 @@ function OrganizationSettingsBody({
                       defaultValue={organizationName}
                     />
                     <div className="orange-txt">
-                      <span className="msg wrongName" style={{ display: "none" }}></span>
+                      <span
+                        className="msg wrongName"
+                        style={wrongNameMessage ? undefined : { display: "none" }}
+                      >
+                        {wrongNameMessage}
+                      </span>
                     </div>
                   </dd>
                   <dt>
@@ -409,4 +421,8 @@ function isImageFile(file: File, fallbackName: string) {
     return file.type.toLowerCase().startsWith("image/");
   }
   return /\.(gif|bmp|jpg|jpeg|png)$/i.test(fallbackName);
+}
+
+function isLegacyOrganizationName(value: string) {
+  return /^[a-zA-Z0-9-가-힣]+([_.][a-zA-Z0-9-가-힣]+)*$/u.test(value);
 }
