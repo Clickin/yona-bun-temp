@@ -14,7 +14,7 @@ const EXPECTED_POST_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -255,6 +255,20 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-posts-pagination");
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-posts-pagination-input";
+  });
+  const pageNumInput = page.locator('#pagination input[name="pageNum"]');
+  await pageNumInput.click();
+  await pageNumInput.fill("7");
+  await pageNumInput.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect(pageNumInput).toHaveValue("2");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-posts-pagination-input");
 
   await mockSiteUsers(page);
   const usersLink = page.locator(".site-setting-nav a", { hasText: "Users" });

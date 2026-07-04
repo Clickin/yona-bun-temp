@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -85,6 +85,8 @@ function PostListPagination({
   currentPage: number;
   totalPages: number;
 }) {
+  const router = useRouter();
+
   if (totalPages <= 0) {
     return <div id="pagination"></div>;
   }
@@ -115,13 +117,32 @@ function PostListPagination({
         <li className="page-num">
           <input
             className="input-mini nospinner"
+            key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
             name="pageNum"
+            onClick={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") {
+                return;
+              }
+
+              const pageNum = Number(event.currentTarget.value);
+              if (!Number.isInteger(pageNum)) {
+                event.currentTarget.value = String(currentPage);
+                return;
+              }
+
+              const nextPage = Math.min(Math.max(pageNum, 1), totalPages);
+              event.currentTarget.value = String(nextPage);
+              void router.navigate({
+                search: { pageNum: nextPage },
+                to: "/sites/postList",
+              });
+            }}
             pattern="[0-9]*"
-            readOnly
             type="number"
-            value={currentPage}
+            defaultValue={currentPage}
           />
         </li>
         <li className="page-num delimiter">/</li>
