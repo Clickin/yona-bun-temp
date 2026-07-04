@@ -108,6 +108,8 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     /attachedFileTemplate|dropFilesHereTemplate|tplAttachedFile|tplDropFilesHere|text\/x-jquery-tmpl/u,
   );
   const cancelButton = await expectModernCancelControl(page);
+  expect(ROUTE_SOURCE).not.toContain("window.history.back()");
+  expect(ROUTE_SOURCE).toContain("router.history.back()");
   const issueEditFormUrl = page.url();
 
   await page.evaluate(() => {
