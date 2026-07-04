@@ -62,11 +62,20 @@ function ProjectCreateScreen({
     ownerOptions.find((option) => option.ownerName === ownerName)?.organization ??
     selectedOwnerOption?.organization ??
     false;
+  const defaultProjectScope = normalizeDefaultProjectScope(runtimeConfig.projectDefaultScope);
+  const defaultMenus = React.useMemo(
+    () => projectDefaultMenus(runtimeConfig.projectDefaultMenus),
+    [runtimeConfig.projectDefaultMenus],
+  );
   const [vcs, setVcs] = React.useState("GIT");
-  const [projectScope, setProjectScope] = React.useState("PUBLIC");
-  const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
-  const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(true);
-  const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
+  const [projectScope, setProjectScope] = React.useState(defaultProjectScope);
+  const [menuCodeChecked, setMenuCodeChecked] = React.useState(() => defaultMenus.has("code"));
+  const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(() =>
+    defaultMenus.has("pullRequest"),
+  );
+  const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
+    defaultMenus.has("review"),
+  );
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -319,7 +328,12 @@ function ProjectCreateScreen({
                         }
                       }}
                     />
-                    <MenuCheckbox id="menuSettingIssue" name="issue" label={t("menu.issue")} />
+                    <MenuCheckbox
+                      id="menuSettingIssue"
+                      name="issue"
+                      label={t("menu.issue")}
+                      defaultChecked={defaultMenus.has("issue")}
+                    />
                     <MenuCheckbox
                       id="menuSettingPullRequest"
                       name="pullRequest"
@@ -349,8 +363,14 @@ function ProjectCreateScreen({
                       id="menuSettingMilestone"
                       name="milestone"
                       label={t("milestone")}
+                      defaultChecked={defaultMenus.has("milestone")}
                     />
-                    <MenuCheckbox id="menuSettingBoard" name="board" label={t("menu.board")} />
+                    <MenuCheckbox
+                      id="menuSettingBoard"
+                      name="board"
+                      label={t("menu.board")}
+                      defaultChecked={defaultMenus.has("board")}
+                    />
                   </div>
                 </div>
               </div>
@@ -385,6 +405,7 @@ function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
 
 function MenuCheckbox({
   checked,
+  defaultChecked = true,
   hidden,
   id,
   label,
@@ -392,6 +413,7 @@ function MenuCheckbox({
   onChange,
 }: {
   checked?: boolean;
+  defaultChecked?: boolean;
   hidden?: boolean;
   id: string;
   label: string;
@@ -411,10 +433,24 @@ function MenuCheckbox({
         name={name}
         value="true"
         checked={checked}
-        defaultChecked={checked === undefined ? true : undefined}
+        defaultChecked={checked === undefined ? defaultChecked : undefined}
         onChange={(event) => onChange?.(event.currentTarget.checked)}
       />
       {label}
     </label>
   );
+}
+
+function normalizeDefaultProjectScope(
+  scope: string | undefined,
+): "PUBLIC" | "PROTECTED" | "PRIVATE" {
+  const normalized = (scope ?? "").trim().toUpperCase();
+  return normalized === "PROTECTED" || normalized === "PRIVATE" ? normalized : "PUBLIC";
+}
+
+function projectDefaultMenus(menus: string[] | undefined): Set<string> {
+  const defaults = menus?.length
+    ? menus
+    : ["code", "issue", "pullRequest", "review", "milestone", "board"];
+  return new Set(defaults);
 }

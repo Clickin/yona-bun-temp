@@ -222,6 +222,34 @@ test("project create form mirrors legacy owner, VCS, and menu dependencies", asy
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project create form honors configured default scope and menus", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript((configuredBasePath) => {
+    (
+      window as Window & {
+        __YONA_RUNTIME_CONFIG__?: Record<string, unknown>;
+      }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: configuredBasePath,
+      projectDefaultMenus: ["issue", "board"],
+      projectDefaultScope: "private",
+    };
+  }, basePath);
+  await mockProjectCreate(page);
+
+  await page.goto(`${basePath}/projectform`);
+
+  await expect(page.locator("#public")).not.toBeChecked();
+  await expect(page.locator("#protected")).not.toBeChecked();
+  await expect(page.locator("#private")).toBeChecked();
+  await expect(page.locator("#menuSettingCode")).not.toBeChecked();
+  await expect(page.locator("#menuSettingIssue")).toBeChecked();
+  await expect(page.locator("#menuSettingPullRequest")).not.toBeChecked();
+  await expect(page.locator("#menuSettingReview")).not.toBeChecked();
+  await expect(page.locator("#menuSettingMilestone")).not.toBeChecked();
+  await expect(page.locator("#menuSettingBoard")).toBeChecked();
+});
+
 test("project create import link keeps legacy href and navigates through the SPA", async ({
   page,
 }) => {
