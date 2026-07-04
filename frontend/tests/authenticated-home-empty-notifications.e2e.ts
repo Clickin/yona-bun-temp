@@ -380,8 +380,24 @@ test("authenticated index redirects to the configured non-root default landing",
 
 test("authenticated home route has no generic LegacyInternalLink adapter", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const legacySources = {
+    footer: readFileSync("../yona-original/app/views/common/footer.scala.html", "utf8"),
+    index: readFileSync("../yona-original/app/views/index/index.scala.html", "utf8"),
+    navbar: readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8"),
+    notifications: readFileSync(
+      "../yona-original/app/views/index/notifications.scala.html",
+      "utf8",
+    ),
+    partialNotifications: readFileSync(
+      "../yona-original/app/views/index/partial_notifications.scala.html",
+      "utf8",
+    ),
+    siteLayout: readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8"),
+    usermenu: readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8"),
+  };
 
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("as unknown as");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
@@ -389,6 +405,49 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("data-login=");
   expect(routeSource).not.toContain("document.dispatchEvent");
   expect(routeSource).not.toContain('data-toggle="yobi-notify"');
+  expect(routeSource).toContain('const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new"');
+  expect(routeSource).toContain(
+    'const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new"',
+  );
+  expect(routeSource).toContain(
+    'const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine"',
+  );
+  expect(routeSource).toContain("prefixBasePath(runtimeConfig.basePath, notification.targetHref)");
+  expect(routeSource).toContain(
+    'const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS"',
+  );
+  expect(routeSource).toContain(
+    'const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona"',
+  );
+  expect(routeSource).toContain("href={navbarCustomLinkUrl}");
+  expect(routeSource).toContain(
+    "href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}",
+  );
+  expect(routeSource).toContain(
+    "href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}",
+  );
+  expect(routeSource).toContain(
+    "href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}",
+  );
+  expect(routeSource).toContain('to="/projectform"');
+
+  expect(legacySources.index).toContain("@views.html.index.notifications(currentUser)");
+  expect(legacySources.notifications).toContain("@siteLayout(utils.Config.getSiteName");
+  expect(legacySources.notifications).toContain("@partial_notifications(0, 20)");
+  expect(legacySources.partialNotifications).toContain('data-toggle="learnmore"');
+  expect(legacySources.partialNotifications).toContain('id="notification-more"');
+  expect(legacySources.navbar).toContain("@common.usermenu()");
+  expect(legacySources.navbar).toContain("gnb-search-form");
+  expect(legacySources.usermenu).toContain("Application.NAVBAR_CUSTOM_LINK_URL");
+  expect(legacySources.usermenu).toContain("routes.UserApp.logout()");
+  expect(legacySources.usermenu).toContain("routes.IssueApp.newDirectIssueForm()");
+  expect(legacySources.usermenu).toContain("routes.ProjectApp.newProjectForm()");
+  expect(legacySources.footer).toContain(
+    "https://github.com/yona-projects/yona/blob/master/AUTHORS",
+  );
+  expect(legacySources.footer).toContain("https://www.ncloud.com/?referer=yona");
+  expect(legacySources.siteLayout).toContain("@common.navbar(menuType, null, null)");
+  expect(legacySources.siteLayout).toContain("@common.footer()");
 });
 
 test("anonymous home shell renders legacy login and signup link affordances", async ({ page }) => {

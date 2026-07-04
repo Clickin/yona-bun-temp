@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const ROUTE_SOURCE_PATH = "src/routes/$ownerName/$projectName/commits/$branch.tsx";
+const LEGACY_HISTORY_SOURCE_PATH = "../yona-original/app/views/code/history.scala.html";
 
 const EXPECTED_HISTORY_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><select id="branches" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" class="pull-right"><option value="__BASE_PATH__/admin/sample/commits/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/commits/feature%2Frelease">feature/release</option></select><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div id="history" class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>...</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></td></tr><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="1234567890abcdef"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" title="View commit">1234567</a></td><td class="messages"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" class="commitMsg short">Second commit</a></td><td class="date">Jul 2, 2026</td><td class="author"><span class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="dev@example.com"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main?page=2" class="ybtn pull-left">Older</a></div></div></div></div>
@@ -146,18 +147,30 @@ test("project code history branch selector navigates slash branch in the SPA", a
 
 test("project code history route source has no internal raw anchor patterns", () => {
   const source = readFileSync(ROUTE_SOURCE_PATH, "utf8");
+  const legacySource = readFileSync(LEGACY_HISTORY_SOURCE_PATH, "utf8");
 
+  expect(legacySource).toContain("@getHistoryURL(path)?page=@(page + 1)");
+  expect(legacySource).toContain('queryString += "&path=" + path + "#"');
+  expect(legacySource).toContain("routes.CodeHistoryApp.show");
+  expect(source).toContain("validateSearch(search): ProjectCodeHistorySearch");
+  expect(source).toContain("return Number.isFinite(page) && page > 0 ? { page } : {};");
+  expect(source).toContain("const showCommitSearch = commitDetailSearch(selectedBranch);");
+  expect(source).toContain("return { branch };");
+  expect(source).toMatch(/projectRoutePath\(\s*ownerName,\s*projectName,\s*"commit",/u);
   expect(source).not.toMatch(/<a(?:\s|>)/u);
   expect(source).not.toContain("</a>");
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("href={commitHref");
+  expect(source).not.toContain("as never");
   expect(source).not.toContain("legacyInactiveLinkOptions");
   expect(source).not.toMatch(/\bdocument\./u);
   expect(source).not.toContain("addEventListener");
   expect(source).not.toContain("classList");
   expect(source).not.toContain("style.display");
   expect(
-    source.match(/activeOptions=\{\{ exact: true, includeHash: true, includeSearch: true \}\}/gu),
+    source.match(
+      /activeOptions=\{\{\s*exact: true,\s*includeHash: true,\s*includeSearch: true,?\s*\}\}/gu,
+    ),
   ).toHaveLength(8);
   expect(source.match(/activeProps=\{\{ className: undefined \}\}/gu)).toHaveLength(8);
 });

@@ -61,6 +61,15 @@ const LEGACY_LOGIN_FORM_LINK_SEARCH = {
   password: undefined!,
   redirectUrl: undefined!,
 } satisfies LegacyLoginFormLinkSearch;
+const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new";
+const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
+const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
+const LEGACY_AUTHENTICATED_LOGOUT_PATH: string = "/users/logout";
+const LEGACY_ANONYMOUS_LOGOUT_PATH: string = "/logout";
+const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS";
+const NAVER_CORP_URL: string = "https://navercorp.com";
+const NAVER_LABS_URL: string = "https://naverlabs.com/";
+const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona";
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -187,7 +196,12 @@ function HomeScreen({
                 <tbody>
                   <tr>
                     <td>
-                      <Link to={"/projects/new" as never} className="ybtn ybtn-success">
+                      <Link
+                        to={LEGACY_GUIDE_NEW_PROJECT_PATH}
+                        href={prefixBasePath(runtimeConfig.basePath, LEGACY_GUIDE_NEW_PROJECT_PATH)}
+                        reloadDocument
+                        className="ybtn ybtn-success"
+                      >
                         {t("button.newProject")}
                       </Link>
                     </td>
@@ -448,8 +462,8 @@ function NotificationStreamItem({
           <div className="title">
             {notification.targetHref ? (
               <Link
+                to={notification.targetHref}
                 href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}
-                to={notification.targetHref as never}
                 activeProps={{ className: undefined }}
               >
                 {notification.targetTitle}
@@ -668,8 +682,8 @@ export function SiteLayoutShell({
           <span className="provider">
             Copyright{" "}
             <Link
-              to={"https://github.com/yona-projects/yona/blob/master/AUTHORS" as never}
-              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
+              to={YONA_AUTHORS_URL}
+              href={YONA_AUTHORS_URL}
               reloadDocument
               target="_blank"
               className="yona-author"
@@ -677,18 +691,13 @@ export function SiteLayoutShell({
               Yona authors
             </Link>
             {" & © "}
-            <Link
-              to={"https://navercorp.com" as never}
-              href="https://navercorp.com"
-              reloadDocument
-              target="_blank"
-            >
+            <Link to={NAVER_CORP_URL} href={NAVER_CORP_URL} reloadDocument target="_blank">
               NAVER Corp.
             </Link>
             {" & "}
             <Link
-              to={"https://naverlabs.com/" as never}
-              href="https://naverlabs.com/"
+              to={NAVER_LABS_URL}
+              href={NAVER_LABS_URL}
               reloadDocument
               target="_blank"
               className="naver-labs"
@@ -697,8 +706,8 @@ export function SiteLayoutShell({
             </Link>{" "}
             Supported by{" "}
             <Link
-              to={"https://www.ncloud.com/?referer=yona" as never}
-              href="https://www.ncloud.com/?referer=yona"
+              to={NAVER_CLOUD_PLATFORM_URL}
+              href={NAVER_CLOUD_PLATFORM_URL}
               reloadDocument
               target="_blank"
               className="naver-cloud-platform"
@@ -772,8 +781,8 @@ function AuthenticatedSiteUserMenu({
               </Link>
             </span>
             <Link
-              to={"/users/logout" as never}
-              href={prefixBasePath(basePath, "/users/logout")}
+              to={LEGACY_AUTHENTICATED_LOGOUT_PATH}
+              href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}
               reloadDocument
             >
               <span className="user-menu logout label">{t("title.logout")}</span>
@@ -824,7 +833,7 @@ function AuthenticatedSiteUserMenu({
         {navbarCustomLinkName ? (
           <li className="gnb-usermenu-item">
             <Link
-              to={navbarCustomLinkUrl as never}
+              to={navbarCustomLinkUrl}
               href={navbarCustomLinkUrl}
               reloadDocument
               className="user-item-btn loggged-in"
@@ -889,10 +898,22 @@ function AuthenticatedSiteUserMenu({
           </button>
           <ul className="dropdown-menu flat right">
             <li>
-              <Link to={"/user/issues/new" as never}>{t("issue.menu.new")}</Link>
+              <Link
+                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
+                reloadDocument
+              >
+                {t("issue.menu.new")}
+              </Link>
             </li>
             <li>
-              <Link to={"/user/issues/new/mine" as never}>{t("issue.menu.new.mine")}</Link>
+              <Link
+                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
+                reloadDocument
+              >
+                {t("issue.menu.new.mine")}
+              </Link>
             </li>
             <li>
               <hr className="no-margin" />
@@ -932,7 +953,9 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
                   className: undefined,
                   "data-status": undefined,
                 }}
-                to={"/user/anonymous" as never}
+                to="/user/anonymous"
+                href={prefixBasePath(basePath, "/user/anonymous")}
+                reloadDocument
               >
                 {t("userinfo.profile")}
               </Link>
@@ -949,7 +972,11 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
                 {t("userinfo.accountSetting")}
               </Link>
             </span>
-            <Link to={"/logout" as never} href={prefixBasePath(basePath, "/logout")} reloadDocument>
+            <Link
+              to={LEGACY_ANONYMOUS_LOGOUT_PATH}
+              href={prefixBasePath(basePath, LEGACY_ANONYMOUS_LOGOUT_PATH)}
+              reloadDocument
+            >
               <span className="user-menu logout label">{t("title.logout")}</span>
             </Link>
           </div>

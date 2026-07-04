@@ -94,6 +94,27 @@ test("legacy GET /users/login keeps the public index mobile proportions", async 
 
 test("root not-found shell source uses Link semantics for legacy navigation anchors", async () => {
   const source = readFileSync("src/routes/__root.tsx", "utf8");
+  const legacySources = [
+    "../yona-original/app/views/siteLayout.scala.html",
+    "../yona-original/app/views/layout.scala.html",
+    "../yona-original/app/views/error/notfound_default.scala.html",
+    "../yona-original/app/views/common/footer.scala.html",
+    "../yona-original/app/views/common/usermenu.scala.html",
+  ].map((path) => readFileSync(path, "utf8"));
+  const legacyShellSource = legacySources.join("\n");
+  expect(legacyShellSource).toContain("@common.usermenu()");
+  expect(legacyShellSource).toContain("@common.footer()");
+  expect(legacyShellSource).toContain("@routes.ProjectApp.projects()");
+  expect(legacyShellSource).toContain("@routes.UserApp.loginForm()");
+  expect(legacyShellSource).toContain("@routes.UserApp.signupForm()");
+  expect(legacyShellSource).toContain('href="http://navercorp.com/"');
+  expect(source).not.toContain("as never");
+  expect(source).toContain('const projectListPath: string = "/projects";');
+  expect(source).toContain("to={projectListPath}");
+  expect(source).toContain('const loginFormPath: string = "/users/loginform";');
+  expect(source).toContain("to={loginFormPath}");
+  expect(source).toContain('const signupFormPath: string = "/users/signupform";');
+  expect(source).toContain("to={signupFormPath}");
   expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
   expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}');
   expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
@@ -102,6 +123,11 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
   expect(source).toContain('href="https://github.com/nforge/yobi/issues?state=open"');
   expect(source).toContain('href="http://navercorp.com/"');
   expect(source).toContain('href="https://developers.naver.com/d2/"');
+  expect(source).not.toContain('to="https://github.com/nforge/yobi/issues?state=open"');
+  expect(source).not.toContain('to="http://navercorp.com/"');
+  expect(source).not.toContain('to="https://developers.naver.com/d2/"');
+  expect(source).toContain('to="/user/anonymous"');
+  expect(source).not.toContain('to="/logout"');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
   expect(source).not.toContain(

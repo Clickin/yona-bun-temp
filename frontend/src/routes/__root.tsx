@@ -633,6 +633,8 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   }, [runtimeConfig]);
 
   const basePath = runtimeConfig.basePath;
+  const lostPasswordPath: string = "/lostPassword";
+  const signupPath: string = "/users/signupform";
   const socialLoginOnly = capabilities?.socialLoginOnly === true;
   const socialProviders = Array.isArray(capabilities?.enabledSocialProviders)
     ? capabilities.enabledSocialProviders
@@ -710,14 +712,11 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   {t("title.rememberMe")}
                 </label>
               </div>
-              <Link to={"/lostPassword" as never} href={prefixBasePath(basePath, "/lostPassword")}>
+              <Link to={lostPasswordPath} href={prefixBasePath(basePath, "/lostPassword")}>
                 {t("title.resetPassword")}
               </Link>
               <span className="gray-txt ml10 mr10">|</span>
-              <Link
-                to={"/users/signupform" as never}
-                href={prefixBasePath(basePath, "/users/signupform")}
-              >
+              <Link to={signupPath} href={prefixBasePath(basePath, "/users/signupform")}>
                 {t("title.signup")}
               </Link>
             </div>
@@ -733,11 +732,12 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
   if (normalized !== "github" && normalized !== "google") {
     return null;
   }
+  const providerLoginPath: string = `/authenticate/${normalized}`;
 
   return (
     <Link
-      to={`/authenticate/${normalized}` as never}
-      href={prefixBasePath(basePath, `/authenticate/${normalized}`)}
+      to={providerLoginPath}
+      href={prefixBasePath(basePath, providerLoginPath)}
       className="ybtn oauth-login-btn"
       reloadDocument
     >
@@ -790,6 +790,13 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
   const pathname =
     typeof window === "undefined" ? "/" : window.location.pathname.slice(basePath.length) || "/";
+  const feedbackUrl: string = "https://github.com/nforge/yobi/issues?state=open";
+  const projectListPath: string = "/projects";
+  const loginFormPath: string = "/users/loginform";
+  const signupFormPath: string = "/users/signupform";
+  const logoutPath: string = "/logout";
+  const naverCorpUrl: string = "http://navercorp.com/";
+  const d2ProgramUrl: string = "https://developers.naver.com/d2/";
 
   React.useEffect(() => {
     if (pathname === "/reset-password") {
@@ -812,10 +819,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link
-                to={"/projects" as never}
-                href={prefixBasePath(runtimeConfig.basePath, "/projects")}
-              >
+              <Link to={projectListPath} href={prefixBasePath(runtimeConfig.basePath, "/projects")}>
                 {t("title.projectList")}
               </Link>
             </li>
@@ -824,7 +828,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             </li>
             <li>
               <Link
-                to={"https://github.com/nforge/yobi/issues?state=open" as never}
+                to={feedbackUrl}
                 href="https://github.com/nforge/yobi/issues?state=open"
                 target="_blank"
               >
@@ -837,7 +841,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
                   <Link
-                    to={"/user/anonymous" as never}
+                    to="/user/anonymous"
                     href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}
                     reloadDocument
                   >
@@ -850,7 +854,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   </Link>
                 </span>
                 <Link
-                  to={"/logout" as never}
+                  to={logoutPath}
                   href={prefixBasePath(runtimeConfig.basePath, "/logout")}
                   reloadDocument
                 >
@@ -902,7 +906,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           <ul className="gnb-usermenu">
             <li className="gnb-usermenu-item" id="required-logged-in">
               <Link
-                to={"/users/loginform" as never}
+                to={loginFormPath}
                 href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
                 className="user-item-btn"
               >
@@ -912,7 +916,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             <li className="divider"></li>
             <li>
               <Link
-                to={"/users/signupform" as never}
+                to={signupFormPath}
                 href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
                 className="ybtn ybtn-success"
               >
@@ -937,16 +941,12 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         <div className="page-footer">
           <span className="provider">
             Copyright ©{" "}
-            <Link
-              to={"http://navercorp.com/" as never}
-              href="http://navercorp.com/"
-              target="_blank"
-            >
+            <Link to={naverCorpUrl} href="http://navercorp.com/" target="_blank">
               NAVER Corp.
             </Link>{" "}
             Supported by{" "}
             <Link
-              to={"https://developers.naver.com/d2/" as never}
+              to={d2ProgramUrl}
               href="https://developers.naver.com/d2/"
               target="_blank"
               className="d2-program"

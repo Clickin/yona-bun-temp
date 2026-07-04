@@ -9,12 +9,15 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
+type ProjectCodeHistorySearch = {
+  page?: number;
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch")({
   component: ProjectCodeHistoryRoute,
-  validateSearch(search) {
-    return {
-      page: typeof search.page === "number" ? search.page : Number(search.page ?? 0) || 0,
-    };
+  validateSearch(search): ProjectCodeHistorySearch {
+    const page = typeof search.page === "number" ? search.page : Number(search.page);
+    return Number.isFinite(page) && page > 0 ? { page } : {};
   },
 });
 
@@ -42,7 +45,7 @@ function ProjectCodeHistoryRoute() {
 
 function ProjectCodeHistoryScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { branch, ownerName, projectName } = Route.useParams();
-  const { page } = Route.useSearch();
+  const { page = 0 } = Route.useSearch();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -130,7 +133,7 @@ function ProjectCodeHistoryBody({
                 <Link
                   to="/$ownerName/$projectName/commits/$branch"
                   params={{ branch: selectedBranch, ownerName, projectName }}
-                  search={emptyHistorySearch()}
+                  search={{}}
                   activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                   activeProps={{ className: undefined }}
                 >
@@ -175,49 +178,59 @@ function ProjectCodeHistoryBody({
                       </td>
                     </tr>
                   ) : (
-                    history.commits.map((commit) => (
-                      <tr key={commit.commitId}>
-                        <td className="commit-id">
-                          <button
-                            type="button"
-                            className="ybtn ybtn-mini btn-copy-commitId"
-                            title={t("code.copyCommitId")}
-                            data-commitid={commit.commitId}
-                          >
-                            <i className="yobicon-copy"></i>
-                          </button>
-                          <Link
-                            to="/$ownerName/$projectName/commit/$commitId"
-                            params={{ commitId: commit.commitId, ownerName, projectName }}
-                            search={commitDetailSearch(selectedBranch)}
-                            activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                            activeProps={{ className: undefined }}
-                            title={t("code.showCommit")}
-                          >
-                            {commit.commitShortId}
-                          </Link>
-                        </td>
-                        <td className="messages">
-                          {commit.commentCount > 0 ? (
-                            <span className="number-of-comments">
-                              <i className="yobicon-comments"></i> {commit.commentCount}
-                            </span>
-                          ) : null}
-                          <CommitMessage
-                            commitId={commit.commitId}
-                            message={commit.message}
-                            ownerName={ownerName}
-                            projectName={projectName}
-                            selectedBranch={selectedBranch}
-                            shortMessage={commit.shortMessage}
-                          />
-                        </td>
-                        <td className="date">{commit.authorDate}</td>
-                        <td className="author">
-                          <CommitAuthor commit={commit} />
-                        </td>
-                      </tr>
-                    ))
+                    history.commits.map((commit) => {
+                      const showCommitPath = projectRoutePath(
+                        ownerName,
+                        projectName,
+                        "commit",
+                        commit.commitId,
+                      );
+                      const showCommitSearch = commitDetailSearch(selectedBranch);
+                      return (
+                        <tr key={commit.commitId}>
+                          <td className="commit-id">
+                            <button
+                              type="button"
+                              className="ybtn ybtn-mini btn-copy-commitId"
+                              title={t("code.copyCommitId")}
+                              data-commitid={commit.commitId}
+                            >
+                              <i className="yobicon-copy"></i>
+                            </button>
+                            <Link
+                              to={showCommitPath}
+                              search={showCommitSearch}
+                              activeOptions={{
+                                exact: true,
+                                includeHash: true,
+                                includeSearch: true,
+                              }}
+                              activeProps={{ className: undefined }}
+                              title={t("code.showCommit")}
+                            >
+                              {commit.commitShortId}
+                            </Link>
+                          </td>
+                          <td className="messages">
+                            {commit.commentCount > 0 ? (
+                              <span className="number-of-comments">
+                                <i className="yobicon-comments"></i> {commit.commentCount}
+                              </span>
+                            ) : null}
+                            <CommitMessage
+                              message={commit.message}
+                              search={showCommitSearch}
+                              shortMessage={commit.shortMessage}
+                              to={showCommitPath}
+                            />
+                          </td>
+                          <td className="date">{commit.authorDate}</td>
+                          <td className="author">
+                            <CommitAuthor commit={commit} />
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -257,19 +270,15 @@ function ProjectCodeHistoryBody({
 }
 
 function CommitMessage({
-  commitId,
   message,
-  ownerName,
-  projectName,
-  selectedBranch,
+  search,
   shortMessage,
+  to,
 }: {
-  commitId: string;
   message: string;
-  ownerName: string;
-  projectName: string;
-  selectedBranch: string;
+  search: { branch: string };
   shortMessage: string;
+  to: string;
 }) {
   const { t } = useLegacyMessages();
   const lines = message.split("\n");
@@ -279,9 +288,8 @@ function CommitMessage({
   return (
     <>
       <Link
-        to="/$ownerName/$projectName/commit/$commitId"
-        params={{ commitId, ownerName, projectName }}
-        search={commitDetailSearch(selectedBranch)}
+        to={to}
+        search={search}
         activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
         activeProps={{ className: undefined }}
         className="commitMsg short"
@@ -310,11 +318,10 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
   const avatarUrl = commit.authorAvatarUrl || "/assets/images/default-avatar-32.png";
 
   if (commit.authorLoginId) {
+    const authorPath = `/${commit.authorLoginId}` as "/";
     return (
       <Link
-        to="/$user"
-        params={{ user: commit.authorLoginId }}
-        search={emptyUserSearch()}
+        to={authorPath}
         activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
         className="avatar-wrap"
         activeProps={{ className: undefined }}
@@ -349,22 +356,15 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
 }
 
 function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {
-  return prefixBasePath(
-    basePath,
-    `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`,
-  );
-}
-
-function emptyHistorySearch() {
-  return { page: undefined } as never;
+  return prefixBasePath(basePath, projectRoutePath(ownerName, projectName, ...parts));
 }
 
 function commitDetailSearch(branch: string) {
-  return { branch, path: undefined } as never;
+  return { branch };
 }
 
-function emptyUserSearch() {
-  return {} as never;
+function projectRoutePath(ownerName: string, projectName: string, ...parts: string[]) {
+  return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }
 
 function encodeBranch(branch: string) {

@@ -318,13 +318,23 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   ).toContainText("Sign in with Google");
 
   const source = readFileSync("src/routes/__root.tsx", "utf8");
-  expect(source).toContain('to={"/lostPassword" as never}');
+  const legacyLoginDialog = readFileSync(
+    "../yona-original/app/views/common/loginDialog.scala.html",
+    "utf8",
+  );
+  expect(legacyLoginDialog).toContain("@routes.PasswordResetApp.lostPassword()");
+  expect(legacyLoginDialog).toContain("@routes.UserApp.signupForm");
+  expect(legacyLoginDialog).toContain("@p.getUrl");
+  expect(source).toContain('const lostPasswordPath: string = "/lostPassword";');
+  expect(source).toContain("to={lostPasswordPath}");
   expect(source).toContain('href={prefixBasePath(basePath, "/lostPassword")}');
-  expect(source).toContain('to={"/users/signupform" as never}');
+  expect(source).toContain('const signupPath: string = "/users/signupform";');
+  expect(source).toContain("to={signupPath}");
   expect(source).toContain('href={prefixBasePath(basePath, "/users/signupform")}');
-  expect(source).toContain("to={`/authenticate/${normalized}` as never}");
-  expect(source).toContain("href={prefixBasePath(basePath, `/authenticate/${normalized}`)}");
+  expect(source).toContain("const providerLoginPath: string = `/authenticate/${normalized}`;");
+  expect(source).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
   expect(source).toContain("reloadDocument");
+  expect(source).not.toContain("as never");
   expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/lostPassword"\)\}/u);
   expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/users\/signupform"\)\}/u);
   expect(source).not.toMatch(
