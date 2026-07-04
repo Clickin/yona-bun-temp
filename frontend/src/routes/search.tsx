@@ -59,7 +59,7 @@ function SearchRoute() {
 
 function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const search = Route.useSearch();
-  const hasKeyword = search.keyword.trim().length > 0;
+  const hasKeyword = search.keyword.length > 0;
   const searchQuery = useQuery({
     ...globalSearchQueryOptions(runtimeConfig, search),
     enabled: hasKeyword && !search.routeInvalid,

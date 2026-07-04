@@ -498,6 +498,20 @@ test("global search without required query renders legacy badrequest_default.sca
   );
 });
 
+test("global search preserves whitespace-only raw keyword and calls search API", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=%20%20&searchType=user`);
+  await expect(page.locator("#searchKeyword")).toHaveValue("  ");
+  await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
+  await expect.poll(() => searchApi.count).toBe(1);
+  await page.waitForLoadState("networkidle");
+  expect(searchApi.count).toBe(1);
+});
+
 test("global user search renders legacy partial_users.scala.html populated row", async ({
   page,
 }) => {
