@@ -74,6 +74,7 @@ function ProjectDeleteFormBody({
     },
     onError() {
       setDeletionModalOpen(false);
+      window.alert(t("project.delete.error"));
     },
   });
   const openDeletionModal = () => {

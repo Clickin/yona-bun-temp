@@ -10,7 +10,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -244,6 +244,37 @@ test("project delete confirmation modal opens, closes, deletes, and redirects th
   expect(await readDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
+test("project delete request failure hides modal and shows legacy error alert", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const deleteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, { deleteFails: true, deleteRequests });
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  await page.locator("#accept").check();
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample") &&
+      response.request().method() === "DELETE",
+  );
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe("Error occurred while deleting a project.");
+    await dialog.accept();
+  });
+  await page.locator("#btnDeleteExec").click();
+  await deleteResponsePromise;
+
+  expect(deleteRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/deleteform`);
+});
+
 test("project delete settings tab links preserve legacy hrefs without native listeners", async ({
   page,
 }) => {
@@ -473,6 +504,7 @@ async function readDesktopDeleteMetrics(page: Page) {
 async function mockProjectAdmin(
   page: Page,
   options: {
+    deleteFails?: boolean;
     deleteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
@@ -538,6 +570,14 @@ async function mockProjectAdmin(
         hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-delete",
         method: request.method(),
       });
+      if (options.deleteFails) {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "delete failed" }),
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ ok: true, redirectPath: "/" }),
