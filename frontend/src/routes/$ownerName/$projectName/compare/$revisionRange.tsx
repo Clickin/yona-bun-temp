@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { codeCompareQueryOptions, type CodeCompareResponse } from "../../../../api/code-compare";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -44,17 +44,26 @@ function ProjectCodeCompareScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectCodeCompareBody compare={compareQuery.data} project={projectQuery.data} />
+      <ProjectCodeCompareBody
+        compare={compareQuery.data}
+        ownerName={ownerName}
+        project={projectQuery.data}
+        projectName={projectName}
+      />
     </>
   );
 }
 
 function ProjectCodeCompareBody({
   compare,
+  ownerName,
   project,
+  projectName,
 }: {
   compare: CodeCompareResponse;
+  ownerName: string;
   project: ProjectContainer;
+  projectName: string;
 }) {
   const { t } = useLegacyMessages();
   const commitA = compare.commitA?.commitId || compare.revA;
@@ -81,16 +90,140 @@ function ProjectCodeCompareBody({
         ) : (
           <div className="diff-body discommentable">
             {compare.files.map((file) => (
-              <div className="diff-file" key={file.path}>
-                <h2>
-                  <span className="filename">{file.path}</span>
-                </h2>
-                <pre>{file.patch}</pre>
-              </div>
+              <CompareFileDiff
+                commitA={commitA}
+                commitB={commitB}
+                file={file}
+                key={file.path}
+                ownerName={ownerName}
+                projectName={projectName}
+              />
             ))}
           </div>
         )}
       </div>
     </div>
   );
+}
+
+function CompareFileDiff({
+  commitA,
+  commitB,
+  file,
+  ownerName,
+  projectName,
+}: {
+  commitA: string;
+  commitB: string;
+  file: CodeCompareResponse["files"][number];
+  ownerName: string;
+  projectName: string;
+}) {
+  if (file.patch.trim() === "") {
+    return (
+      <CompareNoChangesFileDiff
+        commitA={commitA}
+        commitB={commitB}
+        file={file}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
+    );
+  }
+
+  return (
+    <div className="diff-file">
+      <h2>
+        <span className="filename">{file.path}</span>
+      </h2>
+      <pre>{file.patch}</pre>
+    </div>
+  );
+}
+
+function CompareNoChangesFileDiff({
+  commitA,
+  commitB,
+  file,
+  ownerName,
+  projectName,
+}: {
+  commitA: string;
+  commitB: string;
+  file: CodeCompareResponse["files"][number];
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const fileId = file.path.replace(/\//g, "-").replace(/\./g, "-");
+  const shortA = shortenCommitId(commitA);
+  const shortB = shortenCommitId(commitB);
+
+  return (
+    <div id={fileId} className="diff-partial-outer">
+      <div className="diff-partial-inner">
+        <div className="diff-partial-meta">
+          <div className="diff-partial-commit">
+            <div className="diff-partial-commit-id">
+              {commitA && file.path ? (
+                <Link
+                  target="_blank"
+                  title={commitA}
+                  to={projectTo(ownerName, projectName, "code", commitA, file.path)}
+                >
+                  {shortA}
+                </Link>
+              ) : (
+                "\u00a0"
+              )}
+            </div>
+            <div className="diff-partial-commit-id">
+              {commitB && file.path ? (
+                <Link
+                  target="_blank"
+                  title={commitB}
+                  to={projectTo(ownerName, projectName, "code", commitB, file.path)}
+                >
+                  {shortB}
+                </Link>
+              ) : (
+                "\u00a0"
+              )}
+            </div>
+          </div>
+          <div className="diff-partial-file">
+            <span className="filename">{file.path}</span>
+          </div>
+        </div>
+        <div className="diff-partial-code" data-hashcode={file.path}>
+          <div className="patch-header">
+            <div className="path">{`--- ${file.path}`}</div>
+            <div className="path">{`+++ ${file.path}`}</div>
+          </div>
+          <table
+            className="diff-container show-comments"
+            data-commit-a={commitA}
+            data-commit-b={commitB}
+            data-file-path={file.path}
+            data-path-a={file.path}
+            data-path-b={file.path}
+          >
+            <tbody>
+              <tr>
+                <td colSpan={3}>{t("code.noChanges")}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function shortenCommitId(commitId: string) {
+  return commitId.length < 7 ? commitId : commitId.slice(0, 7);
+}
+
+function projectTo(ownerName: string, projectName: string, ...parts: string[]) {
+  return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }

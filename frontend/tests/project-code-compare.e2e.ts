@@ -4,6 +4,10 @@ const EXPECTED_COMPARE_BODY = `
 <div class="project-page-wrap"><div class="code-browse-wrap"><p class="commitInfo"><strong class="commitId">@abcdef1234567890..1234567890abcdef</strong></p><div class="alert">No changes</div></div></div>
 `;
 
+const EXPECTED_FILE_NO_CHANGES_DIFF = `
+<div id="src-main-rs" class="diff-partial-outer"><div class="diff-partial-inner"><div class="diff-partial-meta"><div class="diff-partial-commit"><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/abcdef1234567890/src/main.rs" title="abcdef1234567890" target="_blank">abcdef1</a></div><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/1234567890abcdef/src/main.rs" title="1234567890abcdef" target="_blank">1234567</a></div></div><div class="diff-partial-file"><span class="filename">src/main.rs</span></div></div><div class="diff-partial-code" data-hashcode="src/main.rs"><div class="patch-header"><div class="path">--- src/main.rs</div><div class="path">+++ src/main.rs</div></div><table class="diff-container show-comments" data-commit-a="abcdef1234567890" data-commit-b="1234567890abcdef" data-file-path="src/main.rs" data-path-a="src/main.rs" data-path-b="src/main.rs"><tbody><tr><td colspan="3">No changes</td></tr></tbody></table></div></div></div>
+`;
+
 test("project code compare no-change state matches legacy code/compare.scala.html DOM", async ({
   page,
 }) => {
@@ -22,7 +26,32 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
   );
 });
 
-async function mockProjectCompare(page: Page, compareRequests: string[]) {
+test("project code compare file with no hunks renders legacy partial_filediff no-change row", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const compareRequests: string[] = [];
+  await mockProjectCompare(page, compareRequests, {
+    files: [{ path: "src/main.rs", patch: "" }],
+  });
+
+  await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
+
+  const noChangeCell = page.locator(".diff-partial-code tbody tr td");
+  await expect(page.locator(".diff-body.discommentable")).toBeVisible();
+  await expect(page.locator(".diff-partial-outer#src-main-rs .filename")).toHaveText("src/main.rs");
+  await expect(noChangeCell).toHaveAttribute("colspan", "3");
+  await expect(noChangeCell).toHaveText("No changes");
+  expect(await canonicalize(page, ".diff-partial-outer#src-main-rs")).toEqual(
+    await canonicalizeHtml(page, EXPECTED_FILE_NO_CHANGES_DIFF.replace(/__BASE_PATH__/g, basePath)),
+  );
+});
+
+async function mockProjectCompare(
+  page: Page,
+  compareRequests: string[],
+  compareOverrides: Record<string, unknown> = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -79,6 +108,7 @@ async function mockProjectCompare(page: Page, compareRequests: string[]) {
         projectName: "sample",
         revA: "abcdef1234567890",
         revB: "1234567890abcdef",
+        ...compareOverrides,
       }),
     });
   });
