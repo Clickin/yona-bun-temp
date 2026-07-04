@@ -204,6 +204,63 @@ test("first-run secret setup logo is SPA-owned internal navigation", async ({ pa
   expect(documentRequests).toEqual([]);
 });
 
+test("first-run secret setup shows legacy field errors without setup REST call until valid", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let setupRequests = 0;
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    setupRequests += 1;
+    expect(route.request().postDataJSON()).toEqual({
+      emailAddress: "admin@example.com",
+      name: "Site Admin",
+      password: "secret-pass",
+      retypedPassword: "secret-pass",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ restartPath: "/restart" }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  const emailError = page.locator('dt:has(label[for="email"]) .label.label-important');
+  await expect(emailError).toHaveText("Required field!");
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveText(
+    "Required field!",
+  );
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveText("Required field!");
+  await expect.poll(() => setupRequests).toBe(0);
+
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#password", "secret-pass");
+  await page.fill("#retypedPassword", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  await expect.poll(() => setupRequests).toBe(1);
+  await expect(page).toHaveURL(`${basePath}/restart`);
+});
+
 test("first-run secret setup keeps legacy mobile standalone form proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.route("**/api/v1/auth/capabilities", async (route) => {
@@ -318,6 +375,11 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=["']\/(?!\/)/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/document\./u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/addEventListener/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/classList/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/style\.display/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/dangerouslySetInnerHTML/u);
 });
 
 async function readDesktopSecretMetrics(page: Page) {

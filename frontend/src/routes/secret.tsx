@@ -13,6 +13,8 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   secretSetupRequired?: boolean;
 };
 
+type FieldErrors = Partial<Record<"email" | "password" | "retypedPassword", string[]>>;
+
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
 });
@@ -35,6 +37,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   const router = useRouter();
   const siteName = runtimeConfig.siteName ?? "Yona";
   const welcome = lookupLegacyMessage(language, "app.welcome", { args: [siteName] });
+  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
   const capabilitiesQuery = useQuery({
     queryFn: () => readAuthUiCapabilitiesRest(runtimeConfig),
     queryKey: apiQueryKeys.auth.capabilities(),
@@ -120,6 +123,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 
                   <dt>
                     <label htmlFor="email">{t("user.email")}</label>
+                    <FieldErrorLabels errors={fieldErrors.email} />
                   </dt>
                   <dd>
                     <input
@@ -135,6 +139,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 
                   <dt>
                     <label htmlFor="password">{t("user.password")}</label>
+                    <FieldErrorLabels errors={fieldErrors.password} />
                   </dt>
                   <dd>
                     <input
@@ -149,6 +154,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 
                   <dt>
                     <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
+                    <FieldErrorLabels errors={fieldErrors.retypedPassword} />
                   </dt>
                   <dd>
                     <input
@@ -184,13 +190,42 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const emailAddress = String(form.get("email") ?? "");
+    const password = String(form.get("password") ?? "");
+    const retypedPassword = String(form.get("retypedPassword") ?? "");
+    const nextFieldErrors: FieldErrors = {};
+
+    if (!emailAddress) nextFieldErrors.email = [t("validation.required")];
+    if (!password) nextFieldErrors.password = [t("validation.required")];
+    if (!retypedPassword) nextFieldErrors.retypedPassword = [t("validation.required")];
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      return;
+    }
+
+    setFieldErrors({});
     setupMutation.mutate({
-      emailAddress: String(form.get("email") ?? ""),
+      emailAddress,
       name: String(form.get("name") ?? ""),
-      password: String(form.get("password") ?? ""),
-      retypedPassword: String(form.get("retypedPassword") ?? ""),
+      password,
+      retypedPassword,
     });
   }
+}
+
+function FieldErrorLabels({ errors }: { errors?: string[] }) {
+  if (!errors) return null;
+
+  return (
+    <>
+      {errors.map((error) => (
+        <span className="label label-important" key={error}>
+          {error}
+        </span>
+      ))}
+    </>
+  );
 }
 
 function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
