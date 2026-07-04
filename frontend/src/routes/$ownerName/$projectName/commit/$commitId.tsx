@@ -60,7 +60,11 @@ type CommitFileDiff = CodeCommitDetailResponse["files"][number] & {
   errorCode?: string;
   errorCodes?: string[];
   errors?: string[];
+  fileModeChanged?: boolean | string;
   hasError?: boolean | string;
+  isFileModeChanged?: boolean | string;
+  newMode?: string;
+  oldMode?: string;
 };
 
 type CommitHashLinkProps = {
@@ -628,6 +632,7 @@ function FileDiffView({
   const commitBShort = shortenCommitId(commitB);
   const fileThreads = threads.filter((thread) => thread.path === filePath);
   const errorMessageKey = fileDiffErrorMessageKey(file);
+  const shouldRenderNoChanges = parsed.lines.length === 0 && !hasFileModeChange(file);
 
   return (
     <div id={fileId} className="diff-partial-outer">
@@ -681,6 +686,8 @@ function FileDiffView({
             <tbody>
               {errorMessageKey ? (
                 <FileDiffErrorRow messageKey={errorMessageKey} />
+              ) : shouldRenderNoChanges ? (
+                <FileDiffErrorRow messageKey="code.noChanges" />
               ) : (
                 parsed.lines.map((line) => {
                   const lineThreads =
@@ -755,6 +762,15 @@ function fileDiffErrorMessageKey(file: CommitFileDiff) {
     return "code.tooBigDiff";
   }
   return errors.some(Boolean) ? "code.unknownError" : null;
+}
+
+function hasFileModeChange(file: CommitFileDiff) {
+  return (
+    file.isFileModeChanged === true ||
+    file.fileModeChanged === true ||
+    Boolean(file.oldMode || file.newMode) ||
+    /^(?:old mode|new mode) /mu.test(file.patch)
+  );
 }
 
 function FragmentWithInlineComments({

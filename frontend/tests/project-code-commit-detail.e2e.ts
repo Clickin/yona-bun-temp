@@ -513,6 +513,32 @@ index 1234567..abcdef1 100644
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
+test("project commit detail renders legacy no-changes row for empty hunks", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "src/unchanged.rs",
+        patch: `diff --git a/src/unchanged.rs b/src/unchanged.rs
+index 1234567..abcdef1 100644
+--- a/src/unchanged.rs
++++ b/src/unchanged.rs`,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  const noChangesCell = page.locator("#src-unchanged-rs .diff-container.show-comments tbody tr td");
+  await expect(noChangesCell).toHaveAttribute("colspan", "3");
+  await expect(noChangesCell).toHaveText("No changes");
+  await expect(
+    page.locator("#src-unchanged-rs .diff-container.show-comments tbody tr"),
+  ).toHaveCount(1);
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 async function readPartialDiffMetrics(page: Page) {
   return page.evaluate(() => {
     const diffBody = document.querySelector<HTMLElement>(".diff-body");
