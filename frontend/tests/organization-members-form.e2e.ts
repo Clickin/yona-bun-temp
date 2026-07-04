@@ -100,7 +100,9 @@ test("organization members mutation controls preserve legacy data hooks", async 
   await expect.poll(() => requests.roleUpdates).toEqual([{ role: "org_admin", userId: "2" }]);
 
   await page.locator(".enrollAcceptBtn").click();
-  await expect.poll(() => requests.acceptedUserIds).toEqual(["3"]);
+  await expect(page.locator("#loginId")).toHaveValue("pending");
+  await expect.poll(() => requests.addedLoginIds).toEqual(["jane", "pending"]);
+  expect(requests.acceptedUserIds).toEqual([]);
 });
 
 test("organization members role dropdown uses route-owned open state", async ({ page }) => {
@@ -277,6 +279,7 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
     'to="/organizations/$organizationName/members"',
   );
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("acceptOrganizationEnrollmentRest");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("params={{ organizationName }}");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("LegacyOrganizationLinkProps");

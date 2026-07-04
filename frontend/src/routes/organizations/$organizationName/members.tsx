@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
-  acceptOrganizationEnrollmentRest,
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
@@ -100,6 +99,7 @@ function OrganizationMembersBody({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+  const loginIdInputRef = useRef<HTMLInputElement>(null);
   const [openRoleDropdownLoginId, setOpenRoleDropdownLoginId] = useState<string | null>(null);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
@@ -142,22 +142,15 @@ function OrganizationMembersBody({
       queryClient.invalidateQueries({ queryKey: adminQueryKey });
     },
   });
-  const acceptMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
-        organizationName,
-        userId,
-      });
-    },
-    onSuccess() {
-      queryClient.invalidateQueries({ queryKey: adminQueryKey });
-    },
-  });
-
   function onAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    addMutation.mutate(new FormData(event.currentTarget));
+    addLoginId(String(new FormData(event.currentTarget).get("loginId") ?? ""));
+  }
+
+  function addLoginId(loginId: string) {
+    const formData = new FormData();
+    formData.set("loginId", loginId);
+    addMutation.mutate(formData);
   }
 
   return (
@@ -195,6 +188,7 @@ function OrganizationMembersBody({
                 required={true}
                 data-provider="typeahead"
                 autoComplete="off"
+                ref={loginIdInputRef}
                 placeholder={t("project.members.addMember")}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
                 title={t("user.wrongloginId.alert")}
@@ -282,7 +276,12 @@ function OrganizationMembersBody({
                 {organization.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
                     key={stringField(user.loginId, "")}
-                    onAccept={(userId) => acceptMutation.mutate(userId)}
+                    onAccept={(loginId) => {
+                      if (loginIdInputRef.current) {
+                        loginIdInputRef.current.value = loginId;
+                      }
+                      addLoginId(loginId);
+                    }}
                     user={user}
                   />
                 ))}
@@ -413,7 +412,7 @@ function EnrollmentRequest({
   onAccept,
   user,
 }: {
-  onAccept: (userId: number) => void;
+  onAccept: (loginId: string) => void;
   user: YonaUserItem;
 }) {
   const { t } = useLegacyMessages();
@@ -461,7 +460,7 @@ function EnrollmentRequest({
           type="button"
           className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
           data-loginid={loginId}
-          onClick={() => onAccept(numberField(user.userId))}
+          onClick={() => onAccept(loginId)}
         >
           <i className="yobicon-addfriend"></i>
           {t("button.add")}
