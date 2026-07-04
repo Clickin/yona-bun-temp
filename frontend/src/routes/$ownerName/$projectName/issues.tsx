@@ -8,7 +8,6 @@ import {
   type CSSProperties,
   type FormEvent as ReactFormEvent,
   type HTMLAttributes,
-  type KeyboardEvent as ReactKeyboardEvent,
   type LiHTMLAttributes,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -1122,26 +1121,33 @@ function MassUpdateToolbar({
             </span>
           </button>
           <ul className="dropdown-menu mass-update-list">
-            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- legacy dropdown item is an inert anchor inside a list item. */}
-            <li data-value="0" onClick={() => submitMassUpdate("assignee.id", "0")}>
-              <LegacyInertDropdownAnchor>{t("issue.noAssignee")}</LegacyInertDropdownAnchor>
+            <li data-value="0">
+              <button
+                type="button"
+                style={massUpdateOptionButtonStyle}
+                onClick={() => submitMassUpdate("assignee.id", "0")}
+              >
+                {t("issue.noAssignee")}
+              </button>
             </li>
-            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- legacy dropdown item is an inert anchor inside a list item. */}
-            <li
-              data-value={currentUserId}
-              onClick={() => submitMassUpdate("assignee.id", currentUserId)}
-            >
-              <LegacyInertDropdownAnchor>{t("issue.assignToMe")}</LegacyInertDropdownAnchor>
+            <li data-value={currentUserId}>
+              <button
+                type="button"
+                style={massUpdateOptionButtonStyle}
+                onClick={() => submitMassUpdate("assignee.id", currentUserId)}
+              >
+                {t("issue.assignToMe")}
+              </button>
             </li>
             {users.length ? <li className="divider"></li> : null}
             {users.map((user) => (
-              /* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- legacy dropdown item is an inert anchor inside a list item. */
-              <li
-                data-value={user.id}
-                key={user.id}
-                onClick={() => submitMassUpdate("assignee.id", user.id)}
-              >
-                <LegacyInertDropdownAnchor className="usf-group">
+              <li data-value={user.id} key={user.id}>
+                <button
+                  type="button"
+                  className="usf-group"
+                  style={massUpdateOptionButtonStyle}
+                  onClick={() => submitMassUpdate("assignee.id", user.id)}
+                >
                   <span className="avatar-wrap smaller">
                     <img src={user.avatarUrl} width="20" height="20" alt="" />
                   </span>
@@ -1151,7 +1157,7 @@ function MassUpdateToolbar({
                     <strong>@</strong>
                     {user.loginId}
                   </span>
-                </LegacyInertDropdownAnchor>
+                </button>
               </li>
             ))}
           </ul>
@@ -1248,16 +1254,14 @@ function MassUpdateDropdown({
           option.divider ? (
             <li className="divider" key={option.value}></li>
           ) : (
-            <li
-              data-value={option.value}
-              key={option.value}
-              onClick={() => onSelect(name, option.value)}
-              onKeyDown={(event) =>
-                submitMassUpdateFromOptionKey(event, () => onSelect(name, option.value))
-              }
-            >
-              {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-              <a>{option.label}</a>
+            <li data-value={option.value} key={option.value}>
+              <button
+                type="button"
+                style={massUpdateOptionButtonStyle}
+                onClick={() => onSelect(name, option.value)}
+              >
+                {option.label}
+              </button>
             </li>
           ),
         )}
@@ -1356,17 +1360,16 @@ function LabelMassUpdateGroup({
           data-category={group.categoryId}
           hidden={hiddenLabelIds?.has(label.id)}
           key={label.id}
-          onClick={() => onSelect(name, label.id)}
-          onKeyDown={(event) =>
-            submitMassUpdateFromOptionKey(event, () => onSelect(name, label.id))
-          }
         >
-          {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- legacy dropdown items are anchors without href. */}
-          <a>
+          <button
+            type="button"
+            style={massUpdateOptionButtonStyle}
+            onClick={() => onSelect(name, label.id)}
+          >
             <span className="issue-label active list-label" data-label-id={label.id}>
               {label.name}
             </span>
-          </a>
+          </button>
         </li>
       ))}
       <li className="divider" data-category={group.categoryId} hidden={categoryHidden}></li>
@@ -1378,31 +1381,19 @@ function massUpdateDropdownGroupClassName(isOpen: boolean) {
   return isOpen ? "btn-group open" : "btn-group";
 }
 
-function LegacyInertDropdownAnchor({
-  children,
-  className,
-  ...attrs
-}: HTMLAttributes<HTMLAnchorElement> & {
-  children: ReactNode;
-}) {
-  const Anchor = "a";
-  return (
-    <Anchor className={className} {...attrs}>
-      {children}
-    </Anchor>
-  );
-}
-
-function submitMassUpdateFromOptionKey(
-  event: ReactKeyboardEvent<HTMLLIElement>,
-  submit: () => void,
-) {
-  if (event.key !== "Enter" && event.key !== " ") {
-    return;
-  }
-  event.preventDefault();
-  submit();
-}
+const massUpdateOptionButtonStyle: CSSProperties = {
+  background: "transparent",
+  border: 0,
+  clear: "both",
+  color: "#333",
+  display: "block",
+  fontWeight: "normal",
+  lineHeight: "20px",
+  padding: "3px 20px",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  width: "100%",
+};
 
 function ProjectIssueItem({
   basePath,
@@ -1621,15 +1612,22 @@ function ProjectIssueItem({
               </span>
             ) : null}
             {titleParts.prefixes.map((prefix) => (
-              <LegacyTitlePrefixAnchor
-                active={hoveredTitlePrefix === prefix}
+              <Link
+                activeProps={{ className: undefined }}
+                className={
+                  hoveredTitlePrefix === prefix ? "title-prefix title-prefix-hover" : "title-prefix"
+                }
                 key={`${issueId}-${prefix}`}
                 to={titlePrefixRoute(prefix)}
-                onTitlePrefixHover={onTitlePrefixHover}
-                onTitlePrefixSearch={onTitlePrefixSearch}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onTitlePrefixSearch(prefix);
+                }}
+                onMouseEnter={() => onTitlePrefixHover(prefix)}
+                onMouseLeave={() => onTitlePrefixHover("")}
               >
                 {prefix}
-              </LegacyTitlePrefixAnchor>
+              </Link>
             ))}
             <Link activeProps={{ className: undefined }} to={issueTo} className="title">
               {titleParts.title}
@@ -1695,7 +1693,8 @@ function ProjectIssueItem({
                   </Link>
                 ) : null}
                 {(issue.sharerCount ?? 0) > 0 ? (
-                  <LegacyInertDropdownAnchor
+                  <button
+                    type="button"
                     className="sharer-color"
                     data-toggle="tooltip"
                     data-placement="bottom"
@@ -1705,7 +1704,7 @@ function ProjectIssueItem({
                       <i className="yobicon-friends"></i>
                     </span>
                     <span className="count-groups item-count strong">{issue.sharerCount}</span>
-                  </LegacyInertDropdownAnchor>
+                  </button>
                 ) : null}
               </span>
             ) : null}
@@ -3336,37 +3335,6 @@ function booleanField(value: unknown) {
 function numberField(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
-}
-
-function LegacyTitlePrefixAnchor({
-  active,
-  children,
-  onTitlePrefixHover,
-  onTitlePrefixSearch,
-  to,
-}: {
-  active: boolean;
-  children: string;
-  onTitlePrefixHover: (prefix: string) => void;
-  onTitlePrefixSearch: (filter: string) => void;
-  to: string;
-}) {
-  const submitTitlePrefixSearch = (event: ReactMouseEvent) => {
-    event.preventDefault();
-    onTitlePrefixSearch(children);
-  };
-  return (
-    <Link
-      activeProps={{ className: undefined }}
-      className={active ? "title-prefix title-prefix-hover" : "title-prefix"}
-      to={to}
-      onClick={submitTitlePrefixSearch}
-      onMouseEnter={() => onTitlePrefixHover(children)}
-      onMouseLeave={() => onTitlePrefixHover("")}
-    >
-      {children}
-    </Link>
-  );
 }
 
 function splitHeaderWordsInBrackets(title: string) {

@@ -569,8 +569,6 @@ function ProjectPullRequestRow({
           to="/$user"
           params={{ user: pullRequest.contributorLoginId }}
           className="avatar-wrap mlarge"
-          data-toggle="tooltip"
-          data-placement="top"
           title={pullRequest.contributorLoginId}
         >
           <img src="/assets/images/default-avatar-32.png" alt="" />
@@ -578,14 +576,15 @@ function ProjectPullRequestRow({
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
           {titleParts.prefixes.map((prefix) => (
-            <LegacyTitlePrefixLink
+            <Link
               key={prefix}
-              ownerName={ownerName}
-              projectName={projectName}
+              to="/$ownerName/$projectName/pullRequests"
+              params={{ ownerName, projectName }}
               search={titlePrefixSearch(prefix)}
+              className="title-prefix"
             >
               {prefix}
-            </LegacyTitlePrefixLink>
+            </Link>
           ))}
           <Link
             to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
@@ -601,8 +600,6 @@ function ProjectPullRequestRow({
               to="/$user"
               params={{ user: pullRequest.contributorLoginId }}
               className="infos-item infos-link-item"
-              data-toggle="tooltip"
-              data-placement="top"
               title={pullRequest.contributorLoginId}
             >
               {pullRequest.contributorLabel}
@@ -622,7 +619,6 @@ function ProjectPullRequestRow({
               <Link
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
                 params={pullRequestParams}
-                data-toggle="tooltip"
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
@@ -638,9 +634,7 @@ function ProjectPullRequestRow({
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
                 params={pullRequestParams}
                 hash="reviewers"
-                data-toggle="tooltip"
-                data-html="true"
-                data-title={pullRequest.reviewerNames.join("<br>")}
+                title={pullRequest.reviewerNames.join(", ")}
               >
                 <span className="vmiddle">{pullRequest.reviewerCount}</span>
               </Link>
@@ -656,10 +650,7 @@ function ProjectPullRequestRow({
               to="/$user"
               params={{ user: pullRequest.receiverLoginId }}
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
-              data-placement="top"
-              title=""
-              data-original-title={pullRequest.receiverLabel}
+              title={pullRequest.receiverLabel}
             >
               <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
             </Link>
@@ -670,29 +661,6 @@ function ProjectPullRequestRow({
         <div className={`state ${stateKey} pull-right`}>{t(`pullRequest.state.${stateKey}`)}</div>
       </div>
     </li>
-  );
-}
-
-function LegacyTitlePrefixLink({
-  children,
-  ownerName,
-  projectName,
-  search,
-}: {
-  children: string;
-  ownerName: string;
-  projectName: string;
-  search: ProjectPullRequestsSearch;
-}) {
-  return (
-    <Link
-      to="/$ownerName/$projectName/pullRequests"
-      params={{ ownerName, projectName }}
-      search={search}
-      className="title-prefix"
-    >
-      {children}
-    </Link>
   );
 }
 

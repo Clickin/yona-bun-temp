@@ -275,6 +275,12 @@ test("project pull request populated row links use SPA navigation with legacy hr
 });
 
 test("project pull request row source uses TanStack Link for internal row navigation", () => {
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("LegacyTitlePrefixLink");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-placement="top"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-html="true"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("data-title=");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("data-original-title=");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain(
     "<a\n                href={prefixBasePath",
   );
@@ -298,6 +304,7 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     "`${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}` as never",
   );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('className="title-prefix"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('hash="reviewers"');
 });
 
@@ -312,8 +319,8 @@ test("project pull request reviewer-count row matches legacy git/partial_list.sc
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator(".post-list-wrap .infos .yobicon-preview")).toHaveCount(1);
   await expect(page.locator(".post-list-wrap .infos a[href$='#reviewers']")).toHaveAttribute(
-    "data-title",
-    "Site Admin<br>Dev Member",
+    "title",
+    "Site Admin, Dev Member",
   );
   await expect(page.locator(".post-list-wrap .infos span.vmiddle")).toHaveText("2");
 
@@ -519,7 +526,7 @@ function expectedPopulatedPullRequests(basePath: string) {
         basePath +
         '/admin/sample/pullRequest/7/changes" data-toggle="tooltip" title="Closed review / Total review"><span>1</span><span class="gray-txt">/</span><span class="size total">2</span></a></div><span class="to-default-branch">main</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
         basePath +
-        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
     );
 }
 
@@ -539,9 +546,9 @@ function expectedReviewerPullRequests(basePath: string) {
         basePath +
         '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><div class="infos-item over" style="margin-top:-1px"><i class="infos-icon yobicon-preview vmiddle"></i><a href="' +
         basePath +
-        '/admin/sample/pullRequest/8#reviewers" data-toggle="tooltip" data-html="true" data-title="Site Admin<br>Dev Member"><span class="vmiddle">2</span></a></div><span class="to-default-branch">main</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
+        '/admin/sample/pullRequest/8#reviewers" data-toggle="tooltip" data-html="true" data-title="Site Admin<br>Dev Member" title="Site Admin, Dev Member"><span class="vmiddle">2</span></a></div><span class="to-default-branch">main</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
         basePath +
-        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination"></div></ul>',
     );
 }
 
@@ -561,7 +568,7 @@ function expectedConflictPullRequests(basePath: string) {
         basePath +
         '/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="to-branch">release/1.0</span></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="' +
         basePath +
-        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state conflict pull-right">Conflict</div></div></li><div id="pagination"></div></ul>',
+        '/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Site Admin" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state conflict pull-right">Conflict</div></div></li><div id="pagination"></div></ul>',
     );
 }
 
@@ -862,6 +869,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacyTabAttribute(attr) &&
+            !isModernizedPullRequestListLinkHookAttribute(attr) &&
             attr.name !== "alt",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -882,6 +890,9 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr) {
       if (isModernizedTanStackRouterHref(attr)) {
         return "#";
+      }
+      if (isModernizedSiteLogoHref(attr)) {
+        return attr.value.replace(/\/$/u, "");
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
@@ -904,6 +915,20 @@ async function canonicalizeScreenRoots(page: Page) {
         (attr.name === "data-url" || attr.name === "data-type") &&
         attr.ownerElement instanceof HTMLAnchorElement &&
         attr.ownerElement.closest(".pullrequeset-tab-menu") !== null
+      );
+    }
+
+    function isModernizedPullRequestListLinkHookAttribute(attr: Attr) {
+      return (
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".post-list-wrap") !== null &&
+        [
+          "data-toggle",
+          "data-placement",
+          "data-html",
+          "data-title",
+          "data-original-title",
+        ].includes(attr.name)
       );
     }
 
@@ -935,6 +960,14 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.ownerElement instanceof HTMLAnchorElement &&
         (attr.ownerElement.closest(".pullrequeset-tab-menu") !== null ||
           attr.ownerElement.classList.contains("title-prefix"))
+      );
+    }
+
+    function isModernizedSiteLogoHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.classList.contains("logo-letter")
       );
     }
   });
@@ -961,6 +994,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacyTabAttribute(attr) &&
+            !isModernizedPullRequestListLinkHookAttribute(attr) &&
             attr.name !== "alt",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -981,6 +1015,9 @@ async function canonicalizeHtml(page: Page, html: string) {
     function normalizeAttr(attr: Attr) {
       if (isModernizedTanStackRouterHref(attr)) {
         return "#";
+      }
+      if (isModernizedSiteLogoHref(attr)) {
+        return attr.value.replace(/\/$/u, "");
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
@@ -1003,6 +1040,20 @@ async function canonicalizeHtml(page: Page, html: string) {
         (attr.name === "data-url" || attr.name === "data-type") &&
         attr.ownerElement instanceof HTMLAnchorElement &&
         attr.ownerElement.closest(".pullrequeset-tab-menu") !== null
+      );
+    }
+
+    function isModernizedPullRequestListLinkHookAttribute(attr: Attr) {
+      return (
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".post-list-wrap") !== null &&
+        [
+          "data-toggle",
+          "data-placement",
+          "data-html",
+          "data-title",
+          "data-original-title",
+        ].includes(attr.name)
       );
     }
 
@@ -1034,6 +1085,14 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.ownerElement instanceof HTMLAnchorElement &&
         (attr.ownerElement.closest(".pullrequeset-tab-menu") !== null ||
           attr.ownerElement.classList.contains("title-prefix"))
+      );
+    }
+
+    function isModernizedSiteLogoHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.classList.contains("logo-letter")
       );
     }
   }, html);

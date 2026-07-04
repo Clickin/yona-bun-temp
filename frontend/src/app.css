@@ -1358,7 +1358,8 @@ pre code {
   outline: 0;
 }
 
-.milesion-wrap .item-count-groups > button.sharer-color {
+.milesion-wrap .item-count-groups > button.sharer-color,
+.issue-list-page .item-count-groups > button.sharer-color {
   padding: 0;
   color: #007fca;
   background: transparent;
@@ -4822,7 +4823,9 @@ h1 {
 }
 
 .issue-list-page .item-count-groups a:nth-child(2),
-.issue-list-page .item-count-groups a:nth-child(3) {
+.issue-list-page .item-count-groups a:nth-child(3),
+.issue-list-page .item-count-groups button:nth-child(2),
+.issue-list-page .item-count-groups button:nth-child(3) {
   margin-left: -5px;
 }
 
