@@ -117,6 +117,9 @@ function OrganizationBoardsBody({
                   data-toggle="select2"
                   data-container-css-class="fullsize"
                   defaultValue={search.projectNames}
+                  onChange={(event) => {
+                    event.currentTarget.form?.requestSubmit();
+                  }}
                 >
                   {boards.visibleProjects.map((project) => {
                     const projectName = project.projectName;
