@@ -242,18 +242,24 @@ test("first-run secret setup shows legacy field errors without setup REST call u
   await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
 
   const emailError = page.locator('dt:has(label[for="email"]) .label.label-important');
-  await expect(emailError).toHaveText("Required field!");
+  await expect(emailError).toHaveText("Enter valid email address!");
   await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveText(
-    "Required field!",
+    "Wrong password!",
   );
   await expect(
     page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
-  ).toHaveText("Required field!");
+  ).toHaveCount(0);
+  await expect.poll(() => setupRequests).toBe(0);
+
+  await page.fill("#password", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveText("The passwords don't match");
   await expect.poll(() => setupRequests).toBe(0);
 
   await page.fill("#uname", "Site Admin");
   await page.fill("#email", "admin@example.com");
-  await page.fill("#password", "secret-pass");
   await page.fill("#retypedPassword", "secret-pass");
   await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
 
@@ -287,7 +293,7 @@ test("first-run secret setup renders REST validation errors in legacy field labe
       body: JSON.stringify({
         error: {
           code: "bad_request",
-          message: "validation.tooShortPassword",
+          message: "validation.passwordMismatch",
           status: 400,
         },
       }),
@@ -297,13 +303,14 @@ test("first-run secret setup renders REST validation errors in legacy field labe
   await page.goto(`${basePath}/secret`);
   await page.fill("#uname", "Site Admin");
   await page.fill("#email", "admin@example.com");
-  await page.fill("#password", "bad");
-  await page.fill("#retypedPassword", "bad");
+  await page.fill("#password", "secret-pass");
+  await page.fill("#retypedPassword", "secret-pass");
   await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
 
-  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveText(
-    "Password must be at least 4 characters in length.",
-  );
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveCount(0);
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveText("The passwords don't match");
   await expect(page.locator('dt:has(label[for="email"]) .label.label-important')).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/secret`);
 });

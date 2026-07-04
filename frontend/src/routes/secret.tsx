@@ -76,7 +76,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
         return;
       }
       if (error.message === "validation.passwordMismatch") {
-        setFieldErrors({ retypedPassword: [message] });
+        setFieldErrors({ retypedPassword: [t("user.confirmPassword.alert")] });
       }
     },
   });
@@ -211,9 +211,11 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     const retypedPassword = String(form.get("retypedPassword") ?? "");
     const nextFieldErrors: FieldErrors = {};
 
-    if (!emailAddress) nextFieldErrors.email = [t("validation.required")];
-    if (!password) nextFieldErrors.password = [t("validation.required")];
-    if (!retypedPassword) nextFieldErrors.retypedPassword = [t("validation.required")];
+    if (!emailAddress) nextFieldErrors.email = [t("validation.invalidEmail")];
+    if (!password) nextFieldErrors.password = [t("user.wrongPassword.alert")];
+    if (password !== retypedPassword) {
+      nextFieldErrors.retypedPassword = [t("user.confirmPassword.alert")];
+    }
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
