@@ -54,6 +54,8 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#title")).toHaveAttribute("data-is-user-has-typed", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("data-is-user-has-typed", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  expect(ROUTE_SOURCE).not.toContain("window.history.back()");
+  expect(ROUTE_SOURCE).toContain("router.history.back()");
   await expect(page.locator('form.nm > ul.nav-tabs a[href="#__commits"]')).toHaveCount(0);
   await expect(
     page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-body"]'),

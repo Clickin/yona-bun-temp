@@ -155,7 +155,7 @@ function ProjectPullRequestEditBody({
                 <button type="submit" className="ybtn ybtn-success">
                   {t("button.save")}
                 </button>
-                <button type="button" className="ybtn" onClick={() => window.history.back()}>
+                <button type="button" className="ybtn" onClick={() => router.history.back()}>
                   {t("button.cancel")}
                 </button>
               </div>
