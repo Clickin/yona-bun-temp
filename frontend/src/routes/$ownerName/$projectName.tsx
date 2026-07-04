@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -599,7 +600,11 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
             const createdLabel = stringField(itemRecord.createdLabel, "");
             return (
               <li className="activity-stream" key={`${itemUrl}-${shortTitle}-${createdLabel}`}>
-                <Link href={actorUrl} className="avatar-wrap pull-left mr10">
+                <HistoryLink
+                  basePath={basePath}
+                  href={actorUrl}
+                  className="avatar-wrap pull-left mr10"
+                >
                   <img
                     src={stringField(
                       itemRecord.actorAvatarUrl,
@@ -609,20 +614,20 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                     height="32"
                     alt=""
                   />
-                </Link>
+                </HistoryLink>
                 <div className="activity-desc">
                   <p className="header-text" style={{ marginBottom: "5px" }}>
-                    <Link href={actorUrl} className="actor">
+                    <HistoryLink basePath={basePath} href={actorUrl} className="actor">
                       {stringField(itemRecord.actorName, "")}
-                    </Link>{" "}
+                    </HistoryLink>{" "}
                     {t(`project.history.type.${itemType}`)}{" "}
                     <span className="whereis">
-                      <Link href={itemUrl} className="where">
+                      <HistoryLink basePath={basePath} href={itemUrl} className="where">
                         {shortTitle}
-                      </Link>{" "}
-                      <Link href={itemUrl} className="title">
+                      </HistoryLink>{" "}
+                      <HistoryLink basePath={basePath} href={itemUrl} className="title">
                         {title}
-                      </Link>
+                      </HistoryLink>
                     </span>
                   </p>
                   <p className="others" style={{ paddingLeft: "0" }}>
@@ -647,6 +652,32 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
   );
 }
 
+function HistoryLink({
+  basePath,
+  children,
+  className,
+  href,
+}: {
+  basePath: string;
+  children: ReactNode;
+  className: string;
+  href: string;
+}) {
+  if (href === "#" || href.startsWith("http://") || href.startsWith("https://")) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <Link activeProps={{}} to={toRoutePath(basePath, href)} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 function DashboardPane({
   basePath,
   ownerName,
@@ -667,6 +698,19 @@ function DashboardPane({
   const pullRequests = arrayField(dashboard.pullRequests);
   const unassignedCount = numberField(dashboard.unassignedOpenIssueCount);
   const noMilestoneCount = numberField(dashboard.noMilestoneOpenIssueCount);
+  const visibleAssignees = assignees.filter(
+    (assignee) => numberField(recordField(assignee).openIssueCount) > 0,
+  );
+  const visibleMilestones = milestones.filter(
+    (milestone) => numberField(recordField(milestone).openIssueCount) > 0,
+  );
+  const openPullRequestCount = numberField(dashboard.openPullRequestCount) || pullRequests.length;
+  const pullRequestMoreMessage = t("project.dashboard.more", {
+    args: [String(openPullRequestCount)],
+  });
+  const [pullRequestMorePrefix = "", pullRequestMoreRest = ""] =
+    pullRequestMoreMessage.split("<strong>");
+  const [, pullRequestMoreSuffix = ""] = pullRequestMoreRest.split("</strong>");
   const totalOpenIssues =
     assignees.reduce((sum, item) => sum + numberField(recordField(item).openIssueCount), 0) +
     unassignedCount;
@@ -688,7 +732,7 @@ function DashboardPane({
                   />
                 ) : (
                   <>
-                    {assignees.map((assignee) => {
+                    {visibleAssignees.map((assignee) => {
                       const record = recordField(assignee);
                       const userId = numberField(record.userId);
                       const count = numberField(record.openIssueCount);
@@ -781,7 +825,7 @@ function DashboardPane({
                   />
                 ) : (
                   <>
-                    {milestones.map((milestone) => {
+                    {visibleMilestones.map((milestone) => {
                       const record = recordField(milestone);
                       const milestoneId = numberField(record.id);
                       const count = numberField(record.openIssueCount);
@@ -842,58 +886,73 @@ function DashboardPane({
               <h5>{t("project.dashboard.pullRequests")}</h5>
               <div className="overview-pullrequest">
                 {pullRequests.length > 0 ? (
-                  pullRequests.map((pullRequest) => {
-                    const record = recordField(pullRequest);
-                    const number = numberField(record.pullRequestNumber);
-                    return (
-                      <div className="row-fluid" key={number}>
-                        <div className="span9 title">
-                          <Link
-                            activeProps={{}}
-                            to={toRoutePath(
-                              basePath,
-                              prefixBasePath(
+                  <>
+                    {pullRequests.map((pullRequest) => {
+                      const record = recordField(pullRequest);
+                      const number = numberField(record.pullRequestNumber);
+                      return (
+                        <div className="row-fluid" key={number}>
+                          <div className="span9 title">
+                            <Link
+                              activeProps={{}}
+                              to={toRoutePath(
                                 basePath,
-                                `/${ownerName}/${projectName}/pullRequests?contributorId=${numberField(record.contributorUserId)}`,
-                              ),
-                            )}
-                            className="usf-group"
-                          >
-                            <span
-                              className="avatar-wrap smaller"
-                              data-toggle="tooltip"
-                              title={`${stringField(record.contributorUserLabel, "")} (@${stringField(record.contributorLoginId, "")})`}
+                                prefixBasePath(
+                                  basePath,
+                                  `/${ownerName}/${projectName}/pullRequests?contributorId=${numberField(record.contributorUserId)}`,
+                                ),
+                              )}
+                              className="usf-group"
                             >
-                              <img
-                                src={stringField(
-                                  record.contributorAvatarUrl,
-                                  "/assets/images/default-avatar-32.png",
-                                )}
-                                width="20"
-                                height="20"
-                                alt=""
-                              />
-                            </span>
-                          </Link>
-                          <Link
-                            activeProps={{}}
-                            to={toRoutePath(
-                              basePath,
-                              prefixBasePath(
+                              <span
+                                className="avatar-wrap smaller"
+                                data-toggle="tooltip"
+                                title={`${stringField(record.contributorUserLabel, "")} (@${stringField(record.contributorLoginId, "")})`}
+                              >
+                                <img
+                                  src={stringField(
+                                    record.contributorAvatarUrl,
+                                    "/assets/images/default-avatar-32.png",
+                                  )}
+                                  width="20"
+                                  height="20"
+                                  alt=""
+                                />
+                              </span>
+                            </Link>
+                            <Link
+                              activeProps={{}}
+                              to={toRoutePath(
                                 basePath,
-                                `/${ownerName}/${projectName}/pullRequest/${number}`,
-                              ),
-                            )}
-                          >
-                            {stringField(record.title, "")}
-                          </Link>
+                                prefixBasePath(
+                                  basePath,
+                                  `/${ownerName}/${projectName}/pullRequest/${number}`,
+                                ),
+                              )}
+                            >
+                              {stringField(record.title, "")}
+                            </Link>
+                          </div>
+                          <div className="span3 num right-txt" style={{ color: "#999" }}>
+                            {stringField(record.createdLabel, "")}
+                          </div>
                         </div>
-                        <div className="span3 num right-txt" style={{ color: "#999" }}>
-                          {stringField(record.createdLabel, "")}
-                        </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                    <div className="right-txt mt5" style={{ marginRight: "17px" }}>
+                      <Link
+                        activeProps={{}}
+                        to={toRoutePath(
+                          basePath,
+                          prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`),
+                        )}
+                      >
+                        {pullRequestMorePrefix}
+                        <strong>{openPullRequestCount}</strong>
+                        {pullRequestMoreSuffix}
+                      </Link>
+                    </div>
+                  </>
                 ) : (
                   <DashboardEmpty
                     actionHref={prefixBasePath(
@@ -946,6 +1005,11 @@ function DashboardLabels({
 
   return (
     <>
+      <link
+        rel="stylesheet"
+        href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labels.css`)}
+        type="text/css"
+      />
       {Array.from(groups.entries()).map(([categoryName, categoryLabels]) => (
         <dl className="dl-horizontal overview-label" key={categoryName}>
           <dt>{categoryName}</dt>

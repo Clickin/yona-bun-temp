@@ -481,8 +481,11 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain("<YobiToast notice={cloneCopyNotice} />");
   expect(source).toContain("createFileRoute, Link, Outlet");
   expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
-  expect(source).toContain('<Link href={actorUrl} className="actor">');
-  expect(source).toContain('<Link href={itemUrl} className="where">');
+  expect(source).toContain("function HistoryLink(");
+  expect(source).toContain('<HistoryLink basePath={basePath} href={actorUrl} className="actor">');
+  expect(source).toContain('<HistoryLink basePath={basePath} href={itemUrl} className="where">');
+  expect(source).not.toContain('<Link href={actorUrl} className="actor">');
+  expect(source).not.toContain('<Link href={itemUrl} className="where">');
   expect(source).toContain("function toRoutePath(basePath: string, href: string)");
   expect(source).not.toContain("function toggleProjectUtilDropdown(toggle: HTMLElement)");
   expect(source).not.toContain("function closeProjectUtilDropdown");

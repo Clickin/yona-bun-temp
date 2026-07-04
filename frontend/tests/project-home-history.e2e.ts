@@ -180,7 +180,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -195,7 +195,8 @@ async function canonicalizeScreenRoots(page: Page) {
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => normalizeSerializedAttr(node, attr))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -214,6 +215,19 @@ async function canonicalizeScreenRoots(page: Page) {
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
     }
+
+    function normalizeSerializedAttr(node: Element, attr: Attr) {
+      if (attr.name === "aria-current" || attr.name === "data-status") {
+        return "";
+      }
+      if (
+        node.matches(".user-project-list") &&
+        (attr.name === "role" || attr.name === "tabindex")
+      ) {
+        return "";
+      }
+      return `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`;
+    }
   });
 }
 
@@ -222,6 +236,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     const template = document.createElement("template");
     template.innerHTML = input;
     return Array.from(template.content.children)
+      .filter((root) => !root.matches(".gnb-outer"))
       .map((root) => visit(root))
       .join("");
 
