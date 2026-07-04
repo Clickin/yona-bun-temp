@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { type HTMLAttributes, type MouseEvent } from "react";
+import {
+  type HTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
 import {
@@ -23,6 +27,7 @@ type OrganizationIssuesSearch = {
   orderBy: string;
   orderDir: string;
   pageNum: number;
+  preservedParams?: [string, string][];
   projectNames: string[];
   state: "closed" | "open";
 };
@@ -326,7 +331,12 @@ function OrganizationIssuesBody({
                       />
                     ))}
                   </ul>
-                  <div id="pagination" data-total={totalPages(issues)}></div>
+                  <OrganizationIssuePagination
+                    currentPage={search.pageNum}
+                    organizationName={organizationName}
+                    search={search}
+                    totalPages={totalPages(issues)}
+                  />
                 </>
               ) : (
                 <div className="error-wrap">
@@ -506,6 +516,104 @@ function IssueFilters({
       </div>
     </div>
   );
+}
+
+function OrganizationIssuePagination({
+  currentPage,
+  organizationName,
+  search,
+  totalPages,
+}: {
+  currentPage: number;
+  organizationName: string;
+  search: OrganizationIssuesSearch;
+  totalPages: number;
+}) {
+  const { t } = useLegacyMessages();
+  const navigate = useNavigate();
+  if (totalPages <= 0) {
+    return <div id="pagination" data-total={totalPages}></div>;
+  }
+
+  const pageNum = clampPageNum(currentPage, totalPages);
+  const hasPrev = pageNum > 1;
+  const hasNext = pageNum < totalPages;
+  const pageRoutePath = (nextPageNum: number) =>
+    organizationIssuesRoutePath(organizationName, {
+      ...search,
+      pageNum: nextPageNum,
+    });
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    if (!/^[0-9]+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(pageNum);
+      return;
+    }
+    const nextPageNum = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(nextPageNum);
+    void navigate({ to: pageRoutePath(nextPageNum) });
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap" data-total={totalPages}>
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link activeProps={{ className: undefined }} to={pageRoutePath(pageNum - 1)}>
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            type="number"
+            pattern="[0-9]*"
+            className="input-mini nospinner"
+            name="pageNum"
+            max={totalPages}
+            min={1}
+            defaultValue={pageNum}
+            key={pageNum}
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link activeProps={{ className: undefined }} to={pageRoutePath(pageNum + 1)}>
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
 function OrganizationIssueItem({
@@ -824,6 +932,7 @@ function organizationIssuesSearchFromString(searchString: string) {
     orderBy: stringSearch(search.get("orderBy"), "createdDate"),
     orderDir: stringSearch(search.get("orderDir"), "desc"),
     pageNum: Number(search.get("pageNum")) || 1,
+    preservedParams: preservedSearchEntries(search),
     projectNames: [...search.getAll("projectNames"), ...search.getAll("projectNames[]")].filter(
       (projectName) => projectName !== "[]",
     ),
@@ -833,6 +942,7 @@ function organizationIssuesSearchFromString(searchString: string) {
 
 function organizationIssuesRoutePath(organizationName: string, search: OrganizationIssuesSearch) {
   const params = new URLSearchParams([
+    ...(search.preservedParams ?? []),
     ...optionalSearchEntries({
       assigneeId: search.assigneeId,
       authorId: search.authorId,
@@ -848,6 +958,23 @@ function organizationIssuesRoutePath(organizationName: string, search: Organizat
 
   return `/organizations/${organizationName}/issues?${params.toString()}`;
 }
+
+function preservedSearchEntries(search: URLSearchParams) {
+  return [...search.entries()].filter(([key]) => !knownOrganizationIssueSearchParams.has(key));
+}
+
+const knownOrganizationIssueSearchParams = new Set([
+  "assigneeId",
+  "authorId",
+  "filter",
+  "mentionId",
+  "orderBy",
+  "orderDir",
+  "pageNum",
+  "projectNames",
+  "projectNames[]",
+  "state",
+]);
 
 function optionalSearchEntries(values: Record<string, string>) {
   return Object.entries(values).filter((entry): entry is [string, string] => entry[1] !== "");
