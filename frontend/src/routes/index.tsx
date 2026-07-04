@@ -9,8 +9,8 @@ type IndexSearch = {
 export const Route = createFileRoute("/")({
   component: IndexRoute,
   validateSearch: (search: Record<string, unknown>): IndexSearch => ({
-    signup: typeof search.signup === "string" ? search.signup : "",
-    verify: typeof search.verify === "string" ? search.verify : "",
+    signup: typeof search.signup === "string" ? search.signup : undefined,
+    verify: typeof search.verify === "string" ? search.verify : undefined,
   }),
 });
 

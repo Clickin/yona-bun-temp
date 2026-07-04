@@ -14,7 +14,7 @@ const EXPECTED_SIGNUP_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -44,10 +44,10 @@ const EXPECTED_SIGNUP_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
       </li>
       <li class="divider"></li>
-      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success active">Sign up</a></li>
     </ul>
   </div>
 </header>
@@ -142,7 +142,7 @@ const EXPECTED_PUBLIC_LANDING = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -172,7 +172,7 @@ const EXPECTED_PUBLIC_LANDING = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
@@ -351,6 +351,63 @@ test("social-login-only signup matches legacy user/signup.scala.html screen DOM"
   );
 
   expect(actual).toEqual(expected);
+});
+
+test("signup form applies legacy yobi.user.SignUp client validation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const checkedNames: string[] = [];
+  let registerCalls = 0;
+  await page.route("**/user/isUsed?*", async (route) => {
+    const url = new URL(route.request().url());
+    checkedNames.push(url.searchParams.get("name") ?? "");
+    await route.fulfill({
+      contentType: "application/json",
+      json: { isExist: url.searchParams.get("name") === "door.user", isReserved: false },
+    });
+  });
+  await page.route("**/user/isEmailExist?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { isExist: false },
+    });
+  });
+  await page.route("**/api/v1/auth/register", async (route) => {
+    registerCalls += 1;
+    await route.fulfill({ status: 500, body: "unexpected register" });
+  });
+  await page.goto(`${basePath}/users/signupform`);
+
+  await expect(page.locator("#loginId")).toBeFocused();
+  await page.fill("#loginId", "Door.User");
+  await page.locator("#email").focus();
+  await expect(page.locator("#loginId")).toHaveValue("door.user");
+  await expect(page.locator("#loginId + .popover .popover-content")).toHaveText("Already exists!");
+  expect(checkedNames).toEqual(["door.user"]);
+
+  await page.fill("#loginId", "bad_");
+  await page.locator("#email").focus();
+  await expect(page.locator("#loginId + .popover .popover-content")).toHaveText(
+    "Login ID may contain alphanumeric characters as well as dashes, underscores or dots, but cannot begin or end with underscores or dots.",
+  );
+
+  await page.fill("#email", "bad-email");
+  await page.locator("#password").focus();
+  await expect(page.locator("#email + .popover .popover-content")).toHaveText(
+    "Enter valid email address!",
+  );
+
+  await page.fill("#password", "");
+  await page.locator("#password").type("abc");
+  await expect(page.locator("#password + .popover .popover-content")).toHaveText(
+    "Password must be at least 4 characters in length.",
+  );
+  await page.fill("#retypedPassword", "abcd");
+  await expect(page.locator("#retypedPassword + .popover .popover-content")).toHaveText(
+    "Retyped password doesn't match",
+  );
+
+  await page.locator('form[name="signup"] button[type="submit"]').click();
+  expect(registerCalls).toBe(0);
 });
 
 test("anonymous home usermenu tabs are route-owned buttons", async ({ page }) => {

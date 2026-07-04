@@ -37,6 +37,8 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const loginIdRef = React.useRef<HTMLInputElement>(null);
+  const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<SignupField, string>>>({});
   const [submitError, setSubmitError] = React.useState("");
   const capabilitiesQuery = useQuery({
     queryFn: () => readAuthUiCapabilitiesRest(runtimeConfig),
@@ -47,6 +49,11 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const signupRequireConfirm = capabilities?.signupRequireConfirm === true;
   const siteName = runtimeConfig.siteName ?? "Yona";
   const title = lookupLegacyMessage(language, "title.signupFor", { args: [siteName] });
+  React.useEffect(() => {
+    if (!socialLoginOnly) {
+      loginIdRef.current?.focus();
+    }
+  }, [socialLoginOnly]);
   const registerMutation = useMutation({
     mutationFn: async (input: {
       emailAddress: string;
@@ -71,9 +78,14 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             : capabilities?.emailVerificationEnabled === true
               ? "/?verify=sent"
               : "/";
-      router.history.push(
-        prefixBasePath(runtimeConfig.basePath, safeLocalPath(redirectPath) ?? "/"),
-      );
+      const localPath = safeLocalPath(redirectPath) ?? "/";
+      if (localPath === "/?signup=requested") {
+        await router.navigate({ to: "/", search: { signup: "requested" } });
+      } else if (localPath === "/?verify=sent") {
+        await router.navigate({ to: "/", search: { verify: "sent" } });
+      } else {
+        router.history.push(prefixBasePath(runtimeConfig.basePath, localPath));
+      }
     },
   });
 
@@ -113,12 +125,15 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   <dd>
                     <input
                       id="loginId"
+                      ref={loginIdRef}
                       type="text"
                       name="loginId"
                       className="text password"
                       placeholder=""
                       autoComplete="off"
+                      onBlur={handleLoginIdBlur}
                     />
+                    <FieldPopover message={fieldErrors.loginId} />
                   </dd>
 
                   <dt>
@@ -146,7 +161,9 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       className="text password"
                       placeholder=""
                       autoComplete="off"
+                      onBlur={handleEmailBlur}
                     />
+                    <FieldPopover message={fieldErrors.email} />
                   </dd>
 
                   <dt>
@@ -160,7 +177,9 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       className="text password"
                       placeholder=""
                       autoComplete="off"
+                      onKeyUp={handlePasswordKeyUp}
                     />
+                    <FieldPopover message={fieldErrors.password} />
                   </dd>
 
                   <dt>
@@ -174,7 +193,9 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       className="text password"
                       placeholder=""
                       autoComplete="off"
+                      onKeyUp={handleRetypedPasswordKeyUp}
                     />
+                    <FieldPopover message={fieldErrors.retypedPassword} />
                   </dd>
                 </dl>
 
@@ -211,6 +232,12 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     }
 
     const form = new FormData(event.currentTarget);
+    const nextErrors = validateSignupForm(form, t);
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     registerMutation.mutate({
       emailAddress: String(form.get("email") ?? ""),
       loginId: String(form.get("loginId") ?? ""),
@@ -219,6 +246,148 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       retypedPassword: String(form.get("retypedPassword") ?? ""),
     });
   }
+
+  function setFieldError(field: SignupField, message: string) {
+    setFieldErrors((current) => ({ ...current, [field]: message }));
+  }
+
+  function clearFieldError(field: SignupField) {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  async function handleLoginIdBlur(event: React.FocusEvent<HTMLInputElement>) {
+    const loginId = event.currentTarget.value.trim().toLowerCase();
+    event.currentTarget.value = loginId;
+
+    if (!isValidLoginId(loginId)) {
+      setFieldError("loginId", t("validation.allowedCharsForLoginId"));
+      return;
+    }
+    if (!loginId) {
+      clearFieldError("loginId");
+      return;
+    }
+
+    const result = await readLegacyExistence(
+      runtimeConfig,
+      `/user/isUsed?name=${encodeURIComponent(loginId)}`,
+    );
+    if (result?.isExist === true) {
+      setFieldError("loginId", t("validation.duplicated"));
+    } else if (result?.isReserved === true) {
+      setFieldError("loginId", t("validation.reservedWord"));
+    } else {
+      clearFieldError("loginId");
+    }
+  }
+
+  async function handleEmailBlur(event: React.FocusEvent<HTMLInputElement>) {
+    const email = event.currentTarget.value.trim();
+    if (!email) {
+      clearFieldError("email");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setFieldError("email", t("validation.invalidEmail"));
+      return;
+    }
+
+    const result = await readLegacyExistence(
+      runtimeConfig,
+      `/user/isEmailExist?email=${encodeURIComponent(email)}`,
+    );
+    if (result?.isExist === true) {
+      setFieldError("email", t("validation.duplicated"));
+    } else {
+      clearFieldError("email");
+    }
+  }
+
+  function handlePasswordKeyUp(event: React.KeyboardEvent<HTMLInputElement>) {
+    const password = event.currentTarget.value.trim();
+    if (password.length < 4) {
+      setFieldError("password", t("validation.tooShortPassword"));
+    } else {
+      clearFieldError("password");
+    }
+    validateRetypedPassword(event.currentTarget.form);
+  }
+
+  function handleRetypedPasswordKeyUp(event: React.KeyboardEvent<HTMLInputElement>) {
+    validateRetypedPassword(event.currentTarget.form);
+  }
+
+  function validateRetypedPassword(form: HTMLFormElement | null) {
+    if (!form) return;
+    const formData = new FormData(form);
+    const password = String(formData.get("password") ?? "");
+    const retypedPassword = String(formData.get("retypedPassword") ?? "");
+    if (retypedPassword !== password) {
+      setFieldError("retypedPassword", t("validation.passwordMismatch"));
+    } else {
+      clearFieldError("retypedPassword");
+    }
+  }
+}
+
+type SignupField = "loginId" | "email" | "password" | "retypedPassword";
+
+function validateSignupForm(
+  form: FormData,
+  t: (key: string) => string,
+): Partial<Record<SignupField, string>> {
+  const loginId = String(form.get("loginId") ?? "");
+  const email = String(form.get("email") ?? "");
+  const password = String(form.get("password") ?? "");
+  const retypedPassword = String(form.get("retypedPassword") ?? "");
+  const nextErrors: Partial<Record<SignupField, string>> = {};
+
+  if (!loginId) nextErrors.loginId = t("validation.required");
+  else if (!isValidLoginId(loginId)) nextErrors.loginId = t("validation.allowedCharsForLoginId");
+  if (!email) nextErrors.email = t("validation.required");
+  else if (!isValidEmail(email)) nextErrors.email = t("validation.invalidEmail");
+  if (!password) nextErrors.password = t("validation.required");
+  else if (password.length < 4) nextErrors.password = t("validation.tooShortPassword");
+  if (!retypedPassword) nextErrors.retypedPassword = t("validation.required");
+  else if (retypedPassword !== password) {
+    nextErrors.retypedPassword = t("validation.passwordMismatch");
+  }
+
+  return nextErrors;
+}
+
+function isValidLoginId(loginId: string) {
+  return /^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$/.test(loginId);
+}
+
+function isValidEmail(email: string) {
+  return /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9])?/i.test(
+    email,
+  );
+}
+
+async function readLegacyExistence(runtimeConfig: RuntimeConfig, path: string) {
+  const response = await fetch(prefixBasePath(runtimeConfig.basePath, path), {
+    credentials: "same-origin",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) return null;
+  return (await response.json()) as { isExist?: boolean; isReserved?: boolean };
+}
+
+function FieldPopover({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <div className="popover left in">
+      <div className="arrow"></div>
+      <div className="popover-content">{message}</div>
+    </div>
+  );
 }
 
 function HighlightedLegacyMessage({ message }: { message: string }) {

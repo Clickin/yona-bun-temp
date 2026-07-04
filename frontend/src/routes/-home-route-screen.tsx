@@ -8,6 +8,7 @@ import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { useRootToast } from "./__root";
 
 type LegacyUserLinkSearch = {
   daysAgo: number;
@@ -353,36 +354,19 @@ function HomeScreen({
 }
 
 function HomeFlashToast({ message }: { message: string }) {
-  const [isVisible, setIsVisible] = React.useState(Boolean(message));
+  const setRootToast = useRootToast();
 
   React.useEffect(() => {
-    setIsVisible(Boolean(message));
     if (!message) {
+      setRootToast(null);
       return;
     }
-    const timeoutId = window.setTimeout(() => setIsVisible(false), 5000);
+    setRootToast({ key: `home-flash:${message}`, message });
+    const timeoutId = window.setTimeout(() => setRootToast(null), 5000);
     return () => window.clearTimeout(timeoutId);
-  }, [message]);
+  }, [message, setRootToast]);
 
-  if (!message || !isVisible) {
-    return null;
-  }
-
-  return (
-    <div className="yobiToasts">
-      <div className="toast" tabIndex={-1}>
-        <div className="btn-dismiss">
-          <button type="button" className="btn-transparent" onClick={() => setIsVisible(false)}>
-            &times;
-          </button>
-        </div>
-        <div className="center-text">
-          <span className="v" />
-          <div className="msg">{message}</div>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function NotificationStreamItem({
@@ -596,7 +580,6 @@ export function SiteLayoutShell({
                 className="logo logo-letter"
                 activeProps={{
                   "aria-current": undefined,
-                  className: "logo logo-letter",
                   "data-status": undefined,
                 }}
               >
