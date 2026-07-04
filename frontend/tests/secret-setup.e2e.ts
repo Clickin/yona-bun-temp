@@ -411,13 +411,16 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help">/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="ybtn ybtn-info">/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(
-    /to=\{"https:\/\/github\.com\/nforge\/yobi\/issues\?state=open" as never\}\s+target="_blank"/u,
+    /href="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+to=\{"https:\/\/github\.com\/nforge\/yobi\/issues\?state=open" as never\}\s+target="_blank"/u,
   );
   expect(SECRET_ROUTE_SOURCE).toMatch(
-    /to=\{"http:\/\/navercorp\.com\/" as never\}\s+target="_blank"/u,
+    /href="http:\/\/navercorp\.com\/"\s+to=\{"http:\/\/navercorp\.com\/" as never\}\s+target="_blank"/u,
   );
   expect(SECRET_ROUTE_SOURCE).toMatch(
-    /to=\{"https:\/\/developers\.naver\.com\/d2\/" as never\}\s+target="_blank"\s+className="d2-program"/u,
+    /href="https:\/\/developers\.naver\.com\/d2\/"\s+to=\{"https:\/\/developers\.naver\.com\/d2\/" as never\}\s+target="_blank"\s+className="d2-program"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(
+    /<Link\s+to=\{"https?:\/\/[^"]+" as never\}\s+target="_blank"/u,
   );
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
