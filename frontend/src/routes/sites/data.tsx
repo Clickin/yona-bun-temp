@@ -27,7 +27,6 @@ function SiteDataRoute() {
 function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
-  const exportPath = "/sites/export";
 
   return (
     <>
@@ -64,7 +63,12 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <h3>{t("site.data.export")}</h3>
               <p>{t("site.data.export.info")}</p>
 
-              <Link to={exportPath as never} className="ybtn ybtn-primary">
+              <Link
+                to={"/sites/export" as never}
+                href={prefixBasePath(runtimeConfig.basePath, "/sites/export")}
+                reloadDocument
+                className="ybtn ybtn-primary"
+              >
                 <strong>{t("site.data.export")}</strong>
               </Link>
 
