@@ -541,6 +541,46 @@ index 1234567..abcdef1 100644
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
+test("project commit detail renders legacy file mode change row", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "script/run.sh",
+        patch: `diff --git a/script/run.sh b/script/run.sh
+old mode 100644
+new mode 100755
+index 1234567..abcdef1
+--- a/script/run.sh
++++ b/script/run.sh`,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  const modeRow = page.locator("#script-run-sh .diff-container.show-comments tbody tr").first();
+  await expect(modeRow.locator("td").nth(0)).toHaveClass("linenum");
+  await expect(modeRow.locator("td").nth(0).locator(".line-number")).toHaveAttribute(
+    "data-line-num",
+    "100644",
+  );
+  await expect(modeRow.locator("td").nth(0).locator(".hidden")).toHaveText("100644");
+  await expect(modeRow.locator("td").nth(1)).toHaveClass("linenum");
+  await expect(modeRow.locator("td").nth(1).locator(".line-number")).toHaveAttribute(
+    "data-line-num",
+    "100755",
+  );
+  await expect(modeRow.locator("td").nth(1).locator(".hidden")).toHaveText("100755");
+  await expect(modeRow.locator("td").nth(2)).toHaveClass("isBinary");
+  await expect(modeRow.locator("td").nth(2)).toHaveText("File mode has changed");
+  await expect(page.locator("#script-run-sh .diff-container.show-comments tbody tr")).toHaveCount(
+    1,
+  );
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 async function readPartialDiffMetrics(page: Page) {
   return page.evaluate(() => {
     const diffBody = document.querySelector<HTMLElement>(".diff-body");

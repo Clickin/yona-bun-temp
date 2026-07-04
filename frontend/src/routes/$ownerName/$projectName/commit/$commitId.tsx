@@ -625,7 +625,8 @@ function FileDiffView({
   const commitBShort = shortenCommitId(commitB);
   const fileThreads = threads.filter((thread) => thread.path === filePath);
   const errorMessageKey = fileDiffErrorMessageKey(file);
-  const shouldRenderNoChanges = parsed.lines.length === 0 && !hasFileModeChange(file);
+  const fileModeChange = getFileModeChange(file);
+  const shouldRenderNoChanges = parsed.lines.length === 0 && !fileModeChange;
 
   return (
     <div id={fileId} className="diff-partial-outer">
@@ -682,47 +683,68 @@ function FileDiffView({
               ) : shouldRenderNoChanges ? (
                 <FileDiffErrorRow messageKey="code.noChanges" />
               ) : (
-                parsed.lines.map((line) => {
-                  const lineThreads =
-                    line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
+                <>
+                  {fileModeChange ? <FileModeChangedRow modeChange={fileModeChange} /> : null}
+                  {parsed.lines.map((line) => {
+                    const lineThreads =
+                      line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
 
-                  return line.kind === "range" ? (
-                    <tr className="range" key={diffLineKey(line)}>
-                      <td className="linenum">
-                        <div className="line-number" data-line-num="...">
-                          <span className="hidden">...</span>
-                        </div>
-                      </td>
-                      <td className="linenum">
-                        <div className="line-number" data-line-num="...">
-                          <span className="hidden">...</span>
-                        </div>
-                      </td>
-                      <td className="hunk">{line.text}</td>
-                    </tr>
-                  ) : (
-                    <FragmentWithInlineComments
-                      commitId={commitB}
-                      currentUser={currentUser}
-                      deleteComment={deleteComment}
-                      key={diffLineKey(line)}
-                      line={line}
-                      ownerName={ownerName}
-                      projectName={projectName}
-                      runtimeConfig={runtimeConfig}
-                      submitReply={submitReply}
-                      threads={lineThreads}
-                      toggleThreadState={toggleThreadState}
-                      updateComment={updateComment}
-                    />
-                  );
-                })
+                    return line.kind === "range" ? (
+                      <tr className="range" key={diffLineKey(line)}>
+                        <td className="linenum">
+                          <div className="line-number" data-line-num="...">
+                            <span className="hidden">...</span>
+                          </div>
+                        </td>
+                        <td className="linenum">
+                          <div className="line-number" data-line-num="...">
+                            <span className="hidden">...</span>
+                          </div>
+                        </td>
+                        <td className="hunk">{line.text}</td>
+                      </tr>
+                    ) : (
+                      <FragmentWithInlineComments
+                        commitId={commitB}
+                        currentUser={currentUser}
+                        deleteComment={deleteComment}
+                        key={diffLineKey(line)}
+                        line={line}
+                        ownerName={ownerName}
+                        projectName={projectName}
+                        runtimeConfig={runtimeConfig}
+                        submitReply={submitReply}
+                        threads={lineThreads}
+                        toggleThreadState={toggleThreadState}
+                        updateComment={updateComment}
+                      />
+                    );
+                  })}
+                </>
               )}
             </tbody>
           </table>
         </div>
       </div>
     </div>
+  );
+}
+
+function FileModeChangedRow({ modeChange }: { modeChange: { newMode: string; oldMode: string } }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <tr>
+      <td className="linenum">
+        <div className="line-number" data-line-num={modeChange.oldMode}></div>
+        <span className="hidden">{modeChange.oldMode}</span>
+      </td>
+      <td className="linenum">
+        <div className="line-number" data-line-num={modeChange.newMode}></div>
+        <span className="hidden">{modeChange.newMode}</span>
+      </td>
+      <td className="isBinary">{t("code.fileModeChanged")}</td>
+    </tr>
   );
 }
 
@@ -757,13 +779,19 @@ function fileDiffErrorMessageKey(file: CommitFileDiff) {
   return errors.some(Boolean) ? "code.unknownError" : null;
 }
 
-function hasFileModeChange(file: CommitFileDiff) {
-  return (
+function getFileModeChange(file: CommitFileDiff) {
+  const oldMode = file.oldMode || file.patch.match(/^old mode (.+)$/mu)?.[1] || "";
+  const newMode = file.newMode || file.patch.match(/^new mode (.+)$/mu)?.[1] || "";
+
+  if (
     file.isFileModeChanged === true ||
     file.fileModeChanged === true ||
-    Boolean(file.oldMode || file.newMode) ||
-    /^(?:old mode|new mode) /mu.test(file.patch)
-  );
+    Boolean(oldMode || newMode)
+  ) {
+    return { newMode, oldMode };
+  }
+
+  return null;
 }
 
 function FragmentWithInlineComments({
