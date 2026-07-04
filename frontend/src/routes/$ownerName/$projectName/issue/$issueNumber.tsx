@@ -668,7 +668,7 @@ function IssueDetailBody({
                       data-watching={String(isWatchingIssue)}
                       onClick={() => watchIssueMutation.mutate()}
                     >
-                      {isWatchingIssue ? "Unwatch" : "Watch"}
+                      {isWatchingIssue ? t("issue.unwatch") : t("issue.watch")}
                     </button>
                   ) : null}
                   {canUpdate ? (
