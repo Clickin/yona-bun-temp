@@ -21,7 +21,7 @@ const ROUTE_SOURCE = readFileSync(
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><script type="text/x-jquery-tmpl" id="tplAttachedFile"><li class="attached-file" data-id="\${fileId}" data-name="\${fileName}" data-href="\${fileHref}" data-mime="\${mimeType}" data-size="\${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">\${fileName}</strong><span class="size">\${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li></script><script type="text/x-jquery-tmpl" id="tplDropFilesHere"><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div></script>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
   );
 }
 
@@ -74,8 +74,23 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(
     page.locator('[data-toggle="markdown-help"][data-target="markdownTables"]'),
   ).toHaveText("Table");
+  await expect(page.locator("#upload")).toHaveAttribute("data-resource-type", "PULL_REQUEST");
+  await expect(page.locator("#upload")).not.toHaveAttribute("data-resource-id", /.*/u);
+  await expect(page.locator("#upload .attach-wrap")).toHaveCount(1);
+  await expect(page.locator("#upload .help-droppable")).toHaveText(
+    "Drag & Drop files to attach here or",
+  );
+  await expect(page.locator("#upload .fake-file-wrap")).toContainText("File upload");
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
-  await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  await expect(page.locator("#upload .plain")).toHaveText("Click upload button");
+  await expect(page.locator("#upload .help-pastable")).toHaveText("Paste the clipboard image");
+  await expect(page.locator("#upload ul.attached-files.unstyled > li")).toHaveCount(0);
+  await expect(page.locator("#upload .right-txt.help")).toContainText(
+    "Selected file will be attached when your comment is saved.",
+  );
+  await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
+  await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
+  await expect(page.locator('form.nm > div > script[type="text/x-jquery-tmpl"]')).toHaveCount(0);
   await expect(page.locator("#mergeResult .commit-id a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890`,
@@ -187,6 +202,29 @@ test("project pull request create form matches legacy git/create.scala.html core
       },
     ]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
+});
+
+test("pull request create uploader omits legacy local jQuery templates in source", () => {
+  const uploaderStart = ROUTE_SOURCE.indexOf("function PullRequestFileUploader");
+  const uploaderEnd = ROUTE_SOURCE.indexOf("function MergeResult", uploaderStart);
+  const uploaderSource = ROUTE_SOURCE.slice(uploaderStart, uploaderEnd);
+
+  expect(uploaderStart).toBeGreaterThanOrEqual(0);
+  expect(uploaderEnd).toBeGreaterThan(uploaderStart);
+  expect(uploaderSource).not.toContain("tplAttachedFile");
+  expect(uploaderSource).not.toContain("tplDropFilesHere");
+  expect(uploaderSource).not.toContain("text/x-jquery-tmpl");
+  expect(uploaderSource).not.toContain('className="attached-file"');
+  expect(uploaderSource).not.toContain('class="attached-file"');
+  expect(uploaderSource).not.toContain("upload-drop-here");
+  expect(uploaderSource).not.toContain("${fileId}");
+  expect(uploaderSource).not.toContain("${fileName}");
+  expect(uploaderSource).not.toContain("${fileHref}");
+  expect(uploaderSource).not.toContain("${mimeType}");
+  expect(uploaderSource).not.toContain("${fileSizeReadable}");
+  expect(uploaderSource).not.toContain("dangerouslySetInnerHTML");
+  expect(ROUTE_SOURCE).toContain("legacyMarkdownHelpHtml");
+  expect(ROUTE_SOURCE).toContain("dangerouslySetInnerHTML");
 });
 
 async function createFormMetrics(page: Page) {
