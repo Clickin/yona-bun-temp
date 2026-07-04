@@ -198,7 +198,12 @@ function ProjectForkBody({
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div className="content-wrap frm-wrap">
-          <form method="post" className="form-horizontal nm" onSubmit={onSubmit}>
+          <form
+            action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/fork`)}
+            method="post"
+            className="form-horizontal nm"
+            onSubmit={onSubmit}
+          >
             <input type="hidden" name="owner" value={selectedOwner} />
             <fieldset>
               <legend>
