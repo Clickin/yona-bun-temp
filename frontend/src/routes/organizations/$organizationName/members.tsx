@@ -18,9 +18,6 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
-type LegacyOrganizationLinkProps = Parameters<typeof Link>[0];
-type LegacyUserLinkProps = Parameters<typeof Link>[0];
-
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
 });
@@ -324,7 +321,17 @@ function OrganizationMember({
 
   return (
     <li className="member span6 span-hard-wrap">
-      <Link {...legacyUserLinkProps(loginId)} className="avatar-wrap mlarge pull-left mr10">
+      <Link
+        activeProps={{
+          "aria-current": undefined,
+          className: undefined,
+          "data-status": undefined,
+        }}
+        className="avatar-wrap mlarge pull-left mr10"
+        params={{ user: loginId }}
+        search={() => undefined}
+        to="/$user"
+      >
         <img
           src={stringField(member.avatarUrl, "/assets/images/default-avatar-64.png")}
           width="64"
@@ -415,7 +422,16 @@ function EnrollmentRequest({
   return (
     <div className="span2">
       <div className="pull-left mr10">
-        <Link {...legacyUserLinkProps(loginId)}>
+        <Link
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          params={{ user: loginId }}
+          search={() => undefined}
+          to="/$user"
+        >
           <img
             src={stringField(user.avatarUrl, "/assets/images/default-avatar-64.png")}
             height="65"
@@ -427,7 +443,16 @@ function EnrollmentRequest({
       </div>
       <div className="pull-left" style={{ width: "60px" }}>
         <span>
-          <Link {...legacyUserLinkProps(loginId)}>
+          <Link
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
+            params={{ user: loginId }}
+            search={() => undefined}
+            to="/$user"
+          >
             <strong>{stringField(user.userLabel, loginId)}</strong>
           </Link>
         </span>
@@ -464,7 +489,17 @@ function OrganizationHeader({
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
-                <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}`)}>
+                <Link
+                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  params={{ organizationName }}
+                  search={() => undefined}
+                  to="/organizations/$organizationName"
+                >
                   {organizationName}
                 </Link>
               </span>
@@ -491,23 +526,61 @@ function OrganizationMenu({
       <div className="project-menu-inner">
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
-            <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}`)}>
+            <Link
+              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={() => undefined}
+              to="/organizations/$organizationName"
+            >
               {t("title.organizationHome")}
             </Link>
           </li>
           <li className="">
-            <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/issues`)}>
+            <Link
+              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={() => undefined}
+              to="/organizations/$organizationName/issues"
+            >
               {t("menu.issue")}
             </Link>
           </li>
           <li className="">
-            <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/boards`)}>
+            <Link
+              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={() => undefined}
+              to="/organizations/$organizationName/boards"
+            >
               {t("menu.board")}
             </Link>
           </li>
           <li className="">
             <Link
-              {...legacyOrganizationLinkProps(`/organizations/${organizationName}/pullrequests`)}
+              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              params={{ organizationName }}
+              search={() => undefined}
+              to="/organizations/$organizationName/pullrequests"
             >
               {t("menu.pullRequest")}
             </Link>
@@ -518,7 +591,15 @@ function OrganizationMenu({
             {viewerCanUpdate ? (
               <li className="">
                 <Link
-                  {...legacyOrganizationLinkProps(`/organizations/${organizationName}/settingform`)}
+                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  params={{ organizationName }}
+                  search={() => undefined}
+                  to="/organizations/$organizationName/settingform"
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
@@ -545,17 +626,47 @@ function OrganizationSettingMenu({
   return (
     <ul className="nav nav-tabs">
       <li className="">
-        <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/settingform`)}>
+        <Link
+          activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          params={{ organizationName }}
+          search={() => undefined}
+          to="/organizations/$organizationName/settingform"
+        >
           {t("organization.settingFrom")}
         </Link>
       </li>
       <li className={active === "members" ? "active" : ""}>
-        <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/members`)}>
+        <Link
+          activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          params={{ organizationName }}
+          search={() => undefined}
+          to="/organizations/$organizationName/members"
+        >
           {t("organization.member")}
         </Link>
       </li>
       <li className="">
-        <Link {...legacyOrganizationLinkProps(`/organizations/${organizationName}/deleteForm`)}>
+        <Link
+          activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          params={{ organizationName }}
+          search={() => undefined}
+          to="/organizations/$organizationName/deleteForm"
+        >
           {t("organization.delete")}
         </Link>
       </li>
@@ -568,24 +679,6 @@ function roleLabel(organization: OrganizationAdminView, role: string) {
     (roleOption: YonaRecord) => stringField(roleOption.role, "") === role,
   );
   return stringField(option?.label, role);
-}
-
-function legacyOrganizationLinkProps(to: string): LegacyOrganizationLinkProps {
-  return {
-    activeOptions: { includeHash: true },
-    activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-    search: () => undefined,
-    to,
-  } as unknown as LegacyOrganizationLinkProps;
-}
-
-function legacyUserLinkProps(loginId: string): LegacyUserLinkProps {
-  return {
-    activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-    params: { user: loginId },
-    search: () => undefined,
-    to: "/$user",
-  } as unknown as LegacyUserLinkProps;
 }
 
 function stringField(value: unknown, fallback: string) {
