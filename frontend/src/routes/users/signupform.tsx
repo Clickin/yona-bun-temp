@@ -292,10 +292,6 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       clearFieldError("email");
       return;
     }
-    if (!isValidEmail(email)) {
-      setFieldError("email", t("validation.invalidEmail"));
-      return;
-    }
 
     const result = await readLegacyExistence(
       runtimeConfig,

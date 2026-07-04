@@ -392,9 +392,7 @@ test("signup form applies legacy yobi.user.SignUp client validation", async ({ p
 
   await page.fill("#email", "bad-email");
   await page.locator("#password").focus();
-  await expect(page.locator("#email + .popover .popover-content")).toHaveText(
-    "Enter valid email address!",
-  );
+  await expect(page.locator("#email + .popover .popover-content")).toHaveCount(0);
 
   await page.fill("#password", "");
   await page.locator("#password").type("abc");
@@ -407,6 +405,9 @@ test("signup form applies legacy yobi.user.SignUp client validation", async ({ p
   );
 
   await page.locator('form[name="signup"] button[type="submit"]').click();
+  await expect(page.locator("#email + .popover .popover-content")).toHaveText(
+    "Enter valid email address!",
+  );
   expect(registerCalls).toBe(0);
 });
 
