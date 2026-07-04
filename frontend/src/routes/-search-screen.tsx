@@ -1,6 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { apiQueryKeys } from "../api/query-keys";
@@ -199,7 +206,11 @@ export function LegacySearchBody({
                   <h3 className="search-result-title">{resultTitle}</h3>
                 </div>
                 <div className="search-result-wrap">
-                  <SearchResultList result={result} runtimeConfig={runtimeConfig} />
+                  <SearchResultList
+                    result={result}
+                    runtimeConfig={runtimeConfig}
+                    searchPath={searchPath}
+                  />
                 </div>
               </div>
             </div>
@@ -213,9 +224,11 @@ export function LegacySearchBody({
 function SearchResultList({
   result,
   runtimeConfig,
+  searchPath,
 }: {
   result: SearchResponse;
   runtimeConfig: RuntimeConfig;
+  searchPath: string;
 }) {
   const { t } = useLegacyMessages();
 
@@ -344,7 +357,7 @@ function SearchResultList({
             );
           })}
         </ul>
-        <div id="pagination"></div>
+        <SearchPagination result={result} searchPath={searchPath} />
       </>
     );
   }
@@ -443,7 +456,7 @@ function SearchResultList({
             );
           })}
         </ul>
-        <div id="pagination"></div>
+        <SearchPagination result={result} searchPath={searchPath} />
       </>
     );
   }
@@ -498,12 +511,115 @@ function SearchResultList({
             );
           })}
         </ul>
-        <div id="pagination"></div>
+        <SearchPagination result={result} searchPath={searchPath} />
       </>
     );
   }
 
   return <div className="empty-result"></div>;
+}
+
+function SearchPagination({ result, searchPath }: { result: SearchResponse; searchPath: string }) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  const totalPages = Math.ceil(result.totalCount / Math.max(result.pageSize, 1));
+  if (totalPages <= 1) {
+    return <div id="pagination"></div>;
+  }
+
+  const currentPage = clampPageNum(result.pageNum, totalPages);
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const pageSearch = (pageNum: number) => ({
+    keyword: result.keyword,
+    pageNum,
+    searchType: result.searchType,
+  });
+  const navigateToPage = (pageNum: number) => {
+    void router.navigate({
+      search: pageSearch(pageNum),
+      to: searchPath,
+    });
+  };
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(value);
+    navigateToPage(value);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ className: undefined }}
+              from={searchPath}
+              search={pageSearch(currentPage - 1)}
+              to={searchPath}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            key={currentPage}
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            pattern="[0-9]*"
+            type="number"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ className: undefined }}
+              from={searchPath}
+              search={pageSearch(currentPage + 1)}
+              to={searchPath}
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
 function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {

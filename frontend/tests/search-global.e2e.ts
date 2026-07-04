@@ -511,6 +511,9 @@ test("global user search renders legacy partial_users.scala.html populated row",
   await expect(customAvatar).toHaveAttribute("alt", "Alice");
   await expect(customAvatar).toHaveAttribute("width", "32");
   await expect(customAvatar).toHaveAttribute("height", "32");
+  await expect(page.locator("#pagination")).toHaveAttribute("id", "pagination");
+  await expect(page.locator("#pagination")).not.toHaveClass(/page-navigation-wrap/u);
+  await expect(page.locator("#pagination .page-nums")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_GLOBAL_USER_SEARCH.replaceAll("__BASE_PATH__", basePath)),
@@ -554,6 +557,47 @@ test("global issue search renders legacy partial_issues.scala.html populated row
       EXPECTED_GLOBAL_ISSUE_SEARCH.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("global issue search renders legacy pagination when result pages exceed one", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=paged&searchType=issue&pageNum=1`);
+  const pagination = page.locator("#pagination");
+  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
+  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  await expect(pagination.locator("span.off")).toHaveText("Previous page");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
+  await expect(pagination.locator(".page-num").nth(3)).toHaveText("3");
+
+  const nextHref = await pagination.locator("a", { hasText: "Next page" }).getAttribute("href");
+  expect(nextHref).not.toBeNull();
+  const nextUrl = new URL(nextHref ?? "", page.url());
+  expect(nextUrl.pathname).toBe(`${basePath}/search`);
+  expect(nextUrl.searchParams.get("keyword")).toBe("paged");
+  expect(nextUrl.searchParams.get("searchType")).toBe("issue");
+  expect(nextUrl.searchParams.get("pageNum")).toBe("2");
+
+  await pagination.locator("a", { hasText: "Next page" }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+
+  const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
+  expect(prevHref).not.toBeNull();
+  const prevUrl = new URL(prevHref ?? "", page.url());
+  expect(prevUrl.searchParams.get("pageNum")).toBe("1");
+
+  await pagination.locator('input[name="pageNum"]').fill("9");
+  await pagination.locator('input[name="pageNum"]').press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("3");
+  await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
 });
 
 test("global post search renders legacy partial_posts.scala.html populated row", async ({
@@ -1229,6 +1273,55 @@ async function mockGlobalSearch(page: Page) {
           scope: "global",
           searchType: "issue",
           totalCount: 1,
+        }),
+      });
+      return;
+    }
+    if (keyword === "paged") {
+      const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+      const pageNum = Number(requestUrl.searchParams.get("pageNum")) || 1;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 41,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 0,
+            users: 0,
+          },
+          items: [
+            {
+              authorLabel: "Alice",
+              authorLoginId: "alice",
+              createdLabel: "Jun 30, 2026",
+              href: `${basePath}/admin/sample/issue/${40 + pageNum}`,
+              id: `paged-${pageNum}`,
+              number: String(40 + pageNum),
+              ownerName: "admin",
+              projectName: "sample",
+              snippets: [{ highlights: [], text: "Paged issue body", truncated: true }],
+              state: "open",
+              title: `Paged issue ${pageNum}`,
+              type: "issue",
+              updatedLabel: "Jun 30, 2026",
+            },
+          ],
+          keyword: "paged",
+          pageNum,
+          pageSize: 20,
+          requestedSearchType: "issue",
+          scope: "global",
+          searchType: "issue",
+          totalCount: 41,
         }),
       });
       return;
