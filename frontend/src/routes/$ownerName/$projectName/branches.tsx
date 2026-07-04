@@ -125,7 +125,11 @@ function ProjectBranchesBody({
                 <Link
                   to="/$ownerName/$projectName/branches"
                   params={{ ownerName, projectName }}
-                  search={{ __legacyInactive: undefined } as never}
+                  hash="branches-active-sentinel"
+                  mask={{
+                    to: "/$ownerName/$projectName/branches",
+                    params: { ownerName, projectName },
+                  }}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,

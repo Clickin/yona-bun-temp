@@ -24,14 +24,14 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
   await expect(page.locator(".code-browse-wrap a[data-status]")).toHaveCount(0);
-  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs a").first()).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/code/main`,
-  );
-  await expect(page.locator(".code-breadcrumb-wrap a")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/code/main`,
-  );
+  const activeFilesLink = page.locator(".code-browse-wrap > .nav.nav-tabs a").first();
+  const breadcrumbProjectLink = page.locator(".code-breadcrumb-wrap a");
+  await expect(activeFilesLink).toHaveAttribute("href", `${basePath}/admin/sample/code/main`);
+  await expect(activeFilesLink).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(activeFilesLink).not.toHaveAttribute("data-status", /.+/u);
+  await expect(breadcrumbProjectLink).toHaveAttribute("href", `${basePath}/admin/sample/code/main`);
+  await expect(breadcrumbProjectLink).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(breadcrumbProjectLink).not.toHaveAttribute("data-status", /.+/u);
   await expect(
     page.locator('.code-browse-header .pull-right a.ybtn:has-text("Download")'),
   ).toHaveAttribute("href", `${basePath}/admin/sample/archive/main.zip`);
@@ -144,7 +144,7 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).toContain("activeOptions={{");
   expect(ROUTE_SOURCE).toContain("activeProps={{");
   expect(ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(ROUTE_SOURCE.match(/__legacyInactive/gu) ?? []).toHaveLength(2);
+  expect(ROUTE_SOURCE).not.toContain("__legacyInactive");
   expect(ROUTE_SOURCE).toContain("reloadDocument");
   expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
   expect(ROUTE_SOURCE).not.toContain("FILE_LIST_ITEM_TEMPLATE");

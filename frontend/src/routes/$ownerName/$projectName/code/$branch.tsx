@@ -95,7 +95,8 @@ function ProjectCodeFolderBody({
                   "data-status": undefined,
                 }}
                 to={projectRoute(ownerName, projectName, "code", encodedBranch)}
-                search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
+                hash="code-browser-active-sentinel"
+                mask={{ to: projectRoute(ownerName, projectName, "code", encodedBranch) }}
               >
                 {t("code.files")}
               </Link>
@@ -184,7 +185,8 @@ function ProjectCodeFolderBody({
                   "data-status": undefined,
                 }}
                 to={projectRoute(ownerName, projectName, "code", encodedBranch)}
-                search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
+                hash="code-browser-active-sentinel"
+                mask={{ to: projectRoute(ownerName, projectName, "code", encodedBranch) }}
               >
                 {projectName}
               </Link>

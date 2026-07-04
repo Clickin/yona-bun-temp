@@ -32,6 +32,14 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
     `${basePath}/admin/sample/pullRequest/3`,
   );
   await expect(page.locator(".code-browse-wrap a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".code-browse-wrap a[aria-current]")).toHaveCount(0);
+  const branchesTabItem = page.locator(".code-browse-wrap > .nav.nav-tabs > li").nth(2);
+  const branchesTabAnchor = branchesTabItem.locator("a");
+  await expect(branchesTabItem).toHaveAttribute("class", "active");
+  await expect(branchesTabAnchor).toHaveAttribute("href", `${basePath}/admin/sample/branches`);
+  await expect(branchesTabAnchor).not.toHaveAttribute("class", /./u);
+  await expect(branchesTabAnchor).not.toHaveAttribute("aria-current", /./u);
+  await expect(branchesTabAnchor).not.toHaveAttribute("data-status", /./u);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_BRANCHES_BODY.replaceAll("__BASE_PATH__", basePath)),
@@ -132,10 +140,17 @@ test("project code branches route uses Link for internal anchors", () => {
   )?.[0];
 
   expect(branchesTabLink).toBeTruthy();
-  expect(branchesTabLink).toContain("search={{ __legacyInactive: undefined } as never}");
+  expect(branchesTabLink).not.toContain("__legacyInactive");
+  expect(branchesTabLink).not.toContain("search={{");
+  expect(branchesTabLink).toContain('to="/$ownerName/$projectName/branches"');
+  expect(branchesTabLink).toContain("params={{ ownerName, projectName }}");
+  expect(branchesTabLink).toContain('hash="branches-active-sentinel"');
+  expect(branchesTabLink).toContain("mask={{");
   expect(branchesTabLink).toContain("activeOptions={{");
+  expect(branchesTabLink).toContain("includeHash: true");
   expect(branchesTabLink).toContain("includeSearch: true");
   expect(branchesTabLink).toContain('"data-status": undefined');
+  expect(ROUTE_SOURCE).not.toContain("__legacyInactive");
   expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute }");
   expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
   expect(ROUTE_SOURCE).not.toContain("legacyInactiveSearch");

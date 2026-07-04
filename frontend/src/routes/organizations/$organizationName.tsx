@@ -465,7 +465,11 @@ export function OrganizationHeader({
                     "data-status": undefined,
                   }}
                   params={{ organizationName }}
-                  search={{ __legacyInactive: undefined }}
+                  hash="organization-home-active-sentinel"
+                  mask={{
+                    to: "/organizations/$organizationName",
+                    params: { organizationName },
+                  }}
                   to="/organizations/$organizationName"
                 >
                   {organizationName}
@@ -508,7 +512,11 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{ __legacyInactive: undefined }}
+              hash="organization-home-active-sentinel"
+              mask={{
+                to: "/organizations/$organizationName",
+                params: { organizationName },
+              }}
               to="/organizations/$organizationName"
             >
               {t("title.organizationHome")}

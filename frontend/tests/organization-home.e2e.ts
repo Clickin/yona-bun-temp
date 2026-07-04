@@ -123,10 +123,18 @@ test("organization home menu links keep legacy hrefs without route-local native 
     "href",
     `${basePath}/organizations/weblabs`,
   );
-  await expect(page.locator(".project-menu-gruop a").first()).not.toHaveAttribute("aria-current");
-  await expect(page.locator(".project-menu-gruop a").first()).not.toHaveAttribute("data-status");
-  await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("aria-current");
-  await expect(page.locator(".project-breadcrumb a")).not.toHaveAttribute("data-status");
+  const homeMenuItem = page.locator(".project-menu-gruop li").first();
+  const homeMenuLink = homeMenuItem.locator("a");
+  const breadcrumbLink = page.locator(".project-breadcrumb a");
+  await expect(homeMenuItem).toHaveClass("active");
+  await expect(homeMenuLink).toHaveText("Group Home");
+  await expect(homeMenuLink).not.toHaveAttribute("class");
+  await expect(homeMenuLink).not.toHaveAttribute("aria-current");
+  await expect(homeMenuLink).not.toHaveAttribute("data-status");
+  await expect(breadcrumbLink).toHaveText("weblabs");
+  await expect(breadcrumbLink).not.toHaveAttribute("class");
+  await expect(breadcrumbLink).not.toHaveAttribute("aria-current");
+  await expect(breadcrumbLink).not.toHaveAttribute("data-status");
   expect(await readOrganizationHomeMenuNativeLinkAudit(page)).toEqual([]);
 });
 
@@ -223,6 +231,7 @@ test("organization home project card route source uses Link for internal card na
   expect(source).not.toContain("const projectHref");
   expect(source).not.toContain("<a href={projectHref}");
   expect(source).not.toMatch(/<a\b/);
+  expect(source).toContain('hash="organization-home-active-sentinel"');
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${ownerName}`)}");
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${stringField(member.loginId");
   expect(source).not.toContain("href={prefixBasePath(runtimeConfig.basePath");
@@ -238,6 +247,7 @@ test("organization home project card route source uses Link for internal card na
   expect(source).toContain('to="/organizations/$organizationName/boards"');
   expect(source).toContain('to="/organizations/$organizationName/pullrequests"');
   expect(source).toContain('to="/organizations/$organizationName/settingform"');
+  expect(source).not.toContain("__legacyInactive");
 });
 
 test("organization home filters projects like legacy item-search", async ({ page }) => {
