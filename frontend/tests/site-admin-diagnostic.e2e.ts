@@ -145,6 +145,11 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   await expect(page.locator(".site-setting-nav li").nth(7)).toHaveClass("active");
   const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
+  const siteAdminShellLink = page.locator(".gnb-usermenu .usermenu-icon-button.show-progress-bar");
+  await expect(siteAdminShellLink).toHaveAttribute("href", `${basePath}/sites/userList`);
+  await expect(siteAdminShellLink).toHaveAttribute("title", "Site administration");
+  await expect(siteAdminShellLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(siteAdminShellLink).toHaveAttribute("data-placement", "bottom");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(

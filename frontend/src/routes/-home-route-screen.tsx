@@ -877,6 +877,9 @@ function AuthenticatedSiteUserMenu({
               <Link
                 to="/sites/userList"
                 search={LEGACY_SITE_USER_LIST_LINK_SEARCH}
+                data-toggle="tooltip"
+                title={t("menu.siteAdmin")}
+                data-placement="bottom"
                 className="usermenu-icon-button show-progress-bar"
               >
                 <i className="yobicon-wrench" />
