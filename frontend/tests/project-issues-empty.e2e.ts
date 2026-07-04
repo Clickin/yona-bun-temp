@@ -842,6 +842,21 @@ test("project issue row milestone link preserves legacy partial_list.scala.html 
   await expect(rowMilestoneLink).toHaveText("v1.0");
 });
 
+test("project issue row assignee avatar preserves legacy partial_list.scala.html tooltip attrs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  const assigneeAvatarLink = page.locator("#issue-item-42 .avatar-wrap.assinee");
+
+  await expect(assigneeAvatarLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(assigneeAvatarLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(assigneeAvatarLink).toHaveAttribute("data-placement", "top");
+  await expect(assigneeAvatarLink).toHaveAttribute("title", "Assignee: Site Admin");
+});
+
 test("project issue normal list hides other users' drafts like legacy partial_list.scala.html", async ({
   page,
 }) => {

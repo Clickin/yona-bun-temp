@@ -1768,6 +1768,8 @@ function ProjectIssueItem({
               to="/$user"
               params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
+              data-toggle="tooltip"
+              data-placement="top"
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
             >
               <img
