@@ -5,7 +5,6 @@ import {
   type BoardPostListItem,
   type OrganizationBoardsResponse,
 } from "../../../api/boards";
-import type { LiHTMLAttributes } from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationContainer } from "../../../api/types";
@@ -13,6 +12,12 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+declare module "react" {
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
 
 type OrganizationBoardsSearch = {
   filter: string;
@@ -241,10 +246,9 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
     basePath,
     `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`,
   );
-  const legacyHref = { href: postHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
-    <li className="post-item title" {...legacyHref}>
+    <li className="post-item title" href={postHref}>
       <Link
         to="/$user"
         params={{ user: post.authorLoginId }}

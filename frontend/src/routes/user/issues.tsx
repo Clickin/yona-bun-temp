@@ -1,14 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import type {
-  CSSProperties,
-  FormEvent,
-  HTMLAttributes,
-  KeyboardEvent,
-  LiHTMLAttributes,
-  MouseEvent,
-} from "react";
+import type { CSSProperties, FormEvent, HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
 import {
@@ -21,6 +14,12 @@ import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
+declare module "react" {
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
+
 type UserIssuesSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
   orderBy: string;
@@ -29,6 +28,17 @@ type UserIssuesSearch = {
   query: string;
   state: "closed" | "open";
 };
+
+type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
+type LegacyPjaxFilterAttrs = HTMLAttributes<HTMLButtonElement> & { "pjax-filter": "" };
+type LegacyStateButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
+  state: UserIssuesSearch["state"];
+};
+type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
+  orderby: string;
+  orderdir: string;
+};
+type LegacyPjaxListItemAttrs = HTMLAttributes<HTMLLIElement> & { "data-pjax": "" };
 
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
@@ -112,7 +122,7 @@ function UserIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const basePath = runtimeConfig.basePath;
-  const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
+  const pjaxContainer = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -625,7 +635,7 @@ function QuickSearch({
     <ul className="lst-stacked unstyled">
       {rows.map((row) => {
         const ids = quickFilterIds(row.filter, currentUserId);
-        const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLButtonElement>;
+        const pjaxFilter = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttrs;
         return (
           <li className={search.filter === row.filter ? "active" : ""} key={row.filter}>
             <button
@@ -666,8 +676,8 @@ function StateTab({
   onNavigate: (event: MouseEvent<HTMLButtonElement>, state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
-  const legacyState = { state } as unknown as HTMLAttributes<HTMLButtonElement>;
-  const pjaxItem = { "data-pjax": "" } as unknown as HTMLAttributes<HTMLLIElement>;
+  const legacyState = { state } satisfies LegacyStateButtonAttrs;
+  const pjaxItem = { "data-pjax": "" } satisfies LegacyPjaxListItemAttrs;
 
   return (
     <li className={active ? "active" : ""} {...pjaxItem}>
@@ -706,7 +716,7 @@ function IssueFilters({
           const legacyOrderAttrs = {
             orderby: filter.field,
             orderdir: nextOrderDir,
-          } as unknown as HTMLAttributes<HTMLButtonElement>;
+          } satisfies LegacyOrderButtonAttrs;
           return (
             <button
               type="button"
@@ -755,7 +765,6 @@ function UserIssueItem({
     updatedLabel && updatedLabel !== createdLabel
       ? `Last Updated ${updatedLabel}`
       : `Created at ${createdLabel}`;
-  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const showAuthor = search.filter !== "authored";
   const showAuthorLink = Boolean(issue.authorLoginId && issue.authorLabel);
   const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
@@ -771,7 +780,7 @@ function UserIssueItem({
         ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
         ...(isHovered ? { backgroundColor: "#fafafa" } : {}),
       }}
-      {...legacyHref}
+      href={issueHref}
       onClick={() => {
         setIsChildListVisible(true);
       }}

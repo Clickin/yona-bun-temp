@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import type { LiHTMLAttributes } from "react";
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
@@ -17,6 +16,12 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
+
+declare module "react" {
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
 
 type PublicProfileSearch = {
   daysAgo: number;
@@ -519,10 +524,9 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   const dueDateOverdue = Boolean(issue.dueDateOverdue);
   const dueDateText = stringField(issue, "dueDateText");
   const issueState = stringField(issue, "state");
-  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
 
   return (
-    <li className="post-item title" id={`issue-item-${issueId}`} {...legacyHref}>
+    <li className="post-item title" id={`issue-item-${issueId}`} href={issueHref}>
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">
@@ -855,7 +859,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
   const receiverLoginId = stringField(pullRequest, "receiverLoginId");
   const receiverLabel = stringField(pullRequest, "receiverLabel");
   const receiverAvatarUrl = stringField(
-    pullRequest as unknown as YonaRecord,
+    pullRequest,
     "receiverAvatarUrl",
     "/assets/images/default-avatar-32.png",
   );
@@ -866,7 +870,7 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
         <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap mlarge">
           <img
             src={stringField(
-              pullRequest as unknown as YonaRecord,
+              pullRequest,
               "projectLogoUrl",
               "/assets/images/project_default_logo.png",
             )}

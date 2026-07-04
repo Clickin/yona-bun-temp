@@ -14,7 +14,7 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -284,14 +284,16 @@ test("organization settings breadcrumb organization link keeps legacy href with 
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
-test("organization settings breadcrumb source uses direct Link instead of raw organizationHref anchor", () => {
+test("organization settings breadcrumb source uses direct Link without Link prop shim", () => {
   const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
   const headerBreadcrumb = source.match(
     /<span className="project-author">[\s\S]*?<\/span>\s*<\/div>\s*<\/div>/u,
   )?.[0];
 
   expect(headerBreadcrumb).toContain("<Link");
-  expect(headerBreadcrumb).toContain("to: `/organizations/${organizationName}`");
+  expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
+  expect(source).not.toContain("Parameters<typeof Link>");
+  expect(source).not.toContain("as unknown as");
   expect(headerBreadcrumb).not.toContain("href={organizationHref(basePath, organizationName)}");
   expect(source).not.toContain(
     "<a href={organizationHref(basePath, organizationName)}>{organizationName}</a>",

@@ -326,6 +326,18 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).not.toContain("as unknown as");
+  expect(routeSource).toContain("satisfies LegacyPjaxContainerAttrs");
+  expect(routeSource).toContain("satisfies LegacyPjaxFilterAttrs");
+  expect(routeSource).toContain("satisfies LegacyStateButtonAttrs");
+  expect(routeSource).toContain("satisfies LegacyOrderButtonAttrs");
+  expect(routeSource).toContain("orderby: filter.field");
+  expect(routeSource).toContain("orderdir: nextOrderDir");
+  expect(routeSource).not.toContain("orderBy: filter.field");
+  expect(routeSource).not.toContain("orderDir: nextOrderDir");
+  expect(routeSource).not.toContain("legacyHref");
+  expect(routeSource).not.toContain("LegacyHrefListItemAttrs");
+  expect(routeSource).toContain("href={issueHref}");
   expect(tabsSource).toContain('to="/notifications"');
   expect(tabsSource).toContain('to="/user/issues"');
   expect(tabsSource).toContain('to="/user/files"');

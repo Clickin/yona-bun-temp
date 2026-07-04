@@ -119,9 +119,14 @@ test("public user profile route source keeps navigation on TanStack Link", async
 
   expect(source).not.toContain("<a ");
   expect(source).not.toContain("</a>");
+  expect(source).not.toContain("legacyHref");
+  expect(source).not.toContain("as unknown as LiHTMLAttributes");
   expect(source).toContain("Link, Navigate");
   expect(source).toContain('hash="comments"');
   expect(source).toContain('hash="vote"');
+  expect(source).toContain(
+    '<li className="post-item title" id={`issue-item-${issueId}`} href={issueHref}>',
+  );
 });
 
 test("public user profile matches legacy user/view.scala.html issues screen", async ({ page }) => {
