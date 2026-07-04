@@ -1,19 +1,15 @@
-import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { prefixBasePath } from "../runtime-config";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/register")({
+  beforeLoad: ({ location }) => {
+    throw redirect({
+      href: `/users/signupform${location.searchStr}`,
+      replace: true,
+    });
+  },
   component: RegisterAliasRoute,
 });
 
 function RegisterAliasRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-
-  React.useEffect(() => {
-    window.location.replace(
-      `${prefixBasePath(runtimeConfig.basePath, "/users/signupform")}${window.location.search}`,
-    );
-  }, [runtimeConfig.basePath]);
-
   return null;
 }
