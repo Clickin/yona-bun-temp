@@ -128,6 +128,29 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   ]);
 });
 
+test("project milestone edit form renders legacy title required validation state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+  await mockProjectMilestoneEditForm(page, patchRequests);
+
+  await page.goto(`${basePath}/admin/sample/milestone/5/editform`);
+  await expect(page.locator("#milestone-form")).toBeVisible();
+  await page.fill("#title", "");
+  await page.click('#milestone-form button[type="submit"]');
+
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
+  await expect(page.locator("#title + .message")).toHaveCount(1);
+  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5/editform?state=open`);
+  expect(patchRequests).toEqual([]);
+
+  await page.fill("#title", "v1.0 patched");
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await expect(page.locator("#title + .message")).toHaveCount(0);
+});
+
 test("project milestone edit form route uses typed Link and no uploader jquery templates", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/milestone/$milestoneId/editform.tsx",
@@ -151,6 +174,11 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).not.toContain("text/x-jquery-tmpl");
   expect(routeSource).not.toContain("tplAttachedFile");
   expect(routeSource).not.toContain("tplDropFilesHere");
+  expect(routeSource).toContain('t("validation.required")');
+  expect(routeSource).not.toContain("document.");
+  expect(routeSource).not.toContain("addEventListener");
+  expect(routeSource).not.toContain("classList");
+  expect(routeSource).not.toContain("style.display");
 });
 
 async function mockProjectMilestoneEditForm(page: Page, patchRequests: unknown[]) {
