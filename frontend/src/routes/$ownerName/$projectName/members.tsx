@@ -305,10 +305,11 @@ function ProjectMemberListItem({
               <ul className="dropdown-menu">
                 {members.roleOptions.map((role) => {
                   const roleName = stringField(role.role, "");
+                  const roleId = legacyProjectRoleId(role);
                   const selected = roleName === stringField(member.role, "");
                   return (
                     <li
-                      data-value={roleName}
+                      data-value={roleId}
                       data-selected={selected ? "true" : undefined}
                       className={selected ? "active" : undefined}
                       key={roleName}
@@ -408,6 +409,15 @@ function EnrollmentRequest({
 
 function roleLabel(members: ProjectMembersResponse, role: string) {
   return members.roleOptions.find((option) => stringField(option.role, "") === role)?.label ?? role;
+}
+
+function legacyProjectRoleId(role: ProjectMembersResponse["roleOptions"][number]) {
+  const roleRecord = recordField(role);
+  const explicitId = stringField(roleRecord.id, "");
+  if (explicitId) {
+    return explicitId;
+  }
+  return stringField(role.role, "") === "manager" ? "1" : "2";
 }
 
 function ProjectHeader({ project }: { project: ProjectContainer }) {
