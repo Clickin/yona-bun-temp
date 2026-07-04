@@ -180,6 +180,11 @@ function commentUpdateForm(
 test("project commit detail route source has no generic LegacyInternalLink adapter", async () => {
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("ComponentType");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("attachmentFileHtml");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("escapeHtml");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
+    /className="attachment-files"[\s\S]{0,160}dangerouslySetInnerHTML/u,
+  );
 });
 
 test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
@@ -894,6 +899,21 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     page.locator("#reviewcards-open .review-card.open .avatar-wrap.smaller.margin-right-5 img"),
   ).toHaveAttribute("alt", "Dev User");
   await expect(page.locator("#comment-editform-601")).toBeHidden();
+  const updateAttachment = page.locator(
+    "#comment-editform-601 .attachment-files .attached-file.attached-file-marker",
+  );
+  await expect(updateAttachment).toHaveCount(1);
+  await expect(updateAttachment).toHaveAttribute("data-name", "note.txt");
+  await expect(updateAttachment).toHaveAttribute("data-href", `${basePath}/files/701`);
+  await expect(updateAttachment).toHaveAttribute("data-mime", "text/plain");
+  await expect(updateAttachment.locator("i.mimetype")).toHaveCount(1);
+  await expect(updateAttachment.locator("strong.name")).toHaveText("note.txt");
+  await expect(updateAttachment.locator("span.size")).toHaveText("42");
+  const updateAttachmentDelete = updateAttachment.locator(
+    'button[type="button"].btn-transparent.btn-delete',
+  );
+  await expect(updateAttachmentDelete).toHaveAttribute("data-id", "701");
+  await expect(updateAttachmentDelete).toHaveText("×");
   await expect(
     page.locator("#thread-88 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toBeVisible();

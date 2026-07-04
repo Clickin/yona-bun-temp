@@ -72,11 +72,19 @@ test("project code file history route uses TanStack Link for internal anchors", 
     "src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx",
     "utf8",
   );
+  const removedAdapterName = ["legacy", "Inactive", "Link", "Options"].join("");
 
   expect(routeSource).not.toMatch(/<a\s+href=/u);
   expect(routeSource).not.toContain("commitHref(");
   expect(routeSource).not.toContain("projectHref(");
+  expect(routeSource).not.toContain(removedAdapterName);
   expect(routeSource).toContain('import { Link, createFileRoute } from "@tanstack/react-router"');
+  expect(
+    routeSource.match(
+      /activeOptions=\{\{\s*exact: true,\s*includeHash: true,\s*includeSearch: true,?\s*\}\}/gu,
+    ),
+  ).toHaveLength(8);
+  expect(routeSource.match(/activeProps=\{\{\s*className: undefined\s*\}\}/gu)).toHaveLength(8);
 });
 
 async function mockProjectCodeFileHistory(page: Page, historyRequests: string[], filePath: string) {

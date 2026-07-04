@@ -11,6 +11,7 @@ import {
   deleteCommitDiscussionCommentRest,
   openCommitDiscussionThreadRest,
   type CodeCommitDetailResponse,
+  type CodeReviewAttachment,
   type CodeReviewComment,
   type CodeReviewThread,
   unwatchCommitRest,
@@ -1142,10 +1143,11 @@ function CodeCommentUpdateForm({
             value=""
           />
           <div className={`preview-${commentId}`}></div>
-          <div
-            className="attachment-files"
-            dangerouslySetInnerHTML={{ __html: attachmentFileHtml(basePath, comment) }}
-          ></div>
+          <div className="attachment-files">
+            {(comment.attachments ?? []).map((file) => (
+              <AttachmentFileMarker basePath={basePath} file={file} key={file.id} />
+            ))}
+          </div>
           <div
             id={`upload-${commentId}`}
             data-resourcetype="NONISSUE_COMMENT"
@@ -1153,6 +1155,36 @@ function CodeCommentUpdateForm({
           ></div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function AttachmentFileMarker({
+  basePath,
+  file,
+}: {
+  basePath: string;
+  file: CodeReviewAttachment;
+}) {
+  const id = String(file.id);
+  const name = String(file.name);
+  const mimeType = String(file.mimeType);
+  const size = String(file.size);
+  const href = prefixBasePath(basePath, `/files/${id}`);
+
+  return (
+    <div
+      className="attached-file attached-file-marker"
+      data-name={name}
+      data-href={href}
+      data-mime={mimeType}
+    >
+      <i className="mimetype"></i>
+      <strong className="name">{name}</strong>
+      <span className="size">{size}</span>
+      <button type="button" className="btn-transparent btn-delete" data-id={id}>
+        ×
+      </button>
     </div>
   );
 }
@@ -1396,37 +1428,6 @@ function UploadForm({ resourceType }: { resourceType: string }) {
       </p>
     </div>
   );
-}
-
-function attachmentFileHtml(basePath: string, comment: CodeReviewComment) {
-  return (comment.attachments ?? [])
-    .map((file) => {
-      const id = String(file.id);
-      const name = String(file.name);
-      const mimeType = String(file.mimeType);
-      const size = String(file.size);
-      const href = prefixBasePath(basePath, `/files/${id}`);
-
-      return `<div class="attached-file attached-file-marker" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}"><i class="mimetype"></i><strong class="name">${escapeHtml(name)}</strong><span class="size">${escapeHtml(size)}</span><button type="button" class="btn-transparent btn-delete" data-id="${escapeHtml(id)}">×</button></div>`;
-    })
-    .join("");
-}
-
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/gu, (char) => {
-    switch (char) {
-      case "&":
-        return "&amp;";
-      case "<":
-        return "&lt;";
-      case ">":
-        return "&gt;";
-      case '"':
-        return "&quot;";
-      default:
-        return "&#39;";
-    }
-  });
 }
 
 function ReviewCards({

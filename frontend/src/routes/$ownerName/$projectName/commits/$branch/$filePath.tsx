@@ -119,7 +119,7 @@ function ProjectCodeFileHistoryBody({
             <div id="breadcrumbs" className="code-breadcrumb-wrap">
               <Link
                 to={projectRoutePath(ownerName, projectName, "commits", encodedBranch)}
-                activeOptions={legacyInactiveLinkOptions}
+                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={{ className: undefined }}
               >
                 {projectName}
@@ -127,7 +127,7 @@ function ProjectCodeFileHistoryBody({
               {history.breadcrumbs.map((item) => (
                 <Link
                   to={projectRoutePath(ownerName, projectName, "commits", encodedBranch, item.path)}
-                  activeOptions={legacyInactiveLinkOptions}
+                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                   activeProps={{ className: undefined }}
                   key={item.path}
                 >
@@ -187,7 +187,11 @@ function ProjectCodeFileHistoryBody({
                               to={showCommitPath}
                               search={showCommitSearch}
                               hash={showCommitHash}
-                              activeOptions={legacyInactiveLinkOptions}
+                              activeOptions={{
+                                exact: true,
+                                includeHash: true,
+                                includeSearch: true,
+                              }}
                               activeProps={{ className: undefined }}
                               title={t("code.showCommit")}
                             >
@@ -219,7 +223,11 @@ function ProjectCodeFileHistoryBody({
                               )}
                               title={t("code.showCodeAtThisCommit")}
                               className="ybtn"
-                              activeOptions={legacyInactiveLinkOptions}
+                              activeOptions={{
+                                exact: true,
+                                includeHash: true,
+                                includeSearch: true,
+                              }}
                               activeProps={{ className: undefined }}
                             >
                               {t("code.showCode")}
@@ -244,7 +252,7 @@ function ProjectCodeFileHistoryBody({
                 to={historyPath}
                 search={{ page: Math.max(0, history.page - 1) }}
                 className="ybtn pull-left"
-                activeOptions={legacyInactiveLinkOptions}
+                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={{ className: undefined }}
               >
                 {t("code.newer")}
@@ -255,7 +263,7 @@ function ProjectCodeFileHistoryBody({
                 to={historyPath}
                 search={{ page: history.page + 1 }}
                 className="ybtn pull-left"
-                activeOptions={legacyInactiveLinkOptions}
+                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={{ className: undefined }}
               >
                 {t("code.older")}
@@ -292,7 +300,7 @@ function CommitMessage({
         search={search}
         hash={hash}
         className="commitMsg short"
-        activeOptions={legacyInactiveLinkOptions}
+        activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
         activeProps={{ className: undefined }}
       >
         {summary}
@@ -318,7 +326,7 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
       <Link
         to={authorPath}
         className="avatar-wrap"
-        activeOptions={legacyInactiveLinkOptions}
+        activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
         activeProps={{ className: undefined }}
         data-toggle="tooltip"
         data-placement="top"
@@ -357,9 +365,3 @@ function codePathHash(filePath: string) {
 function projectRoutePath(ownerName: string, projectName: string, ...parts: string[]) {
   return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
 }
-
-const legacyInactiveLinkOptions = {
-  exact: true,
-  includeHash: true,
-  includeSearch: true,
-} as const;

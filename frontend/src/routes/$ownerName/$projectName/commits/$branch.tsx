@@ -115,7 +115,7 @@ function ProjectCodeHistoryBody({
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
                   params={{ branch: selectedBranch || "HEAD", ownerName, projectName }}
-                  activeOptions={legacyInactiveLinkOptions}
+                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                   activeProps={{ className: undefined }}
                 >
                   {t("code.files")}
@@ -126,7 +126,7 @@ function ProjectCodeHistoryBody({
                   to="/$ownerName/$projectName/commits/$branch"
                   params={{ branch: selectedBranch, ownerName, projectName }}
                   search={emptyHistorySearch()}
-                  activeOptions={legacyInactiveLinkOptions}
+                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                   activeProps={{ className: undefined }}
                 >
                   {t("code.commits")}
@@ -136,7 +136,7 @@ function ProjectCodeHistoryBody({
                 <Link
                   to="/$ownerName/$projectName/branches"
                   params={{ ownerName, projectName }}
-                  activeOptions={legacyInactiveLinkOptions}
+                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                   activeProps={{ className: undefined }}
                 >
                   {t("title.branches")}
@@ -185,7 +185,7 @@ function ProjectCodeHistoryBody({
                             to="/$ownerName/$projectName/commit/$commitId"
                             params={{ commitId: commit.commitId, ownerName, projectName }}
                             search={commitDetailSearch(selectedBranch)}
-                            activeOptions={legacyInactiveLinkOptions}
+                            activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                             activeProps={{ className: undefined }}
                             title={t("code.showCommit")}
                           >
@@ -225,7 +225,7 @@ function ProjectCodeHistoryBody({
                 to="/$ownerName/$projectName/commits/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
                 search={{ page: Math.max(0, history.page - 1) }}
-                activeOptions={legacyInactiveLinkOptions}
+                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={{ className: undefined }}
                 className="ybtn pull-left"
               >
@@ -237,7 +237,7 @@ function ProjectCodeHistoryBody({
                 to="/$ownerName/$projectName/commits/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
                 search={{ page: history.page + 1 }}
-                activeOptions={legacyInactiveLinkOptions}
+                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
                 activeProps={{ className: undefined }}
                 className="ybtn pull-left"
               >
@@ -276,7 +276,7 @@ function CommitMessage({
         to="/$ownerName/$projectName/commit/$commitId"
         params={{ commitId, ownerName, projectName }}
         search={commitDetailSearch(selectedBranch)}
-        activeOptions={legacyInactiveLinkOptions}
+        activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
         activeProps={{ className: undefined }}
         className="commitMsg short"
       >
@@ -303,7 +303,7 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         to="/$user"
         params={{ user: commit.authorLoginId }}
         search={emptyUserSearch()}
-        activeOptions={legacyInactiveLinkOptions}
+        activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
         className="avatar-wrap"
         activeProps={{ className: undefined }}
         data-toggle="tooltip"
@@ -354,12 +354,6 @@ function commitDetailSearch(branch: string) {
 function emptyUserSearch() {
   return {} as never;
 }
-
-const legacyInactiveLinkOptions = {
-  exact: true,
-  includeHash: true,
-  includeSearch: true,
-} as const;
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);

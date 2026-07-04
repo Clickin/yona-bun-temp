@@ -99,6 +99,11 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source).not.toContain("</a>");
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("href={commitHref");
+  expect(source).not.toContain("legacyInactiveLinkOptions");
+  expect(
+    source.match(/activeOptions=\{\{ exact: true, includeHash: true, includeSearch: true \}\}/gu),
+  ).toHaveLength(8);
+  expect(source.match(/activeProps=\{\{ className: undefined \}\}/gu)).toHaveLength(8);
 });
 
 async function historyLayoutMetrics(page: Page) {
