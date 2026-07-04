@@ -409,7 +409,7 @@ function ProjectMilestoneDetailBody({
               setDeleteConfirmOpen(false);
             }}
           >
-            x
+            ×
           </button>
           <h3>{t("milestone.delete")}</h3>
         </div>

@@ -318,6 +318,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
   await page.click('.actrow button.ybtn-danger:has-text("Delete")');
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
+  await expect(page.locator("#deleteConfirm .modal-header .close")).toHaveText("×");
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await expect(page.locator("#deleteConfirm [data-request-method='delete']")).toHaveAttribute(
     "data-request-uri",

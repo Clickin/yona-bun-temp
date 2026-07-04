@@ -448,6 +448,65 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   });
 });
 
+test("root select2 template scripts match legacy common/select2.scala.html without html injection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  const templates = await page.evaluate(() =>
+    [
+      "tplSelect2FormatUser",
+      "tplSelect2FormatMilestone",
+      "tplSelect2Projects",
+      "tplSelect2ProjectsWithoutAvatar",
+      "tplSelect2FormatIssues",
+    ].map((id) => ({
+      id,
+      text: document.getElementById(id)?.textContent?.trim().replace(/\s+/g, " "),
+      type: document.getElementById(id)?.getAttribute("type"),
+    })),
+  );
+
+  expect(templates).toEqual([
+    {
+      id: "tplSelect2FormatUser",
+      text: '<div class="usf-group" title="${name} ${loginId}"> <span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span> <strong class="name">${name}</strong> <span class="loginid">${loginId}</span> </div>',
+      type: "text/x-jquery-tmpl",
+    },
+    {
+      id: "tplSelect2FormatMilestone",
+      text: '<div title="[${stateLabel}] ${name}"> ${name} </div>',
+      type: "text/x-jquery-tmpl",
+    },
+    {
+      id: "tplSelect2Projects",
+      text: '<div class="usf-group" title="${name}"> <span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span> <span class="loginid">${owner}</span> <span class="name">${name}</span> </div>',
+      type: "text/x-jquery-tmpl",
+    },
+    {
+      id: "tplSelect2ProjectsWithoutAvatar",
+      text: '<div class="usf-group" title="${name}"> <span class="width25px"></span> <span class="loginid">${owner}</span> <span class="name">${name}</span> </div>',
+      type: "text/x-jquery-tmpl",
+    },
+    {
+      id: "tplSelect2FormatIssues",
+      text: '<div title="${name}"> ${name} </div>',
+      type: "text/x-jquery-tmpl",
+    },
+  ]);
+
+  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
+  const legacySelect2 = readFileSync(
+    "../yona-original/app/views/common/select2.scala.html",
+    "utf8",
+  );
+  expect(legacySelect2).toContain('id="tplSelect2FormatUser"');
+  expect(legacySelect2).toContain('id="tplSelect2ProjectsWithoutAvatar"');
+  expect(rootSource).toContain("function LegacySelect2Templates()");
+  expect(rootSource).not.toContain("dangerouslySetInnerHTML");
+});
+
 function defaultFormBody(
   loginPlaceholder = "Login ID or E-mail",
   passwordPlaceholder = "Password",

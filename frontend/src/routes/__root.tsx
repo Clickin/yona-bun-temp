@@ -565,46 +565,43 @@ function LegacySelect2Assets({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 }
 
 function LegacySelect2Templates() {
+  const TemplateScript = "script";
+
   return (
     <>
-      <script
+      <TemplateScript
         id="tplSelect2FormatUser"
         type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="usf-group" title="${name} ${loginId}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span>\n    <strong class="name">${name}</strong>\n    <span class="loginid">${loginId}</span>\n</div>',
-        }}
-      />
-      <script
+      >{`<div class="usf-group" title="\${name} \${loginId}">
+    <span class="avatar-wrap smaller"><img src="\${avatarURL}" width="20" height="20"></span>
+    <strong class="name">\${name}</strong>
+    <span class="loginid">\${loginId}</span>
+</div>`}</TemplateScript>
+      <TemplateScript
         id="tplSelect2FormatMilestone"
         type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html: '<div title="[${stateLabel}] ${name}">\n    ${name}\n</div>',
-        }}
-      />
-      <script
+      >{`<div title="[\${stateLabel}] \${name}">
+    \${name}
+</div>`}</TemplateScript>
+      <TemplateScript
         id="tplSelect2Projects"
         type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="usf-group" title="${name}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
-        }}
-      />
-      <script
+      >{`<div class="usf-group" title="\${name}">
+    <span class="avatar-wrap smaller"><img src="\${avatarURL}" width="16" height="16"></span>
+    <span class="loginid">\${owner}</span>
+    <span class="name">\${name}</span>
+</div>`}</TemplateScript>
+      <TemplateScript
         id="tplSelect2ProjectsWithoutAvatar"
         type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="usf-group" title="${name}">\n    <span class="width25px"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
-        }}
-      />
-      <script
-        id="tplSelect2FormatIssues"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html: '<div title="${name}">\n    ${name}\n</div>',
-        }}
-      />
+      >{`<div class="usf-group" title="\${name}">
+    <span class="width25px"></span>
+    <span class="loginid">\${owner}</span>
+    <span class="name">\${name}</span>
+</div>`}</TemplateScript>
+      <TemplateScript id="tplSelect2FormatIssues" type="text/x-jquery-tmpl">{`<div title="\${name}">
+    \${name}
+</div>`}</TemplateScript>
     </>
   );
 }
