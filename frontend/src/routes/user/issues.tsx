@@ -14,12 +14,6 @@ import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
-declare module "react" {
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
-
 type UserIssuesSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
   orderBy: string;
@@ -39,6 +33,7 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
   orderdir: string;
 };
 type LegacyPjaxListItemAttrs = HTMLAttributes<HTMLLIElement> & { "data-pjax": "" };
+type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
@@ -775,16 +770,19 @@ function UserIssueItem({
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const legacyIssueRowAttrs = {
+    className: "post-item title",
+    href: issueHref,
+    id: `issue-item-${issue.id}`,
+  } satisfies LegacyIssueRowAttrs;
 
   return (
     <li
-      className="post-item title"
-      id={`issue-item-${issue.id}`}
+      {...legacyIssueRowAttrs}
       style={{
         ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
         ...(isHovered ? { backgroundColor: "#fafafa" } : {}),
       }}
-      href={issueHref}
       onClick={() => {
         setIsChildListVisible(true);
       }}

@@ -327,9 +327,15 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("as unknown as");
+  expect(routeSource).not.toContain('declare module "react"');
+  expect(routeSource).not.toContain("interface LiHTMLAttributes");
+  expect(routeSource).not.toContain("as unknown as LiHTMLAttributes");
   expect(routeSource).not.toContain("const pjaxContainer");
   expect(routeSource).not.toContain("const pjaxFilter");
   expect(routeSource).not.toContain("const legacyState =");
+  expect(routeSource).toContain(
+    "type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
+  );
   expect(routeSource).toContain("const legacyPjaxContainerAttrs");
   expect(routeSource).toContain("const legacyPjaxFilterAttrs");
   expect(routeSource).toContain("const legacyStateButtonAttrs");
@@ -343,7 +349,15 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("orderDir: nextOrderDir");
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).not.toContain("LegacyHrefListItemAttrs");
-  expect(routeSource).toContain("href={issueHref}");
+  const rowSource = routeSource.slice(
+    routeSource.indexOf("function UserIssueItem("),
+    routeSource.indexOf("function UserIssueLabel("),
+  );
+  expect(rowSource).toContain("const legacyIssueRowAttrs");
+  expect(rowSource).toContain("href: issueHref");
+  expect(rowSource).toContain("satisfies LegacyIssueRowAttrs");
+  expect(rowSource).toContain("<li\n      {...legacyIssueRowAttrs}");
+  expect(rowSource).not.toContain("href={issueHref}");
   expect(tabsSource).toContain('to="/notifications"');
   expect(tabsSource).toContain('to="/user/issues"');
   expect(tabsSource).toContain('to="/user/files"');

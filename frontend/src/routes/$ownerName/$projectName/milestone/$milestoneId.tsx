@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import type { HTMLAttributes } from "react";
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -19,12 +20,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
-declare module "react" {
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
-
+type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyIssueItemRowAttrs = {
   htmlFor: string;
 };
@@ -830,6 +826,9 @@ function MilestoneIssueRow({
   const issueItemRowAttrs = {
     htmlFor: `issue-${issueId}`,
   } satisfies LegacyIssueItemRowAttrs;
+  const issueListItemAttrs = {
+    href: issueHref,
+  } satisfies LegacyIssueListItemAttrs;
   const dueDateAttrs =
     state === "open"
       ? {
@@ -846,7 +845,7 @@ function MilestoneIssueRow({
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
       style={hidden ? { display: "none" } : undefined}
-      href={issueHref}
+      {...issueListItemAttrs}
     >
       <div className="span9 span-hard-wrap">
         <label

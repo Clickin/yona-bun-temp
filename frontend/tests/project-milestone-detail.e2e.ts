@@ -344,11 +344,20 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).not.toContain('declare module "react"');
+  expect(routeSource).not.toContain("LiHTMLAttributes");
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).not.toContain("legacyFor");
   expect(routeSource).not.toContain("as unknown as");
   expect(routeSource).not.toContain("<div for={`issue-");
+  expect(routeSource).toContain(
+    "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
+  );
   expect(routeSource).toContain("type LegacyIssueItemRowAttrs = {");
+  expect(routeSource).toContain("const issueListItemAttrs = {");
+  expect(routeSource).toContain("href: issueHref");
+  expect(routeSource).toContain("satisfies LegacyIssueListItemAttrs");
+  expect(routeSource).toContain("{...issueListItemAttrs}");
   expect(routeSource).toContain("const issueItemRowAttrs = {");
   expect(routeSource).toContain("htmlFor: `issue-${issueId}`");
   expect(routeSource).toContain("satisfies LegacyIssueItemRowAttrs");
