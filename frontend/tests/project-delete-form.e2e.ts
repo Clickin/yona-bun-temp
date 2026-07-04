@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_DELETE_FORM = `
@@ -98,7 +99,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
     <ul class="nav nav-tabs">
       <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li>
       <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li>
-      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li>
+      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li>
       <li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li>
       <li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li>
       <li id="subMenuProjectDelete" class="active"><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li>
@@ -180,6 +181,12 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
     projectPageWidth: 1260,
     tabsMarginBottom: "15px",
   });
+});
+
+test("project delete form route has no TanStack route-cast escapes", async () => {
+  await expect(
+    readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8"),
+  ).resolves.not.toContain("as never");
 });
 
 test("project delete confirmation modal opens, closes, deletes, and redirects through SPA", async ({
@@ -290,7 +297,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   ).toEqual([
     `${basePath}/admin/sample/setting`,
     `${basePath}/admin/sample/members`,
-    `${basePath}/admin/sample/labels`,
+    `${basePath}/admin/sample/issue/labelsform`,
     `${basePath}/admin/sample/webhooks`,
     `${basePath}/admin/sample/transfer`,
     `${basePath}/admin/sample/deleteform`,
@@ -300,6 +307,10 @@ test("project delete settings tab links preserve legacy hrefs without native lis
 
   const settingsLink = page.locator("#subMenuProjectSetting a");
   await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(page.locator("#subMenuIssueLabel a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";

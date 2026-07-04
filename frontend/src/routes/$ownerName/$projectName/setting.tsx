@@ -332,7 +332,9 @@ function ProjectSettingBody({
                 <div className="cu-desc">
                   <Link
                     activeProps={{ className: undefined }}
-                    to={`/${ownerName}/${projectName}/postform?issueTemplate=true` as never}
+                    to="/$ownerName/$projectName/postform"
+                    params={{ ownerName, projectName }}
+                    search={{ issueTemplate: true }}
                     className="ybtn"
                     target="_blank"
                   >
@@ -669,7 +671,6 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   activeProps={{ className: undefined }}
                   to="/$user"
                   params={{ user: ownerName }}
-                  search={undefined as never}
                 >
                   {ownerName}
                 </Link>
@@ -887,7 +888,8 @@ function ProjectSettingMenu({
       <li id="subMenuIssueLabel" className="">
         <Link
           activeProps={{ className: undefined }}
-          to={`/${ownerName}/${projectName}/labels` as never}
+          to="/$ownerName/$projectName/issue/labelsform"
+          params={{ ownerName, projectName }}
         >
           {t("issue.label")}
         </Link>
