@@ -28,7 +28,7 @@ function withLegacyEditor(html: string) {
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><script type="text/x-jquery-tmpl" id="tplAttachedFile"><li class="attached-file" data-id="\${fileId}" data-name="\${fileName}" data-href="\${fileHref}" data-mime="\${mimeType}" data-size="\${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">\${fileName}</strong><span class="size">\${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li></script><script type="text/x-jquery-tmpl" id="tplDropFilesHere"><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div></script>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
   );
 }
 
@@ -79,8 +79,23 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
-  await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
-  await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  const uploader = page.locator("#upload.upload-wrap.content-footer");
+  await expect(uploader).toHaveAttribute("data-resource-type", "ISSUE_POST");
+  await expect(uploader.locator(".attach-wrap")).toBeVisible();
+  await expect(uploader.locator(".help.help-droppable")).toHaveText(
+    "Drag & Drop files to attach here or",
+  );
+  await expect(uploader.locator(".fake-file-wrap")).toContainText("File upload");
+  await expect(uploader.locator('input.file[name="filePath"]')).toHaveAttribute("multiple", "");
+  await expect(uploader.locator("ul.attached-files.unstyled")).toHaveCount(1);
+  await expect(uploader.locator(".help.help-pastable")).toHaveText("Paste the clipboard image");
+  await expect(uploader.locator("p.right-txt.help")).toContainText(
+    "Selected file will be attached when your comment is saved.",
+  );
+  await expect(page.locator('#issue-form script[type="text/x-jquery-tmpl"]')).toHaveCount(0);
+  await expect(
+    page.locator("#issue-form #tplAttachedFile, #issue-form #tplDropFilesHere"),
+  ).toHaveCount(0);
   const cancelButton = await expectModernCancelControl(page);
   const issueFormUrl = page.url();
 
@@ -159,7 +174,7 @@ test("project issue create form parent state matches legacy partial_select_subta
   );
 });
 
-test("project issue create form label edit source uses TanStack Link", () => {
+test("project issue create form source uses TanStack Link and no uploader template remnants", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
     "utf8",
@@ -168,6 +183,11 @@ test("project issue create form label edit source uses TanStack Link", () => {
   expect(source).toContain("<Link");
   expect(source).toContain('className="label-edit"');
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
+  expect(source).not.toContain("attachedFileTemplate");
+  expect(source).not.toContain("dropFilesHereTemplate");
+  expect(source).not.toContain("text/x-jquery-tmpl");
+  expect(source).not.toContain("tplAttachedFile");
+  expect(source).not.toContain("tplDropFilesHere");
 });
 
 async function mockProjectIssueForm(page: Page) {

@@ -388,6 +388,88 @@ test("project board list bracketed title prefix matches legacy title helpers", a
   ).toBe("board-prefix");
 });
 
+test("project board post create form uploader shell matches legacy fileUploader.scala.html without local templates", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/postform`);
+  await expect(page.locator("#upload[data-resource-type='BOARD_POST']")).toBeVisible();
+  await expect(page.locator("#upload .attach-wrap")).toBeVisible();
+  await expect(page.locator("#upload input.file[name='filePath']")).toHaveAttribute("multiple", "");
+  await expect(page.locator("#upload .attached-files.unstyled")).toHaveCount(1);
+  await expect(page.locator("#upload .right-txt.help")).toHaveText(
+    "Selected file will be attached when your comment is saved.",
+  );
+  await expect(page.locator("#tplAttachedFile, #tplDropFilesHere")).toHaveCount(0);
+
+  const uploadMetrics = await page.locator("#upload").evaluate((upload) => {
+    const style = window.getComputedStyle(upload);
+    const droppable = upload.querySelector(".help-droppable") as HTMLElement;
+    const btnWrap = upload.querySelector(".btn-wrap") as HTMLElement;
+    const fileButton = upload.querySelector(".fake-file-wrap") as HTMLElement;
+    const fileInput = upload.querySelector("input.file") as HTMLInputElement;
+    const plain = upload.querySelector(".plain") as HTMLElement;
+    const pastable = upload.querySelector(".help-pastable") as HTMLElement;
+    const attachedFiles = upload.querySelector(".attached-files") as HTMLElement;
+    const help = upload.querySelector(".right-txt.help") as HTMLElement;
+    const attachedFilesStyle = window.getComputedStyle(attachedFiles);
+
+    return {
+      className: upload.className,
+      resourceType: upload.getAttribute("data-resource-type"),
+      droppableText: droppable.textContent?.trim(),
+      btnWrapDisplay: window.getComputedStyle(btnWrap).display,
+      uploadButtonText: fileButton.textContent?.trim(),
+      fileInputName: fileInput.name,
+      fileInputMultiple: fileInput.multiple,
+      plainText: plain.textContent?.trim(),
+      pastableText: pastable.textContent?.trim(),
+      attachedFilesClass: attachedFiles.className,
+      attachedFilesDisplay: attachedFilesStyle.display,
+      attachedFilesPadding: attachedFilesStyle.padding,
+      helpText: help.textContent?.trim(),
+      padding: style.padding,
+      backgroundColor: style.backgroundColor,
+      borderRadius: style.borderRadius,
+    };
+  });
+  expect(uploadMetrics).toEqual({
+    className: "upload-wrap content-footer",
+    resourceType: "BOARD_POST",
+    droppableText: "Drag & Drop files to attach here or",
+    btnWrapDisplay: "inline-block",
+    uploadButtonText: "File upload",
+    fileInputName: "filePath",
+    fileInputMultiple: true,
+    plainText: "Click upload button",
+    pastableText: "Paste the clipboard image",
+    attachedFilesClass: "attached-files unstyled",
+    attachedFilesDisplay: "none",
+    attachedFilesPadding: "15px 0px",
+    helpText: "Selected file will be attached when your comment is saved.",
+    padding: "10px 20px",
+    backgroundColor: "rgb(245, 245, 245)",
+    borderRadius: "5px",
+  });
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/postform.tsx", "utf8");
+  const uploaderSource = routeSource.slice(
+    routeSource.indexOf("function BoardPostFileUploader"),
+    routeSource.indexOf("function isOnlineCommitResponse"),
+  );
+  expect(routeSource).not.toContain("tplAttachedFile");
+  expect(routeSource).not.toContain("tplDropFilesHere");
+  expect(routeSource).not.toContain("text/x-jquery-tmpl");
+  expect(uploaderSource).not.toContain("dangerouslySetInnerHTML");
+  expect(uploaderSource).not.toContain("<script");
+  expect(uploaderSource).not.toContain("document.");
+  expect(uploaderSource).not.toContain("createElement");
+  expect(uploaderSource).not.toContain("$(");
+  expect(uploaderSource).not.toContain("<a");
+});
+
 test("project board detail matches legacy board/view.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page);

@@ -309,38 +309,24 @@ function MilestoneMarkdownEditor() {
 
 function MilestoneFileUploader() {
   const { t } = useLegacyMessages();
-  const attachedFileTemplate = `<li class="attached-file" data-id="\${fileId}" data-name="\${fileName}" data-href="\${fileHref}" data-mime="\${mimeType}" data-size="\${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">\${fileName}</strong><span class="size">\${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">${t("common.attach.clickToPost")}</span></li>`;
-  const dropFilesHereTemplate = `<div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div>`;
   return (
-    <>
-      <div id="upload" className="upload-wrap content-footer" data-resource-type="MILESTONE">
-        <div className="attach-wrap">
-          <span className="help help-droppable">{t("common.attach.drophere")}</span>
-          <div className="btn-wrap">
-            <div className="nbtn medium white fake-file-wrap">
-              <i className="yobicon-upload"></i> {t("button.upload")}
-              <input type="file" className="file" name="filePath" multiple />
-            </div>
+    <div id="upload" className="upload-wrap content-footer" data-resource-type="MILESTONE">
+      <div className="attach-wrap">
+        <span className="help help-droppable">{t("common.attach.drophere")}</span>
+        <div className="btn-wrap">
+          <div className="nbtn medium white fake-file-wrap">
+            <i className="yobicon-upload"></i> {t("button.upload")}
+            <input type="file" className="file" name="filePath" multiple />
           </div>
-          <span className="plain">{t("common.attach.clickbutton")}</span>
-          <span className="help help-pastable">{t("common.attach.pastehere")}</span>
         </div>
-        <ul className="attached-files unstyled"></ul>
-        <p className="right-txt help">
-          <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
-        </p>
+        <span className="plain">{t("common.attach.clickbutton")}</span>
+        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
-      <script
-        type="text/x-jquery-tmpl"
-        id="tplAttachedFile"
-        dangerouslySetInnerHTML={{ __html: attachedFileTemplate }}
-      />
-      <script
-        type="text/x-jquery-tmpl"
-        id="tplDropFilesHere"
-        dangerouslySetInnerHTML={{ __html: dropFilesHereTemplate }}
-      />
-    </>
+      <ul className="attached-files unstyled"></ul>
+      <p className="right-txt help">
+        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
+      </p>
+    </div>
   );
 }
 
