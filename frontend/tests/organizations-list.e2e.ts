@@ -193,6 +193,143 @@ test("organization directory top tabs keep legacy hrefs without active marker le
   await expect(orgLink).not.toHaveAttribute("data-status");
 });
 
+test("organization directory renders legacy multi-page pagination with query-preserving SPA links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(
+    page,
+    [
+      {
+        createdLabel: "just now",
+        createdTitle: "2026-06-30",
+        description: "Web labs group",
+        logoUrl: "",
+        organizationName: "weblabs",
+      },
+    ],
+    {
+      pageNum: 1,
+      pageSize: 50,
+      totalCount: 1,
+      totalPages: 3,
+    },
+  );
+
+  await page.goto(`${basePath}/orgs?filter=weblabs&pageNum=1`);
+  const pagination = page.locator("#pagination");
+  const nextLink = pagination.locator("li.page-num.ikon a").last();
+
+  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
+  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  await expect(pagination.locator("li.page-num.ikon").first().locator("a")).toHaveCount(0);
+  await expect(pagination.locator("li.page-num.ikon").first().locator(".off")).toHaveCount(2);
+  await expect(pagination.locator('input[name="pageNum"][type="number"]')).toHaveValue("1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
+  await expect(pagination.locator(".delimiter")).toHaveText("/");
+  await expect(pagination.locator("li.page-num").nth(3)).toHaveText("3");
+  await expect(nextLink).toHaveAttribute("href", `${basePath}/orgs?filter=weblabs&pageNum=2`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await nextLink.click();
+
+  await expect(page).toHaveURL(`${basePath}/orgs?filter=weblabs&pageNum=2`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect(pagination.locator('input[name="pageNum"][type="number"]')).toHaveValue("2");
+  await expect(pagination.locator("li.page-num.ikon a").first()).toHaveAttribute(
+    "href",
+    `${basePath}/orgs?filter=weblabs&pageNum=1`,
+  );
+});
+
+test("organization directory pagination input clamps valid pages and resets invalid input", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(
+    page,
+    [
+      {
+        createdLabel: "just now",
+        createdTitle: "2026-06-30",
+        description: "Web labs group",
+        logoUrl: "",
+        organizationName: "weblabs",
+      },
+    ],
+    {
+      pageNum: 2,
+      pageSize: 1,
+      totalCount: 3,
+      totalPages: 3,
+    },
+  );
+
+  await page.goto(`${basePath}/orgs?filter=weblabs&pageNum=2`);
+  const input = page.locator('#pagination input[name="pageNum"]');
+  await expect(input).toHaveValue("2");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await input.fill("99");
+  await input.press("Enter");
+
+  await expect(page).toHaveURL(`${basePath}/orgs?filter=weblabs&pageNum=3`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await page.goto(`${basePath}/orgs?filter=weblabs&pageNum=2`);
+  await input.fill("1.5");
+  await input.press("Enter");
+
+  await expect(page).toHaveURL(`${basePath}/orgs?filter=weblabs&pageNum=2`);
+  await expect(input).toHaveValue("2");
+});
+
+test("organization directory keeps single-page pagination branch empty", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(
+    page,
+    [
+      {
+        createdLabel: "just now",
+        createdTitle: "2026-06-30",
+        description: "Web labs group",
+        logoUrl: "",
+        organizationName: "weblabs",
+      },
+    ],
+    {
+      pageNum: 1,
+      pageSize: 1,
+      totalCount: 1,
+      totalPages: 1,
+    },
+  );
+
+  await page.goto(`${basePath}/orgs?filter=weblabs`);
+
+  await expect(page.locator("#pagination")).toHaveCount(1);
+  await expect(page.locator("#pagination")).not.toHaveClass(/page-navigation-wrap/u);
+  await expect(page.locator("#pagination ul.page-nums")).toHaveCount(0);
+});
+
 test("organization directory renders unreadable private organization card like legacy", async ({
   page,
 }) => {
@@ -266,6 +403,7 @@ async function mockAuthenticatedOrganizations(
       organizationName: "weblabs",
     },
   ],
+  pageMetadata: Record<string, unknown> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -311,6 +449,7 @@ async function mockAuthenticatedOrganizations(
       contentType: "application/json",
       body: JSON.stringify({
         items,
+        ...pageMetadata,
       }),
     });
   });

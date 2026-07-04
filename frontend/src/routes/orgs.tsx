@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { listOrganizationsQueryOptions } from "../api/org-project";
-import type { YonaRecord } from "../api/types";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { restFetch } from "../api/rest-client";
+import type { ListOrganizationsResponse, YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -9,6 +10,7 @@ import { SiteLayoutShell } from "./-home-route-screen";
 
 type OrgsSearch = {
   filter: string;
+  pageNum?: number;
 };
 
 type OrganizationDirectoryItem = YonaRecord & {
@@ -21,9 +23,13 @@ type OrganizationDirectoryItem = YonaRecord & {
 
 export const Route = createFileRoute("/orgs")({
   component: OrgsRoute,
-  validateSearch: (search: Record<string, unknown>): OrgsSearch => ({
-    filter: typeof search.filter === "string" ? search.filter : "",
-  }),
+  validateSearch: (search: Record<string, unknown>): OrgsSearch => {
+    const pageNum = positiveInteger(search.pageNum);
+    return {
+      filter: typeof search.filter === "string" ? search.filter : "",
+      ...(pageNum ? { pageNum } : {}),
+    };
+  },
 });
 
 function OrgsRoute() {
@@ -39,10 +45,18 @@ function OrgsRoute() {
 }
 
 function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { filter } = Route.useSearch();
+  const search = Route.useSearch();
+  const { filter } = search;
   const { t } = useLegacyMessages();
-  const organizationsQuery = useQuery(listOrganizationsQueryOptions(runtimeConfig));
+  const organizationsQuery = useQuery(organizationsQueryOptions(runtimeConfig, search));
   const organizations = organizationItems(organizationsQuery.data);
+  const totalPages = organizationTotalPages(organizationsQuery.data);
+  const responsePage = positiveIntegerField(
+    organizationsQuery.data,
+    "pageNum",
+    positiveIntegerField(organizationsQuery.data, "page", 1),
+  );
+  const currentPage = clampPageNum(search.pageNum ?? responsePage, totalPages);
   const autofocusRef = (node: HTMLInputElement | null) => {
     node?.setAttribute("autofocus", "");
   };
@@ -119,12 +133,117 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   />
                 ))}
               </ul>
-              <div id="pagination"></div>
+              <OrganizationsPagination
+                currentPage={currentPage}
+                filter={filter}
+                totalPages={totalPages}
+              />
             </>
           )}
         </div>
       </div>
     </SiteLayoutShell>
+  );
+}
+
+function OrganizationsPagination({
+  currentPage,
+  filter,
+  totalPages,
+}: {
+  currentPage: number;
+  filter: string;
+  totalPages: number;
+}) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  if (totalPages <= 1) {
+    return <div id="pagination"></div>;
+  }
+
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const pageSearch = (pageNum: number) => ({
+    filter,
+    pageNum,
+  });
+  const navigateToPage = (pageNum: number) => {
+    void router.navigate({
+      search: pageSearch(pageNum),
+      to: "/orgs",
+    });
+  };
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    if (!/^[0-9]+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
+    const pageNum = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(pageNum);
+    navigateToPage(pageNum);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link
+              activeProps={{ className: undefined }}
+              search={pageSearch(currentPage - 1)}
+              to="/orgs"
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            key={currentPage}
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+            pattern="[0-9]*"
+            type="number"
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link
+              activeProps={{ className: undefined }}
+              search={pageSearch(currentPage + 1)}
+              to="/orgs"
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
   );
 }
 
@@ -182,6 +301,28 @@ function OrganizationListItem({ organization }: { organization: OrganizationDire
   );
 }
 
+function organizationsQueryOptions(runtimeConfig: RuntimeConfig, search: OrgsSearch) {
+  return {
+    queryFn: () => listOrganizationsWithSearch(runtimeConfig, search),
+    queryKey: ["api", "v1", "organizations", search],
+  };
+}
+
+function listOrganizationsWithSearch(runtimeConfig: RuntimeConfig, search: OrgsSearch) {
+  const params = new URLSearchParams();
+  if (search.filter) {
+    params.set("filter", search.filter);
+  }
+  if (search.pageNum) {
+    params.set("pageNum", String(search.pageNum));
+  }
+  const query = params.toString();
+  return restFetch<ListOrganizationsResponse>(
+    runtimeConfig,
+    query ? `/organizations?${query}` : "/organizations",
+  );
+}
+
 function organizationItems(payload: unknown): OrganizationDirectoryItem[] {
   if (!payload || typeof payload !== "object") {
     return [];
@@ -197,9 +338,48 @@ function organizationItems(payload: unknown): OrganizationDirectoryItem[] {
   );
 }
 
+function organizationTotalPages(payload: unknown): number {
+  const providedTotalPages = positiveIntegerField(payload, "totalPages", 0);
+  if (providedTotalPages > 0) {
+    return providedTotalPages;
+  }
+  const totalCount = positiveIntegerField(payload, "totalCount", 0);
+  const pageSize = positiveIntegerField(payload, "pageSize", 0);
+  if (totalCount > 0 && pageSize > 0) {
+    return Math.ceil(totalCount / pageSize);
+  }
+  return 1;
+}
+
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function positiveInteger(value: unknown): number | undefined {
+  const numberValue = numberFromPositiveInteger(value);
+  return Number.isFinite(numberValue) && numberValue > 0 ? Math.floor(numberValue) : undefined;
+}
+
+function numberFromPositiveInteger(value: unknown): number {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string" && /^[0-9]+$/u.test(value)) {
+    return Number.parseInt(value, 10);
+  }
+  return Number.NaN;
+}
+
+function positiveIntegerField(payload: unknown, key: string, fallback: number): number {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+  return positiveInteger((payload as Record<string, unknown>)[key]) ?? fallback;
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  return Math.min(Math.max(pageNum, 1), Math.max(totalPages, 1));
 }
 
 function organizationIsReadable(record: YonaRecord): boolean {
