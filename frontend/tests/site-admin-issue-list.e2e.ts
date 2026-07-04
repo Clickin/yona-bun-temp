@@ -338,6 +338,33 @@ test("site admin issue list renders legacy update notification badge", async ({ 
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin issue list resets decimal pagination input without navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockIssues(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=open&pageNum=2`);
+  const pageInput = page.locator('#pagination input[name="pageNum"]');
+  await expect(pageInput).toHaveValue("2");
+
+  const initialUrl = page.url();
+  await pageInput.fill("1.5");
+  await pageInput.press("Enter");
+
+  await expect(pageInput).toHaveValue("2");
+  expect(page.url()).toBe(initialUrl);
+  expect(new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+});
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

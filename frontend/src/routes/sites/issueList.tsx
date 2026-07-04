@@ -115,6 +115,10 @@ function IssueListPagination({
       return;
     }
     event.preventDefault();
+    if (!/^[0-9]+$/.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
     const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
     event.currentTarget.value = String(value);
     void navigate({ search: pageSearch(value), to: "/sites/issueList" });
