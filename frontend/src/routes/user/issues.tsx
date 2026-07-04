@@ -770,7 +770,7 @@ function UserIssueItem({
       : `Created at ${createdLabel}`;
   const showAuthor = search.filter !== "authored";
   const showAuthorLink = Boolean(issue.authorLoginId && issue.authorLabel);
-  const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId;
+  const showAssignee = search.filter !== "assigned" && issue.assigneeLoginId && issue.assigneeLabel;
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);

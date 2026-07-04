@@ -711,6 +711,20 @@ test("current-user issues assignee avatar column follows legacy authored-tab bra
   );
 });
 
+test("current-user issues omits assignee avatar when legacy assignee name is absent", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserIssuesForBlankAssigneeName(page);
+
+  await page.goto(`${basePath}/user/issues?filter=authored`);
+
+  await expect(page.locator("#issue-item-42 .avatar-wrap.assinee")).toHaveCount(0);
+  await expect(page.locator("#issue-item-42 > .span12 > .infos.meta")).toHaveClass(
+    /(^|\s)span3(\s|$)/,
+  );
+});
+
 test("current-user issues set-default-login-page button follows legacy success branch", async ({
   page,
 }) => {
@@ -998,6 +1012,58 @@ async function mockUserIssuesForNoAuthor(page: Page) {
             projectName: "sample",
             state: "open",
             title: "No author issue",
+            voterCount: 0,
+          },
+        ],
+        openIssueCount: 1,
+        pageNum: 1,
+        pageSize: 20,
+        sideFilterCounts: { favorite: 0, mentioned: 0, shared: 0 },
+        state: "open",
+        totalCount: 1,
+        totalPages: 1,
+        viewerUserId: 1,
+      }),
+    });
+  });
+}
+
+async function mockUserIssuesForBlankAssigneeName(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/user/issues?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        closedIssueCount: 0,
+        filter: "authored",
+        items: [
+          {
+            assigneeAvatarUrl: "/assets/images/default-avatar-32.png",
+            assigneeLabel: "",
+            assigneeLoginId: "admin",
+            authorLabel: "Alice",
+            authorLoginId: "alice",
+            commentCount: 0,
+            createdLabel: "2026-06-30",
+            id: 42,
+            issueNumber: 11,
+            labels: [],
+            ownerName: "admin",
+            projectName: "sample",
+            state: "open",
+            title: "Blank assignee name issue",
             voterCount: 0,
           },
         ],
