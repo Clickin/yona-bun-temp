@@ -8,6 +8,13 @@ const EXPECTED_FILE_NO_CHANGES_DIFF = `
 <div id="src-main-rs" class="diff-partial-outer"><div class="diff-partial-inner"><div class="diff-partial-meta"><div class="diff-partial-commit"><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/abcdef1234567890/src/main.rs" title="abcdef1234567890" target="_blank">abcdef1</a></div><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/1234567890abcdef/src/main.rs" title="1234567890abcdef" target="_blank">1234567</a></div></div><div class="diff-partial-file"><span class="filename">src/main.rs</span></div></div><div class="diff-partial-code" data-hashcode="src/main.rs"><div class="patch-header"><div class="path">--- src/main.rs</div><div class="path">+++ src/main.rs</div></div><table class="diff-container show-comments" data-commit-a="abcdef1234567890" data-commit-b="1234567890abcdef" data-file-path="src/main.rs" data-path-a="src/main.rs" data-path-b="src/main.rs"><tbody><tr><td colspan="3">No changes</td></tr></tbody></table></div></div></div>
 `;
 
+const SIMPLE_FILE_PATCH = `--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,2 +1,2 @@
+ fn main() {
+-    println!("old");
++    println!("new");`;
+
 test("project code compare no-change state matches legacy code/compare.scala.html DOM", async ({
   page,
 }) => {
@@ -44,6 +51,36 @@ test("project code compare file with no hunks renders legacy partial_filediff no
   await expect(noChangeCell).toHaveText("No changes");
   expect(await canonicalize(page, ".diff-partial-outer#src-main-rs")).toEqual(
     await canonicalizeHtml(page, EXPECTED_FILE_NO_CHANGES_DIFF.replace(/__BASE_PATH__/g, basePath)),
+  );
+});
+
+test("project code compare non-empty patch renders legacy diff table rows", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const compareRequests: string[] = [];
+  await mockProjectCompare(page, compareRequests, {
+    files: [{ path: "src/main.rs", patch: SIMPLE_FILE_PATCH }],
+  });
+
+  await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
+
+  const diffOuter = page.locator(".diff-partial-outer#src-main-rs");
+  const diffTable = diffOuter.locator("table.diff-container.show-comments");
+  await expect(diffOuter).toBeVisible();
+  await expect(page.locator(".diff-file > pre")).toHaveCount(0);
+  await expect(diffTable).toHaveCount(1);
+  await expect(diffTable.locator("tbody > tr")).toHaveCount(4);
+  await expect(diffTable.locator("tbody > tr.range .hunk")).toHaveText("@@ -1,2 +1,2 @@");
+  await expect(diffTable.locator("tbody > tr.context")).toHaveAttribute("data-side", "B");
+  await expect(diffTable.locator("tbody > tr.context .diff-partial-codeline")).toHaveText(
+    " fn main() {",
+  );
+  await expect(diffTable.locator("tbody > tr.remove")).toHaveAttribute("data-side", "A");
+  await expect(diffTable.locator("tbody > tr.remove .diff-partial-codeline")).toHaveText(
+    '-    println!("old");',
+  );
+  await expect(diffTable.locator("tbody > tr.add")).toHaveAttribute("data-side", "B");
+  await expect(diffTable.locator("tbody > tr.add .diff-partial-codeline")).toHaveText(
+    '+    println!("new");',
   );
 });
 
