@@ -899,18 +899,16 @@ function MilestoneIssueRow({
               </span>
             ) : null}
             {titleParts.prefixes.map((prefix) => (
-              <Link
-                to="/$ownerName/$projectName/issues"
-                params={{ ownerName, projectName }}
+              <button
+                type="button"
                 className="title-prefix"
                 key={`${issueId}-${prefix}`}
-                onClick={(event) => {
-                  event.preventDefault();
+                onClick={() => {
                   onTitlePrefixSearch(prefix);
                 }}
               >
                 {prefix}
-              </Link>
+              </button>
             ))}
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"

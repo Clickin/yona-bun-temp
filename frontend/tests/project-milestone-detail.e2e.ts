@@ -217,6 +217,11 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "Issue weight 2",
   );
   await expect(page.locator("#issue-item-41 .title-prefix")).toHaveText("[UI]");
+  await expect(page.locator("#issue-item-41 button.title-prefix")).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await expect(page.locator("#issue-item-41 a.title-prefix")).toHaveCount(0);
   await expect(page.locator('#issue-item-41 .title[href$="/issue/11"]').nth(1)).toHaveText(
     "Open milestone issue",
   );
@@ -374,7 +379,9 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain("satisfies LegacyIssueItemRowAttrs");
   expect(routeSource).toContain('<div {...issueItemRowAttrs} className="issue-item-row">');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
-  expect(routeSource).toContain('to="/$ownerName/$projectName/issues"');
+  expect(routeSource).toContain("<button");
+  expect(routeSource).toContain('type="button"');
+  expect(routeSource).toContain('className="title-prefix"');
   expect(routeSource).toContain('hash="issues"');
 });
 
