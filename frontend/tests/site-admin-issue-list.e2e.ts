@@ -14,7 +14,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -119,7 +119,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?state=open&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?state=open&amp;pageNum=2" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -225,7 +225,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "href",
     `${basePath}/sites/issueList?state=open&pageNum=2`,
   );
-  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -315,7 +315,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(routeSource).not.toContain("issuePath");
   expect(routeSource).not.toContain("authorPath");
   expect(routeSource).not.toContain("to={item.href}");
-  expect(routeSource).not.toContain('"pjax-page": ""');
+  expect(routeSource).toContain('pjax-page=""');
 });
 
 test("site admin issue list renders legacy update notification badge", async ({ page }) => {
@@ -363,6 +363,40 @@ test("site admin issue list resets decimal pagination input without navigation",
   await expect(pageInput).toHaveValue("2");
   expect(page.url()).toBe(initialUrl);
   expect(new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+});
+
+test("site admin issue list pagination preserves existing query params like legacy yobi.Pagination", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockIssues(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=open&from=legacy`);
+  const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
+  await expect
+    .poll(async () =>
+      new URL((await nextPageLink.getAttribute("href")) ?? "", "http://yona.test").searchParams.get(
+        "from",
+      ),
+    )
+    .toBe("legacy");
+
+  await nextPageLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("from")).toBe("legacy");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+
+  await page.locator('#pagination input[name="pageNum"]').fill("1");
+  await page.locator('#pagination input[name="pageNum"]').press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("from")).toBe("legacy");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
 });
 
 async function mockSiteAdminSession(page: Page) {

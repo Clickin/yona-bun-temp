@@ -15,11 +15,12 @@ import { SiteLayoutShell } from "../-home-route-screen";
 type IssueListSearch = {
   pageNum: number;
   state: SiteIssueState;
-};
+} & Record<string, unknown>;
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
   validateSearch: (search: Record<string, unknown>): IssueListSearch => ({
+    ...search,
     pageNum: search.pageNum ? Number(search.pageNum) || 1 : 1,
     state: search.state === "closed" ? "closed" : "open",
   }),
@@ -40,7 +41,8 @@ function SiteIssueListRoute() {
 }
 
 function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { pageNum, state } = Route.useSearch();
+  const search = Route.useSearch();
+  const { pageNum, state } = search;
   const query = useQuery(siteIssuesQueryOptions(runtimeConfig, { page: pageNum, state }));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
@@ -80,6 +82,7 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
               <IssueListPagination
                 currentPage={query.data?.page ?? pageNum}
+                search={search}
                 state={state}
                 totalPages={query.data?.totalPages ?? 0}
               />
@@ -93,10 +96,12 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
 function IssueListPagination({
   currentPage,
+  search,
   state,
   totalPages,
 }: {
   currentPage: number;
+  search: IssueListSearch;
   state: SiteIssueState;
   totalPages: number;
 }) {
@@ -109,7 +114,7 @@ function IssueListPagination({
 
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
-  const pageSearch = (pageNum: number) => ({ state, pageNum });
+  const pageSearch = (pageNum: number) => ({ ...search, state, pageNum });
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
       return;
@@ -131,6 +136,7 @@ function IssueListPagination({
           {hasPrev ? (
             <Link
               activeProps={{ className: undefined }}
+              pjax-page=""
               search={pageSearch(currentPage - 1)}
               to="/sites/issueList"
             >
@@ -165,6 +171,7 @@ function IssueListPagination({
           {hasNext ? (
             <Link
               activeProps={{ className: undefined }}
+              pjax-page=""
               search={pageSearch(currentPage + 1)}
               to="/sites/issueList"
             >
