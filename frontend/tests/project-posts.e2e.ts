@@ -959,6 +959,18 @@ test("project board detail submits legacy comment form through REST", async ({ p
   });
   await expect(page.locator("#comment-form #dynamic-comment-btn")).toHaveClass(/hidden/);
 
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  expect(routeSource).not.toContain("help/markdown.scala.html");
+  expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
+  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(routeSource).toContain(
+    'import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help"',
+  );
+
   await page.locator("#comment-form textarea[name='contents']").fill("New **board** comment");
   await page.locator("#comment-form button[type='submit']").click();
 

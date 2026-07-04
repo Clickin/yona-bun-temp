@@ -211,12 +211,20 @@ test("project issue detail uses route-owned timeline and comment hash links", as
   ).resolves.toBe("issue-hash-links");
 });
 
-test("project issue detail route has no generic LegacyInternalLink adapter", () => {
+test("project issue detail route uses shared markdown help and has no generic LegacyInternalLink adapter", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
   );
 
+  expect(routeSource).toContain(
+    'import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";',
+  );
+  expect(routeSource).toContain("<LegacyMarkdownHelp />");
+  expect(routeSource).not.toContain("help/markdown.scala.html?raw");
+  expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
+  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
+  expect(routeSource).not.toMatch(/markdown-help[\s\S]{0,160}dangerouslySetInnerHTML/u);
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("createElement");

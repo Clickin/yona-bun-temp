@@ -10,7 +10,6 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -37,6 +36,7 @@ import {
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../../-home-route-screen";
+import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const LEGACY_LINK_PROPS = {
@@ -67,13 +67,6 @@ function IssueRouteLink({
     </Link>
   );
 }
-
-const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
-  .replace(/<\/div>\s*$/u, "");
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber")({
   component: ProjectIssueDetailRoute,
@@ -2952,10 +2945,7 @@ function MarkdownEditor({
         </li>
       </ul>
       <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
-        <div
-          className="markdown-help"
-          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
-        />
+        <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea

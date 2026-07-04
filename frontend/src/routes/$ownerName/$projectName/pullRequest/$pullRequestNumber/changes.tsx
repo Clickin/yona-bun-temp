@@ -3,7 +3,7 @@ import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
+import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import {
   pullRequestChangesQueryOptions,
   type PullRequestChangesResponse,
@@ -27,12 +27,6 @@ import {
 } from "../$pullRequestNumber";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
-const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
-  .replace(/<\/div>\s*$/u, "");
 
 type CurrentUserSummary = {
   avatarUrl: string;
@@ -781,10 +775,7 @@ function Editor({
         </li>
       </ul>
       <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
-        <div
-          className="markdown-help"
-          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
-        />
+        <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${mode === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
