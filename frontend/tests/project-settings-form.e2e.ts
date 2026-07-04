@@ -7,7 +7,7 @@ const EXPECTED_PROJECT_SETTINGS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -474,12 +474,68 @@ test("project settings menu checkboxes mirror legacy dependency behavior", async
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project settings logo input validates image files and auto-submits like legacy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const uploadRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  const updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[] =
+    [];
+  await mockProjectSettings(page, { updateRequests, uploadRequests });
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+
+  const dialogPromise = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await page.locator("#logoPath").setInputFiles({
+    buffer: Buffer.from("not an image"),
+    mimeType: "text/plain",
+    name: "not-image.txt",
+  });
+  await expect(dialogPromise).resolves.toBe("This is not an image file.");
+  await expect(page.locator("#logoPath")).toHaveValue("");
+  expect(uploadRequests).toEqual([]);
+  expect(updateRequests).toEqual([]);
+
+  const updateResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/owners/admin/projects/sample") &&
+      response.request().method() === "PATCH",
+  );
+  await page.locator("#logoPath").setInputFiles({
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+    mimeType: "image/png",
+    name: "project-logo.png",
+  });
+  await updateResponsePromise;
+
+  expect(uploadRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(updateRequests).toHaveLength(1);
+  expect(updateRequests[0]).toMatchObject({
+    body: {
+      logoAttachmentId: 42,
+      overview: "Sample overview",
+      projectName: "sample",
+      projectScope: "PUBLIC",
+    },
+    hasCsrfToken: true,
+    method: "PATCH",
+  });
+  await expect(page.locator("#logoPath")).toHaveValue("");
+});
+
 async function mockProjectSettings(
   page: Page,
   overrides: Partial<{
     favoriteResponseFavorited: boolean;
     favoriteRequests: { hasCsrfToken: boolean; method: string }[];
     project: Record<string, unknown>;
+    updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[];
+    uploadRequests: { hasCsrfToken: boolean; method: string }[];
   }> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -543,6 +599,42 @@ async function mockProjectSettings(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ favorited: overrides.favoriteResponseFavorited ?? true }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample", async (route) => {
+    const request = route.request();
+    if (request.method() !== "PATCH") {
+      await route.fallback();
+      return;
+    }
+    overrides.updateRequests?.push({
+      body: request.postDataJSON() as Record<string, unknown>,
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-settings",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...projectSettings(),
+        logoUrl: "/files/42",
+      }),
+    });
+  });
+  await page.route("**/files", async (route) => {
+    const request = route.request();
+    overrides.uploadRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-settings",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 42,
+        mimeType: "image/png",
+        name: "project-logo.png",
+        size: 4,
+        url: "/files/42",
+      }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {

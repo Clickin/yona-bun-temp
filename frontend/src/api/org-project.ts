@@ -85,6 +85,7 @@ type ProjectUpdateInput = ProjectPathInput & {
   issue?: boolean;
   isCodeAccessibleMemberOnly?: boolean;
   isUsingReviewerCount?: boolean;
+  logoAttachmentId?: number;
   milestone?: boolean;
   overview: string;
   pullRequest?: boolean;
@@ -1079,6 +1080,9 @@ export function updateProjectRest(
           : {}),
         ...(input.isUsingReviewerCount !== undefined
           ? { isUsingReviewerCount: input.isUsingReviewerCount }
+          : {}),
+        ...(input.logoAttachmentId !== undefined
+          ? { logoAttachmentId: input.logoAttachmentId }
           : {}),
         overview: input.overview,
         projectName: input.projectName,

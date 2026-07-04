@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from "react";
+import {
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
 import {
   readProjectSettingsQueryOptions,
@@ -78,6 +86,7 @@ function ProjectSettingBody({
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const menuSetting = projectMenuSetting(project);
   const oldPlace = projectOldPlace(project);
   const projectScope = stringField(project.projectScope, "PUBLIC").toUpperCase();
@@ -106,28 +115,32 @@ function ProjectSettingBody({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       const selectedDefaultBranch = String(formData.get("defaultBranch") ?? defaultBranch);
+      const logoFile = selectedLogoFile(formData.get("logoPath"));
+      const logoAttachmentId = logoFile
+        ? (await uploadTemporaryAttachment(runtimeConfig, csrfToken, logoFile)).id
+        : undefined;
+      const updateInput = {
+        board: formData.get("board") === "true",
+        code: formData.get("code") === "true",
+        defaultReviewerCount: Number(formData.get("defaultReviewerCount") ?? defaultReviewerCount),
+        issue: formData.get("issue") === "true",
+        isCodeAccessibleMemberOnly: formData.get("isCodeAccessibleMemberOnly") === "true",
+        isUsingReviewerCount: formData.get("isUsingReviewerCount") === "true",
+        logoAttachmentId,
+        milestone: formData.get("milestone") === "true",
+        overview: String(formData.get("overview") ?? ""),
+        ownerName,
+        projectName: String(formData.get("name") ?? projectName),
+        projectScope: String(formData.get("projectScope") ?? projectScope),
+        pullRequest: formData.get("pullRequest") === "true",
+        review: formData.get("review") === "true",
+      };
       const updateResult = await updateProjectRest(
         runtimeConfig,
         csrfToken,
         ownerName,
         projectName,
-        {
-          board: formData.get("board") === "true",
-          code: formData.get("code") === "true",
-          defaultReviewerCount: Number(
-            formData.get("defaultReviewerCount") ?? defaultReviewerCount,
-          ),
-          issue: formData.get("issue") === "true",
-          isCodeAccessibleMemberOnly: formData.get("isCodeAccessibleMemberOnly") === "true",
-          isUsingReviewerCount: formData.get("isUsingReviewerCount") === "true",
-          milestone: formData.get("milestone") === "true",
-          overview: String(formData.get("overview") ?? ""),
-          ownerName,
-          projectName: String(formData.get("name") ?? projectName),
-          projectScope: String(formData.get("projectScope") ?? projectScope),
-          pullRequest: formData.get("pullRequest") === "true",
-          review: formData.get("review") === "true",
-        },
+        updateInput,
       );
       if (selectedDefaultBranch && selectedDefaultBranch !== defaultBranch) {
         await setDefaultCodeBranchRest(runtimeConfig, csrfToken, {
@@ -139,6 +152,9 @@ function ProjectSettingBody({
       return updateResult;
     },
     onSuccess() {
+      if (logoInputRef.current) {
+        logoInputRef.current.value = "";
+      }
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
       });
@@ -151,6 +167,19 @@ function ProjectSettingBody({
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     mutation.mutate(new FormData(event.currentTarget));
+  }
+
+  function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
+    if (!isImageFileInput(event.currentTarget)) {
+      window.alert(t("project.logo.alert"));
+      event.currentTarget.value = "";
+      return;
+    }
+
+    const form = event.currentTarget.form;
+    if (form) {
+      mutation.mutate(new FormData(form));
+    }
   }
 
   return (
@@ -201,11 +230,13 @@ function ProjectSettingBody({
                         <div className="nbtn medium white fake-file-wrap">
                           <i className="yobicon-upload"></i> {t("button.upload")}
                           <input
+                            ref={logoInputRef}
                             id="logoPath"
                             type="file"
                             className="file"
                             name="logoPath"
                             accept="image/*"
+                            onChange={onChangeLogoPath}
                           />
                         </div>
                       </div>
@@ -986,4 +1017,26 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function selectedLogoFile(value: FormDataEntryValue | null) {
+  if (!(value instanceof File) || !value.name || value.size === 0) {
+    return null;
+  }
+  return value;
+}
+
+function isImageFileInput(input: HTMLInputElement) {
+  const files = Array.from(input.files ?? []);
+  if (files.length > 0) {
+    return files.every((file) => isImageFile(file, file.name));
+  }
+  return /\.(gif|bmp|jpg|jpeg|png)$/i.test(input.value);
+}
+
+function isImageFile(file: File, fallbackName: string) {
+  if (file.type) {
+    return file.type.toLowerCase().startsWith("image/");
+  }
+  return /\.(gif|bmp|jpg|jpeg|png)$/i.test(fallbackName);
 }
