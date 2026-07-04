@@ -692,6 +692,11 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
     "data-issue-labels",
     "bug,8,bug,3,false|",
   );
+  const rowMilestoneLink = page.locator("#issue-item-42 .mileston-tag a");
+  await expect(rowMilestoneLink).toHaveAttribute("href", `${basePath}/admin/sample/milestone/5`);
+  await expect(rowMilestoneLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(rowMilestoneLink).toHaveAttribute("data-placement", "bottom");
+  await expect(rowMilestoneLink).toHaveAttribute("title", "Milestone");
   await expect(page.locator("#mass-update-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/issues`,
@@ -819,6 +824,22 @@ test("project issue normal list draft marker matches legacy partial_list.scala.h
     firstTextNode: "#",
     text: "#Draft",
   });
+});
+
+test("project issue row milestone link preserves legacy partial_list.scala.html tooltip attrs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  const rowMilestoneLink = page.locator("#issue-item-42 .mileston-tag a");
+
+  await expect(rowMilestoneLink).toHaveAttribute("href", `${basePath}/admin/sample/milestone/5`);
+  await expect(rowMilestoneLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(rowMilestoneLink).toHaveAttribute("data-placement", "bottom");
+  await expect(rowMilestoneLink).toHaveAttribute("title", "Milestone");
+  await expect(rowMilestoneLink).toHaveText("v1.0");
 });
 
 test("project issue normal list hides other users' drafts like legacy partial_list.scala.html", async ({

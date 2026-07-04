@@ -1675,6 +1675,8 @@ function ProjectIssueItem({
                   activeProps={{ className: undefined }}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ milestoneId: String(issue.milestoneId), ownerName, projectName }}
+                  data-toggle="tooltip"
+                  data-placement="bottom"
                   title={t("milestone")}
                 >
                   {issue.milestoneTitle}
