@@ -316,6 +316,7 @@ function CommitMessage({
 
 function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][number] }) {
   const avatarUrl = commit.authorAvatarUrl || "/assets/images/default-avatar-32.png";
+  const usesGeneratedAvatar = avatarUrl === "/assets/images/default-avatar-32.png";
 
   if (commit.authorLoginId) {
     const authorPath = `/${commit.authorLoginId}` as "/";
@@ -329,12 +330,17 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         data-placement="top"
         title={commit.authorLoginId}
       >
-        <img
-          src={avatarUrl}
-          alt={commit.authorName || commit.authorLoginId}
-          width="32"
-          height="32"
-        />
+        {usesGeneratedAvatar ? (
+          // oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes.
+          <img src={avatarUrl} />
+        ) : (
+          <img
+            src={avatarUrl}
+            alt={commit.authorName || commit.authorLoginId}
+            width="32"
+            height="32"
+          />
+        )}
       </Link>
     );
   }
@@ -347,7 +353,8 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         data-placement="top"
         title={commit.authorEmail}
       >
-        <img src={avatarUrl} alt={commit.authorEmail} width="32" height="32" />
+        {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy email-only default avatar branch renders no alt/size attributes. */}
+        <img src={avatarUrl} />
       </span>
     );
   }
