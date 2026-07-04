@@ -309,6 +309,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
+              count={numberField(project.openIssueCount)}
               label={t("menu.issue")}
               params={{ ownerName, projectName }}
               short="I"
@@ -317,6 +318,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
+              count={numberField(project.openPullRequestCount)}
               label={t("menu.pullRequest")}
               params={{ ownerName, projectName }}
               short="P"
@@ -325,6 +327,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
+              count={numberField(project.reviewCount)}
               label={t("menu.review")}
               params={{ ownerName, projectName }}
               short="R"
@@ -341,6 +344,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
+              count={numberField(project.postCount)}
               label={t("menu.board")}
               params={{ ownerName, projectName }}
               short="B"
@@ -383,12 +387,14 @@ type ProjectMenuRoute =
 
 function ProjectMenuItem({
   className = "",
+  count = 0,
   label,
   params,
   short,
   to,
 }: {
   className?: string;
+  count?: number;
   label: string;
   params: { ownerName: string; projectName: string };
   short: string;
@@ -398,7 +404,7 @@ function ProjectMenuItem({
     <li className={className}>
       <Link activeProps={{ className: undefined }} to={to} params={params}>
         <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
+        <span className="short-menu">{short}</span> <CountBadge count={count} />
       </Link>
     </li>
   );
