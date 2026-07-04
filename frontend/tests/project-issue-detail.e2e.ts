@@ -211,7 +211,7 @@ test("project issue detail uses route-owned timeline and comment hash links", as
   ).resolves.toBe("issue-hash-links");
 });
 
-test("project issue detail route uses shared markdown help and route-local typed links", () => {
+test("project issue detail route uses shared markdown help and direct TanStack links", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
@@ -249,11 +249,9 @@ test("project issue detail route uses shared markdown help and route-local typed
   expect(routeSource).not.toContain("attachedFilesHtml(comment.attachments)");
   expect(routeSource).toContain('<button type="button" className="attached-delete">');
   expect(routeSource).toContain("const LEGACY_LINK_PROPS = {");
-  expect(routeSource).toContain("type IssueLegacyLinkProps = {");
-  expect(routeSource).toContain("function IssueHashLink({");
-  expect(routeSource).toContain("}: IssueLegacyLinkProps & { hash: string })");
-  expect(routeSource).toContain("function IssueRouteLink({");
-  expect(routeSource).toContain("}: IssueLegacyLinkProps & { to: string })");
+  expect(routeSource).not.toContain("IssueLegacyLinkProps");
+  expect(routeSource).not.toContain("IssueHashLink");
+  expect(routeSource).not.toContain("IssueRouteLink");
   expect(routeSource).toContain(
     "`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never",
   );

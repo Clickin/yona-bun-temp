@@ -1,13 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import {
-  Fragment,
-  useRef,
-  useState,
-  type CSSProperties,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
+import { Fragment, useRef, useState, type MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
@@ -43,33 +36,6 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-
-type IssueLegacyLinkProps = {
-  children: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-  title?: string;
-} & {
-  [K in `aria-${string}`]?: string;
-} & {
-  [K in `data-${string}`]?: string | number | boolean;
-};
-
-function IssueHashLink({ children, hash, ...props }: IssueLegacyLinkProps & { hash: string }) {
-  return (
-    <Link {...LEGACY_LINK_PROPS} {...props} to="." hash={hash}>
-      {children}
-    </Link>
-  );
-}
-
-function IssueRouteLink({ children, to, ...props }: IssueLegacyLinkProps & { to: string }) {
-  return (
-    <Link {...LEGACY_LINK_PROPS} {...props} to={to as never}>
-      {children}
-    </Link>
-  );
-}
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber")({
   component: ProjectIssueDetailRoute,
@@ -1156,13 +1122,14 @@ function IssueVoterAvatars({ voters }: { voters: VoterLike[] }) {
       <ul className="voter-list">
         {visibleVoters.map((voter) => (
           <li key={stringField(voter.loginId)}>
-            <IssueRouteLink
+            <Link
+              {...LEGACY_LINK_PROPS}
               to={`/${stringField(voter.loginId)}` as never}
               className="avatar-wrap smaller"
               title={stringField(voter.userLabel)}
             >
               <img src={stringField(voter.avatarUrl)} alt="" />
-            </IssueRouteLink>
+            </Link>
           </li>
         ))}
         {overflowVoters.length ? (
@@ -2057,7 +2024,9 @@ function IssueEventRow({
         {sender}
         {issueStateEventText(newValue)}
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2079,7 +2048,9 @@ function IssueEventRow({
           />
         )}
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2107,7 +2078,9 @@ function IssueEventRow({
         <span className="state milestone-changed">Update milestone</span>
         {sender} changed milestone to {milestone}
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2126,7 +2099,9 @@ function IssueEventRow({
           </Link>
         </strong>
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2149,7 +2124,9 @@ function IssueEventRow({
           </Link>
         </strong>
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2173,7 +2150,9 @@ function IssueEventRow({
           </Link>
         </strong>
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2206,7 +2185,9 @@ function IssueEventRow({
         {added ? " shared current issue to " : " cancelled issue sharing with "}
         {target}
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2232,7 +2213,9 @@ function IssueEventRow({
         {added ? " added " : " removed "}
         {label} label
         <span className="date">
-          <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+          <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+            {stringField(event.createdLabel)}
+          </Link>
         </span>
       </li>
     );
@@ -2242,7 +2225,9 @@ function IssueEventRow({
     <li className="event" id={`event-${eventId}`}>
       {stringField(event.newValue)} by {sender}
       <span className="date">
-        <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
+        <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
+          {stringField(event.createdLabel)}
+        </Link>
       </span>
     </li>
   );
@@ -2349,43 +2334,61 @@ function IssueCommentRow({
     >
       <ChildCommentAnchors childComments={childComments} />
       <div className="comment-avatar">
-        <IssueRouteLink to={authorPath as never} className="avatar-wrap" title={authorLoginId}>
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={authorPath as never}
+          className="avatar-wrap"
+          title={authorLoginId}
+        >
           <img
             src={stringField(comment.authorAvatarUrl)}
             width="32"
             height="32"
             alt={authorLabel}
           />
-        </IssueRouteLink>
+        </Link>
       </div>
       <div className="media-body">
         <div className="meta-info">
           <span className="comment_author">
             <span className="resp-comment-avatar">
-              <IssueRouteLink to={authorPath as never} className="avatar-wrap" title={authorLabel}>
+              <Link
+                {...LEGACY_LINK_PROPS}
+                to={authorPath as never}
+                className="avatar-wrap"
+                title={authorLabel}
+              >
                 <img
                   src={stringField(comment.authorAvatarUrl)}
                   width="32"
                   height="32"
                   alt={authorLoginId}
                 />
-              </IssueRouteLink>
+              </Link>
             </span>
-            <IssueRouteLink to={authorPath as never} title={authorLoginId}>
+            <Link {...LEGACY_LINK_PROPS} to={authorPath as never} title={authorLoginId}>
               <strong>{authorLabel}</strong>
-            </IssueRouteLink>
+            </Link>
           </span>
           <span className="ago-date">
-            <IssueHashLink
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="."
               hash={commentHash}
               className="ago"
               title={stringField(comment.createdLabel)}
             >
               {stringField(comment.createdLabel)}
-            </IssueHashLink>
-            <IssueHashLink hash={commentHash} className="share-link" style={{ display: "none" }}>
+            </Link>
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="."
+              hash={commentHash}
+              className="share-link"
+              style={{ display: "none" }}
+            >
               [Link]
-            </IssueHashLink>
+            </Link>
           </span>
           <span className="act-row pull-right">
             <span className="new-issue-by">
@@ -2668,9 +2671,15 @@ function ChildComment({
           <Link to={`/${authorLoginId}` as never} className="usf-group" title={authorLoginId}>
             <strong>{authorLabel}</strong>
           </Link>
-          <IssueHashLink hash={commentHash} className="ago" title={createdLabel}>
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to="."
+            hash={commentHash}
+            className="ago"
+            title={createdLabel}
+          >
             {createdLabel}
-          </IssueHashLink>
+          </Link>
           {booleanField(comment.viewerCanDelete) ? (
             <button
               type="button"
@@ -2982,14 +2991,15 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
   return (
     <>
       {voters.map((voter) => (
-        <IssueRouteLink
+        <Link
+          {...LEGACY_LINK_PROPS}
           to={`/${stringField(voter.loginId)}` as never}
           className="avatar-wrap smaller"
           title={stringField(voter.userLabel)}
           key={stringField(voter.loginId)}
         >
           <img src={stringField(voter.avatarUrl)} alt="" />
-        </IssueRouteLink>
+        </Link>
       ))}
     </>
   );
@@ -3057,9 +3067,9 @@ function IssueIndexComment({
       <div>
         <div id={`comment-body-${commentId}`}>
           <div className="comment-body">
-            <IssueHashLink hash={commentHash}>
+            <Link {...LEGACY_LINK_PROPS} to="." hash={commentHash}>
               {ellipsisMarkdown(stringField(comment.contentsMarkdown))}
-            </IssueHashLink>
+            </Link>
           </div>
         </div>
         <div className="index-comment-author">
@@ -3075,16 +3085,24 @@ function IssueIndexComment({
             </Link>
           </span>
           <span className="ago-date">
-            <IssueHashLink
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="."
               hash={commentHash}
               className="ago"
               title={stringField(comment.createdLabel)}
             >
               {stringField(comment.createdLabel)}
-            </IssueHashLink>
-            <IssueHashLink hash={commentHash} className="share-link" style={{ display: "none" }}>
+            </Link>
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="."
+              hash={commentHash}
+              className="share-link"
+              style={{ display: "none" }}
+            >
               [Link]
-            </IssueHashLink>
+            </Link>
           </span>
         </div>
       </div>
