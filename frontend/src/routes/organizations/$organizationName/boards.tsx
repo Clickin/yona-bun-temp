@@ -89,8 +89,7 @@ function OrganizationBoardsBody({
 }) {
   const { t } = useLegacyMessages();
   const organizationName = stringField(organization.organizationName, boards.organizationName);
-  const logoUrl =
-    stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
   const hasPosts = hasNotices || boards.items.length > 0;
 

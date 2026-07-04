@@ -276,6 +276,46 @@ test("organization pull request row links preserve legacy hrefs with SPA transit
   );
 });
 
+test("organization pull request title prefix filters the current legacy list", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=prefix-source`);
+  const prefix = page.locator(".title-wrap .title-prefix");
+  await expect(prefix).toHaveText("[UI]");
+  await expect(page.locator(".title-wrap a.title")).toHaveText("Fix login redirect");
+  await expect(prefix).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/pullrequests?filter=%5BUI%5D&pageNum=1`,
+  );
+  await expect(prefix).not.toHaveAttribute("href", /javascript/u);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await prefix.click();
+
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return {
+        filter: url.searchParams.get("filter"),
+        pathname: url.pathname,
+      };
+    })
+    .toEqual({
+      filter: "[UI]",
+      pathname: `${basePath}/organizations/weblabs/pullrequests`,
+    });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
 test("organization pull request route source keeps direct typed row links", async () => {
   const source = await readFile(
     "src/routes/organizations/$organizationName/pullrequests.tsx",
@@ -315,6 +355,8 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain("to={`/organizations/${organizationName}/boards`}");
   expect(source).toContain("to={`/organizations/${organizationName}/pullrequests`}");
   expect(source).toContain("to={`/organizations/${organizationName}/settingform`}");
+  expect(source).toContain("function splitHeaderWordsInBrackets");
+  expect(source).toContain('className="title-prefix"');
   expect(source).toContain('"data-status": undefined');
   expect(headerBreadcrumb).toContain("<Link");
   expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
@@ -420,6 +462,7 @@ async function mockOrganizationPullRequests(page: Page) {
   await page.route("**/api/v1/organizations/weblabs/pull-requests**", async (route) => {
     const url = new URL(route.request().url());
     const category = url.searchParams.get("category") === "closed" ? "closed" : "open";
+    const filter = url.searchParams.get("filter");
     const isEmpty = url.searchParams.get("filter") === "empty";
     const isClosed = category === "closed";
     await route.fulfill({
@@ -448,7 +491,12 @@ async function mockOrganizationPullRequests(page: Page) {
                 receiverLoginId: "admin",
                 reviewerCount: 1,
                 state: isClosed ? "merged" : "open",
-                title: isClosed ? "Ship release" : "Fix login redirect",
+                title:
+                  !isClosed && filter === "prefix-source"
+                    ? "[UI] Fix login redirect"
+                    : isClosed
+                      ? "Ship release"
+                      : "Fix login redirect",
                 toBranch: "main",
                 updatedLabel: isClosed ? "Jul 2, 2026" : "Jul 1, 2026",
               },

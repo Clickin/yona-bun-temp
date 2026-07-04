@@ -256,6 +256,23 @@ test("organization issue aggregate filter controls are React buttons with legacy
   await expect(page.locator('input[name="orderDir"]')).toHaveValue("desc");
 });
 
+test("organization issue aggregate hides user quick filters for anonymous users", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationIssues(page, { isAnonymous: true });
+
+  await page.goto(`${basePath}/organizations/weblabs/issues?state=open&filter=bug`);
+  await expect(page.locator(".lst-stacked > li")).toHaveCount(1);
+  await expect(page.locator(".lst-stacked > li")).toHaveClass("active");
+  await expect(page.locator('.lst-stacked button[pjax-filter][type="button"]')).toHaveText(
+    "All issues",
+  );
+  await expect(page.locator('.lst-stacked [data-assignee-id="1"]')).toHaveCount(0);
+  await expect(page.locator('.lst-stacked [data-author-id="1"]')).toHaveCount(0);
+  await expect(page.locator('.lst-stacked [data-mention-id="1"]')).toHaveCount(0);
+});
+
 test("organization issue aggregate source uses narrow legacy attr types", () => {
   const source = readFileSync(ORGANIZATION_ISSUES_ROUTE_SOURCE, "utf8");
   expect(source).not.toContain('Record<"pjax-filter", string>');
@@ -386,16 +403,19 @@ async function attributes(page: Page, selector: string, name: string) {
     );
 }
 
-async function mockOrganizationIssues(page: Page, options: { itemCount?: number } = {}) {
+async function mockOrganizationIssues(
+  page: Page,
+  options: { isAnonymous?: boolean; itemCount?: number } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        actorId: 1,
+        actorId: options.isAnonymous ? null : 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
         defaultLandingPath: "/",
         emailAddress: "admin@example.com",
-        isAnonymous: false,
+        isAnonymous: options.isAnonymous === true,
         isConfirmed: true,
         isSiteAdmin: true,
         loginId: "admin",

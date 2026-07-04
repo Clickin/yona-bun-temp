@@ -194,7 +194,9 @@ function OrganizationPullRequestsBody({
                 <div id="list" className="row-fluid tab-pane active">
                   <OrganizationPullRequestList
                     basePath={runtimeConfig.basePath}
+                    category={selectedCategory}
                     items={pullRequests.items}
+                    organizationName={organizationName}
                   />
                 </div>
               </div>
@@ -208,10 +210,14 @@ function OrganizationPullRequestsBody({
 
 function OrganizationPullRequestList({
   basePath,
+  category,
   items,
+  organizationName,
 }: {
   basePath: string;
+  category: OrganizationPullRequestsCategory;
   items: PullRequestListItem[];
+  organizationName: string;
 }) {
   const { t } = useLegacyMessages();
 
@@ -222,7 +228,9 @@ function OrganizationPullRequestList({
           {items.map((pullRequest) => (
             <OrganizationPullRequestItem
               basePath={basePath}
+              category={category}
               key={pullRequest.id || pullRequest.pullRequestNumber}
+              organizationName={organizationName}
               pullRequest={pullRequest}
             />
           ))}
@@ -240,9 +248,13 @@ function OrganizationPullRequestList({
 
 function OrganizationPullRequestItem({
   basePath,
+  category,
+  organizationName,
   pullRequest,
 }: {
   basePath: string;
+  category: OrganizationPullRequestsCategory;
+  organizationName: string;
   pullRequest: PullRequestListItem;
 }) {
   const { t } = useLegacyMessages();
@@ -261,6 +273,7 @@ function OrganizationPullRequestItem({
     `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`,
   );
   const pullRequestRowAttrs = { href: pullRequestRowHref } satisfies LegacyListItemHrefAttrs;
+  const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
 
   return (
     <li className="post-item title" {...pullRequestRowAttrs}>
@@ -277,12 +290,28 @@ function OrganizationPullRequestItem({
         </Link>
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
+          {titleParts.prefixes.map((prefix) => (
+            <Link
+              activeProps={{ className: undefined, "data-status": undefined }}
+              className="title-prefix"
+              key={prefix}
+              params={{ organizationName }}
+              search={{ filter: prefix, pageNum: 1 }}
+              to={
+                category === "closed"
+                  ? "/organizations/$organizationName/closedPullrequests"
+                  : "/organizations/$organizationName/pullrequests"
+              }
+            >
+              {prefix}
+            </Link>
+          ))}
           <Link
             params={pullRequestParams}
             to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
             className={`title ${pullRequest.conflict ? "conflict" : ""}`}
           >
-            {pullRequest.title}
+            {titleParts.title}
           </Link>
         </div>
         <div className="infos">
@@ -487,4 +516,23 @@ function booleanField(value: unknown) {
 
 function percentOf(count: number, total: number) {
   return total <= 0 ? 0 : Math.round((count / total) * 100);
+}
+
+function splitHeaderWordsInBrackets(title: string) {
+  const prefixes: string[] = [];
+  const pattern = /^\s*(\[[^\]]+\])/u;
+  let rest = title;
+  while (true) {
+    const match = pattern.exec(rest);
+    if (!match) {
+      break;
+    }
+    prefixes.push(match[1].trim());
+    rest = rest.slice(match[0].length);
+  }
+  const onlyPrefixes = rest.trim() === "";
+  return {
+    prefixes: onlyPrefixes ? [] : prefixes,
+    title: onlyPrefixes ? title : rest.trimStart(),
+  };
 }

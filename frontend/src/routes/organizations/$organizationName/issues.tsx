@@ -110,6 +110,7 @@ function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   return (
     <OrganizationIssuesBody
       currentUserId={stringField(sessionQuery.data.actorId, "")}
+      isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
       issues={issuesQuery.data}
       organization={organizationQuery.data}
       runtimeConfig={runtimeConfig}
@@ -120,12 +121,14 @@ function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 
 function OrganizationIssuesBody({
   currentUserId,
+  isAnonymous,
   issues,
   organization,
   runtimeConfig,
   search,
 }: {
   currentUserId: string;
+  isAnonymous: boolean;
   issues: OrganizationIssueListRestResponse;
   organization: OrganizationContainer;
   runtimeConfig: RuntimeConfig;
@@ -213,6 +216,7 @@ function OrganizationIssuesBody({
               <div className="inner advanced">
                 <QuickSearch
                   currentUserId={currentUserId}
+                  isAnonymous={isAnonymous}
                   onQuickSearch={handleQuickSearch}
                   search={search}
                 />
@@ -341,10 +345,12 @@ function OrganizationIssuesBody({
 
 function QuickSearch({
   currentUserId,
+  isAnonymous,
   onQuickSearch,
   search,
 }: {
   currentUserId: string;
+  isAnonymous: boolean;
   onQuickSearch: (
     event: MouseEvent<HTMLButtonElement>,
     filters: { assigneeId: string; authorId: string; mentionId: string },
@@ -371,54 +377,58 @@ function QuickSearch({
           {t("issue.list.all")}
         </button>
       </li>
-      <li className={search.assigneeId === currentUserId ? "active" : ""}>
-        <button
-          {...legacyQuickSearchAttrs}
-          type="button"
-          data-author-id=""
-          data-assignee-id={currentUserId}
-          data-project-names={projectNames}
-          data-milestone-id=""
-          data-mention-id=""
-          onClick={(event) =>
-            onQuickSearch(event, { assigneeId: currentUserId, authorId: "", mentionId: "" })
-          }
-        >
-          {t("issue.list.assignedToMe")}
-        </button>
-      </li>
-      <li className={search.authorId === currentUserId ? "active" : ""}>
-        <button
-          {...legacyQuickSearchAttrs}
-          type="button"
-          data-author-id={currentUserId}
-          data-assignee-id=""
-          data-milestone-id=""
-          data-project-names={projectNames}
-          data-mention-id=""
-          onClick={(event) =>
-            onQuickSearch(event, { assigneeId: "", authorId: currentUserId, mentionId: "" })
-          }
-        >
-          {t("issue.list.authoredByMe")}
-        </button>
-      </li>
-      <li className={search.mentionId === currentUserId ? "active" : ""}>
-        <button
-          {...legacyQuickSearchAttrs}
-          type="button"
-          data-author-id=""
-          data-assignee-id=""
-          data-milestone-id=""
-          data-project-names={projectNames}
-          data-mention-id={currentUserId}
-          onClick={(event) =>
-            onQuickSearch(event, { assigneeId: "", authorId: "", mentionId: currentUserId })
-          }
-        >
-          {t("issue.list.mentionedOfMe")}
-        </button>
-      </li>
+      {!isAnonymous ? (
+        <>
+          <li className={search.assigneeId === currentUserId ? "active" : ""}>
+            <button
+              {...legacyQuickSearchAttrs}
+              type="button"
+              data-author-id=""
+              data-assignee-id={currentUserId}
+              data-project-names={projectNames}
+              data-milestone-id=""
+              data-mention-id=""
+              onClick={(event) =>
+                onQuickSearch(event, { assigneeId: currentUserId, authorId: "", mentionId: "" })
+              }
+            >
+              {t("issue.list.assignedToMe")}
+            </button>
+          </li>
+          <li className={search.authorId === currentUserId ? "active" : ""}>
+            <button
+              {...legacyQuickSearchAttrs}
+              type="button"
+              data-author-id={currentUserId}
+              data-assignee-id=""
+              data-milestone-id=""
+              data-project-names={projectNames}
+              data-mention-id=""
+              onClick={(event) =>
+                onQuickSearch(event, { assigneeId: "", authorId: currentUserId, mentionId: "" })
+              }
+            >
+              {t("issue.list.authoredByMe")}
+            </button>
+          </li>
+          <li className={search.mentionId === currentUserId ? "active" : ""}>
+            <button
+              {...legacyQuickSearchAttrs}
+              type="button"
+              data-author-id=""
+              data-assignee-id=""
+              data-milestone-id=""
+              data-project-names={projectNames}
+              data-mention-id={currentUserId}
+              onClick={(event) =>
+                onQuickSearch(event, { assigneeId: "", authorId: "", mentionId: currentUserId })
+              }
+            >
+              {t("issue.list.mentionedOfMe")}
+            </button>
+          </li>
+        </>
+      ) : null}
     </ul>
   );
 }
