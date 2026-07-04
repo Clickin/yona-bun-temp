@@ -313,6 +313,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const menuSetting = recordField(project.menuSetting);
+  const canSeeCodeMenu = projectCodeMenuVisible(project);
 
   return (
     <div className="project-menu-outer">
@@ -324,7 +325,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
             short="H"
             to="/$ownerName/$projectName"
           />
-          {booleanField(menuSetting.code) ? (
+          {canSeeCodeMenu ? (
             <ProjectMenuItem
               className="code-menu "
               label={t("menu.code")}
@@ -341,7 +342,9 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
               to="/$ownerName/$projectName/issues"
             />
           ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
+          {canSeeCodeMenu &&
+          booleanField(menuSetting.pullRequest) &&
+          stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
               label={t("menu.pullRequest")}
               params={{ ownerName, projectName }}
@@ -349,7 +352,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
               to="/$ownerName/$projectName/pullRequests"
             />
           ) : null}
-          {booleanField(menuSetting.review) ? (
+          {canSeeCodeMenu && booleanField(menuSetting.review) ? (
             <ProjectMenuItem
               label={t("menu.review")}
               params={{ ownerName, projectName }}
@@ -395,6 +398,14 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function projectCodeMenuVisible(project: ProjectChangeVcsScreenData) {
+  const record = recordField(project);
+  return (
+    booleanField(recordField(project.menuSetting).code) &&
+    (!booleanField(record.codeMemberOnly) || booleanField(record.viewerIsProjectMember))
   );
 }
 

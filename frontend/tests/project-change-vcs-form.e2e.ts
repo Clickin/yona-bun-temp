@@ -7,13 +7,13 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -262,6 +262,37 @@ test("project change-VCS internal project links keep legacy hrefs without route-
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project change-VCS project menu hides code-backed tabs when code is member-only", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      codeMemberOnly: true,
+      viewerIsOrganizationAdmin: false,
+      viewerIsProjectManager: false,
+      viewerIsProjectMember: false,
+      viewerIsSiteAdmin: false,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+
+  const projectMenuLinks = page.locator(".project-menu-outer a");
+  await expect(projectMenuLinks).toHaveCount(5);
+  await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/issues`);
+  await expect(projectMenuLinks.nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestones`,
+  );
+  await expect(projectMenuLinks.nth(3)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
+  await expect(projectMenuLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(page.locator(".project-menu-outer .code-menu")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer a[href$='/pullRequests']")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer a[href$='/reviews']")).toHaveCount(0);
 });
 
 test("project change-VCS settings tabs use direct TanStack Link targets", () => {
@@ -662,6 +693,7 @@ function projectChangeVcs() {
     projectName: "sample",
     vcs: "GIT",
     viewerCanChange: true,
+    viewerIsProjectMember: true,
     viewerCanUpdate: true,
   };
 }
