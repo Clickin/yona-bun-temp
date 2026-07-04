@@ -155,10 +155,14 @@ test("project code file route source has no raw anchors for internal app navigat
   expect(routeSource).not.toContain("legacyLinkProps");
   expect(routeSource).not.toContain("legacyEmptySearch");
   expect(routeSource).not.toContain("legacyInactiveSearch");
+  expect(routeSource).not.toContain("__legacyInactive");
   expect(directLegacyLinkActiveProps).toHaveLength(8);
   expect(directLegacyLinkActiveOptions).toHaveLength(8);
   expect(routeSource).toContain("search={{} as never}");
-  expect(routeSource).toContain("search={{ __legacyInactive: undefined } as never}");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
+  expect(routeSource).toContain(
+    'projectPath(ownerName, projectName, "code", encodedBranch, item.path)',
+  );
 });
 
 async function fileViewMetrics(page: Page) {

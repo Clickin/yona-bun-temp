@@ -143,7 +143,6 @@ function ProjectCodeFileBody({
               <Link
                 to="/$ownerName/$projectName/code/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
-                search={{ __legacyInactive: undefined } as never}
                 activeOptions={{
                   exact: true,
                   explicitUndefined: true,
@@ -164,7 +163,6 @@ function ProjectCodeFileBody({
                   to={
                     projectPath(ownerName, projectName, "code", encodedBranch, item.path) as never
                   }
-                  search={{ __legacyInactive: undefined } as never}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,

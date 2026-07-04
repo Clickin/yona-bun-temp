@@ -52,6 +52,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page.locator("#edit-content-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-content-body")).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
+  await expect(page.locator(".markdown-help-wrap > li")).toHaveCount(10);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#upload .attach-wrap")).toBeVisible();
   await expect(page.locator("#upload .attached-files.unstyled")).toHaveCount(1);
@@ -172,6 +173,24 @@ test("project milestone create form uploader has no route-local jQuery template 
   expect(routeSource).not.toContain("tplDropFilesHere");
   expect(routeSource).not.toContain("attachedFileTemplate");
   expect(routeSource).not.toContain("dropFilesHereTemplate");
+});
+
+test("project milestone create form renders markdown help as JSX without route-local raw HTML", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
+  expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
+  expect(routeSource).not.toContain("markdown.scala.html?raw");
+  expect(routeSource).not.toContain("__html");
+  expect(routeSource).not.toContain(".replace(/@Messages");
+  expect(routeSource).not.toContain(".replace(/<script");
+  expect(routeSource).toContain("function LegacyMarkdownHelp()");
+  expect(routeSource).toContain('className="markdown-help-nav"');
+  expect(routeSource).toContain('className="markdown-help-wrap"');
 });
 
 async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[]) {
