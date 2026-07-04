@@ -87,6 +87,7 @@ function ProjectCreateScreen({
   const [projectScope, setProjectScope] = React.useState(defaultProjectScope);
   const [projectName, setProjectName] = React.useState("");
   const [overview, setOverview] = React.useState("");
+  const [nameError, setNameError] = React.useState<string | undefined>();
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(() => defaultMenus.has("code"));
   const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(() =>
     defaultMenus.has("pullRequest"),
@@ -148,6 +149,13 @@ function ProjectCreateScreen({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const projectName = String(formData.get("name") ?? "");
+    const validationError = validateProjectName(projectName, t);
+    if (validationError) {
+      setNameError(validationError);
+      return;
+    }
+    setNameError(undefined);
     const ownerName = String(formData.get("owner") ?? "");
     createMutation.mutate({
       board: formData.has("board"),
@@ -156,7 +164,7 @@ function ProjectCreateScreen({
       milestone: formData.has("milestone"),
       overview: String(formData.get("overview") ?? ""),
       ownerName,
-      projectName: String(formData.get("name") ?? ""),
+      projectName,
       projectScope: String(formData.get("projectScope") ?? "PUBLIC"),
       pullRequest: formData.has("pullRequest"),
       review: formData.has("review"),
@@ -237,9 +245,21 @@ function ProjectCreateScreen({
                     className="text"
                     maxLength={250}
                     value={projectName}
-                    onChange={(event) => setProjectName(event.currentTarget.value)}
+                    onBlur={() => {
+                      setProjectName((current) => current.trim().replace(/ /gu, "-"));
+                    }}
+                    onChange={(event) => {
+                      setProjectName(event.currentTarget.value);
+                      setNameError(undefined);
+                    }}
                     placeholder={t("project.name.placeholder")}
                   />
+                  {nameError ? (
+                    <div className="popover fade left in" role="tooltip">
+                      <div className="arrow" />
+                      <div className="popover-content">{nameError}</div>
+                    </div>
+                  ) : null}
                 </dd>
 
                 <dt>
@@ -508,6 +528,16 @@ function projectDefaultMenus(menus: string[] | undefined): Set<string> {
     ? menus
     : ["code", "issue", "pullRequest", "review", "milestone", "board"];
   return new Set(defaults);
+}
+
+function validateProjectName(projectName: string, t: (key: string) => string): string | undefined {
+  if (!/^[0-9A-Za-z-_.\uac00-\ud7a3]+$/u.test(projectName)) {
+    return t("project.name.alert");
+  }
+  if (projectName === "." || projectName === ".." || projectName === ".git") {
+    return t("project.name.reserved.alert");
+  }
+  return undefined;
 }
 
 function stringField(value: unknown): string | undefined {

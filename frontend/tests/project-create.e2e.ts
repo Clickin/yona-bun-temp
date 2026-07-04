@@ -12,7 +12,7 @@ const EXPECTED_PROJECT_CREATE = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -46,7 +46,7 @@ const EXPECTED_PROJECT_CREATE = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -220,6 +220,42 @@ test("project create form mirrors legacy owner, VCS, and menu dependencies", asy
 
   await page.locator("#menuSettingReview").check();
   await expect(page.locator("#menuSettingCode")).toBeChecked();
+});
+
+test("project create form mirrors legacy project-name blur and validation", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCreate(page);
+  let createRequests = 0;
+  await page.route("**/api/v1/owners/*/projects", async (route) => {
+    createRequests += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ownerName: "admin",
+        projectName: "valid-project",
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/projectform`);
+
+  await page.locator("#project-name").fill("  project with spaces  ");
+  await page.locator("#description").focus();
+  await expect(page.locator("#project-name")).toHaveValue("project-with-spaces");
+
+  await page.locator("#project-name").fill(".git");
+  await page.locator("#newProjectForm button.ybtn-success").click();
+  await expect(page.locator("#newProjectForm .popover-content")).toHaveText(
+    "You can't use reserved names.",
+  );
+  expect(createRequests).toBe(0);
+
+  await page.locator("#project-name").fill("invalid project!");
+  await page.locator("#newProjectForm button.ybtn-success").click();
+  await expect(page.locator("#newProjectForm .popover-content")).toHaveText(
+    "Enter name in alphabetnumerical or symbol characters(_-.)",
+  );
+  expect(createRequests).toBe(0);
 });
 
 test("project create form honors configured default scope and menus", async ({ page }) => {
