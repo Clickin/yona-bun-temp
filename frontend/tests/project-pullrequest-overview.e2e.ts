@@ -324,8 +324,15 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).not.toContain(
     "href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.contributor.loginId}`)}",
   );
-  expect(routeSource).toContain("to={`/${pullRequest.contributor.loginId}` as never}");
-  expect(routeSource).toContain("to={`/${event.senderLoginId}` as never}");
+  expect(routeSource).not.toContain("as never");
+  expect(routeSource).toContain('to="/$user"');
+  expect(routeSource).toContain("params={{ user: pullRequest.contributor.loginId }}");
+  expect(routeSource).toContain("params={{ user: event.senderLoginId }}");
+  expect(routeSource).toContain("params={{ user: reviewer.loginId }}");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
+  expect(routeSource).toContain("branch: fromBranchName");
+  expect(routeSource).toContain("branch: toBranchName");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/commit/$commitId"');
   expect(routeSource).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );

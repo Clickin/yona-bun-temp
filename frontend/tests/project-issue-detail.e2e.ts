@@ -252,20 +252,16 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain("IssueLegacyLinkProps");
   expect(routeSource).not.toContain("IssueHashLink");
   expect(routeSource).not.toContain("IssueRouteLink");
-  expect(routeSource).not.toContain("parentPath as never");
-  expect(routeSource).not.toContain("issuePath as never");
-  expect(routeSource).not.toContain("editPath as never");
-  expect(routeSource).not.toContain("authorPath as never");
-  expect(routeSource).not.toContain("userPath as never");
+  expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("const authorPath =");
   expect(routeSource).not.toContain("const userPath =");
   expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber/editform"');
   expect(routeSource).toContain('to="/$user"');
   expect(routeSource).toContain(
-    "`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never",
+    "to={`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`}",
   );
-  expect(routeSource).toContain("`/user/issues/new?commentId=${commentId}` as never");
+  expect(routeSource).toContain("to={`/user/issues/new?commentId=${commentId}`}");
   expect(routeSource).not.toContain('data-request-method="post"');
   expect(routeSource).toContain("data-request-uri={voteHref}");
 });
@@ -1170,6 +1166,9 @@ test("project issue detail renders legacy read-only metadata fields", async ({ p
   expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Milestone')) > dd")).toEqual(
     await canonicalizeHtml(page, expectedMilestone),
   );
+  await expect(
+    page.locator(".issue-info form dl:has(dt:text('Milestone')) > dd a"),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/milestone/5`);
 
   expect(await canonicalize(page, ".issue-info form dl:has(dt:text('Due date')) > dd")).toEqual(
     await canonicalizeHtml(page, `<dd>Jul 5, 2026</dd>`),

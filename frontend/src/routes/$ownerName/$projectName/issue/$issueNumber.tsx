@@ -330,10 +330,7 @@ function ProjectIssueNotFoundBody({
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
           <p>{t("error.notfound.issue_post")}</p>
-          <Link
-            to={`/${ownerName}/${projectName}/issues?state=all` as never}
-            className="ybtn ybtn-primary"
-          >
+          <Link to={`/${ownerName}/${projectName}/issues?state=all`} className="ybtn ybtn-primary">
             {t("button.list")}
           </Link>
         </div>
@@ -859,9 +856,7 @@ function IssueDetailBody({
                         ) : issue.milestoneId ? (
                           <Link
                             {...LEGACY_LINK_PROPS}
-                            to={
-                              `/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never
-                            }
+                            to={`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`}
                           >
                             {stringField(issue.milestoneTitle)}
                           </Link>
@@ -871,7 +866,7 @@ function IssueDetailBody({
                       ) : (
                         <Link
                           {...LEGACY_LINK_PROPS}
-                          to={`/${ownerName}/${projectName}/newMilestoneForm` as never}
+                          to={`/${ownerName}/${projectName}/newMilestoneForm`}
                           className="ybtn ybtn-small ybtn-fullsize"
                           target="_blank"
                         >
@@ -1376,7 +1371,7 @@ function IssueLabelSelect({
         {canManageLabels ? (
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/issue/labelsform` as never}
+            to={`/${ownerName}/${projectName}/issue/labelsform`}
             target="_blank"
             className="label-edit"
           >
@@ -1464,7 +1459,7 @@ function IssueSelectedLabels({
         {labels.map((label) => (
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`${listPath}&labelIds=${encodeURIComponent(String(label.id))}` as never}
+            to={`${listPath}&labelIds=${encodeURIComponent(String(label.id))}`}
             className="label issue-label active static"
             key={String(label.id)}
             style={{ background: stringField(label.color) }}
@@ -1608,9 +1603,7 @@ function IssueChildIssue({
       {labels.map((label) => (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={
-            `/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}` as never
-          }
+          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}`}
           className="label issue-label list-label active twoColumeModeTarget"
           key={String(label.id)}
           style={{ background: stringField(label.color) }}
@@ -2128,7 +2121,7 @@ function IssueEventRow({
         <span className="state changed">moved</span>
         {sender} moved this issue from{" "}
         <strong>
-          <Link {...LEGACY_LINK_PROPS} to={`/${fromProjectName}` as never} className="link">
+          <Link {...LEGACY_LINK_PROPS} to={`/${fromProjectName}`} className="link">
             {fromProjectName}
           </Link>
         </strong>
@@ -2445,7 +2438,7 @@ function IssueCommentRow({
           </span>
           <span className="act-row pull-right">
             <span className="new-issue-by">
-              <Link {...LEGACY_LINK_PROPS} to={`/user/issues/new?commentId=${commentId}` as never}>
+              <Link {...LEGACY_LINK_PROPS} to={`/user/issues/new?commentId=${commentId}`}>
                 New issue by this comment
               </Link>
             </span>

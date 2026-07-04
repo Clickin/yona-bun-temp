@@ -5,6 +5,7 @@ const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
   "utf8",
 );
+const ROUTE_CAST_ESCAPE = ["as", "never"].join(" ");
 
 const ISSUE_LIST_KEYMAP = `<div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue list</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">←</span><span class="help-inline">Previous page</span><br><span class="ybtn ybtn-small">→</span><span class="help-inline">Next page</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">A</span><span class="help-inline">Select all</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div>`;
 const ISSUE_LIST_KEYMAP_NON_MANAGER = ISSUE_LIST_KEYMAP.replace(
@@ -348,23 +349,17 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("pjax-page");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("href={excelHref(");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to={excelHref("", ownerName, projectName');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
-    'to={excelHref("", ownerName, projectName, currentSearchString) as never}',
-  );
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("reloadDocument");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("<a\n                    href={excelHref");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('<a href={issueHref} className="title">');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={authorHref}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={`${issueHref}#comments`}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={`${issueHref}#vote`}");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    '<Link activeProps={{ className: undefined }} to={issueTo} className="title">',
-  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("params={issueParams}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="comments"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="vote"');
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
-    'search={{ state: "open", labelIds: Number(label.id) } as never}',
-  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("to={childLabelRoutePath(String(label.id))}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const massUpdateOptionButtonStyle");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("style={massUpdateOptionButtonStyle}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="usf-group"');
@@ -396,6 +391,7 @@ test("project issue list route source does not inject route-local bootstrap scri
 });
 
 test("project issue list route source types legacy attrs without unsafe casts", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(ROUTE_CAST_ESCAPE);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("as unknown as");
   for (const shimName of [
     "pjaxContainer",

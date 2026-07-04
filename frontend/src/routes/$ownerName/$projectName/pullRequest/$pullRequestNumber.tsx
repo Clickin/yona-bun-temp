@@ -139,7 +139,8 @@ function PullRequestOverviewBody({
           <div className="board-body">
             <div className="author-info left-txt" style={{ marginTop: "20px" }}>
               <Link
-                to={`/${pullRequest.contributor.loginId}` as never}
+                to="/$user"
+                params={{ user: pullRequest.contributor.loginId }}
                 className="usf-group pull-left"
                 activeProps={{ className: undefined }}
               >
@@ -372,7 +373,12 @@ function PullRequestStateEventMessage({
     const commit = commitId ? (
       <Link
         className="link"
-        to={`/${pullRequest.ownerName}/${pullRequest.projectName}/commit/${commitId}` as never}
+        to="/$ownerName/$projectName/commit/$commitId"
+        params={{
+          commitId,
+          ownerName: pullRequest.ownerName,
+          projectName: pullRequest.projectName,
+        }}
         title={t("code.showCommit")}
         activeProps={{ className: undefined }}
       >
@@ -410,7 +416,8 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
   return (
     <>
       <Link
-        to={`/${event.senderLoginId}` as never}
+        to="/$user"
+        params={{ user: event.senderLoginId }}
         className="usf-group"
         data-toggle="tooltip"
         data-placement="top"
@@ -420,7 +427,8 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         <img src={avatarUrl} className="avatar-wrap small" alt="" />
       </Link>
       <Link
-        to={`/${event.senderLoginId}` as never}
+        to="/$user"
+        params={{ user: event.senderLoginId }}
         className="usf-group"
         data-toggle="tooltip"
         data-placement="top"
@@ -480,7 +488,8 @@ function PullRequestEventCommit({
         {commit.commitShortId}
       </Link>
       <Link
-        to={`/${event.senderLoginId}` as never}
+        to="/$user"
+        params={{ user: event.senderLoginId }}
         className="avatar-wrap small hide-in-mobile"
         data-toggle="tooltip"
         data-placement="top"
@@ -592,7 +601,8 @@ export function PullRequestHeader({
               {pullRequest.reviewers.map((reviewer) => (
                 <Link
                   key={reviewer.loginId}
-                  to={`/${reviewer.loginId}` as never}
+                  to="/$user"
+                  params={{ user: reviewer.loginId }}
                   className="usf-group"
                   data-toggle="tooltip"
                   data-placement="top"
@@ -698,7 +708,11 @@ export function PullRequestBranchInfo({
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
       <code className="from" data-toggle="tooltip" data-original-title={t("pullRequest.from")}>
-        <Link to={`/${pullRequest.fromOwnerName}` as never} activeProps={{ className: undefined }}>
+        <Link
+          to="/$user"
+          params={{ user: pullRequest.fromOwnerName }}
+          activeProps={{ className: undefined }}
+        >
           {pullRequest.fromOwnerName}
         </Link>
         <span>/</span>
@@ -714,11 +728,12 @@ export function PullRequestBranchInfo({
         </Link>
         :{" "}
         <Link
-          to={
-            `/${pullRequest.fromOwnerName}/${pullRequest.fromProjectName}/code/${encodeBranch(
-              fromBranchName,
-            )}` as never
-          }
+          to="/$ownerName/$projectName/code/$branch"
+          params={{
+            branch: fromBranchName,
+            ownerName: pullRequest.fromOwnerName,
+            projectName: pullRequest.fromProjectName,
+          }}
           className="branchName"
           activeProps={{ className: undefined }}
         >
@@ -727,7 +742,11 @@ export function PullRequestBranchInfo({
       </code>
       <i className="yobicon-right-2 ml10"></i>
       <code className="to" data-toggle="tooltip" data-original-title={t("pullRequest.to")}>
-        <Link to={`/${pullRequest.ownerName}` as never} activeProps={{ className: undefined }}>
+        <Link
+          to="/$user"
+          params={{ user: pullRequest.ownerName }}
+          activeProps={{ className: undefined }}
+        >
           {pullRequest.ownerName}
         </Link>
         <span>/</span>
@@ -740,11 +759,12 @@ export function PullRequestBranchInfo({
         </Link>
         :{" "}
         <Link
-          to={
-            `/${pullRequest.ownerName}/${pullRequest.projectName}/code/${encodeBranch(
-              toBranchName,
-            )}` as never
-          }
+          to="/$ownerName/$projectName/code/$branch"
+          params={{
+            branch: toBranchName,
+            ownerName: pullRequest.ownerName,
+            projectName: pullRequest.projectName,
+          }}
           className="branchName"
           activeProps={{ className: undefined }}
         >
@@ -771,7 +791,8 @@ export function PullRequestStateInfo({
     return (
       <div className="alert alert-info">
         <Link
-          to={`/${pullRequest.receiver.loginId}` as never}
+          to="/$user"
+          params={{ user: pullRequest.receiver.loginId }}
           className="usf-group"
           activeProps={{ className: undefined }}
         >
@@ -985,10 +1006,6 @@ function projectCodeUrlWithLogin(
   const url = new URL(path, window.location.origin);
   url.username = loginId;
   return url.toString();
-}
-
-function encodeBranch(branch: string) {
-  return encodeURIComponent(branch);
 }
 
 function branchItemName(branch: string) {

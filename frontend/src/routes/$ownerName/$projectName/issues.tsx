@@ -555,7 +555,8 @@ function ProjectIssuesBody({
             <div className="pull-right">
               <Link
                 activeProps={{ className: undefined }}
-                to={`/${ownerName}/${projectName}/issueform` as never}
+                to="/$ownerName/$projectName/issueform"
+                params={{ ownerName, projectName }}
                 className="ybtn ybtn-success"
               >
                 {t("issue.menu.new")}
@@ -1452,12 +1453,10 @@ function ProjectIssueItem({
   const { t } = useLegacyMessages();
   const issueId = stringField(issue.id, String(issue.issueNumber));
   const issueNumber = stringField(issue.issueNumber, issueId);
-  const issueTo = `/${ownerName}/${projectName}/issue/${issueNumber}` as never;
+  const issueParams = { issueNumber, ownerName, projectName };
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const authorLoginId = stringField(issue.authorLoginId, "");
-  const authorTo = `/${authorLoginId}` as never;
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
-  const assigneeTo = `/${assigneeLoginId}` as never;
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
   const issueWeight = issue.weight ?? 0;
   const issueLabels = sortedIssueLabels(issue);
@@ -1575,7 +1574,12 @@ function ProjectIssueItem({
         ) : null}
         <div {...issueRowLegacyForAttrs} className="issue-item-row">
           <div className="title-wrap" onClickCapture={handleTitleWrapClick}>
-            <Link activeProps={{ className: undefined }} to={issueTo} className="title">
+            <Link
+              activeProps={{ className: undefined }}
+              to="/$ownerName/$projectName/issue/$issueNumber"
+              params={issueParams}
+              className="title"
+            >
               <span className="post-id">
                 {issue.isDraft && draftNumberSource === "draft-list" ? (
                   <span className="draft-number">#{t("issue.state.draft")}</span>
@@ -1626,7 +1630,12 @@ function ProjectIssueItem({
                 {prefix}
               </Link>
             ))}
-            <Link activeProps={{ className: undefined }} to={issueTo} className="title">
+            <Link
+              activeProps={{ className: undefined }}
+              to="/$ownerName/$projectName/issue/$issueNumber"
+              params={issueParams}
+              className="title"
+            >
               {titleParts.title}
             </Link>
           </div>
@@ -1634,7 +1643,8 @@ function ProjectIssueItem({
             {issue.authorLabel ? (
               <Link
                 activeProps={{ className: undefined }}
-                to={authorTo}
+                to="/$user"
+                params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
                 title={authorLoginId}
               >
@@ -1656,7 +1666,8 @@ function ProjectIssueItem({
               <span className="mileston-tag">
                 <Link
                   activeProps={{ className: undefined }}
-                  to={`/${ownerName}/${projectName}/milestone/${issue.milestoneId}` as never}
+                  to="/$ownerName/$projectName/milestone/$milestoneId"
+                  params={{ milestoneId: String(issue.milestoneId), ownerName, projectName }}
                   title={t("milestone")}
                 >
                   {issue.milestoneTitle}
@@ -1668,7 +1679,8 @@ function ProjectIssueItem({
                 {issue.commentCount > 0 ? (
                   <Link
                     activeProps={{ className: undefined }}
-                    to={issueTo}
+                    to="/$ownerName/$projectName/issue/$issueNumber"
+                    params={issueParams}
                     hash="comments"
                     className="comments-count comments-count-color"
                   >
@@ -1681,7 +1693,8 @@ function ProjectIssueItem({
                 {issue.voterCount > 0 ? (
                   <Link
                     activeProps={{ className: undefined }}
-                    to={issueTo}
+                    to="/$ownerName/$projectName/issue/$issueNumber"
+                    params={issueParams}
                     hash="vote"
                     className="vote-count vote-color"
                   >
@@ -1743,7 +1756,8 @@ function ProjectIssueItem({
           {assigneeLoginId ? (
             <Link
               activeProps={{ className: undefined }}
-              to={assigneeTo}
+              to="/$user"
+              params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
             >
@@ -1850,11 +1864,12 @@ function IssueChildRow({
 }) {
   const issueNumber = stringField(issue.issueNumber, "");
   const issueId = stringField(issue.id, "");
-  const issueTo = `/${ownerName}/${projectName}/issue/${issueNumber}` as never;
+  const issueParams = { issueNumber, ownerName, projectName };
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const isClosed = issue.state === "closed";
   const labels = issue.labels.slice().sort(compareIssueLabels);
-  const childLabelTo = `/${ownerName}/${projectName}/issues` as never;
+  const childLabelRoutePath = (labelId: string) =>
+    `/${ownerName}/${projectName}/issues?state=open&labelIds=${labelId}`;
   const childLabelHref = (labelId: string) =>
     `${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${labelId}`;
   const handleChildTargetClick = (event: ReactMouseEvent<HTMLElement>) => {
@@ -1897,7 +1912,12 @@ function IssueChildRow({
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
-      <Link activeProps={{ className: undefined }} className="twoColumeModeTarget" to={issueTo}>
+      <Link
+        activeProps={{ className: undefined }}
+        className="twoColumeModeTarget"
+        to="/$ownerName/$projectName/issue/$issueNumber"
+        params={issueParams}
+      >
         <span className="item-name">
           <span className="subtask-number">
             {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
@@ -1907,13 +1927,12 @@ function IssueChildRow({
         </span>
       </Link>
       <span className="font12 no-border-at-child">
-        <IssueChildCommentAndVotePair issue={issue} issueTo={issueTo} />
+        <IssueChildCommentAndVotePair issue={issue} issueParams={issueParams} />
       </span>
       {labels.map((label) => (
         <Link
           activeProps={{ className: undefined }}
-          to={childLabelTo}
-          search={{ state: "open", labelIds: Number(label.id) } as never}
+          to={childLabelRoutePath(String(label.id))}
           className="label issue-label list-label active twoColumeModeTarget"
           key={String(label.id)}
           onClick={(event) =>
@@ -1937,10 +1956,14 @@ function childIssueLabelStyle(color: string | undefined): CSSProperties | undefi
 
 function IssueChildCommentAndVotePair({
   issue,
-  issueTo,
+  issueParams,
 }: {
   issue: RestIssueChildItem;
-  issueTo: never;
+  issueParams: {
+    issueNumber: string;
+    ownerName: string;
+    projectName: string;
+  };
 }) {
   const commentCount = numberField(issue.commentCount);
   const voterCount = numberField(issue.voterCount);
@@ -1953,7 +1976,8 @@ function IssueChildCommentAndVotePair({
       {commentCount ? (
         <Link
           activeProps={{ className: undefined }}
-          to={issueTo}
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={issueParams}
           hash="comments"
           className="comments-count comments-count-color"
         >
@@ -1966,7 +1990,8 @@ function IssueChildCommentAndVotePair({
       {voterCount ? (
         <Link
           activeProps={{ className: undefined }}
-          to={issueTo}
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={issueParams}
           hash="vote"
           className="vote-count vote-color"
         >
@@ -2023,7 +2048,8 @@ function IssueSubtaskSummary({
         <span className="infos-item subtask">
           <Link
             activeProps={{ className: undefined }}
-            to={`/${ownerName}/${projectName}/issue/${parentIssueNumber}` as never}
+            to="/$ownerName/$projectName/issue/$issueNumber"
+            params={{ issueNumber: parentIssueNumber, ownerName, projectName }}
           >
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
           </Link>
@@ -2490,7 +2516,8 @@ function IssueSearchForm({
           {labelControls.showManageLink ? (
             <Link
               activeProps={{ className: undefined }}
-              to={`/${ownerName}/${projectName}/issue/labelsform` as never}
+              to="/$ownerName/$projectName/issue/labelsform"
+              params={{ ownerName, projectName }}
               className="ybtn ybtn-default ybtn-mini pull-right"
             >
               <i className="yobicon-cog vmiddle"></i>
@@ -2536,7 +2563,8 @@ function SearchMilestoneStatus({
       <div className="meta-info">
         <Link
           activeProps={{ className: undefined }}
-          to={`/${ownerName}/${projectName}/milestone/${milestoneId}` as never}
+          to="/$ownerName/$projectName/milestone/$milestoneId"
+          params={{ milestoneId, ownerName, projectName }}
           className="title"
         >
           {stringField(milestone.title, "")}
@@ -2611,7 +2639,8 @@ function IssueSearchLabelSelect({
         {showLabelEdit ? (
           <Link
             activeProps={{ className: undefined }}
-            to={`/${ownerName}/${projectName}/issue/labelsform` as never}
+            to="/$ownerName/$projectName/issue/labelsform"
+            params={{ ownerName, projectName }}
             target="_blank"
             className="label-edit"
             rel="noreferrer"
