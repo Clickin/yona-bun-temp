@@ -105,8 +105,8 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     projectReviewsQueryOptions(runtimeConfig, {
       authorId: search.authorId,
       filter: search.filter,
-      orderBy: search.orderBy,
-      orderDir: search.orderDir,
+      orderBy: effectiveOrderBy(search),
+      orderDir: effectiveOrderDir(search),
       ownerName,
       pageNum: search.pageNum,
       participantId: search.participantId,
@@ -154,10 +154,18 @@ function ProjectReviewsBody({
   const currentUserId =
     numberField(project.viewerUserId) || numberField(project.currentUserId) || 1;
   const activeState = search.state || reviews.state || "open";
+  const activeOrderBy = effectiveOrderBy(search);
+  const activeOrderDir = effectiveOrderDir(search);
 
   function pushReviews(next: Partial<ProjectReviewsSearch>) {
     router.history.push(
-      prefixBasePath(runtimeConfig.basePath, `${baseRoute}${reviewsQuery(search, next)}`),
+      prefixBasePath(
+        runtimeConfig.basePath,
+        `${baseRoute}${reviewsQuery(
+          { ...search, orderBy: activeOrderBy, orderDir: activeOrderDir, state: activeState },
+          next,
+        )}`,
+      ),
     );
   }
 
@@ -218,8 +226,8 @@ function ProjectReviewsBody({
               <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
                 <input type="hidden" name="authorId" value={search.authorId || ""} />
                 <input type="hidden" name="participantId" value={search.participantId || ""} />
-                <input type="hidden" name="orderDir" value={search.orderDir} />
-                <input type="hidden" name="orderBy" value={search.orderBy} />
+                <input type="hidden" name="orderDir" value={activeOrderDir} />
+                <input type="hidden" name="orderBy" value={activeOrderBy} />
                 <input type="hidden" name="state" value={activeState} />
                 <hr className="hide-in-mobile" />
                 <div className="search-bar span-hard-wrap">
@@ -242,8 +250,8 @@ function ProjectReviewsBody({
                 type="button"
                 data-field="createdDate"
                 data-value={
-                  search.orderBy === "createdDate"
-                    ? search.orderDir === "asc"
+                  activeOrderBy === "createdDate"
+                    ? activeOrderDir === "asc"
                       ? "desc"
                       : "asc"
                     : "desc"
@@ -261,7 +269,7 @@ function ProjectReviewsBody({
               >
                 <i
                   className={`ico btn-gray-arrow ${
-                    search.orderBy === "createdDate" && search.orderDir !== "desc" ? "" : "down"
+                    activeOrderBy === "createdDate" && activeOrderDir !== "desc" ? "" : "down"
                   }`}
                 ></i>
                 {t("common.order.date")}
@@ -509,4 +517,12 @@ function stringField(value: unknown, fallback = "") {
 
 function numberField(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : Number(value) || 0;
+}
+
+function effectiveOrderBy(search: ProjectReviewsSearch) {
+  return search.orderBy || "createdDate";
+}
+
+function effectiveOrderDir(search: ProjectReviewsSearch) {
+  return search.orderDir || "desc";
 }
