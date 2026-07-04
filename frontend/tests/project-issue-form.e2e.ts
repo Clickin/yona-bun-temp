@@ -220,6 +220,8 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).toContain("<Link");
   expect(source).toContain('className="label-edit"');
   expect(source).toContain('import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";');
+  expect(source).toContain("router.history.back()");
+  expect(source).not.toContain("window.history.back()");
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain("legacyMarkdownHelpHtml");
