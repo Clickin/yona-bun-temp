@@ -199,7 +199,9 @@ test("project home clone URL copy button writes URL and shows legacy toast", asy
   await page.locator("#cloneURLBtn").click();
 
   expect(await copiedText(page)).toBe("https://example.com/admin/sample.git");
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("URL is copied");
+  await expect(page.locator(".project-clone-wrap .yobiToasts .toast .msg")).toHaveText(
+    "URL is copied",
+  );
 });
 
 test("project home header favorite star posts and toggles starred class", async ({ page }) => {
@@ -473,6 +475,10 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).not.toContain("useLinkProps");
   expect(source).not.toContain("function isRoutedHref");
   expect(source).not.toContain("createElement");
+  expect(source).not.toContain("document.dispatchEvent");
+  expect(source).not.toContain("yobi:notify-scan");
+  expect(source).not.toContain('data-toggle="yobi-notify"');
+  expect(source).toContain("<YobiToast notice={cloneCopyNotice} />");
   expect(source).toContain("createFileRoute, Link, Outlet");
   expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
   expect(source).toContain('<Link href={actorUrl} className="actor">');

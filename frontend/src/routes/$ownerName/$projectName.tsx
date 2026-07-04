@@ -106,7 +106,9 @@ function ProjectHomeBody({
   const initialOverview = stringField(project.overview, "");
   const [descriptionEditing, setDescriptionEditing] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
-  const [cloneCopyNoticeKey, setCloneCopyNoticeKey] = useState(0);
+  const [cloneCopyNotice, setCloneCopyNotice] = useState<{ key: number; message: string } | null>(
+    null,
+  );
   const [overviewText, setOverviewText] = useState(initialOverview);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const projectRecord = recordField(project);
@@ -271,20 +273,15 @@ function ProjectHomeBody({
                 id="cloneURLBtn"
                 onClick={async () => {
                   await navigator.clipboard?.writeText(cloneUrl);
-                  setCloneCopyNoticeKey((key) => key + 1);
-                  window.setTimeout(() => document.dispatchEvent(new Event("yobi:notify-scan")));
+                  setCloneCopyNotice((notice) => ({
+                    key: (notice?.key ?? 0) + 1,
+                    message: t("code.copyUrl.copied"),
+                  }));
                 }}
               >
                 {t("code.copyUrl")}
               </button>
-              {cloneCopyNoticeKey > 0 ? (
-                <span
-                  key={cloneCopyNoticeKey}
-                  data-toggle="yobi-notify"
-                  data-message={t("code.copyUrl.copied")}
-                  hidden
-                />
-              ) : null}
+              <YobiToast notice={cloneCopyNotice} />
             </div>
           ) : null}
         </div>
@@ -480,6 +477,28 @@ function ProjectHomeBody({
               {t("button.no")}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function YobiToast({ notice }: { notice: { key: number; message: string } | null }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <div className="yobiToasts" key={notice.key}>
+      <div className="toast" tabIndex={-1}>
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent">
+            &times;
+          </button>
+        </div>
+        <div className="center-text">
+          <span className="v"></span>
+          <div className="msg">{notice.message}</div>
         </div>
       </div>
     </div>
