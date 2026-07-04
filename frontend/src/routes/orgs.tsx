@@ -145,11 +145,7 @@ function OrganizationListItem({ organization }: { organization: OrganizationDire
     );
   }
 
-  const logoUrl = stringField(
-    organization,
-    "logoUrl",
-    "/assets/images/organization_default_logo.png",
-  );
+  const logoUrl = stringField(organization, "logoUrl", "");
   const createdLabel = stringField(organization, "createdLabel", "");
   const createdTitle = stringField(organization, "createdTitle", createdLabel);
 
@@ -162,7 +158,7 @@ function OrganizationListItem({ organization }: { organization: OrganizationDire
             params={{ organizationName }}
             activeProps={{ className: undefined }}
           >
-            <img src={logoUrl} alt={organizationName} />
+            {logoUrl ? <img src={logoUrl} alt={organizationName} /> : null}
           </Link>
         </div>
         <div style={{ float: "left" }}>

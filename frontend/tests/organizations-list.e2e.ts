@@ -14,7 +14,7 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li>
@@ -101,7 +101,7 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       <li class="project">
         <div class="info-wrap">
           <div class="owner-avatar-wrap">
-            <a href="__BASE_PATH__/organizations/weblabs"><img src="/assets/images/organization_default_logo.png" alt="weblabs"></a>
+            <a href="__BASE_PATH__/organizations/weblabs"></a>
           </div>
           <div style="float:left">
             <div class="header">
@@ -153,6 +153,7 @@ test("organization directory card links keep legacy hrefs and use SPA navigation
   const nameLink = page.locator(".all-projects .header a.black");
 
   await expect(logoLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(logoLink.locator("img")).toHaveCount(0);
   await expect(nameLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
 
   await page.evaluate(() => {
@@ -201,7 +202,7 @@ test("organization directory renders unreadable private organization card like l
       createdLabel: "just now",
       createdTitle: "2026-06-30",
       description: "Web labs group",
-      logoUrl: "/assets/images/organization_default_logo.png",
+      logoUrl: "",
       organizationName: "weblabs",
     },
     {
@@ -261,7 +262,7 @@ async function mockAuthenticatedOrganizations(
       createdLabel: "just now",
       createdTitle: "2026-06-30",
       description: "Web labs group",
-      logoUrl: "/assets/images/organization_default_logo.png",
+      logoUrl: "",
       organizationName: "weblabs",
     },
   ],
@@ -297,7 +298,15 @@ async function mockAuthenticatedOrganizations(
       }),
     });
   });
-  await page.route("**/api/v1/organizations", async (route) => {
+  await page.route("**/api/v1/organizations**", async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (
+      !pathname.endsWith("/api/v1/organizations") &&
+      !pathname.endsWith("/api/v1/organizations/")
+    ) {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
