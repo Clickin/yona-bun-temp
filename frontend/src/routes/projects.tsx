@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { listProjectsQueryOptions } from "../api/org-project";
 import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
@@ -9,6 +10,7 @@ import { SiteLayoutShell } from "./-home-route-screen";
 
 type ProjectsSearch = {
   filter: string;
+  pageNum?: number;
 };
 
 type ProjectDirectoryItem = YonaRecord & {
@@ -26,9 +28,13 @@ type ProjectDirectoryItem = YonaRecord & {
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
-  validateSearch: (search: Record<string, unknown>): ProjectsSearch => ({
-    filter: typeof search.filter === "string" ? search.filter : "",
-  }),
+  validateSearch: (search: Record<string, unknown>): ProjectsSearch => {
+    const pageNum = positiveInteger(search.pageNum);
+    return {
+      filter: typeof search.filter === "string" ? search.filter : "",
+      ...(pageNum ? { pageNum } : {}),
+    };
+  },
 });
 
 function ProjectsRoute() {
@@ -44,10 +50,18 @@ function ProjectsRoute() {
 }
 
 function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { filter } = Route.useSearch();
+  const search = Route.useSearch();
+  const { filter } = search;
   const { t } = useLegacyMessages();
   const projectsQuery = useQuery(listProjectsQueryOptions(runtimeConfig));
   const projects = projectItems(projectsQuery.data);
+  const totalPages = positiveIntegerField(projectsQuery.data, "totalPages", 1);
+  const responsePage = positiveIntegerField(
+    projectsQuery.data,
+    "pageNum",
+    positiveIntegerField(projectsQuery.data, "page", 1),
+  );
+  const currentPage = clampPageNum(search.pageNum ?? responsePage, totalPages);
   const autofocusRef = (node: HTMLInputElement | null) => {
     node?.setAttribute("autofocus", "");
   };
@@ -123,12 +137,117 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   />
                 ))}
               </ul>
-              <div id="pagination"></div>
+              <ProjectsPagination
+                currentPage={currentPage}
+                filter={filter}
+                totalPages={totalPages}
+              />
             </>
           )}
         </div>
       </div>
     </SiteLayoutShell>
+  );
+}
+
+function ProjectsPagination({
+  currentPage,
+  filter,
+  totalPages,
+}: {
+  currentPage: number;
+  filter: string;
+  totalPages: number;
+}) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  if (totalPages <= 1) {
+    return <div id="pagination"></div>;
+  }
+
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const pageSearch = (pageNum: number) => ({
+    ...(filter ? { filter } : {}),
+    pageNum,
+  });
+  const navigateToPage = (pageNum: number) => {
+    void router.navigate({
+      search: pageSearch(pageNum),
+      to: "/projects",
+    });
+  };
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    if (!/^[0-9]+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
+    const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(value);
+    navigateToPage(value);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link
+              activeProps={{ className: undefined }}
+              search={pageSearch(currentPage - 1)}
+              to="/projects"
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            key={currentPage}
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+            pattern="[0-9]*"
+            type="number"
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link
+              activeProps={{ className: undefined }}
+              search={pageSearch(currentPage + 1)}
+              to="/projects"
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
   );
 }
 
@@ -243,6 +362,28 @@ function stringField(record: YonaRecord, key: string, fallback: string): string 
 function numberField(record: YonaRecord, key: string, fallback: number): number {
   const value = record[key];
   return typeof value === "number" ? value : fallback;
+}
+
+function positiveInteger(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === "string" && /^[0-9]+$/u.test(value)) {
+    const parsed = Number.parseInt(value, 10);
+    return parsed > 0 ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function positiveIntegerField(payload: unknown, key: string, fallback: number): number {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+  return positiveInteger((payload as YonaRecord)[key]) ?? fallback;
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  return Math.min(Math.max(pageNum, 1), Math.max(totalPages, 1));
 }
 
 function projectIsReadable(record: YonaRecord): boolean {

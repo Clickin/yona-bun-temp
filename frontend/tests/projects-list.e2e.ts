@@ -281,14 +281,75 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     .toBe("owner");
 });
 
+test("projects list renders legacy pagination controls for multi-page project lists", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedProjects(page, { pageNum: 1, totalPages: 3 });
+
+  await page.goto(`${basePath}/projects?filter=sample&pageNum=1`);
+  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+
+  const pagination = page.locator("#pagination");
+  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
+  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  await expect(pagination.locator("span.off")).toHaveText("Previous page");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
+  await expect(pagination.locator(".page-num").nth(2)).toHaveText("/");
+  await expect(pagination.locator(".page-num").nth(3)).toHaveText("3");
+
+  const nextHref = await pagination.locator("a", { hasText: "Next page" }).getAttribute("href");
+  expect(nextHref).not.toBeNull();
+  const nextUrl = new URL(nextHref ?? "", page.url());
+  expect(nextUrl.pathname).toBe(`${basePath}/projects`);
+  expect(nextUrl.searchParams.get("filter")).toBe("sample");
+  expect(nextUrl.searchParams.get("pageNum")).toBe("2");
+
+  await page.evaluate(() => {
+    (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker =
+      "pagination";
+  });
+  await pagination.locator("a", { hasText: "Next page" }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker,
+      ),
+    )
+    .toBe("pagination");
+
+  const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
+  expect(prevHref).not.toBeNull();
+  const prevUrl = new URL(prevHref ?? "", page.url());
+  expect(prevUrl.pathname).toBe(`${basePath}/projects`);
+  expect(prevUrl.searchParams.get("filter")).toBe("sample");
+  expect(prevUrl.searchParams.get("pageNum")).toBe("1");
+
+  const pageInput = pagination.locator('input[name="pageNum"]');
+  await pageInput.fill("9");
+  await pageInput.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
+  await expect(pageInput).toHaveValue("3");
+  await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
+});
+
 test("projects route source uses Link for project directory card navigation", () => {
   const source = readFileSync(new URL("../src/routes/projects.tsx", import.meta.url), "utf8");
 
-  expect(source).toContain("import { createFileRoute, Link } from");
+  expect(source).toContain("import { createFileRoute, Link, useRouter } from");
   expect(source).toContain('to="/projects"');
   expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$user"');
+  expect(source).toContain("pageNum?: number");
+  expect(source).toContain('name="pageNum"');
+  expect(source).toContain("router.navigate");
   expect(source).toContain('"data-status": undefined');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');
@@ -298,7 +359,7 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).not.toContain("<a href={ownerHref}");
 });
 
-async function mockAuthenticatedProjects(page: Page) {
+async function mockAuthenticatedProjects(page: Page, payload: Record<string, unknown> = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -338,6 +399,7 @@ async function mockAuthenticatedProjects(page: Page) {
             viewerCanRead: false,
           },
         ],
+        ...payload,
       }),
     });
   });

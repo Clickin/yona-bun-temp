@@ -197,23 +197,97 @@ function UserFileRow({
 }
 
 function Pagination({ files }: { files: WorkspaceFilesResponse }) {
-  const pages = Array.from({ length: files.totalPages }, (_, index) => index + 1);
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+
+  if (files.totalPages <= 1) {
+    return <div id="pagination"></div>;
+  }
+
+  const currentPage = Math.min(Math.max(files.page, 1), files.totalPages);
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < files.totalPages;
+  const pageSearch = (pageNum: number) => ({ filter: files.filter, pageNum });
+  const navigateToPage = (pageNum: number) => {
+    void router.navigate({
+      search: pageSearch(pageNum),
+      to: "/user/files",
+    });
+  };
 
   return (
-    <div id="pagination">
-      {pages.map((page) => {
-        return (
-          <Link
-            activeProps={{ className: undefined }}
-            key={page}
-            to="/user/files"
-            search={{ filter: files.filter, pageNum: page }}
-            className={page === files.page ? "active" : undefined}
-          >
-            {page}
-          </Link>
-        );
-      })}
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ className: undefined }}
+              search={pageSearch(currentPage - 1)}
+              to="/user/files"
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={currentPage}
+            key={`${currentPage}-${files.totalPages}`}
+            max={files.totalPages}
+            min={1}
+            name="pageNum"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") {
+                return;
+              }
+
+              event.preventDefault();
+              if (!/^\d+$/u.test(event.currentTarget.value)) {
+                event.currentTarget.value = String(currentPage);
+                return;
+              }
+
+              const requestedPage = Number.parseInt(event.currentTarget.value, 10);
+              const nextPage = Math.min(Math.max(requestedPage, 1), files.totalPages);
+              event.currentTarget.value = String(nextPage);
+              navigateToPage(nextPage);
+            }}
+            pattern="[0-9]*"
+            type="number"
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{files.totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ className: undefined }}
+              search={pageSearch(currentPage + 1)}
+              to="/user/files"
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
     </div>
   );
 }

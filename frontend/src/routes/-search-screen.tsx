@@ -522,7 +522,7 @@ function SearchResultList({
 function SearchPagination({ result, searchPath }: { result: SearchResponse; searchPath: string }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  const totalPages = Math.ceil(result.totalCount / Math.max(result.pageSize, 1));
+  const totalPages = searchTotalPages(result);
   if (totalPages <= 1) {
     return <div id="pagination"></div>;
   }
@@ -624,6 +624,14 @@ function clampPageNum(pageNum: number, totalPages: number) {
     return 1;
   }
   return Math.min(Math.max(pageNum, 1), totalPages);
+}
+
+function searchTotalPages(result: SearchResponse) {
+  const providedTotalPages = Number((result as Record<string, unknown>).totalPages);
+  if (Number.isFinite(providedTotalPages) && providedTotalPages > 0) {
+    return providedTotalPages;
+  }
+  return Math.ceil(result.totalCount / Math.max(result.pageSize, 1));
 }
 
 function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {

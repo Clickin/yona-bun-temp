@@ -57,7 +57,7 @@ const EXPECTED_USER_FILES_SCREEN = `
       </div>
     </div>
   </div>
-  <div id="pagination"><a href="__BASE_PATH__/user/files?filter=avatar&pageNum=1">1</a><a href="__BASE_PATH__/user/files?filter=avatar&pageNum=2" class="active">2</a></div>
+  <div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><a href="__BASE_PATH__/user/files?filter=avatar&amp;pageNum=1"><i class="ico btn-pg-prev"></i><span>Previous page</span></a></li><li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="2"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div>
@@ -191,23 +191,51 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   ).toBe("files-my-issues");
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
-  await expect(page.locator('#pagination a:has-text("1")')).toHaveAttribute(
-    "href",
-    `${basePath}/user/files?filter=avatar&pageNum=1`,
-  );
-  await expect(page.locator('#pagination a:has-text("2")')).toHaveAttribute(
-    "href",
-    `${basePath}/user/files?filter=avatar&pageNum=2`,
-  );
-  await expect(page.locator("#pagination a")).toHaveClass(["", "active"]);
+  const pagination = page.locator("#pagination");
+  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
+  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "2");
+  await expect(pagination.locator(".page-num.delimiter")).toHaveText("/");
+  await expect(pagination.locator(".page-num").nth(3)).toHaveText("2");
+  await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
+  await expect(pagination.locator("span.off")).toHaveText("Next page");
+  const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
+  expect(prevHref).not.toBeNull();
+  const prevUrl = new URL(prevHref ?? "", page.url());
+  expect(prevUrl.pathname).toBe(`${basePath}/user/files`);
+  expect(prevUrl.searchParams.get("filter")).toBe("avatar");
+  expect(prevUrl.searchParams.get("pageNum")).toBe("1");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-page-1";
   });
-  await page.locator('#pagination a:has-text("1")').click();
+  await pagination.locator("a", { hasText: "Previous page" }).click();
   await expect(page).toHaveURL(`${basePath}/user/files?filter=avatar&pageNum=1`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("files-page-1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
+  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  const nextHref = await pagination.locator("a", { hasText: "Next page" }).getAttribute("href");
+  expect(nextHref).not.toBeNull();
+  const nextUrl = new URL(nextHref ?? "", page.url());
+  expect(nextUrl.pathname).toBe(`${basePath}/user/files`);
+  expect(nextUrl.searchParams.get("filter")).toBe("avatar");
+  expect(nextUrl.searchParams.get("pageNum")).toBe("2");
+
+  await pagination.locator('input[name="pageNum"]').click();
+  await pagination.locator('input[name="pageNum"]').fill("9");
+  await pagination.locator('input[name="pageNum"]').press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+
+  const pageTwoUrl = page.url();
+  await pagination.locator('input[name="pageNum"]').fill("1.5");
+  await pagination.locator('input[name="pageNum"]').press("Enter");
+  await expect(page).toHaveURL(pageTwoUrl);
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
   await page.locator('.user-file-search input[name="filter"]').fill("fresh");
@@ -285,6 +313,9 @@ test("current-user files leaves location cell empty when source URL is missing",
 
   await page.goto(`${basePath}/user/files`);
   await expect(page.locator(".attachment-file-detail")).toHaveCount(2);
+  const pagination = page.locator("#pagination");
+  await expect(pagination).not.toHaveClass(/page-navigation-wrap/u);
+  await expect(pagination).toBeEmpty();
 
   const missingLocationCell = page
     .locator(".attachment-file-detail")

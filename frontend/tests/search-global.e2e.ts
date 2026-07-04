@@ -1341,7 +1341,8 @@ async function mockGlobalSearch(page: Page) {
           requestedSearchType: "issue",
           scope: "global",
           searchType: "issue",
-          totalCount: 41,
+          totalCount: 1,
+          totalPages: 3,
         }),
       });
       return;
