@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { FormEvent } from "react";
+import { useRef, type ChangeEvent, type FormEvent } from "react";
+import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationDetail } from "../../../api/types";
@@ -51,6 +52,7 @@ function OrganizationSettingsBody({
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const organizationName = stringField(organization.organizationName, "organization");
   const organizationId = stringField(organization.id, "");
   const logoUrl =
@@ -58,12 +60,20 @@ function OrganizationSettingsBody({
   const updateMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const logoFile = selectedLogoFile(formData.get("logoPath"));
+      const logoAttachmentId = logoFile
+        ? (await uploadTemporaryAttachment(runtimeConfig, csrfToken, logoFile)).id
+        : undefined;
       return updateOrganizationRest(runtimeConfig, csrfToken, organizationName, {
         description: String(formData.get("descr") ?? ""),
+        logoAttachmentId,
         organizationName: String(formData.get("name") ?? ""),
       });
     },
     onSuccess(updatedOrganization) {
+      if (logoInputRef.current) {
+        logoInputRef.current.value = "";
+      }
       const updatedName = stringField(updatedOrganization.organizationName, organizationName);
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(updatedName) });
@@ -74,6 +84,19 @@ function OrganizationSettingsBody({
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     updateMutation.mutate(new FormData(event.currentTarget));
+  }
+
+  function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
+    if (!isImageFileInput(event.currentTarget)) {
+      window.alert(t("project.logo.alert"));
+      event.currentTarget.value = "";
+      return;
+    }
+
+    const form = event.currentTarget.form;
+    if (form) {
+      updateMutation.mutate(new FormData(form));
+    }
   }
 
   return (
@@ -118,10 +141,12 @@ function OrganizationSettingsBody({
                             <i className="yobicon-upload"></i> {t("button.upload")}
                             <input
                               id="logoPath"
+                              ref={logoInputRef}
                               type="file"
                               className="file"
                               name="logoPath"
                               accept="image/*"
+                              onChange={onChangeLogoPath}
                             />
                           </div>
                         </div>
@@ -352,4 +377,26 @@ function stringField(value: unknown, fallback: string) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function selectedLogoFile(value: FormDataEntryValue | null) {
+  if (!(value instanceof File) || !value.name || value.size === 0) {
+    return null;
+  }
+  return value;
+}
+
+function isImageFileInput(input: HTMLInputElement) {
+  const files = Array.from(input.files ?? []);
+  if (files.length > 0) {
+    return files.every((file) => isImageFile(file, file.name));
+  }
+  return /\.(gif|bmp|jpg|jpeg|png)$/i.test(input.value);
+}
+
+function isImageFile(file: File, fallbackName: string) {
+  if (file.type) {
+    return file.type.toLowerCase().startsWith("image/");
+  }
+  return /\.(gif|bmp|jpg|jpeg|png)$/i.test(fallbackName);
 }

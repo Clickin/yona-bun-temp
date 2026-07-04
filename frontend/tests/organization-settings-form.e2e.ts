@@ -211,6 +211,61 @@ test("organization settings form keeps legacy setting.scala.html layout metrics"
   expect(metrics.saveButton.height).toBeGreaterThanOrEqual(30);
 });
 
+test("organization settings logo input validates image files and auto-submits like legacy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const uploadRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  const updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[] =
+    [];
+  await mockOrganizationSettings(page, { updateRequests, uploadRequests });
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+
+  const dialogPromise = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await page.locator("#logoPath").setInputFiles({
+    buffer: Buffer.from("not an image"),
+    mimeType: "text/plain",
+    name: "not-image.txt",
+  });
+  await expect(dialogPromise).resolves.toBe("This is not an image file.");
+  await expect(page.locator("#logoPath")).toHaveValue("");
+  expect(uploadRequests).toEqual([]);
+  expect(updateRequests).toEqual([]);
+
+  const updateResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/organizations/weblabs") &&
+      response.request().method() === "PATCH",
+  );
+  await page.locator("#logoPath").setInputFiles({
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+    mimeType: "image/png",
+    name: "organization-logo.png",
+  });
+  await updateResponsePromise;
+
+  expect(uploadRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(updateRequests).toEqual([
+    {
+      body: {
+        description: "Web labs group",
+        logoAttachmentId: 42,
+        organizationName: "weblabs",
+      },
+      hasCsrfToken: true,
+      method: "PATCH",
+    },
+  ]);
+  await expect(page.locator("#logoPath")).toHaveValue("");
+});
+
 test("organization settings navigation anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
@@ -529,7 +584,13 @@ async function organizationSettingsMetrics(page: Page) {
   });
 }
 
-async function mockOrganizationSettings(page: Page) {
+async function mockOrganizationSettings(
+  page: Page,
+  overrides: Partial<{
+    updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[];
+    uploadRequests: { hasCsrfToken: boolean; method: string }[];
+  }> = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -547,6 +608,41 @@ async function mockOrganizationSettings(page: Page) {
     });
   });
   await page.route("**/api/v1/organizations/weblabs/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        description: "Web labs group",
+        id: 42,
+        logoUrl: "/assets/images/organization_default_logo.png",
+        organizationName: "weblabs",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route("**/files", async (route) => {
+    const request = route.request();
+    overrides.uploadRequests?.push({
+      hasCsrfToken: Boolean(request.headers()["x-csrf-token"]),
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 42,
+        mimeType: "image/png",
+        name: "organization-logo.png",
+        size: 4,
+        url: "/files/42",
+      }),
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs", async (route) => {
+    const request = route.request();
+    overrides.updateRequests?.push({
+      body: request.postDataJSON() as Record<string, unknown>,
+      hasCsrfToken: Boolean(request.headers()["x-csrf-token"]),
+      method: request.method(),
+    });
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
