@@ -61,7 +61,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
   });
-  const hasKeyword = search.keyword.trim().length > 0;
+  const hasKeyword = search.keyword.length > 0;
   const searchQuery = useQuery({
     ...organizationSearchQueryOptions(runtimeConfig, {
       ...search,

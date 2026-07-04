@@ -74,6 +74,18 @@ test("organization search without required query renders legacy badrequest_defau
   expect(searchApi.count).toBe(0);
 });
 
+test("organization search preserves whitespace-only keyword and still calls scoped API", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockOrganizationSearch(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=%20%20&searchType=project`);
+  await expect(page.locator("#searchKeyword")).toHaveValue("  ");
+  await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
+  await expect.poll(() => searchApi.count).toBe(1);
+});
+
 test("organization search category button stays inside the React SPA", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockOrganizationSearch(page);
