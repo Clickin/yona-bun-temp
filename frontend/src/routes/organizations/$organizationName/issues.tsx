@@ -137,8 +137,7 @@ function OrganizationIssuesBody({
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
   const organizationName = stringField(organization.organizationName, issues.organizationName);
-  const logoUrl =
-    stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const legacyPjaxRootAttrs = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement> & {
     "pjax-container": string;
   };
