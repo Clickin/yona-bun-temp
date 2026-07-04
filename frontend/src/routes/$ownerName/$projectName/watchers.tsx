@@ -19,10 +19,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/watchers")({
   component: ProjectWatchersRoute,
 });
 
-const legacyLinkProps = {
-  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-};
 const legacyUserSearch = { daysAgo: undefined, selected: undefined } as unknown as {
   daysAgo: number;
   selected: "issues" | "projects" | "pullRequests";
@@ -87,7 +83,17 @@ function ProjectWatchersBody({ watchers }: { watchers: ProjectWatchersResponse }
                   params={{ user: loginId }}
                   search={legacyUserSearch}
                   className="avatar-wrap mlarge pull-left mr10"
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   <img
                     src={stringField(watcher.avatarUrl, "/assets/images/default-avatar-32.png")}
@@ -155,7 +161,17 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   to="/$user"
                   params={{ user: ownerName }}
                   search={legacyUserSearch}
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {ownerName}
                 </Link>
@@ -165,7 +181,17 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                 <Link
                   to="/$ownerName/$projectName"
                   params={{ ownerName, projectName }}
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {projectName}
                 </Link>
@@ -214,7 +240,17 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   to="/$ownerName/$projectName"
                   params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
                   className="project-origin-name"
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {originalOwnerName} / {originalProjectName}
                 </Link>
@@ -303,7 +339,17 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                 <Link
                   to="/$ownerName/$projectName/setting"
                   params={{ ownerName, projectName }}
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">
@@ -342,7 +388,21 @@ function ProjectMenuItem({
 }) {
   return (
     <li className={className}>
-      <Link to={to} params={params} {...legacyLinkProps}>
+      <Link
+        to={to}
+        params={params}
+        activeOptions={{
+          exact: true,
+          explicitUndefined: true,
+          includeHash: true,
+          includeSearch: true,
+        }}
+        activeProps={{
+          "aria-current": undefined,
+          className: undefined,
+          "data-status": undefined,
+        }}
+      >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
       </Link>

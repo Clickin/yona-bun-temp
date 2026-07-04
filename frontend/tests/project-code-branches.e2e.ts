@@ -128,11 +128,14 @@ test("project code branch links navigate through the SPA router", async ({ page 
 
 test("project code branches route uses Link for internal anchors", () => {
   expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute }");
+  expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/code/$branch"');
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/branches"');
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');
   expect(ROUTE_SOURCE).toContain("params={{ branch: branch.name, ownerName, projectName }}");
   expect(ROUTE_SOURCE).toContain("pullRequestNumber: String(");
+  expect(ROUTE_SOURCE).toContain("activeOptions={{");
+  expect(ROUTE_SOURCE).toContain("includeSearch: true");
   expect(ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(ROUTE_SOURCE).not.toContain("<a");
   expect(ROUTE_SOURCE).not.toContain("href={prefixBasePath");

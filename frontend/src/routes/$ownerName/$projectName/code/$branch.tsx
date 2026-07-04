@@ -13,12 +13,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
   component: ProjectCodeBranchRoute,
 });
 
-const legacyLinkProps = {
-  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-};
-const legacyInactiveSearch = { __legacyInactive: undefined } as unknown as Record<string, never>;
-
 function ProjectCodeBranchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { branch, ownerName, projectName } = Route.useParams();
@@ -89,18 +83,38 @@ function ProjectCodeFolderBody({
           <ul className="nav nav-tabs">
             <li className="active">
               <Link
-                {...legacyLinkProps}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
                 to={projectRoute(ownerName, projectName, "code", encodedBranch)}
-                search={legacyInactiveSearch}
+                search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
               >
                 {t("code.files")}
               </Link>
             </li>
             <li>
               <Link
-                {...legacyLinkProps}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
                 to={projectRoute(ownerName, projectName, "commits", encodedBranch)}
-                search={legacyInactiveSearch}
+                search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
               >
                 {t("code.commits")}
               </Link>
@@ -108,9 +122,19 @@ function ProjectCodeFolderBody({
             {isGit ? (
               <li>
                 <Link
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                   to={projectRoute(ownerName, projectName, "branches")}
-                  search={legacyInactiveSearch}
+                  search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
                 >
                   {t("title.branches")}
                 </Link>
@@ -150,9 +174,19 @@ function ProjectCodeFolderBody({
             </select>
             <div id="breadcrumbs" className="code-breadcrumb-wrap ml10 pull-left">
               <Link
-                {...legacyLinkProps}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
                 to={projectRoute(ownerName, projectName, "code", encodedBranch)}
-                search={legacyInactiveSearch}
+                search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
               >
                 {projectName}
               </Link>
@@ -161,7 +195,17 @@ function ProjectCodeFolderBody({
               <>
                 <div className="pull-right">
                   <Link
-                    {...legacyLinkProps}
+                    activeOptions={{
+                      exact: true,
+                      explicitUndefined: true,
+                      includeHash: true,
+                      includeSearch: true,
+                    }}
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
                     to={projectRoute(ownerName, projectName, "archive", `${encodedBranch}.zip`)}
                     reloadDocument
                     className="ybtn"
@@ -172,7 +216,17 @@ function ProjectCodeFolderBody({
                 {booleanField(project.viewerCanUpdate) ? (
                   <div className="pull-right">
                     <Link
-                      {...legacyLinkProps}
+                      activeOptions={{
+                        exact: true,
+                        explicitUndefined: true,
+                        includeHash: true,
+                        includeSearch: true,
+                      }}
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: undefined,
+                        "data-status": undefined,
+                      }}
                       id="new-file-link"
                       to={projectRoute(ownerName, projectName, "postform")}
                       search={{ path: "", branch: selectedBranch }}
@@ -232,7 +286,17 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
         >
           <div className="span6 filename">
             <Link
-              {...legacyLinkProps}
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               to={projectRoute(
                 ownerName,
                 projectName,
@@ -241,7 +305,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
                 entry.path,
               )}
               hash={entry.kind === "folder" ? `cb-${entry.path}` : undefined}
-              search={legacyInactiveSearch}
+              search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
               className={entry.kind === "folder" ? "folder" : "file"}
               title={entry.name}
               {...(entry.kind === "folder" ? { "data-type": "folder" } : {})}
@@ -254,7 +318,17 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
           <div className="span5 commitMsg">
             <span className="ml5">
               <Link
-                {...legacyLinkProps}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
                 to={projectRoute(ownerName, projectName, "commit", entry.commitShortId)}
                 search={{ branch: selectedBranch }}
               >

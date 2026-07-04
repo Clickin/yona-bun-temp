@@ -20,10 +20,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/branches")({
   component: ProjectBranchesRoute,
 });
 
-const legacyLinkProps = {
-  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-};
 const legacyCommitSearch = { page: undefined } as unknown as { page: number };
 const legacyInactiveSearch = { __legacyInactive: undefined } as unknown as Record<string, never>;
 
@@ -91,7 +87,17 @@ function ProjectBranchesBody({
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
                   params={{ branch: defaultBranch, ownerName, projectName }}
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {t("code.files")}
                 </Link>
@@ -101,7 +107,17 @@ function ProjectBranchesBody({
                   to="/$ownerName/$projectName/commits/$branch"
                   params={{ branch: defaultBranch, ownerName, projectName }}
                   search={legacyCommitSearch}
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {t("code.commits")}
                 </Link>
@@ -111,7 +127,17 @@ function ProjectBranchesBody({
                   to="/$ownerName/$projectName/branches"
                   params={{ ownerName, projectName }}
                   search={legacyInactiveSearch}
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {t("title.branches")}
                 </Link>
@@ -195,7 +221,17 @@ function BranchRow({
         <Link
           to="/$ownerName/$projectName/code/$branch"
           params={{ branch: branch.name, ownerName, projectName }}
-          {...legacyLinkProps}
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
         >
           {branch.shortName}
         </Link>
@@ -208,7 +244,17 @@ function BranchRow({
           to="/$ownerName/$projectName/commits/$branch"
           params={{ branch: branch.name, ownerName, projectName }}
           search={legacyCommitSearch}
-          {...legacyLinkProps}
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           className="commitId"
           title={branch.commitId}
         >
@@ -227,7 +273,17 @@ function BranchRow({
               projectName: branch.pullRequest.projectName,
               pullRequestNumber: String(branch.pullRequest.pullRequestNumber),
             }}
-            {...legacyLinkProps}
+            activeOptions={{
+              exact: true,
+              explicitUndefined: true,
+              includeHash: true,
+              includeSearch: true,
+            }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
             className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
             data-toggle="tooltip"
             data-placement="top"

@@ -141,7 +141,11 @@ test("project code branch folder links navigate with TanStack Router without doc
 
 test("project code branch route source converts internal raw anchors to Link", async () => {
   expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute, Outlet, useRouterState }");
+  expect(ROUTE_SOURCE).toContain("activeOptions={{");
+  expect(ROUTE_SOURCE).toContain("activeProps={{");
   expect(ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(ROUTE_SOURCE).toContain("reloadDocument");
+  expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
   expect(ROUTE_SOURCE).not.toContain("FILE_LIST_ITEM_TEMPLATE");
   expect(ROUTE_SOURCE).not.toContain("tplFileListItem");
   expect(ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
