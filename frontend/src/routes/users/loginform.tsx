@@ -224,7 +224,12 @@ function OAuthProviderLink({ basePath, provider }: { basePath: string; provider:
   }
 
   return (
-    <Link to={`/authenticate/${normalized}`} className="ybtn oauth-login-btn" reloadDocument>
+    <Link
+      to={`/authenticate/${normalized}` as never}
+      href={prefixBasePath(basePath, `/authenticate/${normalized}`)}
+      className="ybtn oauth-login-btn"
+      reloadDocument
+    >
       {normalized === "github" ? (
         <span className="auth-provider-logo">
           <span className="github">
