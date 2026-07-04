@@ -17,6 +17,15 @@ type ProjectCreateSearch = {
   owner?: string;
 };
 
+type ProjectCreateFormRestore = {
+  name?: string;
+  overview?: string;
+  owner?: string;
+  ownerName?: string;
+  projectScope?: string;
+  vcs?: string;
+};
+
 export const Route = createFileRoute("/projectform")({
   component: ProjectCreateRoute,
   validateSearch(search): ProjectCreateSearch {
@@ -50,8 +59,15 @@ function ProjectCreateScreen({
   const router = useRouter();
   const queryClient = useQueryClient();
   const optionsQuery = useQuery(projectCreateFormOptionsQueryOptions(runtimeConfig, { owner }));
+  const restoredForm = optionsQuery.data as
+    | (typeof optionsQuery.data & ProjectCreateFormRestore)
+    | undefined;
   const ownerOptions = optionsQuery.data?.ownerOptions ?? [];
+  const restoredOwner = stringField(restoredForm?.owner ?? restoredForm?.ownerName);
   const selectedOwner =
+    (restoredOwner && ownerOptions.some((option) => option.ownerName === restoredOwner)
+      ? restoredOwner
+      : undefined) ??
     ownerOptions.find((option) => option.selected)?.ownerName ??
     optionsQuery.data?.selectedOwnerName ??
     ownerOptions[0]?.ownerName ??
@@ -69,6 +85,8 @@ function ProjectCreateScreen({
   );
   const [vcs, setVcs] = React.useState("GIT");
   const [projectScope, setProjectScope] = React.useState(defaultProjectScope);
+  const [projectName, setProjectName] = React.useState("");
+  const [overview, setOverview] = React.useState("");
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(() => defaultMenus.has("code"));
   const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(() =>
     defaultMenus.has("pullRequest"),
@@ -81,6 +99,27 @@ function ProjectCreateScreen({
       setOwnerName(selectedOwner);
     }
   }, [ownerName, selectedOwner]);
+  React.useEffect(() => {
+    const restoredProjectName = stringField(restoredForm?.name);
+    if (restoredProjectName !== undefined && !projectName) {
+      setProjectName(restoredProjectName);
+    }
+    const restoredOverview = stringField(restoredForm?.overview);
+    if (restoredOverview !== undefined && !overview) {
+      setOverview(restoredOverview);
+    }
+    const restoredProjectScope = normalizeRestoredProjectScope(restoredForm?.projectScope);
+    if (restoredProjectScope) {
+      setProjectScope(restoredProjectScope);
+    }
+    const restoredVcs = normalizeRestoredVcs(restoredForm?.vcs);
+    if (restoredVcs) {
+      setVcs(restoredVcs);
+      if (restoredVcs === "SUBVERSION") {
+        setMenuPullRequestChecked(true);
+      }
+    }
+  }, [overview, projectName, restoredForm]);
   const createMutation = useMutation({
     mutationFn: async (input: {
       board: boolean;
@@ -197,7 +236,8 @@ function ProjectCreateScreen({
                     name="name"
                     className="text"
                     maxLength={250}
-                    defaultValue=""
+                    value={projectName}
+                    onChange={(event) => setProjectName(event.currentTarget.value)}
                     placeholder={t("project.name.placeholder")}
                   />
                 </dd>
@@ -210,7 +250,8 @@ function ProjectCreateScreen({
                     id="description"
                     name="overview"
                     className="text textarea.span4"
-                    defaultValue=""
+                    value={overview}
+                    onChange={(event) => setOverview(event.currentTarget.value)}
                   />
                 </dd>
               </dl>
@@ -448,9 +489,27 @@ function normalizeDefaultProjectScope(
   return normalized === "PROTECTED" || normalized === "PRIVATE" ? normalized : "PUBLIC";
 }
 
+function normalizeRestoredProjectScope(
+  scope: string | undefined,
+): "PUBLIC" | "PROTECTED" | "PRIVATE" | undefined {
+  const normalized = (scope ?? "").trim().toUpperCase();
+  return normalized === "PUBLIC" || normalized === "PROTECTED" || normalized === "PRIVATE"
+    ? normalized
+    : undefined;
+}
+
+function normalizeRestoredVcs(vcs: string | undefined): "GIT" | "SUBVERSION" | undefined {
+  const normalized = (vcs ?? "").trim().toUpperCase();
+  return normalized === "GIT" || normalized === "SUBVERSION" ? normalized : undefined;
+}
+
 function projectDefaultMenus(menus: string[] | undefined): Set<string> {
   const defaults = menus?.length
     ? menus
     : ["code", "issue", "pullRequest", "review", "milestone", "board"];
   return new Set(defaults);
+}
+
+function stringField(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
 }

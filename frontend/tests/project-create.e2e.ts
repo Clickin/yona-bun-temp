@@ -12,7 +12,7 @@ const EXPECTED_PROJECT_CREATE = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -31,9 +31,9 @@ const EXPECTED_PROJECT_CREATE = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -46,25 +46,25 @@ const EXPECTED_PROJECT_CREATE = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </a>
+        </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
           <i class="yobicon-plus"></i><span class="caret"></span>
-        </a>
+        </button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
           <li><hr class="no-margin"></li>
-          <li><a href="__BASE_PATH__/projectform">Create new project</a></li>
+          <li><a href="__BASE_PATH__/projectform" class="active">Create new project</a></li>
           <li><a href="__BASE_PATH__/organizations/new">New Group</a></li>
         </ul>
       </li>
@@ -250,6 +250,33 @@ test("project create form honors configured default scope and menus", async ({ p
   await expect(page.locator("#menuSettingBoard")).toBeChecked();
 });
 
+test("project create form restores legacy server validation values", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCreate(page, {
+    name: "restored-project",
+    overview: "Restored overview",
+    owner: "weblabs",
+    projectScope: "PROTECTED",
+    selectedOwnerName: "weblabs",
+    vcs: "SUBVERSION",
+  });
+
+  await page.goto(`${basePath}/projectform`);
+
+  await expect(page.locator("#project-owner")).toHaveValue("weblabs");
+  await expect(page.locator("#project-name")).toHaveValue("restored-project");
+  await expect(page.locator("#description")).toHaveValue("Restored overview");
+  await expect(page.locator("#protected")).toBeChecked();
+  await expect(page.locator("#vcs")).toHaveValue("SUBVERSION");
+  await expect(page.locator("#svn")).toBeVisible();
+  await expect(page.locator("label[for='menuSettingPullRequest']")).toBeHidden();
+  await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+  await expect(page.locator("#newProjectForm legend a.ybtn-small")).toHaveAttribute(
+    "href",
+    `${basePath}/_import?owner=weblabs`,
+  );
+});
+
 test("project create import link keeps legacy href and navigates through the SPA", async ({
   page,
 }) => {
@@ -303,7 +330,7 @@ test("project create route source keeps form internal navigation out of raw anch
   ).toEqual([]);
 });
 
-async function mockProjectCreate(page: Page) {
+async function mockProjectCreate(page: Page, formOptions: Record<string, unknown> = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -339,6 +366,7 @@ async function mockProjectCreate(page: Page) {
           },
         ],
         selectedOwnerName: "admin",
+        ...formOptions,
       }),
     });
   });

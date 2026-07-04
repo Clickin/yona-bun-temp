@@ -14,7 +14,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -91,7 +91,8 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
           <p>Mailer has not been configured. Set following properties in conf/application.conf.</p>
           <ul>
             <li>smtp.host</li>
-            <li>smtp.port</li>
+            <li>smtp.user</li>
+            <li>smtp.password</li>
           </ul>
         </div>
         <form id="mailForm" method="post" action="__BASE_PATH__/sites/mail" class="form-horizontal">
@@ -263,6 +264,19 @@ test("site admin mail renders legacy errorMessage alert state", async ({ page })
   ]);
 });
 
+test("site admin mail renders legacy Html error message line breaks", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page, {
+    notConfiguredItems: [],
+    sender: "site-admin@yona.local",
+    sent: false,
+  });
+
+  await page.goto(`${basePath}/sites/mail?errorMessage=common.experimental.description`);
+  await expect(page.locator(".span10 > .alert-error p").nth(1).locator("br")).toHaveCount(1);
+});
+
 test("site admin mail renders legacy update notification badge", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -429,7 +443,7 @@ async function mockAvailableUpdate(page: Page) {
 async function mockMailOptions(
   page: Page,
   response = {
-    notConfiguredItems: ["smtp.host", "smtp.port"],
+    notConfiguredItems: ["smtp.host", "smtp.user", "smtp.password"],
     sender: "noreply@example.com",
     sent: false,
   },

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Fragment } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   sendSiteMailRest,
@@ -172,7 +173,11 @@ function MailBody({
       {errorMessageBySearch || mutation.isError ? (
         <div className="alert alert-error">
           <p>{t("site.mail.fail")}</p>
-          <p>{errorMessageBySearch ? t(errorMessageBySearch) : mutationErrorMessage}</p>
+          <p>
+            {errorMessageBySearch
+              ? renderLegacyHtmlMessage(t(errorMessageBySearch))
+              : mutationErrorMessage}
+          </p>
         </div>
       ) : null}
       {sent ? <div className="alert alert-success">{t("site.mail.sended")}</div> : null}
@@ -264,4 +269,13 @@ function MailBody({
 function LegacyMessage({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
   return <>{t(messageKey)}</>;
+}
+
+function renderLegacyHtmlMessage(message: string) {
+  let offset = 0;
+  return message.split(/(<br\s*\/?>)/i).map((part) => {
+    const key = offset;
+    offset += part.length;
+    return /^<br\s*\/?>$/i.test(part) ? <br key={key} /> : <Fragment key={key}>{part}</Fragment>;
+  });
 }
