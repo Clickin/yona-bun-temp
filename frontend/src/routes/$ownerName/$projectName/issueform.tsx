@@ -131,15 +131,16 @@ function ProjectIssueFormBody({
     menuSetting !== null &&
     booleanField((menuSetting as YonaRecord).milestone);
   const [titleErrors, setTitleErrors] = useState<string[]>([]);
+  const draftSubmitRef = useRef(false);
   const mutation = useMutation({
-    mutationFn: async (form: HTMLFormElement) => {
+    mutationFn: async ({ form, isDraft }: { form: HTMLFormElement; isDraft: boolean }) => {
       const formData = new FormData(form);
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return createIssue(runtimeConfig, csrfToken, {
         assigneeLoginId: stringFormValue(formData, "assigneeLoginId"),
         bodyMarkdown: stringFormValue(formData, "body"),
         dueDate: stringFormValue(formData, "dueDate"),
-        isDraft: stringFormValue(formData, "isDraft") === "true",
+        isDraft,
         labelIds: formData.getAll("labelIds").map((value) => Number(value)),
         milestoneId: Number(stringFormValue(formData, "milestoneId")) || undefined,
         ownerName,
@@ -171,13 +172,15 @@ function ProjectIssueFormBody({
             onSubmit={(event) => {
               event.preventDefault();
               const form = event.currentTarget;
+              const isDraft = draftSubmitRef.current;
+              draftSubmitRef.current = false;
               const title = stringFormValue(new FormData(form), "title");
               if (title.trim() === "") {
                 setTitleErrors([t("validation.required")]);
                 return;
               }
               setTitleErrors([]);
-              mutation.mutate(form);
+              mutation.mutate({ form, isDraft });
             }}
           >
             <div className="row-fluid">
@@ -241,11 +244,8 @@ function ProjectIssueFormBody({
                       id="draft-save-btn"
                       className="ybtn ybtn-watching draft-save-btn"
                       onClick={(event) => {
-                        const form = event.currentTarget.form;
-                        form
-                          ?.querySelector<HTMLInputElement>("#isDraft")
-                          ?.setAttribute("value", "true");
-                        form?.requestSubmit();
+                        draftSubmitRef.current = true;
+                        event.currentTarget.form?.requestSubmit();
                       }}
                     >
                       {t("button.draft.save")}

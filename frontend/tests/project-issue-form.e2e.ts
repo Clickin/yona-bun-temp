@@ -221,6 +221,35 @@ test("project issue create form empty title submit renders legacy required error
   await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
 });
 
+test("project issue create form submits draft intent without mutating legacy hidden input DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueForm(page);
+  const createPayloads: Array<Record<string, unknown>> = [];
+  await page.route("**/api/v1/projects/admin/sample/issues", async (route) => {
+    createPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ issueNumber: 101 }),
+    });
+  });
+
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator('input#isDraft[name="isDraft"]')).toHaveAttribute("value", "false");
+  await page.locator("#title").fill("Normal save");
+  await page.locator("#button-save").click();
+  await expect.poll(() => createPayloads.length).toBe(1);
+  expect(createPayloads[0]?.isDraft).toBe(false);
+
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator('input#isDraft[name="isDraft"]')).toHaveAttribute("value", "false");
+  await page.locator("#title").fill("Draft save");
+  await page.locator("#draft-save-btn").click();
+  await expect.poll(() => createPayloads.length).toBe(2);
+  expect(createPayloads[1]?.isDraft).toBe(true);
+});
+
 test("project issue create form renders legacy new milestone button when no open milestones exist", async ({
   page,
 }) => {
@@ -252,6 +281,8 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).toContain('import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";');
   expect(source).toContain("router.history.back()");
   expect(source).not.toContain("window.history.back()");
+  expect(source).not.toContain('querySelector<HTMLInputElement>("#isDraft")');
+  expect(source).not.toContain('setAttribute("value", "true")');
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain("legacyMarkdownHelpHtml");
