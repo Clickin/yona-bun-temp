@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
@@ -36,12 +37,23 @@ function ProjectCodeRoute() {
 
 function ProjectCodeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  const navigate = useNavigate();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { ownerName, projectName, branch: "", path: "" }),
   );
+
+  useEffect(() => {
+    const selectedBranch = codeQuery.data?.selectedBranch;
+    if (codeQuery.data && !codeQuery.data.noHead && selectedBranch) {
+      void navigate({
+        replace: true,
+        to: `/${ownerName}/${projectName}/code/${encodeURIComponent(selectedBranch)}`,
+      });
+    }
+  }, [codeQuery.data, navigate, ownerName, projectName]);
 
   if (!projectQuery.data || !codeQuery.data) {
     return null;

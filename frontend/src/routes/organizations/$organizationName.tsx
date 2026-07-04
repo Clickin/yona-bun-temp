@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { leaveOrganizationRest, readOrganizationContainerRest } from "../../api/org-project";
+import {
+  cancelEnrollOrganizationRest,
+  enrollOrganizationRest,
+  leaveOrganizationRest,
+  readOrganizationContainerRest,
+} from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { OrganizationContainer, YonaRecord, YonaUserItem } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -88,7 +93,12 @@ function OrganizationHomeBody({
 
   return (
     <>
-      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
+      <OrganizationHeader
+        enrollmentRequested={booleanField(organization.enrollmentRequested)}
+        logoUrl={logoUrl}
+        organizationName={organizationName}
+        viewerCanEnroll={booleanField(organization.viewerCanEnroll)}
+      />
       <OrganizationMenu
         active="home"
         organizationName={organizationName}
@@ -440,12 +450,38 @@ function MemberPanel({
 }
 
 export function OrganizationHeader({
+  enrollmentRequested: initialEnrollmentRequested = false,
   logoUrl,
   organizationName,
+  viewerCanEnroll = false,
 }: {
+  enrollmentRequested?: boolean;
   logoUrl: string;
   organizationName: string;
+  viewerCanEnroll?: boolean;
 }) {
+  const { runtimeConfig } = Route.useRouteContext();
+  const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const [enrollmentRequested, setEnrollmentRequested] = useState(initialEnrollmentRequested);
+  const [enrollmentDropdownOpen, setEnrollmentDropdownOpen] = useState(false);
+  const enrollmentMutation = useMutation({
+    mutationFn: async (nextRequested: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return nextRequested
+        ? enrollOrganizationRest(runtimeConfig, csrfToken, organizationName)
+        : cancelEnrollOrganizationRest(runtimeConfig, csrfToken, organizationName);
+    },
+    onSuccess(response, nextRequested) {
+      setEnrollmentRequested(
+        typeof response.enrollmentRequested === "boolean"
+          ? response.enrollmentRequested
+          : nextRequested,
+      );
+      queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
+    },
+  });
+
   return (
     <div className="project-header-outer" style={{ backgroundImage: `url('${logoUrl}')` }}>
       <div className="project-header-inner">
@@ -482,6 +518,61 @@ export function OrganizationHeader({
               </span>
             </div>
           </div>
+          {viewerCanEnroll ? (
+            <div className="project-util-wrap">
+              <ul className="project-util">
+                <li className={enrollmentDropdownOpen ? "open" : undefined}>
+                  <button
+                    className={`ybtn ybtn-small ${enrollmentRequested ? "ybtn-info " : ""}dropdown-toggle`}
+                    type="button"
+                    data-toggle="dropdown"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setEnrollmentDropdownOpen((current) => !current);
+                    }}
+                  >
+                    <i className="yobicon-addfriend"></i>{" "}
+                    {t("organization.member.enrollment.title")}
+                  </button>
+                  <div className="dropdown-menu flat right title">
+                    <div className="pop-title">
+                      {enrollmentRequested
+                        ? t("organization.you.want.to.be.a.member", { args: [organizationName] })
+                        : t("organization.you.may.want.to.be.a.member", {
+                            args: [organizationName],
+                          })}
+                    </div>
+                    <div className="pop-content">
+                      {enrollmentRequested
+                        ? t("organization.member.enrollment.help.after")
+                        : t("organization.member.enrollment.help.before")}
+                    </div>
+                    <div className="pop-content btn-wrap">
+                      <button
+                        type="button"
+                        className={`ybtn ${enrollmentRequested ? "" : "ybtn-info "}enrollBtn`}
+                        id="enrollBtn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEnrollmentDropdownOpen(false);
+                          enrollmentMutation.mutate(!enrollmentRequested);
+                        }}
+                      >
+                        <i
+                          className={
+                            enrollmentRequested ? "yobicon-removefriend" : "yobicon-addfriend"
+                          }
+                        ></i>{" "}
+                        {enrollmentRequested
+                          ? t("button.cancel.enrollment")
+                          : t("button.new.enrollment")}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

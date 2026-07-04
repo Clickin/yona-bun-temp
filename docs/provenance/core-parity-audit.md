@@ -222,6 +222,11 @@
   `frontend/src/user-files-parity.spec.tsx`,
   `frontend/src/form-submit-boundary.spec.tsx`, and
   `pnpm --dir frontend exec tsc --noEmit`.
+- 2026-07-04 user files backend link continuation:
+  `/user/files` keeps the legacy file preview/name/download/location anchors on
+  backend `/files/:id` and source resource URLs while tab, pagination, and
+  filter navigation remain under TanStack Router. Focused coverage:
+  `frontend/tests/user-files.e2e.ts`.
 - 2026-06-27 user issues SPA navigation continuation:
   `/user/issues` keeps the legacy my-issues side filters, search form, open/closed
   tabs, sort links, and pagination markup, but same-page query changes now use

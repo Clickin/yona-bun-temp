@@ -77,6 +77,26 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   });
 });
 
+test("project code root redirects non-empty repository to default branch folder", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page);
+
+  await page.goto(`${basePath}/admin/sample/code`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/main`);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
+  await expect(page.locator('.listitem[data-path="src"] .filename a')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src#cb-src`,
+  );
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(page, EXPECTED_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)),
+  );
+});
+
 test("project SVN code branch root folder matches legacy code/view.scala.html DOM", async ({
   page,
 }) => {

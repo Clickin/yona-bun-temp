@@ -154,28 +154,33 @@ function UserFileRow({
   attachment: WorkspaceFileItem;
   basePath: string;
 }) {
-  const fileTo = attachment.url as never;
+  const fileTo = attachment.url;
+  const fileHref = prefixBasePath(basePath, attachment.url);
   const previewUrl = prefixBasePath(basePath, attachment.previewUrl);
-  const downloadTo = attachment.downloadUrl as never;
-  const locationHref = attachment.locationHref;
-  const locationLabel = attachment.locationLabel || locationHref;
+  const downloadTo = attachment.downloadUrl;
+  const downloadHref = prefixBasePath(basePath, attachment.downloadUrl);
+  const locationTo = attachment.locationHref ?? "";
+  const locationHref = attachment.locationHref
+    ? prefixBasePath(basePath, attachment.locationHref)
+    : "";
+  const locationLabel = attachment.locationLabel || attachment.locationHref;
 
   return (
     <div className="attachment-file-detail row">
       <div className="file-preview span1">
-        <Link activeProps={{ className: undefined }} to={fileTo} target="_blank">
+        <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
           {attachment.mimeType.startsWith("image/") ? <img src={previewUrl} alt="" /> : null}
         </Link>
       </div>
       <div className="span5 file-name">
-        <Link activeProps={{ className: undefined }} to={fileTo} target="_blank">
+        <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
           <i className={`icon ${fileIconClass(attachment.name)}`}></i>
           {attachment.name}
         </Link>
       </div>
       <div className="span1 file-size">{attachment.sizeLabel}</div>
       <div className="span1 file-download">
-        <Link activeProps={{ className: undefined }} to={downloadTo}>
+        <Link href={downloadHref} reloadDocument to={downloadTo}>
           <button type="button" className="ybtn">
             <i className="yobicon-cloud-download"></i>
           </button>
@@ -184,7 +189,7 @@ function UserFileRow({
       <div className="span2 file-date">{attachment.createdLabel}</div>
       <div className="span4 file-location">
         {locationHref ? (
-          <Link activeProps={{ className: undefined }} to={locationHref as never} target="_blank">
+          <Link href={locationHref} reloadDocument target="_blank" to={locationTo}>
             {locationLabel}
           </Link>
         ) : null}
