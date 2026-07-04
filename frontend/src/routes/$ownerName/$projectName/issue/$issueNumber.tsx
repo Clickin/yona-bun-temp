@@ -1484,9 +1484,13 @@ function IssueChildIssues({
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
+  const parentIssueNumber = stringField(issue.parentIssueNumber, issueNumber);
+  const parentIssueTitle = stringField(issue.parentIssueTitle, issue.title);
+  const parentIssueState = stringField((issue as YonaRecord).parentIssueState, issue.state);
   const childOpenCount = numberField(issue.childOpenCount);
   const childClosedCount = numberField(issue.childClosedCount);
   const totalCount = childOpenCount + childClosedCount;
+  const isCurrentIssueParent = issue.parentIssueId == null;
   const isDirectSharedChildIssue =
     booleanField(issue.viewerIsDirectSharer) && issue.parentIssueId != null;
   const children = issue.childIssues ?? [];
@@ -1509,7 +1513,7 @@ function IssueChildIssues({
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
-  const assigneeLabel = stringField(issue.assigneeLabel);
+  const assigneeLabel = isCurrentIssueParent ? stringField(issue.assigneeLabel) : "";
 
   return (
     <div className="subtasks">
@@ -1518,10 +1522,10 @@ function IssueChildIssues({
           <Link
             {...LEGACY_LINK_PROPS}
             to="/$ownerName/$projectName/issue/$issueNumber"
-            params={{ ownerName, projectName, issueNumber }}
-            className="bold"
+            params={{ ownerName, projectName, issueNumber: parentIssueNumber }}
+            className={isCurrentIssueParent ? "bold" : ""}
           >
-            {`#${issueNumber} ${stringField(issue.title)}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
+            {`#${parentIssueNumber} ${parentIssueTitle}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
           </Link>
           <div className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}>
             <div
@@ -1534,8 +1538,8 @@ function IssueChildIssues({
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {totalCount}{" "}
           </span>
-          <span className={`parent-issue-state ${stringField(issue.state, "open")}`}>
-            {stringField(issue.state, "open") === "closed" ? "Closed" : "Open"}
+          <span className={`parent-issue-state ${parentIssueState}`}>
+            {parentIssueState === "closed" ? "Closed" : "Open"}
           </span>
         </div>
         <hr className="parent-issue-delimeter" />
@@ -1543,6 +1547,7 @@ function IssueChildIssues({
           {visibleChildren.map((child) => (
             <IssueChildIssue
               child={child}
+              currentIssueNumber={issueNumber}
               key={`${stringField(child.state)}-${stringField(child.issueNumber)}`}
               ownerName={ownerName}
               projectName={projectName}
@@ -1556,10 +1561,12 @@ function IssueChildIssues({
 
 function IssueChildIssue({
   child,
+  currentIssueNumber,
   ownerName,
   projectName,
 }: {
   child: IssueDetailChildItem;
+  currentIssueNumber: string;
   ownerName: string;
   projectName: string;
 }) {
@@ -1569,7 +1576,9 @@ function IssueChildIssue({
   const labels = (child.labels ?? []).slice().sort(compareLabels);
 
   return (
-    <div className="issue-item  child-issue">
+    <div
+      className={`issue-item ${issueNumber === currentIssueNumber ? "selected-child" : ""} child-issue`}
+    >
       <span className={`state-label ${state}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
@@ -1606,6 +1615,8 @@ function IssueChildIssue({
           to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}`}
           className="label issue-label list-label active twoColumeModeTarget"
           key={String(label.id)}
+          data-category-id={stringField(label.categoryId)}
+          data-label-id={stringField(label.id)}
           style={{ background: stringField(label.color) }}
         >
           {label.name}

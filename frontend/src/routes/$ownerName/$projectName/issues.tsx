@@ -1934,6 +1934,8 @@ function IssueChildRow({
           activeProps={{ className: undefined }}
           to={childLabelRoutePath(String(label.id))}
           className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={label.categoryId ?? ""}
+          data-label-id={label.id}
           key={String(label.id)}
           onClick={(event) =>
             handleChildLabelClick(event, String(label.id), childLabelHref(String(label.id)))

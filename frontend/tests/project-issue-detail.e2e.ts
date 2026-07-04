@@ -1914,6 +1914,65 @@ test("project issue detail hides subtasks for directly shared child issue like l
   await expect(page.locator(".span-left-pane > .subtasks")).not.toContainText("Hidden open child");
 });
 
+test("project issue detail renders parent row and selected child on child issue detail", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    __issueNumber: 12,
+    childClosedCount: 1,
+    childIssues: [
+      {
+        assigneeLabel: "QA One",
+        commentCount: 0,
+        createdLabel: "Jul 3, 2026",
+        issueNumber: 12,
+        labels: [
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "type",
+            color: "#51aacc",
+            id: "8",
+            name: "bug",
+          },
+        ],
+        state: "open",
+        title: "Open child",
+        voterCount: 0,
+      },
+      {
+        assigneeLabel: "",
+        commentCount: 0,
+        createdLabel: "Jul 4, 2026",
+        issueNumber: 13,
+        labels: [],
+        state: "closed",
+        title: "Closed child",
+        voterCount: 0,
+      },
+    ],
+    childOpenCount: 1,
+    issueNumber: 12,
+    parentIssueId: 42,
+    parentIssueNumber: 11,
+    parentIssueState: "closed",
+    parentIssueTitle: "Parent issue",
+    title: "Open child",
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/12`);
+
+  const expected =
+    `<div class="subtasks"><div class="child-issues"><div class="issue-item parent-issue"><a href="__BASE_PATH__/admin/sample/issue/11">#11 Parent issue</a><div class="upload-progress red-outline"><div class="bar red" style="width:50%" title="Subtask"></div></div><span class=" ">1/2 </span><span class="parent-issue-state closed">Closed</span></div><hr class="parent-issue-delimeter"><div class="child-issues"><div class="issue-item selected-child child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/12"><span class="item-name"><span class="subtask-number">#12</span><span>Open child</span><span> - QA One</span></span></a><span class="font12 no-border-at-child"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" style="background:rgb(81,170,204)">bug</a><span class="child-issue-date" title="Jul 3, 2026">Jul 3, 2026</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Closed child</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="Jul 4, 2026">Jul 4, 2026</span></div></div></div></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, ".span-left-pane > .subtasks")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, { viewerCanComment: false });

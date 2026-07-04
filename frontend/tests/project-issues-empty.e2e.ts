@@ -1769,6 +1769,8 @@ test("project issue list child rows match legacy partial_view_childIssueListOnly
     "href",
     `${basePath}/admin/sample/issues?state=open&labelIds=8`,
   );
+  await expect(childLabel).toHaveAttribute("data-category-id", "3");
+  await expect(childLabel).toHaveAttribute("data-label-id", "8");
   await expect(childLabel).toHaveAttribute("style", "background: rgb(81, 170, 204);");
   await expect(childLabel).toHaveText("bug");
   await expect(page.locator(".child-issue-list .issue-item.child-issue").last()).toHaveClass(
