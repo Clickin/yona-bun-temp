@@ -316,7 +316,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     form.requestSubmit();
   });
   await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("board");
-  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBeNull();
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-project-search");

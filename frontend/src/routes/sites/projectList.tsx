@@ -16,14 +16,14 @@ import { SiteLayoutShell } from "../-home-route-screen";
 
 type ProjectListSearch = {
   filter: string;
-  pageNum: number;
+  pageNum?: number;
 };
 
 export const Route = createFileRoute("/sites/projectList")({
   component: SiteProjectListRoute,
   validateSearch: (search: Record<string, unknown>): ProjectListSearch => ({
     filter: typeof search.filter === "string" ? search.filter : "",
-    pageNum: search.pageNum ? Number(search.pageNum) || 1 : 1,
+    pageNum: search.pageNum ? Number(search.pageNum) || 1 : undefined,
   }),
 });
 
@@ -48,7 +48,8 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   const router = useRouter();
   const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
-  const query = useQuery(siteProjectsQueryOptions(runtimeConfig, { filter, page: pageNum }));
+  const currentPage = pageNum ?? 1;
+  const query = useQuery(siteProjectsQueryOptions(runtimeConfig, { filter, page: currentPage }));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
@@ -92,7 +93,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                       queryKey: apiQueryKeys.siteAdmin.projectsBase(),
                     });
                     void router.navigate({
-                      search: { filter: nextFilter, pageNum: 1 },
+                      search: { filter: nextFilter, pageNum: undefined },
                       to: "/sites/projectList",
                     });
                   }}
@@ -146,7 +147,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               </ul>
 
               <ProjectListPagination
-                currentPage={query.data?.page ?? pageNum}
+                currentPage={query.data?.page ?? currentPage}
                 filter={filter}
                 totalPages={query.data?.totalPages ?? 0}
               />
