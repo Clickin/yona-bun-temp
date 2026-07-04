@@ -834,7 +834,11 @@ function ProjectSettingMenu({
           {...LEGACY_LINK_PROPS}
           to="/$ownerName/$projectName/issue/labelsform"
           params={{ ownerName, projectName }}
-          search={{ __legacyInactive: undefined } as never}
+          hash="labelsform-active-sentinel"
+          mask={{
+            to: "/$ownerName/$projectName/issue/labelsform",
+            params: { ownerName, projectName },
+          }}
         >
           {t("issue.label")}
         </Link>

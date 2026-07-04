@@ -127,6 +127,7 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
     "utf8",
   );
   expect(routeSource).not.toMatch(/<a\b/);
+  expect(routeSource).not.toContain("__legacyInactive");
   expect(routeSource).not.toContain("LEGACY_INACTIVE_SEARCH");
   expect(routeSource).not.toContain("useLinkProps");
   expect(routeSource).not.toContain('createElement("a"');
@@ -171,6 +172,14 @@ test("project labels internal links preserve legacy hrefs with SPA transition", 
     `${basePath}/admin/sample/deleteform`,
     `${basePath}/admin/sample/changeVCS`,
   ]);
+  const activeIssueLabelTab = page.locator("#subMenuIssueLabel.active > a");
+  await expect(activeIssueLabelTab).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
+  await expect(activeIssueLabelTab).not.toHaveAttribute("class", /.+/);
+  await expect(activeIssueLabelTab).not.toHaveAttribute("aria-current", /.+/);
+  await expect(activeIssueLabelTab).not.toHaveAttribute("data-status", /.+/);
   await expect(page.locator(".project-header-outer a[aria-current]")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer a[aria-current]")).toHaveCount(0);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a[aria-current]")).toHaveCount(0);
