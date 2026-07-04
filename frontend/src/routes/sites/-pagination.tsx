@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 
 export function SitePagination({
   basePath,
@@ -11,6 +11,8 @@ export function SitePagination({
   pageHref: (pageNum: number) => string;
   totalPages: number;
 }) {
+  const router = useRouter();
+
   if (totalPages <= 0) {
     return <div id="pagination"></div>;
   }
@@ -37,13 +39,29 @@ export function SitePagination({
         <li className="page-num">
           <input
             className="input-mini nospinner"
+            defaultValue={currentPage}
+            key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
             name="pageNum"
+            onClick={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") {
+                return;
+              }
+
+              event.preventDefault();
+              const inputValue = event.currentTarget.value;
+              if (!/^[0-9]+$/.test(inputValue)) {
+                event.currentTarget.value = String(currentPage);
+                return;
+              }
+              const nextPage = Math.min(Math.max(Number(inputValue), 1), totalPages);
+              event.currentTarget.value = String(nextPage);
+              router.history.push(stripBasePath(basePath, pageHref(nextPage)));
+            }}
             pattern="[0-9]*"
-            readOnly
             type="number"
-            value={currentPage}
           />
         </li>
         <li className="page-num delimiter">/</li>

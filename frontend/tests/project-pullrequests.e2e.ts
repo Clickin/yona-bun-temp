@@ -447,6 +447,29 @@ test("project pull request multi-page list matches legacy pagination DOM", async
   );
 });
 
+test("project pull request pagination input follows legacy editable behavior", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=pages&pageNum=1`);
+  const pageNumInput = page.locator('#pagination input[name="pageNum"]');
+  await expect(pageNumInput).toHaveValue("1");
+  const initialPaginationUrl = page.url();
+
+  await markPullRequestSpaSession(page);
+  await pageNumInput.fill("1.5");
+  await pageNumInput.press("Enter");
+  await expect(pageNumInput).toHaveValue("1");
+  await expect(page).toHaveURL(initialPaginationUrl);
+  await expectPullRequestSpaSession(page);
+
+  await pageNumInput.fill("9");
+  await pageNumInput.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect(pageNumInput).toHaveValue("2");
+  await expectPullRequestSpaSession(page);
+});
+
 function expectedClosedPullRequestsEmpty(basePath: string) {
   return expectedProjectPullRequestsEmpty(basePath)
     .replace(
@@ -599,7 +622,7 @@ function expectedPagedPullRequests(basePath: string) {
     .replace('<span class="num-badge">1</span>', '<span class="num-badge">2</span>')
     .replace(
       '<div id="pagination"></div>',
-      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" readonly="" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
+      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
         basePath +
         '/admin/sample/pullRequests?filter=pages&amp;pageNum=2"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
     );
@@ -679,6 +702,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
     const category =
       queryCategory === "closed" || queryCategory === "sent" ? queryCategory : "open";
     const filter = url.searchParams.get("filter") ?? "";
+    const pageNum = Math.min(Math.max(Number(url.searchParams.get("pageNum")) || 1, 1), 2);
     const items =
       filter === "row" && category === "open"
         ? [
@@ -820,7 +844,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
         currentUserId: 1,
         items,
         openCount: filter === "pages" ? 2 : items.length,
-        pageNum: 1,
+        pageNum,
         pageSize: filter === "pages" ? 1 : 15,
         recentlyPushedBranches,
         sentCount: 0,
