@@ -14,7 +14,7 @@ const EXPECTED_POST_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -115,7 +115,7 @@ const EXPECTED_POST_LIST_SCREEN = `
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/postList?pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/postList?pageNum=2" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -201,7 +201,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=2`);
-  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -249,7 +249,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
-  await expect(previousPageLink).not.toHaveAttribute("pjax-page", "");
+  await expect(previousPageLink).toHaveAttribute("pjax-page", "");
   await previousPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   expect(
@@ -366,7 +366,7 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).not.toContain("to={item.href}");
   expect(source).not.toContain("prefixBasePath");
   expect(source).not.toContain("<a href={");
-  expect(source).not.toContain('"pjax-page": ""');
+  expect(source).toContain('pjax-page=""');
   expect(source).toContain('to="/sites/postList"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/post/$postNumber"');
@@ -607,6 +607,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "data-toggle",
         "data-placement",
+        "pjax-page",
         "role",
       ];
       const attrs = stableAttributes
@@ -662,6 +663,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         "title",
         "data-toggle",
         "data-placement",
+        "pjax-page",
         "role",
       ];
       const attrs = stableAttributes

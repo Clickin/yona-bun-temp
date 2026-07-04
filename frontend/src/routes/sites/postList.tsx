@@ -102,6 +102,7 @@ function PostListPagination({
           {hasPrev ? (
             <Link
               activeProps={{ className: undefined }}
+              pjax-page=""
               search={{ pageNum: currentPage - 1 }}
               to="/sites/postList"
             >
@@ -153,6 +154,7 @@ function PostListPagination({
           {hasNext ? (
             <Link
               activeProps={{ className: undefined }}
+              pjax-page=""
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
             >
