@@ -343,6 +343,7 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyInertDropdownAnchor");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyTitlePrefixAnchor");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("ProjectIssuesRouteLink");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"pjax-page": ""');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("pjax-page");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to={excelHref("", ownerName, projectName');

@@ -32,18 +32,6 @@ import {
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
-function ProjectIssuesRouteLink({
-  children,
-  to,
-  ...props
-}: HTMLAttributes<HTMLAnchorElement> & { children: ReactNode; to: string }) {
-  return (
-    <Link activeProps={{ className: undefined }} {...props} to={to as never}>
-      {children}
-    </Link>
-  );
-}
-
 type ProjectIssuesSearch = {
   assigneeId: string;
   authorId: string;
@@ -1643,13 +1631,14 @@ function ProjectIssueItem({
           </div>
           <div className="infos">
             {issue.authorLabel ? (
-              <ProjectIssuesRouteLink
+              <Link
+                activeProps={{ className: undefined }}
                 to={authorTo}
                 className="infos-item infos-link-item"
                 title={authorLoginId}
               >
                 {issue.authorLabel}
-              </ProjectIssuesRouteLink>
+              </Link>
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
@@ -1664,12 +1653,13 @@ function ProjectIssueItem({
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {showMilestone && issue.milestoneId ? (
               <span className="mileston-tag">
-                <ProjectIssuesRouteLink
+                <Link
+                  activeProps={{ className: undefined }}
                   to={`/${ownerName}/${projectName}/milestone/${issue.milestoneId}` as never}
                   title={t("milestone")}
                 >
                   {issue.milestoneTitle}
-                </ProjectIssuesRouteLink>
+                </Link>
               </span>
             ) : null}
             {issue.commentCount > 0 || issue.voterCount > 0 || (issue.sharerCount ?? 0) > 0 ? (
@@ -1750,7 +1740,8 @@ function ProjectIssueItem({
       <div className="span3 hide-in-mobile">
         <div className="mt5 pull-right">
           {assigneeLoginId ? (
-            <ProjectIssuesRouteLink
+            <Link
+              activeProps={{ className: undefined }}
               to={assigneeTo}
               className="avatar-wrap assinee"
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
@@ -1761,7 +1752,7 @@ function ProjectIssueItem({
                 height="32"
                 alt={issue.assigneeLabel}
               />
-            </ProjectIssuesRouteLink>
+            </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
