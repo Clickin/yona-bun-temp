@@ -143,6 +143,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   runtimeConfig.basePath,
                   valid ? `/user/email/setAsMain/${id}` : `/user/email/sendValidationEmail/${id}`,
                 );
+                const requestHref = { href: requestUri };
                 return (
                   <tr key={id || stringValue(row.emailAddress)}>
                     <td>
@@ -171,7 +172,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                         <button
                           type="button"
                           data-request-method="put"
-                          data-request-uri={requestUri}
+                          {...requestHref}
                           className="ybtn ybtn-small"
                           style={{ width: "150px" }}
                           onClick={() => setMainMutation.mutate(id)}
@@ -182,7 +183,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                         <button
                           type="button"
                           data-request-method="post"
-                          data-request-uri={requestUri}
+                          {...requestHref}
                           className="ybtn ybtn-small"
                           style={{ width: "150px" }}
                           onClick={() => sendValidationMutation.mutate(id)}

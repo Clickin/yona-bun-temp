@@ -9,7 +9,7 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -50,8 +50,8 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
     <table class="table mt20">
       <tbody>
         <tr><td><img src="/legacy-assets/images/default-avatar-128.png" width="40" height="40"><strong class="ml10">admin@example.com</strong><span class="label-head vmiddle ml10">Primary email address</span></td><td></td></tr>
-        <tr><td><img src="/legacy-assets/images/sub-avatar-valid.png" width="40" height="40"><span class="ml10">valid@example.com</span></td><td><button type="button" data-request-method="delete" data-request-uri="__BASE_PATH__/user/email/delete/11" class="ybtn ybtn-small ybtn-danger">Delete</button><button type="button" data-request-method="put" data-request-uri="__BASE_PATH__/user/email/setAsMain/11" class="ybtn ybtn-small">Set as primary email address.</button></td></tr>
-        <tr><td><img src="/legacy-assets/images/sub-avatar-invalid.png" width="40" height="40"><span class="ml10">pending@example.com</span></td><td><button type="button" data-request-method="delete" data-request-uri="__BASE_PATH__/user/email/delete/12" class="ybtn ybtn-small ybtn-danger">Delete</button><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/user/email/sendValidationEmail/12" class="ybtn ybtn-small"><i class="yobicon-error2 orange-txt mr5"></i>Send a validation email.</button></td></tr>
+        <tr><td><img src="/legacy-assets/images/sub-avatar-valid.png" width="40" height="40"><span class="ml10">valid@example.com</span></td><td><button type="button" data-request-method="delete" data-request-uri="__BASE_PATH__/user/email/delete/11" class="ybtn ybtn-small ybtn-danger">Delete</button><button type="button" data-request-method="put" href="__BASE_PATH__/user/email/setAsMain/11" class="ybtn ybtn-small">Set as primary email address.</button></td></tr>
+        <tr><td><img src="/legacy-assets/images/sub-avatar-invalid.png" width="40" height="40"><span class="ml10">pending@example.com</span></td><td><button type="button" data-request-method="delete" data-request-uri="__BASE_PATH__/user/email/delete/12" class="ybtn ybtn-small ybtn-danger">Delete</button><button type="button" data-request-method="post" href="__BASE_PATH__/user/email/sendValidationEmail/12" class="ybtn ybtn-small"><i class="yobicon-error2 orange-txt mr5"></i>Send a validation email.</button></td></tr>
       </tbody>
     </table>
   </div>
@@ -130,15 +130,18 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     "Email settings",
   );
 
-  const setMainButton = page.locator('button[data-request-uri$="/user/email/setAsMain/11"]');
-  const sendValidationButton = page.locator(
-    'button[data-request-uri$="/user/email/sendValidationEmail/12"]',
-  );
+  const setMainButton = page.locator('button[href$="/user/email/setAsMain/11"]');
+  const sendValidationButton = page.locator('button[href$="/user/email/sendValidationEmail/12"]');
   await expect(setMainButton).toHaveAttribute("data-request-method", "put");
-  await expect(setMainButton).not.toHaveAttribute("href", /.*/u);
+  await expect(setMainButton).not.toHaveAttribute("data-request-uri", /.*/u);
+  await expect(setMainButton).toHaveAttribute("href", `${basePath}/user/email/setAsMain/11`);
   await expect(setMainButton).toHaveText("Set as primary email address.");
   await expect(sendValidationButton).toHaveAttribute("data-request-method", "post");
-  await expect(sendValidationButton).not.toHaveAttribute("href", /.*/u);
+  await expect(sendValidationButton).not.toHaveAttribute("data-request-uri", /.*/u);
+  await expect(sendValidationButton).toHaveAttribute(
+    "href",
+    `${basePath}/user/email/sendValidationEmail/12`,
+  );
   await expect(sendValidationButton).toContainText("Send a validation email.");
   const setMainRequest = page.waitForRequest("**/api/v1/workspace/emails/11/main");
   await setMainButton.click();
@@ -180,8 +183,8 @@ test("current-user email settings tab menu uses direct typed router links", () =
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("{...legacyHref}");
-  expect(source).toContain("data-request-uri={requestUri}");
-  expect(source).not.toContain("href={requestUri}");
+  expect(source).toContain("const requestHref = { href: requestUri };");
+  expect(source).not.toContain("data-request-uri={requestUri}");
 });
 
 async function mockAuthenticatedSession(page: Page) {
