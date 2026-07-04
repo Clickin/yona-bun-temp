@@ -1256,12 +1256,11 @@ test("project board detail owns comment hash links through router", async ({ pag
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
-  expect(routeSource).toContain("type CommentHashLinkProps = {");
-  expect(routeSource).toContain(
-    "function CommentHashLink({ commentId, ...props }: CommentHashLinkProps)",
-  );
+  expect(routeSource).not.toContain("CommentHashLink");
+  expect(routeSource).not.toContain("CommentHashLinkProps");
+  expect(routeSource.split("hash={`comment-${commentId}`}")).toHaveLength(4);
   const hashLinkSource = routeSource.slice(
-    routeSource.indexOf("type CommentHashLinkProps"),
+    routeSource.indexOf("function PostCommentRow"),
     routeSource.indexOf("function PostCommentUpdateForm"),
   );
   expect(hashLinkSource).toContain("<Link");

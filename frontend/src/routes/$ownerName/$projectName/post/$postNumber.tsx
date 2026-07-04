@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, type CSSProperties, type FormEvent, type ReactNode, useState } from "react";
+import { Fragment, type FormEvent, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -879,16 +879,26 @@ function PostCommentRow({
             </Link>
           </span>
           <span className="ago-date">
-            <CommentHashLink commentId={commentId} className="ago" title={comment.createdLabel}>
+            <Link
+              to="."
+              hash={`comment-${commentId}`}
+              activeOptions={{ includeHash: true }}
+              activeProps={{ className: undefined }}
+              className="ago"
+              title={comment.createdLabel}
+            >
               {comment.createdLabel}
-            </CommentHashLink>
-            <CommentHashLink
-              commentId={commentId}
+            </Link>
+            <Link
+              to="."
+              hash={`comment-${commentId}`}
+              activeOptions={{ includeHash: true }}
+              activeProps={{ className: undefined }}
               className="share-link"
               style={{ display: "none" }}
             >
               [Link]
-            </CommentHashLink>
+            </Link>
           </span>
           <span className="act-row pull-right">
             {canUpdate ? (
@@ -967,26 +977,6 @@ function PostCommentRow({
         projectName={projectName}
       />
     </li>
-  );
-}
-
-type CommentHashLinkProps = {
-  children: ReactNode;
-  className?: string;
-  commentId: string;
-  style?: CSSProperties;
-  title?: string;
-};
-
-function CommentHashLink({ commentId, ...props }: CommentHashLinkProps) {
-  return (
-    <Link
-      {...props}
-      to="."
-      hash={`comment-${commentId}`}
-      activeOptions={{ includeHash: true }}
-      activeProps={{ className: undefined }}
-    />
   );
 }
 
@@ -1228,9 +1218,16 @@ function PostChildComment({
           >
             <strong>{authorLabel}</strong>
           </Link>{" "}
-          <CommentHashLink commentId={commentId} className="ago" title={comment.createdLabel}>
+          <Link
+            to="."
+            hash={`comment-${commentId}`}
+            activeOptions={{ includeHash: true }}
+            activeProps={{ className: undefined }}
+            className="ago"
+            title={comment.createdLabel}
+          >
             {comment.createdLabel}
-          </CommentHashLink>
+          </Link>
           {canDelete ? (
             <button
               type="button"
