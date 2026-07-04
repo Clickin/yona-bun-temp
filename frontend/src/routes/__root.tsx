@@ -380,15 +380,10 @@ function RootResetShell() {
       }
 
       source.dataset.yobiNotified = "true";
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.tabIndex = -1;
-      toast.innerHTML = `<div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div>`;
-      const messageNode = toast.querySelector(".msg");
-      if (messageNode) {
-        messageNode.textContent = message;
-      }
-      container.append(toast);
+      setRootToast({
+        key: `notify:${source.dataset.message ?? source.textContent ?? ""}`,
+        message,
+      });
       source.remove();
     });
   }

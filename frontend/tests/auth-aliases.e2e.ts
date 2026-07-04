@@ -120,6 +120,9 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
   expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/logout")}');
   expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}');
   expect(source).toContain('href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}');
+  expect(source).toContain("<RootYobiToast");
+  expect(source).toContain("key: `notify:${source.dataset.message");
+  expect(source).not.toContain("toast.innerHTML");
   expect(source).toContain('href="https://github.com/nforge/yobi/issues?state=open"');
   expect(source).toContain('href="http://navercorp.com/"');
   expect(source).toContain('href="https://developers.naver.com/d2/"');

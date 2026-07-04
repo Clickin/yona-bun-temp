@@ -448,6 +448,34 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   });
 });
 
+test("root notify scanner renders legacy yobi toast without parsing message html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await page.evaluate(() => {
+    const source = document.createElement("div");
+    source.dataset.toggle = "yobi-notify";
+    source.dataset.message = "Saved <b>markup</b>";
+    document.body.append(source);
+    document.dispatchEvent(new Event("yobi:notify-scan"));
+  });
+
+  await expect(page.locator("#yobiToasts .toast")).toHaveCount(1);
+  await expect(page.locator("#yobiToasts .btn-dismiss button")).toHaveText("×");
+  await expect(page.locator("#yobiToasts .toast .center-text .v")).toHaveCount(1);
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("Saved <b>markup</b>");
+  expect(await page.locator("#yobiToasts .toast .msg").innerHTML()).toBe(
+    "Saved &lt;b&gt;markup&lt;/b&gt;",
+  );
+
+  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
+  expect(rootSource).toContain("<RootYobiToast");
+  expect(rootSource).toContain("key: `notify:${source.dataset.message");
+  expect(rootSource).not.toContain("toast.innerHTML");
+});
+
 test("root select2 template scripts match legacy common/select2.scala.html without html injection", async ({
   page,
 }) => {
