@@ -54,6 +54,46 @@ test("project search matches legacy search/result.scala.html project empty revie
   );
 });
 
+test("project issue search renders legacy partial_issues.scala.html scoped result row", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page);
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
+
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues1");
+  await expect(page.locator("#searchInnerForm input[name='searchType']")).toHaveValue("issue");
+  await expect(page.locator("#searchKeyword")).toHaveValue("sample");
+  await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Issues");
+  await expect(page.locator(".search-result-title strong")).toHaveText("1");
+
+  const row = page.locator(".search-result-wrap .search-list-item");
+  await expect(row).toHaveCount(1);
+  await expect(row.locator(".title-wrap .post-id")).toHaveText("#11");
+  await expect(row.locator(".title-wrap a.title")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/11`,
+  );
+  await expect(row.locator(".title-wrap a.title")).toHaveText("Fix sample issue");
+  await expect(row.locator(".title-wrap a.title strong.keyword")).toHaveText("sample");
+  await expect(row.locator(".search-content-body")).toHaveText("Sample body .....");
+  await expect(row.locator(".search-content-body strong.keyword")).toHaveText("Sample");
+  await expect(row.locator(".search-meta-info .project-link.meta-item")).toHaveCount(0);
+
+  const author = row.locator(".search-meta-info a.meta-item");
+  await expect(author).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(author).toHaveAttribute("data-toggle", "tooltip");
+  await expect(author).toHaveAttribute("data-placement", "top");
+  await expect(author).toHaveAttribute("title", "dev");
+  await expect(author).toHaveText("Dev Member");
+  await expect(row.locator(".search-meta-info span.meta-item")).toHaveAttribute(
+    "title",
+    "Jul 1, 2026",
+  );
+  await expect(page.locator(".search-result-wrap #pagination")).toBeEmpty();
+});
+
 test("project search without required query renders legacy badrequest_default.scala.html shell", async ({
   page,
 }) => {
@@ -148,6 +188,7 @@ async function mockProjectSearch(page: Page) {
     const keyword = url.searchParams.get("keyword") ?? "";
     const searchType = url.searchParams.get("searchType") ?? "review";
     apiCalls.keywords.push(keyword);
+    const hasIssueResult = keyword === "sample" && searchType === "issue";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -158,7 +199,7 @@ async function mockProjectSearch(page: Page) {
         },
         counts: {
           issueComments: 0,
-          issues: 0,
+          issues: hasIssueResult ? 1 : 0,
           milestones: 0,
           postComments: 0,
           posts: 0,
@@ -166,19 +207,43 @@ async function mockProjectSearch(page: Page) {
           reviews: 0,
           users: 0,
         },
-        items: [],
+        items: hasIssueResult
+          ? [
+              {
+                authorLabel: "Dev Member",
+                authorLoginId: "dev",
+                createdLabel: "Jul 1, 2026",
+                href: `${basePathFromRequest(route.request().url())}/admin/sample/issue/11`,
+                id: "issue-11",
+                number: "11",
+                ownerName: "admin",
+                projectName: "sample",
+                snippets: [{ highlights: [], text: "Sample body", truncated: true }],
+                state: "open",
+                title: "Fix sample issue",
+                type: "issue",
+                updatedLabel: "Jul 1, 2026",
+              },
+            ]
+          : [],
         keyword,
         pageNum: 1,
         pageSize: 20,
         requestedSearchType: searchType,
         scope: "project",
         searchType,
-        totalCount: 0,
+        totalCount: hasIssueResult ? 1 : 0,
       }),
     });
   });
 
   return apiCalls;
+}
+
+function basePathFromRequest(requestUrl: string) {
+  const url = new URL(requestUrl);
+  const apiPathStart = url.pathname.indexOf("/api/v1/");
+  return apiPathStart > 0 ? url.pathname.slice(0, apiPathStart) : "";
 }
 
 function projectContainer() {
