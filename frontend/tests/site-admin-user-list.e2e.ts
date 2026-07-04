@@ -131,11 +131,11 @@ const EXPECTED_USER_LIST_SCREEN = `
         </ul>
         <div id="pagination" class="page-navigation-wrap">
           <ul class="page-nums">
-            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li>
+            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/userList?pageNum=2&amp;state=ACTIVE"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/userList?pageNum=2&amp;state=ACTIVE"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
         <div id="alertDeletionWrap" class="modal fade">
@@ -251,7 +251,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  const nextPageLink = page.locator("#pagination a", { hasText: "NEXT" });
+  const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute(
     "href",
     `${basePath}/sites/userList?pageNum=2&state=ACTIVE`,
@@ -265,6 +265,10 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain('"pjax-page": ""');
   expect(routeSource).not.toContain("<a href={userPath}");
+  expect(routeSource).not.toContain("<span>PREV</span>");
+  expect(routeSource).not.toContain("<span>NEXT</span>");
+  expect(routeSource).toContain('t("button.prevPage")');
+  expect(routeSource).toContain('t("button.nextPage")');
   expect(routeSource).not.toMatch(
     /<a[\s\S]*?(?:accountToggleBtn|data-request-method|data-request-uri)/u,
   );
@@ -379,7 +383,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     "href",
     `${basePath}/sites/userList?query=door&state=ACTIVE`,
   );
-  const nextPageWithQueryLink = page.locator("#pagination a", { hasText: "NEXT" });
+  const nextPageWithQueryLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageWithQueryLink).toHaveAttribute(
     "href",
     `${basePath}/sites/userList?pageNum=2&query=door&state=LOCKED`,

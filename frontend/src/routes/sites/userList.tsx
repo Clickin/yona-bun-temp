@@ -333,6 +333,7 @@ function UserListPagination({
   totalPages: number;
 }) {
   const router = useRouter();
+  const { t } = useLegacyMessages();
 
   if (totalPages <= 0) {
     return <div id="pagination"></div>;
@@ -346,6 +347,8 @@ function UserListPagination({
     state,
   });
   const digitOnly = /^[0-9]+$/u;
+  const prevPageLabel = t("button.prevPage");
+  const nextPageLabel = t("button.nextPage");
 
   return (
     <div id="pagination" className="page-navigation-wrap">
@@ -358,12 +361,12 @@ function UserListPagination({
               to="/sites/userList"
             >
               <i className="ico btn-pg-prev"></i>
-              <span>PREV</span>
+              <span>{prevPageLabel}</span>
             </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">PREV</span>
+              <span className="off">{prevPageLabel}</span>
             </>
           )}
         </li>
@@ -412,12 +415,12 @@ function UserListPagination({
               search={search(currentPage + 1)}
               to="/sites/userList"
             >
-              <span>NEXT</span>
+              <span>{nextPageLabel}</span>
               <i className="ico btn-pg-next"></i>
             </Link>
           ) : (
             <>
-              <span className="off">NEXT</span>
+              <span className="off">{nextPageLabel}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
