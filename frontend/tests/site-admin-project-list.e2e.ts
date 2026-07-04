@@ -116,11 +116,11 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
         </ul>
         <div id="pagination" class="page-navigation-wrap">
           <ul class="page-nums">
-            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li>
+            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
         <div id="alertDeletionWrap" class="modal fade">
@@ -214,7 +214,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  const nextPageLink = page.locator("#pagination a", { hasText: "NEXT" });
+  const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute(
     "href",
     `${basePath}/sites/projectList?filter=road&pageNum=2`,
@@ -276,7 +276,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
 
   await page.goto(`${basePath}/sites/projectList?filter=road&pageNum=2`);
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
-  const prevPageLink = page.locator("#pagination a", { hasText: "PREV" });
+  const prevPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(prevPageLink).toHaveAttribute(
     "href",
     `${basePath}/sites/projectList?filter=road&pageNum=1`,
