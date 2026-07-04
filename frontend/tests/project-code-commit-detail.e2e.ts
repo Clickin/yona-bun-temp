@@ -182,6 +182,8 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("ComponentType");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("CommitHashLink");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("as never");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("search={{} as never}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={`comment-${comment.id}`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={`thread-${thread.id}`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("attachmentFileHtml");

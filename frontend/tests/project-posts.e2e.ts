@@ -1151,10 +1151,25 @@ test("project board detail internal links are router-owned", async ({ page }) =>
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
+  expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("FileUploaderTemplates");
   expect(routeSource).not.toContain("tplAttachedFile");
   expect(routeSource).not.toContain("tplDropFilesHere");
   expect(routeSource).not.toContain("text/x-jquery-tmpl");
+  expect(routeSource).toContain("const LEGACY_EMPTY_PROFILE_SEARCH");
+  expect(routeSource).toContain("const LEGACY_EMPTY_POST_FORM_SEARCH");
+  expect(routeSource).toContain("to={`/${ownerName}/${projectName}/posts?labelIds=${label.id}`}");
+  expect(routeSource).not.toContain("legacySingleLabelIds");
+  expect(routeSource).not.toContain("toJSON");
+  expect(routeSource).not.toContain("window.location.assign");
+  expect(routeSource).not.toContain("listRoutePath");
+  expect(routeSource).not.toContain("encodeURIComponent(label.id)");
+  const selectedLabelsSource = routeSource.slice(
+    routeSource.indexOf("function PostSelectedLabels"),
+    routeSource.indexOf("function PostActionButtons"),
+  );
+  expect(selectedLabelsSource).not.toContain("preventDefault");
+  expect(selectedLabelsSource).not.toContain("router.history.push");
   const renderedRouteSource = routeSource.slice(0, routeSource.indexOf("function AttachedFiles"));
   expect(renderedRouteSource).not.toContain("<a");
   expect(renderedRouteSource).not.toContain("href=");
@@ -1208,6 +1223,13 @@ test("project board detail owns comment hash links through router", async ({ pag
     0,
   );
 
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  expect(routeSource).not.toContain("as never");
+  expect(routeSource).toContain("hash={`comment-${commentId}`}");
+
   await parentAgo.click();
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("#comment-21");
   await expect
@@ -1249,10 +1271,6 @@ test("project board detail owns comment hash links through router", async ({ pag
     )
     .toBe("post-comment-hash");
 
-  const routeSource = readFileSync(
-    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
-    "utf8",
-  );
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");

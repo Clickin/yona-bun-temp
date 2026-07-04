@@ -27,6 +27,18 @@ import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
+const LEGACY_EMPTY_PROFILE_SEARCH = {
+  daysAgo: undefined!,
+  selected: undefined!,
+};
+const LEGACY_EMPTY_POST_FORM_SEARCH = {
+  branch: undefined!,
+  edit: undefined!,
+  issueTemplate: undefined!,
+  path: undefined!,
+  readme: undefined!,
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber")({
   component: ProjectPostDetailRoute,
 });
@@ -213,7 +225,7 @@ function ProjectPostDetailBody({
               <Link
                 to="/$user"
                 params={{ user: stringField(post.authorLoginId) }}
-                search={{} as never}
+                search={LEGACY_EMPTY_PROFILE_SEARCH}
                 activeProps={{ className: undefined }}
                 className="usf-group"
               >
@@ -322,7 +334,7 @@ function ProjectPostDetailBody({
                     <Link
                       to="/$ownerName/$projectName/postform"
                       params={{ ownerName, projectName }}
-                      search={{} as never}
+                      search={LEGACY_EMPTY_POST_FORM_SEARCH}
                       activeProps={{ className: undefined }}
                       className="ybtn ybtn-success"
                     >
@@ -560,15 +572,13 @@ function PostSelectedLabels({
     return null;
   }
 
-  const listRoutePath = `/${ownerName}/${projectName}/posts`;
-
   return (
     <dl>
       <dt>Label</dt>
       <dd>
         {labels.map((label) => (
           <Link
-            to={`${listRoutePath}?labelIds=${encodeURIComponent(label.id)}` as never}
+            to={`/${ownerName}/${projectName}/posts?labelIds=${label.id}`}
             activeProps={{ className: undefined }}
             className="label issue-label active static"
             key={label.id}
@@ -848,7 +858,7 @@ function PostCommentRow({
         <Link
           to="/$user"
           params={{ user: authorLoginId }}
-          search={{} as never}
+          search={LEGACY_EMPTY_PROFILE_SEARCH}
           activeProps={{ className: undefined }}
           className={"avatar-wrap"}
         >
@@ -862,7 +872,7 @@ function PostCommentRow({
               <Link
                 to="/$user"
                 params={{ user: authorLoginId }}
-                search={{} as never}
+                search={LEGACY_EMPTY_PROFILE_SEARCH}
                 activeProps={{ className: undefined }}
                 className={"avatar-wrap"}
               >
@@ -872,7 +882,7 @@ function PostCommentRow({
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
-              search={{} as never}
+              search={LEGACY_EMPTY_PROFILE_SEARCH}
               activeProps={{ className: undefined }}
             >
               <strong>{authorLabel}</strong>
@@ -1211,7 +1221,7 @@ function PostChildComment({
           <Link
             to="/$user"
             params={{ user: authorLoginId }}
-            search={{} as never}
+            search={LEGACY_EMPTY_PROFILE_SEARCH}
             className="usf-group"
             activeOptions={{ exact: true }}
             activeProps={{ className: undefined }}

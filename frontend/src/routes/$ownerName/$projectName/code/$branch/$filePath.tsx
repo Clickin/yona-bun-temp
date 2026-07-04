@@ -104,6 +104,11 @@ function ProjectCodeFileBody({
   const isGit = project.vcs === "GIT";
   const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
   const archiveHref = prefixBasePath(runtimeConfig.basePath, archivePath);
+  const newFilePathWithSearch = `${projectPath(
+    ownerName,
+    projectName,
+    "postform",
+  )}?path=${newFilePath}&branch=${encodedBranch}`;
 
   return (
     <div className="page-wrap-outer">
@@ -165,9 +170,7 @@ function ProjectCodeFileBody({
               {code.breadcrumbs.map((item) => (
                 <Link
                   key={item.path}
-                  to={
-                    projectPath(ownerName, projectName, "code", encodedBranch, item.path) as never
-                  }
+                  to={projectPath(ownerName, projectName, "code", encodedBranch, item.path)}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,
@@ -195,13 +198,7 @@ function ProjectCodeFileBody({
                   <div className="pull-right">
                     <Link
                       id="new-file-link"
-                      to={
-                        `${projectPath(
-                          ownerName,
-                          projectName,
-                          "postform",
-                        )}?path=${newFilePath}&branch=${encodedBranch}` as never
-                      }
+                      to={newFilePathWithSearch}
                       activeOptions={{
                         exact: true,
                         explicitUndefined: true,
@@ -273,6 +270,18 @@ function FileView({
   const rawHref = prefixBasePath(runtimeConfig.basePath, rawPath);
   const openPath = projectPath(ownerName, projectName, "files", rawRevision, filePath);
   const openHref = prefixBasePath(runtimeConfig.basePath, openPath);
+  const editPathWithSearch = `${projectPath(
+    ownerName,
+    projectName,
+    "postform",
+  )}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true`;
+  const historyPath = projectPath(
+    ownerName,
+    projectName,
+    "commits",
+    encodeURIComponent(selectedBranch),
+    filePath,
+  );
 
   return (
     <div className="file-wrap" data-type="file">
@@ -282,7 +291,6 @@ function FileView({
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
-              search={{} as never}
               activeOptions={{
                 exact: true,
                 explicitUndefined: true,
@@ -304,7 +312,6 @@ function FileView({
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
-              search={{} as never}
               activeOptions={{
                 exact: true,
                 explicitUndefined: true,
@@ -326,14 +333,9 @@ function FileView({
           </span>
           <span id="revisionNo" className="revision">
             <Link
-              to={
-                `${projectPath(
-                  ownerName,
-                  projectName,
-                  "commit",
-                  commitId,
-                )}?branch=${encodeURIComponent(selectedBranch)}` as never
-              }
+              to="/$ownerName/$projectName/commit/$commitId"
+              params={{ commitId, ownerName, projectName }}
+              search={{ branch: selectedBranch }}
               hash={filePath}
               activeOptions={{
                 exact: true,
@@ -368,13 +370,7 @@ function FileView({
               </Link>
               {booleanField(project.viewerCanUpdate) ? (
                 <Link
-                  to={
-                    `${projectPath(
-                      ownerName,
-                      projectName,
-                      "postform",
-                    )}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true` as never
-                  }
+                  to={editPathWithSearch}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,
@@ -404,15 +400,7 @@ function FileView({
             <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
           </Link>
           <Link
-            to={
-              projectPath(
-                ownerName,
-                projectName,
-                "commits",
-                encodeURIComponent(selectedBranch),
-                filePath,
-              ) as never
-            }
+            to={historyPath}
             activeOptions={{
               exact: true,
               explicitUndefined: true,

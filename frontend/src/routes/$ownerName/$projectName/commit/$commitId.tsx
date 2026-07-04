@@ -976,7 +976,6 @@ function CodeCommentThreadView({
               <Link
                 to="/$user"
                 params={{ user: comment.authorLoginId }}
-                search={{} as never}
                 activeOptions={{ exact: true }}
                 className="avatar-wrap"
                 data-toggle="tooltip"
@@ -997,7 +996,6 @@ function CodeCommentThreadView({
                   <Link
                     to="/$user"
                     params={{ user: comment.authorLoginId }}
-                    search={{} as never}
                     activeOptions={{ exact: true }}
                     data-toggle="tooltip"
                     data-placement="top"
@@ -1096,7 +1094,6 @@ function CodeCommentThreadView({
               <Link
                 to="/$user"
                 params={{ user: currentUser.loginId }}
-                search={{} as never}
                 activeOptions={{ exact: true }}
                 className="avatar-wrap medium"
                 title={currentUser.userLabel}
@@ -1333,7 +1330,6 @@ function ReviewForm({ action, currentUser }: { action: string; currentUser: Curr
             <Link
               to="/$user"
               params={{ user: currentUser.loginId }}
-              search={{} as never}
               activeOptions={{ exact: true }}
               className="avatar-wrap medium"
               data-toggle="tooltip"

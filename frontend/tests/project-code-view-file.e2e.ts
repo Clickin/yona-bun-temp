@@ -197,7 +197,7 @@ test("project code file route source keeps backend links as hrefs without route 
     const match = /\bhref=\{([^}]+)\}/u.exec(block);
     return match ? [match[1]] : [];
   });
-  const backendLinkHrefs = routeSource.match(/<Link[^>]*\bhref=\{[^}]+\}/gu) ?? [];
+  const linkHrefs = routeSource.match(/<Link[^>]*\bhref=\{[^}]+\}/gu) ?? [];
   const directLegacyLinkActiveProps = routeSource.match(
     /activeProps=\{\{\s*"aria-current": undefined,\s*className: undefined,\s*"data-status": undefined,\s*\}\}/gu,
   );
@@ -207,13 +207,15 @@ test("project code file route source keeps backend links as hrefs without route 
 
   expect(rawAnchorBlocks).toEqual([]);
   expect(backendAnchorHrefs).toEqual([]);
-  expect(backendLinkHrefs).toHaveLength(5);
+  expect(linkHrefs).toHaveLength(5);
   expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
   expect(routeSource).toContain("router.history.push(event.currentTarget.value)");
   expect(routeSource).not.toContain("legacyLinkProps");
   expect(routeSource).not.toContain("legacyEmptySearch");
   expect(routeSource).not.toContain("legacyInactiveSearch");
   expect(routeSource).not.toContain("__legacyInactive");
+  expect(routeSource).not.toContain(" as never");
+  expect(routeSource).not.toContain("search={{} as never}");
   expect(routeSource).not.toContain("to={archivePath as never}");
   expect(routeSource).not.toContain("to={rawPath as never}");
   expect(routeSource).not.toContain("to={openPath as never}");
@@ -222,10 +224,13 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).toContain("href={openHref}");
   expect(directLegacyLinkActiveProps).toHaveLength(8);
   expect(directLegacyLinkActiveOptions).toHaveLength(8);
-  expect(routeSource).toContain("search={{} as never}");
   expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName/commit/$commitId"');
+  expect(routeSource).toContain("const newFilePathWithSearch =");
+  expect(routeSource).toContain("const editPathWithSearch =");
+  expect(routeSource).toContain("const historyPath =");
   expect(routeSource).toContain(
-    'projectPath(ownerName, projectName, "code", encodedBranch, item.path)',
+    'to={projectPath(ownerName, projectName, "code", encodedBranch, item.path)}',
   );
 });
 
