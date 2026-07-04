@@ -82,6 +82,7 @@ function ProjectImportScreen({
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
   const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(true);
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
+  const [urlError, setUrlError] = React.useState<string | null>(null);
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -121,6 +122,12 @@ function ProjectImportScreen({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const url = String(formData.get("url") ?? "");
+    if (url.trim().length === 0) {
+      setUrlError(t("project.import.error.empty.url"));
+      return;
+    }
+    setUrlError(null);
     importMutation.mutate({
       authId: String(formData.get("authId") ?? ""),
       authPw: String(formData.get("authPw") ?? ""),
@@ -134,7 +141,7 @@ function ProjectImportScreen({
       projectScope: String(formData.get("projectScope") ?? "PUBLIC"),
       pullRequest: formData.has("pullRequest"),
       review: formData.has("review"),
-      url: String(formData.get("url") ?? ""),
+      url,
       vcs: String(formData.get("vcs") ?? "GIT"),
     });
   }
@@ -181,7 +188,19 @@ function ProjectImportScreen({
                     className="text"
                     placeholder={t("project.git.url.alert")}
                     defaultValue=""
+                    onChange={() => {
+                      if (urlError) {
+                        setUrlError(null);
+                      }
+                    }}
+                    aria-invalid={urlError ? true : undefined}
                   />
+                  {urlError ? (
+                    <div className="popover fade left in">
+                      <div className="arrow" />
+                      <div className="popover-content">{urlError}</div>
+                    </div>
+                  ) : null}
                 </dd>
                 <dd>
                   <label className="checkbox">

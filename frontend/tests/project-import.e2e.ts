@@ -276,6 +276,32 @@ test("project import form renders legacy server auth and owner validation state"
   );
 });
 
+test("project import form blocks empty URL submit with legacy validation copy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let importPosts = 0;
+  await mockProjectImport(page);
+  await page.route("**/api/v1/projects/import", async (route) => {
+    importPosts += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ redirectPath: "/admin/imported" }),
+    });
+  });
+
+  await page.goto(`${basePath}/_import?owner=admin`);
+  await page.locator("#project-name").fill("imported-project");
+  await page.locator("#url").fill("   ");
+  await page.locator("#importGit .actions button.ybtn-primary").click();
+
+  await expect(page.locator("#url + .popover .popover-content")).toHaveText(
+    "Please type the Git repository URL.",
+  );
+  await expect(page.locator("#url")).toHaveAttribute("aria-invalid", "true");
+  await expect.poll(() => importPosts).toBe(0);
+});
+
 test("project import form links preserve legacy hrefs and navigate in the SPA", async ({
   page,
 }) => {
