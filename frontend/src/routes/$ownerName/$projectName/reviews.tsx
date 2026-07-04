@@ -242,7 +242,11 @@ function ProjectReviewsBody({
                 type="button"
                 data-field="createdDate"
                 data-value={
-                  search.orderBy === "createdDate" && search.orderDir === "asc" ? "desc" : "asc"
+                  search.orderBy === "createdDate"
+                    ? search.orderDir === "asc"
+                      ? "desc"
+                      : "asc"
+                    : "desc"
                 }
                 className="filter"
                 data-toggle="order"
