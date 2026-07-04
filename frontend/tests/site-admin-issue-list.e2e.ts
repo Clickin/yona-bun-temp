@@ -14,7 +14,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -115,11 +115,11 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
         </ul>
         <div id="pagination" class="page-navigation-wrap">
           <ul class="page-nums">
-            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li>
+            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?pageNum=2&amp;state=open"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?state=open&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -220,10 +220,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  const nextPageLink = page.locator("#pagination a", { hasText: "NEXT" });
+  const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute(
     "href",
-    `${basePath}/sites/issueList?pageNum=2&state=open`,
+    `${basePath}/sites/issueList?state=open&pageNum=2`,
   );
   await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
 
@@ -272,6 +272,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("open");
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
+  const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
+  await expect(previousPageLink).toHaveAttribute(
+    "href",
+    `${basePath}/sites/issueList?state=open&pageNum=1`,
+  );
+  await page.locator('#pagination input[name="pageNum"]').fill("1");
+  await page.locator('#pagination input[name="pageNum"]').press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-issues-pagination");
@@ -360,7 +368,8 @@ async function mockIssues(page: Page) {
 
   await page.route("**/api/v1/site/issues?*", async (route) => {
     const url = new URL(route.request().url());
-    const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
+    const pageNum =
+      Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({

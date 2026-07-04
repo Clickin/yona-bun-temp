@@ -14,7 +14,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -292,6 +292,18 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-project-pagination-prev");
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-project-pagination-input";
+  });
+  await page.locator('#pagination input[name="pageNum"]').fill("7");
+  await page.locator('#pagination input[name="pageNum"]').press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("road");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-project-pagination-input");
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-search";

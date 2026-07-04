@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { type KeyboardEvent } from "react";
 import {
   siteIssuesQueryOptions,
   siteUpdateQueryOptions,
@@ -99,12 +100,25 @@ function IssueListPagination({
   state: SiteIssueState;
   totalPages: number;
 }) {
+  const { t } = useLegacyMessages();
+  const navigate = useNavigate();
+
   if (totalPages <= 0) {
     return <div id="pagination"></div>;
   }
 
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
+  const pageSearch = (pageNum: number) => ({ state, pageNum });
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(value);
+    void navigate({ search: pageSearch(value), to: "/sites/issueList" });
+  };
 
   return (
     <div id="pagination" className="page-navigation-wrap">
@@ -113,29 +127,32 @@ function IssueListPagination({
           {hasPrev ? (
             <Link
               activeProps={{ className: undefined }}
-              search={{ pageNum: currentPage - 1, state }}
+              search={pageSearch(currentPage - 1)}
               to="/sites/issueList"
             >
               <i className="ico btn-pg-prev"></i>
-              <span>PREV</span>
+              <span>{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">PREV</span>
+              <span className="off">{t("button.prevPage")}</span>
             </>
           )}
         </li>
         <li className="page-num">
           <input
             className="input-mini nospinner"
+            defaultValue={currentPage}
             max={totalPages}
             min={1}
             name="pageNum"
             pattern="[0-9]*"
-            readOnly
             type="number"
-            value={currentPage}
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
           />
         </li>
         <li className="page-num delimiter">/</li>
@@ -144,15 +161,15 @@ function IssueListPagination({
           {hasNext ? (
             <Link
               activeProps={{ className: undefined }}
-              search={{ pageNum: currentPage + 1, state }}
+              search={pageSearch(currentPage + 1)}
               to="/sites/issueList"
             >
-              <span>NEXT</span>
+              <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </Link>
           ) : (
             <>
-              <span className="off">NEXT</span>
+              <span className="off">{t("button.nextPage")}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
@@ -160,6 +177,13 @@ function IssueListPagination({
       </ul>
     </div>
   );
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {

@@ -229,6 +229,8 @@ function ProjectListPagination({
   filter: string;
   totalPages: number;
 }) {
+  const router = useRouter();
+
   if (totalPages <= 0) {
     return <div id="pagination"></div>;
   }
@@ -263,13 +265,32 @@ function ProjectListPagination({
         <li className="page-num">
           <input
             className="input-mini nospinner"
+            key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
             name="pageNum"
+            onClick={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") {
+                return;
+              }
+
+              const pageNum = Number(event.currentTarget.value);
+              if (!Number.isInteger(pageNum)) {
+                event.currentTarget.value = String(currentPage);
+                return;
+              }
+
+              const nextPage = Math.min(Math.max(pageNum, 1), totalPages);
+              event.currentTarget.value = String(nextPage);
+              void router.navigate({
+                search: search(nextPage),
+                to: "/sites/projectList",
+              });
+            }}
             pattern="[0-9]*"
-            readOnly
             type="number"
-            value={currentPage}
+            defaultValue={currentPage}
           />
         </li>
         <li className="page-num delimiter">/</li>
