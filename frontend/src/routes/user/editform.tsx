@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import { uploadTemporaryAttachment } from "../../api/attachments";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   readWorkspaceOverviewRest,
@@ -46,6 +48,18 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   const displayName = profile?.displayName ?? "";
   const email = profile?.primaryEmailAddress ?? "";
   const avatarUrl = profile?.avatarUrl ?? "";
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreviewUrl("");
+      return;
+    }
+    const nextPreviewUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreviewUrl(nextPreviewUrl);
+    return () => URL.revokeObjectURL(nextPreviewUrl);
+  }, [avatarFile]);
 
   const profileMutation = useMutation({
     mutationFn: async (input: { avatarAttachmentId: string; email: string; name: string }) => {
@@ -54,6 +68,21 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     },
     onSuccess: (workspace) => {
       queryClient.setQueryData(["workspace", "overview"], workspace);
+    },
+  });
+  const avatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const attachment = await uploadTemporaryAttachment(runtimeConfig, csrfToken, file);
+      return updateProfileRest(runtimeConfig, csrfToken, {
+        avatarAttachmentId: String(attachment.id),
+        email,
+        name: displayName,
+      });
+    },
+    onSuccess: (workspace) => {
+      queryClient.setQueryData(["workspace", "overview"], workspace);
+      setAvatarFile(null);
     },
   });
   const resetVisitedMutation = useMutation({
@@ -132,6 +161,12 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
             className="pull-left"
             style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (avatarFile) {
+                avatarMutation.mutate(avatarFile);
+              }
+            }}
           >
             <input type="hidden" name="name" value={displayName} />
             <input type="hidden" name="email" value={email} />
@@ -144,8 +179,14 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                   alt=""
                 />
               </div>
-              <div className="upload-progress avatar" style={{ display: "none" }}>
-                <div className="bar orange"></div>
+              <div
+                className="upload-progress avatar"
+                style={avatarMutation.isPending ? undefined : { display: "none" }}
+              >
+                <div
+                  className="bar orange"
+                  style={avatarMutation.isPending ? { width: "100%" } : undefined}
+                ></div>
               </div>
               <div className="btn-wrap mt10 center-txt">
                 <div className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
@@ -156,6 +197,9 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                     className="file"
                     name="filePath"
                     accept="image/*"
+                    onChange={(event) => {
+                      setAvatarFile(event.currentTarget.files?.[0] ?? null);
+                    }}
                   />
                 </div>
               </div>
@@ -177,21 +221,44 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               </button>
             </form>
           </div>
-          <div id="avatarCropWrap" className="modal hide" role="dialog" data-backdrop="static">
+          <div
+            id="avatarCropWrap"
+            className={`modal${avatarFile ? "" : " hide"}`}
+            role="dialog"
+            data-backdrop="static"
+          >
             <div className="modal-header center-txt">
               <div className="avatar-wrap xlarge">
-                <img style={{ maxWidth: "none", width: "128px" }} alt="" />
+                <img
+                  src={avatarPreviewUrl || undefined}
+                  style={{ maxWidth: "none", width: "128px" }}
+                  alt=""
+                />
               </div>
             </div>
             <div className="modal-body">
-              <img style={{ maxWidth: "500px" }} alt="" />
+              <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "500px" }} alt="" />
               <canvas width="128" height="128" className="hide"></canvas>
             </div>
             <div className="modal-footer">
-              <button type="button" className="ybtn ybtn-default" data-dismiss="modal">
+              <button
+                type="button"
+                className="ybtn ybtn-default"
+                data-dismiss="modal"
+                onClick={() => setAvatarFile(null)}
+              >
                 {t("button.cancel")}
               </button>
-              <button type="button" className="ybtn ybtn-success btnSubmitCrop">
+              <button
+                type="button"
+                className="ybtn ybtn-success btnSubmitCrop"
+                disabled={!avatarFile || avatarMutation.isPending}
+                onClick={() => {
+                  if (avatarFile) {
+                    avatarMutation.mutate(avatarFile);
+                  }
+                }}
+              >
                 {t("button.save")}
               </button>
             </div>
