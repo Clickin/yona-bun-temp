@@ -104,9 +104,14 @@ function ProjectWebhooksBody({
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const payloadUrl = String(formData.get("payloadUrl") ?? "");
+    if (payloadUrl.length === 0) {
+      window.alert(t("project.webhook.payloadUrl.empty"));
+      return;
+    }
     mutation.mutate({
       gitPush: formData.get("gitPush") === "on",
-      payloadUrl: String(formData.get("payloadUrl") ?? ""),
+      payloadUrl,
       secret: String(formData.get("secret") ?? ""),
       webhookType: String(formData.get("webhookType") ?? "SIMPLE") as ProjectWebhookType,
     });

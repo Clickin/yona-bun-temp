@@ -16,7 +16,7 @@ const EXPECTED_PROJECT_WEBHOOKS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -246,6 +246,22 @@ test("project webhooks JSON type forces git push checkbox like legacy script", a
   await expect(gitPush).toBeChecked();
 });
 
+test("project webhooks blocks empty payload URL like legacy webhook script", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const createRequests: { payloadUrl: string }[] = [];
+  await mockProjectAdmin(page, [], { createRequests });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe("Payload URL is a required field.");
+    await dialog.accept();
+  });
+  await page.locator("#formNewWebhook .btn-submit").click();
+
+  await page.waitForTimeout(100);
+  expect(createRequests).toEqual([]);
+});
+
 test("project webhooks header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -329,6 +345,7 @@ async function mockProjectAdmin(
   page: Page,
   webhooks: unknown[] = [],
   options: {
+    createRequests?: { payloadUrl: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     project?: Partial<ReturnType<typeof projectContainer>>;
@@ -393,6 +410,21 @@ async function mockProjectAdmin(
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/webhooks", async (route) => {
+    if (route.request().method() === "POST") {
+      const data = route.request().postDataJSON() as { payloadUrl?: string };
+      options.createRequests?.push({ payloadUrl: String(data.payloadUrl ?? "") });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          gitPush: false,
+          id: 99,
+          payloadUrl: data.payloadUrl ?? "",
+          secret: "",
+          webhookType: "SIMPLE",
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
