@@ -206,7 +206,6 @@ test("organization delete failure closes modal and shows legacy alert", async ({
   await mockOrganizationAdmin(page, {
     deleteFailure: {
       code: "organization.delete.impossible.project.exist",
-      message: "organization has projects",
       status: 400,
     },
   });
@@ -380,7 +379,7 @@ test("organization delete breadcrumb source uses direct Link", () => {
 async function mockOrganizationAdmin(
   page: Page,
   options: {
-    deleteFailure?: { code: string; message: string; status: number };
+    deleteFailure?: { code: string; status: number };
     deleteRequests?: { hasCsrfToken: boolean; method: string }[];
   } = {},
 ) {
@@ -425,9 +424,7 @@ async function mockOrganizationAdmin(
         await route.fulfill({
           contentType: "application/json",
           status: options.deleteFailure.status,
-          body: JSON.stringify({
-            error: options.deleteFailure,
-          }),
+          body: JSON.stringify({ errorMsg: options.deleteFailure.code }),
         });
         return;
       }

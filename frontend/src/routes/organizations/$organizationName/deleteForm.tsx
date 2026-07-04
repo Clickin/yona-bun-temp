@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
-import { deleteOrganizationRest, organizationDetailQueryOptions } from "../../../api/org-project";
+import { organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationDetail } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -58,7 +58,7 @@ function OrganizationDeleteFormBody({
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return deleteOrganizationRest(runtimeConfig, csrfToken, organizationName);
+      return deleteOrganizationFromDeleteForm(runtimeConfig, csrfToken, organizationName);
     },
     onSuccess(response) {
       queryClient.removeQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
@@ -295,11 +295,54 @@ function booleanField(value: unknown) {
   return value === true;
 }
 
+async function deleteOrganizationFromDeleteForm(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  organizationName: string,
+): Promise<{ redirectPath?: unknown }> {
+  const response = await fetch(
+    `${runtimeConfig.apiBaseUrl}/v1/organizations/${encodeURIComponent(organizationName)}`,
+    {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "x-csrf-token": csrfToken,
+      },
+      method: "DELETE",
+    },
+  );
+  const payload = await readJsonPayload(response);
+
+  if (!response.ok) {
+    throw { code: organizationDeleteErrorKey(payload) };
+  }
+
+  return typeof payload === "object" && payload !== null ? payload : {};
+}
+
+async function readJsonPayload(response: Response) {
+  const text = await response.text();
+  return text.trim() === "" ? undefined : (JSON.parse(text) as unknown);
+}
+
 function organizationDeleteErrorKey(error: unknown) {
+  if (typeof error === "object" && error !== null && "errorMsg" in error) {
+    const errorMsg = (error as { errorMsg?: unknown }).errorMsg;
+    return knownOrganizationDeleteErrorKey(errorMsg);
+  }
+  if (typeof error === "object" && error !== null && "error" in error) {
+    const nestedError = (error as { error?: unknown }).error;
+    if (typeof nestedError === "object" && nestedError !== null && "code" in nestedError) {
+      return knownOrganizationDeleteErrorKey((nestedError as { code?: unknown }).code);
+    }
+  }
   if (typeof error !== "object" || error === null || !("code" in error)) {
     return "organization.delete.error";
   }
-  const code = (error as { code?: unknown }).code;
+  return knownOrganizationDeleteErrorKey((error as { code?: unknown }).code);
+}
+
+function knownOrganizationDeleteErrorKey(code: unknown) {
   return typeof code === "string" &&
     [
       "organization.delete.impossible.project.exist",
