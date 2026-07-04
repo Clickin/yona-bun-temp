@@ -157,7 +157,8 @@ function UserFileRow({
   const fileTo = attachment.url as never;
   const previewUrl = prefixBasePath(basePath, attachment.previewUrl);
   const downloadTo = attachment.downloadUrl as never;
-  const locationTo = attachment.locationHref as never;
+  const locationHref = attachment.locationHref;
+  const locationLabel = attachment.locationLabel || locationHref;
 
   return (
     <div className="attachment-file-detail row">
@@ -182,9 +183,11 @@ function UserFileRow({
       </div>
       <div className="span2 file-date">{attachment.createdLabel}</div>
       <div className="span4 file-location">
-        <Link activeProps={{ className: undefined }} to={locationTo} target="_blank">
-          {attachment.locationLabel}
-        </Link>
+        {locationHref ? (
+          <Link activeProps={{ className: undefined }} to={locationHref as never} target="_blank">
+            {locationLabel}
+          </Link>
+        ) : null}
       </div>
     </div>
   );

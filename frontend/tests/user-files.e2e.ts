@@ -80,7 +80,7 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
       }),
     });
   });
-  await page.route("**/api/v1/workspace/files?**", async (route) => {
+  await page.route("**/api/v1/workspace/files**", async (route) => {
     const requestUrl = new URL(route.request().url());
     const filter = requestUrl.searchParams.get("filter") ?? "";
     const pageNum = Number(requestUrl.searchParams.get("pageNum") ?? "1");
@@ -217,6 +217,86 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("files-search");
+});
+
+test("current-user files leaves location cell empty when source URL is missing", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        isAnonymous: false,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/workspace/files**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        files: [
+          {
+            containerId: 0,
+            containerType: "ISSUE_POST",
+            createdLabel: "2026-07-04 9:15 AM",
+            downloadUrl: "/files/8?action=download",
+            id: 8,
+            locationHref: null,
+            locationLabel: "",
+            mimeType: "text/plain",
+            name: "detached.txt",
+            previewUrl: "/files/8",
+            size: 42,
+            sizeLabel: "42 B",
+            url: "/files/8",
+          },
+          {
+            containerId: 1,
+            containerType: "ISSUE_POST",
+            createdLabel: "2026-07-04 9:16 AM",
+            downloadUrl: "/files/9?action=download",
+            id: 9,
+            locationHref: "/admin/sample/issue/1",
+            locationLabel: "/admin/sample/issue/1",
+            mimeType: "text/plain",
+            name: "attached.txt",
+            previewUrl: "/files/9",
+            size: 43,
+            sizeLabel: "43 B",
+            url: "/files/9",
+          },
+        ],
+        filter: "",
+        page: 1,
+        pageSize: 50,
+        total: 2,
+        totalPages: 1,
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/user/files`);
+  await expect(page.locator(".attachment-file-detail")).toHaveCount(2);
+
+  const missingLocationCell = page
+    .locator(".attachment-file-detail")
+    .first()
+    .locator(".file-location");
+  await expect(missingLocationCell).toBeEmpty();
+  await expect(missingLocationCell.locator("a")).toHaveCount(0);
+
+  const normalLocationLink = page
+    .locator(".attachment-file-detail")
+    .nth(1)
+    .locator(".file-location > a");
+  await expect(normalLocationLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/1`);
+  await expect(normalLocationLink).toHaveAttribute("target", "_blank");
+  await expect(normalLocationLink).toHaveText("/admin/sample/issue/1");
 });
 
 test("current-user files route uses direct typed links for tabs and pagination", () => {
