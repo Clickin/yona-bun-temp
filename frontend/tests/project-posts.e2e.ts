@@ -58,12 +58,10 @@ const EXPECTED_PROJECT_POSTS_PREFIX = EXPECTED_PROJECT_POSTS_CURRENT.replace(
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
-const FILE_UPLOADER_TEMPLATES =
-  '<script type="text/x-jquery-tmpl" id="tplAttachedFile"><li class="attached-file" data-id="${fileId}" data-name="${fileName}" data-href="${fileHref}" data-mime="${mimeType}" data-size="${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">${fileName}</strong><span class="size">${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li></script><script type="text/x-jquery-tmpl" id="tplDropFilesHere"><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div></script>';
 const POSTING_HISTORY =
   '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history">Change history</button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div></div>';
 const EXPECTED_PROJECT_POST_DETAIL = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl><div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div>${FILE_UPLOADER_TEMPLATES}<div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/post/3">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl><div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/post/3">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
 `;
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
@@ -573,6 +571,13 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     "data-request-uri",
     `${basePath}/admin/sample/post/3`,
   );
+  await expect(page.locator("#tplAttachedFile, #tplDropFilesHere")).toHaveCount(0);
+  await expect(page.locator("#comment-form #upload.upload-wrap.content-footer")).toBeVisible();
+  await expect(page.locator("#comment-form #upload .attached-files.unstyled")).toHaveCount(1);
+  await expect(page.locator("#comment-form #upload input.file[name='filePath']")).toHaveAttribute(
+    "multiple",
+    "",
+  );
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -582,9 +587,13 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   );
   expect(await boardDetailMetrics(page)).toEqual({
     actionRowTextAlign: "right",
-    attachmentTemplateId: "tplAttachedFile",
+    attachmentTemplateCount: 0,
     bodyDisplay: "block",
     bodyWidth: 1260,
+    commentUploadAttachedFilesClass: "attached-files unstyled",
+    commentUploadClass: "upload-wrap content-footer",
+    commentUploadFileMultiple: true,
+    commentUploadResourceType: "NONISSUE_COMMENT",
     contentAllowedUpdate: "true",
     contentLineHeight: "22.165px",
     deleteUri: `${basePath}/admin/sample/post/3`,
@@ -1084,9 +1093,13 @@ test("project board detail internal links are router-owned", async ({ page }) =>
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
+  expect(routeSource).not.toContain("FileUploaderTemplates");
+  expect(routeSource).not.toContain("tplAttachedFile");
+  expect(routeSource).not.toContain("tplDropFilesHere");
+  expect(routeSource).not.toContain("text/x-jquery-tmpl");
   const renderedRouteSource = routeSource.slice(
     0,
-    routeSource.indexOf("function FileUploaderTemplates"),
+    routeSource.indexOf("function attachedFilesHtml"),
   );
   expect(renderedRouteSource).not.toContain("<a");
   expect(renderedRouteSource).not.toContain("href=");
@@ -1588,7 +1601,12 @@ async function boardDetailMetrics(page: Page) {
     const watchButton = element.querySelector("#watch-button") as HTMLButtonElement;
     const newPost = element.querySelector(".issue-info.board-labels .project-btn-item a");
     const deleteButton = document.querySelector("#deleteConfirm [data-request-uri]");
-    const template = document.querySelector("#tplAttachedFile");
+    const templates = document.querySelectorAll("#tplAttachedFile, #tplDropFilesHere");
+    const commentUpload = element.querySelector("#comment-form #upload") as HTMLElement;
+    const commentUploadFile = commentUpload.querySelector("input.file") as HTMLInputElement;
+    const commentUploadAttachedFiles = commentUpload.querySelector(
+      ".attached-files",
+    ) as HTMLElement;
     const keymap = element.querySelector(".board-footer button");
     const headerStyle = window.getComputedStyle(header);
     const titleStyle = window.getComputedStyle(title);
@@ -1598,9 +1616,13 @@ async function boardDetailMetrics(page: Page) {
 
     return {
       actionRowTextAlign: actionStyle.textAlign,
-      attachmentTemplateId: template?.id ?? null,
+      attachmentTemplateCount: templates.length,
       bodyDisplay: bodyStyle.display,
       bodyWidth: Math.round(body.getBoundingClientRect().width),
+      commentUploadAttachedFilesClass: commentUploadAttachedFiles.className,
+      commentUploadClass: commentUpload.className,
+      commentUploadFileMultiple: commentUploadFile.multiple,
+      commentUploadResourceType: commentUpload.getAttribute("data-resource-type"),
       contentAllowedUpdate: content.getAttribute("data-allowed-update"),
       contentLineHeight: contentStyle.lineHeight,
       deleteUri: deleteButton?.getAttribute("data-request-uri") ?? null,

@@ -1032,7 +1032,6 @@ function IssueDetailBody({
           <IssueDetailKeymap project={project} />
         </div>
       </div>
-      <AttachedFileTemplate />
       <DeleteConfirm
         issueHref={issueHref}
         open={deleteModalOpen}
@@ -1055,19 +1054,6 @@ function IssueDetailBody({
         cancelLabel={t("button.no")}
       />
     </div>
-  );
-}
-
-function AttachedFileTemplate() {
-  return (
-    <script
-      type="text/x-jquery-tmpl"
-      id="tplAttachedFile"
-      dangerouslySetInnerHTML={{
-        __html:
-          '<!--\n        --><li class="attached-file" data-name="${fileName}" data-href="${fileHref}" data-mime="${mimeType}" data-size="${fileSize}">\n        <strong>${fileName}(${fileSizeReadable})${notice}</strong><!--\n        --><a class="attached-delete"><i class="ico btn-delete"></i></a></li>',
-      }}
-    ></script>
   );
 }
 
