@@ -56,6 +56,7 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
   const router = useRouter();
   const queryClient = useQueryClient();
   const { ownerName, projectName } = Route.useParams();
+  const [titleErrors, setTitleErrors] = useState<string[]>([]);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -92,7 +93,14 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
             encType="multipart/form-data"
             onSubmit={(event) => {
               event.preventDefault();
-              mutation.mutate(event.currentTarget);
+              const form = event.currentTarget;
+              const title = stringFormValue(new FormData(form), "title");
+              if (title.trim() === "") {
+                setTitleErrors([t("validation.required")]);
+                return;
+              }
+              setTitleErrors([]);
+              mutation.mutate(form);
             }}
           >
             <div className="row-fluid">
@@ -105,10 +113,26 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                       id="title"
                       name="title"
                       defaultValue=""
-                      className="zen-mode text title "
+                      className={
+                        titleErrors.length > 0
+                          ? "zen-mode text title error"
+                          : "zen-mode text title "
+                      }
                       maxLength={250}
                       placeholder={t("title")}
+                      onChange={(event) => {
+                        if (event.currentTarget.value.trim() !== "") {
+                          setTitleErrors([]);
+                        }
+                      }}
                     />
+                    {titleErrors.length > 0 ? (
+                      <div className="message">
+                        {titleErrors.map((error) => (
+                          <div key={error}>{error}</div>
+                        ))}
+                      </div>
+                    ) : null}
                   </dd>
                 </dl>
               </div>

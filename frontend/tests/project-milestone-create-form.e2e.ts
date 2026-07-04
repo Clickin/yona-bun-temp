@@ -152,6 +152,27 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/9?state=open`);
 });
 
+test("project milestone create form renders legacy title required validation state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const postRequests: unknown[] = [];
+  await mockProjectMilestoneCreateForm(page, postRequests);
+
+  await page.goto(`${basePath}/admin/sample/newMilestoneForm`);
+  await page.click('#milestone-form button[type="submit"]');
+
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
+  await expect(page.locator("#title + .message")).toHaveCount(1);
+  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
+  expect(postRequests).toEqual([]);
+
+  await page.fill("#title", "v3.1");
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await expect(page.locator("#title + .message")).toHaveCount(0);
+});
+
 test("project milestone create form route uses direct typed Link for cancel navigation", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
@@ -173,6 +194,19 @@ test("project milestone create form uploader has no route-local jQuery template 
   expect(routeSource).not.toContain("tplDropFilesHere");
   expect(routeSource).not.toContain("attachedFileTemplate");
   expect(routeSource).not.toContain("dropFilesHereTemplate");
+});
+
+test("project milestone create form route keeps validation behavior in React state", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).toContain('t("validation.required")');
+  expect(routeSource).not.toContain("document.");
+  expect(routeSource).not.toContain("addEventListener");
+  expect(routeSource).not.toContain("classList");
+  expect(routeSource).not.toContain("style.display");
 });
 
 test("project milestone create form renders markdown help as JSX without route-local raw HTML", () => {
