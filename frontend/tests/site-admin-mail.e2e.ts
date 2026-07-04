@@ -327,6 +327,23 @@ test("site admin mail renders legacy Html error message external link", async ({
   await expect(chromeLink).toHaveAttribute("target", "_blank");
 });
 
+test("site admin mail renders legacy Html error message arbitrary anchor", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page, {
+    notConfiguredItems: [],
+    sender: "site-admin@yona.local",
+    sent: false,
+  });
+
+  await page.goto(`${basePath}/sites/mail?errorMessage=notification.linkToViewHtml`);
+  const link = page.locator(".span10 > .alert-error p").nth(1).locator("a");
+
+  await expect(link).toHaveText("View it on {0}");
+  await expect(link).toHaveAttribute("href", "{1}");
+  await expect(link).toHaveAttribute("target", "{2}");
+});
+
 test("site admin mail renders legacy update notification badge", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);

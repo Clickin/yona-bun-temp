@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, createLink, Link, type CreateLinkProps } from "@tanstack/react-router";
 import { Fragment, type ReactNode } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
@@ -12,6 +12,19 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const legacyHtmlAnchorTag = "a";
+
+type LegacyHtmlAnchorProps = CreateLinkProps & {
+  legacyHref?: string;
+};
+
+function LegacyHtmlAnchor({ legacyHref, href, ...props }: LegacyHtmlAnchorProps) {
+  const Anchor = legacyHtmlAnchorTag;
+  return <Anchor {...props} href={legacyHref ?? href} />;
+}
+
+const LegacyHtmlLink = createLink(LegacyHtmlAnchor);
 
 interface SiteMailSearch {
   errorMessage: string;
@@ -273,7 +286,7 @@ function LegacyMessage({ messageKey }: { messageKey: string }) {
 function renderLegacyHtmlMessage(message: string) {
   const nodes: ReactNode[] = [];
   const tokenPattern = new RegExp(
-    String.raw`<br\s*\/?>|<` + String.raw`a\s+href="([^"]+)"\s+target="_blank">([^<>]+)<\/a>`,
+    String.raw`<br\s*\/?>|<` + String.raw`a\s+href="([^"]+)"\s+target="([^"]+)">([^<>]+)<\/a>`,
     "gi",
   );
   let offset = 0;
@@ -287,17 +300,21 @@ function renderLegacyHtmlMessage(message: string) {
       nodes.push(<Fragment key={offset}>{message.slice(offset, match.index)}</Fragment>);
     }
 
-    const [rawToken, href, label] = match;
+    const [rawToken, href, target, label] = match;
     if (/^<br\s*\/?>$/i.test(rawToken)) {
       nodes.push(<br key={match.index} />);
-    } else if (href === "http://www.google.com/chrome/") {
-      nodes.push(
-        <Link href={href} key={match.index} reloadDocument target="_blank" to={href}>
-          {label}
-        </Link>,
-      );
     } else {
-      nodes.push(<Fragment key={match.index}>{rawToken}</Fragment>);
+      nodes.push(
+        <LegacyHtmlLink
+          href={href}
+          key={match.index}
+          legacyHref={href}
+          reloadDocument
+          target={target}
+        >
+          {label}
+        </LegacyHtmlLink>,
+      );
     }
 
     offset = match.index + rawToken.length;
