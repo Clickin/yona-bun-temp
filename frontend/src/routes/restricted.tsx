@@ -97,6 +97,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <span className="provider">
             Copyright{" "}
             <Link
+              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
               to={"https://github.com/yona-projects/yona/blob/master/AUTHORS" as never}
               target="_blank"
               className="yona-author"
@@ -106,6 +107,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </Link>{" "}
             & ©{" "}
             <Link
+              href="https://navercorp.com"
               to={"https://navercorp.com" as never}
               target="_blank"
               activeProps={{ className: undefined }}
@@ -114,6 +116,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </Link>{" "}
             &{" "}
             <Link
+              href="https://naverlabs.com/"
               to={"https://naverlabs.com/" as never}
               target="_blank"
               className="naver-labs"
@@ -123,6 +126,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </Link>{" "}
             Supported by{" "}
             <Link
+              href="https://www.ncloud.com/?referer=yona"
               to={"https://www.ncloud.com/?referer=yona" as never}
               target="_blank"
               className="naver-cloud-platform"
