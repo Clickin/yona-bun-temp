@@ -264,6 +264,37 @@ test("invalid reset password link matches legacy error/badrequest_default.scala.
   });
 });
 
+test("reset password form blocks invalid passwords with legacy left popovers", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let resetCompleteCalls = 0;
+  await page.route("**/api/v1/auth/password-reset/complete", async (route) => {
+    resetCompleteCalls += 1;
+    await route.fulfill({ status: 500, body: "unexpected reset complete" });
+  });
+
+  await page.goto(`${basePath}/resetPassword?s=reset-token`);
+  await page.locator("#password").focus();
+  await page.locator("#password").blur();
+  await expectResetPasswordValidationPopovers(page, ["Required field!", "Required field!"]);
+
+  await page.locator("#password").fill("abc");
+  await page.locator("#password").blur();
+  await expectResetPasswordValidationPopovers(page, [
+    "Password must be at least 4 characters in length.",
+    "Required field!",
+  ]);
+
+  await page.locator("#password").fill("new-pass");
+  await page.locator("#retypedPassword").fill("different");
+  await page.locator("#retypedPassword").blur();
+  await expectResetPasswordValidationPopovers(page, ["Retyped password doesn't match"]);
+
+  await page.locator('form[name="passwordReset"] button[type="submit"]').click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/resetPassword`);
+  expect(new URL(page.url()).searchParams.get("s")).toBe("reset-token");
+  expect(resetCompleteCalls).toBe(0);
+});
+
 test("reset password error home link is SPA navigation with legacy rendered href", async ({
   page,
 }) => {
@@ -638,4 +669,9 @@ async function canonicalizeHtml(page: Page, html: string) {
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function expectResetPasswordValidationPopovers(page: Page, messages: string[]) {
+  const popovers = page.locator('form[name="passwordReset"] .popover.left.in .popover-content');
+  await expect(popovers).toHaveText(messages);
 }

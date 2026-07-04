@@ -38,6 +38,10 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const [fieldErrors, setFieldErrors] = React.useState<
+    Partial<Record<"password" | "retypedPassword", string>>
+  >({});
   const siteName = runtimeConfig.siteName ?? "Yona";
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],
@@ -88,6 +92,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
             action="/resetPassword"
             method="post"
             name="passwordReset"
+            ref={formRef}
             onSubmit={(event) => void handleSubmit(event)}
           >
             <input type="hidden" name="hashString" value={s} />
@@ -100,7 +105,9 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   className="text password"
                   placeholder={t("user.password")}
                   autoComplete="off"
+                  onBlur={validateCurrentForm}
                 />
+                <FieldPopover message={fieldErrors.password} />
               </dd>
               <dd>
                 <input
@@ -110,7 +117,9 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   className="text password"
                   placeholder={t("validation.retypePassword")}
                   autoComplete="off"
+                  onBlur={validateCurrentForm}
                 />
+                <FieldPopover message={fieldErrors.retypedPassword} />
               </dd>
             </dl>
 
@@ -132,12 +141,59 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const password = String(form.get("password") ?? "");
+    const retypedPassword = String(form.get("retypedPassword") ?? "");
+    const nextErrors = validateResetPasswordForm(password, retypedPassword, t);
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     resetMutation.mutate({
-      hashString: String(form.get("hashString") ?? ""),
-      password: String(form.get("password") ?? ""),
-      retypedPassword: String(form.get("retypedPassword") ?? ""),
+      hashString: s,
+      password,
+      retypedPassword,
     });
   }
+
+  function validateCurrentForm() {
+    if (!formRef.current) return;
+    const form = new FormData(formRef.current);
+    const password = String(form.get("password") ?? "");
+    const retypedPassword = String(form.get("retypedPassword") ?? "");
+    setFieldErrors(validateResetPasswordForm(password, retypedPassword, t));
+  }
+}
+
+function validateResetPasswordForm(
+  password: string,
+  retypedPassword: string,
+  t: (key: string) => string,
+): Partial<Record<"password" | "retypedPassword", string>> {
+  const nextErrors: Partial<Record<"password" | "retypedPassword", string>> = {};
+
+  if (!password) {
+    nextErrors.password = t("validation.required");
+  } else if (password.length < 4) {
+    nextErrors.password = t("validation.tooShortPassword");
+  }
+  if (!retypedPassword) {
+    nextErrors.retypedPassword = t("validation.required");
+  } else if (retypedPassword !== password) {
+    nextErrors.retypedPassword = t("validation.passwordMismatch");
+  }
+
+  return nextErrors;
+}
+
+function FieldPopover({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <div className="popover left in">
+      <div className="arrow"></div>
+      <div className="popover-content">{message}</div>
+    </div>
+  );
 }
 
 function BadRequestPage({
