@@ -144,6 +144,7 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).toContain("activeOptions={{");
   expect(ROUTE_SOURCE).toContain("activeProps={{");
   expect(ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(ROUTE_SOURCE.match(/__legacyInactive/gu) ?? []).toHaveLength(2);
   expect(ROUTE_SOURCE).toContain("reloadDocument");
   expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
   expect(ROUTE_SOURCE).not.toContain("FILE_LIST_ITEM_TEMPLATE");

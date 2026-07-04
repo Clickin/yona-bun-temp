@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
-import legacyMarkdownHelpTemplate from "../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer, YonaRecord } from "../../../api/types";
@@ -14,19 +13,13 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type IssueFormSearch = {
   commentId: string;
   parentIssueId: string;
 };
-
-const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
-  .replace(/<\/div>\s*$/u, "");
 
 export const Route = createFileRoute("/$ownerName/$projectName/issueform")({
   component: ProjectIssueFormRoute,
@@ -340,10 +333,7 @@ function IssueMarkdownEditor() {
         </li>
       </ul>
       <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
-        <div
-          className="markdown-help"
-          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
-        />
+        <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea

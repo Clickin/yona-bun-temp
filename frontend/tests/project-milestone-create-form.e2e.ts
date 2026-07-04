@@ -180,6 +180,7 @@ test("project milestone create form renders markdown help as JSX without route-l
     "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
     "utf8",
   );
+  const sharedMarkdownHelpSource = readFileSync("src/routes/-legacy-markdown-help.tsx", "utf8");
 
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
   expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
@@ -188,9 +189,14 @@ test("project milestone create form renders markdown help as JSX without route-l
   expect(routeSource).not.toContain("__html");
   expect(routeSource).not.toContain(".replace(/@Messages");
   expect(routeSource).not.toContain(".replace(/<script");
-  expect(routeSource).toContain("function LegacyMarkdownHelp()");
-  expect(routeSource).toContain('className="markdown-help-nav"');
-  expect(routeSource).toContain('className="markdown-help-wrap"');
+  expect(routeSource).toContain(
+    'import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";',
+  );
+  expect(sharedMarkdownHelpSource).toContain("export function LegacyMarkdownHelp()");
+  expect(sharedMarkdownHelpSource).toContain('className="markdown-help-nav"');
+  expect(sharedMarkdownHelpSource).toContain('className="markdown-help-wrap"');
+  expect(sharedMarkdownHelpSource).not.toMatch(/<a\b/u);
+  expect(sharedMarkdownHelpSource).toContain('<Link to="http://demo.yobi.io/yobi/yobi/issue/2">');
 });
 
 async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[]) {

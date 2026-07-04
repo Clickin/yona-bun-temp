@@ -226,8 +226,6 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       />
       <IssueListAssets
         basePath={runtimeConfig.basePath}
-        ownerName={ownerName}
-        projectName={projectName}
         supportedLanguages={runtimeConfig.supportedLanguages}
       />
       <ProjectIssuesBody
@@ -256,13 +254,9 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
 function IssueListAssets({
   basePath,
-  ownerName,
-  projectName,
   supportedLanguages,
 }: {
   basePath: string;
-  ownerName: string;
-  projectName: string;
   supportedLanguages?: string[];
 }) {
   return (
@@ -291,18 +285,6 @@ function IssueListAssets({
       <script
         defer
         src={prefixBasePath(basePath, "/assets/javascripts/service/yona.showSubtask.js")}
-      ></script>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-$(function(){
-  $yobi.loadModule("issue.List");
-  yobi.ShortcutKey.setKeymapLink({
-    "N": "${prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`)}"
-  });
-});
-`,
-        }}
       ></script>
     </>
   );

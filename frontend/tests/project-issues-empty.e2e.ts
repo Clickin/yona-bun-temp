@@ -384,6 +384,12 @@ test("project issue list route source does not duplicate common Select2 template
   expect(routeLocalSelect2Source).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("project issue list route source does not inject route-local bootstrap scripts", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('$yobi.loadModule("issue.List")');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
+});
+
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -415,8 +421,8 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     `${basePath}/assets/javascripts/service/yona.twoColumnMode.js`,
     `${basePath}/assets/javascripts/service/yona.showSubtask.js`,
   ]);
-  expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(true);
-  expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(true);
+  expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
+  expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
   await expectIssueListSelect2Partial(page, basePath);
 
   expect(await issueListShellMetrics(page)).toEqual({

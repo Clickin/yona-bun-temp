@@ -114,7 +114,6 @@ function ProjectCodeFolderBody({
                   "data-status": undefined,
                 }}
                 to={projectRoute(ownerName, projectName, "commits", encodedBranch)}
-                search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
               >
                 {t("code.commits")}
               </Link>
@@ -134,7 +133,6 @@ function ProjectCodeFolderBody({
                     "data-status": undefined,
                   }}
                   to={projectRoute(ownerName, projectName, "branches")}
-                  search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
                 >
                   {t("title.branches")}
                 </Link>
@@ -305,7 +303,6 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
                 entry.path,
               )}
               hash={entry.kind === "folder" ? `cb-${entry.path}` : undefined}
-              search={{ __legacyInactive: undefined } as unknown as Record<string, never>}
               className={entry.kind === "folder" ? "folder" : "file"}
               title={entry.name}
               {...(entry.kind === "folder" ? { "data-type": "folder" } : {})}

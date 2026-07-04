@@ -79,6 +79,7 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
+  await expect(page.locator(".markdown-help-wrap > li")).toHaveCount(10);
   const uploader = page.locator("#upload.upload-wrap.content-footer");
   await expect(uploader).toHaveAttribute("data-resource-type", "ISSUE_POST");
   await expect(uploader.locator(".attach-wrap")).toBeVisible();
@@ -179,15 +180,29 @@ test("project issue create form source uses TanStack Link and no uploader templa
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
     "utf8",
   );
+  const sharedMarkdownHelpSource = readFileSync(
+    new URL("../src/routes/-legacy-markdown-help.tsx", import.meta.url),
+    "utf8",
+  );
 
   expect(source).toContain("<Link");
   expect(source).toContain('className="label-edit"');
+  expect(source).toContain('import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";');
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
+  expect(source).not.toContain("dangerouslySetInnerHTML");
+  expect(source).not.toContain("legacyMarkdownHelpHtml");
+  expect(source).not.toContain("legacyMarkdownHelpTemplate");
+  expect(source).not.toContain("markdown.scala.html?raw");
+  expect(source).not.toContain("__html");
+  expect(source).not.toContain(".replace(/@Messages");
+  expect(source).not.toContain(".replace(/<script");
   expect(source).not.toContain("attachedFileTemplate");
   expect(source).not.toContain("dropFilesHereTemplate");
   expect(source).not.toContain("text/x-jquery-tmpl");
   expect(source).not.toContain("tplAttachedFile");
   expect(source).not.toContain("tplDropFilesHere");
+  expect(sharedMarkdownHelpSource).not.toMatch(/<a\b/u);
+  expect(sharedMarkdownHelpSource).toContain('<Link to="http://demo.yobi.io/yobi/yobi/issue/2">');
 });
 
 async function mockProjectIssueForm(page: Page) {
