@@ -14,7 +14,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -202,7 +202,9 @@ test("site admin update renders the legacy available-version branch", async ({ p
   );
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
-  expect(routeSource).toContain('<Link to={(response.releaseUrl ?? "") as never}');
+  expect(routeSource).toContain('href={response.releaseUrl ?? ""}');
+  expect(routeSource).toContain('to={(response.releaseUrl ?? "") as never}');
+  expect(routeSource).toContain("reloadDocument");
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
   expect(await updateAvailableMetrics(page)).toEqual({
