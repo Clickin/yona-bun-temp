@@ -39,8 +39,8 @@ const NOTIFICATION_TYPES = [
   ["PULL_REQUEST_COMMIT_CHANGED", "notification.type.pullrequest.commit.changed"],
   ["NEW_COMMIT", "notification.type.new.commit"],
   ["PULL_REQUEST_REVIEW_STATE_CHANGED", "notification.type.pullrequest.review.action.changed"],
-  ["ISSUE_REFERRED_FROM_PULL_REQUEST", "notification.type.issue.referred.from.pullrequest"],
   ["ISSUE_BODY_CHANGED", "notification.type.issue.body.changed"],
+  ["ISSUE_REFERRED_FROM_PULL_REQUEST", "notification.type.issue.referred.from.pullrequest"],
   ["REVIEW_THREAD_STATE_CHANGED", "notification.type.review.state.changed"],
   ["ORGANIZATION_MEMBER_ENROLL_REQUEST", "notification.organization.type.member.enroll"],
   ["COMMENT_UPDATED", "notification.type.comment.updated"],
@@ -108,16 +108,17 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                     key={projectId}
                     className={projectId === activeProjectId ? "active" : undefined}
                   >
-                    <button
-                      type="button"
+                    <Link
+                      to="/user/editform/notifications"
+                      hash={projectId}
+                      activeProps={{ className: undefined }}
                       data-toggle="tab"
                       onClick={() => {
                         setSelectedProjectId(projectId);
-                        window.history.replaceState(null, "", `#${projectId}`);
                       }}
                     >
                       {`${stringValue(project.ownerName)} / ${stringValue(project.projectName)}`}
-                    </button>
+                    </Link>
                   </li>
                 );
               })}
