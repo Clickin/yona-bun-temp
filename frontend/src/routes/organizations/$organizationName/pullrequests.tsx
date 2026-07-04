@@ -495,7 +495,12 @@ function OrganizationPullRequestItem({
               title=""
               data-original-title={pullRequest.receiverLabel}
             >
-              <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+              <img
+                src="/assets/images/default-avatar-32.png"
+                width="32"
+                height="32"
+                alt={pullRequest.receiverLabel}
+              />
             </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
