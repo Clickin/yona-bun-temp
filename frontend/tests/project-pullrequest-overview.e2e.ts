@@ -759,6 +759,47 @@ test("project pull request overview hides legacy watch button without WATCH perm
   );
 });
 
+test("project pull request overview watch button posts and toggles legacy watching state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { watchRequests } = await mockPullRequestOverview(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  const watchButton = page.locator(".board-footer #watch-button");
+  await expect(watchButton).toHaveText("Watch");
+  await expect(watchButton).toHaveAttribute("data-watching", "false");
+  await expect(watchButton).not.toHaveClass(/ybtn-watching/u);
+
+  const watchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/pull-requests/9/watch") &&
+      response.request().method() === "POST",
+  );
+  await watchButton.click();
+  await watchResponsePromise;
+
+  await expect(watchButton).toHaveText("Unwatch");
+  await expect(watchButton).toHaveAttribute("data-watching", "true");
+  await expect(watchButton).toHaveClass(/ybtn-watching/u);
+
+  const unwatchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/pull-requests/9/watch") &&
+      response.request().method() === "DELETE",
+  );
+  await watchButton.click();
+  await unwatchResponsePromise;
+
+  expect(watchRequests).toEqual([
+    { hasCsrfToken: true, method: "POST" },
+    { hasCsrfToken: true, method: "DELETE" },
+  ]);
+  await expect(watchButton).toHaveText("Watch");
+  await expect(watchButton).toHaveAttribute("data-watching", "false");
+  await expect(watchButton).not.toHaveClass(/ybtn-watching/u);
+});
+
 test("project pull request overview renders legacy reviewer controls DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestOverview(page, {
@@ -1026,6 +1067,7 @@ async function mockPullRequestOverview(
     session?: Record<string, unknown>;
   } = {},
 ) {
+  const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const detail = {
     attachments: [],
     bodyHtml: "<p>Initial body</p>",
@@ -1099,6 +1141,24 @@ async function mockPullRequestOverview(
       }),
     });
   });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "test-csrf-token" },
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+        ...options.session,
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1134,6 +1194,23 @@ async function mockPullRequestOverview(
     });
   });
   await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/watch",
+    async (route) => {
+      const method = route.request().method();
+      watchRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method,
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...detail,
+          isWatching: method !== "DELETE",
+        }),
+      });
+    },
+  );
+  await page.route(
     "**/api/v1/owners/admin/projects/sample/pull-requests/9/changes**",
     async (route) => {
       const url = new URL(route.request().url());
@@ -1152,6 +1229,8 @@ async function mockPullRequestOverview(
       });
     },
   );
+
+  return { watchRequests };
 }
 
 async function canonicalizeAll(page: Page, selector: string) {

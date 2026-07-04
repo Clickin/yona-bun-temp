@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   pullRequestDetailQueryOptions,
+  unwatchPullRequestRest,
+  watchPullRequestRest,
   type PullRequestCommit,
   type PullRequestDetailResponse,
   type PullRequestEvent,
@@ -13,6 +15,7 @@ import {
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectContainer } from "../../../../api/types";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
@@ -100,7 +103,29 @@ function PullRequestOverviewBody({
 }) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const prPath = `/${ownerName}/${projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const pullRequestInput = {
+    ownerName,
+    projectName,
+    pullRequestNumber: pullRequest.pullRequestNumber,
+  };
+  const [isWatching, setIsWatching] = useState(pullRequest.isWatching);
+  const watchMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return isWatching
+        ? unwatchPullRequestRest(runtimeConfig, csrfToken, pullRequestInput)
+        : watchPullRequestRest(runtimeConfig, csrfToken, pullRequestInput);
+    },
+    onSuccess(response) {
+      setIsWatching(response.isWatching);
+      queryClient.setQueryData(
+        pullRequestDetailQueryOptions(runtimeConfig, pullRequestInput).queryKey,
+        response,
+      );
+    },
+  });
 
   return (
     <>
@@ -153,11 +178,12 @@ function PullRequestOverviewBody({
                 <button
                   id="watch-button"
                   type="button"
-                  className={pullRequest.isWatching ? "ybtn ybtn-watching" : "ybtn"}
+                  className={isWatching ? "ybtn ybtn-watching" : "ybtn"}
                   data-toggle="button"
-                  data-watching={pullRequest.isWatching ? "true" : "false"}
+                  data-watching={isWatching ? "true" : "false"}
+                  onClick={() => watchMutation.mutate()}
                 >
-                  {pullRequest.isWatching ? t("project.unwatch") : t("project.watch")}
+                  {isWatching ? t("project.unwatch") : t("project.watch")}
                 </button>
               ) : null}
             </div>
