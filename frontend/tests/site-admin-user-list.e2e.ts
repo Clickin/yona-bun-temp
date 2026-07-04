@@ -451,6 +451,45 @@ test("site admin user profile links preserve legacy hrefs and use SPA navigation
   ).toBe("site-users-profile");
 });
 
+test("site admin user pagination input selects and clamps like legacy yobi.Pagination", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList?state=ACTIVE&pageNum=2`);
+  const pageNumInput = page.locator('#pagination input[name="pageNum"]');
+  await expect(pageNumInput).toHaveValue("2");
+  await pageNumInput.click();
+  await pageNumInput.press("1");
+  await pageNumInput.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("ACTIVE");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-users-pagination-input";
+  });
+  const pageNumInputAfterNavigation = page.locator('#pagination input[name="pageNum"]');
+  await pageNumInputAfterNavigation.fill("7");
+  await pageNumInputAfterNavigation.press("Enter");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("ACTIVE");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-users-pagination-input");
+});
+
 test("site admin deleted user tab renders legacy leave column without action buttons", async ({
   page,
 }) => {
@@ -706,7 +745,8 @@ async function mockSiteUsers(
 
   await page.route("**/api/v1/site/users?*", async (route) => {
     const url = new URL(route.request().url());
-    const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
+    const pageNum =
+      Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
     const state = url.searchParams.get("state") === "DELETED" ? "DELETED" : "ACTIVE";
     await route.fulfill({
       contentType: "application/json",

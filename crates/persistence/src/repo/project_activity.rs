@@ -195,9 +195,6 @@ impl AppRepositoryImpl<'_> {
                 .filter(issue::Column::State.eq(Some(0)))
                 .count(&self.db)
                 .await? as u32;
-            if open_issue_count == 0 {
-                continue;
-            }
             let closed_issue_count = issue::Entity::find()
                 .filter(issue::Column::ProjectId.eq(Some(project_id)))
                 .filter(issue::Column::MilestoneId.eq(Some(row.id)))

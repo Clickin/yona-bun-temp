@@ -142,6 +142,37 @@ test("project home Dashboard tab follows legacy non-empty row filters and pull r
   );
 });
 
+test("project home Dashboard tab treats zero-open milestones as non-empty legacy branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    dashboard: {
+      milestones: [
+        {
+          completionPercent: 100,
+          id: 6,
+          openIssueCount: 0,
+          title: "M0",
+        },
+      ],
+      noMilestoneOpenIssueCount: 2,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample?tabId=dashboard`);
+  await expect(page.locator(".project-overview-home")).toBeVisible();
+
+  const milestoneOverview = page.locator(".overview-milestone");
+  await expect(milestoneOverview.locator(".empty")).toHaveCount(0);
+  await expect(milestoneOverview).not.toContainText("No milestone entered.");
+  await expect(milestoneOverview).not.toContainText("M0");
+  await expect(milestoneOverview.locator("a[href$='issues?milestoneId=-1']")).toHaveText(
+    "No milestone",
+  );
+  await expect(milestoneOverview.locator(".row-fluid .num strong")).toHaveText("2");
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
