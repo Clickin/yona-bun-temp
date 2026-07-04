@@ -67,6 +67,10 @@ function OrganizationDeleteFormBody({
         prefixBasePath(runtimeConfig.basePath, stringField(response.redirectPath, "/")),
       );
     },
+    onError(error) {
+      closeDeletionModal();
+      window.alert(t(organizationDeleteErrorKey(error)));
+    },
   });
 
   return (
@@ -289,4 +293,19 @@ function stringField(value: unknown, fallback: string) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function organizationDeleteErrorKey(error: unknown) {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return "organization.delete.error";
+  }
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" &&
+    [
+      "organization.delete.impossible.project.exist",
+      "organization.member.needManagerRole",
+      "organization.member.unknownOrganization",
+    ].includes(code)
+    ? code
+    : "organization.delete.error";
 }

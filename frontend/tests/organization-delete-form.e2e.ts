@@ -196,6 +196,34 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   expect(await readOrganizationDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
+test("organization delete failure closes modal and shows legacy alert", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const alerts: string[] = [];
+  page.on("dialog", async (dialog) => {
+    alerts.push(dialog.message());
+    await dialog.accept();
+  });
+  await mockOrganizationAdmin(page, {
+    deleteFailure: {
+      code: "organization.delete.impossible.project.exist",
+      message: "organization has projects",
+      status: 400,
+    },
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+  await page.locator("#btnDelete").click();
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+
+  await page.locator("#btnDeleteExec").click();
+
+  await expect.poll(() => alerts).toEqual(["You cannot delete a group that has projects)."]);
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/deleteForm`);
+});
+
 test("organization delete navigation anchors preserve legacy hrefs without native listeners", async ({
   page,
 }) => {
@@ -351,7 +379,10 @@ test("organization delete breadcrumb source uses direct Link", () => {
 
 async function mockOrganizationAdmin(
   page: Page,
-  options: { deleteRequests?: { hasCsrfToken: boolean; method: string }[] } = {},
+  options: {
+    deleteFailure?: { code: string; message: string; status: number };
+    deleteRequests?: { hasCsrfToken: boolean; method: string }[];
+  } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -390,6 +421,16 @@ async function mockOrganizationAdmin(
         hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-organization-delete",
         method: request.method(),
       });
+      if (options.deleteFailure) {
+        await route.fulfill({
+          contentType: "application/json",
+          status: options.deleteFailure.status,
+          body: JSON.stringify({
+            error: options.deleteFailure,
+          }),
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ ok: true, redirectPath: "/" }),
