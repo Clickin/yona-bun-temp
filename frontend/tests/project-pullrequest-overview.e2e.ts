@@ -329,6 +329,12 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );
+  expect(routeSource).toContain(
+    'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"',
+  );
+  expect(routeSource).toContain("commitId: commit.commitId");
+  expect(routeSource).not.toContain("commitPath as never");
+  expect(routeSource).not.toContain("to={to as never}");
   expect(routeSource).toContain('to="."');
   expect(routeSource).toContain("hash={`event-${event.id}`}");
   expect(routeSource).toContain("Legacy data-request-method controls below are POST actions");
@@ -372,7 +378,16 @@ test("project pull request overview renders legacy commit-changed event DOM", as
   });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
-  await expect(page.locator("#comment-94")).toContainText("Committed");
+  const event = page.locator("#comment-94");
+  await expect(event).toContainText("Committed");
+  await expect(event.locator(".commit-id").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/1234567890abcdef`,
+  );
+  await expect(event.locator(".commitMsg.short").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/1234567890abcdef`,
+  );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(

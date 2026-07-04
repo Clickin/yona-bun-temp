@@ -458,7 +458,12 @@ function PullRequestEventCommit({
   event: PullRequestEvent;
   pullRequest: PullRequestDetailResponse;
 }) {
-  const commitPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}/changes/${commit.commitId}`;
+  const commitChangeParams = {
+    commitId: commit.commitId,
+    ownerName: pullRequest.ownerName,
+    projectName: pullRequest.projectName,
+    pullRequestNumber: String(pullRequest.pullRequestNumber),
+  };
 
   return (
     <li
@@ -466,7 +471,12 @@ function PullRequestEventCommit({
         commit.state === "PRIOR" ? "comment-body commit-info outdated" : "comment-body commit-info"
       }
     >
-      <Link to={commitPath as never} className="commit-id" activeProps={{ className: undefined }}>
+      <Link
+        to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"
+        params={commitChangeParams}
+        className="commit-id"
+        activeProps={{ className: undefined }}
+      >
         {commit.commitShortId}
       </Link>
       <Link
@@ -483,12 +493,23 @@ function PullRequestEventCommit({
       <div className="date hide-in-mobile" title={commit.authorDateLabel}>
         {commit.authorDateLabel}
       </div>
-      <CommitMessage commit={commit} to={commitPath} />
+      <CommitMessage commit={commit} params={commitChangeParams} />
     </li>
   );
 }
 
-function CommitMessage({ commit, to }: { commit: PullRequestCommit; to: string }) {
+function CommitMessage({
+  commit,
+  params,
+}: {
+  commit: PullRequestCommit;
+  params: {
+    commitId: string;
+    ownerName: string;
+    projectName: string;
+    pullRequestNumber: string;
+  };
+}) {
   const { t } = useLegacyMessages();
   const lines = commit.commitMessage.split("\n");
   const summary = lines[0] || t("code.commitMsg.empty");
@@ -496,7 +517,12 @@ function CommitMessage({ commit, to }: { commit: PullRequestCommit; to: string }
 
   return (
     <>
-      <Link to={to as never} className="commitMsg short" activeProps={{ className: undefined }}>
+      <Link
+        to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"
+        params={params}
+        className="commitMsg short"
+        activeProps={{ className: undefined }}
+      >
         {summary}
       </Link>
       {detail ? (

@@ -252,6 +252,16 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain("IssueLegacyLinkProps");
   expect(routeSource).not.toContain("IssueHashLink");
   expect(routeSource).not.toContain("IssueRouteLink");
+  expect(routeSource).not.toContain("parentPath as never");
+  expect(routeSource).not.toContain("issuePath as never");
+  expect(routeSource).not.toContain("editPath as never");
+  expect(routeSource).not.toContain("authorPath as never");
+  expect(routeSource).not.toContain("userPath as never");
+  expect(routeSource).not.toContain("const authorPath =");
+  expect(routeSource).not.toContain("const userPath =");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
+  expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber/editform"');
+  expect(routeSource).toContain('to="/$user"');
   expect(routeSource).toContain(
     "`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never",
   );

@@ -713,13 +713,14 @@ function ProjectIssuesBody({
                 <div className="pull-left" style={{ padding: "10px" }}>
                   <Link
                     activeProps={{ className: "ybtn small" }}
-                    to={excelHref("", ownerName, projectName, currentSearchString) as never}
+                    to={excelHref("", ownerName, projectName, currentSearchString)}
                     href={excelHref(
                       runtimeConfig.basePath,
                       ownerName,
                       projectName,
                       currentSearchString,
                     )}
+                    reloadDocument
                     className="ybtn small"
                   >
                     <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}

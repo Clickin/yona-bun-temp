@@ -346,8 +346,12 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("ProjectIssuesRouteLink");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('"pjax-page": ""');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("pjax-page");
-  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to={excelHref("", ownerName, projectName');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("href={excelHref(");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to={excelHref("", ownerName, projectName');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    'to={excelHref("", ownerName, projectName, currentSearchString) as never}',
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("reloadDocument");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("<a\n                    href={excelHref");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('<a href={issueHref} className="title">');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={authorHref}");

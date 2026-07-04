@@ -599,7 +599,8 @@ function IssueDetailBody({
           <div className="span9 span-left-pane">
             <div className="author-info">
               <Link
-                to={`/${stringField(issue.authorLoginId)}` as never}
+                to="/$user"
+                params={{ user: stringField(issue.authorLoginId) }}
                 className="usf-group"
                 activeOptions={{ exact: true }}
               >
@@ -726,9 +727,11 @@ function IssueDetailBody({
                 canBeDeleted={canBeDeleted}
                 canDelete={canDelete}
                 canUpdate={canUpdate}
-                editPath={editIssuePath}
+                issueNumber={issueNumber}
                 onEditClick={() => void router.navigate({ to: editIssuePath })}
                 onDeleteClick={() => setDeleteModalOpen(true)}
+                ownerName={ownerName}
+                projectName={projectName}
               />
             </div>
             <dl className={sharerListClassName} style={sharerListStyle}>
@@ -759,7 +762,8 @@ function IssueDetailBody({
                     return (
                       <div className="text-ellipsis sharer-item" key={loginId}>
                         <Link
-                          to={`/${loginId}` as never}
+                          to="/$user"
+                          params={{ user: loginId }}
                           className="usf-group"
                           activeOptions={{ exact: true }}
                         >
@@ -817,7 +821,8 @@ function IssueDetailBody({
                       />
                     ) : assigneeLoginId ? (
                       <Link
-                        to={`/${assigneeLoginId}` as never}
+                        to="/$user"
+                        params={{ user: assigneeLoginId }}
                         className="usf-group"
                         activeOptions={{ exact: true }}
                       >
@@ -932,9 +937,11 @@ function IssueDetailBody({
                     canBeDeleted={canBeDeleted}
                     canDelete={canDelete}
                     canUpdate={canUpdate}
-                    editPath={editIssuePath}
+                    issueNumber={issueNumber}
                     onEditClick={() => void router.navigate({ to: editIssuePath })}
                     onDeleteClick={() => setDeleteModalOpen(true)}
+                    ownerName={ownerName}
+                    projectName={projectName}
                     wrap={false}
                   />
                 </div>
@@ -1124,7 +1131,8 @@ function IssueVoterAvatars({ voters }: { voters: VoterLike[] }) {
           <li key={stringField(voter.loginId)}>
             <Link
               {...LEGACY_LINK_PROPS}
-              to={`/${stringField(voter.loginId)}` as never}
+              to="/$user"
+              params={{ user: stringField(voter.loginId) }}
               className="avatar-wrap smaller"
               title={stringField(voter.userLabel)}
             >
@@ -1168,7 +1176,8 @@ function IssueVoterListDialog({
             <li key={stringField(voter.loginId)}>
               <Link
                 {...LEGACY_LINK_PROPS}
-                to={`/${stringField(voter.loginId)}` as never}
+                to="/$user"
+                params={{ user: stringField(voter.loginId) }}
                 className="usf-group"
                 target="_blank"
               >
@@ -1505,14 +1514,18 @@ function IssueChildIssues({
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
-  const parentPath = `/${ownerName}/${projectName}/issue/${issueNumber}`;
   const assigneeLabel = stringField(issue.assigneeLabel);
 
   return (
     <div className="subtasks">
       <div className="child-issues">
         <div className="issue-item parent-issue">
-          <Link {...LEGACY_LINK_PROPS} to={parentPath as never} className="bold">
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to="/$ownerName/$projectName/issue/$issueNumber"
+            params={{ ownerName, projectName, issueNumber }}
+            className="bold"
+          >
             {`#${issueNumber} ${stringField(issue.title)}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
           </Link>
           <div className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}>
@@ -1558,7 +1571,6 @@ function IssueChildIssue({
   const issueNumber = stringField(child.issueNumber);
   const state = booleanField(child.isDraft) ? "draft" : stringField(child.state, "open");
   const isClosed = state === "closed";
-  const issuePath = `/${ownerName}/${projectName}/issue/${issueNumber}`;
   const labels = (child.labels ?? []).slice().sort(compareLabels);
 
   return (
@@ -1566,7 +1578,12 @@ function IssueChildIssue({
       <span className={`state-label ${state}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
-      <Link {...LEGACY_LINK_PROPS} className="twoColumeModeTarget" to={issuePath as never}>
+      <Link
+        {...LEGACY_LINK_PROPS}
+        className="twoColumeModeTarget"
+        to="/$ownerName/$projectName/issue/$issueNumber"
+        params={{ ownerName, projectName, issueNumber }}
+      >
         <span className="item-name">
           <span className="subtask-number">
             {booleanField(child.isDraft) ? (
@@ -1582,7 +1599,11 @@ function IssueChildIssue({
         </span>
       </Link>
       <span className="font12 no-border-at-child">
-        <IssueChildCommentAndVotePair child={child} issuePath={issuePath} />
+        <IssueChildCommentAndVotePair
+          child={child}
+          ownerName={ownerName}
+          projectName={projectName}
+        />
       </span>
       {labels.map((label) => (
         <Link
@@ -1606,10 +1627,12 @@ function IssueChildIssue({
 
 function IssueChildCommentAndVotePair({
   child,
-  issuePath,
+  ownerName,
+  projectName,
 }: {
   child: IssueDetailChildItem;
-  issuePath: string;
+  ownerName: string;
+  projectName: string;
 }) {
   const commentCount = numberField(child.commentCount);
   const voterCount = numberField(child.voterCount);
@@ -1622,7 +1645,8 @@ function IssueChildCommentAndVotePair({
       {commentCount ? (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={issuePath as never}
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={{ ownerName, projectName, issueNumber: stringField(child.issueNumber) }}
           hash="comments"
           className="comments-count comments-count-color"
         >
@@ -1635,7 +1659,8 @@ function IssueChildCommentAndVotePair({
       {voterCount ? (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={issuePath as never}
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={{ ownerName, projectName, issueNumber: stringField(child.issueNumber) }}
           hash="vote"
           className="vote-count vote-color"
         >
@@ -1762,17 +1787,21 @@ function IssueActionButtons({
   canBeDeleted,
   canDelete,
   canUpdate,
-  editPath,
+  issueNumber,
   onEditClick,
   onDeleteClick,
+  ownerName,
+  projectName,
   wrap = true,
 }: {
   canBeDeleted: boolean;
   canDelete: boolean;
   canUpdate: boolean;
-  editPath: string;
+  issueNumber: string;
   onEditClick: () => void;
   onDeleteClick: () => void;
+  ownerName: string;
+  projectName: string;
   wrap?: boolean;
 }) {
   const buttons = (
@@ -1788,7 +1817,11 @@ function IssueActionButtons({
           <i className="yobicon-edit-2"></i>
         </button>
       ) : (
-        <Link {...LEGACY_LINK_PROPS} to={editPath as never}>
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to="/$ownerName/$projectName/issue/$issueNumber/editform"
+          params={{ ownerName, projectName, issueNumber }}
+        >
           <button
             type="button"
             className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
@@ -2066,7 +2099,8 @@ function IssueEventRow({
         <span className="bold font-blue">
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/milestone/${milestoneId}` as never}
+            to="/$ownerName/$projectName/milestone/$milestoneId"
+            params={{ ownerName, projectName, milestoneId }}
             title="Milestone"
           >
             {milestoneTitle}
@@ -2117,7 +2151,8 @@ function IssueEventRow({
           Commit{" "}
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/commit/${commitId}` as never}
+            to="/$ownerName/$projectName/commit/$commitId"
+            params={{ ownerName, projectName, commitId }}
             className="link"
           >
             @{commitId}
@@ -2143,7 +2178,8 @@ function IssueEventRow({
           Pull request -{pullRequestNumber}{" "}
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}` as never}
+            to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
+            params={{ ownerName, projectName, pullRequestNumber }}
             className="link"
           >
             {pullRequestTitle}
@@ -2242,13 +2278,24 @@ function EventUserLink({
   label: string;
   loginId: string;
 }) {
-  const userPath = `/${loginId}`;
   return (
     <>
-      <Link {...LEGACY_LINK_PROPS} to={userPath as never} className="usf-group" title={label}>
+      <Link
+        {...LEGACY_LINK_PROPS}
+        to="/$user"
+        params={{ user: loginId }}
+        className="usf-group"
+        title={label}
+      >
         <img src={avatarUrl} className="avatar-wrap small" alt="" />
       </Link>
-      <Link {...LEGACY_LINK_PROPS} to={userPath as never} className="usf-group" title={loginId}>
+      <Link
+        {...LEGACY_LINK_PROPS}
+        to="/$user"
+        params={{ user: loginId }}
+        className="usf-group"
+        title={loginId}
+      >
         <strong>{label}</strong>
       </Link>
     </>
@@ -2276,7 +2323,6 @@ function IssueCommentRow({
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel);
-  const authorPath = `/${authorLoginId}`;
   const issueNumber = stringField(issue.issueNumber);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -2336,7 +2382,8 @@ function IssueCommentRow({
       <div className="comment-avatar">
         <Link
           {...LEGACY_LINK_PROPS}
-          to={authorPath as never}
+          to="/$user"
+          params={{ user: authorLoginId }}
           className="avatar-wrap"
           title={authorLoginId}
         >
@@ -2354,7 +2401,8 @@ function IssueCommentRow({
             <span className="resp-comment-avatar">
               <Link
                 {...LEGACY_LINK_PROPS}
-                to={authorPath as never}
+                to="/$user"
+                params={{ user: authorLoginId }}
                 className="avatar-wrap"
                 title={authorLabel}
               >
@@ -2366,7 +2414,12 @@ function IssueCommentRow({
                 />
               </Link>
             </span>
-            <Link {...LEGACY_LINK_PROPS} to={authorPath as never} title={authorLoginId}>
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="/$user"
+              params={{ user: authorLoginId }}
+              title={authorLoginId}
+            >
               <strong>{authorLabel}</strong>
             </Link>
           </span>
@@ -2668,7 +2721,12 @@ function ChildComment({
         </ReactMarkdown>
         <span className="subcomment-author hide">
           -{" "}
-          <Link to={`/${authorLoginId}` as never} className="usf-group" title={authorLoginId}>
+          <Link
+            to="/$user"
+            params={{ user: authorLoginId }}
+            className="usf-group"
+            title={authorLoginId}
+          >
             <strong>{authorLabel}</strong>
           </Link>
           <Link
@@ -2993,7 +3051,8 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
       {voters.map((voter) => (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={`/${stringField(voter.loginId)}` as never}
+          to="/$user"
+          params={{ user: stringField(voter.loginId) }}
           className="avatar-wrap smaller"
           title={stringField(voter.userLabel)}
           key={stringField(voter.loginId)}
@@ -3080,7 +3139,12 @@ function IssueIndexComment({
             </span>
           ) : null}
           <span className="comment_author">
-            <Link {...LEGACY_LINK_PROPS} to={`/${authorLoginId}` as never} title={authorLoginId}>
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="/$user"
+              params={{ user: authorLoginId }}
+              title={authorLoginId}
+            >
               <strong>{authorLabel}</strong>
             </Link>
           </span>
