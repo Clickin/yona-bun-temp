@@ -79,6 +79,7 @@ function ProjectSettingBody({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const menuSetting = projectMenuSetting(project);
+  const oldPlace = projectOldPlace(project);
   const projectScope = stringField(project.projectScope, "PUBLIC").toUpperCase();
   const isGit = stringField(project.vcs, "GIT") === "GIT";
   const [menuCodeChecked, setMenuCodeChecked] = useState(() => booleanField(menuSetting.code));
@@ -227,6 +228,12 @@ function ProjectSettingBody({
                     maxLength={250}
                     defaultValue={projectName}
                   />
+                  {oldPlace ? (
+                    <div>
+                      {t("project.previous.place", { args: [""] })}
+                      <span style={{ color: "red" }}>{oldPlace}</span>
+                    </div>
+                  ) : null}
                   <br />
                 </dd>
                 <dt>
@@ -935,6 +942,21 @@ function projectFavorited(project: ProjectContainer) {
   return (
     booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
   );
+}
+
+function projectOldPlace(project: ProjectContainer) {
+  const record = recordField(project);
+  const previous = recordField(record.previous);
+  const previousPlace = recordField(previous.place);
+  const oldPlace =
+    stringField(record.oldPlace, "") ||
+    stringField(record.previousPlace, "") ||
+    stringField(previous.place, "") ||
+    stringField(previousPlace.description, "");
+  if (!oldPlace || record.hasOldPlace === false) {
+    return "";
+  }
+  return oldPlace;
 }
 
 function recordField(value: unknown) {

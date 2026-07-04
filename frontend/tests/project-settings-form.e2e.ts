@@ -83,6 +83,39 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   });
 });
 
+test("project settings renders legacy old-place notice below the project name", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    project: {
+      hasOldPlace: true,
+      previous: {
+        place: {
+          description: "old-admin/old-sample",
+        },
+      },
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+
+  const nameFieldWrap = page.locator("#project-name").locator("..");
+  const oldPlaceNotice = nameFieldWrap.locator("div");
+  await expect(oldPlaceNotice).toHaveText("This project was moved from old-admin/old-sample");
+  await expect(oldPlaceNotice.locator("span")).toHaveText("old-admin/old-sample");
+  await expect(oldPlaceNotice.locator("span")).toHaveAttribute("style", "color: red;");
+  expect(
+    await nameFieldWrap.evaluate((element) =>
+      Array.from(element.childNodes).map((node) =>
+        node.nodeType === Node.ELEMENT_NODE
+          ? (node as Element).tagName.toLowerCase()
+          : node.textContent,
+      ),
+    ),
+  ).toEqual(["input", "div", "br"]);
+});
+
 test("project settings menu links preserve legacy hrefs with SPA transition", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.addInitScript(() => {
