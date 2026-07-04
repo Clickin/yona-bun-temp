@@ -14,8 +14,8 @@ const EXPECTED_PROJECTS_LIST = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar active" data-status="active" aria-current="page">List All</a></li>
       <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
@@ -118,6 +118,14 @@ const EXPECTED_PROJECTS_LIST = `
           </div>
         </div>
       </li>
+      <li class="project" style="background-color:rgb(252,252,252)">
+        <div class="info-wrap" style="opacity:0.3">
+          <div class="owner-avatar-wrap">
+            <img src="/assets/images/project_default_logo.png" alt="hidden">
+          </div>
+          <div style="float:left;color:gray">You do not have permission to view this project's information</div>
+        </div>
+      </li>
     </ul>
     <div id="pagination"></div>
   </div>
@@ -137,7 +145,7 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -178,6 +186,28 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   });
 });
 
+test("unreadable project rows match legacy private fallback", async ({ page }) => {
+  await mockAuthenticatedProjects(page);
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/projects?filter=sample`);
+  await expect(page.locator(".all-projects .project")).toHaveCount(2);
+
+  const unreadableRow = page.locator(".all-projects > .project").nth(1);
+  const unreadableInfo = unreadableRow.locator(".info-wrap");
+  const unreadableLogo = unreadableRow.locator(".owner-avatar-wrap img");
+  const unreadableText = unreadableRow.locator(".info-wrap > div").nth(1);
+
+  await expect(unreadableRow).toHaveCSS("background-color", "rgb(252, 252, 252)");
+  await expect(unreadableInfo).toHaveCSS("opacity", "0.3");
+  await expect(unreadableLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
+  await expect(unreadableLogo).toHaveAttribute("alt", "hidden");
+  await expect(unreadableText).toHaveCSS("color", "rgb(128, 128, 128)");
+  await expect(unreadableText).toHaveText(
+    "You do not have permission to view this project's information",
+  );
+  await expect(unreadableRow.locator("a")).toHaveCount(0);
+});
+
 test("project directory top tabs keep legacy hrefs without active marker leakage", async ({
   page,
 }) => {
@@ -185,7 +215,7 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
   const projectTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(0);
   const organizationTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(1);
@@ -212,7 +242,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await mockProjectCardDestinations(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
   const projectLogoLink = page.locator(".all-projects .owner-avatar-wrap a");
   const projectNameLink = page.locator(".all-projects .header a.black");
@@ -236,7 +266,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     .toBe("project");
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect(page.locator(".all-projects .project").first()).toBeVisible();
   await page.evaluate(() => {
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "owner";
   });
@@ -300,6 +330,12 @@ async function mockAuthenticatedProjects(page: Page) {
             projectName: "sample",
             projectScope: "public",
             watchCount: 3,
+          },
+          {
+            ownerName: "admin",
+            projectName: "hidden",
+            projectScope: "private",
+            viewerCanRead: false,
           },
         ],
       }),

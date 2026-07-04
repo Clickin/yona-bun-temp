@@ -136,6 +136,21 @@ function ProjectListItem({ project }: { project: ProjectDirectoryItem }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project, "ownerName", "");
   const projectName = stringField(project, "projectName", "");
+  if (!projectIsReadable(project)) {
+    return (
+      <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
+        <div className="info-wrap" style={{ opacity: 0.3 }}>
+          <div className="owner-avatar-wrap">
+            <img src="/assets/images/project_default_logo.png" alt={projectName} />
+          </div>
+          <div style={{ float: "left", color: "gray" }}>
+            You do not have permission to view this project's information
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   const logoUrl = stringField(project, "logoUrl", "/assets/images/project_default_logo.png");
   const createdLabel = stringField(project, "createdLabel", "");
   const createdTitle = stringField(project, "createdTitle", createdLabel);
@@ -228,4 +243,13 @@ function stringField(record: YonaRecord, key: string, fallback: string): string 
 function numberField(record: YonaRecord, key: string, fallback: number): number {
   const value = record[key];
   return typeof value === "number" ? value : fallback;
+}
+
+function projectIsReadable(record: YonaRecord): boolean {
+  for (const key of ["viewerCanRead", "canRead", "isReadable", "readable"]) {
+    if (record[key] === false) {
+      return false;
+    }
+  }
+  return true;
 }
