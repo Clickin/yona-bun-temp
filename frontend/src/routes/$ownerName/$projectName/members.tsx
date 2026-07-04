@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -112,6 +112,7 @@ function ProjectMembersBody({
 }) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
+  const addMemberInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const addMutation = useMutation({
     mutationFn: async (loginId: string) => {
@@ -130,6 +131,12 @@ function ProjectMembersBody({
     const formData = new FormData(event.currentTarget);
     addMutation.mutate(String(formData.get("loginId") ?? ""));
   }
+
+  useEffect(() => {
+    if (booleanField(members.viewerCanUpdate)) {
+      addMemberInputRef.current?.focus();
+    }
+  }, [members.viewerCanUpdate]);
 
   return (
     <div className="page-wrap-outer">
@@ -163,6 +170,7 @@ function ProjectMembersBody({
                 autoComplete="off"
                 placeholder={t("project.members.addMember")}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
+                ref={addMemberInputRef}
                 title={t("user.wrongloginId.alert")}
               />
               <button type="submit" className="ybtn ybtn-success">

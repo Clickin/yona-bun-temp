@@ -58,6 +58,17 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   });
 });
 
+test("project members focuses add member input on load like legacy member module", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page);
+
+  await page.goto(`${basePath}/admin/sample/members`);
+
+  await expect(page.locator("#loginId")).toBeFocused();
+});
+
 test("project members settings tab anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
