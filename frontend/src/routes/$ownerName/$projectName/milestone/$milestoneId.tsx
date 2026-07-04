@@ -384,6 +384,7 @@ function ProjectMilestoneDetailBody({
                       );
                     }}
                     onTitlePrefixSearch={setFilter}
+                    milestoneId={milestoneId}
                     ownerName={ownerName}
                     projectName={projectName}
                     projectPath={projectPath}
@@ -791,6 +792,7 @@ function MilestoneIssueRow({
   checked,
   filter,
   issue,
+  milestoneId,
   onCheckedChange,
   onTitlePrefixSearch,
   ownerName,
@@ -801,6 +803,7 @@ function MilestoneIssueRow({
   checked: boolean;
   filter: string;
   issue: ProjectMilestoneIssue;
+  milestoneId: string;
   onCheckedChange: (issueId: string, checked: boolean) => void;
   onTitlePrefixSearch: (filter: string) => void;
   ownerName: string;
@@ -1009,9 +1012,9 @@ function MilestoneIssueRow({
             {labels.map((label) => (
               <Link
                 key={stringField(label.id)}
-                to={`${projectPath}/issues?state=open&labelIds=${encodeURIComponent(
-                  stringField(label.id),
-                )}`}
+                to={`${projectPath}/issues?milestoneId=${encodeURIComponent(
+                  milestoneId,
+                )}&labelIds=${encodeURIComponent(stringField(label.id))}`}
                 className="label issue-label list-label active"
                 data-category-id={stringField(label.categoryId)}
                 data-label-id={stringField(label.id)}

@@ -262,7 +262,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   ).toHaveText("bug");
   await expect(
     page.locator('#issue-item-41 .issue-label[data-category-id="3"][data-label-id="8"]'),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?state=open&labelIds=8`);
+  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?milestoneId=5&labelIds=8`);
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).toHaveAttribute(
     "title",
     "Assignee: Dev Member",
