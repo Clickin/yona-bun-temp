@@ -17,6 +17,13 @@ type ProjectImportSearch = {
   owner?: string;
 };
 
+type ProjectImportFormOptionsState = {
+  errors?: Record<string, string | string[] | undefined>;
+  form?: Record<string, string | undefined>;
+  formErrors?: Record<string, string | string[] | undefined>;
+  formValues?: Record<string, string | undefined>;
+};
+
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRoute,
   validateSearch(search): ProjectImportSearch {
@@ -50,6 +57,12 @@ function ProjectImportScreen({
   const router = useRouter();
   const queryClient = useQueryClient();
   const optionsQuery = useQuery(projectCreateFormOptionsQueryOptions(runtimeConfig, { owner }));
+  const initialFormState = (optionsQuery.data ?? {}) as ProjectImportFormOptionsState;
+  const initialFormValues = initialFormState.formValues ?? initialFormState.form ?? {};
+  const initialFormErrors = initialFormState.formErrors ?? initialFormState.errors ?? {};
+  const initialAuthId = initialFormValues.authId ?? "";
+  const repoAuthError = firstError(initialFormErrors.repoAuth);
+  const ownerError = firstError(initialFormErrors.owner);
   const ownerOptions = optionsQuery.data?.ownerOptions ?? [];
   const selectedOwner =
     ownerOptions.find((option) => option.selected)?.ownerName ??
@@ -62,7 +75,8 @@ function ProjectImportScreen({
     ownerOptions.find((option) => option.ownerName === ownerName)?.organization ??
     selectedOwnerOption?.organization ??
     false;
-  const [usesRepoAuth, setUsesRepoAuth] = React.useState(false);
+  const initiallyUsesRepoAuth = initialAuthId !== "" || repoAuthError !== undefined;
+  const [usesRepoAuth, setUsesRepoAuth] = React.useState(initiallyUsesRepoAuth);
   const [repoAuthChanged, setRepoAuthChanged] = React.useState(false);
   const [projectScope, setProjectScope] = React.useState("PUBLIC");
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
@@ -73,6 +87,11 @@ function ProjectImportScreen({
       setOwnerName(selectedOwner);
     }
   }, [ownerName, selectedOwner]);
+  React.useEffect(() => {
+    if (!repoAuthChanged) {
+      setUsesRepoAuth(initiallyUsesRepoAuth);
+    }
+  }, [initiallyUsesRepoAuth, repoAuthChanged]);
   const importMutation = useMutation({
     mutationFn: async (input: {
       authId: string;
@@ -191,7 +210,8 @@ function ProjectImportScreen({
                             type="text"
                             name="authId"
                             className="text"
-                            defaultValue=""
+                            key={initialAuthId}
+                            defaultValue={initialAuthId}
                             disabled={repoAuthChanged && !usesRepoAuth}
                             placeholder={t("project.import.auth.userid.desc")}
                           />
@@ -241,6 +261,9 @@ function ProjectImportScreen({
                       <OwnerOption key={option.ownerName} option={option} />
                     ))}
                   </select>
+                  {ownerError ? (
+                    <span className="orange-text">{t(ownerError, { fallback: ownerError })}</span>
+                  ) : null}
                 </dd>
 
                 <dt>
@@ -415,6 +438,10 @@ function ProjectImportScreen({
       </div>
     </SiteLayoutShell>
   );
+}
+
+function firstError(error: string | string[] | undefined) {
+  return Array.isArray(error) ? error[0] : error;
 }
 
 function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {

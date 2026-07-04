@@ -236,6 +236,46 @@ test("project import form mirrors legacy auth, owner, and menu dependencies", as
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project import form renders legacy server auth and owner validation state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectImport(page, {
+    formErrors: {
+      owner: "project.owner.invalidate",
+      repoAuth: "project.import.error.transport.unauthorized",
+    },
+    formValues: {
+      authId: "deploy-bot",
+    },
+  });
+
+  await page.goto(`${basePath}/_import?owner=admin`);
+
+  await expect(page.locator("#useRepoAuth")).toBeChecked();
+  await expect(page.locator("#repoAuth")).toBeVisible();
+  await expect(page.locator("#repoAuth")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#repoAuth input[name='authId']")).toHaveValue("deploy-bot");
+  await expect(page.locator("#project-owner + span.orange-text")).toHaveText(
+    "Owner information is not valid.",
+  );
+  expect(
+    await canonicalizeElements(page, [
+      "#useRepoAuth",
+      "#repoAuth",
+      "#project-owner",
+      "#project-owner + span.orange-text",
+    ]),
+  ).toEqual(
+    [
+      '<input id="useRepoAuth" type="checkbox"></input>',
+      '<div class="repo-auth-wrap" id="repoAuth" style="display: block;"><div class="row-fluid"><dl class="span6"><dt>Access ID</dt><dd><input class="text" name="authId" placeholder="Entered information will not be stored anywhere." type="text" value="deploy-bot"></input></dd></dl><dl class="span6"><dt>Access Password</dt><dd><input class="text" name="authPw" type="password"></input></dd></dl></div></div>',
+      '<select class="mb10" data-format="user" data-toggle="select2" id="project-owner" name="owner"><option data-avatar-url="/assets/images/default-avatar-32.png" data-type="user" value="admin">admin</option><option data-avatar-url="/assets/images/organization_default_logo.png" data-type="group" value="weblabs">weblabs</option></select>',
+      '<span class="orange-text">Owner information is not valid.</span>',
+    ].join(""),
+  );
+});
+
 test("project import form links preserve legacy hrefs and navigate in the SPA", async ({
   page,
 }) => {
@@ -296,7 +336,13 @@ test("project import form navigation links use TanStack Router Link in route sou
   expect(routeSource).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/")}');
 });
 
-async function mockProjectImport(page: Page) {
+async function mockProjectImport(
+  page: Page,
+  initialState: {
+    formErrors?: Record<string, string>;
+    formValues?: Record<string, string>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -332,6 +378,7 @@ async function mockProjectImport(page: Page) {
           },
         ],
         selectedOwnerName: "admin",
+        ...initialState,
       }),
     });
   });
@@ -397,6 +444,69 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
   });
+}
+
+async function canonicalizeElements(page: Page, selectors: string[]) {
+  return page.evaluate((targetSelectors) => {
+    return targetSelectors
+      .map((selector) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+          throw new Error(`Missing ${selector}`);
+        }
+        return visit(element);
+      })
+      .join("");
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "value",
+        "maxlength",
+        "placeholder",
+        "autocomplete",
+        "accesskey",
+        "href",
+        "target",
+        "title",
+        "style",
+        "checked",
+        "disabled",
+        "data-toggle",
+        "data-placement",
+        "data-format",
+        "data-type",
+        "data-avatar-url",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .sort()
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+  }, selectors);
 }
 
 async function importFormMetrics(page: Page) {
