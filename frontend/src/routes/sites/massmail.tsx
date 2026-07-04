@@ -239,9 +239,10 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         id="write-email"
         type="submit"
         className="ybtn ybtn-primary"
+        disabled={mailListMutation.isPending}
         onClick={() => mailListMutation.mutate()}
       >
-        <strong>{t("site.mail.write")}</strong>
+        <strong>{mailListMutation.isPending ? "loading..." : t("site.mail.write")}</strong>
       </button>
     </div>
   );

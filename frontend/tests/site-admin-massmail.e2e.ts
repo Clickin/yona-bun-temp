@@ -14,7 +14,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -213,7 +213,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
-  const requests = await mockMailList(page);
+  const requests = await mockMailList(page, { delayMs: 100 });
   await captureWindowOpen(page);
 
   await page.goto(`${basePath}/sites/massmail`);
@@ -259,10 +259,14 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await expect(page.locator("#selected-projects .label")).toHaveText("yona/docs x");
 
   await page.locator("#write-email").click();
+  await expect(page.locator("#write-email")).toBeDisabled();
+  await expect(page.locator("#write-email strong")).toHaveText("loading...");
   await expect.poll(() => requests.payloads).toEqual([{ all: false, projects: ["yona/docs"] }]);
   await expect
     .poll(() => page.evaluate(() => window.__openedWindows ?? []))
     .toEqual([{ target: "_self", url: "mailto:maintainer@example.com,writer@example.com," }]);
+  await expect(page.locator("#write-email")).toBeEnabled();
+  await expect(page.locator("#write-email strong")).toHaveText("Write");
 
   await page.locator("#mailtoAll").click();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
@@ -424,7 +428,7 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockMailList(page: Page) {
+async function mockMailList(page: Page, options: { delayMs?: number } = {}) {
   const requests = {
     payloads: [] as Array<{ all: boolean; projects: string[] }>,
   };
@@ -435,6 +439,9 @@ async function mockMailList(page: Page) {
       projects?: string[];
     };
     requests.payloads.push({ all: body.all === true, projects: body.projects ?? [] });
+    if (options.delayMs) {
+      await new Promise((resolve) => setTimeout(resolve, options.delayMs));
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ recipients: ["maintainer@example.com", "writer@example.com"] }),
