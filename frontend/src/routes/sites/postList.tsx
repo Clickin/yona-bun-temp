@@ -85,6 +85,7 @@ function PostListPagination({
   currentPage: number;
   totalPages: number;
 }) {
+  const { t } = useLegacyMessages();
   const router = useRouter();
 
   if (totalPages <= 0) {
@@ -105,12 +106,12 @@ function PostListPagination({
               to="/sites/postList"
             >
               <i className="ico btn-pg-prev"></i>
-              <span>PREV</span>
+              <span>{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">PREV</span>
+              <span className="off">{t("button.prevPage")}</span>
             </>
           )}
         </li>
@@ -154,12 +155,12 @@ function PostListPagination({
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
             >
-              <span>NEXT</span>
+              <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </Link>
           ) : (
             <>
-              <span className="off">NEXT</span>
+              <span className="off">{t("button.nextPage")}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}

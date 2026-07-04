@@ -111,11 +111,11 @@ const EXPECTED_POST_LIST_SCREEN = `
         </ul>
         <div id="pagination" class="page-navigation-wrap">
           <ul class="page-nums">
-            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li>
+            <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/postList?pageNum=2"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/postList?pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -199,7 +199,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
-  const nextPageLink = page.locator("#pagination a", { hasText: "NEXT" });
+  const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=2`);
   await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
 
@@ -247,7 +247,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
-  const previousPageLink = page.locator("#pagination a", { hasText: "PREV" });
+  const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
   await expect(previousPageLink).not.toHaveAttribute("pjax-page", "");
   await previousPageLink.click();
