@@ -238,6 +238,21 @@ test("project pull request changes matches legacy git/viewChanges.scala.html emp
   );
 });
 
+test("project pull request changes renders legacy file diff error row", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    files: [{ errorCode: "DIFF_SIZE_EXCEEDED", patch: "", path: "src/main.rs" }],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+
+  const diffTable = page.locator(".diff-partial-code table.diff-container.show-comments");
+  await expect(diffTable).toHaveCount(1);
+  await expect(diffTable.locator("tbody > tr")).toHaveCount(1);
+  await expect(diffTable.locator("tbody > tr > td")).toHaveAttribute("colspan", "3");
+  await expect(diffTable.locator("tbody > tr > td")).toHaveText("This diff is too big to display.");
+});
+
 test("project pull request selected commit changes matches legacy git/viewChanges.scala.html DOM", async ({
   page,
 }) => {
@@ -772,6 +787,7 @@ async function mockPullRequestChanges(
     cardThreads?: unknown[];
     commits?: unknown[];
     expectedCommitId?: string;
+    files?: unknown[];
     nonRangedThreads?: unknown[];
     threads?: unknown[];
   } = {},
@@ -829,7 +845,7 @@ async function mockPullRequestChanges(
         body: JSON.stringify({
           cardThreads: options.cardThreads ?? [],
           commits: options.commits ?? [],
-          files: [],
+          files: options.files ?? [],
           inlineThreads: [],
           nonRangedThreads: options.nonRangedThreads ?? [],
           pullRequest: pullRequestDetail(),

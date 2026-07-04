@@ -34,6 +34,14 @@ type CurrentUserSummary = {
   userLabel: string;
 };
 
+type PullRequestChangedFileWithError = PullRequestChangesResponse["files"][number] & {
+  error?: string;
+  errorCode?: string;
+  errorCodes?: string[];
+  errors?: string[];
+  hasError?: boolean | string;
+};
+
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes",
 )({
@@ -203,16 +211,10 @@ function ProjectPullRequestChangesBody({
                     />
                   </div>
                   {changes.files.map((file) => (
-                    <div className="diff-partial-outer" key={file.path}>
-                      <div className="diff-partial-inner">
-                        <div className="diff-partial-meta">
-                          <div className="diff-partial-file">
-                            <span className="filename">{file.path}</span>
-                          </div>
-                        </div>
-                        <pre className="diff-body">{file.patch}</pre>
-                      </div>
-                    </div>
+                    <PullRequestFileDiff
+                      file={file as PullRequestChangedFileWithError}
+                      key={file.path}
+                    />
                   ))}
                   <div className="btnPop">
                     <button type="button" className="ybtn ybtn-info ybtn-small">
@@ -558,6 +560,69 @@ function ReviewCard({
       </p>
     </Link>
   );
+}
+
+function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }) {
+  const errorMessageKey = fileDiffErrorMessageKey(file);
+
+  return (
+    <div className="diff-partial-outer">
+      <div className="diff-partial-inner">
+        <div className="diff-partial-meta">
+          <div className="diff-partial-file">
+            <span className="filename">{file.path}</span>
+          </div>
+        </div>
+        {errorMessageKey ? (
+          <div className="diff-partial-code" data-hashcode={file.path}>
+            <table
+              className="diff-container show-comments"
+              data-path-a={file.path}
+              data-path-b={file.path}
+              data-file-path={file.path}
+            >
+              <tbody>
+                <FileDiffErrorRow messageKey={errorMessageKey} />
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <pre className="diff-body">{file.patch}</pre>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FileDiffErrorRow({ messageKey }: { messageKey: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <tr>
+      <td colSpan={3}>{t(messageKey)}</td>
+    </tr>
+  );
+}
+
+function fileDiffErrorMessageKey(file: PullRequestChangedFileWithError) {
+  const errors = [
+    file.error,
+    file.errorCode,
+    file.hasError === true ? "UNKNOWN" : file.hasError || undefined,
+    ...(file.errors ?? []),
+    ...(file.errorCodes ?? []),
+  ];
+
+  if (errors.includes("OTHERS_SIZE_EXCEEDED")) {
+    return "code.skipDiff";
+  }
+  if (errors.includes("A_SIZE_EXCEEDED") || errors.includes("B_SIZE_EXCEEDED")) {
+    return "code.tooBigFile";
+  }
+  if (errors.includes("DIFF_SIZE_EXCEEDED")) {
+    return "code.tooBigDiff";
+  }
+  return errors.some(Boolean) ? "code.unknownError" : null;
 }
 
 function reviewThreadPath(pullRequest: PullRequestDetailResponse, thread: ReviewThread) {
