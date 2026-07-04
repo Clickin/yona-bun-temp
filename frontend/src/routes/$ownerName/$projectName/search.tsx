@@ -59,7 +59,7 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: !search.routeInvalid,
   });
-  const hasKeyword = search.keyword.trim().length > 0;
+  const hasKeyword = search.keyword.length > 0;
   const searchQuery = useQuery({
     ...projectSearchQueryOptions(runtimeConfig, {
       ...search,

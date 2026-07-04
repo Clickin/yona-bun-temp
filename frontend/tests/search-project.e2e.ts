@@ -71,6 +71,20 @@ test("project search without required query renders legacy badrequest_default.sc
   expect(searchApi.count).toBe(0);
 });
 
+test("project search preserves whitespace-only keyword and calls scoped search API", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockProjectSearch(page);
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=%20%20&searchType=review`);
+  await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
+  await expect(page.locator("#searchKeyword")).toHaveValue("  ");
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Code Reviews0");
+  expect(searchApi.count).toBe(1);
+  expect(searchApi.keywords).toEqual(["  "]);
+});
+
 test("project search category and form navigation stay inside the React SPA", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSearch(page);
@@ -104,7 +118,7 @@ test("project search category and form navigation stay inside the React SPA", as
 });
 
 async function mockProjectSearch(page: Page) {
-  const apiCalls = { count: 0 };
+  const apiCalls: { count: number; keywords: string[] } = { count: 0, keywords: [] };
 
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -133,6 +147,7 @@ async function mockProjectSearch(page: Page) {
     const url = new URL(route.request().url());
     const keyword = url.searchParams.get("keyword") ?? "";
     const searchType = url.searchParams.get("searchType") ?? "review";
+    apiCalls.keywords.push(keyword);
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
