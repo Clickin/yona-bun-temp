@@ -20,13 +20,8 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
-declare module "react" {
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
-
 type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
+type LegacyPullRequestRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export type ProjectPullRequestsSearch = {
   contributorId: number;
@@ -568,9 +563,10 @@ function ProjectPullRequestRow({
   const reviewerClass = pullRequest.reviewerNames.includes(currentUserLabel)
     ? "infos-item over"
     : "infos-item";
+  const legacyPullRequestRowAttrs = { href: pullRequestHref } satisfies LegacyPullRequestRowAttrs;
 
   return (
-    <li className="post-item title" href={pullRequestHref}>
+    <li className="post-item title" {...legacyPullRequestRowAttrs}>
       <div className="span10 span-hard-wrap">
         <Link
           to="/$user"

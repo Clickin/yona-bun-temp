@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { HTMLAttributes } from "react";
 import {
   listOrganizationBoardsQueryOptions,
   type BoardPostListItem,
@@ -13,12 +14,6 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
-declare module "react" {
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
-
 type OrganizationBoardsSearch = {
   filter: string;
   orderBy: string;
@@ -26,6 +21,8 @@ type OrganizationBoardsSearch = {
   pageNum: number;
   projectNames: string[];
 };
+
+type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export const Route = createFileRoute("/organizations/$organizationName/boards")({
   component: OrganizationBoardsRoute,
@@ -246,9 +243,13 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
     basePath,
     `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`,
   );
+  const legacyPostItemAttrs = {
+    className: "post-item title",
+    href: postHref,
+  } satisfies LegacyPostItemAttrs;
 
   return (
-    <li className="post-item title" href={postHref}>
+    <li {...legacyPostItemAttrs}>
       <Link
         to="/$user"
         params={{ user: post.authorLoginId }}

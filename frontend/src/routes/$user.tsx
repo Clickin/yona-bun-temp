@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type HTMLAttributes, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
@@ -17,16 +17,12 @@ import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
-declare module "react" {
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
-
 type PublicProfileSearch = {
   daysAgo: number;
   selected: "issues" | "projects" | "pullRequests";
 };
+
+type LegacyIssueRowAttributes = HTMLAttributes<HTMLLIElement> & { href: string };
 
 type UsermenuTab = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
 
@@ -524,9 +520,14 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   const dueDateOverdue = Boolean(issue.dueDateOverdue);
   const dueDateText = stringField(issue, "dueDateText");
   const issueState = stringField(issue, "state");
+  const legacyIssueRowAttrs = {
+    className: "post-item title",
+    href: issueHref,
+    id: `issue-item-${issueId}`,
+  } satisfies LegacyIssueRowAttributes;
 
   return (
-    <li className="post-item title" id={`issue-item-${issueId}`} href={issueHref}>
+    <li {...legacyIssueRowAttrs}>
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">

@@ -257,6 +257,8 @@ test("organization board row links preserve legacy hrefs with SPA transitions", 
 });
 
 test("organization board route source uses direct Links for row navigation", async () => {
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain('declare module "react"');
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("interface LiHTMLAttributes");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("as unknown as");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("legacyHref");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("const projectHref");
@@ -270,6 +272,11 @@ test("organization board route source uses direct Links for row navigation", asy
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('to="/$ownerName/$projectName"');
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('to="/$user"');
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain('hash="comments"');
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain(
+    "type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain("satisfies LegacyPostItemAttrs");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain("<li {...legacyPostItemAttrs}>");
 });
 
 test("organization board route source uses direct Links for organization top, filter, and header navigation", async () => {
