@@ -192,6 +192,49 @@ test("organization directory top tabs keep legacy hrefs without active marker le
   await expect(orgLink).not.toHaveAttribute("data-status");
 });
 
+test("organization directory renders unreadable private organization card like legacy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(page, [
+    {
+      createdLabel: "just now",
+      createdTitle: "2026-06-30",
+      description: "Web labs group",
+      logoUrl: "/assets/images/organization_default_logo.png",
+      organizationName: "weblabs",
+    },
+    {
+      isPrivate: true,
+      organizationName: "secret-labs",
+      viewerCanRead: false,
+    },
+  ]);
+
+  await page.goto(`${basePath}/orgs?filter=weblabs`);
+  const unreadableCard = page.locator(".all-projects .project").nth(1);
+  const infoWrap = unreadableCard.locator(".info-wrap");
+
+  await expect(unreadableCard).toHaveCSS("background-color", "rgb(252, 252, 252)");
+  await expect(infoWrap).toHaveCSS("opacity", "0.3");
+  await expect(unreadableCard.locator(".owner-avatar-wrap img")).toHaveAttribute(
+    "src",
+    "/assets/images/organization_default_logo.png",
+  );
+  await expect(unreadableCard.locator(".owner-avatar-wrap img")).toHaveAttribute(
+    "alt",
+    "secret-labs",
+  );
+  await expect(infoWrap.locator("div").last()).toHaveCSS("color", "rgb(128, 128, 128)");
+  await expect(unreadableCard).toContainText(
+    "You do not have permission to view this project's information",
+  );
+  await expect(unreadableCard.locator("a")).toHaveCount(0);
+  await expect(
+    page.locator(".all-projects .project").first().locator(".header a.black"),
+  ).toHaveText("weblabs");
+});
+
 test("organization directory source uses Link for internal route anchors", () => {
   const source = readFileSync("src/routes/orgs.tsx", "utf8");
 
@@ -211,7 +254,18 @@ test("organization directory source uses Link for internal route anchors", () =>
   expect(source).toContain('"data-status": undefined');
 });
 
-async function mockAuthenticatedOrganizations(page: Page) {
+async function mockAuthenticatedOrganizations(
+  page: Page,
+  items: Record<string, unknown>[] = [
+    {
+      createdLabel: "just now",
+      createdTitle: "2026-06-30",
+      description: "Web labs group",
+      logoUrl: "/assets/images/organization_default_logo.png",
+      organizationName: "weblabs",
+    },
+  ],
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -247,15 +301,7 @@ async function mockAuthenticatedOrganizations(page: Page) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        items: [
-          {
-            createdLabel: "just now",
-            createdTitle: "2026-06-30",
-            description: "Web labs group",
-            logoUrl: "/assets/images/organization_default_logo.png",
-            organizationName: "weblabs",
-          },
-        ],
+        items,
       }),
     });
   });

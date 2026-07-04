@@ -130,6 +130,21 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
 function OrganizationListItem({ organization }: { organization: OrganizationDirectoryItem }) {
   const organizationName = stringField(organization, "organizationName", "");
+  if (!organizationIsReadable(organization)) {
+    return (
+      <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
+        <div className="info-wrap" style={{ opacity: 0.3 }}>
+          <div className="owner-avatar-wrap">
+            <img src="/assets/images/organization_default_logo.png" alt={organizationName} />
+          </div>
+          <div style={{ float: "left", color: "gray" }}>
+            You do not have permission to view this project's information
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   const logoUrl = stringField(
     organization,
     "logoUrl",
@@ -189,4 +204,13 @@ function organizationItems(payload: unknown): OrganizationDirectoryItem[] {
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function organizationIsReadable(record: YonaRecord): boolean {
+  for (const key of ["viewerCanRead", "canRead", "isReadable", "readable"]) {
+    if (record[key] === false) {
+      return false;
+    }
+  }
+  return true;
 }
