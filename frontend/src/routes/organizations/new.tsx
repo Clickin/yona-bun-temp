@@ -9,23 +9,39 @@ import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
+type OrganizationCreateSearch = {
+  warning?: string;
+};
+
 export const Route = createFileRoute("/organizations/new")({
   component: OrganizationNewRoute,
+  validateSearch(search): OrganizationCreateSearch {
+    return {
+      warning: typeof search.warning === "string" ? search.warning : undefined,
+    };
+  },
 });
 
 function OrganizationNewRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { warning } = Route.useSearch();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <OrganizationNewScreen runtimeConfig={runtimeConfig} />
+        <OrganizationNewScreen runtimeConfig={runtimeConfig} warning={warning} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function OrganizationNewScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function OrganizationNewScreen({
+  runtimeConfig,
+  warning,
+}: {
+  runtimeConfig: RuntimeConfig;
+  warning?: string;
+}) {
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -81,6 +97,7 @@ function OrganizationNewScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 <dt>
                   <div className="n-alert" ref={legacyNameErrorTypeRef}>
                     <div className="orange-txt">
+                      {warning ? <span className="warning">{t(warning)}</span> : null}
                       <span
                         className="msg wrongName"
                         style={nameError ? undefined : { display: "none" }}

@@ -12,7 +12,7 @@ const EXPECTED_ORGANIZATION_NEW = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_ROOT_HREF__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -31,9 +31,9 @@ const EXPECTED_ORGANIZATION_NEW = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -46,26 +46,26 @@ const EXPECTED_ORGANIZATION_NEW = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </a>
+        </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
           <i class="yobicon-plus"></i><span class="caret"></span>
-        </a>
+        </button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
           <li><hr class="no-margin"></li>
           <li><a href="__BASE_PATH__/projectform">Create new project</a></li>
-          <li><a href="__BASE_PATH__/organizations/new">New Group</a></li>
+          <li><a href="__BASE_PATH__/organizations/new" class="active">New Group</a></li>
         </ul>
       </li>
     </ul>
@@ -174,6 +174,35 @@ test("organization create form validates name and posts REST payload", async ({ 
   await expect(page).toHaveURL(`${basePath}/organizations/team-alpha`);
 });
 
+test("organization create form renders legacy flash warning before wrongName", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedSession(page);
+
+  await page.goto(`${basePath}/organizations/new?warning=organization.name.duplicate`);
+
+  const warning = page.locator(".n-alert .orange-txt > span.warning");
+  const wrongName = page.locator(".n-alert .orange-txt > span.wrongName");
+  await expect(warning).toHaveText("Already existent user's login id or group name.");
+  await expect(wrongName).toBeHidden();
+  expect(
+    await page.locator(".n-alert .orange-txt > span").evaluateAll((spans) =>
+      spans.map((span) => ({
+        className: span.className,
+        text: span.textContent ?? "",
+      })),
+    ),
+  ).toEqual([
+    {
+      className: "warning",
+      text: "Already existent user's login id or group name.",
+    },
+    {
+      className: "msg wrongName",
+      text: "",
+    },
+  ]);
+});
+
 test("organization create cancel keeps legacy href and navigates through the SPA", async ({
   page,
 }) => {
@@ -228,6 +257,9 @@ test("organization create route source keeps cancel navigation out of raw anchor
   expect(
     rawAnchorBlocks.filter((block) => /Cancel|button\.cancel|prefixBasePath/u.test(block)),
   ).toEqual([]);
+  expect(routeSource).not.toMatch(
+    /dangerouslySetInnerHTML|document\.|addEventListener|classList|\.style\.display/u,
+  );
 });
 
 async function mockAuthenticatedSession(page: Page) {
