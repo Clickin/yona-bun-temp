@@ -187,6 +187,16 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   );
 });
 
+test("project commit detail markdown help uses shared React helper", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("LegacyMarkdownHelp");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("help/markdown.scala.html?raw");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
+    /markdown-help[\s\S]{0,160}dangerouslySetInnerHTML/u,
+  );
+});
+
 test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
   page,
 }) => {
@@ -270,6 +280,14 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   ).toHaveCount(2);
   const commentEditor = page.locator('#comment-form [data-toggle="markdown-editor"]');
   const reviewEditor = page.locator('#review-form [data-toggle="markdown-editor"]');
+  await expect(commentEditor.locator(".tab-content > .markdown-help")).toHaveCount(1);
+  await expect(reviewEditor.locator(".tab-content > .markdown-help")).toHaveCount(1);
+  await expect(commentEditor.locator(".markdown-help .markdown-help-nav .label")).toHaveText(
+    "Markdown help",
+  );
+  await expect(
+    commentEditor.locator(".markdown-help .markdown-help-item.markdownHeaders"),
+  ).toHaveCount(1);
   await expect(commentEditor.locator('button[data-mode="edit"]')).toHaveText("Edit");
   await expect(commentEditor.locator('button[data-mode="preview"]')).toHaveText("Preview");
   await expect(reviewEditor.locator('button[data-mode="edit"]')).toHaveText("Edit");

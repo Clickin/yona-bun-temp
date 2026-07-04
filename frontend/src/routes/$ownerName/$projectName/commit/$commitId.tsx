@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { type AnchorHTMLAttributes, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import legacyMarkdownHelpTemplate from "../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import {
   codeCommitDetailQueryOptions,
   closeCommitDiscussionThreadRest,
@@ -27,15 +26,10 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
+import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
-const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
-  .replace(/<\/div>\s*$/u, "");
 
 type CurrentUserSummary = {
   avatarUrl: string;
@@ -1370,10 +1364,7 @@ function Editor({
         </li>
       </ul>
       <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
-        <div
-          className="markdown-help"
-          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
-        />
+        <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
