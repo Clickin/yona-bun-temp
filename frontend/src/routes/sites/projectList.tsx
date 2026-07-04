@@ -102,6 +102,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                     <input
                       type="text"
                       className="textbox"
+                      key={filter}
                       name="filter"
                       placeholder={t("site.project.filter")}
                       defaultValue={filter}

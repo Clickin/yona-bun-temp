@@ -14,7 +14,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -334,6 +334,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-project-search");
 
+  await page.goBack();
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("road");
+  await expect(page.locator('.form-search input[name="filter"]')).toHaveValue("road");
+
   await mockPosts(page);
   const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
@@ -440,6 +444,7 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).not.toContain("navItems.map");
   expect(routeSource).toContain('to="/sites/projectList"');
   expect(routeSource).toContain('to="/$ownerName/$projectName"');
+  expect(routeSource).toContain("key={filter}");
   expect(routeSource).not.toContain("<a href={projectPath}");
   expect(routeSource).not.toContain('"pjax-page": ""');
 });
