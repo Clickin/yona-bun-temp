@@ -14,7 +14,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -241,6 +241,12 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
     selectedLabelPaddingBlock: 4,
     selectedLabelPaddingInline: 8,
   });
+
+  await page.locator("#mailtoPrj").click();
+  await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+  await page.locator("#input-project").fill("admin/projectYobi");
+  await page.locator("#select-project").click();
+  await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
 
   await page.locator("#input-project").fill("yona/docs");
   await page.keyboard.press("Enter");

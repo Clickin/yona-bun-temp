@@ -147,6 +147,11 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     }
   }
 
+  function selectMailingType(nextMailingType: "all" | "projects") {
+    setMailingType(nextMailingType);
+    setSelectedProjects([]);
+  }
+
   return (
     <div className="mess-mail-wrap">
       <label className="radio" htmlFor="mailtoAll">
@@ -158,10 +163,8 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           checked={mailingType === "all"}
           data-toggle="mail-type"
           data-action="hide"
-          onChange={() => {
-            setMailingType("all");
-            setSelectedProjects([]);
-          }}
+          onClick={() => selectMailingType("all")}
+          onChange={() => selectMailingType("all")}
         />
         {t("site.massMail.toAll")}
       </label>
@@ -174,10 +177,8 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           data-toggle="mail-type"
           data-action="show"
           checked={mailingType === "projects"}
-          onChange={() => {
-            setMailingType("projects");
-            setSelectedProjects([]);
-          }}
+          onClick={() => selectMailingType("projects")}
+          onChange={() => selectMailingType("projects")}
         />
         {t("site.massMail.toProjects")}
       </label>
