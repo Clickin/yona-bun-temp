@@ -55,6 +55,14 @@ type ParsedFileDiff = {
   pathB: string;
 };
 
+type CommitFileDiff = CodeCommitDetailResponse["files"][number] & {
+  error?: string;
+  errorCode?: string;
+  errorCodes?: string[];
+  errors?: string[];
+  hasError?: boolean | string;
+};
+
 type CommitHashLinkProps = {
   children: ReactNode;
   className?: string;
@@ -604,7 +612,7 @@ function FileDiffView({
   commitB: string;
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
-  file: { path: string; patch: string };
+  file: CommitFileDiff;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -619,6 +627,7 @@ function FileDiffView({
   const commitAShort = shortenCommitId(commitA);
   const commitBShort = shortenCommitId(commitB);
   const fileThreads = threads.filter((thread) => thread.path === filePath);
+  const errorMessageKey = fileDiffErrorMessageKey(file);
 
   return (
     <div id={fileId} className="diff-partial-outer">
@@ -670,47 +679,82 @@ function FileDiffView({
             data-file-path={filePath}
           >
             <tbody>
-              {parsed.lines.map((line) => {
-                const lineThreads =
-                  line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
+              {errorMessageKey ? (
+                <FileDiffErrorRow messageKey={errorMessageKey} />
+              ) : (
+                parsed.lines.map((line) => {
+                  const lineThreads =
+                    line.kind === "line" ? threadsForDiffLine(fileThreads, line) : [];
 
-                return line.kind === "range" ? (
-                  <tr className="range" key={diffLineKey(line)}>
-                    <td className="linenum">
-                      <div className="line-number" data-line-num="...">
-                        <span className="hidden">...</span>
-                      </div>
-                    </td>
-                    <td className="linenum">
-                      <div className="line-number" data-line-num="...">
-                        <span className="hidden">...</span>
-                      </div>
-                    </td>
-                    <td className="hunk">{line.text}</td>
-                  </tr>
-                ) : (
-                  <FragmentWithInlineComments
-                    commitId={commitB}
-                    currentUser={currentUser}
-                    deleteComment={deleteComment}
-                    key={diffLineKey(line)}
-                    line={line}
-                    ownerName={ownerName}
-                    projectName={projectName}
-                    runtimeConfig={runtimeConfig}
-                    submitReply={submitReply}
-                    threads={lineThreads}
-                    toggleThreadState={toggleThreadState}
-                    updateComment={updateComment}
-                  />
-                );
-              })}
+                  return line.kind === "range" ? (
+                    <tr className="range" key={diffLineKey(line)}>
+                      <td className="linenum">
+                        <div className="line-number" data-line-num="...">
+                          <span className="hidden">...</span>
+                        </div>
+                      </td>
+                      <td className="linenum">
+                        <div className="line-number" data-line-num="...">
+                          <span className="hidden">...</span>
+                        </div>
+                      </td>
+                      <td className="hunk">{line.text}</td>
+                    </tr>
+                  ) : (
+                    <FragmentWithInlineComments
+                      commitId={commitB}
+                      currentUser={currentUser}
+                      deleteComment={deleteComment}
+                      key={diffLineKey(line)}
+                      line={line}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                      runtimeConfig={runtimeConfig}
+                      submitReply={submitReply}
+                      threads={lineThreads}
+                      toggleThreadState={toggleThreadState}
+                      updateComment={updateComment}
+                    />
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   );
+}
+
+function FileDiffErrorRow({ messageKey }: { messageKey: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <tr>
+      <td colSpan={3}>{t(messageKey)}</td>
+    </tr>
+  );
+}
+
+function fileDiffErrorMessageKey(file: CommitFileDiff) {
+  const errors = [
+    file.error,
+    file.errorCode,
+    file.hasError === true ? "UNKNOWN" : file.hasError || undefined,
+    ...(file.errors ?? []),
+    ...(file.errorCodes ?? []),
+  ];
+
+  if (errors.includes("OTHERS_SIZE_EXCEEDED")) {
+    return "code.skipDiff";
+  }
+  if (errors.includes("A_SIZE_EXCEEDED") || errors.includes("B_SIZE_EXCEEDED")) {
+    return "code.tooBigFile";
+  }
+  if (errors.includes("DIFF_SIZE_EXCEEDED")) {
+    return "code.tooBigDiff";
+  }
+  return errors.some(Boolean) ? "code.unknownError" : null;
 }
 
 function FragmentWithInlineComments({

@@ -488,6 +488,31 @@ index 1234567..abcdef1 100644
   });
 });
 
+test("project commit detail renders legacy file diff error row", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        errorCode: "DIFF_SIZE_EXCEEDED",
+        path: "src/large.rs",
+        patch: `diff --git a/src/large.rs b/src/large.rs
+index 1234567..abcdef1 100644
+--- a/src/large.rs
++++ b/src/large.rs`,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  const errorCell = page.locator("#src-large-rs .diff-container.show-comments tbody tr td");
+  await expect(errorCell).toHaveAttribute("colspan", "3");
+  await expect(errorCell).toHaveText("This diff is too big to display.");
+  await expect(page.locator("#src-large-rs .diff-container.show-comments tbody tr")).toHaveCount(1);
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 async function readPartialDiffMetrics(page: Page) {
   return page.evaluate(() => {
     const diffBody = document.querySelector<HTMLElement>(".diff-body");
