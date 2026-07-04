@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const EMPTY_WEBHOOKS_LIST =
@@ -32,6 +33,28 @@ const EXPECTED_PROJECT_WEBHOOKS = `
 <div class="page-wrap-outer"><div class="project-page-wrap webhook-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li><li id="subMenuWebhook" class="active"><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="formNewWebhook" action="__BASE_PATH__/admin/sample/webhooks" method="post" class="new-webhook-wrap"><strong class="form-legend">Create new webhook</strong><div class="form-wrap form-actions"><div><input type="text" name="payloadUrl" class="input-webhook-payload" maxlength="2000" autocomplete="off" placeholder="Payload URL"><input type="text" name="secret" class="input-webhook-secret" maxlength="250" autocomplete="off" placeholder="Authorization Token"><button type="submit" class="ybtn ybtn-primary btn-submit">Add webhook</button></div><div><label class="radio inline"><input type="radio" name="webhookType" value="SIMPLE" checked=""> Messenger (Only text)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_SLACK"> Slack (Meta)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_HANGOUT_CHAT"> Google Chat (Thread)</label><label class="radio inline"><input type="radio" name="webhookType" value="JSON"> Continuous Integration tool (Only push event)</label><span class="radio inline" aria-hidden="true">|</span><span class="radio inline" aria-hidden="true"></span><label class="checkbox inline" for="gitPush"><input type="checkbox" id="gitPush" name="gitPush" class="form-check-input"> Include git push events</label></div></div><div>* Every webhook is sent in POST and with Content-Type: application/json header.<br>* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value <br>* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header. <br></div></form><div id="webhooksList" class="webhook-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No webhook exists.</p></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
+
+test("project webhooks help is rendered as JSX, not route-local HTML injection", async ({
+  page,
+}) => {
+  const source = await readFile(
+    new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(source).not.toContain("dangerouslySetInnerHTML");
+  expect(source).toContain('<LegacyWebhookHelp help={t("project.webhook.help")} />');
+  expect(source).toContain("help.split(/\\s*<br\\s*\\/?>/iu)");
+  expect(source).toContain('{" "}');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  await expect(page.locator("#formNewWebhook > div:last-child")).toHaveJSProperty(
+    "innerHTML",
+    "* Every webhook is sent in POST and with Content-Type: application/json header. <br>* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value <br>* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header. <br>",
+  );
+});
 
 test("project webhooks matches legacy project/webhooks.scala.html empty DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";

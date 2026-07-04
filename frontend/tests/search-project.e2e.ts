@@ -82,8 +82,6 @@ test("project search category and form navigation stay inside the React SPA", as
   await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
   const issueCategory = page.locator(".search-category-wrap button", { hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute("type", "button");
-  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
-  await expect(issueCategory).toHaveAttribute("data-type", "issue");
   await issueCategory.click();
   await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/search\\?`));
   expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");

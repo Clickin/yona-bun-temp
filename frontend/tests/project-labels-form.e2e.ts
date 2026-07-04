@@ -127,6 +127,11 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
     "utf8",
   );
   expect(routeSource).not.toMatch(/<a\b/);
+  expect(routeSource).not.toContain("LEGACY_INACTIVE_SEARCH");
+  expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain('createElement("a"');
+  expect(routeSource).not.toMatch(/\bfunction\s+LegacyLink\b/);
+  expect(routeSource).not.toMatch(/\bconst\s+LegacyLink\b/);
 });
 
 test("project labels internal links preserve legacy hrefs with SPA transition", async ({

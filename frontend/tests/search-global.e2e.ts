@@ -402,6 +402,7 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeBodySource).not.toContain("<Link href");
   expect(routeBodySource).not.toContain('data-toggle="search-category"');
   expect(routeBodySource).not.toContain("data-type={menu.type}");
+  expect(routeBodySource).not.toContain("dangerouslySetInnerHTML");
   expect(resultListSource).not.toMatch(/<a[\s>]/u);
   expect(resultListSource).not.toContain("</a>");
   expect(resultListSource).not.toContain("InternalResultLink");

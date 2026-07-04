@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { Fragment, useState, type FormEvent } from "react";
 import {
   createProjectWebhookRest,
   deleteProjectWebhookRest,
@@ -219,7 +219,7 @@ function ProjectWebhooksBody({
                 </label>
               </div>
             </div>
-            <div dangerouslySetInnerHTML={{ __html: t("project.webhook.help") }} />
+            <LegacyWebhookHelp help={t("project.webhook.help")} />
           </form>
         ) : null}
         <div id="webhooksList" className="webhook-list-wrap">
@@ -232,6 +232,26 @@ function ProjectWebhooksBody({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function LegacyWebhookHelp({ help }: { help: string }) {
+  const parts = help.split(/\s*<br\s*\/?>/iu);
+
+  return (
+    <div>
+      {parts.map((part, index) => (
+        <Fragment key={`${part}-${parts.length}`}>
+          {part}
+          {index < parts.length - 1 ? (
+            <>
+              {" "}
+              <br />
+            </>
+          ) : null}
+        </Fragment>
+      ))}
     </div>
   );
 }

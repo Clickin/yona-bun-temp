@@ -99,7 +99,9 @@ export function LegacySearchBody({
   const activeType = result.searchType === "auto" ? "issue" : result.searchType;
   const activeCount = countForType(result.counts, activeType);
   const activeTitle = titleForType(t, activeType);
-  const resultTitleHtml = t("search.result.title", { args: [activeCount, activeTitle] });
+  const resultTitle = renderLegacySearchResultTitle(
+    t("search.result.title", { args: [activeCount, activeTitle] }),
+  );
   const [keywordValue, setKeywordValue] = useState(result.keyword);
   const categories = includeProjectCategory
     ? ALL_SEARCH_CATEGORIES
@@ -194,10 +196,7 @@ export function LegacySearchBody({
                     </button>
                   </form>
 
-                  <h3
-                    className="search-result-title"
-                    dangerouslySetInnerHTML={{ __html: resultTitleHtml }}
-                  />
+                  <h3 className="search-result-title">{resultTitle}</h3>
                 </div>
                 <div className="search-result-wrap">
                   <SearchResultList result={result} runtimeConfig={runtimeConfig} />
@@ -582,6 +581,20 @@ function countForType(counts: SearchCounts, searchType: SearchType): number {
 function titleForType(t: ReturnType<typeof useLegacyMessages>["t"], searchType: SearchType) {
   const match = ALL_SEARCH_CATEGORIES.find((menu) => menu.type === searchType);
   return match ? t(match.labelKey) : "";
+}
+
+function renderLegacySearchResultTitle(message: string): ReactNode {
+  const match = /^(.*?)<strong>(.*?)<\/\s*strong\s*>(.*)$/u.exec(message);
+  if (!match) {
+    return message;
+  }
+  return (
+    <>
+      {match[1]}
+      <strong>{match[2]}</strong>
+      {match[3]}
+    </>
+  );
 }
 
 function noAuthorMessageKey(searchType: SearchType) {

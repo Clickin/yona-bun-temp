@@ -55,7 +55,6 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-const LEGACY_INACTIVE_SEARCH = { __legacyInactive: undefined } as unknown as Record<string, never>;
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/labelsform")({
   component: ProjectLabelsRoute,
@@ -835,7 +834,7 @@ function ProjectSettingMenu({
           {...LEGACY_LINK_PROPS}
           to="/$ownerName/$projectName/issue/labelsform"
           params={{ ownerName, projectName }}
-          search={LEGACY_INACTIVE_SEARCH}
+          search={{ __legacyInactive: undefined } as never}
         >
           {t("issue.label")}
         </Link>

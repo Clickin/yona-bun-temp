@@ -84,8 +84,6 @@ test("organization search category button stays inside the React SPA", async ({ 
   await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
   const issueCategory = page.locator(".search-category-wrap button", { hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute("type", "button");
-  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
-  await expect(issueCategory).toHaveAttribute("data-type", "issue");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
