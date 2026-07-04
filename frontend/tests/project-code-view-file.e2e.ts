@@ -185,7 +185,7 @@ test("project code file branch selector navigates slash branch in the SPA", asyn
   ]);
 });
 
-test("project code file route source has no raw anchors for internal app navigation", () => {
+test("project code file route source keeps backend links as hrefs without route casts", () => {
   const routeSource = readFileSync(
     fileURLToPath(
       new URL("../src/routes/$ownerName/$projectName/code/$branch/$filePath.tsx", import.meta.url),
@@ -193,6 +193,11 @@ test("project code file route source has no raw anchors for internal app navigat
     "utf8",
   );
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
+  const backendAnchorHrefs = rawAnchorBlocks.flatMap((block) => {
+    const match = /\bhref=\{([^}]+)\}/u.exec(block);
+    return match ? [match[1]] : [];
+  });
+  const backendLinkHrefs = routeSource.match(/<Link[^>]*\bhref=\{[^}]+\}/gu) ?? [];
   const directLegacyLinkActiveProps = routeSource.match(
     /activeProps=\{\{\s*"aria-current": undefined,\s*className: undefined,\s*"data-status": undefined,\s*\}\}/gu,
   );
@@ -201,12 +206,20 @@ test("project code file route source has no raw anchors for internal app navigat
   );
 
   expect(rawAnchorBlocks).toEqual([]);
+  expect(backendAnchorHrefs).toEqual([]);
+  expect(backendLinkHrefs).toHaveLength(5);
   expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
   expect(routeSource).toContain("router.history.push(event.currentTarget.value)");
   expect(routeSource).not.toContain("legacyLinkProps");
   expect(routeSource).not.toContain("legacyEmptySearch");
   expect(routeSource).not.toContain("legacyInactiveSearch");
   expect(routeSource).not.toContain("__legacyInactive");
+  expect(routeSource).not.toContain("to={archivePath as never}");
+  expect(routeSource).not.toContain("to={rawPath as never}");
+  expect(routeSource).not.toContain("to={openPath as never}");
+  expect(routeSource).toContain("<Link href={archiveHref} to={archivePath} reloadDocument");
+  expect(routeSource).toContain("<Link href={rawHref} to={rawPath}");
+  expect(routeSource).toContain("href={openHref}");
   expect(directLegacyLinkActiveProps).toHaveLength(8);
   expect(directLegacyLinkActiveOptions).toHaveLength(8);
   expect(routeSource).toContain("search={{} as never}");

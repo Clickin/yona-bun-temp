@@ -64,8 +64,8 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <p>{t("site.data.export.info")}</p>
 
               <Link
-                to={"/sites/export" as never}
                 href={prefixBasePath(runtimeConfig.basePath, "/sites/export")}
+                to="/sites/export"
                 reloadDocument
                 className="ybtn ybtn-primary"
               >

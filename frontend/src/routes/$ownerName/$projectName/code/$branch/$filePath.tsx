@@ -103,6 +103,7 @@ function ProjectCodeFileBody({
   const newFilePath = directoryPath(filePath);
   const isGit = project.vcs === "GIT";
   const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
+  const archiveHref = prefixBasePath(runtimeConfig.basePath, archivePath);
 
   return (
     <div className="page-wrap-outer">
@@ -186,12 +187,7 @@ function ProjectCodeFileBody({
             {isGit ? (
               <>
                 <div className="pull-right">
-                  <Link
-                    to={archivePath as never}
-                    reloadDocument
-                    className="ybtn"
-                    activeProps={{ className: "ybtn" }}
-                  >
+                  <Link href={archiveHref} to={archivePath} reloadDocument className="ybtn">
                     {t("code.download")}
                   </Link>
                 </div>
@@ -276,6 +272,7 @@ function FileView({
   const rawPath = projectPath(ownerName, projectName, "rawcode", rawRevision, filePath);
   const rawHref = prefixBasePath(runtimeConfig.basePath, rawPath);
   const openPath = projectPath(ownerName, projectName, "files", rawRevision, filePath);
+  const openHref = prefixBasePath(runtimeConfig.basePath, openPath);
 
   return (
     <div className="file-wrap" data-type="file">
@@ -366,12 +363,7 @@ function FileView({
         <div className="pull-right">
           {!isBinary ? (
             <>
-              <Link
-                to={rawPath as never}
-                className="ybtn"
-                target="_blank"
-                activeProps={{ className: "ybtn" }}
-              >
+              <Link href={rawHref} to={rawPath} className="ybtn" target="_blank">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
               </Link>
               {booleanField(project.viewerCanUpdate) ? (
@@ -403,11 +395,11 @@ function FileView({
           ) : null}
           <Link
             id="open-in-browser"
-            to={openPath as never}
+            href={openHref}
+            to={openPath}
             className="ybtn"
             target="_blank"
             data-content={t("code.open.desc")}
-            activeProps={{ className: "ybtn" }}
           >
             <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
           </Link>
@@ -450,12 +442,7 @@ function FileView({
               <br />
               <span className="filesize">{stringField(file.size, "")}</span>
               <br />
-              <Link
-                to={rawPath as never}
-                reloadDocument
-                className="filehref ybtn"
-                activeProps={{ className: "filehref ybtn" }}
-              >
+              <Link href={rawHref} to={rawPath} reloadDocument className="filehref ybtn">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
                 {t("button.download")}
               </Link>
@@ -466,12 +453,7 @@ function FileView({
         <p>
           {t("code.tooBigFileForCodeBrowser", { args: [MAX_FILE_SIZE_CAN_BE_VIEWED] })}
           <br />
-          <Link
-            to={rawPath as never}
-            target="_blank"
-            className="filehref ybtn"
-            activeProps={{ className: "filehref ybtn" }}
-          >
+          <Link href={rawHref} to={rawPath} target="_blank" className="filehref ybtn">
             {t("code.viewRaw")}
           </Link>
         </p>

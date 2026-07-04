@@ -118,7 +118,7 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
           <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>{" "}
           <Link
             href={response.releaseUrl ?? ""}
-            to={(response.releaseUrl ?? "") as never}
+            to={response.releaseUrl ?? ""}
             reloadDocument
             className="ybtn ybtn-success"
           >

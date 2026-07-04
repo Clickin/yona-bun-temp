@@ -214,7 +214,7 @@ test("site admin data export link preserves legacy download href", async ({ page
   await expect(exportLink).toHaveText("Export");
 });
 
-test("site admin data sidebar uses typed TanStack links without route-local adapter", () => {
+test("site admin data source keeps export as legacy href without route escape", () => {
   const routeSource = readFileSync("src/routes/sites/data.tsx", "utf8");
 
   expect(routeSource).not.toContain("LegacyInternalLink");
@@ -225,8 +225,10 @@ test("site admin data sidebar uses typed TanStack links without route-local adap
   expect(routeSource).toContain('href={prefixBasePath(runtimeConfig.basePath, "/sites/export")}');
   expect(routeSource).toContain("reloadDocument");
   expect(routeSource).not.toContain("to={exportPath as never}");
-  expect(routeSource).toContain('to={"/sites/export" as never}');
+  expect(routeSource).not.toContain('to={"/sites/export" as never}');
+  expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toMatch(/<a\b[\s\S]*\/sites\/export/u);
+  expect(routeSource).toContain('to="/sites/export"');
 });
 
 async function expectSiteAdminSidebar(page: Page, basePath: string) {

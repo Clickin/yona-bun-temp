@@ -200,10 +200,13 @@ test("site admin update renders the legacy available-version branch", async ({ p
     "href",
     "https://example.test/yona-1.1.0",
   );
+  await expect(page.locator("a.ybtn.ybtn-success")).not.toHaveAttribute("target", /.*/);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
   expect(routeSource).toContain('href={response.releaseUrl ?? ""}');
-  expect(routeSource).toContain('to={(response.releaseUrl ?? "") as never}');
+  expect(routeSource).not.toContain("as never");
+  expect(routeSource).not.toContain("to={(response.releaseUrl");
+  expect(routeSource).toContain('to={response.releaseUrl ?? ""}');
   expect(routeSource).toContain("reloadDocument");
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
