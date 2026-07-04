@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import type { HTMLAttributes, MouseEvent as ReactMouseEvent } from "react";
+import type {
+  HTMLAttributes,
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
@@ -195,8 +199,9 @@ function OrganizationPullRequestsBody({
                   <OrganizationPullRequestList
                     basePath={runtimeConfig.basePath}
                     category={selectedCategory}
-                    items={pullRequests.items}
                     organizationName={organizationName}
+                    pullRequests={pullRequests}
+                    search={search}
                   />
                 </div>
               </div>
@@ -211,21 +216,24 @@ function OrganizationPullRequestsBody({
 function OrganizationPullRequestList({
   basePath,
   category,
-  items,
   organizationName,
+  pullRequests,
+  search,
 }: {
   basePath: string;
   category: OrganizationPullRequestsCategory;
-  items: PullRequestListItem[];
   organizationName: string;
+  pullRequests: PullRequestListResponse;
+  search: OrganizationPullRequestsSearch;
 }) {
   const { t } = useLegacyMessages();
+  const totalPages = Math.ceil(pullRequests.totalCount / pullRequests.pageSize);
 
   return (
     <ul className="post-list-wrap">
-      {items.length > 0 ? (
+      {pullRequests.items.length > 0 ? (
         <>
-          {items.map((pullRequest) => (
+          {pullRequests.items.map((pullRequest) => (
             <OrganizationPullRequestItem
               basePath={basePath}
               category={category}
@@ -234,7 +242,14 @@ function OrganizationPullRequestList({
               pullRequest={pullRequest}
             />
           ))}
-          <div id="pagination"></div>
+          <OrganizationPullRequestPagination
+            basePath={basePath}
+            category={category}
+            currentPage={pullRequests.pageNum || search.pageNum}
+            organizationName={organizationName}
+            search={search}
+            totalPages={totalPages}
+          />
         </>
       ) : (
         <div className="error-wrap">
@@ -243,6 +258,115 @@ function OrganizationPullRequestList({
         </div>
       )}
     </ul>
+  );
+}
+
+function OrganizationPullRequestPagination({
+  basePath,
+  category,
+  currentPage,
+  organizationName,
+  search,
+  totalPages,
+}: {
+  basePath: string;
+  category: OrganizationPullRequestsCategory;
+  currentPage: number;
+  organizationName: string;
+  search: OrganizationPullRequestsSearch;
+  totalPages: number;
+}) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  if (totalPages <= 0) {
+    return <div id="pagination"></div>;
+  }
+
+  const safeCurrentPage = clampPageNum(currentPage, totalPages);
+  const route =
+    category === "closed"
+      ? "/organizations/$organizationName/closedPullrequests"
+      : "/organizations/$organizationName/pullrequests";
+  const pathForPage = (pageNum: number) =>
+    `/organizations/${organizationName}/${
+      category === "closed" ? "closedPullrequests" : "pullrequests"
+    }?${new URLSearchParams({
+      filter: search.filter,
+      pageNum: String(pageNum),
+    }).toString()}`;
+  const goToPage = (pageNum: number) => {
+    router.history.push(prefixBasePath(basePath, pathForPage(pageNum)));
+  };
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    if (!/^[0-9]+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(safeCurrentPage);
+      return;
+    }
+    const pageNum = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(pageNum);
+    goToPage(pageNum);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {safeCurrentPage > 1 ? (
+            <Link
+              params={{ organizationName }}
+              search={{ filter: search.filter, pageNum: safeCurrentPage - 1 }}
+              to={route}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            className="input-mini nospinner"
+            defaultValue={safeCurrentPage}
+            max={totalPages}
+            min={1}
+            name="pageNum"
+            onClick={(event) => {
+              event.currentTarget.select();
+            }}
+            onKeyDown={handleInputKeyDown}
+            pattern="[0-9]*"
+            type="number"
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {safeCurrentPage < totalPages ? (
+            <Link
+              params={{ organizationName }}
+              search={{ filter: search.filter, pageNum: safeCurrentPage + 1 }}
+              to={route}
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
+    </div>
   );
 }
 
@@ -516,6 +640,13 @@ function booleanField(value: unknown) {
 
 function percentOf(count: number, total: number) {
   return total <= 0 ? 0 : Math.round((count / total) * 100);
+}
+
+function clampPageNum(pageNum: number, totalPages: number) {
+  if (!Number.isFinite(pageNum)) {
+    return 1;
+  }
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
 
 function splitHeaderWordsInBrackets(title: string) {
