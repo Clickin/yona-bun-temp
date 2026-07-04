@@ -24,11 +24,15 @@ const LEGACY_LINK_PROPS = {
 
 function ProjectStatisticsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+        >
           <ProjectStatisticsScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -49,7 +53,6 @@ function ProjectStatisticsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   return (
     <>
       <ProjectHeader project={query.data} />
-      <ProjectMenu project={query.data} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h1>Under Construction</h1>
@@ -113,6 +116,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   {projectName}
                 </Link>
               </span>
+              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
               <span
                 className="user-project-list"
                 data-project-id={projectId}
@@ -170,127 +174,12 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   );
 }
 
-function ProjectMenu({ project }: { project: ProjectContainer }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = recordField(project.menuSetting);
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            to={projectPath(ownerName, projectName)}
-            label={t("title.projectHome")}
-            short="H"
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              to={projectPath(ownerName, projectName, "code")}
-              label={t("menu.code")}
-              short="C"
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              className="active"
-              to={projectPath(ownerName, projectName, "issues")}
-              label={t("menu.issue")}
-              short="I"
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              to={projectPath(ownerName, projectName, "pullRequests")}
-              label={t("menu.pullRequest")}
-              short="P"
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              to={projectPath(ownerName, projectName, "reviews")}
-              label={t("menu.review")}
-              short="R"
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              to={projectPath(ownerName, projectName, "milestones")}
-              label={t("milestone")}
-              short="M"
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              to={projectPath(ownerName, projectName, "posts")}
-              label={t("menu.board")}
-              short="B"
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="">
-                <Link to={projectPath(ownerName, projectName, "setting")} {...LEGACY_LINK_PROPS}>
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  to,
-  label,
-  short,
-}: {
-  className?: string;
-  to: string;
-  label: string;
-  short: string;
-}) {
-  return (
-    <li className={className}>
-      <Link to={to} {...LEGACY_LINK_PROPS}>
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-      </Link>
-    </li>
-  );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
-}
-
 function projectPath(ownerName: string, projectName: string, leaf?: string) {
   return `/${ownerName}/${projectName}${leaf ? `/${leaf}` : ""}`;
 }
 
 function userPath(ownerName: string) {
   return `/${ownerName}`;
-}
-
-function recordField(value: unknown) {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
 function stringField(value: unknown, fallback: string) {
@@ -301,10 +190,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
 }
 
 function booleanField(value: unknown) {

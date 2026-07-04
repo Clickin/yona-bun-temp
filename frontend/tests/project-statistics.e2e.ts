@@ -8,24 +8,23 @@ const STATISTICS_ROUTE_SOURCE = readFileSync(
 
 const EXPECTED_PROJECT_STATISTICS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>
-      <li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><h1>Under Construction</h1></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
@@ -41,8 +40,6 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     await canonicalizeHtml(page, EXPECTED_PROJECT_STATISTICS.replaceAll("__BASE_PATH__", basePath)),
   );
   expect(await readDesktopStatisticsMetrics(page)).toEqual({
-    activeMenuBackground: "rgba(0, 0, 0, 0)",
-    activeMenuHeight: "30px",
     headingFontSize: "26px",
     headingFontWeight: "400",
     headingLineHeight: "32.5px",
@@ -50,13 +47,12 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     headingMarginTop: "0px",
     pageWrapMinWidth: "1100px",
     projectHeaderHeight: "120px",
-    projectMenuHeight: "39px",
-    projectPageMarginTop: "5px",
+    projectPageMarginTop: "20px",
     projectPageWidth: 1260,
   });
 });
 
-test("project statistics header and menu links keep legacy hrefs without TanStack active markers", async ({
+test("project statistics header links keep legacy hrefs without TanStack active markers", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -69,35 +65,36 @@ test("project statistics header and menu links keep legacy hrefs without TanStac
     `${basePath}/admin`,
     `${basePath}/admin/sample`,
   ]);
-  await expect(page.locator(".project-menu-gruop > li")).toHaveClass([
-    "",
-    "code-menu ",
-    "active",
-    "",
-    "",
-    "",
-    "",
-  ]);
-  expect(await attributes(page, ".project-menu-gruop > li > a", "href")).toEqual([
-    `${basePath}/admin/sample`,
-    `${basePath}/admin/sample/code`,
-    `${basePath}/admin/sample/issues`,
-    `${basePath}/admin/sample/pullRequests`,
-    `${basePath}/admin/sample/reviews`,
-    `${basePath}/admin/sample/milestones`,
-    `${basePath}/admin/sample/posts`,
-  ]);
-  await expect(page.locator(".project-setting a")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/setting`,
-  );
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".project-header-outer a[aria-current]")).toHaveCount(0);
-  await expect(page.locator(".project-menu-outer a[aria-current]")).toHaveCount(0);
   await expect(page.locator(".project-header-outer a[data-status]")).toHaveCount(0);
-  await expect(page.locator(".project-menu-outer a[data-status]")).toHaveCount(0);
 });
 
-test("project statistics header and menu links navigate through the SPA history marker", async ({
+test("project statistics navbar uses legacy project search scope", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect(
+    attributes(page, ".gnb-search-form [data-toggle='search-scope']", "data-action"),
+  ).resolves.toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+
+  await page.locator(".gnb-search-form [data-action$='/search']").last().dispatchEvent("click");
+
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+});
+
+test("project statistics breadcrumb links navigate through the SPA history marker", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -106,10 +103,10 @@ test("project statistics header and menu links navigate through the SPA history 
 
   await page.goto(`${basePath}/admin/sample/statistics`);
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
-  await page.locator(".project-menu-gruop > li > a").filter({ hasText: "Code" }).click();
+  await page.locator(".project-breadcrumb .project-name a").click();
 
   await expect.poll(() => pushStateCalls(page)).toBeGreaterThan(0);
-  await expect(page).toHaveURL(`${basePath}/admin/sample/code`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
 });
 
 test("project statistics route TSX has no route-local raw anchor elements", () => {
@@ -196,20 +193,14 @@ test("project statistics header favorite star has no route-local native listener
 async function readDesktopStatisticsMetrics(page: Page) {
   return page.evaluate(() => {
     const projectHeader = requireElement(".project-header-outer");
-    const projectMenu = requireElement(".project-menu-outer");
     const pageWrapOuter = requireElement(".page-wrap-outer");
     const projectPageWrap = requireElement(".project-page-wrap");
     const heading = requireElement(".project-page-wrap h1");
-    const issueMenu = requireElement(".project-menu-nav.project-menu-gruop > li.active > a");
     const projectHeaderStyle = getComputedStyle(projectHeader);
-    const projectMenuStyle = getComputedStyle(projectMenu);
     const pageWrapStyle = getComputedStyle(pageWrapOuter);
     const projectPageStyle = getComputedStyle(projectPageWrap);
     const headingStyle = getComputedStyle(heading);
-    const issueMenuStyle = getComputedStyle(issueMenu);
     return {
-      activeMenuBackground: issueMenuStyle.backgroundColor,
-      activeMenuHeight: issueMenuStyle.height,
       headingFontSize: headingStyle.fontSize,
       headingFontWeight: headingStyle.fontWeight,
       headingLineHeight: headingStyle.lineHeight,
@@ -217,7 +208,6 @@ async function readDesktopStatisticsMetrics(page: Page) {
       headingMarginTop: headingStyle.marginTop,
       pageWrapMinWidth: pageWrapStyle.minWidth,
       projectHeaderHeight: projectHeaderStyle.height,
-      projectMenuHeight: projectMenuStyle.height,
       projectPageMarginTop: projectPageStyle.marginTop,
       projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
     };
