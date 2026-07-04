@@ -158,11 +158,7 @@ function MailBody({
     onSuccess: (data) => queryClient.setQueryData(mailOptions.queryKey, data),
   });
 
-  if (!response) {
-    return null;
-  }
-
-  const sent = sentBySearch || response.sent || mutation.data?.sent === true;
+  const sent = sentBySearch || response?.sent === true || mutation.data?.sent === true;
   const mutationErrorMessage = mutation.error instanceof Error ? mutation.error.message : "";
 
   return (
@@ -170,7 +166,8 @@ function MailBody({
       <div className="title_area">
         <h2 className="pull-left">{t("site.sidebar.mailSend")}</h2>
       </div>
-      {errorMessageBySearch || mutation.isError ? (
+      {!response ? <p>{t("common.loading")}</p> : null}
+      {response && (errorMessageBySearch || mutation.isError) ? (
         <div className="alert alert-error">
           <p>{t("site.mail.fail")}</p>
           <p>
@@ -180,8 +177,8 @@ function MailBody({
           </p>
         </div>
       ) : null}
-      {sent ? <div className="alert alert-success">{t("site.mail.sended")}</div> : null}
-      {response.notConfiguredItems.length > 0 ? (
+      {response && sent ? <div className="alert alert-success">{t("site.mail.sended")}</div> : null}
+      {response && response.notConfiguredItems.length > 0 ? (
         <div className="alert alert-error">
           <p>{t("site.mail.notConfigured", { args: ["/admin/mailconf"] })}</p>
           <ul>
@@ -191,77 +188,79 @@ function MailBody({
           </ul>
         </div>
       ) : null}
-      <form
-        id="mailForm"
-        method="post"
-        action={prefixBasePath(runtimeConfig.basePath, "/sites/mail")}
-        className="form-horizontal"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const form = new FormData(event.currentTarget);
-          mutation.mutate({
-            body: String(form.get("body") ?? ""),
-            from: String(form.get("from") ?? ""),
-            subject: String(form.get("subject") ?? ""),
-            to: String(form.get("to") ?? ""),
-          });
-        }}
-      >
-        <div className="control-group">
-          <label {...{ name: "from" }} className="control-label span3">
-            {t("site.mail.from")}
-          </label>
-          <div className="controls">
-            <input
-              type="text"
-              name="from"
-              defaultValue={response.sender}
-              required
-              placeholder={t("site.mail.fromPlaceholder")}
-              className="span4"
-            />
+      {response ? (
+        <form
+          id="mailForm"
+          method="post"
+          action={prefixBasePath(runtimeConfig.basePath, "/sites/mail")}
+          className="form-horizontal"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            mutation.mutate({
+              body: String(form.get("body") ?? ""),
+              from: String(form.get("from") ?? ""),
+              subject: String(form.get("subject") ?? ""),
+              to: String(form.get("to") ?? ""),
+            });
+          }}
+        >
+          <div className="control-group">
+            <label {...{ name: "from" }} className="control-label span3">
+              {t("site.mail.from")}
+            </label>
+            <div className="controls">
+              <input
+                type="text"
+                name="from"
+                defaultValue={response.sender}
+                required
+                placeholder={t("site.mail.fromPlaceholder")}
+                className="span4"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="control-group">
-          <label {...{ name: "to" }} className="control-label">
-            {t("site.mail.to")}
-          </label>
-          <div className="controls">
-            <input
-              type="text"
-              className="span4"
-              name="to"
-              required
-              placeholder={t("site.mail.toPlaceholder")}
-            />
+          <div className="control-group">
+            <label {...{ name: "to" }} className="control-label">
+              {t("site.mail.to")}
+            </label>
+            <div className="controls">
+              <input
+                type="text"
+                className="span4"
+                name="to"
+                required
+                placeholder={t("site.mail.toPlaceholder")}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="control-group mr10">
-          <label {...{ name: "subject" }} className="control-label">
-            {t("site.mail.subject")}
-          </label>
-          <div className="controls">
-            <input type="text" name="subject" className="span12" />
+          <div className="control-group mr10">
+            <label {...{ name: "subject" }} className="control-label">
+              {t("site.mail.subject")}
+            </label>
+            <div className="controls">
+              <input type="text" name="subject" className="span12" />
+            </div>
           </div>
-        </div>
 
-        <div className="control-group mr10">
-          <label {...{ name: "body" }} className="control-label">
-            {t("site.mail.body")}
-          </label>
-          <div className="controls">
-            <textarea id="body" name="body" rows={16} className="span12 input-xlarge textbody" />
+          <div className="control-group mr10">
+            <label {...{ name: "body" }} className="control-label">
+              {t("site.mail.body")}
+            </label>
+            <div className="controls">
+              <textarea id="body" name="body" rows={16} className="span12 input-xlarge textbody" />
+            </div>
           </div>
-        </div>
 
-        <div className="span12 mail-btn-wrap">
-          <button type="submit" className="ybtn ybtn-primary">
-            <strong>{t("site.mail.send")}</strong>
-          </button>
-        </div>
-      </form>
+          <div className="span12 mail-btn-wrap">
+            <button type="submit" className="ybtn ybtn-primary">
+              <strong>{t("site.mail.send")}</strong>
+            </button>
+          </div>
+        </form>
+      ) : null}
     </>
   );
 }

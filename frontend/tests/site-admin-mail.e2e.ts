@@ -14,7 +14,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -238,6 +238,36 @@ test("site admin mail renders legacy sended=true success state", async ({ page }
     "alert alert-success",
     "form-horizontal",
   ]);
+});
+
+test("site admin mail shows legacy common.loading while mail options load", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let releaseMailOptions: (() => void) | undefined;
+
+  await mockSiteAdminSession(page);
+  await page.route("**/api/v1/site/mail", async (route) => {
+    await new Promise<void>((resolve) => {
+      releaseMailOptions = resolve;
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        notConfiguredItems: [],
+        sender: "site-admin@yona.local",
+        sent: false,
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/sites/mail`);
+  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".span10 > .title_area h2")).toHaveText("Send email");
+  await expect(page.locator(".span10 > p")).toHaveText("Loading");
+  await expect(page.locator("#mailForm")).toHaveCount(0);
+
+  releaseMailOptions?.();
+  await expect(page.locator("#mailForm")).toBeVisible();
+  await expect(page.locator(".span10 > p")).toHaveCount(0);
 });
 
 test("site admin mail renders legacy errorMessage alert state", async ({ page }) => {
