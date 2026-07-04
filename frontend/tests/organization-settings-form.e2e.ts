@@ -310,6 +310,12 @@ test("organization settings navigation anchors keep legacy hrefs without route-l
     "href",
     `${basePath}/organizations/weblabs/deleteForm`,
   );
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs li").nth(0)).toHaveClass("active");
+  for (const tabLink of await page.locator(".project-page-wrap > .nav.nav-tabs a").all()) {
+    await expect(tabLink).not.toHaveAttribute("class", /(^|\s)active(\s|$)/u);
+    await expect(tabLink).not.toHaveAttribute("aria-current", /.*/u);
+    await expect(tabLink).not.toHaveAttribute("data-status", /.*/u);
+  }
   expect(await readOrganizationSettingsNativeLinkAudit(page)).toEqual([]);
 });
 

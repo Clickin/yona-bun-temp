@@ -112,6 +112,8 @@ test("project statistics breadcrumb links navigate through the SPA history marke
 test("project statistics route TSX has no route-local raw anchor elements", () => {
   expect(STATISTICS_ROUTE_SOURCE).toContain("Link");
   expect(STATISTICS_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(STATISTICS_ROUTE_SOURCE).toContain("onClick=");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("onMouseDown=");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("<a ");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("</a>");
 });
@@ -140,7 +142,7 @@ test("project statistics header favorite star posts and toggles starred class", 
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.dispatchEvent("click");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -168,7 +170,7 @@ test("project statistics header favorite star removes starred class when unfavor
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
+  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("click");
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);

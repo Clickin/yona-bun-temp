@@ -342,6 +342,11 @@ function OrganizationSettingMenu({
       <li className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           search={{}}
           to={`/organizations/${organizationName}/members`}
         >
@@ -351,6 +356,11 @@ function OrganizationSettingMenu({
       <li className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           search={{}}
           to={`/organizations/${organizationName}/deleteForm`}
         >
