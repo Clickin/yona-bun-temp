@@ -16,6 +16,10 @@ const LEGACY_SELECT2_TEMPLATE = readFileSync(
   ),
   "utf8",
 );
+const UIKIT_ROUTE_SOURCE = readFileSync(
+  fileURLToPath(new URL("../src/routes/[_]UIKit.tsx", import.meta.url)),
+  "utf8",
+);
 const EXPECTED_UIKIT_BODY = extractBetween(LEGACY_UIKIT_TEMPLATE, "<body>", "</body>");
 const LEGACY_MARKDOWN_HELP_BODY = LEGACY_MARKDOWN_HELP_TEMPLATE.split(
   '<script type="text/javascript">',
@@ -71,6 +75,14 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
     subtitleLineHeight: "55px",
     subtitleVerticalAlign: "bottom",
   });
+});
+
+test("standalone UI kit route renders JSX without raw legacy body injection", async () => {
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("UIKit.scala.html?raw");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("legacyUiKitTemplate");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("extractBetween");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("__html");
 });
 
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
@@ -795,7 +807,7 @@ async function canonicalizeUIKitRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => `${name}=${JSON.stringify(stableAttributeValue(current, name))}`)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -814,6 +826,21 @@ async function canonicalizeUIKitRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function stableAttributeValue(current: Element, name: string) {
+      if (name === "checked") {
+        return "checked";
+      }
+      if (name === "href" && current.closest(".dropdown-menu")) {
+        return "javascript:void(0)";
+      }
+      if (name === "style") {
+        const probe = document.createElement("div");
+        probe.setAttribute("style", current.getAttribute("style") ?? "");
+        return probe.style.cssText;
+      }
+      return current.getAttribute(name) ?? "";
     }
 
     const roots = Array.from(
@@ -848,7 +875,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => `${name}=${JSON.stringify(stableAttributeValue(current, name))}`)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -867,6 +894,21 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join("");
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+
+      function stableAttributeValue(current: Element, name: string) {
+        if (name === "checked") {
+          return "checked";
+        }
+        if (name === "href" && current.closest(".dropdown-menu")) {
+          return "javascript:void(0)";
+        }
+        if (name === "style") {
+          const probe = document.createElement("div");
+          probe.setAttribute("style", current.getAttribute("style") ?? "");
+          return probe.style.cssText;
+        }
+        return current.getAttribute(name) ?? "";
       }
 
       const template = document.createElement("template");

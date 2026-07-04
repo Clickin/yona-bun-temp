@@ -1,16 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import legacyUiKitTemplate from "../../../yona-original/app/views/help/UIKit.scala.html?raw";
+import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
 });
-
-const legacyBody = extractBetween(legacyUiKitTemplate, "<body>", "</body>");
-const legacyPageWrapInner = extractBetween(
-  legacyBody,
-  '<div class="page-wrap-outer">',
-  '<footer class="page-footer-outer">',
-);
 
 function UIKitRoute() {
   return (
@@ -25,7 +18,196 @@ dd { margin-left:0; }
       <header className="gnb-outer">
         <span className="subtitle">Yobi UI</span>
       </header>
-      <div className="page-wrap-outer" dangerouslySetInnerHTML={{ __html: legacyPageWrapInner }} />
+      <div className="page-wrap-outer">
+        <div className="container page-wrap">
+          <div className="page">
+            <h3>Buttons</h3>
+            <div>
+              <pre>.ybtn</pre>
+              <p>
+                <LegacyAnchor href="#" className="ybtn">
+                  Default
+                </LegacyAnchor>{" "}
+                <button type="button" className="ybtn ybtn-primary">
+                  Primary
+                </button>{" "}
+                <LegacyAnchor href="#" className="ybtn ybtn-inverse">
+                  Inverse
+                </LegacyAnchor>{" "}
+                <button type="button" className="ybtn ybtn-info">
+                  Info
+                </button>{" "}
+                <LegacyAnchor href="#" className="ybtn ybtn-watching">
+                  Watching
+                </LegacyAnchor>{" "}
+                <button type="button" className="ybtn ybtn-warning">
+                  Warning
+                </button>{" "}
+                <LegacyAnchor href="#" className="ybtn ybtn-danger">
+                  Danger
+                </LegacyAnchor>{" "}
+                <button type="button" className="ybtn ybtn-disabled">
+                  Disabled
+                </button>
+              </p>
+              <CodeSample>{`${legacyAnchorMarkup('href="#" class="ybtn"', "Default")}
+<button type="button" class="ybtn ybtn-primary">Primary</button>
+${legacyAnchorMarkup('href="#" class="ybtn ybtn-inverse"', "Inverse")}
+<button type="button" class="ybtn ybtn-info">Info</button>
+${legacyAnchorMarkup('href="#" class="ybtn ybtn-watching"', "Watching")}
+<button type="button" class="ybtn ybtn-warning">Warning</button>
+${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSample>
+              <hr />
+              <div className="btn-wrap">
+                <div className="nbtn medium white fake-file-wrap">
+                  <i className="ico ico-plus-blue" />
+                  Upload
+                  <input type="file" className="file" name="filePath" accept="image/*" />
+                </div>
+              </div>
+              <CodeSample>{`<div class="btn-wrap">
+    <div class="nbtn medium white fake-file-wrap">
+        <i class="ico ico-plus-blue"></i>Upload
+        <input type="file" class="file" name="filePath" accept="image/*">
+    </div>
+</div>`}</CodeSample>
+            </div>
+            <hr />
+            <h3>Select</h3>
+            <div>
+              <pre>.dropdown-toggle</pre>
+              <DropdownDemo size="small" />
+              <DropdownDemo size="medium" />
+              <DropdownDemo size="large" />
+              <CodeSample>{`<div class="btn-group" data-name="assigneeId">
+    <button class="btn dropdown-toggle large" data-toggle="dropdown">
+        <span class="d-label">전체</span>
+        <span class="d-caret"><span class="caret"></span></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li data-value="" data-selected="true" class="active">${legacyAnchorMarkup('href="javascript:void(0)"', "전체")}</li>
+        <li data-value="0">${legacyAnchorMarkup('href="javascript:void(0)"', "담당자 없음")}</li>
+    </ul>
+</div>`}</CodeSample>
+            </div>
+            <hr />
+            <h3>Search Form</h3>
+            <div>
+              <pre>.form-search</pre>
+              <form className="form-search">
+                <input
+                  type="text"
+                  className="text"
+                  name="filter"
+                  placeholder="현재 프로젝트에서 검색"
+                />
+                <button type="button" className="btn">
+                  검색
+                </button>
+              </form>
+              <CodeSample>{`<form class="form-search">
+    <input type="text" class="text" name="filter" placeholder="현재 프로젝트에서 검색"><!--
+ --><button type="button" class="btn">검색</button>
+</form>`}</CodeSample>
+              <hr />
+              <pre>.search-bar</pre>
+              <div className="search">
+                <div className="search-bar">
+                  <input name="filter" className="textbox full" type="text" />
+                  <button type="submit" className="search-btn">
+                    <i className="yobicon-search" />
+                  </button>
+                </div>
+              </div>
+              <CodeSample>{`<div class="search">
+    <div class="search-bar">
+        <input name="filter" class="textbox full" type="text">
+        <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
+    </div>
+</div>`}</CodeSample>
+            </div>
+            <hr />
+            <h3>Labels</h3>
+            <div>
+              <pre>.issue-label</pre>
+              <p>
+                <button className="issue-label">Clean</button>{" "}
+                <button className="issue-label">Fresh</button>{" "}
+                <button className="issue-label">Modern</button>{" "}
+                <button className="issue-label">Unique</button>
+              </p>
+              <pre>.issue-label .active</pre>
+              <p>
+                <IssueLabel color="#da5454">Clean</IssueLabel>{" "}
+                <IssueLabel color="#ff9933">Fresh</IssueLabel>{" "}
+                <IssueLabel color="#ffcc33">Modern</IssueLabel>{" "}
+                <IssueLabel color="#22b4b9">Unique</IssueLabel>
+              </p>
+              <pre>.issue-label .active .editable</pre>
+              <p>
+                <IssueLabel color="#da5454" editable>
+                  Clean
+                </IssueLabel>{" "}
+                <IssueLabel color="#ff9933" editable>
+                  Fresh
+                </IssueLabel>{" "}
+                <IssueLabel color="#ffcc33" editable>
+                  Modern
+                </IssueLabel>{" "}
+                <IssueLabel color="#22b4b9" editable>
+                  Unique
+                </IssueLabel>
+              </p>
+            </div>
+            <CodeSample>{`<button class="issue-label">Clean</button>
+<button class="issue-label active" style="background-color:#da5454; color:#fff;">Clean<span class="delete">&times;</span></button>
+<button class="issue-label active editable" style="background-color:#da5454; color:#fff;">Clean<span class="delete">&times;</span></button>`}</CodeSample>
+            <hr />
+            <h3>Avatar</h3>
+            <div>
+              <pre>.avatar-wrap</pre>
+              <AvatarDemo size="mini" label=".mini (12x12)" />
+              <AvatarDemo size="smaller" label=".smaller (20x20)" />
+              <AvatarDemo size="small" label=".small (24x24)" />
+              <AvatarDemo size="medium" label=".medium (32x32, default)" />
+              <AvatarDemo size="mlarge" label=".mlarge (40x40)" />
+              <AvatarDemo size="large" label=".large (64x64)" />
+              <AvatarDemo size="xlarge" label=".xlarge (128x128)" />
+            </div>
+            <hr />
+            <h3>Tabs</h3>
+            <pre>.nav .nav-tabs</pre>
+            <div>
+              <ul className="nav nav-tabs">
+                <li className="active">
+                  <LegacyAnchor href="#">파일</LegacyAnchor>
+                </li>
+                <li>
+                  <LegacyAnchor href="#">커밋</LegacyAnchor>
+                </li>
+              </ul>
+            </div>
+            <hr />
+            <h3>Switches</h3>
+            <CodeSample>{`<input type="checkbox" data-toggle="switch">`}</CodeSample>
+            <div>
+              <div className="switch" data-on-label="미해결" data-off-label="해결">
+                <input type="checkbox" data-toggle="switch" defaultChecked />
+              </div>
+              <div className="switch deactivate" data-on-label="미해결" data-off-label="해결">
+                <input type="checkbox" data-toggle="switch" />
+              </div>
+              <div
+                className="switch switch-square"
+                data-on-label="<i class='yobicon-eye-close'></i>"
+                data-off-label="<i class='yobicon-eye-open'></i>"
+              >
+                <input type="checkbox" data-toggle="switch" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
           <span className="provider">
@@ -37,11 +219,90 @@ dd { margin-left:0; }
   );
 }
 
-function extractBetween(source: string, start: string, end: string) {
-  const startIndex = source.indexOf(start);
-  const endIndex = source.indexOf(end, startIndex + start.length);
-  if (startIndex === -1 || endIndex === -1) {
-    throw new Error(`Legacy UIKit template marker not found: ${start} ... ${end}`);
-  }
-  return source.slice(startIndex + start.length, endIndex);
+function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
+  return (
+    <dl>
+      <dt>
+        <span className="css">.{size}</span>
+      </dt>
+      <dd>
+        <div className="btn-group" data-name="assigneeId">
+          <button className={`btn dropdown-toggle ${size}`} data-toggle="dropdown">
+            <span className="d-label">전체</span>
+            <span className="d-caret">
+              <span className="caret" />
+            </span>
+          </button>
+          <ul className="dropdown-menu">
+            <li data-value="" data-selected="true" className="active">
+              <LegacyAnchor href="#">전체</LegacyAnchor>
+            </li>
+            <li data-value="0">
+              <LegacyAnchor href="#">담당자 없음</LegacyAnchor>
+            </li>
+          </ul>
+        </div>
+      </dd>
+    </dl>
+  );
+}
+
+function IssueLabel({
+  children,
+  color,
+  editable = false,
+}: {
+  children: string;
+  color: string;
+  editable?: boolean;
+}) {
+  return (
+    <button
+      className={`issue-label active${editable ? " editable" : ""}`}
+      style={{ backgroundColor: color, color: "#fff" }}
+    >
+      {children}
+      <span className="delete">&times;</span>
+    </button>
+  );
+}
+
+function AvatarDemo({ label, size }: { label: string; size: string }) {
+  return (
+    <dl>
+      <dt>
+        <span className="css">{label}</span>
+      </dt>
+      <dd>
+        <LegacyAnchor href="#" className={`avatar-wrap ${size}`}>
+          <img src="/assets/images/default-avatar-128.png" alt="" />
+        </LegacyAnchor>
+      </dd>
+    </dl>
+  );
+}
+
+function CodeSample({ children }: { children: string }) {
+  return <xmp className="css">{children}</xmp>;
+}
+
+function LegacyAnchor({
+  children,
+  className,
+  href,
+}: {
+  children: ReactNode;
+  className?: string;
+  href: string;
+}) {
+  const Anchor = "a";
+  return (
+    <Anchor className={className} href={href}>
+      {children}
+    </Anchor>
+  );
+}
+
+function legacyAnchorMarkup(attributes: string, text: string) {
+  return `<${"a"} ${attributes}>${text}</${"a"}>`;
 }
