@@ -9,7 +9,7 @@ const EXPECTED_USER_PASSWORD_SETTINGS_SCREEN = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -22,7 +22,7 @@ const EXPECTED_USER_PASSWORD_SETTINGS_SCREEN = `
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
@@ -45,11 +45,11 @@ const EXPECTED_USER_PASSWORD_SETTINGS_SCREEN = `
       <input type="hidden" name="loginId" value="admin">
       <dl>
         <dt>Current password</dt>
-        <dd class="mt10"><input type="password" id="oldPassword" name="oldPassword" autocomplete="off"></dd>
+        <dd class="mt10"><input type="password" id="oldPassword" name="oldPassword" value="" autocomplete="off"></dd>
         <dt>New password</dt>
-        <dd class="mt10"><input type="password" id="password" name="password" autocomplete="off"></dd>
+        <dd class="mt10"><input type="password" id="password" name="password" value="" autocomplete="off"></dd>
         <dt>Password confirmation</dt>
-        <dd class="mt10"><input type="password" id="retypedPassword" name="retypedPassword" autocomplete="off"></dd>
+        <dd class="mt10"><input type="password" id="retypedPassword" name="retypedPassword" value="" autocomplete="off"></dd>
         <dd><button type="submit" class="ybtn ybtn-success">Change password</button></dd>
       </dl>
     </form>
@@ -82,7 +82,9 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await page.route("**/api/v1/workspace", async (route) => {
     await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) });
   });
+  let passwordPostCount = 0;
   await page.route("**/api/v1/workspace/password", async (route) => {
+    passwordPostCount += 1;
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-token");
     expect(JSON.parse(route.request().postData() ?? "{}")).toEqual({
@@ -125,6 +127,32 @@ test("current-user password settings page matches legacy user/edit_password.scal
     "href",
     `${basePath}/lostPassword`,
   );
+
+  await page.locator("#oldPassword").focus();
+  await page.locator("#oldPassword").blur();
+  await expectPasswordValidationPopovers(page, [
+    "Required field!",
+    "Required field!",
+    "Required field!",
+  ]);
+  await page.locator("#password").fill("abc");
+  await page.locator("#password").blur();
+  await expectPasswordValidationPopovers(page, [
+    "Required field!",
+    "Password must be at least 4 characters in length.",
+    "Required field!",
+  ]);
+  await page.locator("#password").fill("new-pass");
+  await page.locator("#retypedPassword").fill("different");
+  await page.locator("#retypedPassword").blur();
+  await expectPasswordValidationPopovers(page, [
+    "Required field!",
+    "Retyped password doesn't match",
+  ]);
+  await page.locator("#frmPassword button[type=submit]").click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/password`);
+  expect(passwordPostCount).toBe(0);
+
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "password-token-tab";
   });
@@ -143,6 +171,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   });
   await page.locator("#frmPassword button[type=submit]").click();
   await page.waitForURL("**/users/loginform*");
+  expect(passwordPostCount).toBe(1);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/loginform`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -155,6 +184,11 @@ test("current-user password settings tabs use typed TanStack links without route
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
 });
+
+async function expectPasswordValidationPopovers(page: Page, messages: string[]) {
+  const popovers = page.locator("#frmPassword .popover.right.in .popover-content");
+  await expect(popovers).toHaveText(messages);
+}
 
 async function expectPasswordEditTabs(page: Page, basePath: string) {
   const tabItems = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li");
