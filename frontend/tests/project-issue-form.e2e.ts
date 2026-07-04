@@ -175,6 +175,38 @@ test("project issue create form parent state matches legacy partial_select_subta
   );
 });
 
+test("project issue create form empty title submit renders legacy required error state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueForm(page);
+  let createRequestCount = 0;
+  await page.route("**/api/v1/owners/admin/projects/sample/issues", async (route) => {
+    createRequestCount += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      status: 500,
+      body: JSON.stringify({ message: "unexpected create request" }),
+    });
+  });
+
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator("#title")).toHaveClass("text title ");
+  await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
+
+  await page.locator("#button-save").click();
+
+  await expect(page.locator("#title")).toHaveClass("text title error");
+  await expect(page.locator("#issue-form dd > div.span12 + div.message")).toHaveCount(1);
+  await expect(page.locator("#issue-form dd > div.message > div")).toHaveText("Required field!");
+  await expect(page.locator("#issue-form dd > div.message + div.subtask-wrap")).toHaveCount(1);
+  expect(createRequestCount).toBe(0);
+
+  await page.locator("#title").fill("Legacy title");
+  await expect(page.locator("#title")).toHaveClass("text title ");
+  await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
+});
+
 test("project issue create form source uses TanStack Link and no uploader template remnants", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
@@ -194,6 +226,10 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).not.toContain("legacyMarkdownHelpTemplate");
   expect(source).not.toContain("markdown.scala.html?raw");
   expect(source).not.toContain("__html");
+  expect(source).not.toContain("document.");
+  expect(source).not.toContain("addEventListener");
+  expect(source).not.toContain("classList");
+  expect(source).not.toContain("style.display");
   expect(source).not.toContain(".replace(/@Messages");
   expect(source).not.toContain(".replace(/<script");
   expect(source).not.toContain("attachedFileTemplate");

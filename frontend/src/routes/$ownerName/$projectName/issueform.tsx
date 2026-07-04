@@ -107,6 +107,7 @@ function ProjectIssueFormBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { ownerName, projectName } = Route.useParams();
+  const [titleErrors, setTitleErrors] = useState<string[]>([]);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -146,7 +147,14 @@ function ProjectIssueFormBody({
             encType="multipart/form-data"
             onSubmit={(event) => {
               event.preventDefault();
-              mutation.mutate(event.currentTarget);
+              const form = event.currentTarget;
+              const title = stringFormValue(new FormData(form), "title");
+              if (title.trim() === "") {
+                setTitleErrors([t("validation.required")]);
+                return;
+              }
+              setTitleErrors([]);
+              mutation.mutate(form);
             }}
           >
             <div className="row-fluid">
@@ -161,15 +169,27 @@ function ProjectIssueFormBody({
                           id="title"
                           name="title"
                           defaultValue=""
-                          className="text title "
+                          className={titleErrors.length > 0 ? "text title error" : "text title "}
                           maxLength={250}
                           placeholder={t("title")}
                           autoComplete="off"
                           title={t("title.help.key")}
+                          onChange={(event) => {
+                            if (event.currentTarget.value.trim() !== "") {
+                              setTitleErrors([]);
+                            }
+                          }}
                         />
                       </div>
                       <div className="span1 subtask-message">{t("issue.option")}</div>
                     </div>
+                    {titleErrors.length > 0 ? (
+                      <div className="message">
+                        {titleErrors.map((error) => (
+                          <div key={error}>{error}</div>
+                        ))}
+                      </div>
+                    ) : null}
                     <SubtaskSelects
                       parentIssueId={parentIssueId}
                       parentOptions={parentOptions}
