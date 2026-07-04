@@ -267,7 +267,6 @@ function ProjectMemberListItem({
         activeProps={{ className: undefined }}
         to="/$user"
         params={{ user: loginId }}
-        search={undefined as never}
         className="avatar-wrap mlarge pull-left mr10"
       >
         <img
@@ -319,7 +318,7 @@ function ProjectMemberListItem({
                         data-action="apply"
                         data-href={prefixBasePath(
                           basePath,
-                          `/${ownerName}/${projectName}/members/${userId}`,
+                          `/${ownerName}/${projectName}/member/${userId}/edit`,
                         )}
                         data-loginid={loginId}
                         onClick={(event) => {
@@ -338,7 +337,10 @@ function ProjectMemberListItem({
             <button
               type="button"
               data-action="delete"
-              data-href={prefixBasePath(basePath, `/${ownerName}/${projectName}/members/${userId}`)}
+              data-href={prefixBasePath(
+                basePath,
+                `/${ownerName}/${projectName}/member/${userId}/delete`,
+              )}
               className="ybtn ybtn-danger ybtn-small"
               onClick={() => deleteMutation.mutate()}
             >
@@ -366,12 +368,7 @@ function EnrollmentRequest({
   return (
     <div className="span2">
       <div className="pull-left mr10">
-        <Link
-          activeProps={{ className: undefined }}
-          to="/$user"
-          params={{ user: loginId }}
-          search={undefined as never}
-        >
+        <Link activeProps={{ className: undefined }} to="/$user" params={{ user: loginId }}>
           <img
             src={stringField(user.avatarUrl, "/assets/images/default-avatar-32.png")}
             height="65"
@@ -383,12 +380,7 @@ function EnrollmentRequest({
       </div>
       <div className="pull-left" style={{ width: "60px" }}>
         <span>
-          <Link
-            activeProps={{ className: undefined }}
-            to="/$user"
-            params={{ user: loginId }}
-            search={undefined as never}
-          >
+          <Link activeProps={{ className: undefined }} to="/$user" params={{ user: loginId }}>
             <strong>{stringField(user.userLabel, loginId)}</strong>
           </Link>
         </span>
@@ -468,7 +460,6 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   activeProps={{ className: undefined }}
                   to="/$user"
                   params={{ user: ownerName }}
-                  search={undefined as never}
                 >
                   {ownerName}
                 </Link>
@@ -695,7 +686,9 @@ function ProjectSettingMenu({
         </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
-        <Link to={`/${ownerName}/${projectName}/labels` as never}>{t("issue.label")}</Link>
+        <Link to="/$ownerName/$projectName/issue/labelsform" params={{ ownerName, projectName }}>
+          {t("issue.label")}
+        </Link>
       </li>
       <li id="subMenuWebhook" className="">
         <Link to="/$ownerName/$projectName/webhooks" params={{ ownerName, projectName }}>

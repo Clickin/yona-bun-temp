@@ -604,12 +604,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
           <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$user"
-                  params={{ user: ownerName }}
-                  search={undefined as never}
-                >
+                <Link {...LEGACY_LINK_PROPS} to="/$user" params={{ user: ownerName }}>
                   {ownerName}
                 </Link>
               </span>

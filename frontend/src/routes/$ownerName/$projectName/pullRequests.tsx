@@ -24,8 +24,8 @@ type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-contain
 type LegacyPullRequestRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export type ProjectPullRequestsSearch = {
-  contributorId: number;
   filter: string;
+  contributorId: number;
   pageNum: number;
 };
 
@@ -33,8 +33,8 @@ export function validateProjectPullRequestsSearch(
   search: Record<string, unknown>,
 ): ProjectPullRequestsSearch {
   return {
-    contributorId: Number(search.contributorId) || 0,
     filter: typeof search.filter === "string" ? search.filter : "",
+    contributorId: Number(search.contributorId) || 0,
     pageNum: Number(search.pageNum) || 1,
   };
 }
@@ -165,30 +165,46 @@ function ProjectPullRequestsBody({
       contributorId: requestType === "sent" ? "" : contributorId,
       filter,
     });
-  const searchNavigationMutation = useMutation({
-    mutationFn: async ({
-      action,
-      contributorId,
+  const navigatePullRequestSearch = ({
+    action,
+    contributorId,
+    filter,
+  }: {
+    action: string;
+    contributorId: number | string;
+    filter: string;
+  }) => {
+    const nextSearch = pullRequestSearchObject({
+      contributorId: requestType === "sent" ? "" : contributorId,
       filter,
-    }: {
-      action: string;
-      contributorId: number | string;
-      filter: string;
-    }) =>
-      pullRequestSearchHref({
-        action,
-        contributorId: requestType === "sent" ? "" : contributorId,
-        filter,
-      }),
-    onSuccess(href) {
-      void queryClient.invalidateQueries({
-        queryKey: [...apiQueryKeys.project.base(ownerName, projectName), "pull-requests"],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: [...apiQueryKeys.project.base(ownerName, projectName), "pull-requests"],
+    });
+    if (action === closedAction) {
+      router.navigate({
+        to: "/$ownerName/$projectName/closedPullRequests",
+        params: { ownerName, projectName },
+        search: nextSearch,
       });
-      router.navigate({ to: stripBasePath(runtimeConfig.basePath, href) });
-    },
-  });
+      return;
+    }
+    if (action === sentAction) {
+      router.navigate({
+        to: "/$ownerName/$projectName/sentPullRequests",
+        params: { ownerName, projectName },
+        search: nextSearch,
+      });
+      return;
+    }
+    router.navigate({
+      to: "/$ownerName/$projectName/pullRequests",
+      params: { ownerName, projectName },
+      search: nextSearch,
+    });
+  };
   const submitPullRequestSearch = (action = searchAction) => {
-    searchNavigationMutation.mutate({
+    navigatePullRequestSearch({
       action,
       contributorId: contributorIdValue,
       filter: filterValue,
@@ -239,7 +255,7 @@ function ProjectPullRequestsBody({
                         onChange={(event) => {
                           const nextContributorId = event.currentTarget.value;
                           setContributorIdValue(nextContributorId);
-                          searchNavigationMutation.mutate({
+                          navigatePullRequestSearch({
                             action: searchAction,
                             contributorId: nextContributorId,
                             filter: filterValue,
@@ -284,7 +300,8 @@ function ProjectPullRequestsBody({
             />
             <div className="pull-right">
               <Link
-                to={`/${ownerName}/${projectName}/newPullRequestForm` as never}
+                to="/$ownerName/$projectName/newPullRequestForm"
+                params={{ ownerName, projectName }}
                 className="ybtn ybtn-success"
               >
                 {t("pullRequest.new")}
@@ -397,6 +414,10 @@ function ProjectRecentlyPushedBranches({
       <div className="alert alert-info">
         {pushedBranches.map((branch) => {
           const projectPath = `/${branch.ownerName}/${branch.projectName}`;
+          const newPullRequestHref = prefixBasePath(
+            runtimeConfig.basePath,
+            `${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}`,
+          );
           return (
             <div key={branch.id || branch.branchName}>
               <i className="yobicon-split"></i>
@@ -404,11 +425,7 @@ function ProjectRecentlyPushedBranches({
                 {`${branch.ownerName}/${branch.projectName}:${branch.shortName} ( ${branch.pushedLabel} )`}
               </span>
               &nbsp;-&nbsp;
-              <Link
-                to={
-                  `${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}` as never
-                }
-              >
+              <Link to={stripBasePath(runtimeConfig.basePath, newPullRequestHref)}>
                 {t("pullRequest")}
               </Link>
               {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy close hook keeps aria-hidden. */}
@@ -667,27 +684,6 @@ function ProjectPullRequestRow({
   );
 }
 
-function pullRequestSearchHref({
-  action,
-  contributorId,
-  filter,
-}: {
-  action: string;
-  contributorId: number | string;
-  filter: string;
-}) {
-  const params = new URLSearchParams();
-  const normalizedFilter = filter.trim();
-  const normalizedContributorId = String(contributorId || "").trim();
-  if (normalizedFilter) {
-    params.set("filter", normalizedFilter);
-  }
-  if (normalizedContributorId) {
-    params.set("contributorId", normalizedContributorId);
-  }
-  return params.size ? `${action}?${params.toString()}` : action;
-}
-
 function pullRequestSearchObject({
   contributorId,
   filter,
@@ -698,8 +694,8 @@ function pullRequestSearchObject({
   const normalizedContributorId = Number(contributorId) || 0;
   const normalizedFilter = filter.trim();
   return {
-    contributorId: normalizedContributorId,
     filter: normalizedFilter,
+    contributorId: normalizedContributorId,
     pageNum: 1,
   };
 }

@@ -275,6 +275,7 @@ test("project pull request populated row links use SPA navigation with legacy hr
 });
 
 test("project pull request row source uses TanStack Link for internal row navigation", () => {
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("as never");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("as unknown as");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("pjaxContainer");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("legacyHref");
@@ -297,6 +298,8 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={`${pullRequestHref}#reviewers`}");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('declare module "react"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("interface LiHTMLAttributes");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("<a ");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("<a\n");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("type LegacyPjaxContainerAttrs");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     'const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs',
@@ -317,10 +320,10 @@ test("project pull request row source uses TanStack Link for internal row naviga
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    "to={`/${ownerName}/${projectName}/newPullRequestForm` as never}",
+    'to="/$ownerName/$projectName/newPullRequestForm"',
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    "`${projectPath}/newPullRequestForm?fromBranch=${branch.branchName}&toBranch=${branch.defaultBranch}` as never",
+    "to={stripBasePath(runtimeConfig.basePath, newPullRequestHref)}",
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('className="title-prefix"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('hash="reviewers"');
