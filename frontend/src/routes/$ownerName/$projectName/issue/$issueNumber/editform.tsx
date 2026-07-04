@@ -100,6 +100,7 @@ function ProjectIssueEditFormBody({
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const numericIssueNumber = Number(issueNumber) || 0;
   const issueRecord = issue as YonaRecord;
+  const [isTitleRequired, setIsTitleRequired] = useState(false);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -150,6 +151,12 @@ function ProjectIssueEditFormBody({
             encType="multipart/form-data"
             onSubmit={(event) => {
               event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              if (stringFormValue(formData, "title").trim() === "") {
+                setIsTitleRequired(true);
+                return;
+              }
+              setIsTitleRequired(false);
               mutation.mutate(event.currentTarget);
             }}
           >
@@ -177,14 +184,20 @@ function ProjectIssueEditFormBody({
                           id="title"
                           name="title"
                           defaultValue={stringField(issue.title, "")}
-                          className="text title "
+                          className={`text title ${isTitleRequired ? "error" : ""}`}
                           maxLength={250}
                           placeholder={t("title")}
                           autoComplete="off"
+                          onChange={() => setIsTitleRequired(false)}
                         />
                       </div>
                       <div className="span1 subtask-message">{t("issue.option")}</div>
                     </div>
+                    {isTitleRequired ? (
+                      <div className="message">
+                        <div>{t("validation.required")}</div>
+                      </div>
+                    ) : null}
                     <SubtaskSelects issue={issue} parentOptions={parentOptions} project={project} />
                   </dd>
                 </dl>

@@ -51,6 +51,9 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   expect(ROUTE_SOURCE).not.toMatch(
     /help\/markdown\.scala\.html|legacyMarkdownHelpTemplate|legacyMarkdownHelpHtml|dangerouslySetInnerHTML|__html/u,
   );
+  expect(ROUTE_SOURCE).not.toMatch(
+    /document\.|addEventListener|classList|style\.display|href="javascript:/u,
+  );
   await expect(page.locator("#notificationMail")).toBeChecked();
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
@@ -224,6 +227,45 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
       ),
     )
     .toBe("kept");
+});
+
+test("project issue edit form renders legacy title required validation state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let updateRequests = 0;
+  await mockProjectIssueEditForm(page);
+  page.on("request", (request) => {
+    if (
+      request.method() === "PUT" &&
+      request.url().includes("/api/v1/projects/admin/sample/issues/1")
+    ) {
+      updateRequests += 1;
+    }
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#title")).toHaveClass(/^text title\s*$/u);
+  await expect(page.locator("dd > .message")).toHaveCount(0);
+
+  await page.locator("#title").fill("");
+  await page.locator("#button-save").click();
+
+  await expect(page.locator("#title")).toHaveClass("text title error");
+  const message = page.locator("dd > .message");
+  await expect(message).toHaveCount(1);
+  await expect(message.locator("> div")).toHaveText("Required field!");
+  expect(
+    await message.evaluate((element) =>
+      element.nextElementSibling?.classList.contains("subtask-wrap"),
+    ),
+  ).toBe(true);
+  expect(updateRequests).toBe(0);
+
+  await page.locator("#title").fill("Editable issue updated");
+  await expect(page.locator("#title")).toHaveClass(/^text title\s*$/u);
+  await expect(page.locator("dd > .message")).toHaveCount(0);
+  await page.locator("#button-save").click();
+  await expect.poll(() => updateRequests).toBe(1);
 });
 
 async function mockProjectIssueEditForm(page: Page) {
