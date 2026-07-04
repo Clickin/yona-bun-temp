@@ -14,7 +14,7 @@ const EXPECTED_USER_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -576,6 +576,7 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   await expect(page.locator(".action-buttons .alert-success h4")).toHaveText(
     "New password: reset-1234",
   );
+  await expect(page.locator(".action-buttons > *").last()).toHaveClass("alert alert-success");
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 

@@ -619,10 +619,6 @@ function UserListItem({
           >
             {t("title.resetPassword")}
           </button>
-          {passwordReset === "pending" ? <RequestWaitingAlert /> : null}
-          {passwordReset && passwordReset !== "pending" ? (
-            <PasswordResetAlert newPassword={passwordReset.newPassword ?? ""} />
-          ) : null}
           <button
             type="button"
             className={
@@ -650,6 +646,10 @@ function UserListItem({
           >
             {t("button.delete")}
           </button>
+          {passwordReset === "pending" ? <RequestWaitingAlert /> : null}
+          {passwordReset && passwordReset !== "pending" ? (
+            <PasswordResetAlert newPassword={passwordReset.newPassword ?? ""} />
+          ) : null}
         </div>
       ) : (
         <div className="span4 listitem-col">{legacyLastStateModifiedDate(user)}</div>
