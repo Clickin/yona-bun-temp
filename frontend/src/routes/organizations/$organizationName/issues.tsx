@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { type HTMLAttributes, type LiHTMLAttributes, type MouseEvent } from "react";
+import { type HTMLAttributes, type MouseEvent } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
 import {
@@ -33,6 +33,7 @@ type LegacySortFilterAttrs = {
   orderby: string;
   orderdir: string;
 };
+type LegacyIssueRowAttributes = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export const Route = createFileRoute("/organizations/$organizationName/issues")({
   component: OrganizationIssuesRoute,
@@ -514,9 +515,7 @@ function OrganizationIssueItem({
   const assigneeRoutePath = `/${issue.assigneeLoginId}`;
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
-  const legacyIssueRowAttrs = { href: issueHref } satisfies LiHTMLAttributes<HTMLLIElement> & {
-    href: string;
-  };
+  const legacyIssueRowAttrs = { href: issueHref } satisfies LegacyIssueRowAttributes;
 
   return (
     <li className="post-item title" id={`issue-item-${issue.id}`} {...legacyIssueRowAttrs}>

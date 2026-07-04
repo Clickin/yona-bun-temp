@@ -261,14 +261,19 @@ test("organization issue aggregate source uses narrow legacy attr types", () => 
   expect(source).not.toContain('Record<"pjax-filter", string>');
   expect(source).not.toContain('Record<"state", string>');
   expect(source).not.toContain('Record<"orderby" | "orderdir", string>');
+  expect(source).not.toContain("LiHTMLAttributes");
   expect(source).not.toContain("pjaxFilter");
   expect(source).not.toContain("legacyState");
+  expect(source).toContain(
+    "type LegacyIssueRowAttributes = HTMLAttributes<HTMLLIElement> & { href: string };",
+  );
   expect(source).toContain("type LegacyPjaxFilterAttrs");
   expect(source).toContain("type LegacyStateTabAttrs");
   expect(source).toContain("type LegacySortFilterAttrs");
   expect(source).toContain("satisfies LegacyPjaxFilterAttrs");
   expect(source).toContain("satisfies LegacyStateTabAttrs");
   expect(source).toContain("satisfies LegacySortFilterAttrs");
+  expect(source).toContain("} satisfies LegacyIssueRowAttributes;");
 });
 
 test("organization issues menu board link preserves legacy href with SPA transition", async ({
