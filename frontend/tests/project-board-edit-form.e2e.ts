@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+const EDITFORM_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
+  "utf8",
+);
 const EXPECTED_EDIT_FORM_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/post/3" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dt><label for="title">Title</label></dt><dd><input type="text" id="title" name="title" value="Release note" class="zen-mode text title " maxlength="250" tabindex="1" autocomplete="off"></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="right-txt mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><label class="checkbox"><input type="checkbox" id="readme" name="readme">make it a README file</label></div><div class="actions"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button class="ybtn ybtn-info" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
@@ -24,13 +28,23 @@ function withLegacyEditor(html: string) {
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><script type="text/x-jquery-tmpl" id="tplAttachedFile"><li class="attached-file" data-id="\${fileId}" data-name="\${fileName}" data-href="\${fileHref}" data-mime="\${mimeType}" data-size="\${fileSize}"><i class="yobicon-supportrequest"></i><i class="mimetype"></i><strong class="name">\${fileName}</strong><span class="size">\${fileSizeReadable}</span><div class="pull-right"><div class="progress upload-progress"><div class="bar orange"></div></div></div><button type="button" class="btn-transparent btn-delete pull-right">×</button><span class="pull-right nbtn small white btn-insert">Click to post</span></li></script><script type="text/x-jquery-tmpl" id="tplDropFilesHere"><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div></script>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
   );
 }
 
 test("project board edit form matches legacy board/edit.scala.html core form DOM", async ({
   page,
 }) => {
+  expect(EDITFORM_ROUTE_SOURCE).toContain('t("validation.required")');
+  expect(EDITFORM_ROUTE_SOURCE).toContain(
+    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
+  );
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("document.");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("classList");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("style.display");
+
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const patchRequests: unknown[] = [];
   await mockProjectBoardEditForm(page, patchRequests);
@@ -41,7 +55,7 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
-  await expect(page.locator("#tplAttachedFile")).toHaveAttribute("type", "text/x-jquery-tmpl");
+  await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -149,7 +163,15 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
     )
     .toBe("kept");
 
+  await page.fill("#title", "");
+  await page.click("form.nm .actions .ybtn-info");
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
+  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  expect(patchRequests).toEqual([]);
+
   await page.fill("#title", "Release note patched");
+  await expect(page.locator("#title")).not.toHaveClass(/error/);
+  await expect(page.locator("#title + .message")).toHaveCount(0);
   await page.fill("#editor-body-body", "Patched **body**");
   await page.check("#notice");
   const patchResponsePromise = page.waitForResponse(

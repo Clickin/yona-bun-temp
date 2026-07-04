@@ -55,6 +55,7 @@ function ProjectBoardEditFormBody({
   const canUpdate = Boolean(post.permissions.canUpdate);
   const canShowReadme = canUpdate;
   const canSendNotification = !post.readme && post.authorLoginId !== "";
+  const [titleHasError, setTitleHasError] = useState(false);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -94,6 +95,11 @@ function ProjectBoardEditFormBody({
           className="nm"
           onSubmit={(event) => {
             event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            if (stringFormValue(formData, "title").trim() === "") {
+              setTitleHasError(true);
+              return;
+            }
             mutation.mutate(event.currentTarget);
           }}
         >
@@ -109,10 +115,20 @@ function ProjectBoardEditFormBody({
                   id="title"
                   name="title"
                   defaultValue={post.title}
-                  className="zen-mode text title "
+                  className={`zen-mode text title ${titleHasError ? "error" : ""}`}
                   maxLength={250}
                   autoComplete="off"
+                  onChange={(event) => {
+                    if (event.currentTarget.value.trim() !== "") {
+                      setTitleHasError(false);
+                    }
+                  }}
                 />
+                {titleHasError ? (
+                  <div className="message">
+                    <div>{t("validation.required")}</div>
+                  </div>
+                ) : null}
               </dd>
               <dd style={{ position: "relative" }}>
                 <BoardPostMarkdownEditor value={post.bodyMarkdown} />
