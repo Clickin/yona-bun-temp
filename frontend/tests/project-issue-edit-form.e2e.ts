@@ -234,6 +234,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
 test("project issue edit form renders legacy title required validation state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   let updateRequests = 0;
+  let updateBody: Record<string, unknown> | undefined;
   await mockProjectIssueEditForm(page);
   page.on("request", (request) => {
     if (
@@ -241,6 +242,7 @@ test("project issue edit form renders legacy title required validation state", a
       request.url().includes("/api/v1/projects/admin/sample/issues/1")
     ) {
       updateRequests += 1;
+      updateBody = request.postDataJSON() as Record<string, unknown>;
     }
   });
 
@@ -268,9 +270,61 @@ test("project issue edit form renders legacy title required validation state", a
   await expect(page.locator("dd > .message")).toHaveCount(0);
   await page.locator("#button-save").click();
   await expect.poll(() => updateRequests).toBe(1);
+  expect(updateBody?.isDraft).toBe(false);
+  expect(updateBody?.isPublish).toBe(false);
 });
 
-async function mockProjectIssueEditForm(page: Page) {
+test("project issue draft edit form submits legacy draft save and publish flags", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page, { issue: { isDraft: true, title: "Editable draft issue" } });
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("dt > .draft")).toHaveText("Draft");
+  await expect(page.locator("#isDraft")).toHaveValue("false");
+  await expect(page.locator("#isPublish")).toHaveValue("false");
+  await expect(page.locator("#button-draft-publish")).toHaveClass("ybtn ybtn-info");
+  await expect(page.locator("#button-draft-publish")).toHaveText("Publish");
+  await expect(page.locator("#draft-save-btn")).toHaveClass("ybtn ybtn-watching draft-save-btn");
+  await expect(page.locator("#draft-save-btn")).toHaveText("Draft Save");
+  await expect(page.locator("#button-save")).toHaveCount(0);
+  await expect(page.locator(".send-notification-check")).toHaveCount(0);
+
+  const draftSaveRequest = page.waitForRequest(
+    (request) =>
+      request.method() === "PUT" &&
+      request.url().includes("/api/v1/projects/admin/sample/issues/1"),
+  );
+  await page.locator("#draft-save-btn").click();
+  const draftSaveBody = (await draftSaveRequest).postDataJSON() as Record<string, unknown>;
+  expect(draftSaveBody.isDraft).toBe(true);
+  expect(draftSaveBody.isPublish).toBe(false);
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  const publishRequest = page.waitForRequest(
+    (request) =>
+      request.method() === "PUT" &&
+      request.url().includes("/api/v1/projects/admin/sample/issues/1"),
+  );
+  await page.locator("#button-draft-publish").click();
+  const publishBody = (await publishRequest).postDataJSON() as Record<string, unknown>;
+  expect(publishBody.isDraft).toBe(false);
+  expect(publishBody.isPublish).toBe(true);
+
+  expect(ROUTE_SOURCE).not.toMatch(/querySelector<HTMLInputElement>\("#isDraft"\)/u);
+  expect(ROUTE_SOURCE).not.toMatch(/setAttribute\("value", "true"\)/u);
+  expect(ROUTE_SOURCE).toContain('id="draft-save-btn"');
+  expect(ROUTE_SOURCE).toContain("requestSubmit()");
+});
+
+async function mockProjectIssueEditForm(
+  page: Page,
+  options: {
+    issue?: Partial<Record<string, unknown>>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -340,36 +394,38 @@ async function mockProjectIssueEditForm(page: Page) {
     });
   });
   await page.route("**/api/v1/projects/admin/sample/issues/1", async (route) => {
+    const issue = {
+      assigneeLoginId: "dev",
+      authorId: 1,
+      bodyMarkdown: "Editable body",
+      dueDateLabel: "2026-08-02",
+      isDraft: false,
+      issueId: 101,
+      issueNumber: 1,
+      labels: [
+        {
+          categoryId: "3",
+          categoryIsExclusive: false,
+          categoryName: "type",
+          color: "#51aacc",
+          id: "8",
+          name: "bug",
+        },
+      ],
+      milestoneId: 5,
+      milestoneTitle: "v1.0",
+      ownerName: "admin",
+      parentIssueId: null,
+      projectName: "sample",
+      state: "open",
+      title: "Editable issue",
+      viewerCanUpdate: true,
+      viewerUserId: 1,
+      ...options.issue,
+    };
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        assigneeLoginId: "dev",
-        authorId: 1,
-        bodyMarkdown: "Editable body",
-        dueDateLabel: "2026-08-02",
-        isDraft: false,
-        issueId: 101,
-        issueNumber: 1,
-        labels: [
-          {
-            categoryId: "3",
-            categoryIsExclusive: false,
-            categoryName: "type",
-            color: "#51aacc",
-            id: "8",
-            name: "bug",
-          },
-        ],
-        milestoneId: 5,
-        milestoneTitle: "v1.0",
-        ownerName: "admin",
-        parentIssueId: null,
-        projectName: "sample",
-        state: "open",
-        title: "Editable issue",
-        viewerCanUpdate: true,
-        viewerUserId: 1,
-      }),
+      body: JSON.stringify(issue),
     });
   });
 }

@@ -101,9 +101,9 @@ function ProjectIssueEditFormBody({
   const numericIssueNumber = Number(issueNumber) || 0;
   const issueRecord = issue as YonaRecord;
   const [isTitleRequired, setIsTitleRequired] = useState(false);
+  const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
   const mutation = useMutation({
-    mutationFn: async (form: HTMLFormElement) => {
-      const formData = new FormData(form);
+    mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return updateIssue(runtimeConfig, csrfToken, {
         assigneeLoginId: stringFormValue(formData, "assigneeLoginId"),
@@ -151,13 +151,18 @@ function ProjectIssueEditFormBody({
             encType="multipart/form-data"
             onSubmit={(event) => {
               event.preventDefault();
-              const formData = new FormData(event.currentTarget);
+              const form = event.currentTarget;
+              const formData = new FormData(form);
+              const submitIntent = submitIntentRef.current;
+              submitIntentRef.current = "save";
+              formData.set("isDraft", submitIntent === "draft" ? "true" : "false");
+              formData.set("isPublish", submitIntent === "publish" ? "true" : "false");
               if (stringFormValue(formData, "title").trim() === "") {
                 setIsTitleRequired(true);
                 return;
               }
               setIsTitleRequired(false);
-              mutation.mutate(event.currentTarget);
+              mutation.mutate(formData);
             }}
           >
             <input type="hidden" name="authorId" value={authorId} />
@@ -229,7 +234,14 @@ function ProjectIssueEditFormBody({
                     ) : null}
                     {isDraft ? (
                       <>
-                        <button type="submit" id="button-draft-publish" className="ybtn ybtn-info">
+                        <button
+                          type="submit"
+                          id="button-draft-publish"
+                          className="ybtn ybtn-info"
+                          onClick={() => {
+                            submitIntentRef.current = "publish";
+                          }}
+                        >
                           {t("button.draft.publish")}
                         </button>
                         <button
@@ -237,18 +249,22 @@ function ProjectIssueEditFormBody({
                           id="draft-save-btn"
                           className="ybtn ybtn-watching draft-save-btn"
                           onClick={(event) => {
-                            const form = event.currentTarget.form;
-                            form
-                              ?.querySelector<HTMLInputElement>("#isDraft")
-                              ?.setAttribute("value", "true");
-                            form?.requestSubmit();
+                            submitIntentRef.current = "draft";
+                            event.currentTarget.form?.requestSubmit();
                           }}
                         >
                           {t("button.draft.save")}
                         </button>
                       </>
                     ) : (
-                      <button type="submit" id="button-save" className="ybtn ybtn-info">
+                      <button
+                        type="submit"
+                        id="button-save"
+                        className="ybtn ybtn-info"
+                        onClick={() => {
+                          submitIntentRef.current = "save";
+                        }}
+                      >
                         {t("button.save")}
                       </button>
                     )}
