@@ -103,7 +103,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               event.preventDefault();
               const form = event.currentTarget;
               const email = String(new FormData(form).get("email") ?? "");
-              addMutation.mutate(email);
+              addMutation.mutate(email, { onSuccess: () => form.reset() });
             }}
           >
             <input

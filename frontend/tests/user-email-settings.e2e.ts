@@ -171,6 +171,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   await page.goto(`${basePath}/user/editform/emails`);
   await page.locator('form.form-inline input[name="email"]').fill("new@example.com");
   await page.locator("form.form-inline button[type=submit]").click();
+  await expect(page.locator('form.form-inline input[name="email"]')).toHaveValue("");
 });
 
 test("current-user email settings tab menu uses direct typed router links", () => {
