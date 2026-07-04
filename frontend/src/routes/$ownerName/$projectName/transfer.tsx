@@ -87,6 +87,8 @@ function ProjectTransferBody({
       });
       if (typeof response.redirectPath === "string") {
         router.history.push(prefixBasePath(runtimeConfig.basePath, response.redirectPath));
+      } else {
+        router.history.go(0);
       }
     },
     onError() {

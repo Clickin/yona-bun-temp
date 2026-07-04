@@ -328,6 +328,28 @@ test("project transfer confirmation sends only one request on repeated Yes click
   ]);
 });
 
+test("project transfer confirmation reloads when success has no redirect path", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, { transferResponseWithoutRedirect: true });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await page.locator("#owner").fill("target-owner");
+  await page.locator("#accept").check();
+  await page.locator("#btnTransfer").click();
+  await expect(page.locator("#alertTransfer")).toHaveClass("modal in");
+
+  await page.locator("#btnTransferExec").click();
+  await page.waitForFunction(() => {
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    return navigation?.type === "reload";
+  });
+  await expect(page).toHaveURL(`${basePath}/admin/sample/transfer`);
+});
+
 test("project transfer header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -490,6 +512,7 @@ async function mockProjectAdmin(
       url: string;
     }[];
     transferResponseDelayMs?: number;
+    transferResponseWithoutRedirect?: boolean;
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -539,7 +562,7 @@ async function mockProjectAdmin(
         body: JSON.stringify({
           ...transferProject(),
           destination: "target-owner",
-          redirectPath: "/admin/sample",
+          ...(options.transferResponseWithoutRedirect ? {} : { redirectPath: "/admin/sample" }),
           transferId: 91,
         }),
       });
