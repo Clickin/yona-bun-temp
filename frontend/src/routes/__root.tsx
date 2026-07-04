@@ -10,6 +10,23 @@ export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
 }
 
+type RootToast = {
+  key: string;
+  message: string;
+};
+
+const RootToastContext = React.createContext<React.Dispatch<
+  React.SetStateAction<RootToast | null>
+> | null>(null);
+
+export function useRootToast() {
+  const setRootToast = React.use(RootToastContext);
+  if (!setRootToast) {
+    throw new Error("useRootToast must be used under RootToastContext.");
+  }
+  return setRootToast;
+}
+
 export const Route = createRootRouteWithContext<AppRouterContext>()({
   component: RootResetShell,
   notFoundComponent: RootAliasNotFound,
@@ -17,6 +34,7 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 
 function RootResetShell() {
   const { runtimeConfig } = Route.useRouteContext();
+  const [rootToast, setRootToast] = React.useState<RootToast | null>(null);
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const rendersPlainResponseState = pathname.startsWith("/verify/");
@@ -434,14 +452,22 @@ function RootResetShell() {
   }
 
   return (
-    <>
+    <RootToastContext.Provider value={setRootToast}>
       <Outlet />
       {rendersPlainResponseState ? null : (
         <>
           <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
             <RootYobiDialog />
           </LegacyI18nProvider>
-          <div id="yobiToasts" className="yobiToasts" />
+          <div id="yobiToasts" className="yobiToasts">
+            {rootToast ? (
+              <RootYobiToast
+                key={rootToast.key}
+                message={rootToast.message}
+                onDismiss={() => setRootToast(null)}
+              />
+            ) : null}
+          </div>
           <script type="text/x-jquery-tmpl" id="tplYobiToast">
             {
               '<div class="toast" tabindex="-1"><div class="btn-dismiss"><button type="button" class="btn-transparent">&times;</button></div><div class="center-text"><span class="v"></span><div class="msg"></div></div></div>'
@@ -456,7 +482,23 @@ function RootResetShell() {
           )}
         </>
       )}
-    </>
+    </RootToastContext.Provider>
+  );
+}
+
+function RootYobiToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <div className="toast" tabIndex={-1}>
+      <div className="btn-dismiss">
+        <button type="button" className="btn-transparent" onClick={onDismiss}>
+          &times;
+        </button>
+      </div>
+      <div className="center-text">
+        <span className="v" />
+        <div className="msg">{message}</div>
+      </div>
+    </div>
   );
 }
 

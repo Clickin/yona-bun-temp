@@ -378,6 +378,17 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
     "Please log in with the new password!",
   );
+  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
+  expect(source).toContain('<LoginFlashToast message={t("user.loginWithNewPassword")} />');
+  expect(source).toContain("useRootToast");
+  expect(source).not.toContain('data-toggle="yobi-notify"');
+  expect(source).not.toContain("data-toggle='yobi-notify'");
+  expect(source).not.toContain('id="yobiToasts"');
+  expect(source).not.toContain("document.");
+  expect(source).not.toContain("createPortal");
+  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
+  expect(rootSource).toContain("<RootToastContext.Provider value={setRootToast}>");
+  expect(rootSource).toContain('<div id="yobiToasts" className="yobiToasts">');
   const actual = await canonicalizeScreenAndToastRoots(page);
   const expected = await canonicalizeHtml(
     page,
