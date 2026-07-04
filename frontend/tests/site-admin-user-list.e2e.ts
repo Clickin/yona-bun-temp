@@ -449,6 +449,49 @@ test("site admin user profile links preserve legacy hrefs and use SPA navigation
   ).toBe("site-users-profile");
 });
 
+test("site admin deleted user tab renders legacy leave column without action buttons", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList?state=DELETED`);
+
+  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText("Deleted user");
+  await expect(page.locator('.form-search input[name="state"]')).toHaveValue("DELETED");
+  await expect(page.locator(".listhead .listhead-title strong")).toHaveText([
+    "Name",
+    "Email address",
+    "Member since",
+    "Date of leaving",
+  ]);
+  await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
+  await expect(page.locator(".user-list-wrap .listitem .span4.listitem-col")).toHaveText(
+    "2026-07-01 10:30:00",
+  );
+  await expect(page.locator(".user-list-wrap .action-buttons")).toHaveCount(0);
+  await expect(page.locator(".user-list-wrap [data-request-method]")).toHaveCount(0);
+  await expect(page.locator(".user-list-wrap [data-toggle='reset-password']")).toHaveCount(0);
+  await expect(page.locator(".user-list-wrap [data-toggle='account-delete']")).toHaveCount(0);
+  await expect(page.getByRole("link", { exact: true, name: "Unlocked user" })).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList?state=ACTIVE`,
+  );
+
+  const routeSource = readFileSync("src/routes/sites/userList.tsx", "utf8");
+  expect(routeSource).toContain("legacyLastStateModifiedDate(user)");
+  expect(routeSource).toContain("lastStateModifiedDate");
+  expect(routeSource).toMatch(/state !== "DELETED" \? \(/u);
+});
+
 test("site admin user actions follow legacy confirmation and alert flow", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -660,6 +703,7 @@ async function mockSiteUsers(
   await page.route("**/api/v1/site/users?*", async (route) => {
     const url = new URL(route.request().url());
     const pageNum = Number(url.searchParams.get("pageNum") ?? "1") || 1;
+    const state = url.searchParams.get("state") === "DELETED" ? "DELETED" : "ACTIVE";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -667,7 +711,7 @@ async function mockSiteUsers(
         pageSize: 20,
         query: "",
         siteAdminCount: 3,
-        state: "ACTIVE",
+        state,
         total: 2,
         totalPages: 2,
         users: [
@@ -679,9 +723,10 @@ async function mockSiteUsers(
             id: 42,
             isGuest: false,
             isSiteAdmin: false,
-            lastStateModifiedAt: "",
+            lastStateModifiedAt: state === "DELETED" ? undefined : "",
+            lastStateModifiedDate: state === "DELETED" ? "2026-07-01 10:30:00" : undefined,
             loginId: "doortts",
-            state: "ACTIVE",
+            state,
           },
         ],
       }),

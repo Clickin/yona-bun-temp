@@ -622,9 +622,16 @@ function UserListItem({
           </button>
         </div>
       ) : (
-        <div className="span4 listitem-col">{user.lastStateModifiedAt}</div>
+        <div className="span4 listitem-col">{legacyLastStateModifiedDate(user)}</div>
       )}
     </li>
+  );
+}
+
+function legacyLastStateModifiedDate(user: SiteUser) {
+  return (
+    (user as SiteUser & { lastStateModifiedDate?: string }).lastStateModifiedDate ??
+    user.lastStateModifiedAt
   );
 }
 
