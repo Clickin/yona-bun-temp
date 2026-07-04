@@ -385,7 +385,7 @@ function MilestoneIssueLink({
       target="_blank"
       style={style}
     >
-      <div className="issue-item" style={style}>
+      <div className="issue-item">
         <span className={`state-label ${state}`}>
           {state === "closed" ? <i className=" yobicon-checkmark"></i> : null}
         </span>

@@ -91,6 +91,14 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(
     page.locator('.issue-link[href$="/issue/11"]').filter({ hasText: "#11" }),
   ).toBeHidden();
+  await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute(
+    "style",
+    /display: none/u,
+  );
+  await expect(page.locator('.issue-link[href$="/issue/11"] > .issue-item')).not.toHaveAttribute(
+    "style",
+    /display/u,
+  );
   await expect(
     page.locator('.issue-link[href$="/issue/12"]').filter({ hasText: "#12" }),
   ).toBeVisible();
