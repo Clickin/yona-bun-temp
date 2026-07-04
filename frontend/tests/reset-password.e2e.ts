@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const RESET_PASSWORD_ROUTE_SOURCE = readFileSync("src/routes/resetPassword.tsx", "utf8");
+const HOME_ROUTE_SCREEN_SOURCE = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
 
 const EXPECTED_RESET_PASSWORD_SCREEN = `
 <div class="unsupported hidden">
@@ -297,6 +298,14 @@ test("reset password route keeps route-local internal anchors on TanStack Link",
   expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=\{?prefixBasePath/u);
   expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=(?:["'`]\s*\/|\{["'`]\s*\/)/u);
   expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('<Link to="/" className="ybtn ybtn-info">');
+});
+
+test("reset password shared site shell keeps legacy navbar and login-link attributes", () => {
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
+    'legacyHref={prefixBasePath(runtimeConfig.basePath, "")}',
+  );
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("<LegacyHrefLink");
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain('data-login="required"');
 });
 
 async function canonicalizeScreenRoots(page: Page) {

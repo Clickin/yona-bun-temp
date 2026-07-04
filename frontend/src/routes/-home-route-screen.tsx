@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate } from "@tanstack/react-router";
+import { createLink, Link, Navigate, type CreateLinkProps } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -70,6 +70,18 @@ const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/mas
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
 const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona";
+const legacyHrefAnchorTag = "a";
+
+type LegacyHrefAnchorProps = CreateLinkProps & {
+  legacyHref?: string;
+};
+
+function LegacyHrefAnchor({ legacyHref, href, ...props }: LegacyHrefAnchorProps) {
+  const Anchor = legacyHrefAnchorTag;
+  return <Anchor {...props} href={legacyHref ?? href} />;
+}
+
+const LegacyHrefLink = createLink(LegacyHrefAnchor);
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -589,16 +601,18 @@ export function SiteLayoutShell({
           </div>
           <ul className="gnb-nav">
             <li>
-              <Link
+              <LegacyHrefLink
                 to="/"
+                legacyHref={prefixBasePath(runtimeConfig.basePath, "")}
                 className="logo logo-letter"
                 activeProps={{
                   "aria-current": undefined,
+                  className: undefined,
                   "data-status": undefined,
                 }}
               >
                 Y
-              </Link>
+              </LegacyHrefLink>
             </li>
             {activeMenu === "projects" ? (
               <>
@@ -1018,6 +1032,7 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
             to="/users/loginform"
             search={LEGACY_LOGIN_FORM_LINK_SEARCH}
             className="user-item-btn"
+            data-login="required"
           >
             {t("title.login")}
           </Link>
