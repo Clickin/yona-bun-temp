@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../../api/code-browser";
@@ -96,6 +96,7 @@ function ProjectCodeFileBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
@@ -122,6 +123,9 @@ function ProjectCodeFileBody({
                 encodedBranch,
                 filePath,
               )}
+              onChange={(event) => {
+                router.history.push(event.currentTarget.value);
+              }}
             >
               {code.branches.map((item) => (
                 <option

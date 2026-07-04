@@ -136,6 +136,55 @@ test("project code file internal links keep legacy hrefs and navigate through th
   expect(documentRequests).toEqual([]);
 });
 
+test("project code file branch selector navigates slash branch in the SPA", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(page, codeRequests, "README.txt");
+
+  await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
+  await expect(page.locator("#branches")).toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#branches")).toHaveAttribute("data-format", "branch");
+  await expect(page.locator("#branches")).toHaveAttribute("data-dropdown-css-class", "branches");
+  await expect(
+    page.locator(
+      `#branches option[value="${basePath}/admin/sample/code/feature%2Frelease/README.txt"]`,
+    ),
+  ).toHaveText("feature/release");
+
+  await page.evaluate(() => {
+    (
+      window as typeof window & { __yonaCodeFileBranchSpaMarker?: string }
+    ).__yonaCodeFileBranchSpaMarker = "alive";
+  });
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+
+  await page
+    .locator("#branches")
+    .selectOption(`${basePath}/admin/sample/code/feature%2Frelease/README.txt`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease/README.txt`);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __yonaCodeFileBranchSpaMarker?: string })
+            .__yonaCodeFileBranchSpaMarker,
+      ),
+    )
+    .toBe("alive");
+  expect(documentRequests).toEqual([]);
+  expect(codeRequests).toEqual([
+    "branch=main&path=README.txt",
+    "branch=feature%2Frelease&path=README.txt",
+  ]);
+});
+
 test("project code file route source has no raw anchors for internal app navigation", () => {
   const routeSource = readFileSync(
     fileURLToPath(
@@ -152,6 +201,8 @@ test("project code file route source has no raw anchors for internal app navigat
   );
 
   expect(rawAnchorBlocks).toEqual([]);
+  expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
+  expect(routeSource).toContain("router.history.push(event.currentTarget.value)");
   expect(routeSource).not.toContain("legacyLinkProps");
   expect(routeSource).not.toContain("legacyEmptySearch");
   expect(routeSource).not.toContain("legacyInactiveSearch");
@@ -427,6 +478,7 @@ async function mockProjectCodeFile(
   });
   await page.route("**/api/v1/projects/admin/sample/code**", async (route) => {
     const url = new URL(route.request().url());
+    const requestedBranch = url.searchParams.get("branch") ?? selectedBranch;
     codeRequests.push(url.searchParams.toString());
     await route.fulfill({
       contentType: "application/json",
@@ -453,7 +505,7 @@ async function mockProjectCodeFile(
         ownerName: "admin",
         path: filePath,
         projectName: "sample",
-        selectedBranch,
+        selectedBranch: requestedBranch,
       }),
     });
   });
