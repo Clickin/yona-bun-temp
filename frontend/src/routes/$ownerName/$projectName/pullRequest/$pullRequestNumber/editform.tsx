@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  pullRequestMergeResultQueryOptions,
   pullRequestEditFormOptionsQueryOptions,
+  type PullRequestCommit,
   updatePullRequestRest,
   type PullRequestFormOptionsResponse,
   type PullRequestFormSelected,
@@ -83,6 +85,13 @@ function ProjectPullRequestEditBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const pullRequest = formOptions.pullRequest;
+  const mergeResultQuery = useQuery(
+    pullRequestMergeResultQueryOptions(runtimeConfig, {
+      ownerName,
+      projectName,
+      query: formOptions.selected,
+    }),
+  );
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -164,12 +173,29 @@ function ProjectPullRequestEditBody({
               <li className="active">
                 <button type="button" data-toggle="tab">
                   <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
-                  <span id="numOfCommits" className="num-badge vmiddle-inline"></span>
+                  <span id="numOfCommits" className="num-badge vmiddle-inline">
+                    {mergeResultQuery.data?.commits.length
+                      ? String(mergeResultQuery.data.commits.length)
+                      : ""}
+                  </span>
                 </button>
               </li>
             </ul>
             <div className="tab-content">
-              <div id="__commits" className="code-browse-wrap tab-pane active"></div>
+              <div id="__commits" className="code-browse-wrap tab-pane active">
+                {mergeResultQuery.data ? (
+                  <MergeResult
+                    authorLabel={t("code.author")}
+                    commitDateLabel={t("code.commitDate")}
+                    commitMessageLabel={t("code.commitMsg")}
+                    commits={mergeResultQuery.data.commits}
+                    conflict={mergeResultQuery.data.conflict}
+                    noChangesLabel={t("pullRequest.diff.noChanges")}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                  />
+                ) : null}
+              </div>
             </div>
           </form>
         </div>
@@ -384,6 +410,99 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
       <p className="right-txt help">
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
+    </div>
+  );
+}
+
+function MergeResult({
+  authorLabel,
+  commitDateLabel,
+  commitMessageLabel,
+  commits,
+  conflict,
+  noChangesLabel,
+  ownerName,
+  projectName,
+}: {
+  authorLabel: string;
+  commitDateLabel: string;
+  commitMessageLabel: string;
+  commits: PullRequestCommit[];
+  conflict: boolean;
+  noChangesLabel: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  if (!commits.length) {
+    return (
+      <div
+        id="mergeResult"
+        className="code-browser-wrap"
+        data-commits="0"
+        data-pullrequest-title=""
+        data-pullrequest-body=""
+      >
+        <div>
+          <h5>{noChangesLabel}</h5>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      id="mergeResult"
+      className="code-browser-wrap"
+      data-commits={String(commits.length)}
+      data-pullrequest-title=""
+      data-pullrequest-body=""
+      data-conflict={String(conflict)}
+    >
+      <div className="commit-wrap">
+        <table className="code-table commits">
+          <thead className="thead">
+            <tr>
+              <td className="commit-id">
+                <strong>@</strong>
+              </td>
+              <td className="messages">
+                <strong>{commitMessageLabel}</strong>
+              </td>
+              <td className="date">
+                <strong>{commitDateLabel}</strong>
+              </td>
+              <td className="author">
+                <strong>{authorLabel}</strong>
+              </td>
+            </tr>
+          </thead>
+          <tbody className="tbody">
+            {commits.map((commit) => (
+              <tr key={commit.commitId}>
+                <td className="commit-id">
+                  <Link
+                    to="/$ownerName/$projectName/commit/$commitId"
+                    params={{ commitId: commit.commitId, ownerName, projectName }}
+                  >
+                    {commit.commitShortId}
+                  </Link>
+                </td>
+                <td className="messages">
+                  <span className="commitMsg short">{commit.commitMessage}</span>
+                </td>
+                <td className="date" title={commit.authorDateLabel}>
+                  {commit.authorDateLabel}
+                </td>
+                <td className={`author ${commit.authorEmail}`}>
+                  <div className="avatar-wrap">
+                    <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
