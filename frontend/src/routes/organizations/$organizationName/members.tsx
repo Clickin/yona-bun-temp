@@ -290,6 +290,12 @@ function OrganizationMembersBody({
           ) : null}
         </div>
       </div>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href="/assets/javascripts/lib/mentionjs/mention.css"
+      />
     </>
   );
 }
