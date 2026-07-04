@@ -1,6 +1,6 @@
-import { type HTMLAttributes, useEffect, useState } from "react";
+import { type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
@@ -41,6 +41,14 @@ export const Route = createFileRoute("/$user")({
       selected: isProfileTab(selected) ? selected : "issues",
     };
   },
+  beforeLoad: ({ location, params }) => {
+    if (params.user === "reset-password") {
+      throw redirect({
+        href: `/resetPassword${location.searchStr}`,
+        replace: true,
+      });
+    }
+  },
 });
 
 function PublicProfileRoute() {
@@ -58,13 +66,6 @@ function PublicProfileRoute() {
 function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { user } = Route.useParams();
   const search = Route.useSearch();
-  useEffect(() => {
-    if (user === "reset-password") {
-      window.location.replace(
-        `${prefixBasePath(runtimeConfig.basePath, "/resetPassword")}${window.location.search}`,
-      );
-    }
-  }, [runtimeConfig.basePath, user]);
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const profileQuery = useQuery(
     readPublicUserProfileQueryOptions(runtimeConfig, {
@@ -74,10 +75,6 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     }),
   );
   const redirectPath = profileQuery.data?.redirectPath;
-
-  if (user === "reset-password") {
-    return null;
-  }
 
   if (profileQuery.error instanceof RestApiError && profileQuery.error.status === 404) {
     return <PublicProfileNotFoundPage runtimeConfig={runtimeConfig} />;
