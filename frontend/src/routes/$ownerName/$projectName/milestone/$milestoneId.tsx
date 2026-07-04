@@ -421,7 +421,7 @@ function ProjectMilestoneDetailBody({
             type="button"
             className="ybtn ybtn-danger"
             data-request-method="delete"
-            data-request-uri={prefixBasePath(runtimeConfig.basePath, milestonePath)}
+            data-request-uri={prefixBasePath(runtimeConfig.basePath, `${milestonePath}/delete`)}
             onClick={() => deleteMutation.mutate()}
           >
             {t("button.yes")}

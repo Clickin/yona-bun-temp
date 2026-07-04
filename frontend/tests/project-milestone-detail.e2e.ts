@@ -321,7 +321,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await expect(page.locator("#deleteConfirm [data-request-method='delete']")).toHaveAttribute(
     "data-request-uri",
-    `${basePath}/admin/sample/milestone/5`,
+    `${basePath}/admin/sample/milestone/5/delete`,
   );
   const deleteResponse = page.waitForResponse(
     (response) =>
