@@ -488,6 +488,12 @@ test("site admin user pagination input selects and clamps like legacy yobi.Pagin
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-users-pagination-input");
+
+  const pageTwoUrl = page.url();
+  await page.locator('#pagination input[name="pageNum"]').fill("1e2");
+  await page.locator('#pagination input[name="pageNum"]').press("Enter");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  expect(page.url()).toBe(pageTwoUrl);
 });
 
 test("site admin deleted user tab renders legacy leave column without action buttons", async ({

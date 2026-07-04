@@ -345,6 +345,7 @@ function UserListPagination({
     query: query || undefined,
     state,
   });
+  const digitOnly = /^[0-9]+$/u;
 
   return (
     <div id="pagination" className="page-navigation-wrap">
@@ -377,6 +378,11 @@ function UserListPagination({
             onClick={(event) => event.currentTarget.select()}
             onKeyDown={(event) => {
               if (event.key !== "Enter") {
+                return;
+              }
+
+              if (!digitOnly.test(event.currentTarget.value)) {
+                event.currentTarget.value = String(currentPage);
                 return;
               }
 
