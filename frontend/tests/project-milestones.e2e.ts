@@ -104,17 +104,18 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   ).toBeVisible();
 
   await page.click('.nav-tabs a:has-text("Closed")');
-  await expect(page).toHaveURL(
-    `${basePath}/admin/sample/milestones?state=closed&orderBy=dueDate&orderDir=asc`,
-  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestones?state=closed`);
 });
 
 test("project milestones route uses direct typed Link targets", () => {
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
 
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("as never");
   expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
+  expect(routeSource).toContain("orderBy: optionalStringSearch(search.orderBy)");
+  expect(routeSource).toContain('const orderBy = search.orderBy ?? "dueDate"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
   expect(routeSource).toContain("params={{ ownerName, projectName");

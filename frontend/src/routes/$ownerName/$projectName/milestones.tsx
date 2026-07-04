@@ -16,18 +16,18 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type MilestoneListSearch = {
-  orderBy: string;
-  orderDir: string;
-  state: string;
+  orderBy?: string;
+  orderDir?: string;
+  state?: string;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestones")({
   component: ProjectMilestonesRoute,
   validateSearch(search: Record<string, unknown>): MilestoneListSearch {
     return {
-      orderBy: stringSearch(search.orderBy, "dueDate"),
-      orderDir: stringSearch(search.orderDir, "asc"),
-      state: stringSearch(search.state, "open"),
+      orderBy: optionalStringSearch(search.orderBy),
+      orderDir: optionalStringSearch(search.orderDir),
+      state: optionalStringSearch(search.state),
     };
   },
 });
@@ -52,22 +52,17 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const state = search.state ?? "open";
+  const orderBy = search.orderBy ?? "dueDate";
+  const orderDir = search.orderDir ?? "asc";
   const milestonesQuery = useQuery({
     queryFn: () =>
       listProjectMilestones(runtimeConfig, ownerName, projectName, {
-        orderBy: search.orderBy,
-        orderDir: search.orderDir,
-        state: search.state,
+        orderBy,
+        orderDir,
+        state,
       }),
-    queryKey: [
-      "project",
-      ownerName,
-      projectName,
-      "milestones",
-      search.state,
-      search.orderBy,
-      search.orderDir,
-    ],
+    queryKey: ["project", ownerName, projectName, "milestones", state, orderBy, orderDir],
   });
 
   if (!projectQuery.data || !milestonesQuery.data) {
@@ -111,6 +106,7 @@ function ProjectMilestonesBody({
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
   const [filter, setFilter] = useState("");
+  const currentState = search.state ?? "open";
 
   return (
     <div className="page-wrap-outer">
@@ -130,7 +126,7 @@ function ProjectMilestonesBody({
 
           <ul className="nav nav-tabs">
             {["open", "closed", "all"].map((state) => (
-              <li key={state} className={search.state === state ? "active" : ""}>
+              <li key={state} className={currentState === state ? "active" : ""}>
                 <Link
                   to="/$ownerName/$projectName/milestones"
                   params={{ ownerName, projectName }}
@@ -159,14 +155,14 @@ function ProjectMilestonesBody({
                       fieldText={t("common.order.dueDate")}
                       ownerName={ownerName}
                       projectName={projectName}
-                      search={search}
+                      search={{ ...search, state: currentState }}
                     />
                     <SortLink
                       fieldName="completionRate"
                       fieldText={t("common.order.completionRate")}
                       ownerName={ownerName}
                       projectName={projectName}
-                      search={search}
+                      search={{ ...search, state: currentState }}
                     />
                   </div>
                   <div className="pull-left search search-bar">
@@ -198,7 +194,7 @@ function ProjectMilestonesBody({
                       milestone={milestone}
                       ownerName={ownerName}
                       projectName={projectName}
-                      search={search}
+                      search={{ ...search, state: currentState }}
                     />
                   ))}
                 </ul>
@@ -224,8 +220,10 @@ function SortLink({
   projectName: string;
   search: MilestoneListSearch;
 }) {
-  const isActive = search.orderBy === fieldName;
-  const orderDir = isActive && search.orderDir === "desc" ? "asc" : isActive ? "desc" : "asc";
+  const searchOrderBy = search.orderBy ?? "dueDate";
+  const isActive = searchOrderBy === fieldName;
+  const searchOrderDir = search.orderDir ?? "asc";
+  const orderDir = isActive && searchOrderDir === "desc" ? "asc" : isActive ? "desc" : "asc";
 
   return (
     <Link
@@ -237,7 +235,7 @@ function SortLink({
       <i
         className={
           isActive
-            ? search.orderDir === "desc"
+            ? searchOrderDir === "desc"
               ? "ico btn-gray-arrow  down "
               : "ico btn-gray-arrow "
             : "ico btn-gray-arrow"
@@ -277,6 +275,7 @@ function MilestoneRow({
           <Link
             to="/$ownerName/$projectName/milestone/$milestoneId"
             params={{ ownerName, projectName, milestoneId: stringField(milestone.id) }}
+            search={{}}
             className="milestone-name"
           >
             {stringField(milestone.title)}
@@ -441,8 +440,8 @@ function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : value == null ? fallback : String(value);
 }
 
-function stringSearch(value: unknown, fallback = "") {
-  return typeof value === "string" ? value : fallback;
+function optionalStringSearch(value: unknown) {
+  return typeof value === "string" ? value : undefined;
 }
 
 function cssBackgroundColor(value: string) {

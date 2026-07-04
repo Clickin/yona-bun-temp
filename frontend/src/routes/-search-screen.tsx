@@ -318,7 +318,12 @@ function SearchResultList({
                   className="avatar-wrap"
                   title={item.authorLoginId}
                 >
-                  <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+                  {isDefaultUserSearchAvatar(item.avatarUrl) ? (
+                    /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
+                    <img src={item.avatarUrl} />
+                  ) : (
+                    <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+                  )}
                 </RouterLink>
                 <div className="title-wrap">
                   <Link
@@ -520,6 +525,10 @@ function LegacyProjectLogoImage({ src }: { src: string }) {
   }, []);
 
   return <img alt="" ref={imageRef} src={src} />;
+}
+
+function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {
+  return avatarUrl?.includes("gravatar.com/avatar/") === true;
 }
 
 export function emptySearchResult(input: {

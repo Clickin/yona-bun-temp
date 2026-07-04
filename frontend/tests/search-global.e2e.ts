@@ -158,6 +158,28 @@ const EXPECTED_GLOBAL_USER_SEARCH = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+const DEFAULT_USER_PICTURE_URL = "https://www.gravatar.com/avatar/default-member?s=32&d=identicon";
+
+const EXPECTED_GLOBAL_DEFAULT_USER_SEARCH = `
+<div class="unsupported hidden">
+  <div class="unsupported-inner"><p id="unsupported-content"></p></div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
+  </div>
+</header>
+<div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Search</h3></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">0</span></a></li><li class="active "><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">1</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="project">Projects<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">0</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/search"><input type="hidden" name="searchType" value="user"><input type="text" id="searchKeyword" name="keyword" class="span11" value="default-member"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Users</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item project"><a href="__BASE_PATH__/default-member" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="default-member"><img src="${DEFAULT_USER_PICTURE_URL}"></a><div class="title-wrap"><a href="__BASE_PATH__/default-member" class="title user-link">Default Member (@<strong class="keyword">default-member</strong>)</a></div><div class="infos nm"><span class="infos-item">Member since Jun 30, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`;
+
 const EXPECTED_GLOBAL_ISSUE_SEARCH = `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
@@ -408,6 +430,7 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(resultListSource).not.toContain("InternalResultLink");
   expect(resultListSource).not.toContain('data-toggle="tooltip"');
   expect(resultListSource).not.toContain('data-placement="top"');
+  expect(resultListSource).toContain("isDefaultUserSearchAvatar(item.avatarUrl)");
   expect(resultListSource).toContain("<Link");
   expect(resultListSource).toContain("to={itemLink.to}");
   expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
@@ -483,9 +506,36 @@ test("global user search renders legacy partial_users.scala.html populated row",
 
   await page.goto(`${basePath}/search?keyword=member&searchType=user`);
   await expect(page.locator(".search-list-wrap .search-list-item.project")).toBeVisible();
+  const customAvatar = page.locator(".search-list-item.project .avatar-wrap img");
+  await expect(customAvatar).toHaveAttribute("src", `${basePath}/files/7`);
+  await expect(customAvatar).toHaveAttribute("alt", "Alice");
+  await expect(customAvatar).toHaveAttribute("width", "32");
+  await expect(customAvatar).toHaveAttribute("height", "32");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_GLOBAL_USER_SEARCH.replaceAll("__BASE_PATH__", basePath)),
+  );
+});
+
+test("global user search renders legacy partial_users.scala.html default avatar branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  await page.goto(`${basePath}/search?keyword=default-member&searchType=user`);
+  await expect(page.locator(".search-list-wrap .search-list-item.project")).toBeVisible();
+  const defaultAvatar = page.locator(".search-list-item.project .avatar-wrap img");
+  await expect(defaultAvatar).toHaveAttribute("src", DEFAULT_USER_PICTURE_URL);
+  await expect(defaultAvatar).not.toHaveAttribute("alt");
+  await expect(defaultAvatar).not.toHaveAttribute("width");
+  await expect(defaultAvatar).not.toHaveAttribute("height");
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_GLOBAL_DEFAULT_USER_SEARCH.replaceAll("__BASE_PATH__", basePath),
+    ),
   );
 });
 
@@ -1076,6 +1126,55 @@ async function mockGlobalSearch(page: Page) {
             },
           ],
           keyword: "member",
+          pageNum: 1,
+          pageSize: 20,
+          requestedSearchType: "user",
+          scope: "global",
+          searchType: "user",
+          totalCount: 1,
+        }),
+      });
+      return;
+    }
+    if (keyword === "default-member") {
+      const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 0,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 0,
+            users: 1,
+          },
+          items: [
+            {
+              authorLabel: "Default Member",
+              authorLoginId: "default-member",
+              avatarUrl: DEFAULT_USER_PICTURE_URL,
+              createdLabel: "Jun 30, 2026",
+              href: `${basePath}/default-member`,
+              id: "11",
+              number: "",
+              ownerName: "",
+              projectName: "",
+              snippets: [],
+              state: "active",
+              title: "Default Member",
+              type: "user",
+              updatedLabel: "",
+            },
+          ],
+          keyword: "default-member",
           pageNum: 1,
           pageSize: 20,
           requestedSearchType: "user",
