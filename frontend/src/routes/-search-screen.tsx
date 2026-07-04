@@ -546,6 +546,10 @@ function SearchPagination({ result, searchPath }: { result: SearchResponse; sear
       return;
     }
     event.preventDefault();
+    if (!/^\d+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
     const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
     event.currentTarget.value = String(value);
     navigateToPage(value);

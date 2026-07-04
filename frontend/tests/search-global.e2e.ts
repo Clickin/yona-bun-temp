@@ -602,6 +602,12 @@ test("global issue search renders legacy pagination when result pages exceed one
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
+  const pageTwoUrl = page.url();
+  await pagination.locator('input[name="pageNum"]').fill("1.5");
+  await pagination.locator('input[name="pageNum"]').press("Enter");
+  await expect(page).toHaveURL(pageTwoUrl);
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+
   const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
   expect(prevHref).not.toBeNull();
   const prevUrl = new URL(prevHref ?? "", page.url());
