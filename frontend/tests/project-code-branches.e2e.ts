@@ -271,7 +271,7 @@ function branchesPayload() {
         shortName: "release",
       },
     ],
-    defaultBranch: "main",
+    defaultBranch: "refs/heads/main",
     noHead: false,
     ownerName: "admin",
     permissions: { canDelete: true, canUpdate: true },

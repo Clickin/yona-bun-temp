@@ -65,13 +65,14 @@ function ProjectBranchesBody({
 }) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
-  const defaultBranch =
+  const rawDefaultBranch =
     branches.defaultBranch || branches.branches.find((branch) => branch.isDefault)?.name || "";
+  const defaultBranch = shortBranchName(rawDefaultBranch);
   const rows = [
     ...branches.branches
-      .filter((branch) => branch.name === defaultBranch || branch.isDefault)
+      .filter((branch) => branch.name === rawDefaultBranch || branch.isDefault)
       .slice(0, 1),
-    ...branches.branches.filter((branch) => branch.name !== defaultBranch && !branch.isDefault),
+    ...branches.branches.filter((branch) => branch.name !== rawDefaultBranch && !branch.isDefault),
   ];
 
   return (
@@ -337,4 +338,9 @@ function BranchRow({
 
 function encodeBranch(branchName: string) {
   return encodeURIComponent(branchName);
+}
+
+function shortBranchName(branchName: string) {
+  const slashIndex = branchName.lastIndexOf("/");
+  return slashIndex > 0 ? branchName.slice(slashIndex + 1) : branchName;
 }
