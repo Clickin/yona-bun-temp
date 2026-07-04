@@ -188,15 +188,10 @@ const EXPECTED_HELP_SCREEN = `
 test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
-  expect(HELP_ROUTE_SOURCE).not.toContain(
-    '<Link to={"https://github.com/doortts/yona#korean" as never}>',
-  );
+  expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
   expect(HELP_ROUTE_SOURCE).toContain('<Link to="/"');
-  expect(HELP_ROUTE_SOURCE).toContain('<Link to={"/info" as never}');
-  expect(HELP_ROUTE_SOURCE).not.toContain(
-    '<Link to={"https://github.com/nforge/yobi/issues" as never}>',
-  );
+  expect(HELP_ROUTE_SOURCE).toContain("href={infoHref}");
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/nforge/yobi/issues"');
 
   await page.addInitScript(() => {

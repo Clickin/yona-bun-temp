@@ -265,7 +265,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <li>
               <Link
                 href="https://github.com/nforge/yobi/issues?state=open"
-                to={"https://github.com/nforge/yobi/issues?state=open" as never}
+                to="https://github.com/nforge/yobi/issues?state=open"
                 target="_blank"
                 activeProps={{ className: undefined }}
               >
@@ -292,7 +292,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             {"Copyright © "}
             <Link
               href="http://navercorp.com/"
-              to={"http://navercorp.com/" as never}
+              to="http://navercorp.com/"
               target="_blank"
               activeProps={{ className: undefined }}
             >
@@ -301,7 +301,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             Supported by{" "}
             <Link
               href="https://developers.naver.com/d2/"
-              to={"https://developers.naver.com/d2/" as never}
+              to="https://developers.naver.com/d2/"
               target="_blank"
               className="d2-program"
               activeProps={{ className: undefined }}

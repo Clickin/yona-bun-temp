@@ -9,6 +9,13 @@ export const Route = createFileRoute("/restricted")({
   component: RestrictedRoute,
 });
 
+const FOOTER_LINKS = {
+  authors: "https://github.com/yona-projects/yona/blob/master/AUTHORS",
+  naver: "https://navercorp.com",
+  naverLabs: "https://naverlabs.com/",
+  ncloud: "https://www.ncloud.com/?referer=yona",
+} as const;
+
 function RestrictedRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -97,8 +104,8 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <span className="provider">
             Copyright{" "}
             <Link
-              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"
-              to={"https://github.com/yona-projects/yona/blob/master/AUTHORS" as never}
+              href={FOOTER_LINKS.authors}
+              to={FOOTER_LINKS.authors}
               target="_blank"
               className="yona-author"
               activeProps={{ className: undefined }}
@@ -107,8 +114,8 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </Link>{" "}
             & ©{" "}
             <Link
-              href="https://navercorp.com"
-              to={"https://navercorp.com" as never}
+              href={FOOTER_LINKS.naver}
+              to={FOOTER_LINKS.naver}
               target="_blank"
               activeProps={{ className: undefined }}
             >
@@ -116,8 +123,8 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </Link>{" "}
             &{" "}
             <Link
-              href="https://naverlabs.com/"
-              to={"https://naverlabs.com/" as never}
+              href={FOOTER_LINKS.naverLabs}
+              to={FOOTER_LINKS.naverLabs}
               target="_blank"
               className="naver-labs"
               activeProps={{ className: undefined }}
@@ -126,8 +133,8 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </Link>{" "}
             Supported by{" "}
             <Link
-              href="https://www.ncloud.com/?referer=yona"
-              to={"https://www.ncloud.com/?referer=yona" as never}
+              href={FOOTER_LINKS.ncloud}
+              to={FOOTER_LINKS.ncloud}
               target="_blank"
               className="naver-cloud-platform"
               activeProps={{ className: undefined }}

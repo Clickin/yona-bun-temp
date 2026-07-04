@@ -129,17 +129,17 @@ test("restricted route source keeps internal navigation out of raw anchors", asy
 
 test("restricted route source keeps footer links as external href Links", async () => {
   expect(RESTRICTED_ROUTE_SOURCE).toContain(
-    '<Link\n              href="https://github.com/yona-projects/yona/blob/master/AUTHORS"',
+    'authors: "https://github.com/yona-projects/yona/blob/master/AUTHORS"',
   );
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('href="https://navercorp.com"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('href="https://naverlabs.com/"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('href="https://www.ncloud.com/?referer=yona"');
-  expect(RESTRICTED_ROUTE_SOURCE).toMatch(
-    /href="https:\/\/github\.com\/yona-projects\/yona\/blob\/master\/AUTHORS"\s+to=\{"https:\/\/github\.com\/yona-projects\/yona\/blob\/master\/AUTHORS" as never\}/,
-  );
-  expect(RESTRICTED_ROUTE_SOURCE).toMatch(
-    /href="https:\/\/navercorp\.com"\s+to=\{"https:\/\/navercorp\.com" as never\}/,
-  );
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('naver: "https://navercorp.com"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('naverLabs: "https://naverlabs.com/"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('ncloud: "https://www.ncloud.com/?referer=yona"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.authors}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.authors}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.naver}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.naver}");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain(" as never");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/to=\{["'`]https?:\/\//);
 });
 
 test("restricted page keeps legacy mobile shell and fixed iframe proportions", async ({ page }) => {
