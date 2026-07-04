@@ -39,19 +39,30 @@ import {
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
+const LEGACY_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 function IssueHashLink({
   children,
   hash,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; hash: string }) {
   return (
-    <Link
-      {...props}
-      to="."
-      hash={hash}
-      activeOptions={{ includeHash: true }}
-      activeProps={{ className: undefined }}
-    >
+    <Link {...LEGACY_LINK_PROPS} {...props} to="." hash={hash}>
+      {children}
+    </Link>
+  );
+}
+
+function IssueRouteLink({
+  children,
+  to,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; to: string }) {
+  return (
+    <Link {...LEGACY_LINK_PROPS} {...props} to={to as never}>
       {children}
     </Link>
   );
@@ -448,7 +459,6 @@ function IssueDetailBody({
   const issueId = stringField(issue.issueId, issueNumber);
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const editIssuePath = `/${ownerName}/${projectName}/issue/${issueNumber}/editform`;
-  const editIssueHref = prefixBasePath(basePath, editIssuePath);
   const issueState = stringField(issue.state, "open").toLowerCase();
   const stateLabel = issueState === "closed" ? "Closed" : "Open";
   const createdLabel = stringField(issue.createdLabel);
@@ -773,7 +783,6 @@ function IssueDetailBody({
                 </div>
               </div>
               <IssueVote
-                basePath={basePath}
                 canComment={canComment}
                 hasVoted={hasVotedIssue}
                 issue={issue}
@@ -798,7 +807,7 @@ function IssueDetailBody({
                 canBeDeleted={canBeDeleted}
                 canDelete={canDelete}
                 canUpdate={canUpdate}
-                editHref={editIssueHref}
+                editPath={editIssuePath}
                 onEditClick={() => void router.navigate({ to: editIssuePath })}
                 onDeleteClick={() => setDeleteModalOpen(true)}
               />
@@ -844,11 +853,7 @@ function IssueDetailBody({
               </dd>
             </dl>
             <div className="watcher-list"></div>
-            <IssueChildIssues
-              basePath={basePath}
-              currentUserLoginId={currentUserLoginId}
-              issue={issue}
-            />
+            <IssueChildIssues currentUserLoginId={currentUserLoginId} issue={issue} />
             {!isDraft ? (
               <IssueMainTimeline
                 basePath={basePath}
@@ -927,28 +932,26 @@ function IssueDetailBody({
                         canUpdate ? (
                           <IssueMilestoneSelect issue={issue} milestones={milestones} />
                         ) : issue.milestoneId ? (
-                          <a
-                            href={prefixBasePath(
-                              basePath,
-                              `/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`,
-                            )}
+                          <Link
+                            {...LEGACY_LINK_PROPS}
+                            to={
+                              `/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never
+                            }
                           >
                             {stringField(issue.milestoneTitle)}
-                          </a>
+                          </Link>
                         ) : (
                           "No milestone"
                         )
                       ) : (
-                        <a
-                          href={prefixBasePath(
-                            basePath,
-                            `/${ownerName}/${projectName}/newMilestoneForm`,
-                          )}
+                        <Link
+                          {...LEGACY_LINK_PROPS}
+                          to={`/${ownerName}/${projectName}/newMilestoneForm` as never}
                           className="ybtn ybtn-small ybtn-fullsize"
                           target="_blank"
                         >
                           New milestone
-                        </a>
+                        </Link>
                       )}
                     </dd>
                   </dl>
@@ -990,7 +993,6 @@ function IssueDetailBody({
                 </dl>
                 {selectableLabels.length > 0 && canUpdate ? (
                   <IssueLabelSelect
-                    basePath={basePath}
                     canManageLabels={canManageProjectLabels}
                     labels={selectableLabels}
                     ownerName={ownerName}
@@ -999,7 +1001,6 @@ function IssueDetailBody({
                   />
                 ) : selectableLabels.length > 0 ? (
                   <IssueSelectedLabels
-                    basePath={basePath}
                     issueState={issueState}
                     labels={labels}
                     ownerName={ownerName}
@@ -1011,18 +1012,14 @@ function IssueDetailBody({
                     canBeDeleted={canBeDeleted}
                     canDelete={canDelete}
                     canUpdate={canUpdate}
-                    editHref={editIssueHref}
+                    editPath={editIssuePath}
                     onEditClick={() => void router.navigate({ to: editIssuePath })}
                     onDeleteClick={() => setDeleteModalOpen(true)}
                     wrap={false}
                   />
                 </div>
               </form>
-              <IssueIndexTimeline
-                basePath={basePath}
-                currentUserLoginId={currentUserLoginId}
-                issue={issue}
-              />
+              <IssueIndexTimeline currentUserLoginId={currentUserLoginId} issue={issue} />
             </div>
           </div>
         </div>
@@ -1247,7 +1244,6 @@ function IssuePostingHistory({
 }
 
 function IssueVote({
-  basePath,
   canComment,
   hasVoted,
   issue,
@@ -1255,7 +1251,6 @@ function IssueVote({
   onIssueVote,
   voters,
 }: {
-  basePath: string;
   canComment: boolean;
   hasVoted: boolean;
   issue: RestIssueDetailResponse;
@@ -1297,11 +1292,10 @@ function IssueVote({
             </span>
           </span>
         )}
-        {voters.length ? <IssueVoterAvatars basePath={basePath} voters={voters} /> : null}
+        {voters.length ? <IssueVoterAvatars voters={voters} /> : null}
       </div>
       {voters.length ? (
         <IssueVoterListDialog
-          basePath={basePath}
           id="voters"
           ownerName={ownerName}
           projectName={projectName}
@@ -1313,7 +1307,7 @@ function IssueVote({
   );
 }
 
-function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: VoterLike[] }) {
+function IssueVoterAvatars({ voters }: { voters: VoterLike[] }) {
   const visibleVoters = voters.slice(0, 3);
   const overflowVoters = voters.slice(3);
   const overflowTitle = overflowVoters
@@ -1326,15 +1320,13 @@ function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: Vot
       <ul className="voter-list">
         {visibleVoters.map((voter) => (
           <li key={stringField(voter.loginId)}>
-            <a
-              href={prefixBasePath(basePath, `/${stringField(voter.loginId)}`)}
+            <IssueRouteLink
+              to={`/${stringField(voter.loginId)}` as never}
               className="avatar-wrap smaller"
-              data-toggle="tooltip"
-              data-placement="top"
               title={stringField(voter.userLabel)}
             >
               <img src={stringField(voter.avatarUrl)} alt="" />
-            </a>
+            </IssueRouteLink>
           </li>
         ))}
         {overflowVoters.length ? (
@@ -1350,11 +1342,9 @@ function IssueVoterAvatars({ basePath, voters }: { basePath: string; voters: Vot
 }
 
 function IssueVoterListDialog({
-  basePath,
   id,
   voters,
 }: {
-  basePath: string;
   id: string;
   issueNumber?: string;
   ownerName?: string;
@@ -1373,8 +1363,9 @@ function IssueVoterListDialog({
         <ul className="unstyled">
           {voters.map((voter) => (
             <li key={stringField(voter.loginId)}>
-              <a
-                href={prefixBasePath(basePath, `/${stringField(voter.loginId)}`)}
+              <Link
+                {...LEGACY_LINK_PROPS}
+                to={`/${stringField(voter.loginId)}` as never}
                 className="usf-group"
                 target="_blank"
               >
@@ -1387,7 +1378,7 @@ function IssueVoterListDialog({
                   <strong>@</strong>
                   {stringField(voter.loginId)}
                 </span>
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -1532,14 +1523,12 @@ function IssueMilestoneSelect({
 }
 
 function IssueLabelSelect({
-  basePath,
   canManageLabels,
   labels,
   ownerName,
   projectName,
   selectedLabelIds,
 }: {
-  basePath: string;
   canManageLabels: boolean;
   labels: YonaRecord[];
   ownerName: string;
@@ -1553,13 +1542,14 @@ function IssueLabelSelect({
       <dt>
         Label{" "}
         {canManageLabels ? (
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={`/${ownerName}/${projectName}/issue/labelsform` as never}
             target="_blank"
             className="label-edit"
           >
             [Edit]
-          </a>
+          </Link>
         ) : null}
       </dt>
       <dd>
@@ -1584,13 +1574,11 @@ function IssueLabelSelect({
 }
 
 function IssueSelectedLabels({
-  basePath,
   issueState,
   labels,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   issueState: string;
   labels: YonaRecord[];
   ownerName: string;
@@ -1600,25 +1588,22 @@ function IssueSelectedLabels({
     return null;
   }
 
-  const listLink = prefixBasePath(
-    basePath,
-    `/${ownerName}/${projectName}/issues?state=${encodeURIComponent(issueState)}`,
-  );
+  const listPath = `/${ownerName}/${projectName}/issues?state=${encodeURIComponent(issueState)}`;
 
   return (
     <dl>
       <dt>Label</dt>
       <dd>
         {labels.map((label) => (
-          <a
-            href={`${listLink}&labelIds=${encodeURIComponent(String(label.id))}`}
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={`${listPath}&labelIds=${encodeURIComponent(String(label.id))}` as never}
             className="label issue-label active static"
-            data-label-id={String(label.id)}
             key={String(label.id)}
             style={{ background: stringField(label.color) }}
           >
             {label.name}
-          </a>
+          </Link>
         ))}
       </dd>
     </dl>
@@ -1628,11 +1613,9 @@ function IssueSelectedLabels({
 type IssueDetailChildItem = NonNullable<RestIssueDetailResponse["childIssues"]>[number];
 
 function IssueChildIssues({
-  basePath,
   currentUserLoginId,
   issue,
 }: {
-  basePath: string;
   currentUserLoginId: string;
   issue: RestIssueDetailResponse;
 }) {
@@ -1664,16 +1647,16 @@ function IssueChildIssues({
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
-  const parentHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const parentPath = `/${ownerName}/${projectName}/issue/${issueNumber}`;
   const assigneeLabel = stringField(issue.assigneeLabel);
 
   return (
     <div className="subtasks">
       <div className="child-issues">
         <div className="issue-item parent-issue">
-          <a href={parentHref} className="bold">
+          <Link {...LEGACY_LINK_PROPS} to={parentPath as never} className="bold">
             {`#${issueNumber} ${stringField(issue.title)}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
-          </a>
+          </Link>
           <div className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}>
             <div
               className={`bar ${percentage === 100 ? "done" : "red"}`}
@@ -1693,7 +1676,6 @@ function IssueChildIssues({
         <div className="child-issues">
           {visibleChildren.map((child) => (
             <IssueChildIssue
-              basePath={basePath}
               child={child}
               key={`${stringField(child.state)}-${stringField(child.issueNumber)}`}
               ownerName={ownerName}
@@ -1707,12 +1689,10 @@ function IssueChildIssues({
 }
 
 function IssueChildIssue({
-  basePath,
   child,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   child: IssueDetailChildItem;
   ownerName: string;
   projectName: string;
@@ -1720,7 +1700,7 @@ function IssueChildIssue({
   const issueNumber = stringField(child.issueNumber);
   const state = booleanField(child.isDraft) ? "draft" : stringField(child.state, "open");
   const isClosed = state === "closed";
-  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
+  const issuePath = `/${ownerName}/${projectName}/issue/${issueNumber}`;
   const labels = (child.labels ?? []).slice().sort(compareLabels);
 
   return (
@@ -1728,7 +1708,7 @@ function IssueChildIssue({
       <span className={`state-label ${state}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
-      <a className="twoColumeModeTarget" href={issueHref}>
+      <Link {...LEGACY_LINK_PROPS} className="twoColumeModeTarget" to={issuePath as never}>
         <span className="item-name">
           <span className="subtask-number">
             {booleanField(child.isDraft) ? (
@@ -1742,21 +1722,22 @@ function IssueChildIssue({
             {stringField(child.assigneeLabel) ? ` - ${stringField(child.assigneeLabel)}` : ""}
           </span>
         </span>
-      </a>
+      </Link>
       <span className="font12 no-border-at-child">
-        <IssueChildCommentAndVotePair child={child} issueHref={issueHref} />
+        <IssueChildCommentAndVotePair child={child} issuePath={issuePath} />
       </span>
       {labels.map((label) => (
-        <a
-          href={`${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${String(label.id)}`}
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={
+            `/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}` as never
+          }
           className="label issue-label list-label active twoColumeModeTarget"
-          data-category-id={String(label.categoryId ?? "")}
-          data-label-id={String(label.id)}
           key={String(label.id)}
           style={{ background: stringField(label.color) }}
         >
           {label.name}
-        </a>
+        </Link>
       ))}
       <span className="child-issue-date" title={stringField(child.createdLabel)}>
         {stringField(child.createdLabel)}
@@ -1767,10 +1748,10 @@ function IssueChildIssue({
 
 function IssueChildCommentAndVotePair({
   child,
-  issueHref,
+  issuePath,
 }: {
   child: IssueDetailChildItem;
-  issueHref: string;
+  issuePath: string;
 }) {
   const commentCount = numberField(child.commentCount);
   const voterCount = numberField(child.voterCount);
@@ -1781,20 +1762,30 @@ function IssueChildCommentAndVotePair({
   return (
     <span className="item-count-groups">
       {commentCount ? (
-        <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={issuePath as never}
+          hash="comments"
+          className="comments-count comments-count-color"
+        >
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
           <span className="count-groups item-count">{commentCount}</span>
-        </a>
+        </Link>
       ) : null}
       {voterCount ? (
-        <a href={`${issueHref}#vote`} className="vote-count vote-color">
+        <Link
+          {...LEGACY_LINK_PROPS}
+          to={issuePath as never}
+          hash="vote"
+          className="vote-count vote-color"
+        >
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
           <span className="count-groups item-count strong">{voterCount}</span>
-        </a>
+        </Link>
       ) : null}
     </span>
   );
@@ -1913,7 +1904,7 @@ function IssueActionButtons({
   canBeDeleted,
   canDelete,
   canUpdate,
-  editHref,
+  editPath,
   onEditClick,
   onDeleteClick,
   wrap = true,
@@ -1921,7 +1912,7 @@ function IssueActionButtons({
   canBeDeleted: boolean;
   canDelete: boolean;
   canUpdate: boolean;
-  editHref: string;
+  editPath: string;
   onEditClick: () => void;
   onDeleteClick: () => void;
   wrap?: boolean;
@@ -1939,7 +1930,7 @@ function IssueActionButtons({
           <i className="yobicon-edit-2"></i>
         </button>
       ) : (
-        <a href={editHref}>
+        <Link {...LEGACY_LINK_PROPS} to={editPath as never}>
           <button
             type="button"
             className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
@@ -1948,7 +1939,7 @@ function IssueActionButtons({
           >
             <i className="yobicon-edit-2"></i>
           </button>
-        </a>
+        </Link>
       )}
       {canBeDeleted && canDelete ? (
         <button
@@ -2032,7 +2023,6 @@ function IssueMainTimeline({
                   />
                 ) : (
                   <IssueEventRow
-                    basePath={basePath}
                     event={item}
                     issue={issue}
                     key={`event-${stringField(item.id)}`}
@@ -2138,12 +2128,10 @@ function UploadForm({ resourceType }: { resourceType: string }) {
 }
 
 function IssueEventRow({
-  basePath,
   event,
   issue,
   previousEvent,
 }: {
-  basePath: string;
   event: IssueTimelineItem;
   issue: RestIssueDetailResponse;
   previousEvent?: IssueTimelineItem;
@@ -2163,7 +2151,6 @@ function IssueEventRow({
   const sender = (
     <EventUserLink
       avatarUrl={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
-      basePath={basePath}
       label={senderLabel}
       loginId={senderLoginId}
     />
@@ -2193,7 +2180,6 @@ function IssueEventRow({
         {targetLoginId === senderLoginId ? null : (
           <EventUserLink
             avatarUrl={stringField(event.targetAvatarUrl, "/assets/images/default-avatar-32.png")}
-            basePath={basePath}
             label={targetLabel}
             loginId={targetLoginId}
           />
@@ -2213,14 +2199,13 @@ function IssueEventRow({
         <span className="bold">None</span>
       ) : (
         <span className="bold font-blue">
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestone/${milestoneId}`)}
-            data-toggle="tooltip"
-            data-placement="bottom"
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={`/${ownerName}/${projectName}/milestone/${milestoneId}` as never}
             title="Milestone"
           >
             {milestoneTitle}
-          </a>
+          </Link>
         </span>
       );
     return (
@@ -2242,9 +2227,9 @@ function IssueEventRow({
         <span className="state changed">moved</span>
         {sender} moved this issue from{" "}
         <strong>
-          <a href={prefixBasePath(basePath, `/${fromProjectName}`)} className="link">
+          <Link {...LEGACY_LINK_PROPS} to={`/${fromProjectName}` as never} className="link">
             {fromProjectName}
-          </a>
+          </Link>
         </strong>
         <span className="date">
           <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
@@ -2261,12 +2246,13 @@ function IssueEventRow({
         {sender} mentioned this issue in{" "}
         <strong>
           Commit{" "}
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/commit/${commitId}`)}
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={`/${ownerName}/${projectName}/commit/${commitId}` as never}
             className="link"
           >
             @{commitId}
-          </a>
+          </Link>
         </strong>
         <span className="date">
           <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
@@ -2284,15 +2270,13 @@ function IssueEventRow({
         {sender} mentioned this issue in{" "}
         <strong>
           Pull request -{pullRequestNumber}{" "}
-          <a
-            href={prefixBasePath(
-              basePath,
-              `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`,
-            )}
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to={`/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}` as never}
             className="link"
           >
             {pullRequestTitle}
-          </a>
+          </Link>
         </strong>
         <span className="date">
           <IssueHashLink hash={eventHash}>{stringField(event.createdLabel)}</IssueHashLink>
@@ -2311,7 +2295,6 @@ function IssueEventRow({
     const target = (
       <EventUserLink
         avatarUrl={stringField(event.targetAvatarUrl, "/assets/images/default-avatar-32.png")}
-        basePath={basePath}
         label={stringField(event.targetLabel, targetLoginId)}
         loginId={targetLoginId}
       />
@@ -2373,30 +2356,22 @@ function IssueEventRow({
 
 function EventUserLink({
   avatarUrl,
-  basePath,
   label,
   loginId,
 }: {
   avatarUrl: string;
-  basePath: string;
   label: string;
   loginId: string;
 }) {
-  const href = prefixBasePath(basePath, `/${loginId}`);
+  const userPath = `/${loginId}`;
   return (
     <>
-      <a href={href} className="usf-group" data-toggle="tooltip" data-placement="top" title={label}>
+      <Link {...LEGACY_LINK_PROPS} to={userPath as never} className="usf-group" title={label}>
         <img src={avatarUrl} className="avatar-wrap small" alt="" />
-      </a>
-      <a
-        href={href}
-        className="usf-group"
-        data-toggle="tooltip"
-        data-placement="top"
-        title={loginId}
-      >
+      </Link>
+      <Link {...LEGACY_LINK_PROPS} to={userPath as never} className="usf-group" title={loginId}>
         <strong>{label}</strong>
-      </a>
+      </Link>
     </>
   );
 }
@@ -2420,7 +2395,7 @@ function IssueCommentRow({
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel);
-  const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
+  const authorPath = `/${authorLoginId}`;
   const issueNumber = stringField(issue.issueNumber);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -2477,43 +2452,31 @@ function IssueCommentRow({
     >
       <ChildCommentAnchors childComments={childComments} />
       <div className="comment-avatar">
-        <a
-          href={authorHref}
-          className="avatar-wrap"
-          data-toggle="tooltip"
-          data-placement="top"
-          title={authorLoginId}
-        >
+        <IssueRouteLink to={authorPath as never} className="avatar-wrap" title={authorLoginId}>
           <img
             src={stringField(comment.authorAvatarUrl)}
             width="32"
             height="32"
             alt={authorLabel}
           />
-        </a>
+        </IssueRouteLink>
       </div>
       <div className="media-body">
         <div className="meta-info">
           <span className="comment_author">
             <span className="resp-comment-avatar">
-              <a
-                href={authorHref}
-                className="avatar-wrap"
-                data-toggle="tooltip"
-                data-placement="top"
-                title={authorLabel}
-              >
+              <IssueRouteLink to={authorPath as never} className="avatar-wrap" title={authorLabel}>
                 <img
                   src={stringField(comment.authorAvatarUrl)}
                   width="32"
                   height="32"
                   alt={authorLoginId}
                 />
-              </a>
+              </IssueRouteLink>
             </span>
-            <a href={authorHref} data-toggle="tooltip" data-placement="top" title={authorLoginId}>
+            <IssueRouteLink to={authorPath as never} title={authorLoginId}>
               <strong>{authorLabel}</strong>
-            </a>
+            </IssueRouteLink>
           </span>
           <span className="ago-date">
             <IssueHashLink
@@ -2529,11 +2492,11 @@ function IssueCommentRow({
           </span>
           <span className="act-row pull-right">
             <span className="new-issue-by">
-              <a href={prefixBasePath(basePath, `/user/issues/new?commentId=${commentId}`)}>
+              <Link {...LEGACY_LINK_PROPS} to={`/user/issues/new?commentId=${commentId}` as never}>
                 New issue by this comment
-              </a>
+              </Link>
             </span>
-            <CommentVoters basePath={basePath} commentId={commentId} voters={voters} />
+            <CommentVoters commentId={commentId} voters={voters} />
             {hasVoted || canVote ? (
               <button
                 type="button"
@@ -2804,7 +2767,7 @@ function ChildComment({
         </ReactMarkdown>
         <span className="subcomment-author hide">
           -{" "}
-          <Link to={`/${authorLoginId}`} className="usf-group" title={authorLoginId}>
+          <Link to={`/${authorLoginId}` as never} className="usf-group" title={authorLoginId}>
             <strong>{authorLabel}</strong>
           </Link>
           <IssueHashLink hash={commentHash} className="ago" title={createdLabel}>
@@ -3090,15 +3053,7 @@ function TasklistBar() {
   );
 }
 
-function CommentVoters({
-  basePath,
-  commentId,
-  voters,
-}: {
-  basePath: string;
-  commentId: string;
-  voters: VoterLike[];
-}) {
+function CommentVoters({ commentId, voters }: { commentId: string; voters: VoterLike[] }) {
   if (!voters.length) {
     return null;
   }
@@ -3124,7 +3079,7 @@ function CommentVoters({
             {voters.length} Agreements
           </button>
         </span>
-        <IssueVoterListDialog basePath={basePath} id={`voters-${commentId}`} voters={voters} />
+        <IssueVoterListDialog id={`voters-${commentId}`} voters={voters} />
       </>
     );
   }
@@ -3132,27 +3087,23 @@ function CommentVoters({
   return (
     <>
       {voters.map((voter) => (
-        <a
-          href={prefixBasePath(basePath, `/${stringField(voter.loginId)}`)}
+        <IssueRouteLink
+          to={`/${stringField(voter.loginId)}` as never}
           className="avatar-wrap smaller"
-          data-toggle="tooltip"
-          data-placement="top"
           title={stringField(voter.userLabel)}
           key={stringField(voter.loginId)}
         >
           <img src={stringField(voter.avatarUrl)} alt="" />
-        </a>
+        </IssueRouteLink>
       ))}
     </>
   );
 }
 
 function IssueIndexTimeline({
-  basePath,
   currentUserLoginId,
   issue,
 }: {
-  basePath: string;
   currentUserLoginId: string;
   issue: RestIssueDetailResponse;
 }) {
@@ -3170,7 +3121,6 @@ function IssueIndexTimeline({
             <ul className="comments">
               {comments.map((comment) => (
                 <IssueIndexComment
-                  basePath={basePath}
                   comment={comment}
                   currentUserLoginId={currentUserLoginId}
                   key={stringField(comment.id)}
@@ -3185,11 +3135,9 @@ function IssueIndexTimeline({
 }
 
 function IssueIndexComment({
-  basePath,
   comment,
   currentUserLoginId,
 }: {
-  basePath: string;
   comment: IssueComment;
   currentUserLoginId: string;
 }) {
@@ -3227,14 +3175,9 @@ function IssueIndexComment({
             </span>
           ) : null}
           <span className="comment_author">
-            <a
-              href={prefixBasePath(basePath, `/${authorLoginId}`)}
-              data-toggle="tooltip"
-              data-placement="top"
-              title={authorLoginId}
-            >
+            <Link {...LEGACY_LINK_PROPS} to={`/${authorLoginId}` as never} title={authorLoginId}>
               <strong>{authorLabel}</strong>
-            </a>
+            </Link>
           </span>
           <span className="ago-date">
             <IssueHashLink

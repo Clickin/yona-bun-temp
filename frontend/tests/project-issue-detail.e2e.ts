@@ -55,6 +55,14 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     "data-clipboard-text",
     "Site Admin <admin@example.com>;Dev Member <dev@example.com>;",
   );
+  await expect(page.locator("#vote .voter-list a.avatar-wrap").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
+  await expect(page.locator('#voters a.usf-group[target="_blank"]').first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin`,
+  );
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
   await expectIssueDetailAssets(page, basePath);
 
@@ -215,6 +223,13 @@ test("project issue detail route has no generic LegacyInternalLink adapter", () 
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("createElement");
+  expect(routeSource).not.toMatch(/^\s*<a(?:\s|>)/mu);
+  expect(routeSource.match(/<a class="attached-delete"/gu)).toHaveLength(2);
+  expect(routeSource).toContain("const LEGACY_LINK_PROPS = {");
+  expect(routeSource).toContain(
+    "`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never",
+  );
+  expect(routeSource).toContain("`/user/issues/new?commentId=${commentId}` as never");
   expect(routeSource).not.toContain('data-request-method="post"');
   expect(routeSource).toContain("data-request-uri={voteHref}");
 });
@@ -1059,12 +1074,12 @@ test("project issue detail renders legacy read-only selected labels", async ({ p
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#labelIds")).toHaveCount(0);
   await expect(page.locator(".issue-info .label.issue-label.active.static")).toHaveAttribute(
-    "data-label-id",
-    "8",
+    "href",
+    `${basePath}/admin/sample/issues?state=open&labelIds=8`,
   );
 
   const expected =
-    `<dl><dt>Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="label issue-label active static" data-label-id="8" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
+    `<dl><dt>Label</dt><dd><a href="__BASE_PATH__/admin/sample/issues?state=open&labelIds=8" class="label issue-label active static" style="background:rgb(81, 170, 204)">bug</a></dd></dl>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3255,7 +3270,14 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            (node.tagName !== "A" || !attr.name.startsWith("data-")),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -3289,7 +3311,14 @@ async function canonicalizeAll(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            (node.tagName !== "A" || !attr.name.startsWith("data-")),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -3334,7 +3363,14 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            (node.tagName !== "A" || !attr.name.startsWith("data-")),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");

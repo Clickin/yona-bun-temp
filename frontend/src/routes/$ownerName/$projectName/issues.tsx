@@ -33,6 +33,18 @@ import {
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
+function ProjectIssuesRouteLink({
+  children,
+  to,
+  ...props
+}: HTMLAttributes<HTMLAnchorElement> & { children: ReactNode; to: string }) {
+  return (
+    <Link activeProps={{ className: undefined }} {...props} to={to as never}>
+      {children}
+    </Link>
+  );
+}
+
 type ProjectIssuesSearch = {
   assigneeId: string;
   authorId: string;
@@ -745,7 +757,9 @@ function ProjectIssuesBody({
                   ))}
                 </ul>
                 <div className="pull-left" style={{ padding: "10px" }}>
-                  <a
+                  <Link
+                    activeProps={{ className: "ybtn small" }}
+                    to={excelHref("", ownerName, projectName, currentSearchString) as never}
                     href={excelHref(
                       runtimeConfig.basePath,
                       ownerName,
@@ -755,7 +769,7 @@ function ProjectIssuesBody({
                     className="ybtn small"
                   >
                     <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
-                  </a>
+                  </Link>
                 </div>
                 <IssueListKeymap project={project} />
                 <IssuePagination
@@ -1488,10 +1502,12 @@ function ProjectIssueItem({
   const { t } = useLegacyMessages();
   const issueId = stringField(issue.id, String(issue.issueNumber));
   const issueNumber = stringField(issue.issueNumber, issueId);
+  const issueTo = `/${ownerName}/${projectName}/issue/${issueNumber}` as never;
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const authorLoginId = stringField(issue.authorLoginId, "");
-  const authorHref = prefixBasePath(basePath, `/${authorLoginId}`);
+  const authorTo = `/${authorLoginId}` as never;
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
+  const assigneeTo = `/${assigneeLoginId}` as never;
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
   const issueWeight = issue.weight ?? 0;
   const issueLabels = sortedIssueLabels(issue);
@@ -1554,6 +1570,22 @@ function ProjectIssueItem({
       }
     }
   };
+  const handleIssueItemClickCapture = (event: ReactMouseEvent<HTMLLIElement>) => {
+    if (!useTwoColumnMode) {
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (
+      target?.closest(".mass-update-check") ||
+      target?.closest(".issue-label") ||
+      target?.closest(".title-wrap > .title")
+    ) {
+      return;
+    }
+    onTwoColumnIssueTarget(issueId, issueHref, event.currentTarget.textContent ?? "");
+    event.preventDefault();
+    event.stopPropagation();
+  };
   const handleIssueItemKeyDown = (event: ReactKeyboardEvent<HTMLLIElement>) => {
     if (event.key !== "Enter" && event.key !== " ") {
       return;
@@ -1567,6 +1599,7 @@ function ProjectIssueItem({
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
+      onClickCapture={handleIssueItemClickCapture}
       onClick={handleIssueItemClick}
       onKeyDown={handleIssueItemKeyDown}
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
@@ -1592,7 +1625,7 @@ function ProjectIssueItem({
         ) : null}
         <div {...legacyFor} className="issue-item-row">
           <div className="title-wrap" onClickCapture={handleTitleWrapClick}>
-            <a href={issueHref} className="title">
+            <Link activeProps={{ className: undefined }} to={issueTo} className="title">
               <span className="post-id">
                 {issue.isDraft && draftNumberSource === "draft-list" ? (
                   <span className="draft-number">#{t("issue.state.draft")}</span>
@@ -1604,7 +1637,7 @@ function ProjectIssueItem({
                   `#${issueNumber}`
                 )}
               </span>
-            </a>
+            </Link>
             {issueWeight > 0 ? (
               <span
                 className="weight-up-arrow"
@@ -1636,21 +1669,19 @@ function ProjectIssueItem({
                 {prefix}
               </LegacyTitlePrefixAnchor>
             ))}
-            <a href={issueHref} className="title">
+            <Link activeProps={{ className: undefined }} to={issueTo} className="title">
               {titleParts.title}
-            </a>
+            </Link>
           </div>
           <div className="infos">
             {issue.authorLabel ? (
-              <a
-                href={authorHref}
+              <ProjectIssuesRouteLink
+                to={authorTo}
                 className="infos-item infos-link-item"
-                data-toggle="tooltip"
-                data-placement="bottom"
                 title={authorLoginId}
               >
                 {issue.authorLabel}
-              </a>
+              </ProjectIssuesRouteLink>
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
@@ -1662,44 +1693,44 @@ function ProjectIssueItem({
             >
               {createdLabel}
             </span>
-            <IssueSubtaskSummary
-              basePath={basePath}
-              issue={issue}
-              ownerName={ownerName}
-              projectName={projectName}
-            />
+            <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {showMilestone && issue.milestoneId ? (
               <span className="mileston-tag">
-                <a
-                  href={prefixBasePath(
-                    basePath,
-                    `/${ownerName}/${projectName}/milestone/${issue.milestoneId}`,
-                  )}
-                  data-toggle="tooltip"
-                  data-placement="bottom"
+                <ProjectIssuesRouteLink
+                  to={`/${ownerName}/${projectName}/milestone/${issue.milestoneId}` as never}
                   title={t("milestone")}
                 >
                   {issue.milestoneTitle}
-                </a>
+                </ProjectIssuesRouteLink>
               </span>
             ) : null}
             {issue.commentCount > 0 || issue.voterCount > 0 || (issue.sharerCount ?? 0) > 0 ? (
               <span className="infos-item item-count-groups">
                 {issue.commentCount > 0 ? (
-                  <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+                  <Link
+                    activeProps={{ className: undefined }}
+                    to={issueTo}
+                    hash="comments"
+                    className="comments-count comments-count-color"
+                  >
                     <span className="count-groups item-icon">
                       <i className="yobicon-comment2"></i>
                     </span>
                     <span className="count-groups item-count">{issue.commentCount}</span>
-                  </a>
+                  </Link>
                 ) : null}
                 {issue.voterCount > 0 ? (
-                  <a href={`${issueHref}#vote`} className="vote-count vote-color">
+                  <Link
+                    activeProps={{ className: undefined }}
+                    to={issueTo}
+                    hash="vote"
+                    className="vote-count vote-color"
+                  >
                     <span className="count-groups item-icon">
                       <i className="yobicon-hearts"></i>
                     </span>
                     <span className="count-groups item-count strong">{issue.voterCount}</span>
-                  </a>
+                  </Link>
                 ) : null}
                 {(issue.sharerCount ?? 0) > 0 ? (
                   <LegacyInertDropdownAnchor
@@ -1750,11 +1781,9 @@ function ProjectIssueItem({
       <div className="span3 hide-in-mobile">
         <div className="mt5 pull-right">
           {assigneeLoginId ? (
-            <a
-              href={prefixBasePath(basePath, `/${assigneeLoginId}`)}
+            <ProjectIssuesRouteLink
+              to={assigneeTo}
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
-              data-placement="top"
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
             >
               <img
@@ -1763,7 +1792,7 @@ function ProjectIssueItem({
                 height="32"
                 alt={issue.assigneeLabel}
               />
-            </a>
+            </ProjectIssuesRouteLink>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
@@ -1860,9 +1889,11 @@ function IssueChildRow({
 }) {
   const issueNumber = stringField(issue.issueNumber, "");
   const issueId = stringField(issue.id, "");
+  const issueTo = `/${ownerName}/${projectName}/issue/${issueNumber}` as never;
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const isClosed = issue.state === "closed";
   const labels = issue.labels.slice().sort(compareIssueLabels);
+  const childLabelTo = `/${ownerName}/${projectName}/issues` as never;
   const childLabelHref = (labelId: string) =>
     `${prefixBasePath(basePath, `/${ownerName}/${projectName}`)}/issues?state=open&labelIds=${labelId}`;
   const handleChildTargetClick = (event: ReactMouseEvent<HTMLElement>) => {
@@ -1905,7 +1936,7 @@ function IssueChildRow({
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
-      <a className="twoColumeModeTarget" href={issueHref}>
+      <Link activeProps={{ className: undefined }} className="twoColumeModeTarget" to={issueTo}>
         <span className="item-name">
           <span className="subtask-number">
             {issue.isDraft ? <span className="draft-number">#Draft</span> : `#${issueNumber}`}
@@ -1913,16 +1944,16 @@ function IssueChildRow({
           <span>{issue.title}</span>
           <span>{issue.assigneeLabel ? ` - ${issue.assigneeLabel}` : ""}</span>
         </span>
-      </a>
+      </Link>
       <span className="font12 no-border-at-child">
-        <IssueChildCommentAndVotePair issue={issue} issueHref={issueHref} />
+        <IssueChildCommentAndVotePair issue={issue} issueTo={issueTo} />
       </span>
       {labels.map((label) => (
-        <a
-          href={childLabelHref(String(label.id))}
+        <Link
+          activeProps={{ className: undefined }}
+          to={childLabelTo}
+          search={{ state: "open", labelIds: Number(label.id) } as never}
           className="label issue-label list-label active twoColumeModeTarget"
-          data-category-id={String(label.categoryId ?? "")}
-          data-label-id={String(label.id)}
           key={String(label.id)}
           onClick={(event) =>
             handleChildLabelClick(event, String(label.id), childLabelHref(String(label.id)))
@@ -1930,7 +1961,7 @@ function IssueChildRow({
           style={childIssueLabelStyle(label.color)}
         >
           {label.name}
-        </a>
+        </Link>
       ))}
       <span className="child-issue-date" title={issue.createdLabel}>
         {issue.createdLabel}
@@ -1945,10 +1976,10 @@ function childIssueLabelStyle(color: string | undefined): CSSProperties | undefi
 
 function IssueChildCommentAndVotePair({
   issue,
-  issueHref,
+  issueTo,
 }: {
   issue: RestIssueChildItem;
-  issueHref: string;
+  issueTo: never;
 }) {
   const commentCount = numberField(issue.commentCount);
   const voterCount = numberField(issue.voterCount);
@@ -1959,32 +1990,40 @@ function IssueChildCommentAndVotePair({
   return (
     <span className="item-count-groups">
       {commentCount ? (
-        <a href={`${issueHref}#comments`} className="comments-count comments-count-color">
+        <Link
+          activeProps={{ className: undefined }}
+          to={issueTo}
+          hash="comments"
+          className="comments-count comments-count-color"
+        >
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
           <span className="count-groups item-count">{commentCount}</span>
-        </a>
+        </Link>
       ) : null}
       {voterCount ? (
-        <a href={`${issueHref}#vote`} className="vote-count vote-color">
+        <Link
+          activeProps={{ className: undefined }}
+          to={issueTo}
+          hash="vote"
+          className="vote-count vote-color"
+        >
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
           <span className="count-groups item-count strong">{voterCount}</span>
-        </a>
+        </Link>
       ) : null}
     </span>
   );
 }
 
 function IssueSubtaskSummary({
-  basePath,
   issue,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   issue: RestIssueListItem;
   ownerName: string;
   projectName: string;
@@ -2021,14 +2060,12 @@ function IssueSubtaskSummary({
       ) : null}
       {parentIssueNumber ? (
         <span className="infos-item subtask">
-          <a
-            href={prefixBasePath(
-              basePath,
-              `/${ownerName}/${projectName}/issue/${parentIssueNumber}`,
-            )}
+          <Link
+            activeProps={{ className: undefined }}
+            to={`/${ownerName}/${projectName}/issue/${parentIssueNumber}` as never}
           >
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
-          </a>
+          </Link>
         </span>
       ) : null}
     </>
@@ -2461,7 +2498,6 @@ function IssueSearchForm({
               {selectedMilestone ? (
                 <>
                   <SearchMilestoneStatus
-                    basePath={basePath}
                     milestone={selectedMilestone}
                     ownerName={ownerName}
                     projectName={projectName}
@@ -2491,8 +2527,9 @@ function IssueSearchForm({
         </dl>
         <div className="labels-wrap">
           {labelControls.showManageLink ? (
-            <a
-              href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+            <Link
+              activeProps={{ className: undefined }}
+              to={`/${ownerName}/${projectName}/issue/labelsform` as never}
               className="ybtn ybtn-default ybtn-mini pull-right"
             >
               <i className="yobicon-cog vmiddle"></i>
@@ -2501,10 +2538,9 @@ function IssueSearchForm({
                   {t("label.manage")}
                 </span>
               ) : null}
-            </a>
+            </Link>
           ) : null}
           <IssueSearchLabelSelect
-            basePath={basePath}
             labels={labels}
             ownerName={ownerName}
             projectName={projectName}
@@ -2518,12 +2554,10 @@ function IssueSearchForm({
 }
 
 function SearchMilestoneStatus({
-  basePath,
   milestone,
   ownerName,
   projectName,
 }: {
-  basePath: string;
   milestone: ProjectMilestone;
   ownerName: string;
   projectName: string;
@@ -2539,12 +2573,13 @@ function SearchMilestoneStatus({
   return (
     <div className="milestone-info">
       <div className="meta-info">
-        <a
-          href={prefixBasePath(basePath, `/${ownerName}/${projectName}/milestone/${milestoneId}`)}
+        <Link
+          activeProps={{ className: undefined }}
+          to={`/${ownerName}/${projectName}/milestone/${milestoneId}` as never}
           className="title"
         >
           {stringField(milestone.title, "")}
-        </a>
+        </Link>
         {dueDateLabel ? (
           <span
             className={
@@ -2589,14 +2624,12 @@ function selectedSearchMilestone(
 }
 
 function IssueSearchLabelSelect({
-  basePath,
   labels,
   ownerName,
   projectName,
   search,
   showLabelEdit,
 }: {
-  basePath: string;
   labels: Array<Record<string, unknown>>;
   ownerName: string;
   projectName: string;
@@ -2615,14 +2648,15 @@ function IssueSearchLabelSelect({
       <dt>
         {t("label")}{" "}
         {showLabelEdit ? (
-          <a
-            href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labelsform`)}
+          <Link
+            activeProps={{ className: undefined }}
+            to={`/${ownerName}/${projectName}/issue/labelsform` as never}
             target="_blank"
             className="label-edit"
             rel="noreferrer"
           >
             [{t("button.edit")}]
-          </a>
+          </Link>
         ) : null}
       </dt>
       <dd>
