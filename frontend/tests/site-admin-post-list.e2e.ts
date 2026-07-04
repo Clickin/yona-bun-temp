@@ -266,6 +266,13 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await pageNumInput.press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(pageNumInput).toHaveValue("2");
+
+  const pageTwoUrl = page.url();
+  await pageNumInput.click();
+  await pageNumInput.fill("1e2");
+  await pageNumInput.press("Enter");
+  expect(page.url()).toBe(pageTwoUrl);
+  await expect(pageNumInput).toHaveValue("2");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-posts-pagination-input");

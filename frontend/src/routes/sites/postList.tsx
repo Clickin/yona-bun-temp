@@ -128,12 +128,13 @@ function PostListPagination({
                 return;
               }
 
-              const pageNum = Number(event.currentTarget.value);
-              if (!Number.isInteger(pageNum)) {
+              const inputValue = event.currentTarget.value;
+              if (!/^[0-9]+$/.test(inputValue)) {
                 event.currentTarget.value = String(currentPage);
                 return;
               }
 
+              const pageNum = Number(inputValue);
               const nextPage = Math.min(Math.max(pageNum, 1), totalPages);
               event.currentTarget.value = String(nextPage);
               void router.navigate({
