@@ -252,6 +252,7 @@ function ProjectListPagination({
           {hasPrev ? (
             <Link
               activeProps={{ className: undefined }}
+              pjax-page=""
               search={search(currentPage - 1)}
               to="/sites/projectList"
             >
@@ -302,6 +303,7 @@ function ProjectListPagination({
           {hasNext ? (
             <Link
               activeProps={{ className: undefined }}
+              pjax-page=""
               search={search(currentPage + 1)}
               to="/sites/projectList"
             >
