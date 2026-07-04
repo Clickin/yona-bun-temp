@@ -68,6 +68,7 @@ function ProjectTransferBody({
   const destinationInputRef = useRef<HTMLInputElement>(null);
   const acceptInputRef = useRef<HTMLInputElement>(null);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [hasTransferRequestStarted, setHasTransferRequestStarted] = useState(false);
   const transferMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -197,7 +198,14 @@ function ProjectTransferBody({
                 id="btnTransferExec"
                 type="button"
                 className="ybtn ybtn-danger"
-                onClick={() => transferMutation.mutate()}
+                disabled={hasTransferRequestStarted || transferMutation.isPending}
+                onClick={() => {
+                  if (hasTransferRequestStarted || transferMutation.isPending) {
+                    return;
+                  }
+                  setHasTransferRequestStarted(true);
+                  transferMutation.mutate();
+                }}
               >
                 {t("button.yes")}
               </button>
