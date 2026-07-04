@@ -14,7 +14,7 @@ import {
   updateProjectOverviewRest,
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
-import type { ProjectContainer, YonaUserItem } from "../../api/types";
+import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -114,6 +114,7 @@ function ProjectHomeBody({
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const projectRecord = recordField(project);
   const menuSetting = projectMenuSetting(project);
+  const currentMilestone = projectCurrentMilestone(project);
   const members = arrayField(projectRecord.members) as YonaUserItem[];
   const currentUserId =
     numberField(projectRecord.viewerUserId) ||
@@ -391,6 +392,14 @@ function ProjectHomeBody({
                   </span>
                 ) : null}
               </div>
+              {booleanField(menuSetting.milestone) && currentMilestone ? (
+                <ProjectHomeMilestoneStatus
+                  basePath={runtimeConfig.basePath}
+                  milestone={currentMilestone}
+                  ownerName={ownerName}
+                  projectName={projectName}
+                />
+              ) : null}
               <div className="inner member-info">
                 <header>
                   <h3>{t("project.members")}</h3>
@@ -500,6 +509,74 @@ function YobiToast({ notice }: { notice: { key: number; message: string } | null
         <div className="center-text">
           <span className="v"></span>
           <div className="msg">{notice.message}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectHomeMilestoneStatus({
+  basePath,
+  milestone,
+  ownerName,
+  projectName,
+}: {
+  basePath: string;
+  milestone: ProjectMilestone;
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  const milestoneRecord = recordField(milestone);
+  const milestoneId = stringField(milestoneRecord.id, "");
+  const isClosed = stringField(milestoneRecord.state, "open").toLowerCase() === "closed";
+  const dueDateLabel =
+    stringField(milestoneRecord.dueDateLabel, "") || stringField(milestoneRecord.dueDateText, "");
+  const dueDateRelative =
+    stringField(milestoneRecord.untilLabel, "") || stringField(milestoneRecord.until, "");
+  const openCount = milestoneIssueCount(milestoneRecord, "open");
+  const closedCount = milestoneIssueCount(milestoneRecord, "closed");
+  const completionPercent =
+    numberField(milestoneRecord.completionPercent) || numberField(milestoneRecord.completionRate);
+
+  return (
+    <div className="milestone-info">
+      <div className="meta-info">
+        <Link
+          activeProps={{}}
+          to={toRoutePath(
+            basePath,
+            prefixBasePath(basePath, `/${ownerName}/${projectName}/milestone/${milestoneId}`),
+          )}
+          className="title"
+        >
+          {stringField(milestoneRecord.title, "")}
+        </Link>
+        {dueDateLabel ? (
+          <span
+            className={
+              !isClosed && booleanField(milestoneRecord.dueDateOverdue)
+                ? "due-date over"
+                : "due-date"
+            }
+          >
+            {t("label.dueDate")}
+            <strong>{dueDateLabel}</strong>
+            {!isClosed && dueDateRelative ? (
+              <span className="date">({dueDateRelative})</span>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="progress-wrap">
+        <div className="progress progress-success nm">
+          <div className="bar" style={{ width: `${completionPercent}%` }}></div>
+        </div>
+        <div className="progress-info">
+          <span className="pull-right">
+            <strong>{`${closedCount} / ${openCount + closedCount}`}</strong>
+          </span>
         </div>
       </div>
     </div>
@@ -1635,6 +1712,19 @@ function projectMenuSetting(project: ProjectContainer) {
     pullRequest: nested.pullRequest ?? record.showPullRequest,
     review: nested.review ?? record.showReview,
   };
+}
+
+function projectCurrentMilestone(project: ProjectContainer) {
+  const currentMilestone = recordField(recordField(project).currentMilestone);
+  return Object.keys(currentMilestone).length > 0 ? (currentMilestone as ProjectMilestone) : null;
+}
+
+function milestoneIssueCount(milestone: Record<string, unknown>, state: "closed" | "open") {
+  const issues = arrayField(milestone[`${state}Issues`]);
+  if (issues.length > 0) {
+    return issues.length;
+  }
+  return numberField(milestone[`${state}IssueCount`]);
 }
 
 function projectHref(basePath: string, ownerName: string, projectName: string) {
