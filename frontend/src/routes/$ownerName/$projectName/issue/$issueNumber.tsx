@@ -172,12 +172,6 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         runtimeConfig={runtimeConfig}
       />
       <CommentDeleteModalScripts basePath={runtimeConfig.basePath} />
-      <IssueViewBootstrapScript
-        basePath={runtimeConfig.basePath}
-        currentUserName={stringField(sessionQuery.data.userLabel, sessionQuery.data.loginId)}
-        issue={issueQuery.data}
-        project={projectQuery.data}
-      />
     </>
   );
 }
@@ -813,6 +807,7 @@ function IssueDetailBody({
             {!isDraft ? (
               <IssueMainTimeline
                 basePath={basePath}
+                currentUserLoginId={currentUserLoginId}
                 issue={issue}
                 onCommentDeleteRequest={setCommentDeleteRequestUri}
                 onCommentVote={(commentId, voted) =>
@@ -1015,114 +1010,10 @@ function IssueDetailBody({
 
 function CommentDeleteModalScripts({ basePath }: { basePath: string }) {
   return (
-    <>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.Comment.js")}
-      ></script>
-      <script
-        type="text/javascript"
-        dangerouslySetInnerHTML={{
-          __html:
-            "\n    $(function () {\n        yobi.Comment.init({'sContainer' : '#comments'});\n    });\n",
-        }}
-      ></script>
-    </>
-  );
-}
-
-function IssueViewBootstrapScript({
-  basePath,
-  currentUserName,
-  issue,
-  project,
-}: {
-  basePath: string;
-  currentUserName: string;
-  issue: RestIssueDetailResponse;
-  project: ProjectContainer;
-}) {
-  const ownerName = stringField(issue.ownerName);
-  const projectName = stringField(issue.projectName);
-  const issueNumber = stringField(issue.issueNumber);
-  const issueId = stringField(issue.issueId, issueNumber);
-  const issueState = stringField(issue.state, "open").toLowerCase();
-  const nextState = issueState === "open" ? "closed" : "open";
-  const canUpdate = booleanField(issue.viewerCanUpdate);
-  const showIssue = projectMenuEnabled(project, "issue");
-  const keymapEntries = [
-    `"L": ${jsString(prefixBasePath(basePath, `/${ownerName}/${projectName}/issues?state=open`))}`,
-  ];
-
-  if (showIssue) {
-    keymapEntries.push(
-      `,"N": ${jsString(prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`))}`,
-    );
-  }
-
-  if (canUpdate) {
-    keymapEntries.push(
-      `,"E": ${jsString(
-        prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}/editform`),
-      )}`,
-    );
-  }
-
-  const watchQuery = `resource.type=issue_post&resource.id=${encodeURIComponent(issueId)}`;
-  const script = `
-    $(function(){
-        // yobi.issue.View
-        $yobi.loadModule("issue.View", {
-            "issueId"  : ${jsString(issueId)},
-            "nextState": ${jsString(nextState)},
-            "urls"     : {
-                "watch"     : ${jsString(prefixBasePath(basePath, `/watch?${watchQuery}`))},
-                "unwatch"   : ${jsString(prefixBasePath(basePath, `/unwatch?${watchQuery}`))},
-                "timeline"  : ${jsString(
-                  prefixBasePath(
-                    basePath,
-                    `/${ownerName}/${projectName}/issue/${issueNumber}/timeline`,
-                  ),
-                )},
-                "nextState" : ${jsString(
-                  prefixBasePath(
-                    basePath,
-                    `/${ownerName}/${projectName}/issue/${issueNumber}/nextstate`,
-                  ),
-                )},
-                "massUpdate": ${jsString(prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`))}
-            }
-        });
-
-        // yobi.ShortcutKey
-        yobi.ShortcutKey.setKeymapLink({
-            ${keymapEntries.join("\n            ")}
-        });
-
-        // yobi.Mention
-        yobi.Mention({
-            "target": 'textarea[id^=editor-], .editorSeries',
-            "url"   : ${jsString(
-              prefixBasePath(
-                basePath,
-                `/${ownerName}/${projectName}/mentionList?number=${issueNumber}&resourceType=issue_post`,
-              ),
-            )}
-        });
-
-        // detect comment which contains mention at me
-        $(".comment-body:contains('${escapeJqueryContains(currentUserName)}')").closest(".comment").addClass("mentioned");
-        $(".user-link:contains('${escapeJqueryContains(currentUserName)}')").addClass("me");
-    });
-`;
-
-  return (
     <script
+      defer
       type="text/javascript"
-      dangerouslySetInnerHTML={{
-        __html: script,
-      }}
+      src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.Comment.js")}
     ></script>
   );
 }
@@ -1979,12 +1870,14 @@ type VoterLike = {
 
 function IssueMainTimeline({
   basePath,
+  currentUserLoginId,
   issue,
   onCommentDeleteRequest,
   onCommentVote,
   runtimeConfig,
 }: {
   basePath: string;
+  currentUserLoginId: string;
   issue: RestIssueDetailResponse;
   onCommentDeleteRequest: (requestUri: string) => void;
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
@@ -2012,6 +1905,7 @@ function IssueMainTimeline({
                   <IssueCommentRow
                     basePath={basePath}
                     comment={item.comment}
+                    currentUserLoginId={currentUserLoginId}
                     issue={issue}
                     key={`comment-${stringField(item.comment.id)}`}
                     onCommentDeleteRequest={onCommentDeleteRequest}
@@ -2376,6 +2270,7 @@ function EventUserLink({
 function IssueCommentRow({
   basePath,
   comment,
+  currentUserLoginId,
   issue,
   onCommentDeleteRequest,
   onCommentVote,
@@ -2383,6 +2278,7 @@ function IssueCommentRow({
 }: {
   basePath: string;
   comment: IssueComment;
+  currentUserLoginId: string;
   issue: RestIssueDetailResponse;
   onCommentDeleteRequest: (requestUri: string) => void;
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
@@ -2416,6 +2312,7 @@ function IssueCommentRow({
   const childComments = Array.isArray(comment.childComments)
     ? (comment.childComments as IssueChildComment[])
     : [];
+  const hasCurrentUserMention = hasLegacyMention(comment.contentsMarkdown, currentUserLoginId);
 
   async function translateComment() {
     if (translatePending || translatedContentsMarkdown !== null) {
@@ -2438,7 +2335,7 @@ function IssueCommentRow({
 
   return (
     <li
-      className="comment "
+      className={`comment ${hasCurrentUserMention ? "mentioned" : ""}`}
       id={`comment-${commentId}`}
       onMouseEnter={() => setReplyVisible(true)}
       onMouseLeave={() => {
@@ -3423,14 +3320,6 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
-}
-
-function jsString(value: string) {
-  return JSON.stringify(value);
-}
-
-function escapeJqueryContains(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 function projectMenuEnabled(project: ProjectContainer, key: string) {

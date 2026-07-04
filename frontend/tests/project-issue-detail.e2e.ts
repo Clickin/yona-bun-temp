@@ -228,6 +228,16 @@ test("project issue detail route uses shared markdown help and has no generic Le
   expect(routeSource).not.toContain("labelSelectOptionsHtml");
   expect(routeSource).not.toContain("optionsHtml");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML={{ __html: optionsHtml }}");
+  expect(routeSource).not.toContain("yobi.Comment.init({'sContainer' : '#comments'});");
+  expect(routeSource).not.toContain("IssueViewBootstrapScript");
+  expect(routeSource).not.toContain('$yobi.loadModule("issue.View"');
+  expect(routeSource).not.toContain("yobi.ShortcutKey.setKeymapLink");
+  expect(routeSource).not.toContain("yobi.Mention({");
+  expect(routeSource).not.toContain(":contains(");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(routeSource).not.toMatch(
+    /function CommentDeleteModalScripts[\s\S]*dangerouslySetInnerHTML[\s\S]*function IssueViewBootstrapScript/u,
+  );
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("createElement");
@@ -305,7 +315,7 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
           (script.textContent ?? "").includes("yobi.Comment.init({'sContainer' : '#comments'});"),
         ),
       ),
-  ).toBe(true);
+  ).toBe(false);
 
   await expect(
     page.locator(
@@ -313,32 +323,17 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
     ),
   ).toHaveAttribute("type", "text/javascript");
 
-  const issueViewBootstrap = await inlineScriptContaining(page, '$yobi.loadModule("issue.View"');
-  expect(issueViewBootstrap).toContain('$yobi.loadModule("issue.View"');
-  expect(issueViewBootstrap).toContain('"issueId"  : "42"');
-  expect(issueViewBootstrap).toContain('"nextState": "closed"');
-  expect(issueViewBootstrap).toContain(
-    `"watch"     : "${basePath}/watch?resource.type=issue_post&resource.id=42"`,
+  const inlineScriptTexts = await page
+    .locator("script:not([src])")
+    .evaluateAll((scripts) => scripts.map((script) => script.textContent ?? ""));
+  expect(inlineScriptTexts.some((text) => text.includes('$yobi.loadModule("issue.View"'))).toBe(
+    false,
   );
-  expect(issueViewBootstrap).toContain(
-    `"unwatch"   : "${basePath}/unwatch?resource.type=issue_post&resource.id=42"`,
+  expect(inlineScriptTexts.some((text) => text.includes("yobi.ShortcutKey.setKeymapLink"))).toBe(
+    false,
   );
-  expect(issueViewBootstrap).toContain(
-    `"timeline"  : "${basePath}/admin/sample/issue/11/timeline"`,
-  );
-  expect(issueViewBootstrap).toContain(
-    `"nextState" : "${basePath}/admin/sample/issue/11/nextstate"`,
-  );
-  expect(issueViewBootstrap).toContain(`"massUpdate": "${basePath}/admin/sample/issues"`);
-  expect(issueViewBootstrap).toContain(`"L": "${basePath}/admin/sample/issues?state=open"`);
-  expect(issueViewBootstrap).toContain(`,"N": "${basePath}/admin/sample/issueform"`);
-  expect(issueViewBootstrap).toContain(`,"E": "${basePath}/admin/sample/issue/11/editform"`);
-  expect(issueViewBootstrap).toContain("\"target\": 'textarea[id^=editor-], .editorSeries'");
-  expect(issueViewBootstrap).toContain(
-    `"url"   : "${basePath}/admin/sample/mentionList?number=11&resourceType=issue_post"`,
-  );
-  expect(issueViewBootstrap).toContain(`$(".comment-body:contains('Site Admin')`);
-  expect(issueViewBootstrap).toContain(`$(".user-link:contains('Site Admin')`);
+  expect(inlineScriptTexts.some((text) => text.includes("yobi.Mention({"))).toBe(false);
+  expect(inlineScriptTexts.some((text) => text.includes(":contains("))).toBe(false);
 
   await expect(page.locator("script", { hasText: "yonaAssgineeModule(" })).toHaveCount(0);
   await expect(page.locator("script", { hasText: '$(".markdown-wrap").first().html' })).toHaveCount(
@@ -386,13 +381,6 @@ async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
     await expect(nodes).toHaveCount(1);
     expect(await nodes.first().textContent()).toContain(template.text);
   }
-}
-
-async function inlineScriptContaining(page: Page, text: string) {
-  return page.locator("script:not([src])").evaluateAll((scripts, needle) => {
-    const found = scripts.find((script) => (script.textContent ?? "").includes(String(needle)));
-    return found?.textContent ?? "";
-  }, text);
 }
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {
@@ -882,6 +870,7 @@ test("project issue detail renders legacy index comment mention and child count 
   });
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator(".span-left-pane #comment-77")).toHaveClass("comment mentioned");
   const indexComment = page.locator(".span-right-pane #comment-77.index-comment");
   await expect(indexComment).toHaveClass("comment index-comment mentioned mentionedInChild");
   expect(await canonicalize(page, ".span-right-pane #comment-77 .comment-exists")).toEqual(
