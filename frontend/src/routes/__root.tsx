@@ -1,5 +1,11 @@
 import * as React from "react";
-import { Link, Outlet, createRootRouteWithContext, useRouterState } from "@tanstack/react-router";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  createRootRouteWithContext,
+  useRouterState,
+} from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../api/auth";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { readSessionBootstrap } from "../auth-workspace-client";
@@ -782,6 +788,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
   const pathname =
     typeof window === "undefined" ? "/" : window.location.pathname.slice(basePath.length) || "/";
+  const resetPasswordSearch = useRouterState({ select: (state) => state.location.search });
   const feedbackUrl: string = "https://github.com/nforge/yobi/issues?state=open";
   const projectListPath: string = "/projects";
   const loginFormPath: string = "/users/loginform";
@@ -790,16 +797,8 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const naverCorpUrl: string = "http://navercorp.com/";
   const d2ProgramUrl: string = "https://developers.naver.com/d2/";
 
-  React.useEffect(() => {
-    if (pathname === "/reset-password") {
-      window.location.replace(
-        `${prefixBasePath(runtimeConfig.basePath, "/resetPassword")}${window.location.search}`,
-      );
-    }
-  }, [pathname, runtimeConfig.basePath]);
-
   if (pathname === "/reset-password") {
-    return null;
+    return <Navigate to="/resetPassword" search={resetPasswordSearch} replace />;
   }
 
   return (
