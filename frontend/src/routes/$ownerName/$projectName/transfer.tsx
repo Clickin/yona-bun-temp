@@ -273,7 +273,7 @@ function ProjectHeader({ project }: { project: ProjectTransferScreenData }) {
                   activeProps={{ className: undefined }}
                   to="/$user"
                   params={{ user: ownerName }}
-                  search={undefined as never}
+                  search={{}}
                 >
                   {ownerName}
                 </Link>
@@ -496,7 +496,8 @@ function ProjectSettingMenu({
       <li id="subMenuIssueLabel" className="">
         <Link
           activeProps={{ className: undefined }}
-          to={`/${ownerName}/${projectName}/labels` as never}
+          to="/$ownerName/$projectName/issue/labelsform"
+          params={{ ownerName, projectName }}
         >
           {t("issue.label")}
         </Link>

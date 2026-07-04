@@ -26,7 +26,7 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
     <ul class="nav nav-tabs">
       <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li>
       <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li>
-      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li>
+      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li>
       <li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li>
       <li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li>
       <li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li>
@@ -228,7 +228,10 @@ test("project change-VCS internal project links keep legacy hrefs without route-
   await expect(settingTabLinks).toHaveCount(7);
   await expect(settingTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   await expect(settingTabLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/members`);
-  await expect(settingTabLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/labels`);
+  await expect(settingTabLinks.nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
   await expect(settingTabLinks.nth(3)).toHaveAttribute("href", `${basePath}/admin/sample/webhooks`);
   await expect(settingTabLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/transfer`);
   await expect(settingTabLinks.nth(5)).toHaveAttribute(
@@ -269,11 +272,15 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ProjectSettingLink");
+  expect(source).not.toContain("to={`/${ownerName}/${projectName}/labels` as never}");
+  expect(source).not.toContain("as never");
   expect(source).not.toMatch(/<a\s+href=\{(?:prefixBasePath|projectHref)/);
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
+  expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
+  expect(source).not.toContain("mask={{ to:");
   expect(source).toContain('to="/$ownerName/$projectName/changeVCS"');
   expect(source).toContain("params={{ ownerName, projectName }}");
 });

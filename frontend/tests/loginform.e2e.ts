@@ -278,9 +278,11 @@ test("configured social provider login form matches legacy user/login.scala.html
     svgVerticalAlign: "middle",
   });
   const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  expect(source).toContain("to={`/authenticate/${normalized}` as never}");
-  expect(source).toContain("href={prefixBasePath(basePath, `/authenticate/${normalized}`)}");
+  expect(source).toContain("const providerLoginPath: string = `/authenticate/${normalized}`;");
+  expect(source).toContain("to={providerLoginPath}");
+  expect(source).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
   expect(source).toContain("reloadDocument");
+  expect(source).not.toContain("as never");
   expect(source).not.toMatch(/<a\s+href=\{[^}]*\/authenticate\/\$\{normalized\}[^}]*\}/);
 });
 

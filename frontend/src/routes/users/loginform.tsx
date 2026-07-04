@@ -222,11 +222,12 @@ function OAuthProviderLink({ basePath, provider }: { basePath: string; provider:
   if (normalized !== "github" && normalized !== "google") {
     return null;
   }
+  const providerLoginPath: string = `/authenticate/${normalized}`;
 
   return (
     <Link
-      to={`/authenticate/${normalized}` as never}
-      href={prefixBasePath(basePath, `/authenticate/${normalized}`)}
+      to={providerLoginPath}
+      href={prefixBasePath(basePath, providerLoginPath)}
       className="ybtn oauth-login-btn"
       reloadDocument
     >

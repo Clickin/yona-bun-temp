@@ -26,7 +26,7 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
     <ul class="nav nav-tabs">
       <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li>
       <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li>
-      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/labels">Issue Label</a></li>
+      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li>
       <li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li>
       <li id="subMenuProjectTransfer" class="active"><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li>
       <li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li>
@@ -132,7 +132,10 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
   await expect(settingsTabLinks).toHaveCount(7);
   await expect(settingsTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   await expect(settingsTabLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/members`);
-  await expect(settingsTabLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/labels`);
+  await expect(settingsTabLinks.nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
   await expect(settingsTabLinks.nth(3)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/webhooks`,
@@ -179,6 +182,8 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ProjectSettingLink");
+  expect(source).not.toContain("as never");
+  expect(source).not.toContain("search={undefined");
   expect(source).not.toContain("<a href={prefixBasePath");
   expect(source).not.toContain("<a href={projectHref");
   expect(source).toContain('to="/$user"');
@@ -190,6 +195,7 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toContain('to="/$ownerName/$projectName/milestones"');
   expect(source).toContain('to="/$ownerName/$projectName/posts"');
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
+  expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('to="/$ownerName/$projectName/transfer"');
   expect(source).toContain("params={{ ownerName, projectName }}");
 });
