@@ -256,6 +256,21 @@ test("organization issue aggregate filter controls are React buttons with legacy
   await expect(page.locator('input[name="orderDir"]')).toHaveValue("desc");
 });
 
+test("organization issue aggregate source uses narrow legacy attr types", () => {
+  const source = readFileSync(ORGANIZATION_ISSUES_ROUTE_SOURCE, "utf8");
+  expect(source).not.toContain('Record<"pjax-filter", string>');
+  expect(source).not.toContain('Record<"state", string>');
+  expect(source).not.toContain('Record<"orderby" | "orderdir", string>');
+  expect(source).not.toContain("pjaxFilter");
+  expect(source).not.toContain("legacyState");
+  expect(source).toContain("type LegacyPjaxFilterAttrs");
+  expect(source).toContain("type LegacyStateTabAttrs");
+  expect(source).toContain("type LegacySortFilterAttrs");
+  expect(source).toContain("satisfies LegacyPjaxFilterAttrs");
+  expect(source).toContain("satisfies LegacyStateTabAttrs");
+  expect(source).toContain("satisfies LegacySortFilterAttrs");
+});
+
 test("organization issues menu board link preserves legacy href with SPA transition", async ({
   page,
 }) => {

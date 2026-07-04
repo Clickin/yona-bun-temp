@@ -27,6 +27,13 @@ type OrganizationIssuesSearch = {
   state: "closed" | "open";
 };
 
+type LegacyPjaxFilterAttrs = { "pjax-filter": "" };
+type LegacyStateTabAttrs = { state: OrganizationIssuesSearch["state"] };
+type LegacySortFilterAttrs = {
+  orderby: string;
+  orderdir: string;
+};
+
 export const Route = createFileRoute("/organizations/$organizationName/issues")({
   component: OrganizationIssuesRoute,
   validateSearch(search: Record<string, unknown>): OrganizationIssuesSearch {
@@ -344,14 +351,14 @@ function QuickSearch({
   search: OrganizationIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
-  const pjaxFilter: Record<"pjax-filter", string> = { "pjax-filter": "" };
+  const legacyQuickSearchAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttrs;
   const projectNames = search.projectNames.join(",");
 
   return (
     <ul className="lst-stacked unstyled">
       <li className={!search.assigneeId && !search.authorId && !search.mentionId ? "active" : ""}>
         <button
-          {...pjaxFilter}
+          {...legacyQuickSearchAttrs}
           type="button"
           data-assignee-id=""
           data-author-id=""
@@ -365,7 +372,7 @@ function QuickSearch({
       </li>
       <li className={search.assigneeId === currentUserId ? "active" : ""}>
         <button
-          {...pjaxFilter}
+          {...legacyQuickSearchAttrs}
           type="button"
           data-author-id=""
           data-assignee-id={currentUserId}
@@ -381,7 +388,7 @@ function QuickSearch({
       </li>
       <li className={search.authorId === currentUserId ? "active" : ""}>
         <button
-          {...pjaxFilter}
+          {...legacyQuickSearchAttrs}
           type="button"
           data-author-id={currentUserId}
           data-assignee-id=""
@@ -397,7 +404,7 @@ function QuickSearch({
       </li>
       <li className={search.mentionId === currentUserId ? "active" : ""}>
         <button
-          {...pjaxFilter}
+          {...legacyQuickSearchAttrs}
           type="button"
           data-author-id=""
           data-assignee-id=""
@@ -428,11 +435,15 @@ function StateTab({
   onStateChange: (event: MouseEvent<HTMLButtonElement>, state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
-  const legacyState: Record<"state", string> = { state };
+  const legacyTabStateAttrs = { state } satisfies LegacyStateTabAttrs;
 
   return (
     <li className={active ? "active" : ""}>
-      <button type="button" {...legacyState} onClick={(event) => onStateChange(event, state)}>
+      <button
+        type="button"
+        {...legacyTabStateAttrs}
+        onClick={(event) => onStateChange(event, state)}
+      >
         {label}
         <span className="num-badge">{count}</span>
       </button>
@@ -466,7 +477,7 @@ function IssueFilters({
           const legacySort = {
             orderby: filter.field,
             orderdir: active ? nextDir : "desc",
-          } satisfies Record<"orderby" | "orderdir", string>;
+          } satisfies LegacySortFilterAttrs;
           return (
             <button
               type="button"

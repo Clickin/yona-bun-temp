@@ -122,7 +122,7 @@ function UserIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const basePath = runtimeConfig.basePath;
-  const pjaxContainer = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
+  const legacyPjaxContainerAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -252,7 +252,7 @@ function UserIssuesBody({
           hideDefaultLoginPageButton={isDefaultLoginPageSet}
           onSetDefaultLoginPage={(path) => setDefaultLoginPage.mutate(path)}
         />
-        <div {...pjaxContainer} className="row-fluid issue-list-wrap">
+        <div {...legacyPjaxContainerAttrs} className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
             <div className="inner advanced">
               <QuickSearch
@@ -635,11 +635,11 @@ function QuickSearch({
     <ul className="lst-stacked unstyled">
       {rows.map((row) => {
         const ids = quickFilterIds(row.filter, currentUserId);
-        const pjaxFilter = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttrs;
+        const legacyPjaxFilterAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttrs;
         return (
           <li className={search.filter === row.filter ? "active" : ""} key={row.filter}>
             <button
-              {...pjaxFilter}
+              {...legacyPjaxFilterAttrs}
               type="button"
               data-author-id={ids.authorId}
               data-assignee-id={ids.assigneeId}
@@ -676,12 +676,16 @@ function StateTab({
   onNavigate: (event: MouseEvent<HTMLButtonElement>, state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
-  const legacyState = { state } satisfies LegacyStateButtonAttrs;
+  const legacyStateButtonAttrs = { state } satisfies LegacyStateButtonAttrs;
   const pjaxItem = { "data-pjax": "" } satisfies LegacyPjaxListItemAttrs;
 
   return (
     <li className={active ? "active" : ""} {...pjaxItem}>
-      <button type="button" {...legacyState} onClick={(event) => onNavigate(event, state)}>
+      <button
+        type="button"
+        {...legacyStateButtonAttrs}
+        onClick={(event) => onNavigate(event, state)}
+      >
         {label}
         <span className="num-badge">{count}</span>
       </button>

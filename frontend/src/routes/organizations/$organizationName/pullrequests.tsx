@@ -14,15 +14,8 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
-declare module "react" {
-  interface HTMLAttributes<T> {
-    "pjax-container"?: string;
-  }
-
-  interface LiHTMLAttributes<T> {
-    href?: string;
-  }
-}
+type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
+type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export type OrganizationPullRequestsSearch = {
   filter: string;
@@ -118,7 +111,7 @@ function OrganizationPullRequestsBody({
   const organizationName = stringField(organization.organizationName, "");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
-  const pjaxContainer = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement>;
+  const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const openAction = prefixBasePath(
     runtimeConfig.basePath,
     `/organizations/${organizationName}/pullrequests`,
@@ -154,7 +147,7 @@ function OrganizationPullRequestsBody({
       />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div {...pjaxContainer} className="row-fluid cb">
+          <div {...legacyPjaxAttrs} className="row-fluid cb">
             <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
               <form id="search" name="search" action={searchAction} method="get">
                 <div className="search">
@@ -263,13 +256,14 @@ function OrganizationPullRequestItem({
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const legacyHref = prefixBasePath(
+  const pullRequestRowHref = prefixBasePath(
     basePath,
     `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`,
   );
+  const pullRequestRowAttrs = { href: pullRequestRowHref } satisfies LegacyListItemHrefAttrs;
 
   return (
-    <li className="post-item title" href={legacyHref}>
+    <li className="post-item title" {...pullRequestRowAttrs}>
       <div className="span10 span-hard-wrap">
         <Link
           params={{ user: pullRequest.contributorLoginId }}

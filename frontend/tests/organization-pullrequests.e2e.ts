@@ -294,8 +294,18 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).not.toContain("changesHref");
   expect(source).not.toContain("contributorHref");
   expect(source).not.toContain("receiverHref");
+  expect(source).not.toContain("const pjaxContainer");
+  expect(source).not.toContain("const legacyHref");
+  expect(source).not.toContain('declare module "react"');
+  expect(source).not.toContain("LiHTMLAttributes");
   expect(source).not.toContain("<a\n          href={");
   expect(source).not.toContain("as unknown");
+  expect(source).toContain("type LegacyPjaxContainerAttrs");
+  expect(source).toContain("type LegacyListItemHrefAttrs");
+  expect(source).toContain('{ "pjax-container": "" } satisfies LegacyPjaxContainerAttrs');
+  expect(source).toContain("{ href: pullRequestRowHref } satisfies LegacyListItemHrefAttrs");
+  expect(source).toContain('<div {...legacyPjaxAttrs} className="row-fluid cb">');
+  expect(source).toContain('<li className="post-item title" {...pullRequestRowAttrs}>');
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');

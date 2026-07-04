@@ -327,6 +327,12 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("as unknown as");
+  expect(routeSource).not.toContain("const pjaxContainer");
+  expect(routeSource).not.toContain("const pjaxFilter");
+  expect(routeSource).not.toContain("const legacyState =");
+  expect(routeSource).toContain("const legacyPjaxContainerAttrs");
+  expect(routeSource).toContain("const legacyPjaxFilterAttrs");
+  expect(routeSource).toContain("const legacyStateButtonAttrs");
   expect(routeSource).toContain("satisfies LegacyPjaxContainerAttrs");
   expect(routeSource).toContain("satisfies LegacyPjaxFilterAttrs");
   expect(routeSource).toContain("satisfies LegacyStateButtonAttrs");
