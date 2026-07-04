@@ -277,12 +277,12 @@ function ProjectListPagination({
                 return;
               }
 
-              const pageNum = Number(event.currentTarget.value);
-              if (!Number.isInteger(pageNum)) {
+              if (!/^[0-9]+$/.test(event.currentTarget.value)) {
                 event.currentTarget.value = String(currentPage);
                 return;
               }
 
+              const pageNum = Number(event.currentTarget.value);
               const nextPage = Math.min(Math.max(pageNum, 1), totalPages);
               event.currentTarget.value = String(nextPage);
               void router.navigate({

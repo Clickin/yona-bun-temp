@@ -306,6 +306,19 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   ).toBe("site-project-pagination-input");
 
   await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-project-pagination-nondigit";
+  });
+  await page.locator('#pagination input[name="pageNum"]').fill("1e2");
+  await page.locator('#pagination input[name="pageNum"]').press("Enter");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("road");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-project-pagination-nondigit");
+
+  await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-search";
   });
   await page.locator('.form-search input[name="filter"]').fill("board");
