@@ -69,7 +69,7 @@ function OrganizationNewScreen({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const organizationName = String(formData.get("name") ?? "");
-    if (!/^[A-Za-z0-9_.-]+$/u.test(organizationName)) {
+    if (!/^[A-Za-z0-9가-힣-]+([_.][A-Za-z0-9가-힣-]+)*$/u.test(organizationName)) {
       setNameError(t("organization.name.alert"));
       return;
     }
@@ -97,7 +97,14 @@ function OrganizationNewScreen({
                 <dt>
                   <div className="n-alert" ref={legacyNameErrorTypeRef}>
                     <div className="orange-txt">
-                      {warning ? <span className="warning">{t(warning)}</span> : null}
+                      {warning ? (
+                        <span
+                          className="warning"
+                          style={nameError ? { display: "none" } : undefined}
+                        >
+                          {t(warning)}
+                        </span>
+                      ) : null}
                       <span
                         className="msg wrongName"
                         style={nameError ? undefined : { display: "none" }}

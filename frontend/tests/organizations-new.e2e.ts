@@ -12,7 +12,7 @@ const EXPECTED_ORGANIZATION_NEW = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_ROOT_HREF__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -46,7 +46,7 @@ const EXPECTED_ORGANIZATION_NEW = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -157,8 +157,15 @@ test("organization create form validates name and posts REST payload", async ({ 
   await expect(page.locator(".wrongName")).toBeVisible();
   expect(requests.createdOrganizations).toEqual([]);
 
-  await page.locator("#name").fill("team-alpha");
-  await page.locator("#descr").fill("Alpha team");
+  await page.locator("#name").fill("team.");
+  await page
+    .locator('form[name="new-org"]')
+    .evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect(page.locator(".wrongName")).toBeVisible();
+  expect(requests.createdOrganizations).toEqual([]);
+
+  await page.locator("#name").fill("한글-group");
+  await page.locator("#descr").fill("Hangul team");
   await page
     .locator('form[name="new-org"]')
     .evaluate((form: HTMLFormElement) => form.requestSubmit());
@@ -167,8 +174,8 @@ test("organization create form validates name and posts REST payload", async ({ 
     .poll(() => requests.createdOrganizations)
     .toEqual([
       {
-        description: "Alpha team",
-        organizationName: "team-alpha",
+        description: "Hangul team",
+        organizationName: "한글-group",
       },
     ]);
   await expect(page).toHaveURL(`${basePath}/organizations/team-alpha`);
@@ -201,6 +208,17 @@ test("organization create form renders legacy flash warning before wrongName", a
       text: "",
     },
   ]);
+
+  await page.locator("#name").fill("bad name");
+  await page
+    .locator('form[name="new-org"]')
+    .evaluate((form: HTMLFormElement) => form.requestSubmit());
+
+  await expect(warning).toBeHidden();
+  await expect(wrongName).toBeVisible();
+  await expect(wrongName).toHaveText(
+    "Enter the group name in alphanumerical or symbol characters(_-.)",
+  );
 });
 
 test("organization create cancel keeps legacy href and navigates through the SPA", async ({
