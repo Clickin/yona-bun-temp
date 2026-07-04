@@ -226,7 +226,7 @@ test("project home header favorite star posts and toggles starred class", async 
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -255,7 +255,7 @@ test("project home header favorite star removes starred class when unfavorited",
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await page.locator(".project-breadcrumb .user-project-list").dispatchEvent("mousedown");
+  await page.locator(".project-breadcrumb .user-project-list").click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -478,6 +478,7 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).not.toContain("document.dispatchEvent");
   expect(source).not.toContain("yobi:notify-scan");
   expect(source).not.toContain('data-toggle="yobi-notify"');
+  expect(source).not.toContain("onMouseDown=");
   expect(source).toContain("<YobiToast notice={cloneCopyNotice} />");
   expect(source).toContain("createFileRoute, Link, Outlet");
   expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
