@@ -100,19 +100,29 @@ function EditTabMenu({ active }: { active: string }) {
   return (
     <ul className="nav nav-tabs mt20">
       <li className={active === "profile" ? "active" : undefined}>
-        <Link to="/user/editform">{t("userinfo.editProfile")}</Link>
+        <Link to="/user/editform" activeProps={{ className: undefined }}>
+          {t("userinfo.editProfile")}
+        </Link>
       </li>
       <li className={active === "password" ? "active" : undefined}>
-        <Link to="/user/editform/password">{t("userinfo.changePassword")}</Link>
+        <Link to="/user/editform/password" activeProps={{ className: undefined }}>
+          {t("userinfo.changePassword")}
+        </Link>
       </li>
       <li className={active === "notifications" ? "active" : undefined}>
-        <Link to="/user/editform/notifications">{t("userinfo.changeNotifications")}</Link>
+        <Link to="/user/editform/notifications" activeProps={{ className: undefined }}>
+          {t("userinfo.changeNotifications")}
+        </Link>
       </li>
       <li className={active === "emails" ? "active" : undefined}>
-        <Link to="/user/editform/emails">{t("userinfo.changeEmails")}</Link>
+        <Link to="/user/editform/emails" activeProps={{ className: undefined }}>
+          {t("userinfo.changeEmails")}
+        </Link>
       </li>
       <li className={active === "token" ? "active" : undefined}>
-        <Link to="/user/editform/token">{t("userinfo.token")}</Link>
+        <Link to="/user/editform/token" activeProps={{ className: undefined }}>
+          {t("userinfo.token")}
+        </Link>
       </li>
     </ul>
   );

@@ -39,7 +39,7 @@ const EXPECTED_USER_FILES_SCREEN = `
     </ul>
     <form action="__BASE_PATH__/user/files">
       <div class="user-file-search search search-bar">
-        <input name="filter" class="textbox" type="text" placeholder="Search" value="avatar">
+        <input name="filter" class="textbox" type="text" placeholder="Search" value="">
         <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
       </div>
     </form>
@@ -119,6 +119,8 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
   await expect(page.locator(".attachment-files")).toBeVisible();
   await expect(page.locator(".attachment-file-detail")).toHaveCount(1);
+  await expect(page.locator('.user-file-search input[name="filter"]')).toHaveAttribute("value", "");
+  await expect(page.locator('.user-file-search input[name="filter"]')).toHaveValue("");
 
   const previewLink = page.locator(".attachment-file-detail .file-preview > a");
   await expect(previewLink).toHaveAttribute("href", `${basePath}/files/7`);
@@ -214,6 +216,7 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   });
   await page.locator(".user-file-search .search-btn").click();
   await expect(page).toHaveURL(`${basePath}/user/files?filter=fresh&pageNum=1`);
+  await expect(page.locator('.user-file-search input[name="filter"]')).toHaveValue("");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("files-search");

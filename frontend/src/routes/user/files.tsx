@@ -114,14 +114,12 @@ function UserFilesScreen({
         >
           <div className="user-file-search search search-bar">
             <input
-              ref={(element) => {
-                element?.setAttribute("value", filter);
-              }}
+              key={`${filter}:${pageNum}`}
               name="filter"
               className="textbox"
               type="text"
               placeholder={t("search.title")}
-              defaultValue={filter}
+              defaultValue=""
             />
             <button type="submit" className="search-btn">
               <i className="yobicon-search"></i>
