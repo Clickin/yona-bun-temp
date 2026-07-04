@@ -119,6 +119,31 @@ test("project code history converted links navigate in the SPA", async ({ page }
     .toBe("alive");
 });
 
+test("project code history branch selector navigates slash branch in the SPA", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeHistory(page);
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("project-code-history-branch-spa-marker", "alive");
+  });
+
+  await page.goto(`${basePath}/admin/sample/commits/main`);
+  await page
+    .locator("#branches")
+    .selectOption(`${basePath}/admin/sample/commits/feature%2Frelease`);
+
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/commits/feature%2Frelease$`));
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect(page.locator(".nav-tabs a", { hasText: "Branches" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/branches`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.sessionStorage.getItem("project-code-history-branch-spa-marker")),
+    )
+    .toBe("alive");
+});
+
 test("project code history route source has no internal raw anchor patterns", () => {
   const source = readFileSync(ROUTE_SOURCE_PATH, "utf8");
 
@@ -265,6 +290,8 @@ async function mockProjectCodeHistory(page: Page, options: { secondMessage?: str
     });
   });
   await page.route("**/api/v1/projects/admin/sample/commits**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const selectedBranch = requestUrl.searchParams.get("branch") || "main";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -303,7 +330,7 @@ async function mockProjectCodeHistory(page: Page, options: { secondMessage?: str
         page: 1,
         path: "",
         projectName: "sample",
-        selectedBranch: "main",
+        selectedBranch,
       }),
     });
   });

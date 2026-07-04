@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
@@ -71,6 +71,7 @@ function ProjectCodeHistoryBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const { branch, ownerName, projectName } = Route.useParams();
   const selectedBranch = history.selectedBranch || branch;
   const encodedBranch = encodeBranch(selectedBranch);
@@ -94,6 +95,9 @@ function ProjectCodeHistoryBody({
               data-dropdown-css-class="branches"
               className="pull-right"
               defaultValue={historyHref}
+              onChange={(event) => {
+                router.history.push(event.currentTarget.value);
+              }}
             >
               {history.branches.map((item) => (
                 <option
