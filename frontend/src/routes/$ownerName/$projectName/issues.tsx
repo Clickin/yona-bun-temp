@@ -4,6 +4,7 @@ import {
   Fragment,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type FormEvent as ReactFormEvent,
@@ -2324,15 +2325,14 @@ function IssueSearchForm({
 }) {
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
+  const dueDateInputRef = useRef<HTMLInputElement>(null);
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
   const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
   const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const dueDateInput = event.currentTarget.querySelector<HTMLInputElement>(
-      "[data-toggle='calendar']",
-    );
+    const dueDateInput = dueDateInputRef.current;
     if (dueDateInput && !isValidIssueDueDate(dueDateInput.value)) {
       setInvalidDueDateNoticeKey((currentKey) => currentKey + 1);
       dueDateInput.focus();
@@ -2507,6 +2507,7 @@ function IssueSearchForm({
           <dt>{t("issue.dueDate")}</dt>
           <dd className="search search-bar">
             <input
+              ref={dueDateInputRef}
               id="issueDueDate"
               type="text"
               name="dueDate"

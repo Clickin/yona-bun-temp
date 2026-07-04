@@ -390,6 +390,15 @@ test("project issue list route source does not inject route-local bootstrap scri
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
 });
 
+test("project issue search due-date validation uses React-owned input access", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const dueDateInputRef = useRef<HTMLInputElement>");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("ref={dueDateInputRef}");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    "event.currentTarget.querySelector<HTMLInputElement>",
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("\"[data-toggle='calendar']\"");
+});
+
 test("project issue list route source types legacy attrs without unsafe casts", async () => {
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(ROUTE_CAST_ESCAPE);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("as unknown as");
