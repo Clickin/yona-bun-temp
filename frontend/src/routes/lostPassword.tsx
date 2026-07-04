@@ -46,7 +46,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     args: [siteName],
   });
   const isSent = requested !== "";
-  const errorMessage = error ? t(error) : submitError;
+  const errorMessage = error ? lostPasswordErrorMessage(error, t) : submitError;
   const shouldPrefillCurrentUser = sessionQuery.data?.isAnonymous === false;
   const currentUserLoginId =
     shouldPrefillCurrentUser && typeof sessionQuery.data?.loginId === "string"
@@ -64,7 +64,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     onError(errorValue) {
       setSubmitError(
         errorValue instanceof Error
-          ? errorValue.message
+          ? t(errorValue.message, { fallback: errorValue.message })
           : t("site.resetPasswordEmail.invalidRequest"),
       );
     },
@@ -164,6 +164,12 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       loginId: String(form.get("loginId") ?? ""),
     });
   }
+}
+
+function lostPasswordErrorMessage(error: string, t: ReturnType<typeof useLegacyMessages>["t"]) {
+  return t(error === "invalid" ? "site.resetPasswordEmail.invalidRequest" : error, {
+    fallback: error,
+  });
 }
 
 function setRequiredAttributeValue(element: HTMLInputElement | null) {

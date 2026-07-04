@@ -13,7 +13,7 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -32,9 +32,9 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -43,7 +43,7 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
@@ -263,6 +263,17 @@ test("lost-password invalid-request alert matches legacy site/lostPassword.scala
     headingFontSize: "15px",
     headingMargin: "0px",
   });
+});
+
+test("lost-password invalid error token renders legacy invalid-request copy", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword?error=invalid`);
+
+  const alert = page.locator(".login-form-wrap .alert.alert-error");
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText("Failed to send mail.");
+  await expect(alert).toContainText("Invalid password reset request");
+  await expect(alert).not.toContainText("invalid");
 });
 
 async function mockAuthenticatedSession(page: Page) {
