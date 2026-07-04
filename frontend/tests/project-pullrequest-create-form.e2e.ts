@@ -4,15 +4,6 @@ import { expect, test, type Page } from "@playwright/test";
 const EXPECTED_CREATE_FORM = `
 <div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20">We are checking if the code is safe. Please wait for a while to complete this process.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
-const LEGACY_MARKDOWN_HELP = readFileSync(
-  new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
-  "utf8",
-)
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
-  .replace(/<\/div>\s*$/u, "</div>");
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
   "utf8",
@@ -28,7 +19,7 @@ function withLegacyFileUploader(html: string) {
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -71,6 +62,7 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(previewTab).toHaveText("Preview");
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator(".markdown-help-wrap > .markdown-help-item")).toHaveCount(10);
+  await expect(page.locator(".markdown-help .label")).toHaveText("Markdown help");
   await expect(
     page.locator('[data-toggle="markdown-help"][data-target="markdownTables"]'),
   ).toHaveText("Table");
@@ -204,13 +196,26 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
 });
 
-test("pull request create uploader omits legacy local jQuery templates in source", () => {
+test("pull request create editor and uploader omit legacy local raw injection", () => {
+  const editorStart = ROUTE_SOURCE.indexOf("function PullRequestMarkdownEditor");
+  const editorEnd = ROUTE_SOURCE.indexOf("function PullRequestFileUploader", editorStart);
+  const editorSource = ROUTE_SOURCE.slice(editorStart, editorEnd);
   const uploaderStart = ROUTE_SOURCE.indexOf("function PullRequestFileUploader");
   const uploaderEnd = ROUTE_SOURCE.indexOf("function MergeResult", uploaderStart);
   const uploaderSource = ROUTE_SOURCE.slice(uploaderStart, uploaderEnd);
 
+  expect(editorStart).toBeGreaterThanOrEqual(0);
+  expect(editorEnd).toBeGreaterThan(editorStart);
   expect(uploaderStart).toBeGreaterThanOrEqual(0);
   expect(uploaderEnd).toBeGreaterThan(uploaderStart);
+  expect(ROUTE_SOURCE).toContain(
+    'import { LegacyMarkdownHelp } from "../../-legacy-markdown-help"',
+  );
+  expect(ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
+  expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
+  expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
+  expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(editorSource).toContain("<LegacyMarkdownHelp />");
   expect(uploaderSource).not.toContain("tplAttachedFile");
   expect(uploaderSource).not.toContain("tplDropFilesHere");
   expect(uploaderSource).not.toContain("text/x-jquery-tmpl");
@@ -222,9 +227,6 @@ test("pull request create uploader omits legacy local jQuery templates in source
   expect(uploaderSource).not.toContain("${fileHref}");
   expect(uploaderSource).not.toContain("${mimeType}");
   expect(uploaderSource).not.toContain("${fileSizeReadable}");
-  expect(uploaderSource).not.toContain("dangerouslySetInnerHTML");
-  expect(ROUTE_SOURCE).toContain("legacyMarkdownHelpHtml");
-  expect(ROUTE_SOURCE).toContain("dangerouslySetInnerHTML");
 });
 
 async function createFormMetrics(page: Page) {
@@ -445,6 +447,9 @@ async function canonicalize(page: Page, selector: string) {
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
+      if (node.classList.contains("markdown-help")) {
+        return `${open}</${node.tagName.toLowerCase()}>`;
+      }
       return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
     }
 
@@ -481,6 +486,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
+      if (node.classList.contains("markdown-help")) {
+        return `${open}</${node.tagName.toLowerCase()}>`;
+      }
       return `${open}${Array.from(node.childNodes).map(visit).join("")}</${node.tagName.toLowerCase()}>`;
     }
 

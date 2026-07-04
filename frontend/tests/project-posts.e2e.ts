@@ -475,6 +475,34 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
+  const editor = page.locator('[data-toggle="markdown-editor"]');
+  await expect(editor.locator(".tab-content > .markdown-help")).toHaveCount(1);
+  await expect(editor.locator(".markdown-help-nav .label")).toHaveText("Markdown help");
+  await expect(editor.locator(".markdown-help-nav > li")).toHaveCount(11);
+  await expect(editor.locator(".markdown-help-wrap > .markdown-help-item")).toHaveCount(10);
+  expect(
+    await editor.locator(".tab-content").evaluate((tabContent) =>
+      Array.from(tabContent.children)
+        .slice(0, 2)
+        .map((child) => ({
+          className: child.className,
+          id: child.id,
+          tagName: child.tagName.toLowerCase(),
+        })),
+    ),
+  ).toEqual([
+    {
+      className: "markdown-help",
+      id: "",
+      tagName: "div",
+    },
+    {
+      className: "tab-pane active",
+      id: "edit-body",
+      tagName: "div",
+    },
+  ]);
+
   const upload = page.locator("#upload[data-resource-type='BOARD_POST'][data-resource-id='33']");
   await expect(upload).toBeVisible();
   await expect(upload.locator(".attach-wrap")).toBeVisible();
@@ -550,6 +578,13 @@ test("project board post edit form uploader shell matches legacy fileUploader.sc
   expect(routeSource).not.toContain("tplAttachedFile");
   expect(routeSource).not.toContain("tplDropFilesHere");
   expect(routeSource).not.toContain("text/x-jquery-tmpl");
+  expect(routeSource).not.toContain("help/markdown.scala.html");
+  expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
+  expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(routeSource).toContain(
+    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
+  );
   expect(uploaderSource).not.toContain("dangerouslySetInnerHTML");
   expect(uploaderSource).not.toContain("<script");
   expect(uploaderSource).not.toContain("document.");
