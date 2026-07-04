@@ -21,7 +21,7 @@ const EXPECTED_PROJECT_WATCHERS = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a href="__BASE_PATH__/admin/sample/watchers" class="btn watcher-count no-border watch-on" title="number of watcher">2</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a href="__BASE_PATH__/user/editform/notifications#7" class="ybtn"><i class="yobicon-alert2"></i> Notification settings</a><button type="button" class="ybtn ybtn-watching watchBtn"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Unwatch</button></div></li></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><h4><strong>This projects watcher list.</strong></h4><p>* This list contains only those who can access this project.</p><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/bob" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Bob Smith</div><div class="member-id">@bob</div></li></ul></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
@@ -104,8 +104,10 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain("import { Link, createFileRoute }");
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
+  expect(source).toContain('to="/$ownerName/$projectName/watchers"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
+  expect(source).toContain("toggleProjectWatchRest");
   expect(source).not.toContain("legacyUserSearch");
   expect(source).not.toContain("daysAgo: undefined");
   expect(source).not.toContain("selected: undefined");
@@ -195,6 +197,47 @@ test("project watchers header favorite star has no route-local native listener",
   await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
+test("project watchers header renders legacy watch dropdown and toggles project watch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, { watchRequests, watchResponseCount: 1 });
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+  const watchButtonGroup = page.locator(".project-util .watch-btn");
+  await expect(watchButtonGroup.locator(".watcher-count")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/watchers`,
+  );
+  await expect(watchButtonGroup.locator(".watcher-count")).toHaveText("2");
+  await expect(watchButtonGroup.locator(".watcher-count")).toHaveClass(/watch-on/);
+  await expect(watchButtonGroup.locator(".down-arrow")).toHaveText("Unwatch");
+
+  await watchButtonGroup.locator(".down-arrow").click();
+  await expect(watchButtonGroup).toHaveClass(/open/);
+  await expect(watchButtonGroup.locator(".pop-title")).toHaveText(
+    "You are watching the sample project.",
+  );
+  await expect(watchButtonGroup.locator(".pop-content.btn-wrap a.ybtn")).toHaveAttribute(
+    "href",
+    `${basePath}/user/editform/notifications#7`,
+  );
+
+  const watchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/watch") &&
+      response.request().method() === "DELETE",
+  );
+  await watchButtonGroup.locator(".watchBtn").click();
+  await watchResponsePromise;
+
+  expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(watchButtonGroup.locator(".watcher-count")).toHaveText("1");
+  await expect(watchButtonGroup.locator(".watcher-count")).not.toHaveClass(/watch-on/);
+  await expect(watchButtonGroup.locator(".down-arrow")).toHaveText("Watch");
+});
+
 async function readDesktopWatchersMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = requireElement(".page-wrap-outer");
@@ -251,6 +294,8 @@ async function mockProjectAdmin(
   options: {
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
+    watchRequests?: { hasCsrfToken: boolean; method: string }[];
+    watchResponseCount?: number;
     project?: Partial<ReturnType<typeof projectContainer>>;
   } = {},
 ) {
@@ -325,6 +370,20 @@ async function mockProjectAdmin(
       body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
+  await page.route("**/api/v1/owners/admin/projects/sample/watch", async (route) => {
+    const request = route.request();
+    options.watchRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-watchers",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        isWatching: request.method() === "POST",
+        watchingCount: options.watchResponseCount ?? (request.method() === "POST" ? 3 : 1),
+      }),
+    });
+  });
 }
 
 async function installFavoriteSpanNativeListenerAudit(page: Page) {
@@ -364,6 +423,7 @@ function projectContainer() {
     isFavorite: false,
     isFavorited: false,
     isForkedFromOrigin: false,
+    isWatching: true,
     isPrivate: false,
     isProtected: false,
     logoUrl: "/assets/images/project_default_logo.png",
@@ -378,7 +438,9 @@ function projectContainer() {
     ownerName: "admin",
     projectName: "sample",
     vcs: "GIT",
+    viewerCanWatch: true,
     viewerCanUpdate: true,
+    watchingCount: 2,
   };
 }
 

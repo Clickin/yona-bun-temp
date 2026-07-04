@@ -4,6 +4,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   readProjectContainerQueryOptions,
   readProjectWatchersQueryOptions,
+  toggleProjectWatchRest,
   toggleFavoriteProjectRest,
 } from "../../../api/org-project";
 import type { ProjectWatchersResponse } from "../../../api/org-project";
@@ -123,6 +124,9 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   const [isFavoritedProject, setIsFavoritedProject] = useState(
     () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
   );
+  const [isWatchingProject, setIsWatchingProject] = useState(() => projectIsWatching(project));
+  const [watchingCount, setWatchingCount] = useState(() => projectWatchingCount(project));
+  const [watchDropdownOpen, setWatchDropdownOpen] = useState(false);
   const favoriteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -132,6 +136,19 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
       setIsFavoritedProject((current) =>
         typeof response.favorited === "boolean" ? response.favorited : !current,
       );
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.container(ownerName, projectName),
+      });
+    },
+  });
+  const watchMutation = useMutation({
+    mutationFn: async (nextWatching: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return toggleProjectWatchRest(runtimeConfig, csrfToken, ownerName, projectName, nextWatching);
+    },
+    onSuccess(response, nextWatching) {
+      setIsWatchingProject(nextWatching);
+      setWatchingCount((current) => projectWatchingCountValue(response) ?? current);
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.container(ownerName, projectName),
       });
@@ -251,7 +268,110 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
             ) : null}
           </div>
           <div className="project-util-wrap">
-            <ul className="project-util"></ul>
+            <ul className="project-util">
+              {projectCanWatch(project) ? (
+                <li className={watchDropdownOpen ? "open" : undefined}>
+                  <div
+                    className={`btn-group dropdown watch-btn${watchDropdownOpen ? " open" : ""}`}
+                  >
+                    <Link
+                      to="/$ownerName/$projectName/watchers"
+                      params={{ ownerName, projectName }}
+                      search={{ watchersLinkActive: undefined }}
+                      className={`btn watcher-count no-border ${isWatchingProject ? "watch-on" : ""}`}
+                      title={t("project.watcher.number")}
+                      activeOptions={{
+                        exact: true,
+                        explicitUndefined: true,
+                        includeHash: true,
+                        includeSearch: true,
+                      }}
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: undefined,
+                        "data-status": undefined,
+                      }}
+                    >
+                      {watchingCount}
+                    </Link>
+                    <div className="dropdown-menu flat right title">
+                      <div className="pop-title">
+                        {t(
+                          isWatchingProject
+                            ? "project.you.are.watching"
+                            : "project.you.are.not.watching",
+                          { args: [projectName] },
+                        )}
+                      </div>
+                      <div className="pop-content">
+                        <p>{t("notification.help")}</p>
+                        <ul className="icons-ul">
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.new")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.new.comment")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.update.issue")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.update.pullrequest")}
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="pop-content btn-wrap">
+                        <Link
+                          to="/user/editform/notifications"
+                          hash={projectId}
+                          className="ybtn"
+                          activeOptions={{
+                            exact: true,
+                            explicitUndefined: true,
+                            includeHash: true,
+                            includeSearch: true,
+                          }}
+                          activeProps={{
+                            "aria-current": undefined,
+                            className: undefined,
+                            "data-status": undefined,
+                          }}
+                        >
+                          <i className="yobicon-alert2"></i> {t("userinfo.changeNotifications")}
+                        </Link>
+                        <button
+                          type="button"
+                          className="ybtn ybtn-watching watchBtn"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setWatchDropdownOpen(false);
+                            watchMutation.mutate(!isWatchingProject);
+                          }}
+                        >
+                          <i className={isWatchingProject ? "yobicon-eye-off" : "yobicon-eye"}></i>{" "}
+                          {t(isWatchingProject ? "project.unwatch" : "project.watch")}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      className="btn nofocus no-border down-arrow"
+                      type="button"
+                      data-toggle="dropdown"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setWatchDropdownOpen((open) => !open);
+                      }}
+                    >
+                      {t(isWatchingProject ? "project.unwatch" : "project.watch")}
+                    </button>
+                  </div>
+                </li>
+              ) : null}
+            </ul>
           </div>
         </div>
       </div>
@@ -433,4 +553,34 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectCanWatch(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.viewerCanWatch) || booleanField(record.canWatch);
+}
+
+function projectIsWatching(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isWatching) || booleanField(record.viewerIsWatching);
+}
+
+function projectWatchingCount(project: ProjectContainer) {
+  return projectWatchingCountValue(project) ?? 0;
+}
+
+function projectWatchingCountValue(project: ProjectContainer) {
+  const record = recordField(project);
+  for (const value of [record.watchingCount, record.watchCount, record.watcherCount]) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
 }
