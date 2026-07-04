@@ -32,6 +32,8 @@ test("project pull request create form matches legacy git/create.scala.html core
 
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
   expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
+  expect(ROUTE_SOURCE).not.toContain("window.history.back()");
+  expect(ROUTE_SOURCE).toContain("router.history.back()");
 
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
