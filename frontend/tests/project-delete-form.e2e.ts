@@ -184,9 +184,10 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
 });
 
 test("project delete form route has no TanStack route-cast escapes", async () => {
-  await expect(
-    readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8"),
-  ).resolves.not.toContain("as never");
+  const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
+  expect(source).not.toContain("as never");
+  expect(source).not.toContain("onMouseDown=");
+  expect(source).toContain("onClick=");
 });
 
 test("project delete confirmation modal opens, closes, deletes, and redirects through SPA", async ({
@@ -392,7 +393,7 @@ test("project delete header favorite star posts and toggles starred class", asyn
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -425,7 +426,7 @@ test("project delete header favorite star removes starred class when unfavorited
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);

@@ -183,6 +183,7 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ProjectSettingLink");
   expect(source).not.toContain("as never");
+  expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("search={undefined");
   expect(source).not.toContain("<a href={prefixBasePath");
   expect(source).not.toContain("<a href={projectHref");
@@ -349,7 +350,7 @@ test("project transfer header favorite star posts and toggles starred class", as
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -382,7 +383,7 @@ test("project transfer header favorite star removes starred class when unfavorit
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);

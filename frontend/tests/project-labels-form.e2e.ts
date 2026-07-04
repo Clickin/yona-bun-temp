@@ -132,6 +132,7 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
   expect(routeSource).not.toContain("__legacyInactive");
   expect(routeSource).not.toContain("LEGACY_INACTIVE_SEARCH");
   expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("onMouseDown=");
   expect(routeSource).not.toContain('createElement("a"');
   expect(routeSource).not.toMatch(/\bfunction\s+LegacyLink\b/);
   expect(routeSource).not.toMatch(/\bconst\s+LegacyLink\b/);
@@ -287,7 +288,7 @@ test("project labels header favorite star posts and toggles starred class", asyn
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -319,7 +320,7 @@ test("project labels header favorite star removes starred class when unfavorited
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);

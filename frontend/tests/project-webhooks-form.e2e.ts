@@ -44,6 +44,7 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
 
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain(" as never");
+  expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("<a ");
   expect(source).toContain('<LegacyWebhookHelp help={t("project.webhook.help")} />');
   expect(source).toContain("help.split(/\\s*<br\\s*\\/?>/iu)");
@@ -290,7 +291,7 @@ test("project webhooks header favorite star posts and toggles starred class", as
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
@@ -323,7 +324,7 @@ test("project webhooks header favorite star removes starred class when unfavorit
       response.url().includes("/api/v1/owners/admin/projects/sample/favorite") &&
       response.request().method() === "POST",
   );
-  await favoriteToggle.dispatchEvent("mousedown");
+  await favoriteToggle.click();
   await favoriteResponsePromise;
 
   expect(favoriteRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
