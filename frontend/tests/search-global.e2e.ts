@@ -394,21 +394,23 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   );
   const resultListSource = routeSource.slice(
     routeSource.indexOf("function SearchResultList"),
-    routeSource.indexOf("function InternalResultLink"),
-  );
-  const routeBodySource = routeSource.slice(0, routeSource.indexOf("function HighlightedText"));
-  const internalLinkSource = routeSource.slice(
-    routeSource.indexOf("function InternalResultLink"),
     routeSource.indexOf("function internalLinkTarget"),
   );
+  const routeBodySource = routeSource.slice(0, routeSource.indexOf("function HighlightedText"));
   expect(routeBodySource).not.toMatch(/<a[\s>]/u);
   expect(routeBodySource).not.toContain('href="#"');
   expect(routeBodySource).not.toContain("<Link href");
+  expect(routeBodySource).not.toContain('data-toggle="search-category"');
+  expect(routeBodySource).not.toContain("data-type={menu.type}");
   expect(resultListSource).not.toMatch(/<a[\s>]/u);
   expect(resultListSource).not.toContain("</a>");
-  expect(resultListSource).toContain("<InternalResultLink");
+  expect(resultListSource).not.toContain("InternalResultLink");
+  expect(resultListSource).not.toContain('data-toggle="tooltip"');
+  expect(resultListSource).not.toContain('data-placement="top"');
+  expect(resultListSource).toContain("<Link");
+  expect(resultListSource).toContain("to={itemLink.to}");
+  expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
   expect(routeBodySource).toContain('<button\n                          type="button"');
-  expect(internalLinkSource).toContain("<Link");
 });
 
 test("global search category button uses React SPA navigation", async ({ page }) => {
@@ -420,8 +422,8 @@ test("global search category button uses React SPA navigation", async ({ page })
   await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
   const issueCategory = page.locator(".search-category-wrap button").filter({ hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute("type", "button");
-  await expect(issueCategory).toHaveAttribute("data-toggle", "search-category");
-  await expect(issueCategory).toHaveAttribute("data-type", "issue");
+  await expect(issueCategory).not.toHaveAttribute("data-toggle");
+  await expect(issueCategory).not.toHaveAttribute("data-type");
   await page.locator("#searchKeyword").fill("fresh");
 
   await page.evaluate(() => {
@@ -1508,6 +1510,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
+            !isModernizedSearchResultTooltipAttribute(attr) &&
             !isModernizedLegacySearchCategoryButtonType(attr) &&
             !isModernizedLegacyTabButtonType(attr) &&
             attr.name !== "data-login" &&
@@ -1563,6 +1566,16 @@ async function canonicalizeScreenRoots(page: Page) {
         (attr.name === "data-toggle" || attr.name === "data-type") &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedSearchResultTooltipAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-placement") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-result-wrap") !== null &&
+        (attr.ownerElement.classList.contains("avatar-wrap") ||
+          attr.ownerElement.classList.contains("meta-item"))
       );
     }
 
@@ -1654,6 +1667,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedTanStackRouterAttr(attr) &&
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
+            !isModernizedSearchResultTooltipAttribute(attr) &&
             !isModernizedLegacySearchCategoryButtonType(attr) &&
             !isModernizedLegacyTabButtonType(attr) &&
             attr.name !== "data-login" &&
@@ -1709,6 +1723,16 @@ async function canonicalizeHtml(page: Page, html: string) {
         (attr.name === "data-toggle" || attr.name === "data-type") &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
         attr.ownerElement.closest(".search-category-wrap") !== null
+      );
+    }
+
+    function isModernizedSearchResultTooltipAttribute(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" || attr.name === "data-placement") &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.closest(".search-result-wrap") !== null &&
+        (attr.ownerElement.classList.contains("avatar-wrap") ||
+          attr.ownerElement.classList.contains("meta-item"))
       );
     }
 

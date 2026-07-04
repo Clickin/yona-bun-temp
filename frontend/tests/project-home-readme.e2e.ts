@@ -463,24 +463,21 @@ test("project home header unwatch action deletes and renders not-watching branch
   );
 });
 
-test("project home route owns project-util dropdown state without route-local DOM mutation", async () => {
+test("project home route owns project-util dropdown state and explicit Link semantics", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
 
   expect(source).not.toMatch(/<a\b/u);
   expect(source).not.toMatch(/<\/a>/u);
-  expect(source).toContain("function LegacyLink");
-  expect(source).toContain("function RoutedLegacyLink");
-  expect(source).toContain("function isRoutedHref");
-  expect(source).toContain('return href.startsWith("/");');
+  expect(source).not.toContain("LegacyLink");
+  expect(source).not.toContain("RoutedLegacyLink");
+  expect(source).not.toContain("useLinkProps");
+  expect(source).not.toContain("function isRoutedHref");
   expect(source).not.toContain("createElement");
-  expect(source).toContain('const Anchor = "a";');
-  expect(source).toContain("return <Anchor {...props} href={href} />;");
-  expect(source).toContain("const linkProps = useLinkProps({");
-  expect(source).toContain("activeProps: {},");
-  expect(source).toContain("to: toRoutePath(runtimeConfig.basePath, href) as never");
-  expect(source).toContain('"aria-current": _ariaCurrent');
-  expect(source).toContain('"data-status": _dataStatus');
-  expect(source).toContain("return <Anchor {...legacyAnchorProps}>{children}</Anchor>;");
+  expect(source).toContain("createFileRoute, Link, Outlet");
+  expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
+  expect(source).toContain('<Link href={actorUrl} className="actor">');
+  expect(source).toContain('<Link href={itemUrl} className="where">');
+  expect(source).toContain("function toRoutePath(basePath: string, href: string)");
   expect(source).not.toContain("function toggleProjectUtilDropdown(toggle: HTMLElement)");
   expect(source).not.toContain("function closeProjectUtilDropdown");
   expect(source).not.toContain('querySelectorAll(".project-util li.open")');
@@ -787,10 +784,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
     }
 
     function normalizeSerializedAttr(node: Element, attr: Attr) {
-      if (
-        node.matches("#mySidenav .user-menu > a") &&
-        (attr.name === "aria-current" || attr.name === "data-status")
-      ) {
+      if (attr.name === "aria-current" || attr.name === "data-status") {
         return "";
       }
       if (node.matches("#mySidenav .user-menu > a") && attr.name === "class") {
@@ -846,10 +840,7 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeSerializedAttr(node: Element, attr: Attr) {
-      if (
-        node.matches("#mySidenav .user-menu > a") &&
-        (attr.name === "aria-current" || attr.name === "data-status")
-      ) {
+      if (attr.name === "aria-current" || attr.name === "data-status") {
         return "";
       }
       if (node.matches("#mySidenav .user-menu > a") && attr.name === "class") {

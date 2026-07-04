@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useRouter } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { apiQueryKeys } from "../api/query-keys";
@@ -149,8 +149,6 @@ export function LegacySearchBody({
                       >
                         <button
                           type="button"
-                          data-toggle="search-category"
-                          data-type={menu.type}
                           onClick={() => {
                             navigationMutation.mutate({
                               keyword: keywordValue,
@@ -229,67 +227,79 @@ function SearchResultList({
   if (result.searchType === "project") {
     return (
       <ul className="search-list-wrap">
-        {result.items.map((item) => (
-          <li className="search-list-item project" key={item.id}>
-            <InternalResultLink
-              href={item.href}
-              runtimeConfig={runtimeConfig}
-              className="avatar-wrap"
-            >
-              <LegacyProjectLogoImage
-                src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
-              />
-            </InternalResultLink>
-            <div className="title-wrap">
-              <InternalResultLink
-                href={item.href}
-                runtimeConfig={runtimeConfig}
-                className="title project-link"
+        {result.items.map((item) => {
+          const projectLink = internalLinkTarget(item.href, runtimeConfig);
+          const originProjectLink =
+            item.originOwnerName && item.originProjectName
+              ? internalLinkTarget(
+                  prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/${item.originOwnerName}/${item.originProjectName}`,
+                  ),
+                  runtimeConfig,
+                )
+              : null;
+
+          return (
+            <li className="search-list-item project" key={item.id}>
+              <Link
+                to={projectLink.to}
+                hash={projectLink.hash || undefined}
+                className="avatar-wrap"
               >
-                <HighlightedText
-                  text={`${item.ownerName}/${item.projectName}`}
-                  keyword={result.keyword}
+                <LegacyProjectLogoImage
+                  src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
                 />
-              </InternalResultLink>
-            </div>
-            {item.originOwnerName && item.originProjectName ? (
-              <div className="search-meta-info nm np">
-                <span>
-                  <i className="yobicon-split yobicon-white vmiddle"></i>
-                  {t("fork.original")}
-                </span>
-                <span>
-                  <InternalResultLink
-                    href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${item.originOwnerName}/${item.originProjectName}`,
-                    )}
-                    runtimeConfig={runtimeConfig}
-                    className="project-link"
-                  >
-                    {item.originOwnerName}/{item.originProjectName}
-                  </InternalResultLink>
-                </span>
+              </Link>
+              <div className="title-wrap">
+                <Link
+                  to={projectLink.to}
+                  hash={projectLink.hash || undefined}
+                  className="title project-link"
+                >
+                  <HighlightedText
+                    text={`${item.ownerName}/${item.projectName}`}
+                    keyword={result.keyword}
+                  />
+                </Link>
               </div>
-            ) : null}
-            <div className="search-content np">
-              <p className="search-content-body">
-                <HighlightedText text={item.snippets[0]?.text ?? ""} keyword={result.keyword} />
-              </p>
-            </div>
-            <div className="search-meta-info np">
-              <span className="meta-info">
-                {t("project.create")} <strong title={item.createdLabel}>{item.createdLabel}</strong>
-              </span>
-              {item.updatedLabel ? (
-                <span className="meta-info">
-                  {t("project.codeUpdate")}{" "}
-                  <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
-                </span>
+              {originProjectLink ? (
+                <div className="search-meta-info nm np">
+                  <span>
+                    <i className="yobicon-split yobicon-white vmiddle"></i>
+                    {t("fork.original")}
+                  </span>
+                  <span>
+                    <Link
+                      to={originProjectLink.to}
+                      hash={originProjectLink.hash || undefined}
+                      className="project-link"
+                    >
+                      {item.originOwnerName}/{item.originProjectName}
+                    </Link>
+                  </span>
+                </div>
               ) : null}
-            </div>
-          </li>
-        ))}
+              <div className="search-content np">
+                <p className="search-content-body">
+                  <HighlightedText text={item.snippets[0]?.text ?? ""} keyword={result.keyword} />
+                </p>
+              </div>
+              <div className="search-meta-info np">
+                <span className="meta-info">
+                  {t("project.create")}{" "}
+                  <strong title={item.createdLabel}>{item.createdLabel}</strong>
+                </span>
+                {item.updatedLabel ? (
+                  <span className="meta-info">
+                    {t("project.codeUpdate")}{" "}
+                    <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
+                  </span>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     );
   }
@@ -298,35 +308,37 @@ function SearchResultList({
     return (
       <>
         <ul className="search-list-wrap">
-          {result.items.map((item) => (
-            <li className="search-list-item project" key={item.id}>
-              <InternalResultLink
-                href={item.href}
-                runtimeConfig={runtimeConfig}
-                className="avatar-wrap"
-                data-toggle="tooltip"
-                data-placement="top"
-                title={item.authorLoginId}
-              >
-                <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
-              </InternalResultLink>
-              <div className="title-wrap">
-                <InternalResultLink
-                  href={item.href}
-                  runtimeConfig={runtimeConfig}
-                  className="title user-link"
+          {result.items.map((item) => {
+            const userLink = internalLinkTarget(item.href, runtimeConfig);
+
+            return (
+              <li className="search-list-item project" key={item.id}>
+                <RouterLink
+                  to={userLink.to}
+                  hash={userLink.hash || undefined}
+                  className="avatar-wrap"
+                  title={item.authorLoginId}
                 >
-                  <HighlightedText
-                    text={`${item.authorLabel} (@${item.authorLoginId})`}
-                    keyword={result.keyword}
-                  />
-                </InternalResultLink>
-              </div>
-              <div className="infos nm">
-                <span className="infos-item">{`${t("userinfo.since")} ${item.createdLabel}`}</span>
-              </div>
-            </li>
-          ))}
+                  <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+                </RouterLink>
+                <div className="title-wrap">
+                  <Link
+                    to={userLink.to}
+                    hash={userLink.hash || undefined}
+                    className="title user-link"
+                  >
+                    <HighlightedText
+                      text={`${item.authorLabel} (@${item.authorLoginId})`}
+                      keyword={result.keyword}
+                    />
+                  </Link>
+                </div>
+                <div className="infos nm">
+                  <span className="infos-item">{`${t("userinfo.since")} ${item.createdLabel}`}</span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
         <div id="pagination"></div>
       </>
@@ -350,6 +362,15 @@ function SearchResultList({
       <>
         <ul className="search-list-wrap">
           {result.items.map((item) => {
+            const itemLink = internalLinkTarget(item.href, runtimeConfig);
+            const projectLink = internalLinkTarget(
+              prefixBasePath(runtimeConfig.basePath, `/${item.ownerName}/${item.projectName}`),
+              runtimeConfig,
+            );
+            const authorLink = internalLinkTarget(
+              prefixBasePath(runtimeConfig.basePath, `/${item.authorLoginId}`),
+              runtimeConfig,
+            );
             const reviewThreadOnPullRequest =
               result.searchType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
@@ -366,9 +387,9 @@ function SearchResultList({
                 {reviewThreadOnPullRequest ? (
                   <div className="title-wrap">
                     <span className="post-id">#{item.number}</span>
-                    <InternalResultLink
-                      href={item.href}
-                      runtimeConfig={runtimeConfig}
+                    <Link
+                      to={itemLink.to}
+                      hash={itemLink.hash || undefined}
                       className={titleClassName}
                     >
                       {titleClassName ? (
@@ -376,42 +397,37 @@ function SearchResultList({
                       ) : (
                         item.title
                       )}
-                    </InternalResultLink>
+                    </Link>
                   </div>
                 ) : null}
                 <div className="search-content">
                   {reviewThreadOnPullRequest ? (
                     snippets
                   ) : (
-                    <InternalResultLink href={item.href} runtimeConfig={runtimeConfig}>
+                    <Link to={itemLink.to} hash={itemLink.hash || undefined}>
                       {snippets}
-                    </InternalResultLink>
+                    </Link>
                   )}
                 </div>
                 <div className="search-meta-info">
                   {result.scope !== "project" ? (
-                    <InternalResultLink
-                      href={prefixBasePath(
-                        runtimeConfig.basePath,
-                        `/${item.ownerName}/${item.projectName}`,
-                      )}
-                      runtimeConfig={runtimeConfig}
+                    <Link
+                      to={projectLink.to}
+                      hash={projectLink.hash || undefined}
                       className="project-link meta-item"
                     >
                       {item.ownerName}/{item.projectName}
-                    </InternalResultLink>
+                    </Link>
                   ) : null}
                   {item.authorLabel ? (
-                    <InternalResultLink
-                      href={prefixBasePath(runtimeConfig.basePath, `/${item.authorLoginId}`)}
-                      runtimeConfig={runtimeConfig}
+                    <RouterLink
+                      to={authorLink.to}
+                      hash={authorLink.hash || undefined}
                       className="meta-item"
-                      data-toggle="tooltip"
-                      data-placement="top"
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
-                    </InternalResultLink>
+                    </RouterLink>
                   ) : (
                     <span className="meta-item">{t(noAuthorMessageKey(result.searchType))}</span>
                   )}
@@ -432,50 +448,51 @@ function SearchResultList({
     return (
       <>
         <ul className="search-list-wrap">
-          {result.items.map((item) => (
-            <li className="search-list-item" key={item.id}>
-              <div className="title-wrap">
-                <InternalResultLink
-                  href={item.href}
-                  runtimeConfig={runtimeConfig}
-                  className="title"
-                >
-                  <HighlightedText text={item.title} keyword={result.keyword} />
-                </InternalResultLink>
-              </div>
-              <div className="search-content">
-                {item.snippets.map((snippet) => (
-                  <p
-                    className="search-content-body"
-                    key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
-                  >
-                    <HighlightedText text={snippet.text} keyword={result.keyword} />
-                    {snippet.truncated ? " ..... " : null}
-                  </p>
-                ))}
-              </div>
-              <div className="search-meta-info">
-                {result.scope !== "project" ? (
-                  <InternalResultLink
-                    href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${item.ownerName}/${item.projectName}`,
-                    )}
-                    runtimeConfig={runtimeConfig}
-                    className="project-link meta-item"
-                  >
-                    {item.ownerName}/{item.projectName}
-                  </InternalResultLink>
-                ) : null}
-                {item.updatedLabel ? (
-                  <span className="due-date meta-item">
-                    {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
-                    {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
-                  </span>
-                ) : null}
-              </div>
-            </li>
-          ))}
+          {result.items.map((item) => {
+            const itemLink = internalLinkTarget(item.href, runtimeConfig);
+            const projectLink = internalLinkTarget(
+              prefixBasePath(runtimeConfig.basePath, `/${item.ownerName}/${item.projectName}`),
+              runtimeConfig,
+            );
+
+            return (
+              <li className="search-list-item" key={item.id}>
+                <div className="title-wrap">
+                  <Link to={itemLink.to} hash={itemLink.hash || undefined} className="title">
+                    <HighlightedText text={item.title} keyword={result.keyword} />
+                  </Link>
+                </div>
+                <div className="search-content">
+                  {item.snippets.map((snippet) => (
+                    <p
+                      className="search-content-body"
+                      key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
+                    >
+                      <HighlightedText text={snippet.text} keyword={result.keyword} />
+                      {snippet.truncated ? " ..... " : null}
+                    </p>
+                  ))}
+                </div>
+                <div className="search-meta-info">
+                  {result.scope !== "project" ? (
+                    <Link
+                      to={projectLink.to}
+                      hash={projectLink.hash || undefined}
+                      className="project-link meta-item"
+                    >
+                      {item.ownerName}/{item.projectName}
+                    </Link>
+                  ) : null}
+                  {item.updatedLabel ? (
+                    <span className="due-date meta-item">
+                      {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
+                      {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
+                    </span>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
         <div id="pagination"></div>
       </>
@@ -483,19 +500,6 @@ function SearchResultList({
   }
 
   return <div className="empty-result"></div>;
-}
-
-function InternalResultLink({
-  href,
-  runtimeConfig,
-  ...props
-}: Omit<ComponentProps<typeof Link>, "to" | "href"> & {
-  href: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const target = internalLinkTarget(href, runtimeConfig);
-
-  return <Link {...props} to={target.to} hash={target.hash || undefined} />;
 }
 
 function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {
