@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
-import legacyMarkdownHelpTemplate from "../../../../../../../yona-original/app/views/help/markdown.scala.html?raw";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectMilestone } from "../../../../../api/types";
 import {
@@ -13,14 +12,8 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
+import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
-
-const legacyMarkdownHelpHtml = legacyMarkdownHelpTemplate
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, "")
-  .replace(/<\/div>\s*$/u, "");
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId/editform")({
   component: ProjectMilestoneEditFormRoute,
@@ -300,10 +293,7 @@ function MilestoneMarkdownEditor({ contents }: { contents: string }) {
         </li>
       </ul>
       <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
-        <div
-          className="markdown-help"
-          dangerouslySetInnerHTML={{ __html: legacyMarkdownHelpHtml }}
-        />
+        <LegacyMarkdownHelp />
         <div
           id="edit-content-body"
           className={activeTab === "edit" ? "tab-pane active" : "tab-pane"}

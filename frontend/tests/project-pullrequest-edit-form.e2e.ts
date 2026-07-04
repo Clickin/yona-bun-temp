@@ -73,6 +73,7 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(previewTab).toHaveText("Preview");
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator(".markdown-help-wrap > .markdown-help-item")).toHaveCount(10);
+  expectPullRequestEditorUsesSharedMarkdownHelp();
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-id", "90");
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-type", "PULL_REQUEST");
   await expect(page.locator("#upload .attach-wrap")).toHaveCount(1);
@@ -275,6 +276,24 @@ function expectPullRequestUploaderHasNoLegacyLocalTemplates() {
   expect(uploaderSource).not.toContain("${fileHref}");
   expect(uploaderSource).not.toContain("upload-drop-here");
   expect(uploaderSource).not.toContain("Click to post");
+}
+
+function expectPullRequestEditorUsesSharedMarkdownHelp() {
+  const editorSource = ROUTE_SOURCE.match(
+    /function PullRequestMarkdownEditor[\s\S]*?\n\}\n\nfunction PullRequestFileUploader/u,
+  )?.[0];
+  if (!editorSource) {
+    throw new Error("PullRequestMarkdownEditor source was not found");
+  }
+  expect(ROUTE_SOURCE).toContain(
+    'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";',
+  );
+  expect(editorSource).toContain("<LegacyMarkdownHelp />");
+  expect(ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
+  expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpTemplate");
+  expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
+  expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(ROUTE_SOURCE).not.toContain('replace(/@Messages("title.markdown.help")');
 }
 
 async function mockProjectPullRequestEditForm(page: Page, patchRequests: unknown[]) {
