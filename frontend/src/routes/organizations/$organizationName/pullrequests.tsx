@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import type { HTMLAttributes, LiHTMLAttributes, MouseEvent as ReactMouseEvent } from "react";
+import type { HTMLAttributes, MouseEvent as ReactMouseEvent } from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
@@ -13,6 +13,16 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+declare module "react" {
+  interface HTMLAttributes<T> {
+    "pjax-container"?: string;
+  }
+
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
 
 export type OrganizationPullRequestsSearch = {
   filter: string;
@@ -108,7 +118,7 @@ function OrganizationPullRequestsBody({
   const organizationName = stringField(organization.organizationName, "");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
-  const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
+  const pjaxContainer = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement>;
   const openAction = prefixBasePath(
     runtimeConfig.basePath,
     `/organizations/${organizationName}/pullrequests`,
@@ -253,15 +263,13 @@ function OrganizationPullRequestItem({
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const legacyHref = {
-    href: prefixBasePath(
-      basePath,
-      `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`,
-    ),
-  } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const legacyHref = prefixBasePath(
+    basePath,
+    `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`,
+  );
 
   return (
-    <li className="post-item title" {...legacyHref}>
+    <li className="post-item title" href={legacyHref}>
       <div className="span10 span-hard-wrap">
         <Link
           params={{ user: pullRequest.contributorLoginId }}
@@ -408,44 +416,36 @@ function OrganizationMenu({
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: {},
-                to: `/organizations/${organizationName}`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              search={{}}
+              to={`/organizations/${organizationName}`}
             >
               {t("title.organizationHome")}
             </Link>
           </li>
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: () => undefined,
-                to: `/organizations/${organizationName}/issues`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              search={() => undefined}
+              to={`/organizations/${organizationName}/issues`}
             >
               {t("menu.issue")}
             </Link>
           </li>
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: () => undefined,
-                to: `/organizations/${organizationName}/boards`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              search={() => undefined}
+              to={`/organizations/${organizationName}/boards`}
             >
               {t("menu.board")}
             </Link>
           </li>
           <li className={active === "pullrequests" ? "active" : ""}>
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: () => undefined,
-                to: `/organizations/${organizationName}/pullrequests`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              search={() => undefined}
+              to={`/organizations/${organizationName}/pullrequests`}
             >
               {t("menu.pullRequest")}
             </Link>
@@ -456,16 +456,14 @@ function OrganizationMenu({
             {viewerCanUpdate ? (
               <li className="">
                 <Link
-                  {...({
-                    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                    activeProps: {
-                      "aria-current": undefined,
-                      className: undefined,
-                      "data-status": undefined,
-                    },
-                    search: () => undefined,
-                    to: `/organizations/${organizationName}/settingform`,
-                  } as unknown as Parameters<typeof Link>[0])}
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  search={() => undefined}
+                  to={`/organizations/${organizationName}/settingform`}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>

@@ -20,8 +20,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/branches")({
   component: ProjectBranchesRoute,
 });
 
-const legacyCommitSearch = { page: undefined } as unknown as { page: number };
-
 function ProjectBranchesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -105,7 +103,7 @@ function ProjectBranchesBody({
                 <Link
                   to="/$ownerName/$projectName/commits/$branch"
                   params={{ branch: defaultBranch, ownerName, projectName }}
-                  search={legacyCommitSearch}
+                  search={{}}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,
@@ -246,7 +244,7 @@ function BranchRow({
         <Link
           to="/$ownerName/$projectName/commits/$branch"
           params={{ branch: branch.name, ownerName, projectName }}
-          search={legacyCommitSearch}
+          search={{}}
           activeOptions={{
             exact: true,
             explicitUndefined: true,

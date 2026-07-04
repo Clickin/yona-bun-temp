@@ -16,7 +16,7 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -340,8 +340,10 @@ test("organization delete breadcrumb source uses direct Link", () => {
   expect(source).not.toContain("function organizationHref");
   expect(source).not.toContain("organizationHref(");
   expect(source).not.toContain("<a href={organizationHref");
+  expect(source).not.toContain("Parameters<typeof Link>");
+  expect(source).not.toContain("as unknown as");
   expect(source).toMatch(
-    /<span className="project-author">[\s\S]*?<Link[\s\S]*?to: `\/organizations\/\$\{organizationName\}`/,
+    /<span className="project-author">[\s\S]*?<Link[\s\S]*?to="\/organizations\/\$organizationName"/,
   );
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');

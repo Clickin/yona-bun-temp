@@ -19,11 +19,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/watchers")({
   component: ProjectWatchersRoute,
 });
 
-const legacyUserSearch = { daysAgo: undefined, selected: undefined } as unknown as {
-  daysAgo: number;
-  selected: "issues" | "projects" | "pullRequests";
-};
-
 function ProjectWatchersRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -81,7 +76,6 @@ function ProjectWatchersBody({ watchers }: { watchers: ProjectWatchersResponse }
                 <Link
                   to="/$user"
                   params={{ user: loginId }}
-                  search={legacyUserSearch}
                   className="avatar-wrap mlarge pull-left mr10"
                   activeOptions={{
                     exact: true,
@@ -160,7 +154,6 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                 <Link
                   to="/$user"
                   params={{ user: ownerName }}
-                  search={legacyUserSearch}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,

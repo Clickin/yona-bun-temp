@@ -82,16 +82,15 @@ function OrganizationDeleteFormBody({
                 <span className="project-author">
                   <span className="group-title-head">group</span>
                   <Link
-                    {...({
-                      activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                      activeProps: {
-                        "aria-current": undefined,
-                        className: undefined,
-                        "data-status": undefined,
-                      },
-                      search: {},
-                      to: `/organizations/${organizationName}`,
-                    } as unknown as Parameters<typeof Link>[0])}
+                    activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
+                    params={{ organizationName }}
+                    search={{}}
+                    to="/organizations/$organizationName"
                   >
                     {organizationName}
                   </Link>
@@ -179,44 +178,40 @@ function OrganizationMenu({
         <ul className="project-menu-nav project-menu-gruop">
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: {},
-                to: `/organizations/${organizationName}`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName"
             >
               {t("title.organizationHome")}
             </Link>
           </li>
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: () => undefined,
-                to: `/organizations/${organizationName}/issues`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName/issues"
             >
               {t("menu.issue")}
             </Link>
           </li>
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: () => undefined,
-                to: `/organizations/${organizationName}/boards`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName/boards"
             >
               {t("menu.board")}
             </Link>
           </li>
           <li className="">
             <Link
-              {...({
-                activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                search: () => undefined,
-                to: `/organizations/${organizationName}/pullrequests`,
-              } as unknown as Parameters<typeof Link>[0])}
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              params={{ organizationName }}
+              search={{}}
+              to="/organizations/$organizationName/pullrequests"
             >
               {t("menu.pullRequest")}
             </Link>
@@ -227,11 +222,10 @@ function OrganizationMenu({
             {viewerCanUpdate ? (
               <li className="">
                 <Link
-                  {...({
-                    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-                    search: () => undefined,
-                    to: `/organizations/${organizationName}/settingform`,
-                  } as unknown as Parameters<typeof Link>[0])}
+                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                  params={{ organizationName }}
+                  search={{}}
+                  to="/organizations/$organizationName/settingform"
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
@@ -252,38 +246,35 @@ function OrganizationSettingMenu({ organizationName }: { organizationName: strin
     <ul className="nav nav-tabs">
       <li className="">
         <Link
-          {...({
-            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-            search: () => undefined,
-            to: `/organizations/${organizationName}/settingform`,
-          } as unknown as Parameters<typeof Link>[0])}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          params={{ organizationName }}
+          search={{}}
+          to="/organizations/$organizationName/settingform"
         >
           {t("organization.settingFrom")}
         </Link>
       </li>
       <li className="">
         <Link
-          {...({
-            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-            search: {},
-            to: `/organizations/${organizationName}/members`,
-          } as unknown as Parameters<typeof Link>[0])}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          params={{ organizationName }}
+          search={{}}
+          to="/organizations/$organizationName/members"
         >
           {t("organization.member")}
         </Link>
       </li>
       <li className="active">
         <Link
-          {...({
-            activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-            activeProps: {
-              "aria-current": undefined,
-              className: undefined,
-              "data-status": undefined,
-            },
-            search: {},
-            to: `/organizations/${organizationName}/deleteForm`,
-          } as unknown as Parameters<typeof Link>[0])}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          params={{ organizationName }}
+          search={{}}
+          to="/organizations/$organizationName/deleteForm"
         >
           {t("organization.delete")}
         </Link>

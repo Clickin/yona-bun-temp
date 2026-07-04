@@ -154,6 +154,8 @@ test("project code branches route uses Link for internal anchors", () => {
   expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute }");
   expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
   expect(ROUTE_SOURCE).not.toContain("legacyInactiveSearch");
+  expect(ROUTE_SOURCE).not.toContain("legacyCommitSearch");
+  expect(ROUTE_SOURCE).not.toContain("as unknown as");
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/code/$branch"');
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/branches"');
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');

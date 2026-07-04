@@ -74,10 +74,13 @@ test("project watchers internal links render legacy hrefs and navigate through t
     "href",
     `${basePath}/admin/sample/code`,
   );
-  await expect(page.locator(".members.project .avatar-wrap").first()).toHaveAttribute(
-    "href",
-    `${basePath}/alice`,
-  );
+  const firstWatcherAvatar = page.locator(".members.project .avatar-wrap").first();
+  await expect(firstWatcherAvatar).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(firstWatcherAvatar).toHaveClass("avatar-wrap mlarge pull-left mr10");
+  await expect(firstWatcherAvatar).not.toHaveAttribute("aria-current", /.+/);
+  await expect(firstWatcherAvatar).not.toHaveAttribute("data-status", /.+/);
+  await expect(page.locator(".project-author a")).not.toHaveAttribute("aria-current", /.+/);
+  await expect(page.locator(".project-author a")).not.toHaveAttribute("data-status", /.+/);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __watchersSpaMarker?: string }).__watchersSpaMarker =
@@ -103,6 +106,10 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
+  expect(source).not.toContain("legacyUserSearch");
+  expect(source).not.toContain("daysAgo: undefined");
+  expect(source).not.toContain("selected: undefined");
+  expect(source).not.toContain("search={legacyUserSearch}");
   expect(source).not.toContain("legacyLinkProps");
   expect(source).not.toContain("{...legacyLinkProps}");
   expect(source).toContain("activeOptions={{");
