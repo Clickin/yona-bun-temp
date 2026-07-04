@@ -190,7 +190,10 @@ function isNotificationEnabled(notifications: NotificationRow[], eventType: stri
 }
 
 function stringValue(value: unknown): string {
-  return typeof value === "string" ? value : "";
+  if (typeof value === "string") {
+    return value;
+  }
+  return typeof value === "number" ? String(value) : "";
 }
 
 function EditTabMenu({ active }: { active: string }) {

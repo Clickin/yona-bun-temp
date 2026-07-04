@@ -184,14 +184,14 @@ function workspaceBody() {
     pullRequestItems: [],
     recentProjects: [],
     watchedProjects: [
-      watchedProject("2", "admin", "projectYobi"),
-      watchedProject("7", "weblabs", "projectAlpha"),
+      watchedProject(2, "admin", "projectYobi"),
+      watchedProject(7, "weblabs", "projectAlpha"),
     ],
   };
 }
 
-function watchedProject(projectId: string, ownerName: string, projectName: string) {
-  const checked = CHECKED_BY_PROJECT.get(projectId) ?? new Set<string>();
+function watchedProject(projectId: number, ownerName: string, projectName: string) {
+  const checked = CHECKED_BY_PROJECT.get(String(projectId)) ?? new Set<string>();
   return {
     notifications: NOTIFICATION_TYPES.map(([eventType, label]) => ({
       enabled: checked.has(eventType),
@@ -213,7 +213,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="${basePath}/" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
       <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
