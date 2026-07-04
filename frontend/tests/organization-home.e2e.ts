@@ -325,6 +325,26 @@ test("organization home leave modal posts legacy leave action", async ({ page })
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
 });
 
+test("organization home hides leave button when legacy leave validation fails", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page, { viewerCanLeaveAfterValidation: false });
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+
+  await expect(page.locator("#groupLeaveBtn")).toHaveCount(0);
+  await expect(page.locator(".bubble-wrap.gray.project-home")).toHaveCount(2);
+  await expect(
+    page.locator(".bubble-wrap.gray.project-home").first().locator("header h3"),
+  ).toHaveText("Group Manager");
+  await expect(
+    page.locator(".bubble-wrap.gray.project-home").last().locator("header h3"),
+  ).toHaveText("Group Member");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide/);
+  await expect(page.locator("#alertLeave #leaveBtn")).toHaveText("Yes");
+});
+
 async function organizationHomeMetrics(page: Page) {
   return page.evaluate(() => {
     const row = mustElement(".project-home-header");
@@ -446,7 +466,10 @@ async function organizationHomeMetrics(page: Page) {
 
 async function mockOrganizationHome(
   page: Page,
-  options: { leaveRequests?: { hasCsrfToken: boolean; method: string }[] } = {},
+  options: {
+    leaveRequests?: { hasCsrfToken: boolean; method: string }[];
+    viewerCanLeaveAfterValidation?: boolean;
+  } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -499,6 +522,7 @@ async function mockOrganizationHome(
         ],
         organizationName: "weblabs",
         viewerCanCreateProject: true,
+        viewerCanLeaveAfterValidation: options.viewerCanLeaveAfterValidation ?? true,
         viewerCanLeave: true,
         viewerCanUpdate: true,
         visibleProjects: [

@@ -64,6 +64,11 @@ function OrganizationHomeBody({
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const viewerCanLeave = booleanField(organization.viewerCanLeave);
+  const viewerCanLeaveAfterValidation = optionalBooleanField(
+    organization.viewerCanLeaveAfterValidation,
+    viewerCanLeave,
+  );
   const leaveMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -156,7 +161,7 @@ function OrganizationHomeBody({
                 members={organization.adminMembers}
                 onLeaveClick={() => setLeaveModalOpen(true)}
                 organizationName={organizationName}
-                showLeave={booleanField(organization.viewerCanLeave)}
+                showLeave={viewerCanLeave && viewerCanLeaveAfterValidation}
                 title={t("user.role.org_admin")}
               />
               <MemberPanel
@@ -638,4 +643,8 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function optionalBooleanField(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
 }
