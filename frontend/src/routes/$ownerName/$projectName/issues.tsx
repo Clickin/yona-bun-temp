@@ -1646,6 +1646,8 @@ function ProjectIssueItem({
                 to="/$user"
                 params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
+                data-toggle="tooltip"
+                data-placement="bottom"
                 title={authorLoginId}
               >
                 {issue.authorLabel}

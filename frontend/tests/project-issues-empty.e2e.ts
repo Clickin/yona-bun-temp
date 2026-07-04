@@ -675,6 +675,9 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
     "alt",
     "Site Admin",
   );
+  const authorLink = page.locator("#issue-item-42 .infos > .infos-link-item");
+  await expect(authorLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(authorLink).toHaveAttribute("data-placement", "bottom");
   await expect(page.locator("#issue-42")).toHaveAttribute("data-issue-id", "42");
   await expect(page.locator("#issue-42")).toHaveAttribute(
     "data-issue-labels",
