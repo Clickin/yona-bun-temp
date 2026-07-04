@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, type AnchorHTMLAttributes, type FormEvent, useState } from "react";
+import { Fragment, type CSSProperties, type FormEvent, type ReactNode, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -970,10 +970,15 @@ function PostCommentRow({
   );
 }
 
-function CommentHashLink({
-  commentId,
-  ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { commentId: string }) {
+type CommentHashLinkProps = {
+  children: ReactNode;
+  className?: string;
+  commentId: string;
+  style?: CSSProperties;
+  title?: string;
+};
+
+function CommentHashLink({ commentId, ...props }: CommentHashLinkProps) {
   return (
     <Link
       {...props}

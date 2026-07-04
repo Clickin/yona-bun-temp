@@ -4,7 +4,7 @@ import {
   Fragment,
   useRef,
   useState,
-  type AnchorHTMLAttributes,
+  type CSSProperties,
   type MouseEvent,
   type ReactNode,
 } from "react";
@@ -44,11 +44,18 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
-function IssueHashLink({
-  children,
-  hash,
-  ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; hash: string }) {
+type IssueLegacyLinkProps = {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  title?: string;
+} & {
+  [K in `aria-${string}`]?: string;
+} & {
+  [K in `data-${string}`]?: string | number | boolean;
+};
+
+function IssueHashLink({ children, hash, ...props }: IssueLegacyLinkProps & { hash: string }) {
   return (
     <Link {...LEGACY_LINK_PROPS} {...props} to="." hash={hash}>
       {children}
@@ -56,11 +63,7 @@ function IssueHashLink({
   );
 }
 
-function IssueRouteLink({
-  children,
-  to,
-  ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; to: string }) {
+function IssueRouteLink({ children, to, ...props }: IssueLegacyLinkProps & { to: string }) {
   return (
     <Link {...LEGACY_LINK_PROPS} {...props} to={to as never}>
       {children}

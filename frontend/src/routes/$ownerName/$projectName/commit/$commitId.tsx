@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { type AnchorHTMLAttributes, useState } from "react";
+import { type ReactNode, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -53,6 +53,13 @@ type ParsedFileDiff = {
   lines: ParsedDiffLine[];
   pathA: string;
   pathB: string;
+};
+
+type CommitHashLinkProps = {
+  children: ReactNode;
+  className?: string;
+  hash: string;
+  title?: string;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/commit/$commitId")({
@@ -1461,10 +1468,7 @@ function ReviewCards({
   );
 }
 
-function CommitHashLink({
-  hash,
-  ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement> & { hash: string }) {
+function CommitHashLink({ hash, ...props }: CommitHashLinkProps) {
   const { branch, path } = Route.useSearch();
   const search = {
     ...(branch ? { branch } : {}),

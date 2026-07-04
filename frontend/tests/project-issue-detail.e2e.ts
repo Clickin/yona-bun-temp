@@ -211,7 +211,7 @@ test("project issue detail uses route-owned timeline and comment hash links", as
   ).resolves.toBe("issue-hash-links");
 });
 
-test("project issue detail route uses shared markdown help and has no generic LegacyInternalLink adapter", () => {
+test("project issue detail route uses shared markdown help and route-local typed links", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
@@ -240,6 +240,7 @@ test("project issue detail route uses shared markdown help and has no generic Le
   );
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("createElement");
   expect(routeSource).not.toMatch(/^\s*<a(?:\s|>)/mu);
   expect(routeSource).not.toContain("function attachedFilesHtml");
@@ -248,6 +249,11 @@ test("project issue detail route uses shared markdown help and has no generic Le
   expect(routeSource).not.toContain("attachedFilesHtml(comment.attachments)");
   expect(routeSource).toContain('<button type="button" className="attached-delete">');
   expect(routeSource).toContain("const LEGACY_LINK_PROPS = {");
+  expect(routeSource).toContain("type IssueLegacyLinkProps = {");
+  expect(routeSource).toContain("function IssueHashLink({");
+  expect(routeSource).toContain("}: IssueLegacyLinkProps & { hash: string })");
+  expect(routeSource).toContain("function IssueRouteLink({");
+  expect(routeSource).toContain("}: IssueLegacyLinkProps & { to: string })");
   expect(routeSource).toContain(
     "`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never",
   );

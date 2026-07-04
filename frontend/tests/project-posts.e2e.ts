@@ -1253,8 +1253,21 @@ test("project board detail owns comment hash links through router", async ({ pag
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
+  expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).toContain("type CommentHashLinkProps = {");
+  expect(routeSource).toContain(
+    "function CommentHashLink({ commentId, ...props }: CommentHashLinkProps)",
+  );
+  const hashLinkSource = routeSource.slice(
+    routeSource.indexOf("type CommentHashLinkProps"),
+    routeSource.indexOf("function PostCommentUpdateForm"),
+  );
+  expect(hashLinkSource).toContain("<Link");
+  expect(hashLinkSource).toContain("hash={`comment-${commentId}`}");
+  expect(hashLinkSource).not.toContain("<a");
+  expect(hashLinkSource).not.toContain("href=");
 });
 
 test("project board detail renders legacy comment update form", async ({ page }) => {

@@ -180,6 +180,10 @@ function commentUpdateForm(
 test("project commit detail route source has no generic LegacyInternalLink adapter", async () => {
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("ComponentType");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("type CommitHashLinkProps = {");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("}: CommitHashLinkProps) {");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={hash}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("attachmentFileHtml");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("escapeHtml");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
