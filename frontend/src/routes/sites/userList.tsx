@@ -580,6 +580,7 @@ function UserListItem({
             {t(`button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
           </button>
           <button
+            type="button"
             id={user.loginId}
             className="ybtn ybtn-small"
             data-toggle="reset-password"
@@ -609,6 +610,7 @@ function UserListItem({
               : t("button.user.upgrade.to.site.admin")}
           </button>
           <button
+            type="button"
             className="ybtn ybtn-small ybtn-danger"
             data-toggle="account-delete"
             data-href={prefixBasePath(runtimeConfig.basePath, `/sites/user/${user.id}`)}

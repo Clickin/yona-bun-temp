@@ -18,12 +18,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$fil
 type CodeFile = Record<string, unknown>;
 
 const MAX_FILE_SIZE_CAN_BE_VIEWED = 1024 * 1024;
-const legacyLinkProps = {
-  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
-  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
-};
-const legacyEmptySearch = {} as never;
-const legacyInactiveSearch = { __legacyInactive: undefined } as never;
 
 export type ProjectCodeFileRouteParams = {
   branch: string;
@@ -149,8 +143,18 @@ function ProjectCodeFileBody({
               <Link
                 to="/$ownerName/$projectName/code/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
-                search={legacyInactiveSearch}
-                {...legacyLinkProps}
+                search={{ __legacyInactive: undefined } as never}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
               >
                 {projectName}
               </Link>
@@ -160,8 +164,18 @@ function ProjectCodeFileBody({
                   to={
                     projectPath(ownerName, projectName, "code", encodedBranch, item.path) as never
                   }
-                  search={legacyInactiveSearch}
-                  {...legacyLinkProps}
+                  search={{ __legacyInactive: undefined } as never}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                 >
                   {item.name}
                 </Link>
@@ -190,7 +204,17 @@ function ProjectCodeFileBody({
                           "postform",
                         )}?path=${newFilePath}&branch=${encodedBranch}` as never
                       }
-                      {...legacyLinkProps}
+                      activeOptions={{
+                        exact: true,
+                        explicitUndefined: true,
+                        includeHash: true,
+                        includeSearch: true,
+                      }}
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: undefined,
+                        "data-status": undefined,
+                      }}
                       className="ybtn"
                     >
                       {t("code.new.file")}
@@ -259,8 +283,18 @@ function FileView({
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
-              search={legacyEmptySearch}
-              {...legacyLinkProps}
+              search={{} as never}
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               className="avatar-wrap"
               data-toggle="tooltip"
               data-placement="top"
@@ -271,8 +305,18 @@ function FileView({
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
-              search={legacyEmptySearch}
-              {...legacyLinkProps}
+              search={{} as never}
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               className="ml5"
             >
               {stringField(file.author, "")}
@@ -292,7 +336,17 @@ function FileView({
                 )}?branch=${encodeURIComponent(selectedBranch)}` as never
               }
               hash={filePath}
-              {...legacyLinkProps}
+              activeOptions={{
+                exact: true,
+                explicitUndefined: true,
+                includeHash: true,
+                includeSearch: true,
+              }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
             >
               {isGit ? shortCommitId : `Revision ${commitId}`}
               {numberField(file.commentCount) > 0 ? (
@@ -327,7 +381,17 @@ function FileView({
                       "postform",
                     )}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true` as never
                   }
-                  {...legacyLinkProps}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
                   className="ybtn"
                 >
                   Edit
@@ -355,7 +419,17 @@ function FileView({
                 filePath,
               ) as never
             }
-            {...legacyLinkProps}
+            activeOptions={{
+              exact: true,
+              explicitUndefined: true,
+              includeHash: true,
+              includeSearch: true,
+            }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
             className="ybtn"
           >
             {t("code.history")}

@@ -144,8 +144,21 @@ test("project code file route source has no raw anchors for internal app navigat
     "utf8",
   );
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
+  const directLegacyLinkActiveProps = routeSource.match(
+    /activeProps=\{\{\s*"aria-current": undefined,\s*className: undefined,\s*"data-status": undefined,\s*\}\}/gu,
+  );
+  const directLegacyLinkActiveOptions = routeSource.match(
+    /activeOptions=\{\{\s*exact: true,\s*explicitUndefined: true,\s*includeHash: true,\s*includeSearch: true,\s*\}\}/gu,
+  );
 
   expect(rawAnchorBlocks).toEqual([]);
+  expect(routeSource).not.toContain("legacyLinkProps");
+  expect(routeSource).not.toContain("legacyEmptySearch");
+  expect(routeSource).not.toContain("legacyInactiveSearch");
+  expect(directLegacyLinkActiveProps).toHaveLength(8);
+  expect(directLegacyLinkActiveOptions).toHaveLength(8);
+  expect(routeSource).toContain("search={{} as never}");
+  expect(routeSource).toContain("search={{ __legacyInactive: undefined } as never}");
 });
 
 async function fileViewMetrics(page: Page) {

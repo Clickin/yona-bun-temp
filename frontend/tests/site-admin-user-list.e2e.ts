@@ -14,7 +14,7 @@ const EXPECTED_USER_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -123,9 +123,9 @@ const EXPECTED_USER_LIST_SCREEN = `
             <div class="span5 listitem-col action-buttons">
               <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/guest/toggle?state=ACTIVE">Make Guest</button>
               <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/account-lock/toggle?state=ACTIVE">Lock account</button>
-              <button id="doortts" class="ybtn ybtn-small" data-toggle="reset-password" data-href="__BASE_PATH__/doortts?action=resetPassword">Reset password</button>
+              <button type="button" id="doortts" class="ybtn ybtn-small" data-toggle="reset-password" data-href="__BASE_PATH__/doortts?action=resetPassword">Reset password</button>
               <button type="button" class="ybtn ybtn-small label-info" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/site-admin/toggle">Upgrade to Site admin</button>
-              <button class="ybtn ybtn-small ybtn-danger" data-toggle="account-delete" data-href="__BASE_PATH__/sites/user/42" data-user-id="doortts" data-user-name="Door TTS">Delete</button>
+              <button type="button" class="ybtn ybtn-small ybtn-danger" data-toggle="account-delete" data-href="__BASE_PATH__/sites/user/42" data-user-id="doortts" data-user-name="Door TTS">Delete</button>
             </div>
           </li>
         </ul>
@@ -222,9 +222,20 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(
     page.locator('.action-buttons button[data-request-uri$="/account-lock/toggle?state=ACTIVE"]'),
   ).toHaveAttribute("type", "button");
+  const resetPasswordButton = page.locator('.action-buttons button[data-toggle="reset-password"]');
+  await expect(resetPasswordButton).toHaveAttribute("type", "button");
+  await expect(resetPasswordButton).toHaveAttribute(
+    "data-href",
+    `${basePath}/doortts?action=resetPassword`,
+  );
   await expect(
     page.locator('.action-buttons button[data-request-uri$="/site-admin/toggle"]'),
   ).toHaveClass("ybtn ybtn-small label-info");
+  const accountDeleteButton = page.locator('.action-buttons button[data-toggle="account-delete"]');
+  await expect(accountDeleteButton).toHaveAttribute("type", "button");
+  await expect(accountDeleteButton).toHaveAttribute("data-href", `${basePath}/sites/user/42`);
+  await expect(accountDeleteButton).toHaveAttribute("data-user-id", "doortts");
+  await expect(accountDeleteButton).toHaveAttribute("data-user-name", "Door TTS");
   await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
   await expect(page.locator("#accountToggleBtn")).toHaveAttribute("type", "button");
   await expect(page.locator("#accountToggleBtn")).toHaveClass("ybtn ybtn-danger");
@@ -257,6 +268,12 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   );
   expect(routeSource).toMatch(/<button\s+type="button"\s+id="accountToggleBtn"/u);
   expect(routeSource).toMatch(/<button\s+type="button"[\s\S]*?data-request-method="post"/u);
+  expect(routeSource).toMatch(
+    /<button\s+type="button"\s+id=\{user\.loginId\}[\s\S]*?data-toggle="reset-password"/u,
+  );
+  expect(routeSource).toMatch(
+    /<button\s+type="button"\s+className="ybtn ybtn-small ybtn-danger"[\s\S]*?data-toggle="account-delete"/u,
+  );
   expect(routeSource).toMatch(
     /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="avatar-wrap list-avatar"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
   );
