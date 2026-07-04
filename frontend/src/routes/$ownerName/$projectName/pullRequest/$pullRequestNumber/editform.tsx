@@ -126,7 +126,7 @@ function ProjectPullRequestEditBody({
           <form
             action={prefixBasePath(
               runtimeConfig.basePath,
-              `/${ownerName}/${projectName}/pullRequest/${prNumber}`,
+              `/${ownerName}/${projectName}/pullRequest/${prNumber}/edit`,
             )}
             encType="multipart/form-data"
             className="nm"
