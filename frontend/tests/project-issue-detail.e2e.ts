@@ -371,8 +371,8 @@ async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
 
   for (const template of templates) {
     const nodes = page.locator(`script#${template.id}[type="text/x-jquery-tmpl"]`);
-    await expect(nodes).toHaveCount(2);
-    expect(await nodes.nth(1).textContent()).toContain(template.text);
+    await expect(nodes).toHaveCount(1);
+    expect(await nodes.first().textContent()).toContain(template.text);
   }
 }
 
@@ -1735,6 +1735,41 @@ test("project issue detail omits route-local legacy attachment template", async 
   expect(routeSource).not.toContain("${fileName}");
   expect(routeSource).not.toContain("${fileHref}");
   expect(routeSource).not.toContain("${fileSizeReadable}");
+});
+
+test("project issue detail omits route-local duplicated Select2 templates", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expectIssueDetailSelect2Partial(page, basePath);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const select2HelperStart = routeSource.indexOf("function IssueDetailSelect2Partial");
+  const select2HelperEnd = routeSource.indexOf("function ProjectIssueNotFoundBody");
+  const select2HelperSource =
+    select2HelperStart >= 0 && select2HelperEnd > select2HelperStart
+      ? routeSource.slice(select2HelperStart, select2HelperEnd)
+      : "";
+
+  expect(select2HelperSource).not.toBe("");
+  for (const templateId of [
+    "tplSelect2FormatUser",
+    "tplSelect2FormatMilestone",
+    "tplSelect2Projects",
+    "tplSelect2ProjectsWithoutAvatar",
+    "tplSelect2FormatIssues",
+  ]) {
+    expect(select2HelperSource).not.toContain(templateId);
+  }
+  expect(select2HelperSource).not.toContain("text/x-jquery-tmpl");
+  expect(select2HelperSource).not.toContain("dangerouslySetInnerHTML");
+  expect(select2HelperSource).not.toContain("${name}");
+  expect(select2HelperSource).not.toContain("${avatarURL}");
+  expect(select2HelperSource).not.toContain("${stateLabel}");
 });
 
 test("project issue detail renders legacy child issue list", async ({ page }) => {

@@ -335,44 +335,6 @@ function IssueListSelect2Partial({
         src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Select2.js")}
       ></script>
       {localeScript ? <script defer src={prefixBasePath(basePath, localeScript)}></script> : null}
-      <script
-        id="tplSelect2FormatUser"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="usf-group" title="${name} ${loginId}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="20" height="20"></span>\n    <strong class="name">${name}</strong>\n    <span class="loginid">${loginId}</span>\n</div>',
-        }}
-      />
-      <script
-        id="tplSelect2FormatMilestone"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html: '<div title="[${stateLabel}] ${name}">\n    ${name}\n</div>',
-        }}
-      />
-      <script
-        id="tplSelect2Projects"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="usf-group" title="${name}">\n    <span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
-        }}
-      />
-      <script
-        id="tplSelect2ProjectsWithoutAvatar"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html:
-            '<div class="usf-group" title="${name}">\n    <span class="width25px"></span>\n    <span class="loginid">${owner}</span>\n    <span class="name">${name}</span>\n</div>',
-        }}
-      />
-      <script
-        id="tplSelect2FormatIssues"
-        type="text/x-jquery-tmpl"
-        dangerouslySetInnerHTML={{
-          __html: '<div title="${name}">\n    ${name}\n</div>',
-        }}
-      />
     </>
   );
 }

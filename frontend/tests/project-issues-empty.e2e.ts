@@ -360,6 +360,25 @@ test("project issue list route source uses Link for navigation while preserving 
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("function LegacyInertDropdownAnchor");
 });
 
+test("project issue list route source does not duplicate common Select2 templates", async () => {
+  const routeLocalSelect2Source =
+    PROJECT_ISSUES_ROUTE_SOURCE.match(
+      /function IssueListSelect2Partial\([\s\S]*?\nfunction ProjectIssuesBody/u,
+    )?.[0] ?? "";
+
+  expect(routeLocalSelect2Source).toContain("/assets/javascripts/lib/select2/select2.js");
+  expect(routeLocalSelect2Source).toContain("/assets/javascripts/common/yobi.ui.Select2.js");
+
+  for (const templateId of select2TemplateIds) {
+    expect(routeLocalSelect2Source).not.toContain(templateId);
+  }
+
+  expect(routeLocalSelect2Source).not.toContain('type="text/x-jquery-tmpl"');
+  expect(routeLocalSelect2Source).not.toContain("${avatarURL}");
+  expect(routeLocalSelect2Source).not.toContain("${stateLabel}");
+  expect(routeLocalSelect2Source).not.toContain("dangerouslySetInnerHTML");
+});
+
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -475,10 +494,18 @@ async function expectIssueListSelect2Partial(page: Page, basePath: string) {
 
   for (const template of templates) {
     const nodes = page.locator(`script#${template.id}[type="text/x-jquery-tmpl"]`);
-    await expect(nodes).toHaveCount(2);
-    expect(await nodes.nth(1).textContent()).toContain(template.text);
+    await expect(nodes).toHaveCount(1);
+    expect(await nodes.first().textContent()).toContain(template.text);
   }
 }
+
+const select2TemplateIds = [
+  "tplSelect2FormatUser",
+  "tplSelect2FormatMilestone",
+  "tplSelect2Projects",
+  "tplSelect2ProjectsWithoutAvatar",
+  "tplSelect2FormatIssues",
+];
 
 test("project issue list search form renders legacy partial_select_label when project labels exist", async ({
   page,
