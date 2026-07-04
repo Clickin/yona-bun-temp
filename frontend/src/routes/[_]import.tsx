@@ -60,11 +60,16 @@ function ProjectImportScreen({
   const initialFormState = (optionsQuery.data ?? {}) as ProjectImportFormOptionsState;
   const initialFormValues = initialFormState.formValues ?? initialFormState.form ?? {};
   const initialFormErrors = initialFormState.formErrors ?? initialFormState.errors ?? {};
+  const initialUrl = initialFormValues.url ?? "";
   const initialAuthId = initialFormValues.authId ?? "";
+  const initialProjectName = initialFormValues.name ?? "";
+  const initialOverview = initialFormValues.overview ?? "";
+  const initialProjectScope = normalizeProjectScope(initialFormValues.projectScope);
   const repoAuthError = firstError(initialFormErrors.repoAuth);
   const ownerError = firstError(initialFormErrors.owner);
   const ownerOptions = optionsQuery.data?.ownerOptions ?? [];
   const selectedOwner =
+    initialFormValues.owner ??
     ownerOptions.find((option) => option.selected)?.ownerName ??
     optionsQuery.data?.selectedOwnerName ??
     ownerOptions[0]?.ownerName ??
@@ -78,7 +83,7 @@ function ProjectImportScreen({
   const initiallyUsesRepoAuth = initialAuthId !== "" || repoAuthError !== undefined;
   const [usesRepoAuth, setUsesRepoAuth] = React.useState(initiallyUsesRepoAuth);
   const [repoAuthChanged, setRepoAuthChanged] = React.useState(false);
-  const [projectScope, setProjectScope] = React.useState("PUBLIC");
+  const [projectScope, setProjectScope] = React.useState(initialProjectScope);
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
   const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(true);
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
@@ -93,6 +98,9 @@ function ProjectImportScreen({
       setUsesRepoAuth(initiallyUsesRepoAuth);
     }
   }, [initiallyUsesRepoAuth, repoAuthChanged]);
+  React.useEffect(() => {
+    setProjectScope(initialProjectScope);
+  }, [initialProjectScope]);
   const importMutation = useMutation({
     mutationFn: async (input: {
       authId: string;
@@ -187,7 +195,8 @@ function ProjectImportScreen({
                     name="url"
                     className="text"
                     placeholder={t("project.git.url.alert")}
-                    defaultValue=""
+                    key={initialUrl}
+                    defaultValue={initialUrl}
                     onChange={() => {
                       if (urlError) {
                         setUrlError(null);
@@ -298,7 +307,8 @@ function ProjectImportScreen({
                     name="name"
                     className="text"
                     maxLength={250}
-                    defaultValue=""
+                    key={initialProjectName}
+                    defaultValue={initialProjectName}
                     placeholder={t("project.name.alert")}
                   />
                 </dd>
@@ -311,7 +321,8 @@ function ProjectImportScreen({
                     id="description"
                     name="overview"
                     className="text textarea.span4"
-                    defaultValue=""
+                    key={initialOverview}
+                    defaultValue={initialOverview}
                   />
                 </dd>
               </dl>
@@ -461,6 +472,11 @@ function ProjectImportScreen({
 
 function firstError(error: string | string[] | undefined) {
   return Array.isArray(error) ? error[0] : error;
+}
+
+function normalizeProjectScope(scope: string | undefined) {
+  const normalized = scope?.toUpperCase();
+  return normalized === "PROTECTED" || normalized === "PRIVATE" ? normalized : "PUBLIC";
 }
 
 function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {

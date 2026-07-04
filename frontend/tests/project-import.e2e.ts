@@ -13,7 +13,7 @@ const EXPECTED_PROJECT_IMPORT = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_ROOT__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -32,9 +32,9 @@ const EXPECTED_PROJECT_IMPORT = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -47,20 +47,20 @@ const EXPECTED_PROJECT_IMPORT = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
-        </a>
+        </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">
           <i class="yobicon-plus"></i><span class="caret"></span>
-        </a>
+        </button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -158,7 +158,7 @@ const EXPECTED_PROJECT_IMPORT = `
         </div>
         <div class="actions mt20">
           <button class="ybtn ybtn-primary">Create a project</button>
-          <a href="__BASE_PATH__" class="ybtn">Cancel</a>
+          <a href="__BASE_ROOT__" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -184,7 +184,13 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   await expect(page.locator("#project-owner")).toHaveValue("admin");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_IMPORT.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_IMPORT.replaceAll("__BASE_ROOT__", rootHref(basePath)).replaceAll(
+        "__BASE_PATH__",
+        basePath,
+      ),
+    ),
   );
   expect(await importFormMetrics(page)).toEqual({
     actionsTextAlign: "center",
@@ -247,6 +253,11 @@ test("project import form renders legacy server auth and owner validation state"
     },
     formValues: {
       authId: "deploy-bot",
+      name: "restored-import",
+      overview: "Restored import description",
+      owner: "weblabs",
+      projectScope: "PROTECTED",
+      url: "https://github.com/yona-projects/yona.git",
     },
   });
 
@@ -256,6 +267,12 @@ test("project import form renders legacy server auth and owner validation state"
   await expect(page.locator("#repoAuth")).toBeVisible();
   await expect(page.locator("#repoAuth")).toHaveAttribute("style", "display: block;");
   await expect(page.locator("#repoAuth input[name='authId']")).toHaveValue("deploy-bot");
+  await expect(page.locator("#url")).toHaveValue("https://github.com/yona-projects/yona.git");
+  await expect(page.locator("#project-name")).toHaveValue("restored-import");
+  await expect(page.locator("#description")).toHaveValue("Restored import description");
+  await expect(page.locator("#project-owner")).toHaveValue("weblabs");
+  await expect(page.locator("#opt-protected")).toBeVisible();
+  await expect(page.locator("#protected")).toBeChecked();
   await expect(page.locator("#project-owner + span.orange-text")).toHaveText(
     "Owner information is not valid.",
   );
