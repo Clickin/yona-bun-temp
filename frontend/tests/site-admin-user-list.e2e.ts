@@ -47,7 +47,7 @@ const EXPECTED_USER_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar active"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar active"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -381,7 +381,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ).toBe("site-users-search");
   await expect(page.getByRole("link", { exact: true, name: "Unlocked user" })).toHaveAttribute(
     "href",
-    `${basePath}/sites/userList?query=door&state=ACTIVE`,
+    `${basePath}/sites/userList?state=ACTIVE`,
   );
   const nextPageWithQueryLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageWithQueryLink).toHaveAttribute(

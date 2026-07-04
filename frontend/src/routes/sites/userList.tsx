@@ -187,7 +187,6 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               </div>
               <UserStateTabs
                 currentState={search.state}
-                query={search.query}
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
               <div className="row-fluid listhead">
@@ -480,11 +479,9 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 
 function UserStateTabs({
   currentState,
-  query,
   siteAdminCount,
 }: {
   currentState: SiteUserState;
-  query: string;
   siteAdminCount: number;
 }) {
   const legacySiteAdminBadgeCount = Math.max(siteAdminCount - 1, 0);
@@ -502,7 +499,7 @@ function UserStateTabs({
         <li className={item.state === currentState ? "active" : ""} key={item.state}>
           <Link
             activeProps={{ className: undefined }}
-            search={{ query: query || undefined, state: item.state }}
+            search={{ state: item.state }}
             to="/sites/userList"
           >
             <LegacyMessage messageKey={item.labelKey} />
