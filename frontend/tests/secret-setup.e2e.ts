@@ -261,6 +261,53 @@ test("first-run secret setup shows legacy field errors without setup REST call u
   await expect(page).toHaveURL(`${basePath}/restart`);
 });
 
+test("first-run secret setup renders REST validation errors in legacy field labels", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 400,
+      body: JSON.stringify({
+        error: {
+          code: "bad_request",
+          message: "validation.tooShortPassword",
+          status: 400,
+        },
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#password", "bad");
+  await page.fill("#retypedPassword", "bad");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveText(
+    "Password must be at least 4 characters in length.",
+  );
+  await expect(page.locator('dt:has(label[for="email"]) .label.label-important')).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/secret`);
+});
+
 test("first-run secret setup keeps legacy mobile standalone form proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.route("**/api/v1/auth/capabilities", async (route) => {

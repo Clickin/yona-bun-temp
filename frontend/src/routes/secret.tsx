@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
+import { RestApiError } from "../api/rest-client";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
@@ -62,6 +63,21 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
           ? restartPath
           : prefixBasePath(runtimeConfig.basePath, restartPath),
       );
+    },
+    onError(error) {
+      if (!(error instanceof RestApiError)) return;
+      const message = t(error.message);
+      if (error.message === "validation.invalidEmail") {
+        setFieldErrors({ email: [message] });
+        return;
+      }
+      if (error.message === "validation.tooShortPassword") {
+        setFieldErrors({ password: [message] });
+        return;
+      }
+      if (error.message === "validation.passwordMismatch") {
+        setFieldErrors({ retypedPassword: [message] });
+      }
     },
   });
 
