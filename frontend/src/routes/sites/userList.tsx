@@ -601,7 +601,7 @@ function UserListItem({
             data-request-method="post"
             data-request-uri={prefixBasePath(
               runtimeConfig.basePath,
-              `/sites/user/${user.loginId}/site-admin/toggle`,
+              `/sites/toggleSiteAdminRole/${user.loginId}`,
             )}
             onClick={() => onToggleClick(user.loginId, "site-admin")}
           >
@@ -613,7 +613,7 @@ function UserListItem({
             type="button"
             className="ybtn ybtn-small ybtn-danger"
             data-toggle="account-delete"
-            data-href={prefixBasePath(runtimeConfig.basePath, `/sites/user/${user.id}`)}
+            data-href={prefixBasePath(runtimeConfig.basePath, `/sites/user/delete${user.id}`)}
             data-user-id={user.loginId}
             data-user-name={user.displayName}
             onClick={() => onDeleteClick(user)}
@@ -672,11 +672,13 @@ function legacyUserMutationPath(
   query: string,
 ) {
   const params = new URLSearchParams();
+  params.set("loginId", loginId);
   params.set("state", state);
   if (query.trim() !== "") {
     params.set("query", query.trim());
   }
-  return prefixBasePath(basePath, `/sites/user/${loginId}/${action}/toggle?${params.toString()}`);
+  const route = action === "guest" ? "/sites/toggleGuestMode" : "/sites/toggleAccountLock";
+  return prefixBasePath(basePath, `${route}?${params.toString()}`);
 }
 
 function isSiteUserState(value: unknown): value is SiteUserState {

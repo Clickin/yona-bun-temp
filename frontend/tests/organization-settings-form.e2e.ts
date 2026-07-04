@@ -97,7 +97,7 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
       <li class=""><a href="__BASE_PATH__/organizations/weblabs/members">Group member</a></li>
       <li class=""><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li>
     </ul>
-    <form id="saveSetting" method="post" action="__BASE_PATH__/organizations/weblabs" enctype="multipart/form-data" class="nm" name="update-org">
+    <form id="saveSetting" method="post" action="__BASE_PATH__/organizations/weblabs/setting" enctype="multipart/form-data" class="nm" name="update-org">
       <input type="hidden" name="id" value="42">
       <div class="bubble-wrap gray">
         <div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;">
@@ -142,6 +142,10 @@ test("organization settings form matches legacy organization/setting.scala.html 
 
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
   await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#saveSetting")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/setting`,
+  );
   await expect(page.locator("#project-name")).toHaveValue("weblabs");
   await expect(page.locator("#project-desc")).toHaveValue("Web labs group");
   expect(
@@ -349,9 +353,11 @@ test("organization settings breadcrumb source uses direct Link without Link prop
   expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
   expect(source).not.toContain("Parameters<typeof Link>");
   expect(source).not.toContain("as unknown as");
-  expect(headerBreadcrumb).not.toContain("href={organizationHref(basePath, organizationName)}");
+  expect(headerBreadcrumb).not.toContain(
+    "href={organizationSettingHref(basePath, organizationName)}",
+  );
   expect(source).not.toContain(
-    "<a href={organizationHref(basePath, organizationName)}>{organizationName}</a>",
+    "<a href={organizationSettingHref(basePath, organizationName)}>{organizationName}</a>",
   );
 });
 

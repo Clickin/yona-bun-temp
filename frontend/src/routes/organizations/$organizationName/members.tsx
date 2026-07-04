@@ -375,7 +375,7 @@ function OrganizationMember({
                     data-action="apply"
                     data-href={prefixBasePath(
                       basePath,
-                      `/organizations/${organizationName}/members/${userId}`,
+                      `/organizations/${organizationName}/member/${userId}/edit`,
                     )}
                     data-loginid={loginId}
                     onClick={(event) => {
@@ -396,7 +396,7 @@ function OrganizationMember({
           data-action="delete"
           data-href={prefixBasePath(
             basePath,
-            `/organizations/${organizationName}/members/${userId}`,
+            `/organizations/${organizationName}/member/${userId}/delete`,
           )}
           className="ybtn ybtn-danger ybtn-small"
           onClick={() => onDelete(userId)}

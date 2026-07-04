@@ -112,7 +112,7 @@ function OrganizationSettingsBody({
           <form
             id="saveSetting"
             method="post"
-            action={organizationHref(runtimeConfig.basePath, organizationName)}
+            action={organizationSettingHref(runtimeConfig.basePath, organizationName)}
             encType="multipart/form-data"
             className="nm"
             name="update-org"
@@ -361,8 +361,8 @@ function OrganizationSettingMenu({
   );
 }
 
-function organizationHref(basePath: string, organizationName: string) {
-  return prefixBasePath(basePath, `/organizations/${organizationName}`);
+function organizationSettingHref(basePath: string, organizationName: string) {
+  return prefixBasePath(basePath, `/organizations/${organizationName}/setting`);
 }
 
 function stringField(value: unknown, fallback: string) {

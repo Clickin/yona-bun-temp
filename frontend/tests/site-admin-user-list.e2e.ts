@@ -121,11 +121,11 @@ const EXPECTED_USER_LIST_SCREEN = `
               <span>2026-06-28 12:00:00</span>
             </div>
             <div class="span5 listitem-col action-buttons">
-              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/guest/toggle?state=ACTIVE">Make Guest</button>
-              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/account-lock/toggle?state=ACTIVE">Lock account</button>
+              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/toggleGuestMode?loginId=doortts&amp;state=ACTIVE">Make Guest</button>
+              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/toggleAccountLock?loginId=doortts&amp;state=ACTIVE">Lock account</button>
               <button type="button" id="doortts" class="ybtn ybtn-small" data-toggle="reset-password" data-href="__BASE_PATH__/doortts?action=resetPassword">Reset password</button>
-              <button type="button" class="ybtn ybtn-small label-info" data-request-method="post" data-request-uri="__BASE_PATH__/sites/user/doortts/site-admin/toggle">Upgrade to Site admin</button>
-              <button type="button" class="ybtn ybtn-small ybtn-danger" data-toggle="account-delete" data-href="__BASE_PATH__/sites/user/42" data-user-id="doortts" data-user-name="Door TTS">Delete</button>
+              <button type="button" class="ybtn ybtn-small label-info" data-request-method="post" data-request-uri="__BASE_PATH__/sites/toggleSiteAdminRole/doortts">Upgrade to Site admin</button>
+              <button type="button" class="ybtn ybtn-small ybtn-danger" data-toggle="account-delete" data-href="__BASE_PATH__/sites/user/delete42" data-user-id="doortts" data-user-name="Door TTS">Delete</button>
             </div>
           </li>
         </ul>
@@ -214,13 +214,15 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator(".action-buttons a[data-request-method]")).toHaveCount(0);
   await expect(page.locator(".action-buttons button")).toHaveCount(5);
   const guestToggleButton = page.locator(
-    '.action-buttons button[data-request-uri$="/guest/toggle?state=ACTIVE"]',
+    '.action-buttons button[data-request-uri$="/sites/toggleGuestMode?loginId=doortts&state=ACTIVE"]',
   );
   await expect(guestToggleButton).toHaveAttribute("type", "button");
   await expect(guestToggleButton).toHaveClass("ybtn ybtn-small");
   await expect(guestToggleButton).toHaveAttribute("data-request-method", "post");
   await expect(
-    page.locator('.action-buttons button[data-request-uri$="/account-lock/toggle?state=ACTIVE"]'),
+    page.locator(
+      '.action-buttons button[data-request-uri$="/sites/toggleAccountLock?loginId=doortts&state=ACTIVE"]',
+    ),
   ).toHaveAttribute("type", "button");
   const resetPasswordButton = page.locator('.action-buttons button[data-toggle="reset-password"]');
   await expect(resetPasswordButton).toHaveAttribute("type", "button");
@@ -229,11 +231,11 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     `${basePath}/doortts?action=resetPassword`,
   );
   await expect(
-    page.locator('.action-buttons button[data-request-uri$="/site-admin/toggle"]'),
+    page.locator('.action-buttons button[data-request-uri$="/sites/toggleSiteAdminRole/doortts"]'),
   ).toHaveClass("ybtn ybtn-small label-info");
   const accountDeleteButton = page.locator('.action-buttons button[data-toggle="account-delete"]');
   await expect(accountDeleteButton).toHaveAttribute("type", "button");
-  await expect(accountDeleteButton).toHaveAttribute("data-href", `${basePath}/sites/user/42`);
+  await expect(accountDeleteButton).toHaveAttribute("data-href", `${basePath}/sites/user/delete42`);
   await expect(accountDeleteButton).toHaveAttribute("data-user-id", "doortts");
   await expect(accountDeleteButton).toHaveAttribute("data-user-name", "Door TTS");
   await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
@@ -622,7 +624,9 @@ test("site admin user role toggle success reloads like legacy requestAs", async 
   });
 
   const reloadPromise = page.waitForEvent("framenavigated");
-  await page.locator('[data-request-uri$="/guest/toggle?state=ACTIVE"]').click();
+  await page
+    .locator('[data-request-uri$="/sites/toggleGuestMode?loginId=doortts&state=ACTIVE"]')
+    .click();
   await reloadPromise;
 
   await expect.poll(() => requests.toggledActions).toEqual(["doortts:guest"]);

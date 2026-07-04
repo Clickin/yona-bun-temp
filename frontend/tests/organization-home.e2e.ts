@@ -432,6 +432,29 @@ test("organization home hides leave button when legacy leave validation fails", 
   await expect(page.locator("#alertLeave #leaveBtn")).toHaveText("Yes");
 });
 
+test("organization home renders leave button in member panel for legacy member viewer", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page, {
+    viewerCanCreateProject: false,
+    viewerCanUpdate: false,
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+
+  const panels = page.locator(".bubble-wrap.gray.project-home");
+  await expect(panels).toHaveCount(2);
+  await expect(panels.first().locator("header h3")).toHaveText("Group Manager");
+  await expect(panels.first().locator("#groupLeaveBtn")).toHaveCount(0);
+  await expect(panels.last().locator("header h3")).toHaveText("Group Member");
+  await expect(panels.last().locator("#groupLeaveBtn")).toHaveAttribute(
+    "data-href",
+    `${basePath}/organizations/weblabs/leave`,
+  );
+  await expect(panels.last().locator("#groupLeaveBtn")).toHaveText("Leave the group");
+});
+
 async function organizationHomeMetrics(page: Page) {
   return page.evaluate(() => {
     const row = mustElement(".project-home-header");
@@ -558,7 +581,9 @@ async function mockOrganizationHome(
     enrollRequests?: { hasCsrfToken: boolean; method: string }[];
     leaveRequests?: { hasCsrfToken: boolean; method: string }[];
     viewerCanEnroll?: boolean;
+    viewerCanCreateProject?: boolean;
     viewerCanLeaveAfterValidation?: boolean;
+    viewerCanUpdate?: boolean;
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -625,11 +650,11 @@ async function mockOrganizationHome(
           },
         ],
         organizationName: "weblabs",
-        viewerCanCreateProject: true,
+        viewerCanCreateProject: options.viewerCanCreateProject ?? true,
         viewerCanEnroll: options.viewerCanEnroll ?? false,
         viewerCanLeaveAfterValidation: options.viewerCanLeaveAfterValidation ?? true,
         viewerCanLeave: true,
-        viewerCanUpdate: true,
+        viewerCanUpdate: options.viewerCanUpdate ?? true,
         visibleProjects: [
           {
             createdLabel: "Jun 30, 2026",

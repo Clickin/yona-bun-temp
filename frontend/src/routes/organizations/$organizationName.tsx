@@ -74,6 +74,8 @@ function OrganizationHomeBody({
     organization.viewerCanLeaveAfterValidation,
     viewerCanLeave,
   );
+  const viewerCanUpdate = booleanField(organization.viewerCanUpdate);
+  const showLeaveButton = viewerCanLeave && viewerCanLeaveAfterValidation;
   const leaveMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -102,7 +104,7 @@ function OrganizationHomeBody({
       <OrganizationMenu
         active="home"
         organizationName={organizationName}
-        viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
+        viewerCanUpdate={viewerCanUpdate}
       />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -171,7 +173,7 @@ function OrganizationHomeBody({
                 members={organization.adminMembers}
                 onLeaveClick={() => setLeaveModalOpen(true)}
                 organizationName={organizationName}
-                showLeave={viewerCanLeave && viewerCanLeaveAfterValidation}
+                showLeave={showLeaveButton && viewerCanUpdate}
                 title={t("user.role.org_admin")}
               />
               <MemberPanel
@@ -180,7 +182,7 @@ function OrganizationHomeBody({
                 members={organization.memberMembers}
                 onLeaveClick={() => setLeaveModalOpen(true)}
                 organizationName={organizationName}
-                showLeave={false}
+                showLeave={showLeaveButton && !viewerCanUpdate}
                 title={t("user.role.org_member")}
               />
             </div>
