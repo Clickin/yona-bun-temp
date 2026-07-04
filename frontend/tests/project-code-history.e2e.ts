@@ -74,6 +74,33 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   });
 });
 
+test("project code history multiline commit message disclosure toggles per row", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeHistory(page, {
+    secondMessage: "Second commit\nKeep row scoped",
+  });
+
+  await page.goto(`${basePath}/admin/sample/commits/main`);
+  const rows = page.locator("#history .code-table.commits tbody tr");
+  const firstDesc = rows.nth(0).locator("pre.commitMsg.desc");
+  const secondDesc = rows.nth(1).locator("pre.commitMsg.desc");
+
+  await expect(rows.nth(0).locator("button.commitMsg.moreBtn")).toHaveCount(1);
+  await expect(rows.nth(1).locator("button.commitMsg.moreBtn")).toHaveCount(1);
+  await expect(firstDesc).toHaveClass(/(?:^|\s)hidden(?:\s|$)/u);
+  await expect(secondDesc).toHaveClass(/(?:^|\s)hidden(?:\s|$)/u);
+
+  await rows.nth(0).locator("button.commitMsg.moreBtn").click();
+  await expect(firstDesc).not.toHaveClass(/(?:^|\s)hidden(?:\s|$)/u);
+  await expect(secondDesc).toHaveClass(/(?:^|\s)hidden(?:\s|$)/u);
+
+  await rows.nth(0).locator("button.commitMsg.moreBtn").click();
+  await expect(firstDesc).toHaveClass(/(?:^|\s)hidden(?:\s|$)/u);
+  await expect(secondDesc).toHaveClass(/(?:^|\s)hidden(?:\s|$)/u);
+});
+
 test("project code history converted links navigate in the SPA", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCodeHistory(page);
@@ -100,6 +127,10 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("href={commitHref");
   expect(source).not.toContain("legacyInactiveLinkOptions");
+  expect(source).not.toMatch(/\bdocument\./u);
+  expect(source).not.toContain("addEventListener");
+  expect(source).not.toContain("classList");
+  expect(source).not.toContain("style.display");
   expect(
     source.match(/activeOptions=\{\{ exact: true, includeHash: true, includeSearch: true \}\}/gu),
   ).toHaveLength(8);
@@ -189,7 +220,7 @@ async function historyLayoutMetrics(page: Page) {
   });
 }
 
-async function mockProjectCodeHistory(page: Page) {
+async function mockProjectCodeHistory(page: Page, options: { secondMessage?: string } = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -261,7 +292,7 @@ async function mockProjectCodeHistory(page: Page) {
             commentCount: 0,
             commitId: "1234567890abcdef",
             commitShortId: "1234567",
-            message: "Second commit",
+            message: options.secondMessage ?? "Second commit",
             shortMessage: "Second commit",
           },
         ],

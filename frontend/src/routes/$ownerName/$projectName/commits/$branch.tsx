@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../api/code-commits";
@@ -269,6 +270,7 @@ function CommitMessage({
   const { t } = useLegacyMessages();
   const lines = message.split("\n");
   const summary = shortMessage || t("code.commitMsg.empty");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <>
@@ -284,10 +286,16 @@ function CommitMessage({
       </Link>
       {lines.length > 1 ? (
         <>
-          <button type="button" className="commitMsg moreBtn">
+          <button
+            type="button"
+            className="commitMsg moreBtn"
+            onClick={() => setIsExpanded((current) => !current)}
+          >
             <span>...</span>
           </button>
-          <pre className="commitMsg desc hidden">{lines.slice(1).join("\n")}</pre>
+          <pre className={`commitMsg desc${isExpanded ? "" : " hidden"}`}>
+            {lines.slice(1).join("\n")}
+          </pre>
         </>
       ) : null}
     </>
