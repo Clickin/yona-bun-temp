@@ -74,7 +74,10 @@ function HelpTocScreen() {
                 <i className="yobicon-a a" />
                 <Answer>
                   {appName}를 설치하고자 하면{" "}
-                  <Link to={"https://github.com/doortts/yona#korean" as never}>
+                  <Link
+                    href="https://github.com/doortts/yona#korean"
+                    to={"https://github.com/doortts/yona#korean" as never}
+                  >
                     https://github.com/doortts/yona#korean
                   </Link>
                   를 참고해 주세요.
@@ -209,7 +212,10 @@ function HelpTocScreen() {
                 <i className="yobicon-a a" />
                 <Answer>
                   {appName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
-                  <Link to={"https://github.com/nforge/yobi/issues" as never}>
+                  <Link
+                    href="https://github.com/nforge/yobi/issues"
+                    to={"https://github.com/nforge/yobi/issues" as never}
+                  >
                     {`${appName} 이슈트래커에 등록`}
                   </Link>
                   해 주시거나 패치를 만들어 보내주시면 됩니다.

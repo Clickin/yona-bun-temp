@@ -19,7 +19,7 @@ const EXPECTED_HELP_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -49,7 +49,7 @@ const EXPECTED_HELP_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
@@ -188,14 +188,16 @@ const EXPECTED_HELP_SCREEN = `
 test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
-  expect(HELP_ROUTE_SOURCE).toContain(
+  expect(HELP_ROUTE_SOURCE).not.toContain(
     '<Link to={"https://github.com/doortts/yona#korean" as never}>',
   );
+  expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
   expect(HELP_ROUTE_SOURCE).toContain('<Link to="/"');
   expect(HELP_ROUTE_SOURCE).toContain('<Link to={"/info" as never}');
-  expect(HELP_ROUTE_SOURCE).toContain(
+  expect(HELP_ROUTE_SOURCE).not.toContain(
     '<Link to={"https://github.com/nforge/yobi/issues" as never}>',
   );
+  expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/nforge/yobi/issues"');
 
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
