@@ -231,7 +231,10 @@ test("project board list row internal links are router-owned", async ({ page }) 
     routeSource.indexOf("function ProjectBoardPost"),
     routeSource.indexOf("function LegacyTitlePrefixButton"),
   );
-  expect(rowSource).not.toContain("const postHref");
+  expect(rowSource).toContain("const postHref");
+  expect(rowSource).toContain("href={postHref}");
+  expect(rowSource).not.toContain("legacyHref");
+  expect(rowSource).not.toContain("as unknown as LiHTMLAttributes<HTMLLIElement>");
   expect(rowSource).not.toContain("const authorHref");
   expect(rowSource).not.toContain("<a\n        href={authorHref}");
   expect(rowSource).not.toContain('<a href={postHref} className="title">');

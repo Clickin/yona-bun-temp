@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import { useEffect, useState, type HTMLAttributes } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -19,6 +19,14 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+
+declare module "react" {
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
+
+type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
 
 export type ProjectPullRequestsSearch = {
   contributorId: number;
@@ -132,7 +140,7 @@ function ProjectPullRequestsBody({
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, pullRequests.items[0]?.ownerName ?? "");
   const projectName = stringField(project.projectName, pullRequests.items[0]?.projectName ?? "");
-  const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
+  const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const openAction = projectPullRequestsHref(runtimeConfig.basePath, ownerName, projectName);
   const closedAction = prefixBasePath(
     runtimeConfig.basePath,
@@ -195,7 +203,7 @@ function ProjectPullRequestsBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div {...pjaxContainer} className="row-fluid cb">
+        <div {...legacyPjaxAttrs} className="row-fluid cb">
           <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
             <form
               id="search"
@@ -554,7 +562,6 @@ function ProjectPullRequestRow({
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const legacyHref = { href: pullRequestHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
   const toBranchClass = pullRequest.toBranch === defaultBranch ? "to-default-branch" : "to-branch";
   const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
   const showReviewerCount = isUsingReviewerCount && pullRequest.reviewerCount > 0;
@@ -563,7 +570,7 @@ function ProjectPullRequestRow({
     : "infos-item";
 
   return (
-    <li className="post-item title" {...legacyHref}>
+    <li className="post-item title" href={pullRequestHref}>
       <div className="span10 span-hard-wrap">
         <Link
           to="/$user"

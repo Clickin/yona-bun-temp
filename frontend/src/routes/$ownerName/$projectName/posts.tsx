@@ -1,11 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import {
-  Fragment,
-  useState,
-  type LiHTMLAttributes,
-  type MouseEvent as ReactMouseEvent,
-} from "react";
+import { Fragment, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
@@ -21,6 +16,12 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+
+declare module "react" {
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
 
 type ProjectPostsSearch = {
   filter: string;
@@ -364,12 +365,10 @@ function ProjectBoardPost({
   const titleParts = splitHeaderWordsInBrackets(post.title);
   const postRoutePath = `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`;
   const authorRoutePath = `/${post.authorLoginId}`;
-  const legacyHref = {
-    href: prefixBasePath(basePath, postRoutePath),
-  } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const postHref = prefixBasePath(basePath, postRoutePath);
 
   return (
-    <li className="post-item title" {...legacyHref}>
+    <li className="post-item title" href={postHref}>
       <Link
         to={authorRoutePath}
         activeProps={{ className: undefined }}

@@ -163,6 +163,7 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "data-issue-labels",
     "type,8,bug,3,false|",
   );
+  await expect(page.locator("#issue-item-41 .issue-item-row")).toHaveAttribute("for", "issue-41");
   await page.check("#issue-41");
   await expect(page.locator("#state > button")).toBeEnabled();
   await page.evaluate(() => {
@@ -343,6 +344,15 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
+  expect(routeSource).not.toContain("legacyHref");
+  expect(routeSource).not.toContain("legacyFor");
+  expect(routeSource).not.toContain("as unknown as");
+  expect(routeSource).not.toContain("<div for={`issue-");
+  expect(routeSource).toContain("type LegacyIssueItemRowAttrs = {");
+  expect(routeSource).toContain("const issueItemRowAttrs = {");
+  expect(routeSource).toContain("htmlFor: `issue-${issueId}`");
+  expect(routeSource).toContain("satisfies LegacyIssueItemRowAttrs");
+  expect(routeSource).toContain('<div {...issueItemRowAttrs} className="issue-item-row">');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/issues"');
   expect(routeSource).toContain('hash="issues"');

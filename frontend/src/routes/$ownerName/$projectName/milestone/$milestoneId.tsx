@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useMemo, useState, type HTMLAttributes, type LiHTMLAttributes } from "react";
+import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -18,6 +18,16 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
+
+declare module "react" {
+  interface LiHTMLAttributes<T> {
+    href?: string;
+  }
+}
+
+type LegacyIssueItemRowAttrs = {
+  htmlFor: string;
+};
 
 type MilestoneDetailSearch = {
   state: "all" | "closed" | "open";
@@ -817,8 +827,9 @@ function MilestoneIssueRow({
   const normalizedFilter = filter.toLowerCase().trim();
   const hidden = normalizedFilter.length > 0 && !issueSearchText(issue).includes(normalizedFilter);
   const labels = sortedIssueLabels(issue);
-  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
-  const legacyFor = { htmlFor: `issue-${issueId}` } as unknown as HTMLAttributes<HTMLDivElement>;
+  const issueItemRowAttrs = {
+    htmlFor: `issue-${issueId}`,
+  } satisfies LegacyIssueItemRowAttrs;
   const dueDateAttrs =
     state === "open"
       ? {
@@ -835,7 +846,7 @@ function MilestoneIssueRow({
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
       style={hidden ? { display: "none" } : undefined}
-      {...legacyHref}
+      href={issueHref}
     >
       <div className="span9 span-hard-wrap">
         <label
@@ -856,7 +867,7 @@ function MilestoneIssueRow({
             }}
           />
         </label>
-        <div {...legacyFor} className="issue-item-row">
+        <div {...issueItemRowAttrs} className="issue-item-row">
           <div className="title-wrap">
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"

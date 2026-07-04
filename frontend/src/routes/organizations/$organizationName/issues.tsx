@@ -128,7 +128,9 @@ function OrganizationIssuesBody({
   const organizationName = stringField(organization.organizationName, issues.organizationName);
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
-  const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
+  const legacyPjaxRootAttrs = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement> & {
+    "pjax-container": string;
+  };
   const hasIssues = issues.items.length > 0;
   const navigateToSearch = (
     event: MouseEvent<HTMLButtonElement>,
@@ -198,7 +200,7 @@ function OrganizationIssuesBody({
       />
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <div {...pjaxContainer} className="row-fluid issue-list-wrap">
+          <div {...legacyPjaxRootAttrs} className="row-fluid issue-list-wrap">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
                 <QuickSearch
@@ -501,10 +503,12 @@ function OrganizationIssueItem({
   const assigneeRoutePath = `/${issue.assigneeLoginId}`;
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
-  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const legacyIssueRowAttrs = { href: issueHref } satisfies LiHTMLAttributes<HTMLLIElement> & {
+    href: string;
+  };
 
   return (
-    <li className="post-item title" id={`issue-item-${issue.id}`} {...legacyHref}>
+    <li className="post-item title" id={`issue-item-${issue.id}`} {...legacyIssueRowAttrs}>
       <div className="span10 span-hard-wrap">
         <Link
           to={authorRoutePath}

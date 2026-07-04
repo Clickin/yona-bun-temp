@@ -275,6 +275,10 @@ test("project pull request populated row links use SPA navigation with legacy hr
 });
 
 test("project pull request row source uses TanStack Link for internal row navigation", () => {
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("as unknown as");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("pjaxContainer");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("legacyHref");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("<div pjax-container=");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("LegacyTitlePrefixLink");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-placement="top"');
@@ -291,6 +295,12 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={changesHref}");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={receiverHref}");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={`${pullRequestHref}#reviewers`}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("type LegacyPjaxContainerAttrs");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    'const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs',
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("<div {...legacyPjaxAttrs}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("href={pullRequestHref}");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('to="/$user"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"',
