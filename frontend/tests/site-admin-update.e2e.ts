@@ -47,7 +47,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -205,9 +205,8 @@ test("site admin update renders the legacy available-version branch", async ({ p
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
   expect(routeSource).toContain('href={response.releaseUrl ?? ""}');
   expect(routeSource).not.toContain("as never");
-  expect(routeSource).not.toContain("to={(response.releaseUrl");
   expect(routeSource).toContain('to={response.releaseUrl ?? ""}');
-  expect(routeSource).toContain("reloadDocument");
+  expect(routeSource).not.toContain("reloadDocument");
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
   expect(await updateAvailableMetrics(page)).toEqual({

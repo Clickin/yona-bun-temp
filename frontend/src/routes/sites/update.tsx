@@ -119,7 +119,6 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
           <Link
             href={response.releaseUrl ?? ""}
             to={response.releaseUrl ?? ""}
-            reloadDocument
             className="ybtn ybtn-success"
           >
             {t("site.update.download")}
