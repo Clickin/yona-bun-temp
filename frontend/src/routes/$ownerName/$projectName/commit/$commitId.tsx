@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -65,13 +65,6 @@ type CommitFileDiff = CodeCommitDetailResponse["files"][number] & {
   isFileModeChanged?: boolean | string;
   newMode?: string;
   oldMode?: string;
-};
-
-type CommitHashLinkProps = {
-  children: ReactNode;
-  className?: string;
-  hash: string;
-  title?: string;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/commit/$commitId")({
@@ -934,6 +927,11 @@ function CodeCommentThreadView({
   updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
   const { t } = useLegacyMessages();
+  const { branch, path } = Route.useSearch();
+  const hashSearch = {
+    ...(branch ? { branch } : {}),
+    ...(path ? { path } : {}),
+  };
   const state = thread.state.toLowerCase();
   const action = commitCommentsHref(
     runtimeConfig.basePath,
@@ -1009,9 +1007,16 @@ function CodeCommentThreadView({
                   </Link>
                 </span>
                 <span className="ago">
-                  <CommitHashLink hash={`comment-${comment.id}`} title={comment.createdLabel}>
+                  <Link
+                    to="."
+                    hash={`comment-${comment.id}`}
+                    search={hashSearch}
+                    activeOptions={{ includeHash: true }}
+                    activeProps={{ className: undefined }}
+                    title={comment.createdLabel}
+                  >
                     {comment.createdLabel}
-                  </CommitHashLink>
+                  </Link>
                 </span>
                 {comment.canUpdate ? (
                   <span className="edit pull-right">
@@ -1497,11 +1502,21 @@ function ReviewCards({
   isActive?: boolean;
   threads: CodeReviewThread[];
 }) {
+  const { branch, path } = Route.useSearch();
+  const hashSearch = {
+    ...(branch ? { branch } : {}),
+    ...(path ? { path } : {}),
+  };
+
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
       {threads.map((thread) => (
-        <CommitHashLink
+        <Link
+          to="."
           hash={`thread-${thread.id}`}
+          search={hashSearch}
+          activeOptions={{ includeHash: true }}
+          activeProps={{ className: undefined }}
           className={`review-card ${thread.state.toLowerCase()}`}
           key={thread.id}
         >
@@ -1522,28 +1537,9 @@ function ReviewCards({
             </span>
             {thread.createdLabel}
           </span>
-        </CommitHashLink>
+        </Link>
       ))}
     </div>
-  );
-}
-
-function CommitHashLink({ hash, ...props }: CommitHashLinkProps) {
-  const { branch, path } = Route.useSearch();
-  const search = {
-    ...(branch ? { branch } : {}),
-    ...(path ? { path } : {}),
-  };
-
-  return (
-    <Link
-      {...props}
-      to="."
-      hash={hash}
-      search={search}
-      activeOptions={{ includeHash: true }}
-      activeProps={{ className: undefined }}
-    />
   );
 }
 
