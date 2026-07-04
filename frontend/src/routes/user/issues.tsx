@@ -426,7 +426,11 @@ function IssuePagination({
       return;
     }
     event.preventDefault();
-    const value = clampPageNum(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    if (!/^\d+$/.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
+    const value = clampPageNum(Number(event.currentTarget.value), totalPages);
     event.currentTarget.value = String(value);
     onPageChange(value);
   };

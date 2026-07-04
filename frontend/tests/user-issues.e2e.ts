@@ -802,6 +802,14 @@ test("current-user issues pagination follows legacy yobi.Pagination input behavi
 
   const pageInput = page.locator('#pagination input[name="pageNum"][type="number"]');
   await expect(pageInput).toHaveAttribute("max", "3");
+  await expect(pageInput).toHaveValue("2");
+  await pageInput.click();
+  await pageInput.fill("1.5");
+  await pageInput.press("Enter");
+  await expect(pageInput).toHaveValue("2");
+  await expect(page).toHaveURL(
+    `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=2&state=open`,
+  );
   await pageInput.click();
   await pageInput.fill("9");
   await pageInput.press("Enter");
