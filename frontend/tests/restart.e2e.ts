@@ -22,6 +22,27 @@ const EXPECTED_RESTART_SCREEN = `
 </footer>
 `;
 
+const EXPECTED_FAILED_SECRET_RESTART_SCREEN = `
+<div class="page-wrap-outer">
+  <div class="container page-wrap">
+    <div class="page">
+      <div class="secret-wrap">
+        <a href="__BASE_PATH__" class="logo"><span>Yona</span></a>
+        <h3>Welcome!</h3>
+        <p class="secret-box txt-center">
+          Server needs to be restarted.Please update application.secret with random text.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Powered by <strong>Yona</strong></span>
+  </div>
+</footer>
+`;
+
 test("restart notice matches legacy welcome/restart.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/restart`);
@@ -58,6 +79,24 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   });
 });
 
+test("restart failed secret state adds the legacy manual update notice", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/restart?hasFailedToUpdateSecret=true`);
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+
+  await expect(page.locator(".secret-box")).toHaveText(
+    "Server needs to be restarted. Please update application.secret with random text.",
+  );
+
+  const actual = await canonicalizeScreenRoots(page);
+  const expected = await canonicalizeHtml(
+    page,
+    EXPECTED_FAILED_SECRET_RESTART_SCREEN.replace("__BASE_PATH__", `${basePath}/`),
+  );
+
+  expect(actual).toEqual(expected);
+});
+
 test("restart logo uses TanStack navigation for the internal home href", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/restart`);
@@ -87,8 +126,12 @@ test("restart route source keeps internal home navigation out of raw anchors", a
   const source = await readFile(new URL("../src/routes/restart.tsx", import.meta.url), "utf8");
 
   expect(source).toContain('import { Link, createFileRoute } from "@tanstack/react-router";');
+  expect(source).toContain("hasFailedToUpdateSecret");
   expect(source).toContain('<Link to="/" className="logo">');
   expect(source).not.toMatch(/<a\s+[^>]*href=\{[^}]*prefixBasePath\([^}]*,\s*["']\/["'][^}]*\}/);
+  expect(source).not.toMatch(
+    /dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
+  );
 });
 
 test("restart notice keeps legacy mobile standalone proportions", async ({ page }) => {

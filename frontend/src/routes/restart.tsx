@@ -4,6 +4,12 @@ import { YonaQueryProvider } from "../query-client";
 
 export const Route = createFileRoute("/restart")({
   component: RestartRoute,
+  validateSearch(search: Record<string, unknown>) {
+    return {
+      hasFailedToUpdateSecret:
+        search.hasFailedToUpdateSecret === true || search.hasFailedToUpdateSecret === "true",
+    };
+  },
 });
 
 function RestartRoute() {
@@ -19,6 +25,7 @@ function RestartRoute() {
 }
 
 function RestartScreen({ siteName }: { siteName: string }) {
+  const { hasFailedToUpdateSecret } = Route.useSearch();
   const { t } = useLegacyMessages();
 
   return (
@@ -32,7 +39,10 @@ function RestartScreen({ siteName }: { siteName: string }) {
               </Link>
 
               <h3>{t("app.restart.welcome")}</h3>
-              <p className="secret-box txt-center">{t("app.restart.notice")}</p>
+              <p className="secret-box txt-center">
+                {t("app.restart.notice")}
+                {hasFailedToUpdateSecret ? <> {t("app.restart.updateSecretYourself")}</> : null}
+              </p>
             </div>
           </div>
         </div>
