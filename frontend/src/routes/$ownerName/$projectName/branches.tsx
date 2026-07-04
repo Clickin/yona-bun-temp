@@ -317,6 +317,10 @@ function BranchRow({
               type="button"
               className="ybtn ybtn-danger ybtn-small"
               data-request-method="delete"
+              data-request-uri={prefixBasePath(
+                runtimeConfig.basePath,
+                `/${ownerName}/${projectName}/code/${encodedBranch}/`,
+              )}
               onClick={(event) => {
                 event.preventDefault();
                 deleteMutation.mutate();
