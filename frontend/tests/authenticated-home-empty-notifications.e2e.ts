@@ -382,6 +382,7 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
 
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("as unknown as");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toMatch(/<a[\s>]/u);

@@ -9,20 +9,13 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
-const LEGACY_USER_LINK_SEARCH = { daysAgo: undefined, selected: undefined } as unknown as {
+type LegacyUserLinkSearch = {
   daysAgo: number;
   selected: "issues" | "projects" | "pullRequests";
 };
-const LEGACY_PROJECTS_LINK_SEARCH = { filter: undefined } as unknown as { filter: string };
-const LEGACY_PROJECT_FORM_LINK_SEARCH = { owner: undefined } as unknown as { owner?: string };
-const LEGACY_USER_ISSUES_LINK_SEARCH = {
-  filter: undefined,
-  orderBy: undefined,
-  orderDir: undefined,
-  pageNum: undefined,
-  query: undefined,
-  state: undefined,
-} as unknown as {
+type LegacyProjectsLinkSearch = { filter: string };
+type LegacyProjectFormLinkSearch = { owner?: string };
+type LegacyUserIssuesLinkSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
   orderBy: string;
   orderDir: string;
@@ -30,22 +23,43 @@ const LEGACY_USER_ISSUES_LINK_SEARCH = {
   query: string;
   state: "closed" | "open";
 };
-const LEGACY_SITE_USER_LIST_LINK_SEARCH = {
-  pageNum: undefined,
-  query: undefined,
-  state: undefined,
-} as unknown as {
+type LegacySiteUserListLinkSearch = {
   pageNum: number;
   query: string;
   state: "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN";
 };
-const LEGACY_LOGIN_FORM_LINK_SEARCH = {
-  password: undefined,
-  redirectUrl: undefined,
-} as unknown as {
+type LegacyLoginFormLinkSearch = {
   password: string;
   redirectUrl: string;
 };
+
+const LEGACY_USER_LINK_SEARCH = {
+  daysAgo: undefined!,
+  selected: undefined!,
+} satisfies LegacyUserLinkSearch;
+const LEGACY_PROJECTS_LINK_SEARCH = {
+  filter: undefined!,
+} satisfies LegacyProjectsLinkSearch;
+const LEGACY_PROJECT_FORM_LINK_SEARCH = {
+  owner: undefined,
+} satisfies LegacyProjectFormLinkSearch;
+const LEGACY_USER_ISSUES_LINK_SEARCH = {
+  filter: undefined!,
+  orderBy: undefined!,
+  orderDir: undefined!,
+  pageNum: undefined!,
+  query: undefined!,
+  state: undefined!,
+} satisfies LegacyUserIssuesLinkSearch;
+const LEGACY_SITE_USER_LIST_LINK_SEARCH = {
+  pageNum: undefined!,
+  query: undefined!,
+  state: undefined!,
+} satisfies LegacySiteUserListLinkSearch;
+const LEGACY_LOGIN_FORM_LINK_SEARCH = {
+  password: undefined!,
+  redirectUrl: undefined!,
+} satisfies LegacyLoginFormLinkSearch;
 
 export function HomeRouteScreen({
   flashMessageKey = "",

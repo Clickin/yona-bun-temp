@@ -8,7 +8,7 @@ import {
   type CSSProperties,
   type FormEvent as ReactFormEvent,
   type HTMLAttributes,
-  type LiHTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
@@ -73,6 +73,29 @@ type ProjectIssueSearchUserOptionSource = {
   loginId?: string;
   pureNameOnly?: string;
   userId?: string;
+};
+
+type LegacyPjaxContainerAttributes = HTMLAttributes<HTMLDivElement> & {
+  "pjax-container": "";
+};
+type LegacyPjaxFilterAttributes = HTMLAttributes<HTMLButtonElement> & {
+  "pjax-filter": "";
+};
+type LegacyDataPjaxAttributes = HTMLAttributes<HTMLLIElement> & {
+  "data-pjax": "";
+};
+type LegacyStateButtonAttributes = HTMLAttributes<HTMLButtonElement> & {
+  state: "closed" | "open";
+};
+type LegacyIssueRowListAttributes = HTMLAttributes<HTMLLIElement> & {
+  href: string;
+};
+type LegacyIssueRowForAttributes = HTMLAttributes<HTMLDivElement> & {
+  htmlFor: string;
+};
+type LegacyOrderAttributes = HTMLAttributes<HTMLButtonElement> & {
+  orderby: string;
+  orderdir: string;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/issues")({
@@ -358,7 +381,7 @@ function ProjectIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
-  const pjaxContainer = { "pjax-container": "" } as unknown as HTMLAttributes<HTMLDivElement>;
+  const issueListWrapLegacyAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttributes;
   const hasIssues = issues.items.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
     () =>
@@ -502,7 +525,7 @@ function ProjectIssuesBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div {...pjaxContainer} className="row-fluid issue-list-wrap">
+        <div {...issueListWrapLegacyAttrs} className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
             <QuickSearch
               currentUserId={currentUserId}
@@ -880,7 +903,10 @@ function IssueSortFilter({
   onSortChange: (orderBy: string, orderDir: string) => void;
   orderDir: string;
 }) {
-  const legacyOrderAttributes = { orderby: field, orderdir: orderDir } as Record<string, string>;
+  const legacyOrderAttributes = {
+    orderby: field,
+    orderdir: orderDir,
+  } satisfies LegacyOrderAttributes;
   const selectIssueSortFilter = (event: ReactMouseEvent) => {
     event.preventDefault();
     onSortChange(field, orderDir);
@@ -1447,7 +1473,7 @@ function ProjectIssueItem({
   const issueWeight = issue.weight ?? 0;
   const issueLabels = sortedIssueLabels(issue);
   const titleParts = splitHeaderWordsInBrackets(issue.title);
-  const legacyHref = { href: issueHref } as unknown as LiHTMLAttributes<HTMLLIElement>;
+  const issueListItemLegacyAttrs = { href: issueHref } satisfies LegacyIssueRowListAttributes;
   const currentIssueRowHoverStyle =
     issueRowHoverStyle?.issueId === issueId ? issueRowHoverStyle : null;
   const issueRowStyle: CSSProperties | undefined =
@@ -1459,9 +1485,9 @@ function ProjectIssueItem({
           ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
         }
       : undefined;
-  const legacyFor = {
+  const issueRowLegacyForAttrs = {
     htmlFor: `issue-${issueId}`,
-  } as unknown as HTMLAttributes<HTMLDivElement>;
+  } satisfies LegacyIssueRowForAttributes;
   const dueDateAttrs =
     issue.state === "open"
       ? {
@@ -1540,7 +1566,7 @@ function ProjectIssueItem({
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
       onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
       style={issueRowStyle}
-      {...legacyHref}
+      {...issueListItemLegacyAttrs}
     >
       <div className="span9 span-hard-wrap">
         {showMassUpdateControls ? (
@@ -1558,7 +1584,7 @@ function ProjectIssueItem({
             />
           </label>
         ) : null}
-        <div {...legacyFor} className="issue-item-row">
+        <div {...issueRowLegacyForAttrs} className="issue-item-row">
           <div className="title-wrap" onClickCapture={handleTitleWrapClick}>
             <Link activeProps={{ className: undefined }} to={issueTo} className="title">
               <span className="post-id">
@@ -2031,7 +2057,7 @@ function QuickSearch({
   state: "closed" | "open";
 }) {
   const { t } = useLegacyMessages();
-  const pjaxFilter = { "pjax-filter": "" } as unknown as HTMLAttributes<HTMLButtonElement>;
+  const quickSearchLegacyAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttributes;
   const allLabel = state === "closed" ? t("issue.list.all.closed") : t("issue.list.all.open");
   const allCount = countField(issues, state === "closed" ? "closedIssueCount" : "openIssueCount");
 
@@ -2043,7 +2069,7 @@ function QuickSearch({
         }
       >
         <button
-          {...pjaxFilter}
+          {...quickSearchLegacyAttrs}
           type="button"
           data-assignee-id=""
           data-author-id=""
@@ -2068,7 +2094,7 @@ function QuickSearch({
         <>
           <li className={search.assigneeId === currentUserId ? "active" : undefined}>
             <button
-              {...pjaxFilter}
+              {...quickSearchLegacyAttrs}
               type="button"
               data-assignee-id={currentUserId}
               data-author-id=""
@@ -2093,7 +2119,7 @@ function QuickSearch({
           </li>
           <li className={search.authorId === currentUserId ? "active" : undefined}>
             <button
-              {...pjaxFilter}
+              {...quickSearchLegacyAttrs}
               type="button"
               data-assignee-id=""
               data-author-id={currentUserId}
@@ -2118,7 +2144,7 @@ function QuickSearch({
           </li>
           <li className={search.commenterId === currentUserId ? "active" : undefined}>
             <button
-              {...pjaxFilter}
+              {...quickSearchLegacyAttrs}
               type="button"
               data-assignee-id=""
               data-author-id=""
@@ -2657,18 +2683,19 @@ function StateTab({
   onStateChange: (state: "closed" | "open") => void;
   state: "closed" | "open";
 }) {
-  const legacyState = {
-    onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      onStateChange(state);
-    },
-    state,
-  } as unknown as HTMLAttributes<HTMLButtonElement>;
-  const dataPjax = { "data-pjax": "" } as unknown as HTMLAttributes<HTMLLIElement>;
+  const stateTabLegacyAttrs = { state } satisfies LegacyStateButtonAttributes;
+  const stateTabLegacyPjaxAttrs = { "data-pjax": "" } satisfies LegacyDataPjaxAttributes;
 
   return (
-    <li className={active ? "active" : undefined} {...dataPjax}>
-      <button type="button" {...legacyState}>
+    <li className={active ? "active" : undefined} {...stateTabLegacyPjaxAttrs}>
+      <button
+        type="button"
+        {...stateTabLegacyAttrs}
+        onClick={(event) => {
+          event.preventDefault();
+          onStateChange(state);
+        }}
+      >
         {label}
         <span className="num-badge">{count}</span>
       </button>

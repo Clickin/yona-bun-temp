@@ -86,7 +86,7 @@ function ProjectForkScreen({
     return null;
   }
 
-  const project = query.data.source as unknown as ProjectContainer;
+  const project = projectContainerFromForkSource(query.data.source);
 
   return (
     <>
@@ -604,6 +604,16 @@ function CountBadge({
   count: number;
 }) {
   return count > 0 ? <span className={className}>{count}</span> : null;
+}
+
+function projectContainerFromForkSource(
+  source: ProjectForkOptionsResponse["source"],
+): ProjectContainer {
+  return {
+    ...source,
+    enrollmentRequestCount: numberField(recordField(source).enrollmentRequestCount),
+    members: [],
+  };
 }
 
 function userPath(ownerName: string) {

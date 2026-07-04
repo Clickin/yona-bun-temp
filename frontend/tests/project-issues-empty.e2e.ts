@@ -390,6 +390,33 @@ test("project issue list route source does not inject route-local bootstrap scri
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
 });
 
+test("project issue list route source types legacy attrs without unsafe casts", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("as unknown as");
+  for (const shimName of [
+    "pjaxContainer",
+    "pjaxFilter",
+    "legacyHref",
+    "legacyFor",
+    "legacyState",
+    "dataPjax",
+  ]) {
+    expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(`${shimName} = {`);
+    expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(`${shimName}:`);
+  }
+
+  for (const typedLegacyAttrs of [
+    "satisfies LegacyPjaxContainerAttributes",
+    "satisfies LegacyPjaxFilterAttributes",
+    "satisfies LegacyDataPjaxAttributes",
+    "satisfies LegacyStateButtonAttributes",
+    "satisfies LegacyIssueRowListAttributes",
+    "satisfies LegacyIssueRowForAttributes",
+    "satisfies LegacyOrderAttributes",
+  ]) {
+    expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(typedLegacyAttrs);
+  }
+});
+
 test("empty project issue list matches legacy issue/list.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
