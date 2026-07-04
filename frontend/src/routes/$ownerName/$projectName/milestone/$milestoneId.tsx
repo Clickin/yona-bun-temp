@@ -812,6 +812,7 @@ function MilestoneIssueRow({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const issueId = stringField(issue.id, stringField(issue.issueNumber));
   const issueNumber = stringField(issue.issueNumber, issueId);
   const title = stringField(issue.title);
@@ -1008,18 +1009,23 @@ function MilestoneIssueRow({
               </span>
             ) : null}
             {labels.map((label) => (
-              <Link
+              <button
+                type="button"
                 key={stringField(label.id)}
-                to={`${projectPath}/issues?milestoneId=${encodeURIComponent(
-                  milestoneId,
-                )}&labelIds=${encodeURIComponent(stringField(label.id))}`}
                 className="label issue-label list-label active"
                 data-category-id={stringField(label.categoryId)}
                 data-label-id={stringField(label.id)}
                 style={{ background: cssBackgroundColor(stringField(label.color)) }}
+                onClick={() => {
+                  void router.navigate({
+                    to: `${projectPath}/issues?milestoneId=${encodeURIComponent(
+                      milestoneId,
+                    )}&labelIds=${encodeURIComponent(stringField(label.id))}`,
+                  });
+                }}
               >
                 {stringField(label.name)}
-              </Link>
+              </button>
             ))}
             <div className="child-issue-list hide"></div>
           </div>

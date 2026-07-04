@@ -267,7 +267,10 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   ).toHaveText("bug");
   await expect(
     page.locator('#issue-item-41 .issue-label[data-category-id="3"][data-label-id="8"]'),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?milestoneId=5&labelIds=8`);
+  ).toHaveAttribute("type", "button");
+  await expect(
+    page.locator('#issue-item-41 a.issue-label[data-category-id="3"][data-label-id="8"]'),
+  ).toHaveCount(0);
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).toHaveAttribute(
     "title",
     "Assignee: Dev Member",
@@ -349,6 +352,38 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   });
   await deleteResponse;
   expect(deleteRequests).toEqual(["DELETE"]);
+});
+
+test("project milestone detail issue labels translate legacy href hash navigation to React buttons", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestoneDetail(page, [], []);
+  await page.route("**/api/v1/owners/admin/projects/sample/issues**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        issues: [],
+        pagination: { currentPage: 1, totalPages: 0 },
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestone/5?state=open`);
+
+  const labelChip = page.locator(
+    '#issue-item-41 button.issue-label[data-category-id="3"][data-label-id="8"]',
+  );
+  await expect(labelChip).toHaveText("bug");
+  await expect(labelChip).toHaveAttribute("type", "button");
+  await expect(page.locator("#issue-item-41 a.issue-label")).toHaveCount(0);
+
+  await labelChip.click();
+  await expect(page).toHaveURL(/\/admin\/sample\/issues/u);
+  const url = new URL(page.url());
+  expect(url.pathname).toBe(`${basePath}/admin/sample/issues`);
+  expect(url.searchParams.get("milestoneId")).toBe("5");
+  expect(url.searchParams.getAll("labelIds")).toEqual(["8"]);
 });
 
 test("project milestone detail route uses direct Links", () => {
