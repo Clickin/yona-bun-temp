@@ -198,10 +198,10 @@ function ProjectWebhooksBody({
                   />{" "}
                   Continuous Integration tool (Only push event)
                 </label>
-                <span className="radio inline" aria-hidden="true">
-                  |
-                </span>
-                <span className="radio inline" aria-hidden="true"></span>
+                {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this separator as a label. */}
+                <label className="radio inline">|</label>
+                {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this empty spacer as a label. */}
+                <label className="radio inline"></label>
                 <label className="checkbox inline" htmlFor="gitPush">
                   <input
                     type="checkbox"
@@ -334,7 +334,12 @@ function ProjectWebhooksList({
             <h6>{stringField(webhook.webhookType, "")}</h6>
           </div>
           <div className="span2 text-center">
-            <input type="checkbox" checked={booleanField(webhook.gitPush)} onChange={() => {}} />
+            <input
+              type="checkbox"
+              checked={booleanField(webhook.gitPush)}
+              onClick={(event) => event.preventDefault()}
+              onChange={() => {}}
+            />
           </div>
           <div className="span1 text-center">
             <button
