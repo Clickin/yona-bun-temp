@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   sendSiteMailRest,
@@ -272,10 +272,41 @@ function LegacyMessage({ messageKey }: { messageKey: string }) {
 }
 
 function renderLegacyHtmlMessage(message: string) {
+  const nodes: ReactNode[] = [];
+  const tokenPattern = new RegExp(
+    String.raw`<br\s*\/?>|<` + String.raw`a\s+href="([^"]+)"\s+target="_blank">([^<>]+)<\/a>`,
+    "gi",
+  );
   let offset = 0;
-  return message.split(/(<br\s*\/?>)/i).map((part) => {
-    const key = offset;
-    offset += part.length;
-    return /^<br\s*\/?>$/i.test(part) ? <br key={key} /> : <Fragment key={key}>{part}</Fragment>;
-  });
+
+  for (const match of message.matchAll(tokenPattern)) {
+    if (match.index === undefined) {
+      continue;
+    }
+
+    if (match.index > offset) {
+      nodes.push(<Fragment key={offset}>{message.slice(offset, match.index)}</Fragment>);
+    }
+
+    const [rawToken, href, label] = match;
+    if (/^<br\s*\/?>$/i.test(rawToken)) {
+      nodes.push(<br key={match.index} />);
+    } else if (href === "http://www.google.com/chrome/") {
+      nodes.push(
+        <Link href={href} key={match.index} reloadDocument target="_blank" to={href}>
+          {label}
+        </Link>,
+      );
+    } else {
+      nodes.push(<Fragment key={match.index}>{rawToken}</Fragment>);
+    }
+
+    offset = match.index + rawToken.length;
+  }
+
+  if (offset < message.length) {
+    nodes.push(<Fragment key={offset}>{message.slice(offset)}</Fragment>);
+  }
+
+  return nodes;
 }

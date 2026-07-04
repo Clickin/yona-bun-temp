@@ -277,6 +277,26 @@ test("site admin mail renders legacy Html error message line breaks", async ({ p
   await expect(page.locator(".span10 > .alert-error p").nth(1).locator("br")).toHaveCount(1);
 });
 
+test("site admin mail renders legacy Html error message external link", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page, {
+    notConfiguredItems: [],
+    sender: "site-admin@yona.local",
+    sent: false,
+  });
+
+  await page.goto(`${basePath}/sites/mail?errorMessage=error.unsupported.ie`);
+  const message = page.locator(".span10 > .alert-error p").nth(1);
+  await expect(message.locator("br")).toHaveCount(1);
+  await expect(message).toContainText("Please note that you're using an unsupported version");
+  await expect(message).toContainText("We recommend the Google Chrome or 10+ version");
+
+  const chromeLink = message.locator("a", { hasText: "Google Chrome" });
+  await expect(chromeLink).toHaveAttribute("href", "http://www.google.com/chrome/");
+  await expect(chromeLink).toHaveAttribute("target", "_blank");
+});
+
 test("site admin mail renders legacy update notification badge", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
