@@ -315,6 +315,80 @@ test("project board list top navigation and filters are router-owned", async ({ 
   expect(filtersSource).toContain("<Link");
 });
 
+test("project board list pagination matches legacy yobi.Pagination behavior", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "paged");
+
+  await page.goto(
+    `${basePath}/admin/sample/posts?pageNum=2&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
+  );
+
+  const pagination = page.locator("#pagination");
+  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination.locator("> ul.page-nums")).toHaveCount(1);
+  await expect(pagination.locator("> ul.page-nums > li")).toHaveCount(5);
+  await expect(pagination.locator("li.page-num.ikon").first()).toContainText("Previous page");
+  await expect(pagination.locator("li.page-num.ikon").last()).toContainText("Next page");
+  await expect(pagination.locator("li.page-num.delimiter")).toHaveText("/");
+  await expect(pagination.locator("li.page-num").nth(3)).toHaveText("3");
+
+  const input = pagination.locator('input[name="pageNum"]');
+  await expect(input).toHaveAttribute("type", "number");
+  await expect(input).toHaveAttribute("pattern", "[0-9]*");
+  await expect(input).toHaveClass("input-mini nospinner");
+  await expect(input).toHaveAttribute("min", "1");
+  await expect(input).toHaveAttribute("max", "3");
+  await expect(input).toHaveValue("2");
+
+  await expect(pagination.locator("li.page-num.ikon").first().locator("a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
+  );
+  await expect(pagination.locator("li.page-num.ikon").last().locator("a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/posts?pageNum=3&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
+  );
+
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-pagination-next";
+  });
+  await pagination.locator("li.page-num.ikon").last().locator("a").click();
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/posts?pageNum=3&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
+  );
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-pagination-next");
+
+  const lastPagePagination = page.locator("#pagination");
+  await expect(lastPagePagination.locator('input[name="pageNum"]')).toHaveValue("3");
+  await expect(lastPagePagination.locator("li.page-num.ikon").last().locator("a")).toHaveCount(0);
+  await expect(lastPagePagination.locator("li.page-num.ikon").last()).toContainText("Next page");
+  await expect(lastPagePagination.locator("li.page-num.ikon").last().locator(".off")).toHaveCount(
+    2,
+  );
+
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-pagination-input";
+  });
+  await input.fill("99");
+  await input.press("Enter");
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/posts?pageNum=3&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
+  );
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("3");
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-pagination-input");
+
+  await page.locator('#pagination input[name="pageNum"]').fill("1.5");
+  await page.locator('#pagination input[name="pageNum"]').press("Enter");
+  await expect(page).toHaveURL(
+    `${basePath}/admin/sample/posts?pageNum=3&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
+  );
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("3");
+});
+
 test("project board list empty state matches legacy board/list.scala.html DOM", async ({
   page,
 }) => {
@@ -326,6 +400,8 @@ test("project board list empty state matches legacy board/list.scala.html DOM", 
   await expect(page.locator(".error-wrap")).toHaveText("No post has been added.");
   await expect(page.locator(".filter-wrap.board")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
+  await expect(page.locator("#pagination")).not.toHaveClass(/page-navigation-wrap/u);
+  await expect(page.locator("#pagination")).toBeEmpty();
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedProjectPostsEmpty().replaceAll("__BASE_PATH__", basePath)),
@@ -1780,6 +1856,7 @@ async function mockProjectPosts(
   page: Page,
   state:
     | "default"
+    | "paged"
     | "empty"
     | "prefix"
     | "readonlyLabel"
@@ -1898,6 +1975,8 @@ async function mockProjectPosts(
   });
   await page.route("**/api/v1/projects/admin/sample/posts?**", async (route) => {
     const isEmpty = state === "empty";
+    const requestUrl = new URL(route.request().url());
+    const requestPageNum = Number(requestUrl.searchParams.get("pageNum")) || 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1949,11 +2028,11 @@ async function mockProjectPosts(
               },
             ],
         ownerName: "admin",
-        pageNum: 1,
+        pageNum: state === "paged" ? requestPageNum : 1,
         pageSize: 15,
         projectName: "sample",
         readme: null,
-        totalCount: isEmpty ? 0 : 2,
+        totalCount: isEmpty ? 0 : state === "paged" ? 45 : 2,
       }),
     });
   });

@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { Fragment, useState, type HTMLAttributes, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  Fragment,
+  useState,
+  type HTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import {
   listProjectPostsQueryOptions,
   readProjectPostFormOptionsQueryOptions,
@@ -197,7 +203,13 @@ function ProjectPostsBody({
         )}
 
         <div className="write-btn-wrap"></div>
-        <div id="pagination"></div>
+        <BoardPagination
+          basePath={runtimeConfig.basePath}
+          ownerName={ownerName}
+          posts={posts}
+          projectName={projectName}
+          search={search}
+        />
         <BoardListKeymap project={project} />
       </div>
     </div>
@@ -340,6 +352,105 @@ function BoardFilters({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function BoardPagination({
+  basePath,
+  ownerName,
+  posts,
+  projectName,
+  search,
+}: {
+  basePath: string;
+  ownerName: string;
+  posts: ProjectPostsResponse;
+  projectName: string;
+  search: ProjectPostsSearch;
+}) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  const totalPages = Math.ceil(posts.totalCount / Math.max(posts.pageSize, 1));
+  if (totalPages <= 1) {
+    return <div id="pagination"></div>;
+  }
+
+  const currentPage = clampPage(posts.pageNum, totalPages);
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const pageSearch = (pageNum: number) => ({ ...search, pageNum });
+  const navigateToPage = (pageNum: number) => {
+    router.history.push(boardListHref(basePath, ownerName, projectName, pageSearch(pageNum)));
+  };
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    if (!/^\d+$/u.test(event.currentTarget.value)) {
+      event.currentTarget.value = String(currentPage);
+      return;
+    }
+
+    const nextPage = clampPage(Number.parseInt(event.currentTarget.value, 10), totalPages);
+    event.currentTarget.value = String(nextPage);
+    navigateToPage(nextPage);
+  };
+
+  return (
+    <div id="pagination" className="page-navigation-wrap">
+      <ul className="page-nums">
+        <li className="page-num ikon">
+          {hasPrev ? (
+            <Link
+              to={boardListHref("", ownerName, projectName, pageSearch(currentPage - 1))}
+              activeProps={{ className: undefined }}
+            >
+              <i className="ico btn-pg-prev"></i>
+              <span>{t("button.prevPage")}</span>
+            </Link>
+          ) : (
+            <>
+              <i className="ico btn-pg-prev off"></i>
+              <span className="off">{t("button.prevPage")}</span>
+            </>
+          )}
+        </li>
+        <li className="page-num">
+          <input
+            type="number"
+            pattern="[0-9]*"
+            className="input-mini nospinner"
+            name="pageNum"
+            max={totalPages}
+            min={1}
+            defaultValue={currentPage}
+            key={`${currentPage}-${totalPages}`}
+            onClick={(event) => event.currentTarget.select()}
+            onKeyDown={handleInputKeyDown}
+          />
+        </li>
+        <li className="page-num delimiter">/</li>
+        <li className="page-num">{totalPages}</li>
+        <li className="page-num ikon">
+          {hasNext ? (
+            <Link
+              to={boardListHref("", ownerName, projectName, pageSearch(currentPage + 1))}
+              activeProps={{ className: undefined }}
+            >
+              <span>{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next"></i>
+            </Link>
+          ) : (
+            <>
+              <span className="off">{t("button.nextPage")}</span>
+              <i className="ico btn-pg-next off"></i>
+            </>
+          )}
+        </li>
+      </ul>
     </div>
   );
 }
@@ -645,4 +756,8 @@ function stringField(value: unknown, fallback = ""): string {
 
 function booleanField(value: unknown): boolean {
   return value === true;
+}
+
+function clampPage(pageNum: number, totalPages: number) {
+  return Math.min(Math.max(pageNum, 1), totalPages);
 }
