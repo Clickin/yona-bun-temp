@@ -21,7 +21,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/branches")({
 });
 
 const legacyCommitSearch = { page: undefined } as unknown as { page: number };
-const legacyInactiveSearch = { __legacyInactive: undefined } as unknown as Record<string, never>;
 
 function ProjectBranchesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -126,7 +125,7 @@ function ProjectBranchesBody({
                 <Link
                   to="/$ownerName/$projectName/branches"
                   params={{ ownerName, projectName }}
-                  search={legacyInactiveSearch}
+                  search={{ __legacyInactive: undefined } as never}
                   activeOptions={{
                     exact: true,
                     explicitUndefined: true,

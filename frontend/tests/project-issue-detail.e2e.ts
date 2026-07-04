@@ -221,10 +221,11 @@ test("project issue detail route has no generic LegacyInternalLink adapter", () 
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("createElement");
   expect(routeSource).not.toMatch(/^\s*<a(?:\s|>)/mu);
-  expect(routeSource.match(/<a class="attached-delete"/gu)).toHaveLength(1);
-  expect(routeSource.match(/attachedFilesHtml\((?:issue|comment)\.attachments\)/gu)).toHaveLength(
-    2,
-  );
+  expect(routeSource).not.toContain("function attachedFilesHtml");
+  expect(routeSource).not.toContain('<a class="attached-delete"');
+  expect(routeSource).not.toContain("attachedFilesHtml(issue.attachments)");
+  expect(routeSource).not.toContain("attachedFilesHtml(comment.attachments)");
+  expect(routeSource).toContain('<button type="button" className="attached-delete">');
   expect(routeSource).toContain("const LEGACY_LINK_PROPS = {");
   expect(routeSource).toContain(
     "`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}` as never",
@@ -1690,7 +1691,7 @@ test("project issue detail renders legacy attachment file items", async ({ page 
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const expectedIssueAttachments =
-    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(issueAttachments)}'><li class="attached-file" data-name="issue-spec.txt" data-href="__BASE_PATH__/files/501" data-mime="text/plain" data-size="12345"><strong>issue-spec.txt(12.3 kB)</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li></div>`.replaceAll(
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(issueAttachments)}'><li class="attached-file" data-name="issue-spec.txt" data-href="__BASE_PATH__/files/501" data-mime="text/plain" data-size="12345"><strong>issue-spec.txt(12.3 kB)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -1699,7 +1700,7 @@ test("project issue detail renders legacy attachment file items", async ({ page 
   );
 
   const expectedCommentAttachments =
-    `<div class="attachments pull-left" data-attachments='${JSON.stringify(commentAttachments)}'><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/502" data-mime="image/png" data-size="4096"><strong>comment-shot.png(4.1 kB)</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li></div>`.replaceAll(
+    `<div class="attachments pull-left" data-attachments='${JSON.stringify(commentAttachments)}'><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/502" data-mime="image/png" data-size="4096"><strong>comment-shot.png(4.1 kB)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );

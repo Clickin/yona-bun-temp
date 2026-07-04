@@ -127,8 +127,18 @@ test("project code branch links navigate through the SPA router", async ({ page 
 });
 
 test("project code branches route uses Link for internal anchors", () => {
+  const branchesTabLink = ROUTE_SOURCE.match(
+    /<Link\s+to="\/\$ownerName\/\$projectName\/branches"[\s\S]*?<\/Link>/u,
+  )?.[0];
+
+  expect(branchesTabLink).toBeTruthy();
+  expect(branchesTabLink).toContain("search={{ __legacyInactive: undefined } as never}");
+  expect(branchesTabLink).toContain("activeOptions={{");
+  expect(branchesTabLink).toContain("includeSearch: true");
+  expect(branchesTabLink).toContain('"data-status": undefined');
   expect(ROUTE_SOURCE).toContain("import { Link, createFileRoute }");
   expect(ROUTE_SOURCE).not.toContain("legacyLinkProps");
+  expect(ROUTE_SOURCE).not.toContain("legacyInactiveSearch");
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/code/$branch"');
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/branches"');
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"');

@@ -697,8 +697,9 @@ function IssueDetailBody({
               className="attachments"
               id="attachments"
               data-attachments={JSON.stringify(issue.attachments ?? [])}
-              dangerouslySetInnerHTML={{ __html: attachedFilesHtml(issue.attachments) }}
-            ></div>
+            >
+              <AttachedFiles attachments={issue.attachments} />
+            </div>
             <div className="board-actrow right-txt">
               <div className="pull-left">
                 <div>
@@ -2544,8 +2545,9 @@ function IssueCommentRow({
           <div
             className="attachments pull-left"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
-            dangerouslySetInnerHTML={{ __html: attachedFilesHtml(comment.attachments) }}
-          ></div>
+          >
+            <AttachedFiles attachments={comment.attachments} />
+          </div>
         </div>
       </div>
       <ChildComments
@@ -3292,24 +3294,46 @@ function labelSelectOptionsHtml(labels: YonaRecord[], selectedLabelIds: Set<stri
   ].join("");
 }
 
-function attachedFilesHtml(
+function AttachedFiles({
+  attachments,
+}: {
   attachments?:
     | RestIssueDetailResponse["attachments"]
-    | { attachments?: RestIssueDetailResponse["attachments"] },
-): string {
+    | { attachments?: RestIssueDetailResponse["attachments"] };
+}) {
   const files = attachmentItems(attachments);
 
-  return files
-    .map((file) => {
-      const name = stringField(file.name);
-      const href = stringField(file.url);
-      const mimeType = stringField(file.mimeType);
-      const size = stringField(file.size);
-      const sizeReadable = stringField(file.sizeLabel, size);
+  return (
+    <>
+      {files.map((file) => {
+        const id = stringField(file.id);
+        const name = stringField(file.name);
+        const href = stringField(file.url);
+        const mimeType = stringField(file.mimeType);
+        const size = stringField(file.size);
+        const sizeReadable = stringField(file.sizeLabel, size);
+        const notice = stringField(file.notice);
 
-      return `<li class="attached-file" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}" data-size="${escapeHtml(size)}"><strong>${escapeHtml(name)}(${escapeHtml(sizeReadable)})</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li>`;
-    })
-    .join("");
+        return (
+          <li
+            className="attached-file"
+            data-name={name}
+            data-href={href}
+            data-mime={mimeType}
+            data-size={size}
+            key={`${id}:${href}:${name}`}
+          >
+            <strong>
+              {name}({sizeReadable}){notice}
+            </strong>
+            <button type="button" className="attached-delete">
+              <i className="ico btn-delete"></i>
+            </button>
+          </li>
+        );
+      })}
+    </>
+  );
 }
 
 function attachmentItems(value: unknown): Array<Record<string, unknown>> {

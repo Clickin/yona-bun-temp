@@ -273,10 +273,9 @@ function ProjectPostDetailBody({
               className="attachments"
               id="attachments"
               data-attachments={JSON.stringify(post.attachments ?? [])}
-              dangerouslySetInnerHTML={{
-                __html: attachedFilesHtml(basePath, post.attachments),
-              }}
-            ></div>
+            >
+              <AttachedFiles basePath={basePath} attachments={post.attachments} />
+            </div>
             <div className="board-actrow right-txt">
               <div className="pull-left">
                 <div>
@@ -958,13 +957,9 @@ function PostCommentRow({
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
           </div>
-          <div
-            className="attachments"
-            data-attachments={JSON.stringify(comment.attachments ?? [])}
-            dangerouslySetInnerHTML={{
-              __html: attachedFilesHtml(basePath, comment.attachments),
-            }}
-          ></div>
+          <div className="attachments" data-attachments={JSON.stringify(comment.attachments ?? [])}>
+            <AttachedFiles basePath={basePath} attachments={comment.attachments} />
+          </div>
         </div>
       </div>
       <PostChildComments
@@ -1094,12 +1089,9 @@ function PostCommentUpdateForm({
             value=""
           />
           <div className={`preview-${commentId}`}></div>
-          <div
-            className="attachment-files"
-            dangerouslySetInnerHTML={{
-              __html: attachmentFileHtml(basePath, comment.attachments),
-            }}
-          ></div>
+          <div className="attachment-files">
+            <CommentEditAttachmentFiles basePath={basePath} attachments={comment.attachments} />
+          </div>
           <div
             id={`upload-${commentId}`}
             data-resourcetype="NONISSUE_COMMENT"
@@ -1357,32 +1349,79 @@ function MarkdownEditor({
   );
 }
 
-function attachedFilesHtml(basePath: string, attachments: BoardAttachment[]) {
-  return attachments
-    .map((file) => {
-      const id = stringField(file.id);
-      const name = stringField(file.name);
-      const mimeType = stringField(file.mimeType);
-      const size = String(file.size);
-      const href = prefixBasePath(basePath, `/files/${id}`);
+function AttachedFiles({
+  attachments,
+  basePath,
+}: {
+  attachments: BoardAttachment[];
+  basePath: string;
+}) {
+  return (
+    <>
+      {attachments.map((file) => {
+        const id = stringField(file.id);
+        const name = stringField(file.name);
+        const mimeType = stringField(file.mimeType);
+        const size = String(file.size);
+        const href = prefixBasePath(basePath, `/files/${id}`);
 
-      return `<li class="attached-file" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}" data-size="${escapeHtml(size)}"><strong>${escapeHtml(name)}(${escapeHtml(size)})</strong><a class="attached-delete"><i class="ico btn-delete"></i></a></li>`;
-    })
-    .join("");
+        return (
+          <li
+            className="attached-file"
+            data-name={name}
+            data-href={href}
+            data-mime={mimeType}
+            data-size={size}
+            key={id}
+          >
+            <strong>
+              {name}({size})
+            </strong>
+            <button type="button" className="attached-delete">
+              <i className="ico btn-delete"></i>
+            </button>
+          </li>
+        );
+      })}
+    </>
+  );
 }
 
-function attachmentFileHtml(basePath: string, attachments: BoardAttachment[]) {
-  return attachments
-    .map((file) => {
-      const id = stringField(file.id);
-      const name = stringField(file.name);
-      const mimeType = stringField(file.mimeType);
-      const size = String(file.size);
-      const href = prefixBasePath(basePath, `/files/${id}`);
+function CommentEditAttachmentFiles({
+  attachments,
+  basePath,
+}: {
+  attachments: BoardAttachment[];
+  basePath: string;
+}) {
+  return (
+    <>
+      {attachments.map((file) => {
+        const id = stringField(file.id);
+        const name = stringField(file.name);
+        const mimeType = stringField(file.mimeType);
+        const size = String(file.size);
+        const href = prefixBasePath(basePath, `/files/${id}`);
 
-      return `<div class="attached-file attached-file-marker" data-name="${escapeHtml(name)}" data-href="${escapeHtml(href)}" data-mime="${escapeHtml(mimeType)}"><i class="mimetype"></i><strong class="name">${escapeHtml(name)}</strong><span class="size">${escapeHtml(size)}</span><button type="button" class="btn-transparent btn-delete" data-id="${escapeHtml(id)}">×</button></div>`;
-    })
-    .join("");
+        return (
+          <div
+            className="attached-file attached-file-marker"
+            data-name={name}
+            data-href={href}
+            data-mime={mimeType}
+            key={id}
+          >
+            <i className="mimetype"></i>
+            <strong className="name">{name}</strong>
+            <span className="size">{size}</span>
+            <button type="button" className="btn-transparent btn-delete" data-id={id}>
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </>
+  );
 }
 
 function TasklistBar() {
@@ -1500,14 +1539,6 @@ function siteSearchKeys() {
 
 function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
 }
 
 function booleanField(value: unknown) {
