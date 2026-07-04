@@ -903,6 +903,24 @@ test("project issue pagination input clamps and routes like legacy yobi.Paginati
   ).toBe("issue-page-input");
 });
 
+test("project issue pagination input rejects decimal text like legacy yobi.Pagination keydown", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=2&state=open`);
+  const pageInput = page.locator('#pagination input[name="pageNum"][type="number"]');
+  await pageInput.click();
+  await pageInput.fill("1.5");
+  const beforeUrl = page.url();
+
+  await pageInput.press("Enter");
+
+  await expect(pageInput).toHaveValue("2");
+  expect(page.url()).toBe(beforeUrl);
+});
+
 test("project issue Excel export href removes pageNum like legacy partial_list_wrap.scala.html", async ({
   page,
 }) => {
