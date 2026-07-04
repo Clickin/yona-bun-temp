@@ -255,7 +255,9 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               <LegacyTabIndexButton tabIndexValue="3" className="ybtn ybtn-success">
                 {t("button.save")}
               </LegacyTabIndexButton>
-              <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
+              <HistoryBackLink onCancel={() => router.history.back()}>
+                {t("button.cancel")}
+              </HistoryBackLink>
             </div>
           </div>
         </form>
@@ -286,10 +288,10 @@ function LegacyTabIndexButton({
   return <button ref={buttonRef} {...props}></button>;
 }
 
-function HistoryBackLink({ children }: { children: string }) {
+function HistoryBackLink({ children, onCancel }: { children: string; onCancel: () => void }) {
   return (
     // oxlint-disable-next-line jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html sets tabindex="4" on Cancel.
-    <button type="button" className="ybtn" tabIndex={4} onClick={() => window.history.back()}>
+    <button type="button" className="ybtn" tabIndex={4} onClick={onCancel}>
       {children}
     </button>
   );

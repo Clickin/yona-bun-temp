@@ -36,6 +36,8 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("classList");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("style.display");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
+  expect(POSTFORM_ROUTE_SOURCE).toContain("router.history.back()");
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
