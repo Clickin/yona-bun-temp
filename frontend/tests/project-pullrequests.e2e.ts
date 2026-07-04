@@ -437,7 +437,8 @@ test("project pull request multi-page list matches legacy pagination DOM", async
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
-  await expect(page.locator("#pagination a").filter({ hasText: "NEXT" })).toHaveAttribute(
+  await expect(page.locator("#pagination span.off")).toHaveText("Previous page");
+  await expect(page.locator("#pagination a").filter({ hasText: "Next page" })).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequests?filter=pages&pageNum=2`,
   );
@@ -622,9 +623,9 @@ function expectedPagedPullRequests(basePath: string) {
     .replace('<span class="num-badge">1</span>', '<span class="num-badge">2</span>')
     .replace(
       '<div id="pagination"></div>',
-      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">PREV</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
+      '<div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="' +
         basePath +
-        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2"><span>NEXT</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
+        '/admin/sample/pullRequests?filter=pages&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>',
     );
 }
 

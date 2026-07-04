@@ -1,4 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
+import { useLegacyMessages } from "../../i18n";
 
 export function SitePagination({
   basePath,
@@ -12,6 +13,9 @@ export function SitePagination({
   totalPages: number;
 }) {
   const router = useRouter();
+  const { t } = useLegacyMessages();
+  const prevPageLabel = t("button.prevPage");
+  const nextPageLabel = t("button.nextPage");
 
   if (totalPages <= 0) {
     return <div id="pagination"></div>;
@@ -27,12 +31,12 @@ export function SitePagination({
           {hasPrev ? (
             <Link to={stripBasePath(basePath, pageHref(currentPage - 1))}>
               <i className="ico btn-pg-prev"></i>
-              <span>PREV</span>
+              <span>{prevPageLabel}</span>
             </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">PREV</span>
+              <span className="off">{prevPageLabel}</span>
             </>
           )}
         </li>
@@ -69,12 +73,12 @@ export function SitePagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link to={stripBasePath(basePath, pageHref(currentPage + 1))}>
-              <span>NEXT</span>
+              <span>{nextPageLabel}</span>
               <i className="ico btn-pg-next"></i>
             </Link>
           ) : (
             <>
-              <span className="off">NEXT</span>
+              <span className="off">{nextPageLabel}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
