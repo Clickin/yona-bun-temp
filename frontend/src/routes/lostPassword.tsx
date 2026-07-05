@@ -137,7 +137,6 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   id="loginId"
                   name="loginId"
                   required
-                  ref={setRequiredAttributeValue}
                   placeholder={t("user.loginId")}
                   className="text"
                   {...(shouldPrefillCurrentUser ? { defaultValue: currentUserLoginId } : {})}
@@ -186,10 +185,6 @@ function lostPasswordErrorMessage(error: string, t: ReturnType<typeof useLegacyM
   return t(error === "invalid" ? "site.resetPasswordEmail.invalidRequest" : error, {
     fallback: error,
   });
-}
-
-function setRequiredAttributeValue(element: HTMLInputElement | null) {
-  element?.setAttribute("required", "required");
 }
 
 function HighlightedLegacyMessage({ message }: { message: string }) {

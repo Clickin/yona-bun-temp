@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const MIGRATION_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/migration.tsx", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_MIGRATION_SCREEN = `
 <div class="unsupported hidden">
@@ -84,7 +90,7 @@ const EXPECTED_MIGRATION_SCREEN = `
       </div>
       <div class="span6 status">
         <div class="progress row">
-          <div class="bar span10 bar-danger" style="width: 0%">0/0</div>
+          <div class="bar span10 bar-danger" style="width: 0%;">0/0</div>
         </div>
         <table class="table">
           <thead>
@@ -133,6 +139,13 @@ const EXPECTED_MIGRATION_SCREEN = `
 </footer>
 `;
 
+test("migration route source keeps tabindex and progress width declarative", () => {
+  expect(MIGRATION_ROUTE_SOURCE).not.toMatch(/setAttribute\(["'](?:style|tabindex)["']/u);
+  expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={1}");
+  expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={2}");
+  expect(MIGRATION_ROUTE_SOURCE).toContain('style={{ width: "0%" }}');
+});
+
 test("migration disabled shell matches legacy migration/home.scala.html screen DOM", async ({
   page,
 }) => {
@@ -143,6 +156,12 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
   await expect(page.locator(".yobi-migration form")).toHaveCount(0);
   await expect(page.locator(".source-project input.search-query")).toBeDisabled();
   await expect(page.locator(".destination-project input.search-query")).toBeDisabled();
+  await expect(page.locator(".source-project input.search-query")).toHaveAttribute("tabindex", "1");
+  await expect(page.locator(".destination-project input.search-query")).toHaveAttribute(
+    "tabindex",
+    "2",
+  );
+  await expect(page.locator(".progress .span10")).toHaveAttribute("style", "width: 0%;");
   await expect(page.locator('head meta[name="viewport"]')).toHaveAttribute(
     "content",
     "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_LOST_PASSWORD_SCREEN = `
@@ -62,7 +64,7 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
     <form method="post" action="/lostPassword">
       <dl>
         <dd>
-          <input type="text" id="loginId" name="loginId" required="required" placeholder="Login ID" class="text">
+          <input type="text" id="loginId" name="loginId" required="" placeholder="Login ID" class="text">
         </dd>
         <dd>
           <input type="text" id="emailAddress" name="emailAddress" required="" placeholder="Email address" class="text">
@@ -156,6 +158,24 @@ test("authenticated lost-password form prefills current user like legacy", async
   await expect(page.locator("#loginId")).toHaveAttribute("value", "doortts");
   await expect(page.locator("#emailAddress")).toHaveValue("doortts@example.com");
   await expect(page.locator("#emailAddress")).toHaveAttribute("value", "doortts@example.com");
+});
+
+test("lost-password required attributes are declarative browser-normalized parity", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword`);
+
+  await expect(page.locator("#loginId")).toHaveJSProperty("required", true);
+  await expect(page.locator("#loginId")).toHaveAttribute("required", "");
+  await expect(page.locator("#emailAddress")).toHaveJSProperty("required", true);
+  await expect(page.locator("#emailAddress")).toHaveAttribute("required", "");
+});
+
+test("lost-password route does not mutate required attributes after render", () => {
+  const routeSource = readFileSync(resolve("src/routes/lostPassword.tsx"), "utf8");
+
+  expect(routeSource).not.toContain('setAttribute("required"');
 });
 
 test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({

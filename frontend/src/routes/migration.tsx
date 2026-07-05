@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy migration/home.scala.html requires positive tab order on source/destination search inputs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
@@ -56,7 +57,7 @@ function MigrationScreen() {
             <div className="header">Source 0 개</div>
             <div className="search left-border">
               <input
-                ref={setSourceSearchTabIndex}
+                tabIndex={1}
                 type="text"
                 className="search-query"
                 name="target-filter"
@@ -71,7 +72,7 @@ function MigrationScreen() {
             <div className="search">
               <input
                 type="text"
-                ref={setDestinationSearchTabIndex}
+                tabIndex={2}
                 className="search-query"
                 name="target-filter"
                 placeholder="Search.."
@@ -82,7 +83,7 @@ function MigrationScreen() {
           </div>
           <div className="span6 status">
             <div className="progress row">
-              <div className="bar span10 bar-danger" ref={setZeroWidthStyle}>
+              <div className="bar span10 bar-danger" style={{ width: "0%" }}>
                 0/0
               </div>
             </div>
@@ -148,16 +149,4 @@ function MigrationScreen() {
       </div>
     </div>
   );
-}
-
-function setZeroWidthStyle(element: HTMLDivElement | null) {
-  element?.setAttribute("style", "width: 0%");
-}
-
-function setSourceSearchTabIndex(element: HTMLInputElement | null) {
-  element?.setAttribute("tabindex", "1");
-}
-
-function setDestinationSearchTabIndex(element: HTMLInputElement | null) {
-  element?.setAttribute("tabindex", "2");
 }
