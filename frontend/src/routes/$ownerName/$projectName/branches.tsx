@@ -69,10 +69,8 @@ function ProjectBranchesBody({
     branches.defaultBranch || branches.branches.find((branch) => branch.isDefault)?.name || "";
   const defaultBranch = shortBranchName(rawDefaultBranch);
   const rows = [
-    ...branches.branches
-      .filter((branch) => branch.name === rawDefaultBranch || branch.isDefault)
-      .slice(0, 1),
-    ...branches.branches.filter((branch) => branch.name !== rawDefaultBranch && !branch.isDefault),
+    ...branches.branches.filter((branch) => isDefaultBranch(branch, rawDefaultBranch)).slice(0, 1),
+    ...branches.branches.filter((branch) => !isDefaultBranch(branch, rawDefaultBranch)),
   ];
 
   return (
@@ -188,7 +186,7 @@ function BranchRow({
   const { ownerName, projectName } = Route.useParams();
   const queryClient = useQueryClient();
   const encodedBranch = encodeBranch(branch.name);
-  const isHead = branch.name === branches.defaultBranch || branch.isDefault;
+  const isHead = isDefaultBranch(branch, branches.defaultBranch);
   const queryKey = apiQueryKeys.project.codeBranches(ownerName, projectName);
   const setDefaultMutation = useMutation({
     mutationFn: async () => {
@@ -343,4 +341,16 @@ function encodeBranch(branchName: string) {
 function shortBranchName(branchName: string) {
   const slashIndex = branchName.lastIndexOf("/");
   return slashIndex > 0 ? branchName.slice(slashIndex + 1) : branchName;
+}
+
+function isDefaultBranch(branch: CodeBranchListItem, defaultBranch: string) {
+  if (branch.isDefault) {
+    return true;
+  }
+  const defaultBranchName = shortBranchName(defaultBranch);
+  return (
+    branch.name === defaultBranch ||
+    branch.name === defaultBranchName ||
+    branch.shortName === defaultBranchName
+  );
 }

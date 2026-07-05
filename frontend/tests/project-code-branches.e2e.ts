@@ -250,7 +250,7 @@ function branchesPayload() {
         commitId: "abcdef1234567890",
         commitMessage: "Initial commit",
         commitShortId: "abcdef1",
-        isDefault: true,
+        isDefault: false,
         name: "main",
         pullRequest: null,
         shortName: "main",
