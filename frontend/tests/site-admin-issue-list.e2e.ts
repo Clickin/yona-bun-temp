@@ -179,6 +179,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ]);
   await expect(page.locator(".site-setting-nav li").nth(2)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveAttribute(
     "href",
@@ -315,6 +316,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(routeSource).not.toContain("issuePath");
   expect(routeSource).not.toContain("authorPath");
   expect(routeSource).not.toContain("to={item.href}");
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('pjax-page=""');
 });
 
@@ -577,6 +579,17 @@ async function mockUpdate(
       body: JSON.stringify(response),
     });
   });
+}
+
+async function siteSettingNavActiveMarkerLeaks(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.flatMap((link) => {
+      const leaked = ["class", "aria-current", "data-status"].filter((name) =>
+        link.hasAttribute(name),
+      );
+      return leaked.map((name) => `${link.textContent?.trim() ?? ""}:${name}`);
+    }),
+  );
 }
 
 async function issueListMetrics(page: Page) {
