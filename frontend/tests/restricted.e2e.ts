@@ -111,8 +111,14 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
   });
 
   await page.goto(`${basePath}/restricted`);
-  await expect(page.locator(".logo.logo-letter")).toHaveAttribute("href", `${basePath}/`);
-  await page.locator(".logo.logo-letter").click();
+  const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
+  await expectLegacyAnchor(logoLink, {
+    className: "logo logo-letter",
+    href: `${basePath}/`,
+    target: null,
+    text: "Y",
+  });
+  await logoLink.click();
 
   await expect
     .poll(() => page.evaluate(() => `${location.pathname}${location.hash}`))
@@ -122,8 +128,55 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
     .toBe("1");
 });
 
+test("restricted footer links preserve legacy external anchors without router markers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockRestrictedSession(page);
+
+  await page.goto(`${basePath}/restricted`);
+
+  await expectLegacyAnchor(
+    page.locator(
+      '.page-footer .provider a[href="https://github.com/yona-projects/yona/blob/master/AUTHORS"]',
+    ),
+    {
+      className: "yona-author",
+      href: "https://github.com/yona-projects/yona/blob/master/AUTHORS",
+      target: "_blank",
+      text: "Yona authors",
+    },
+  );
+  await expectLegacyAnchor(page.locator('.page-footer .provider a[href="https://navercorp.com"]'), {
+    className: null,
+    href: "https://navercorp.com",
+    target: "_blank",
+    text: "NAVER Corp.",
+  });
+  await expectLegacyAnchor(
+    page.locator('.page-footer .provider a[href="https://naverlabs.com/"]'),
+    {
+      className: "naver-labs",
+      href: "https://naverlabs.com/",
+      target: "_blank",
+      text: "NAVER LABS",
+    },
+  );
+  await expectLegacyAnchor(
+    page.locator('.page-footer .provider a[href="https://www.ncloud.com/?referer=yona"]'),
+    {
+      className: "naver-cloud-platform",
+      href: "https://www.ncloud.com/?referer=yona",
+      target: "_blank",
+      text: "NAVER CLOUD PLATFORM",
+    },
+  );
+});
+
 test("restricted route source keeps internal navigation out of raw anchors", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('<Link to="/" className="logo logo-letter">');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('to="/"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('className="logo logo-letter"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps={legacyPlainLinkActiveProps}");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
 });
 
@@ -138,6 +191,11 @@ test("restricted route source keeps footer links as external href Links", async 
   expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.authors}");
   expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.naver}");
   expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.naver}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.naverLabs}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.naverLabs}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.ncloud}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.ncloud}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("reloadDocument");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain(" as never");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/to=\{["'`]https?:\/\//);
 });
@@ -186,6 +244,31 @@ async function mockRestrictedSession(page: Page) {
       }),
     });
   });
+}
+
+async function expectLegacyAnchor(
+  locator: ReturnType<Page["locator"]>,
+  expected: {
+    className: null | string;
+    href: string;
+    target: null | string;
+    text: string;
+  },
+) {
+  await expect(locator).toHaveText(expected.text);
+  await expect(locator).toHaveAttribute("href", expected.href);
+  if (expected.target === null) {
+    await expect(locator).not.toHaveAttribute("target");
+  } else {
+    await expect(locator).toHaveAttribute("target", expected.target);
+  }
+  if (expected.className === null) {
+    await expect(locator).not.toHaveAttribute("class");
+  } else {
+    await expect(locator).toHaveAttribute("class", expected.className);
+  }
+  await expect(locator).not.toHaveAttribute("aria-current");
+  await expect(locator).not.toHaveAttribute("data-status");
 }
 
 async function readDesktopRestrictedMetrics(page: Page) {

@@ -196,6 +196,7 @@ function ProjectImportScreen({
                     to="/projectform"
                     search={{ owner: ownerName || selectedOwner }}
                     className="ybtn ybtn-small nm"
+                    activeOptions={{ exact: true }}
                     activeProps={{ className: undefined }}
                   >
                     <strong>{t("title.newProject")}</strong>
@@ -499,7 +500,12 @@ function ProjectImportScreen({
                 <button className="ybtn ybtn-primary" disabled={importMutation.isPending}>
                   {t("project.create")}
                 </button>
-                <Link to="/" className="ybtn" activeProps={{ className: undefined }}>
+                <Link
+                  to="/"
+                  className="ybtn"
+                  activeOptions={{ exact: true }}
+                  activeProps={{ className: undefined }}
+                >
                   {t("button.cancel")}
                 </Link>
               </div>

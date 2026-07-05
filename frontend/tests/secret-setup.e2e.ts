@@ -185,6 +185,11 @@ test("first-run secret setup logo is SPA-owned internal navigation", async ({ pa
     "href",
     tanStackRootHref(basePath),
   );
+  await expectLegacyAnchor(page, ".secret-wrap .logo", {
+    className: "logo",
+    href: tanStackRootHref(basePath),
+    text: "Yona",
+  });
   await expect(page.locator(".secret-wrap .logo span")).toHaveText("Yona");
 
   const documentRequests: string[] = [];
@@ -381,42 +386,54 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
   );
 
   expect(actual).toEqual(expected);
-  await expect(page.locator(".gnb-nav a").nth(2)).toHaveAttribute(
-    "href",
-    "https://github.com/nforge/yobi/issues?state=open",
-  );
-  await expect(page.locator(".gnb-nav a").nth(2)).toHaveAttribute("target", "_blank");
-  await expect(page.locator(".gnb-nav a").nth(2)).toHaveText("Feedback");
-  await expect(page.locator(".page-footer .provider > a").nth(0)).toHaveAttribute(
-    "href",
-    "http://navercorp.com/",
-  );
-  await expect(page.locator(".page-footer .provider > a").nth(0)).toHaveAttribute(
-    "target",
-    "_blank",
-  );
-  await expect(page.locator(".page-footer .provider > a").nth(0)).toHaveText("NAVER Corp.");
-  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveAttribute(
-    "href",
-    "https://developers.naver.com/d2/",
-  );
-  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveAttribute(
-    "target",
-    "_blank",
-  );
-  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveAttribute(
-    "class",
-    "d2-program",
-  );
-  await expect(page.locator(".page-footer .provider > a").nth(1)).toHaveText("D2 Program");
+  await expectLegacyAnchor(page, ".gnb-inner > .logo", {
+    className: "logo",
+    href: tanStackRootHref(basePath),
+    text: "Yona",
+  });
+  await expectLegacyAnchor(page, ".gnb-nav a >> nth=0", {
+    href: `${basePath}/projects`,
+    text: "Project list",
+  });
+  await expectLegacyAnchor(page, ".gnb-nav a >> nth=1", {
+    href: `${basePath}/_help`,
+    text: "Help",
+  });
+  await expectLegacyAnchor(page, ".gnb-nav a >> nth=2", {
+    href: "https://github.com/nforge/yobi/issues?state=open",
+    target: "_blank",
+    text: "Feedback",
+  });
+  await expectLegacyAnchor(page, ".error-wrap .ybtn", {
+    className: "ybtn ybtn-info",
+    href: tanStackRootHref(basePath),
+    text: "Home",
+  });
+  await expectLegacyAnchor(page, ".page-footer .provider > a >> nth=0", {
+    href: "http://navercorp.com/",
+    target: "_blank",
+    text: "NAVER Corp.",
+  });
+  await expectLegacyAnchor(page, ".page-footer .provider > a >> nth=1", {
+    className: "d2-program",
+    href: "https://developers.naver.com/d2/",
+    target: "_blank",
+    text: "D2 Program",
+  });
 });
 
 test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
-  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="logo">/u);
-  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects">/u);
-  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help">/u);
-  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/"\s+className="ybtn ybtn-info">/u);
+  expect(SECRET_ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(SECRET_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /<Link\s+to="\/"\s+className="logo"\s+activeProps=\{legacyAnchorActiveProps\}>/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /<Link\s+to="\/"\s+className="ybtn ybtn-info"\s+activeProps=/u,
+  );
   expect(SECRET_ROUTE_SOURCE).toMatch(
     /href="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+to="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+target="_blank"/u,
   );
@@ -503,6 +520,28 @@ async function readDesktopSecretMetrics(page: Page) {
       secretBoxWidth: secretBoxStyle.width,
     };
   });
+}
+
+async function expectLegacyAnchor(
+  page: Page,
+  selector: string,
+  expected: { className?: string; href: string; target?: string; text: string },
+) {
+  const link = page.locator(selector);
+  await expect(link).toHaveAttribute("href", expected.href);
+  await expect(link).toHaveText(expected.text);
+  if (expected.className) {
+    await expect(link).toHaveAttribute("class", expected.className);
+  } else {
+    await expect(link).not.toHaveAttribute("class", /.+/u);
+  }
+  if (expected.target) {
+    await expect(link).toHaveAttribute("target", expected.target);
+  } else {
+    await expect(link).not.toHaveAttribute("target", /.+/u);
+  }
+  await expect(link).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(link).not.toHaveAttribute("data-status", /.+/u);
 }
 
 async function readMobileSecretMetrics(page: Page) {

@@ -15,6 +15,17 @@ const FOOTER_LINKS = {
   naverLabs: "https://naverlabs.com/",
   ncloud: "https://www.ncloud.com/?referer=yona",
 } as const;
+const legacyPlainLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+const legacyPlainLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 function RestrictedRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -53,7 +64,12 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
           <ul className="gnb-nav">
             <li>
-              <Link to="/" className="logo logo-letter">
+              <Link
+                to="/"
+                className="logo logo-letter"
+                activeOptions={legacyPlainLinkActiveOptions}
+                activeProps={legacyPlainLinkActiveProps}
+              >
                 Y
               </Link>
             </li>
@@ -106,9 +122,11 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <Link
               href={FOOTER_LINKS.authors}
               to={FOOTER_LINKS.authors}
+              reloadDocument
               target="_blank"
               className="yona-author"
-              activeProps={{ className: undefined }}
+              activeOptions={legacyPlainLinkActiveOptions}
+              activeProps={legacyPlainLinkActiveProps}
             >
               Yona authors
             </Link>{" "}
@@ -116,8 +134,10 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <Link
               href={FOOTER_LINKS.naver}
               to={FOOTER_LINKS.naver}
+              reloadDocument
               target="_blank"
-              activeProps={{ className: undefined }}
+              activeOptions={legacyPlainLinkActiveOptions}
+              activeProps={legacyPlainLinkActiveProps}
             >
               NAVER Corp.
             </Link>{" "}
@@ -125,9 +145,11 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <Link
               href={FOOTER_LINKS.naverLabs}
               to={FOOTER_LINKS.naverLabs}
+              reloadDocument
               target="_blank"
               className="naver-labs"
-              activeProps={{ className: undefined }}
+              activeOptions={legacyPlainLinkActiveOptions}
+              activeProps={legacyPlainLinkActiveProps}
             >
               NAVER LABS
             </Link>{" "}
@@ -135,9 +157,11 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <Link
               href={FOOTER_LINKS.ncloud}
               to={FOOTER_LINKS.ncloud}
+              reloadDocument
               target="_blank"
               className="naver-cloud-platform"
-              activeProps={{ className: undefined }}
+              activeOptions={legacyPlainLinkActiveOptions}
+              activeProps={legacyPlainLinkActiveProps}
             >
               NAVER CLOUD PLATFORM
             </Link>

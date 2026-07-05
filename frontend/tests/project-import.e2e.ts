@@ -13,7 +13,7 @@ const EXPECTED_PROJECT_IMPORT = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_ROOT__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -369,6 +369,8 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
   await expect(createProjectLink).toHaveText("Create new project");
   await expect(createProjectLink).toHaveAttribute("href", `${basePath}/projectform?owner=admin`);
   await expect(createProjectLink).toHaveClass("ybtn ybtn-small nm");
+  await expect(createProjectLink).not.toHaveAttribute("aria-current", "page");
+  await expect(createProjectLink).not.toHaveAttribute("data-status", "active");
 
   await page.evaluate(() => {
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
@@ -389,6 +391,8 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
   await expect(cancelLink).toHaveText("Cancel");
   await expect(cancelLink).toHaveAttribute("href", rootHref(basePath));
   await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).not.toHaveAttribute("aria-current", "page");
+  await expect(cancelLink).not.toHaveAttribute("data-status", "active");
 
   await page.evaluate(() => {
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
@@ -409,7 +413,8 @@ test("project import form navigation links use TanStack Router Link in route sou
 
   expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
   expect(routeSource).toContain('<Link\n                    to="/projectform"');
-  expect(routeSource).toContain('<Link to="/" className="ybtn"');
+  expect(routeSource).toContain('<Link\n                  to="/"');
+  expect(routeSource).toContain("activeOptions={{ exact: true }}");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("LegacyHrefLink");
   expect(routeSource).not.toMatch(/<a\b/);

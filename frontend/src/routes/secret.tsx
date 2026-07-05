@@ -16,6 +16,12 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
 
 type FieldErrors = Partial<Record<"email" | "password" | "retypedPassword", string[]>>;
 
+const legacyAnchorActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
 });
@@ -91,7 +97,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <Link to="/" className="logo">
+              <Link to="/" className="logo" activeProps={legacyAnchorActiveProps}>
                 <span>{siteName}</span>
               </Link>
 
@@ -254,22 +260,26 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <Link to="/" className="logo">
+          <Link to="/" className="logo" activeProps={legacyAnchorActiveProps}>
             <h1 className="blind">{siteName}</h1>
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link to="/projects">{t("title.projectList")}</Link>
+              <Link to="/projects" activeProps={legacyAnchorActiveProps}>
+                {t("title.projectList")}
+              </Link>
             </li>
             <li>
-              <Link to="/_help">{t("title.help")}</Link>
+              <Link to="/_help" activeProps={legacyAnchorActiveProps}>
+                {t("title.help")}
+              </Link>
             </li>
             <li>
               <Link
                 href="https://github.com/nforge/yobi/issues?state=open"
                 to="https://github.com/nforge/yobi/issues?state=open"
                 target="_blank"
-                activeProps={{ className: undefined }}
+                activeProps={legacyAnchorActiveProps}
               >
                 {t("title.yobi.feedback")}
               </Link>
@@ -282,7 +292,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <div className="error-wrap">
             <i className="ico ico-err2" />
             <p>{t("error.notfound")}</p>
-            <Link to="/" className="ybtn ybtn-info">
+            <Link to="/" className="ybtn ybtn-info" activeProps={legacyAnchorActiveProps}>
               {t("menu.home")}
             </Link>
           </div>
@@ -296,7 +306,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               href="http://navercorp.com/"
               to="http://navercorp.com/"
               target="_blank"
-              activeProps={{ className: undefined }}
+              activeProps={legacyAnchorActiveProps}
             >
               NAVER Corp.
             </Link>{" "}
@@ -306,7 +316,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               to="https://developers.naver.com/d2/"
               target="_blank"
               className="d2-program"
-              activeProps={{ className: undefined }}
+              activeProps={legacyAnchorActiveProps}
             >
               <span className="d2">D2</span>
               <span className="program"> Program</span>
