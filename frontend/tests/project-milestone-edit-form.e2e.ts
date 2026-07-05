@@ -78,7 +78,7 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     leftPaneWidth: 938,
     rightPaneMarginLeft: 27,
     rightPaneWidth: 295,
-    titleBorderBottomColor: "rgb(221, 221, 221)",
+    titleBorderBottomColor: "rgb(243, 108, 34)",
     titleFontSize: "18px",
     titleMarginBottom: "15px",
     titleMarginTop: "15px",
@@ -128,7 +128,7 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   ]);
 });
 
-test("project milestone edit form renders legacy title required validation state", async ({
+test("project milestone edit form preserves legacy write validation and focus behavior", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -137,16 +137,37 @@ test("project milestone edit form renders legacy title required validation state
 
   await page.goto(`${basePath}/admin/sample/milestone/5/editform`);
   await expect(page.locator("#milestone-form")).toBeVisible();
-  await page.fill("#title", "");
-  await page.click('#milestone-form button[type="submit"]');
+  await expect(page.locator("#title")).toBeFocused();
+  await page.locator("#title").press("Enter");
+  await expect(page.locator("#editor-contents-content-body")).toBeFocused();
 
-  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
-  await expect(page.locator("#title + .message")).toHaveCount(1);
-  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  await page.fill("#title", "");
+  const titleDialogPromise = acceptNextAlert(page);
+  await page.click('#milestone-form button[type="submit"]');
+  await expect(titleDialogPromise).resolves.toBe("Milestone title is a required field.");
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5/editform?state=open`);
+  expect(patchRequests).toEqual([]);
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await expect(page.locator("#title + .message")).toHaveCount(0);
+
+  await page.fill("#title", "v1.0 patched");
+  await page.fill("#editor-contents-content-body", "");
+  const contentDialogPromise = acceptNextAlert(page);
+  await page.click('#milestone-form button[type="submit"]');
+  await expect(contentDialogPromise).resolves.toBe("Milestone description is a required field");
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5/editform?state=open`);
   expect(patchRequests).toEqual([]);
 
-  await page.fill("#title", "v1.0 patched");
+  await page.fill("#editor-contents-content-body", "Release scope");
+  await page.fill("#dueDate", "08/31/2026");
+  const dueDateDialogPromise = acceptNextAlert(page);
+  await page.click('#milestone-form button[type="submit"]');
+  await expect(dueDateDialogPromise).resolves.toBe(
+    "Invalid format. Enter the due date in YYYY-MM-DD format.",
+  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5/editform?state=open`);
+  expect(patchRequests).toEqual([]);
   await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
   await expect(page.locator("#title + .message")).toHaveCount(0);
 });
@@ -174,7 +195,11 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).not.toContain("text/x-jquery-tmpl");
   expect(routeSource).not.toContain("tplAttachedFile");
   expect(routeSource).not.toContain("tplDropFilesHere");
-  expect(routeSource).toContain('t("validation.required")');
+  expect(routeSource).toContain('t("milestone.error.title")');
+  expect(routeSource).toContain('t("milestone.error.content")');
+  expect(routeSource).toContain('t("milestone.error.duedateFormat")');
+  expect(routeSource).toContain('event.key === "Enter"');
+  expect(routeSource).not.toContain('t("validation.required")');
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("classList");
@@ -249,6 +274,16 @@ async function mockProjectMilestoneEditForm(page: Page, patchRequests: unknown[]
           viewerCanUpdate: true,
         },
       }),
+    });
+  });
+}
+
+function acceptNextAlert(page: Page) {
+  return new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      const message = dialog.message();
+      await dialog.accept();
+      resolve(message);
     });
   });
 }

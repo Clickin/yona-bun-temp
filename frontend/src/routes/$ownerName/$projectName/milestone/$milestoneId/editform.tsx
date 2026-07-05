@@ -77,7 +77,8 @@ function ProjectMilestoneEditFormBody({
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const numericMilestoneId = Number(milestoneId) || 0;
   const state = stringField(milestone.state, "open").toUpperCase() === "CLOSED" ? "CLOSED" : "OPEN";
-  const [titleErrors, setTitleErrors] = useState<string[]>([]);
+  const [titleFocusRequest, setTitleFocusRequest] = useState(1);
+  const [contentFocusRequest, setContentFocusRequest] = useState(0);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -120,12 +121,22 @@ function ProjectMilestoneEditFormBody({
             onSubmit={(event) => {
               event.preventDefault();
               const form = event.currentTarget;
-              const title = stringFormValue(new FormData(form), "title");
+              const formData = new FormData(form);
+              const title = stringFormValue(formData, "title");
+              const contents = stringFormValue(formData, "contents");
+              const dueDate = stringFormValue(formData, "dueDate");
               if (title.trim() === "") {
-                setTitleErrors([t("validation.required")]);
+                window.alert(t("milestone.error.title"));
                 return;
               }
-              setTitleErrors([]);
+              if (contents.trim() === "") {
+                window.alert(t("milestone.error.content"));
+                return;
+              }
+              if (dueDate.trim() !== "" && !/\d{4}-\d{2}-\d{2}$/.test(dueDate.trim())) {
+                window.alert(t("milestone.error.duedateFormat"));
+                return;
+              }
               mutation.mutate(form);
             }}
           >
@@ -134,31 +145,22 @@ function ProjectMilestoneEditFormBody({
                 <dl>
                   <dd>
                     <LegacyTabIndexInput
+                      focusRequest={titleFocusRequest}
                       tabIndexValue="1"
                       type="text"
                       id="title"
                       name="title"
                       defaultValue={stringField(milestone.title, "")}
-                      className={
-                        titleErrors.length > 0
-                          ? "zen-mode text title error"
-                          : "zen-mode text title "
-                      }
+                      className="zen-mode text title "
                       maxLength={250}
                       placeholder={t("title")}
-                      onChange={(event) => {
-                        if (event.currentTarget.value.trim() !== "") {
-                          setTitleErrors([]);
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          setContentFocusRequest((current) => current + 1);
                         }
                       }}
                     />
-                    {titleErrors.length > 0 ? (
-                      <div className="message">
-                        {titleErrors.map((error) => (
-                          <div key={error}>{error}</div>
-                        ))}
-                      </div>
-                    ) : null}
                   </dd>
                 </dl>
               </div>
@@ -168,6 +170,7 @@ function ProjectMilestoneEditFormBody({
                   <dl>
                     <dd style={{ position: "relative" }}>
                       <MilestoneMarkdownEditor
+                        focusRequest={contentFocusRequest}
                         contents={stringField(milestone.contentsMarkdown, "")}
                       />
                     </dd>
@@ -249,23 +252,40 @@ function ProjectMilestoneEditFormBody({
 }
 
 function LegacyTabIndexInput({
+  focusRequest = 0,
   tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.setAttribute("tabindex", tabIndexValue);
   }, [tabIndexValue]);
+  useEffect(() => {
+    if (focusRequest > 0) {
+      inputRef.current?.focus();
+    }
+  }, [focusRequest]);
   return <input ref={inputRef} {...props} />;
 }
 
-function MilestoneMarkdownEditor({ contents }: { contents: string }) {
+function MilestoneMarkdownEditor({
+  contents,
+  focusRequest,
+}: {
+  contents: string;
+  focusRequest: number;
+}) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const contentsRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     contentsRef.current?.setAttribute("tabindex", "2");
   }, []);
+  useEffect(() => {
+    if (focusRequest > 0) {
+      contentsRef.current?.focus();
+    }
+  }, [focusRequest]);
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
