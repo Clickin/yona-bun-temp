@@ -275,15 +275,13 @@ function LegacyMessage({ messageKey }: { messageKey: string }) {
   return <>{t(messageKey)}</>;
 }
 
-function renderLegacyHtmlMessage(message: string) {
-  if (typeof DOMParser === "undefined") {
-    return message;
-  }
+type LegacyHtmlMessagePart =
+  | { kind: "text"; value: string }
+  | { kind: "break" }
+  | { kind: "link"; href: string; target?: string; children: LegacyHtmlMessagePart[] };
 
-  const document = new DOMParser().parseFromString(`<body>${message}</body>`, "text/html");
-  const nodes = Array.from(document.body.childNodes).flatMap((node, index) =>
-    renderLegacyHtmlNode(node, `legacy-html-${index}`),
-  );
+function renderLegacyHtmlMessage(message: string) {
+  const nodes = renderLegacyHtmlMessageParts(parseLegacyHtmlMessage(message), "legacy-html");
 
   if (nodes.length === 0) {
     return message;
@@ -292,56 +290,136 @@ function renderLegacyHtmlMessage(message: string) {
   return nodes;
 }
 
-function renderLegacyHtmlNode(node: ChildNode, key: string): ReactNode[] {
-  if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent ? [<Fragment key={key}>{node.textContent}</Fragment>] : [];
+function parseLegacyHtmlMessage(message: string): LegacyHtmlMessagePart[] {
+  const parts: LegacyHtmlMessagePart[] = [];
+  const htmlTagPattern = /<br\s*\/?>|<[a]\s+([^>]*?)>([\s\S]*?)<\/[a]>/giu;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = htmlTagPattern.exec(message)) !== null) {
+    const start = match.index;
+    if (start > lastIndex) {
+      parts.push({ kind: "text", value: message.slice(lastIndex, start) });
+    }
+
+    if (match[0].toLowerCase().startsWith("<br")) {
+      parts.push({ kind: "break" });
+    } else {
+      const attributes = parseLegacyHtmlAttributes(match[1] ?? "");
+      parts.push({
+        children: parseLegacyHtmlMessage(match[2] ?? ""),
+        href: attributes.href ?? "",
+        kind: "link",
+        target: attributes.target,
+      });
+    }
+
+    lastIndex = start + match[0].length;
   }
 
-  if (!(node instanceof HTMLElement)) {
-    return [];
+  if (lastIndex < message.length) {
+    parts.push({ kind: "text", value: message.slice(lastIndex) });
   }
 
-  if (node.tagName === "BR") {
-    return [<br key={key} />];
+  return parts;
+}
+
+function parseLegacyHtmlAttributes(source: string) {
+  const attributes: Record<string, string> = {};
+  const htmlAttributePattern = /([a-zA-Z_:][\w:.-]*)="([^"]*)"/gu;
+  let match: RegExpExecArray | null;
+
+  while ((match = htmlAttributePattern.exec(source)) !== null) {
+    attributes[match[1]] = match[2];
   }
 
-  if (node.tagName === "A") {
-    const href = node.getAttribute("href");
-    if (!href || !isRenderableLegacyLinkHref(href)) {
-      return flattenLegacyHtmlChildren(node, key);
+  return attributes;
+}
+
+function renderLegacyHtmlMessageParts(
+  parts: LegacyHtmlMessagePart[],
+  keyPrefix: string,
+): ReactNode[] {
+  return parts.flatMap((part, index) => {
+    const key = `${keyPrefix}-${index}`;
+
+    if (part.kind === "text") {
+      return part.value ? [<Fragment key={key}>{part.value}</Fragment>] : [];
+    }
+
+    if (part.kind === "break") {
+      return [<br key={key} />];
+    }
+
+    const children = renderLegacyHtmlMessageParts(part.children, `${key}-child`);
+    if (!isRenderableLegacyLinkHref(part.href)) {
+      return children;
+    }
+
+    if (isInternalLegacyLinkHref(part.href)) {
+      return [
+        <Link key={key} target={part.target ?? undefined} to={part.href}>
+          {children}
+        </Link>,
+      ];
     }
 
     return [
       <Link
-        href={href}
+        href={part.href}
         key={key}
         reloadDocument
-        to={href}
-        target={node.getAttribute("target") ?? undefined}
+        target={part.target ?? undefined}
+        to={part.href}
       >
-        {flattenLegacyHtmlChildren(node, `${key}-child`)}
+        {children}
       </Link>,
     ];
-  }
-
-  return flattenLegacyHtmlChildren(node, key);
+  });
 }
 
-function flattenLegacyHtmlChildren(node: HTMLElement, keyPrefix: string) {
-  return Array.from(node.childNodes).flatMap((child, index) =>
-    renderLegacyHtmlNode(child, `${keyPrefix}-${index}`),
-  );
+function isInternalLegacyLinkHref(href: string) {
+  return href.startsWith("/") || href.startsWith("./") || href.startsWith("../");
 }
 
 function isRenderableLegacyLinkHref(href: string) {
-  if (href.startsWith("/") || href.startsWith("./") || href.startsWith("../")) {
+  const normalizedHref = href.trim();
+  if (
+    normalizedHref === "" ||
+    normalizedHref === "#" ||
+    normalizedHref.startsWith("javascript:") ||
+    hasUnresolvedLegacyPlaceholder(normalizedHref)
+  ) {
+    return false;
+  }
+
+  if (isInternalLegacyLinkHref(normalizedHref)) {
     return true;
   }
 
   try {
-    new URL(href);
+    new URL(normalizedHref);
     return true;
   } catch {
     return false;
   }
+}
+
+function hasUnresolvedLegacyPlaceholder(value: string) {
+  for (let index = 0; index < value.length; index += 1) {
+    if (value[index] !== "{") {
+      continue;
+    }
+
+    let cursor = index + 1;
+    while (cursor < value.length && value[cursor] >= "0" && value[cursor] <= "9") {
+      cursor += 1;
+    }
+
+    if (cursor > index + 1 && value[cursor] === "}") {
+      return true;
+    }
+  }
+
+  return false;
 }

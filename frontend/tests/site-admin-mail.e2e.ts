@@ -381,7 +381,10 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
   expect(source).not.toContain("matchAll(tokenPattern)");
   expect(source).not.toContain("new RegExp(");
   expect(source).not.toContain("to={item.href}");
-  expect(source).toContain("new DOMParser()");
+  expect(source).not.toContain("DOMParser");
+  expect(source).not.toContain("parseFromString");
+  expect(source).not.toContain("const document =");
+  expect(source).not.toContain("document.body");
   expect(source).toContain("<Link");
 });
 
