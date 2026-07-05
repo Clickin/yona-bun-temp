@@ -179,6 +179,25 @@ test("project fork shell anchors keep legacy active state on owning list items",
   await expectNoTanStackActiveMarkers(cancelLink);
 });
 
+test("project fork admin cog badge uses enrolled users count from legacy project menu", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    source: {
+      enrolledUsers: [{ id: 101 }, { id: 102 }],
+      enrollmentRequestCount: 5,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/newFork`);
+
+  const adminCogBadge = page.locator(".project-setting .project-menu-count");
+  await expect(adminCogBadge).toHaveText("2");
+  await expect(adminCogBadge).not.toHaveText("5");
+  await expect(page.locator(".project-setting")).not.toContainText("5");
+});
+
 test("project fork route has no raw route-local internal anchors", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
 
@@ -540,6 +559,7 @@ function existingProjectForkOptions() {
 function sourceProject() {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
+    enrolledUsers: [],
     enrollmentRequestCount: 0,
     id: 7,
     isFavorite: false,

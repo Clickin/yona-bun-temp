@@ -590,7 +590,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                  <CountBadge count={countField(project.enrolledUsers)} />
                 </Link>
               </li>
             </ul>
@@ -678,6 +678,10 @@ function stringField(value: unknown, fallback: string) {
 
 function numberField(value: unknown) {
   return typeof value === "number" ? value : 0;
+}
+
+function countField(value: unknown) {
+  return Array.isArray(value) ? value.length : 0;
 }
 
 function booleanField(value: unknown) {
