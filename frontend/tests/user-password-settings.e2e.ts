@@ -204,27 +204,27 @@ async function expectPasswordValidationPopovers(page: Page, messages: string[]) 
 async function expectPasswordEditTabs(page: Page, basePath: string) {
   const tabItems = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li");
   const tabLinks = tabItems.locator("a");
+  const expectedTabs = [
+    { href: `${basePath}/user/editform`, text: "Edit profile" },
+    { href: `${basePath}/user/editform/password`, text: "Change password" },
+    { href: `${basePath}/user/editform/notifications`, text: "Notification settings" },
+    { href: `${basePath}/user/editform/emails`, text: "Email settings" },
+    { href: `${basePath}/user/editform/token`, text: "User Token" },
+  ];
   await expect(tabItems).toHaveCount(5);
-  await expect(tabLinks).toHaveText([
-    "Edit profile",
-    "Change password",
-    "Notification settings",
-    "Email settings",
-    "User Token",
-  ]);
-  await expect(tabLinks.nth(0)).toHaveAttribute("href", `${basePath}/user/editform`);
-  await expect(tabLinks.nth(1)).toHaveAttribute("href", `${basePath}/user/editform/password`);
-  await expect(tabLinks.nth(2)).toHaveAttribute("href", `${basePath}/user/editform/notifications`);
-  await expect(tabLinks.nth(3)).toHaveAttribute("href", `${basePath}/user/editform/emails`);
-  await expect(tabLinks.nth(4)).toHaveAttribute("href", `${basePath}/user/editform/token`);
+  await expect(tabLinks).toHaveText(expectedTabs.map((tab) => tab.text));
+  for (const [index, tab] of expectedTabs.entries()) {
+    const link = tabLinks.nth(index);
+    await expect(link).toHaveAttribute("href", tab.href);
+    await expect(link).not.toHaveAttribute("class");
+    await expect(link).not.toHaveAttribute("aria-current");
+    await expect(link).not.toHaveAttribute("data-status");
+  }
   await expect(tabItems.nth(1)).toHaveClass("active");
   await expect(tabItems.nth(0)).not.toHaveClass(/active/);
   await expect(tabItems.nth(2)).not.toHaveClass(/active/);
   await expect(tabItems.nth(3)).not.toHaveClass(/active/);
   await expect(tabItems.nth(4)).not.toHaveClass(/active/);
-  for (let index = 0; index < 5; index += 1) {
-    await expect(tabLinks.nth(index)).not.toHaveAttribute("class");
-  }
 }
 
 async function mockAuthenticatedSession(page: Page) {
