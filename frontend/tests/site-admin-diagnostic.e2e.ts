@@ -142,6 +142,34 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
+  expect(
+    await page.locator(".site-setting-nav a").evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+  ]);
+  await expect(page.locator(".site-setting-nav li")).toHaveClass([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "active",
+  ]);
   await expect(page.locator(".site-setting-nav li").nth(7)).toHaveClass("active");
   const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
@@ -238,7 +266,12 @@ test("site admin diagnostics sidebar uses typed route Links without a route-loca
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("to={item.href}");
-  expect(source).toContain('<Link activeProps={{ className: undefined }} to="/sites/diagnostic">');
+  expect(source).toContain("const legacySiteSidebarLinkProps = {");
+  expect(source).toContain(
+    'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
+  );
+  expect(source).toContain("const legacyDiagnosticSidebarSearch = {");
+  expect(source).toContain("search={legacyDiagnosticSidebarSearch}");
 });
 
 async function diagnosticErrorMetrics(page: Page) {
