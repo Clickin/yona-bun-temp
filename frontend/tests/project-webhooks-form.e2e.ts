@@ -178,6 +178,24 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
 
   const settingsTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabLinks).toHaveCount(7);
+  expect(
+    await settingsTabLinks.evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+  ]);
+  await expect(page.locator("#subMenuWebhook")).toHaveClass("active");
   await expect(settingsTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   await expect(settingsTabLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/members`);
   await expect(settingsTabLinks.nth(2)).toHaveAttribute(
@@ -760,8 +778,8 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            (node.matches(".project-page-wrap > .nav.nav-tabs a") ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -806,8 +824,8 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            (node.matches(".project-page-wrap > .nav.nav-tabs a") ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
