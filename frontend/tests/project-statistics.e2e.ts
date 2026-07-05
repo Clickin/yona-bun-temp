@@ -12,19 +12,19 @@ const EXPECTED_PROJECT_STATISTICS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-placement="bottom" data-toggle="tooltip" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " href="__BASE_PATH__/admin/sample/watchers" title="number of watcher">3</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="__BASE_PATH__/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" data-toggle="dropdown" type="button">Watch</button></div></li></ul></div></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><h1>Under Construction</h1></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
@@ -192,6 +192,45 @@ test("project statistics header favorite star has no route-local native listener
   await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
 
+test("project statistics header renders legacy watch dropdown and toggles project watch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectAdmin(page, { watchRequests });
+
+  await page.goto(`${basePath}/admin/sample/statistics`);
+  const watchButton = page.locator(".project-util .watch-btn .down-arrow");
+  const watcherCount = page.locator(".project-util .watcher-count");
+
+  await expect(watcherCount).toHaveAttribute("href", `${basePath}/admin/sample/watchers`);
+  await expect(watcherCount).toHaveText("3");
+  await expect(watchButton).toHaveText("Watch");
+
+  await watchButton.click();
+  await expect(page.locator(".project-util > li")).toHaveClass("open");
+  await expect(page.locator(".project-util .pop-title")).toHaveText(
+    "You are not watching the sample project.",
+  );
+  await expect(page.locator(".project-util .btn-wrap .ybtn").first()).toHaveAttribute(
+    "href",
+    `${basePath}/user/editform/notifications#7`,
+  );
+
+  const watchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/watch") &&
+      response.request().method() === "POST",
+  );
+  await page.locator(".project-util .watchBtn").click();
+  await watchResponsePromise;
+
+  expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  await expect(watcherCount).toHaveText("4");
+  await expect(watcherCount).toHaveClass(/watch-on/);
+  await expect(watchButton).toHaveText("Unwatch");
+});
+
 async function readDesktopStatisticsMetrics(page: Page) {
   return page.evaluate(() => {
     const projectHeader = requireElement(".project-header-outer");
@@ -292,6 +331,7 @@ async function mockProjectAdmin(
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     project?: Partial<ReturnType<typeof projectContainer>>;
+    watchRequests?: { hasCsrfToken: boolean; method: string }[];
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -341,6 +381,17 @@ async function mockProjectAdmin(
       body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
     });
   });
+  await page.route("**/api/v1/owners/admin/projects/sample/watch", async (route) => {
+    const request = route.request();
+    options.watchRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-statistics",
+      method: request.method(),
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...projectContainer(), isWatching: true, watchingCount: 4 }),
+    });
+  });
 }
 
 function projectContainer() {
@@ -353,6 +404,7 @@ function projectContainer() {
     isForkedFromOrigin: false,
     isPrivate: false,
     isProtected: false,
+    isWatching: false,
     logoUrl: "/assets/images/project_default_logo.png",
     menuSetting: {
       board: true,
@@ -366,6 +418,8 @@ function projectContainer() {
     projectName: "sample",
     vcs: "GIT",
     viewerCanUpdate: true,
+    viewerCanWatch: true,
+    watchingCount: 3,
   };
 }
 
