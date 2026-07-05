@@ -83,6 +83,14 @@ test("standalone UI kit route renders JSX without raw legacy body injection", as
   expect(UIKIT_ROUTE_SOURCE).not.toContain("extractBetween");
   expect(UIKIT_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(UIKIT_ROUTE_SOURCE).not.toContain("__html");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("LegacyAnchor");
+
+  const routeSourceOutsideCodeSamples = UIKIT_ROUTE_SOURCE.replace(
+    /<CodeSample>[\s\S]*?<\/CodeSample>/g,
+    "",
+  );
+  expect(routeSourceOutsideCodeSamples).not.toMatch(/href=["']#/);
+  expect(routeSourceOutsideCodeSamples).not.toContain('href="javascript:void(0)"');
 });
 
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
@@ -110,6 +118,18 @@ test("standalone UI kit keeps legacy mobile shell proportions", async ({ page })
     subtitleHeight: "55px",
     subtitleLineHeight: "55px",
   });
+});
+
+test("standalone UI kit interactive JSX does not render raw legacy href controls", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+
+  expect(await readRenderedLegacyHrefControls(page)).toEqual([]);
+  await expect(page.locator("xmp").first()).toContainText('<a href="#" class="ybtn">Default</a>');
+  await expect(page.locator("xmp").nth(2)).toContainText('<a href="javascript:void(0)">전체</a>');
 });
 
 test("standalone UI kit dropdown matches legacy yobi.ui.Dropdown interaction", async ({ page }) => {
@@ -715,6 +735,17 @@ async function readMobileUIKitMetrics(page: Page) {
   });
 }
 
+async function readRenderedLegacyHrefControls(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="#"], a[href^="javascript:"]'))
+      .filter((anchor) => !anchor.closest("xmp"))
+      .map((anchor) => ({
+        href: anchor.getAttribute("href"),
+        text: (anchor.textContent ?? "").replace(/\s+/g, " ").trim(),
+      })),
+  );
+}
+
 async function readLoginDialogOpenMetrics(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
@@ -806,12 +837,11 @@ async function canonicalizeUIKitRoots(page: Page) {
         "data-off-label",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter((name) => hasStableAttribute(current, name))
         .map((name) => `${name}=${JSON.stringify(stableAttributeValue(current, name))}`)
         .join(" ");
-      const open = attrs
-        ? `<${current.tagName.toLowerCase()} ${attrs}>`
-        : `<${current.tagName.toLowerCase()}>`;
+      const tagName = stableTagName(current);
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       const children = Array.from(current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
@@ -825,10 +855,24 @@ async function canonicalizeUIKitRoots(page: Page) {
         .filter(Boolean)
         .join("");
 
-      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      return `${open}${children}</${tagName}>`;
+    }
+
+    function stableTagName(current: Element) {
+      return isLegacyAnchorReplacement(current) ? "a" : current.tagName.toLowerCase();
+    }
+
+    function hasStableAttribute(current: Element, name: string) {
+      if (isLegacyAnchorReplacement(current)) {
+        return name === "href" || (name === "class" && current.hasAttribute("class"));
+      }
+      return current.hasAttribute(name);
     }
 
     function stableAttributeValue(current: Element, name: string) {
+      if (isLegacyAnchorReplacement(current) && name === "href") {
+        return current.closest(".dropdown-menu") ? "javascript:void(0)" : "#";
+      }
       if (name === "checked") {
         return "checked";
       }
@@ -841,6 +885,22 @@ async function canonicalizeUIKitRoots(page: Page) {
         return probe.style.cssText;
       }
       return current.getAttribute(name) ?? "";
+    }
+
+    function isLegacyAnchorReplacement(current: Element) {
+      if (current.tagName.toLowerCase() !== "button") {
+        return false;
+      }
+      if (
+        current.closest(".dropdown-menu, .nav-tabs") ||
+        current.classList.contains("avatar-wrap")
+      ) {
+        return true;
+      }
+      const className = current.getAttribute("class") ?? "";
+      return ["ybtn", "ybtn ybtn-inverse", "ybtn ybtn-watching", "ybtn ybtn-danger"].includes(
+        className,
+      );
     }
 
     const roots = Array.from(

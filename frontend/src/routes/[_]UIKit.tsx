@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
@@ -25,27 +24,27 @@ dd { margin-left:0; }
             <div>
               <pre>.ybtn</pre>
               <p>
-                <LegacyAnchor href="#" className="ybtn">
+                <button type="button" className="ybtn">
                   Default
-                </LegacyAnchor>{" "}
+                </button>{" "}
                 <button type="button" className="ybtn ybtn-primary">
                   Primary
                 </button>{" "}
-                <LegacyAnchor href="#" className="ybtn ybtn-inverse">
+                <button type="button" className="ybtn ybtn-inverse">
                   Inverse
-                </LegacyAnchor>{" "}
+                </button>{" "}
                 <button type="button" className="ybtn ybtn-info">
                   Info
                 </button>{" "}
-                <LegacyAnchor href="#" className="ybtn ybtn-watching">
+                <button type="button" className="ybtn ybtn-watching">
                   Watching
-                </LegacyAnchor>{" "}
+                </button>{" "}
                 <button type="button" className="ybtn ybtn-warning">
                   Warning
                 </button>{" "}
-                <LegacyAnchor href="#" className="ybtn ybtn-danger">
+                <button type="button" className="ybtn ybtn-danger">
                   Danger
-                </LegacyAnchor>{" "}
+                </button>{" "}
                 <button type="button" className="ybtn ybtn-disabled">
                   Disabled
                 </button>
@@ -180,10 +179,10 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
             <div>
               <ul className="nav nav-tabs">
                 <li className="active">
-                  <LegacyAnchor href="#">파일</LegacyAnchor>
+                  <button type="button">파일</button>
                 </li>
                 <li>
-                  <LegacyAnchor href="#">커밋</LegacyAnchor>
+                  <button type="button">커밋</button>
                 </li>
               </ul>
             </div>
@@ -235,10 +234,10 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
           </button>
           <ul className="dropdown-menu">
             <li data-value="" data-selected="true" className="active">
-              <LegacyAnchor href="#">전체</LegacyAnchor>
+              <button type="button">전체</button>
             </li>
             <li data-value="0">
-              <LegacyAnchor href="#">담당자 없음</LegacyAnchor>
+              <button type="button">담당자 없음</button>
             </li>
           </ul>
         </div>
@@ -274,9 +273,9 @@ function AvatarDemo({ label, size }: { label: string; size: string }) {
         <span className="css">{label}</span>
       </dt>
       <dd>
-        <LegacyAnchor href="#" className={`avatar-wrap ${size}`}>
+        <button type="button" className={`avatar-wrap ${size}`}>
           <img src="/assets/images/default-avatar-128.png" alt="" />
-        </LegacyAnchor>
+        </button>
       </dd>
     </dl>
   );
@@ -284,23 +283,6 @@ function AvatarDemo({ label, size }: { label: string; size: string }) {
 
 function CodeSample({ children }: { children: string }) {
   return <xmp className="css">{children}</xmp>;
-}
-
-function LegacyAnchor({
-  children,
-  className,
-  href,
-}: {
-  children: ReactNode;
-  className?: string;
-  href: string;
-}) {
-  const Anchor = "a";
-  return (
-    <Anchor className={className} href={href}>
-      {children}
-    </Anchor>
-  );
 }
 
 function legacyAnchorMarkup(attributes: string, text: string) {
