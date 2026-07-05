@@ -219,6 +219,12 @@ async function expectPasswordEditTabs(page: Page, basePath: string) {
   await expect(tabLinks.nth(4)).toHaveAttribute("href", `${basePath}/user/editform/token`);
   await expect(tabItems.nth(1)).toHaveClass("active");
   await expect(tabItems.nth(0)).not.toHaveClass(/active/);
+  await expect(tabItems.nth(2)).not.toHaveClass(/active/);
+  await expect(tabItems.nth(3)).not.toHaveClass(/active/);
+  await expect(tabItems.nth(4)).not.toHaveClass(/active/);
+  for (let index = 0; index < 5; index += 1) {
+    await expect(tabLinks.nth(index)).not.toHaveAttribute("class");
+  }
 }
 
 async function mockAuthenticatedSession(page: Page) {
@@ -326,17 +332,6 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string) {
-      if (
-        name === "class" &&
-        current.tagName.toLowerCase() === "a" &&
-        current.closest(".page-wrap .nav-tabs")
-      ) {
-        const className = (current.getAttribute(name) ?? "")
-          .split(/\s+/)
-          .filter((value) => value && value !== "active")
-          .join(" ");
-        return className ? `${name}=${JSON.stringify(className)}` : "";
-      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
@@ -396,17 +391,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string) {
-        if (
-          name === "class" &&
-          current.tagName.toLowerCase() === "a" &&
-          current.closest(".page-wrap .nav-tabs")
-        ) {
-          const className = (current.getAttribute(name) ?? "")
-            .split(/\s+/)
-            .filter((value) => value && value !== "active")
-            .join(" ");
-          return className ? `${name}=${JSON.stringify(className)}` : "";
-        }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
