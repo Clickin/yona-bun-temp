@@ -321,6 +321,12 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   await page.click("#issue-item-41 .title-prefix");
   await expect(page.locator('.search-bar input[name="filter"]')).toHaveValue("[UI]");
   await expect(page.locator("#issue-item-41")).toBeVisible();
+  await page.fill('.search-bar input[name="filter"]', "bug");
+  await expect(page.locator("#issue-item-41")).toBeHidden();
+  await page.fill('.search-bar input[name="filter"]', "Dev Member");
+  await expect(page.locator("#issue-item-41")).toBeHidden();
+  await page.fill('.search-bar input[name="filter"]', "dev");
+  await expect(page.locator("#issue-item-41")).toBeVisible();
   await page.fill('.search-bar input[name="filter"]', "no-match");
   await expect(page.locator("#issue-item-41")).toBeHidden();
 

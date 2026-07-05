@@ -1084,9 +1084,6 @@ function issueSearchText(issue: ProjectMilestoneIssue) {
     stringField(issue.issueNumber),
     stringField(issue.title),
     stringField(issue.authorLoginId),
-    stringField(issue.authorLabel),
-    stringField(issue.assigneeLabel),
-    ...((issue.labels ?? []) as YonaLabel[]).map((label) => stringField(label.name)),
   ]
     .join(" ")
     .toLowerCase();
