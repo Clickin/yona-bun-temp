@@ -247,6 +247,18 @@ test("project change-VCS internal project links keep legacy hrefs without route-
     "href",
     `${basePath}/admin/sample/changeVCS`,
   );
+  expect(await readProjectSettingMenuAnchorState(page)).toEqual({
+    activeItemClass: "active",
+    anchors: [
+      { ariaCurrent: null, className: "", dataStatus: null },
+      { ariaCurrent: null, className: "", dataStatus: null },
+      { ariaCurrent: null, className: "", dataStatus: null },
+      { ariaCurrent: null, className: "", dataStatus: null },
+      { ariaCurrent: null, className: "", dataStatus: null },
+      { ariaCurrent: null, className: "", dataStatus: null },
+      { ariaCurrent: null, className: "", dataStatus: null },
+    ],
+  });
   expect(await readProjectChangeVcsInternalLinkNativeAudit(page)).toEqual([]);
 
   const projectSettingsCogLink = page.locator(".project-setting a");
@@ -464,6 +476,19 @@ async function readDesktopChangeVcsMetrics(page: Page) {
       return element;
     }
   });
+}
+
+async function readProjectSettingMenuAnchorState(page: Page) {
+  return page.evaluate(() => ({
+    activeItemClass: document.querySelector("#subMenuProjectChangeVCS")?.getAttribute("class"),
+    anchors: Array.from(document.querySelectorAll(".project-page-wrap > .nav.nav-tabs a")).map(
+      (anchor) => ({
+        ariaCurrent: anchor.getAttribute("aria-current"),
+        className: anchor.getAttribute("class") ?? "",
+        dataStatus: anchor.getAttribute("data-status"),
+      }),
+    ),
+  }));
 }
 
 async function mockProjectAdmin(
@@ -764,7 +789,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter((attr) => !shouldIgnoreAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -784,6 +809,13 @@ async function canonicalizeScreenRoots(page: Page) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function shouldIgnoreAttr(node: Element, attr: Attr) {
+      return (
+        (attr.name === "aria-current" || attr.name === "data-status") &&
+        !node.matches(".project-page-wrap > .nav.nav-tabs a")
+      );
     }
   });
 }
@@ -805,7 +837,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter((attr) => !shouldIgnoreAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -825,6 +857,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function shouldIgnoreAttr(node: Element, attr: Attr) {
+      return (
+        (attr.name === "aria-current" || attr.name === "data-status") &&
+        !node.matches(".project-page-wrap > .nav.nav-tabs a")
+      );
     }
   }, html);
 }
