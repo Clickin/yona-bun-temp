@@ -1182,6 +1182,48 @@ test("project issue search button submits route like legacy partial_searchform.s
   ).toBe("issue-search-submit");
 });
 
+test("project issue unchanged blur keeps URL and skips issue-list GET like legacy partial_searchform.scala.html change submit", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  const sawProjectIssueListGet = async () => {
+    return page
+      .waitForRequest(
+        (request) => {
+          if (request.method() !== "GET") {
+            return false;
+          }
+          return new URL(request.url()).pathname.endsWith("/api/v1/projects/admin/sample/issues");
+        },
+        { timeout: 300 },
+      )
+      .then(() => true)
+      .catch(() => false);
+  };
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=3&state=open`);
+  await page.waitForLoadState("networkidle");
+  const initialUrl = page.url();
+
+  const filterInput = page.locator("#search input[name='filter']");
+  await filterInput.focus();
+  await expect(filterInput).toBeFocused();
+  const filterBlurTriggeredGet = sawProjectIssueListGet();
+  await filterInput.blur();
+  expect(await filterBlurTriggeredGet).toBe(false);
+  expect(page.url()).toBe(initialUrl);
+
+  const dueDateInput = page.locator("#issueDueDate");
+  await dueDateInput.focus();
+  await expect(dueDateInput).toBeFocused();
+  const dueDateBlurTriggeredGet = sawProjectIssueListGet();
+  await dueDateInput.blur();
+  expect(await dueDateBlurTriggeredGet).toBe(false);
+  expect(page.url()).toBe(initialUrl);
+});
+
 test("project issue search blocks invalid due date like legacy issue.List submit validation", async ({
   page,
 }) => {

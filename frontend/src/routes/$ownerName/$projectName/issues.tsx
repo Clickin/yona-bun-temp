@@ -2392,6 +2392,17 @@ function IssueSearchForm({
 
     onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
   };
+  const rememberSearchInputValue = (control: HTMLInputElement) => {
+    control.dataset.initialValue = control.value;
+  };
+  const submitSearchInputIfChanged = (control: HTMLInputElement) => {
+    const initialValue = control.dataset.initialValue ?? control.value;
+    delete control.dataset.initialValue;
+    if (control.value === initialValue) {
+      return;
+    }
+    control.form?.requestSubmit();
+  };
   const submitSearchControlForm = (control: HTMLSelectElement | HTMLInputElement) => {
     control.form?.requestSubmit();
   };
@@ -2424,7 +2435,8 @@ function IssueSearchForm({
             type="text"
             defaultValue={search.filter}
             data-search="filter"
-            onBlur={(event) => submitSearchControlForm(event.currentTarget)}
+            onFocus={(event) => rememberSearchInputValue(event.currentTarget)}
+            onBlur={(event) => submitSearchInputIfChanged(event.currentTarget)}
           />
           <button
             type="button"
@@ -2565,7 +2577,8 @@ function IssueSearchForm({
               className="textbox full"
               defaultValue={search.dueDate}
               data-toggle="calendar"
-              onBlur={(event) => submitSearchControlForm(event.currentTarget)}
+              onFocus={(event) => rememberSearchInputValue(event.currentTarget)}
+              onBlur={(event) => submitSearchInputIfChanged(event.currentTarget)}
             />
             <button type="button" className="search-btn btn-calendar">
               <i className="yobicon-calendar2"></i>
