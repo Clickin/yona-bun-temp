@@ -139,7 +139,17 @@ function CompareFileDiff({
 }) {
   const { t } = useLegacyMessages();
   const parsed = parseUnifiedDiff(file.path, file.patch);
-  const filePath = parsed.pathB || parsed.pathA || file.path;
+  const pathA = isNullDiffPath(parsed.pathA) ? "" : parsed.pathA;
+  const pathB = isNullDiffPath(parsed.pathB) ? "" : parsed.pathB;
+  const filePath = pathB || pathA || file.path;
+  const fileHeader =
+    !pathA && pathB
+      ? t("code.addedPath", { args: [pathB] })
+      : pathA && !pathB
+        ? t("code.deletedPath", { args: [pathA] })
+        : pathA && pathB && pathA !== pathB
+          ? t("code.renamedPath", { args: [pathA, pathB] })
+          : filePath;
   const fileId = filePath.replace(/\//g, "-").replace(/\./g, "-");
   const shortA = shortenCommitId(commitA);
   const shortB = shortenCommitId(commitB);
@@ -150,11 +160,11 @@ function CompareFileDiff({
         <div className="diff-partial-meta">
           <div className="diff-partial-commit">
             <div className="diff-partial-commit-id">
-              {commitA && file.path ? (
+              {commitA && pathA ? (
                 <Link
                   target="_blank"
                   title={commitA}
-                  to={projectTo(ownerName, projectName, "code", commitA, file.path)}
+                  to={projectTo(ownerName, projectName, "code", commitA, pathA)}
                 >
                   {shortA}
                 </Link>
@@ -163,11 +173,11 @@ function CompareFileDiff({
               )}
             </div>
             <div className="diff-partial-commit-id">
-              {commitB && file.path ? (
+              {commitB && pathB ? (
                 <Link
                   target="_blank"
                   title={commitB}
-                  to={projectTo(ownerName, projectName, "code", commitB, file.path)}
+                  to={projectTo(ownerName, projectName, "code", commitB, pathB)}
                 >
                   {shortB}
                 </Link>
@@ -177,21 +187,21 @@ function CompareFileDiff({
             </div>
           </div>
           <div className="diff-partial-file">
-            <span className="filename">{file.path}</span>
+            <span className="filename">{fileHeader}</span>
           </div>
         </div>
         <div className="diff-partial-code" data-hashcode={file.path}>
           <div className="patch-header">
-            {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
-            {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
+            {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
+            {pathB ? <div className="path">{`+++ ${pathB}`}</div> : null}
           </div>
           <table
             className="diff-container show-comments"
             data-commit-a={commitA}
             data-commit-b={commitB}
             data-file-path={filePath}
-            data-path-a={parsed.pathA}
-            data-path-b={parsed.pathB}
+            data-path-a={pathA}
+            data-path-b={pathB}
           >
             <tbody>
               {parsed.lines.length === 0 ? (
@@ -332,6 +342,10 @@ function parseUnifiedDiff(path: string, patch: string): ParsedFileDiff {
 function normalizeDiffPath(input: string) {
   const path = input.trim().split(/\s+/u)[0] ?? "";
   return path.replace(/^[ab]\//u, "");
+}
+
+function isNullDiffPath(path: string) {
+  return path === "/dev/null" || path === "dev/null";
 }
 
 function shortenCommitId(commitId: string) {

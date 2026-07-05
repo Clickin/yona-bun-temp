@@ -15,6 +15,11 @@ const SIMPLE_FILE_PATCH = `--- a/src/main.rs
 -    println!("old");
 +    println!("new");`;
 
+const ADDED_FILE_PATCH = `--- /dev/null
++++ b/src/new.rs
+@@ -0,0 +1,1 @@
++pub fn added() {}`;
+
 test("project code compare no-change state matches legacy code/compare.scala.html DOM", async ({
   page,
 }) => {
@@ -81,6 +86,32 @@ test("project code compare non-empty patch renders legacy diff table rows", asyn
   await expect(diffTable.locator("tbody > tr.add")).toHaveAttribute("data-side", "B");
   await expect(diffTable.locator("tbody > tr.add .diff-partial-codeline")).toHaveText(
     '+    println!("new");',
+  );
+});
+
+test("project code compare added file renders legacy added-path metadata", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const compareRequests: string[] = [];
+  await mockProjectCompare(page, compareRequests, {
+    files: [{ path: "src/new.rs", patch: ADDED_FILE_PATCH }],
+  });
+
+  await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
+
+  const diffOuter = page.locator(".diff-partial-outer#src-new-rs");
+  const commitIds = diffOuter.locator(".diff-partial-commit-id");
+  await expect(diffOuter.locator(".filename")).toHaveText("src/new.rs (added)");
+  await expect(commitIds.nth(0)).toHaveText("\u00a0");
+  await expect(commitIds.nth(0).locator("a")).toHaveCount(0);
+  await expect(commitIds.nth(1).locator("a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/1234567890abcdef/src/new.rs`,
+  );
+  await expect(diffOuter.locator(".patch-header .path")).toHaveText("+++ src/new.rs");
+  await expect(diffOuter.locator("table.diff-container")).toHaveAttribute("data-path-a", "");
+  await expect(diffOuter.locator("table.diff-container")).toHaveAttribute(
+    "data-path-b",
+    "src/new.rs",
   );
 });
 
