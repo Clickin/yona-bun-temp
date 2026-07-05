@@ -69,6 +69,51 @@ test("project members focuses add member input on load like legacy member module
   await expect(page.locator("#loginId")).toBeFocused();
 });
 
+test("project members admin and settings badges follow legacy enrolled-user count instead of enrollmentRequestCount", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, {
+    enrollmentRequests: [
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "bob",
+        userId: 3,
+        userLabel: "Bob Smith",
+      },
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "carol",
+        userId: 4,
+        userLabel: "Carol Jones",
+      },
+    ],
+    project: {
+      enrolledUsers: [
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "bob",
+          userId: 3,
+          userLabel: "Bob Smith",
+        },
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "carol",
+          userId: 4,
+          userLabel: "Carol Jones",
+        },
+      ],
+      enrollmentRequestCount: 7,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+
+  await expect(page.locator("legend")).toContainText("Sign-up request (2)");
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
+});
+
 test("project members settings tab anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
@@ -243,10 +288,16 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).not.toContain("window.confirm");
   expect(source).not.toContain('data-toggle="modal"');
   expect(source).not.toContain('data-dismiss="modal"');
+  expect(source).not.toContain("project.enrollmentRequestCount");
   expect(source).toContain("data-href={prefixBasePath(");
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('to="/$user"');
+  expect(source).toContain("function enrolledUserCount(project: ProjectContainer)");
+  expect(source).toContain("<CountBadge count={enrolledUserCount(project)} />");
+  expect(source).toContain(
+    '<CountBadge count={enrolledUserCount(project)} className="num-badge" />',
+  );
   expect(source).toContain("function insulateProjectMemberDeleteConfirmClick");
   expect(source).toContain("function openDeleteConfirm");
   expect(source).toContain("function dismissDeleteConfirm");
@@ -850,6 +901,12 @@ async function documentDropdownBubbleClicks(page: Page) {
 async function mockProjectMembers(
   page: Page,
   options: {
+    enrollmentRequests?: {
+      avatarUrl: string;
+      loginId: string;
+      userId: number;
+      userLabel: string;
+    }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     deleteMessage?: string;
@@ -886,15 +943,16 @@ async function mockProjectMembers(
       userLabel: "Alice Doe",
     },
   ];
+  const enrollmentRequests = options.enrollmentRequests ?? [
+    {
+      avatarUrl: "/assets/images/default-avatar-32.png",
+      loginId: "bob",
+      userId: 3,
+      userLabel: "Bob Smith",
+    },
+  ];
   const memberDirectoryResponse = () => ({
-    enrollmentRequests: [
-      {
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        loginId: "bob",
-        userId: 3,
-        userLabel: "Bob Smith",
-      },
-    ],
+    enrollmentRequests,
     members: currentMembers,
     ownerName: "admin",
     projectName: "sample",
@@ -1071,6 +1129,14 @@ function expectedProjectMembersErrorScreen({
 
 function projectContainer() {
   return {
+    enrolledUsers: [
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "bob",
+        userId: 3,
+        userLabel: "Bob Smith",
+      },
+    ],
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     enrollmentRequestCount: 1,
     id: 7,

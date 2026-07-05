@@ -760,7 +760,7 @@ function ProjectMenu({
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                  <CountBadge count={enrolledUserCount(project)} />
                 </Link>
               </li>
             </ul>
@@ -844,7 +844,7 @@ function ProjectSettingMenu({
           params={{ ownerName, projectName }}
         >
           {t("project.member")}
-          <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
+          <CountBadge count={enrolledUserCount(project)} className="num-badge" />
         </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
@@ -922,6 +922,11 @@ function CountBadge({
 
 function recordField(value: unknown) {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function enrolledUserCount(project: ProjectContainer) {
+  const enrolledUsers = recordField(project).enrolledUsers;
+  return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
 function stringField(value: unknown, fallback: string) {
