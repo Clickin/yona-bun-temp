@@ -98,6 +98,24 @@ test("project watchers internal links render legacy hrefs and navigate through t
   ).toBe("kept");
 });
 
+test("project watchers admin cog badge uses enrolled member count instead of enrollment requests", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      enrolledUsers: [{ id: 1 }, { id: 2 }],
+      enrollmentRequestCount: 5,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+  const adminCogBadge = page.locator(".project-setting .project-menu-count");
+
+  await expect(adminCogBadge).toHaveText("2");
+  await expect(adminCogBadge).not.toHaveText("5");
+});
+
 test("project watchers route source uses Link for internal app navigation", () => {
   const source = readFileSync(PROJECT_WATCHERS_ROUTE_SOURCE, "utf8");
 
@@ -127,6 +145,7 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).not.toContain("href={prefixBasePath");
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("function projectHref");
+  expect(source).not.toContain("project.enrollmentRequestCount");
 });
 
 test("project watchers header favorite star posts and toggles starred class", async ({ page }) => {
@@ -489,6 +508,7 @@ async function watchDropdownDelegatedClickTrapHits(page: Page) {
 
 function projectContainer() {
   return {
+    enrolledUsers: [],
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     enrollmentRequestCount: 0,
     id: 7,

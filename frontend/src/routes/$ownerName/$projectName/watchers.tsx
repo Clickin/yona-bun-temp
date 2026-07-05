@@ -471,7 +471,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                  <CountBadge count={enrolledUserCount(project)} />
                 </Link>
               </li>
             </ul>
@@ -538,6 +538,11 @@ function CountBadge({
 
 function recordField(value: unknown) {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function enrolledUserCount(project: ProjectContainer) {
+  const enrolledUsers = recordField(project).enrolledUsers;
+  return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
 function stringField(value: unknown, fallback: string) {
