@@ -252,7 +252,12 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain('<a class="attached-delete"');
   expect(routeSource).not.toContain("attachedFilesHtml(issue.attachments)");
   expect(routeSource).not.toContain("attachedFilesHtml(comment.attachments)");
-  expect(routeSource).toContain('<button type="button" className="attached-delete">');
+  expect(routeSource).not.toContain('className="attached-delete"');
+  expect(routeSource).toContain('<ul className="attaches wm">');
+  expect(routeSource).toContain('className="attach"');
+  expect(routeSource).toContain('className="download ybtn ybtn-mini"');
+  expect(routeSource).toContain('className="vmiddle"');
+  expect(routeSource).toContain("action=download");
   expect(routeSource).toContain("const LEGACY_LINK_PROPS = {");
   expect(routeSource).not.toContain("IssueLegacyLinkProps");
   expect(routeSource).not.toContain("IssueHashLink");
@@ -1783,8 +1788,14 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 });
 
-test("project issue detail renders legacy attachment file items", async ({ page }) => {
+test("project issue detail renders legacy readonly attachment downloader lists", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+    }
+  });
   const issueAttachments = {
     attachments: [
       {
@@ -1832,8 +1843,14 @@ test("project issue detail renders legacy attachment file items", async ({ page 
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
+  await expect(page.locator(".span-left-pane > #attachments > ul.attaches.wm")).toHaveCount(1);
+  await expect(page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attach")).toHaveCount(
+    1,
+  );
+  await expect(page.locator(".span-left-pane > #attachments > .attached-file")).toHaveCount(0);
+
   const expectedIssueAttachments =
-    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(issueAttachments)}'><li class="attached-file" data-name="issue-spec.txt" data-href="__BASE_PATH__/files/501" data-mime="text/plain" data-size="12345"><strong>issue-spec.txt(12.3 kB)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></div>`.replaceAll(
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(issueAttachments)}'><ul class="attaches wm"><li class="attach"><a href="__BASE_PATH__/files/501?action=download" class="download ybtn ybtn-mini" title="Download a file issue-spec.txt"><i class="yobicon-download"></i></a><a href="__BASE_PATH__/files/501" class="vmiddle" target="_blank"><i class="yobicon-paperclip"></i><span class="filename">issue-spec.txt</span><span class="filesize">(12.3 kB)</span></a></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -1841,8 +1858,14 @@ test("project issue detail renders legacy attachment file items", async ({ page 
     await canonicalizeHtml(page, expectedIssueAttachments),
   );
 
+  await expect(page.locator("#comment-body-77 > .attachments > ul.attaches.wm")).toHaveCount(1);
+  await expect(
+    page.locator("#comment-body-77 > .attachments > ul.attaches.wm > li.attach"),
+  ).toHaveCount(1);
+  await expect(page.locator("#comment-body-77 > .attachments > .attached-file")).toHaveCount(0);
+
   const expectedCommentAttachments =
-    `<div class="attachments pull-left" data-attachments='${JSON.stringify(commentAttachments)}'><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/502" data-mime="image/png" data-size="4096"><strong>comment-shot.png(4.1 kB)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></div>`.replaceAll(
+    `<div class="attachments pull-left" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attach"><a href="__BASE_PATH__/files/502?action=download" class="download ybtn ybtn-mini" title="Download a file comment-shot.png"><i class="yobicon-download"></i></a><a href="__BASE_PATH__/files/502" class="vmiddle" target="_blank"><i class="yobicon-paperclip"></i><span class="filename">comment-shot.png</span><span class="filesize">(4.1 kB)</span></a></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -1858,6 +1881,13 @@ test("project issue detail renders legacy attachment file items", async ({ page 
   expect(await canonicalize(page, "#comment-editform-77 > form .attachment-files")).toEqual(
     await canonicalizeHtml(page, expectedCommentUpdateAttachments),
   );
+  expect(
+    consoleErrors.some(
+      (message) =>
+        message.includes("<li> cannot be a descendant of <li>") ||
+        message.includes("<li> cannot contain a nested <li>"),
+    ),
+  ).toBe(false);
 });
 
 test("project issue detail omits route-local legacy attachment template", async ({ page }) => {

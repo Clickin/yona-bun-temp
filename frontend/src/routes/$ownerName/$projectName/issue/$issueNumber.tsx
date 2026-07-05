@@ -663,7 +663,7 @@ function IssueDetailBody({
               id="attachments"
               data-attachments={JSON.stringify(issue.attachments ?? [])}
             >
-              <AttachedFiles attachments={issue.attachments} />
+              <AttachedFiles attachments={issue.attachments} basePath={basePath} />
             </div>
             <div className="board-actrow right-txt">
               <div className="pull-left">
@@ -2603,7 +2603,7 @@ function IssueCommentRow({
             className="attachments pull-left"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
           >
-            <AttachedFiles attachments={comment.attachments} />
+            <AttachedFiles attachments={comment.attachments} basePath={basePath} />
           </div>
         </div>
       </div>
@@ -3373,43 +3373,57 @@ function compareLabels(
 
 function AttachedFiles({
   attachments,
+  basePath,
 }: {
   attachments?:
     | RestIssueDetailResponse["attachments"]
     | { attachments?: RestIssueDetailResponse["attachments"] };
+  basePath: string;
 }) {
+  const { t } = useLegacyMessages();
   const files = attachmentItems(attachments);
 
+  if (files.length === 0) {
+    return null;
+  }
+
   return (
-    <>
+    <ul className="attaches wm">
       {files.map((file) => {
         const id = stringField(file.id);
         const name = stringField(file.name);
         const href = stringField(file.url);
-        const mimeType = stringField(file.mimeType);
-        const size = stringField(file.size);
-        const sizeReadable = stringField(file.sizeLabel, size);
-        const notice = stringField(file.notice);
+        const sizeReadable = stringField(file.sizeLabel, stringField(file.size));
+        const downloadHref = attachmentDownloadHref(href);
+        const downloadPath = attachmentLinkPath(basePath, downloadHref);
+        const filePath = attachmentLinkPath(basePath, href);
 
         return (
-          <li
-            className="attached-file"
-            data-name={name}
-            data-href={href}
-            data-mime={mimeType}
-            data-size={size}
-            key={`${id}:${href}:${name}`}
-          >
-            <strong>
-              {name}({sizeReadable}){notice}
-            </strong>
-            <button type="button" className="attached-delete">
-              <i className="ico btn-delete"></i>
-            </button>
+          <li className="attach" key={`${id}:${href}:${name}`}>
+            <Link
+              to={downloadPath}
+              href={downloadHref}
+              reloadDocument
+              className="download ybtn ybtn-mini"
+              title={`${t("button.download")} ${name}`}
+            >
+              <i className="yobicon-download"></i>
+            </Link>
+            <Link
+              to={filePath}
+              href={href}
+              reloadDocument
+              target="_blank"
+              className="vmiddle"
+            >
+              <i className="yobicon-paperclip"></i>
+              <span className="filename">{name}</span>
+              <span className="filesize">({sizeReadable})</span>
+            </Link>
           </li>
         );
       })}
-    </>
+    </ul>
   );
 }
 
@@ -3424,6 +3438,24 @@ function attachmentItems(value: unknown): Array<Record<string, unknown>> {
     }
   }
   return [];
+}
+
+function attachmentDownloadHref(href: string) {
+  if (href === "") {
+    return "?action=download";
+  }
+  return href.includes("?") ? `${href}&action=download` : `${href}?action=download`;
+}
+
+function attachmentLinkPath(basePath: string, href: string) {
+  if (href === "" || basePath === "" || basePath === "/") {
+    return href;
+  }
+  if (href.startsWith(basePath)) {
+    const path = href.slice(basePath.length);
+    return path === "" ? "/" : path;
+  }
+  return href;
 }
 
 function ellipsisMarkdown(markdown: string) {
