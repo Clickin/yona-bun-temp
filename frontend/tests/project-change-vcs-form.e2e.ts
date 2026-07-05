@@ -20,12 +20,12 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
   </div>
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
+<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">2</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer">
   <div class="project-page-wrap">
     <ul class="nav nav-tabs">
       <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li>
-      <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li>
+      <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">2</span></a></li>
       <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li>
       <li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li>
       <li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li>
@@ -61,6 +61,8 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   await page.goto(`${basePath}/admin/sample/changeVCS`);
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveClass(/hide/);
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -337,7 +339,7 @@ test("project change-VCS internal project links keep legacy hrefs without route-
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/setting`,
-      text: "Project configuration",
+      text: "Project configuration2",
     },
   ]);
 
@@ -374,7 +376,7 @@ test("project change-VCS internal project links keep legacy hrefs without route-
         className: "",
         dataStatus: null,
         href: `${basePath}/admin/sample/members`,
-        text: "Member",
+        text: "Member2",
       },
       {
         ariaCurrent: null,
@@ -417,6 +419,8 @@ test("project change-VCS internal project links keep legacy hrefs without route-
 
   const projectSettingsCogLink = page.locator(".project-setting a");
   await expect(projectSettingsCogLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(projectSettingsCogLink.locator(".project-menu-count")).toHaveText("2");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -970,7 +974,8 @@ function projectChangeVcs() {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     currentVcs: "GIT",
-    enrollmentRequestCount: 0,
+    enrolledUsers: [{ id: 1 }, { id: 2 }],
+    enrollmentRequestCount: 5,
     id: 7,
     isFavorite: false,
     isFavorited: false,
