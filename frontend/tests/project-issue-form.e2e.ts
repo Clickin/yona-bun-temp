@@ -18,6 +18,36 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>");
 
+const EXPECTED_MARKDOWN_HEADER_SAMPLE = `
+# This is an H1
+## This is an H2
+### This is an H3
+`;
+
+const EXPECTED_MARKDOWN_LIST_SAMPLE = `
+- Red
+    1. White
+    2. Blue
+- Green.
+`;
+
+const EXPECTED_MARKDOWN_CODE_SAMPLE = `
+\`function test() {console.log("hello world");}\`
+
+\`\`\`javascript
+function test() {
+  console.log("hello world");
+}
+\`\`\`
+`;
+
+const EXPECTED_MARKDOWN_TABLE_SAMPLE = `
+| Default      | Align center | Align right |
+| ------------ | :----------: | ------: |
+| Carrot       | Red          | 1,000   |
+| Banana       | Yellow       | 32,000  |
+`;
+
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
@@ -98,6 +128,10 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator(".markdown-help-wrap > li")).toHaveCount(10);
+  await expectMarkdownHelpPreText(page, ".markdownHeaders", EXPECTED_MARKDOWN_HEADER_SAMPLE);
+  await expectMarkdownHelpPreText(page, ".markdownLists", EXPECTED_MARKDOWN_LIST_SAMPLE);
+  await expectMarkdownHelpPreText(page, ".markdownCodes", EXPECTED_MARKDOWN_CODE_SAMPLE);
+  await expectMarkdownHelpPreText(page, ".markdownTables", EXPECTED_MARKDOWN_TABLE_SAMPLE);
   const uploader = page.locator("#upload.upload-wrap.content-footer");
   await expect(uploader).toHaveAttribute("data-resource-type", "ISSUE_POST");
   await expect(uploader.locator(".attach-wrap")).toBeVisible();
@@ -456,6 +490,16 @@ async function expectModernCancelControl(page: Page) {
   await expect(cancel).toHaveCount(1);
   await expect(cancel).toHaveText("Cancel");
   return cancel;
+}
+
+async function expectMarkdownHelpPreText(page: Page, sectionSelector: string, expected: string) {
+  await expect
+    .poll(() =>
+      page
+        .locator(`.markdown-help-item${sectionSelector} .markdwon-syntax pre`)
+        .evaluate((node) => node.textContent ?? ""),
+    )
+    .toBe(expected);
 }
 
 async function canonicalize(page: Page, selector: string) {

@@ -48,6 +48,12 @@ test("project search matches legacy search/result.scala.html project empty revie
     "page-wrap-outer",
     "page-footer-outer",
   ]);
+  await expectProjectSearchShell(page);
+  await expectProjectSearchForm(page, basePath, "review", "missing");
+  await expect(page.locator(".project-menu-outer .project-menu-nav li.active")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
+  await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
+  await expect(page.locator(".search-result-wrap").locator("> .empty-result")).toHaveCount(1);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_SEARCH.replaceAll("__BASE_PATH__", basePath)),
@@ -62,14 +68,20 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
 
   await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
 
+  await expectProjectSearchShell(page);
+  await expectProjectSearchForm(page, basePath, "issue", "sample");
+  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
+  await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
   await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues1");
-  await expect(page.locator("#searchInnerForm input[name='searchType']")).toHaveValue("issue");
-  await expect(page.locator("#searchKeyword")).toHaveValue("sample");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Issues");
   await expect(page.locator(".search-result-title strong")).toHaveText("1");
+  await expect(page.locator(".search-result-wrap > .search-list-wrap")).toHaveCount(1);
 
   const row = page.locator(".search-result-wrap .search-list-item");
   await expect(row).toHaveCount(1);
+  expect(
+    await row.evaluate((element) => Array.from(element.children).map((child) => child.className)),
+  ).toEqual(["title-wrap", "search-content", "search-meta-info"]);
   await expect(row.locator(".title-wrap .post-id")).toHaveText("#11");
   await expect(row.locator(".title-wrap a.title")).toHaveAttribute(
     "href",
@@ -181,6 +193,37 @@ test("project search category and form navigation stay inside the React SPA", as
   expect(new URL(page.url()).searchParams.get("searchType")).toBe("review");
   await expectSearchSpaSession(page);
 });
+
+async function expectProjectSearchShell(page: Page) {
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
+  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  const rootOrder = await page
+    .locator(".project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer")
+    .evaluateAll((roots) => roots.map((root) => root.className));
+  expect(rootOrder).toEqual([
+    "project-header-outer",
+    "project-menu-outer",
+    "site-breadcrumb-outer",
+    "page-wrap-outer",
+  ]);
+  await expect(page.locator(".site-breadcrumb-inner h3")).toHaveText("Search");
+}
+
+async function expectProjectSearchForm(
+  page: Page,
+  basePath: string,
+  searchType: string,
+  keyword: string,
+) {
+  const form = page.locator("#searchInnerForm");
+  await expect(form).toHaveAttribute("method", "get");
+  await expect(form).toHaveAttribute("action", new RegExp(`${basePath}/admin/sample/search$`));
+  await expect(form.locator("input[name='searchType']")).toHaveValue(searchType);
+  await expect(form.locator("#searchKeyword[name='keyword'].span11")).toHaveValue(keyword);
+  await expect(form.locator("button[type='submit'].ybtn")).toHaveText("Search");
+}
 
 async function mockProjectSearch(page: Page) {
   const apiCalls: { count: number; keywords: string[]; pageNums: number[] } = {

@@ -1,5 +1,105 @@
 import { Link } from "@tanstack/react-router";
 
+const MARKDOWN_HEADER_SAMPLE = `
+# This is an H1
+## This is an H2
+### This is an H3
+`;
+
+const MARKDOWN_STYLING_SAMPLE = `
+*This is an italic*
+**This is an bold**
+~~This is an strike~~
+`;
+
+const MARKDOWN_LINK_SAMPLE = `
+[Site](http://yobi.io/ "Yobi Site")
+
+http://yobi.io/
+`;
+
+const MARKDOWN_LINK_OUTPUT_SAMPLE = `
+
+[Site](http://yobi.io/ "Yobi Site")
+
+http://yobi.io/
+`;
+
+const MARKDOWN_LIST_INPUT_SAMPLE = `
+- Red
+    1. White
+    2. Blue
+- Green.
+`;
+
+const MARKDOWN_LIST_OUTPUT_SAMPLE = `
+- Red
+    1. White
+    2. Blue
+- Green
+`;
+
+const MARKDOWN_TASK_LIST_SAMPLE = `
+- [ ] Todos
+    - [x] To do A
+    - [ ] To do B
+    - [ ] To do C
+`;
+
+const MARKDOWN_IMAGE_INPUT_SAMPLE = `
+![title](https://repo.yona.io/assets/images/ico-like-small.png "Yobi")
+`;
+
+const MARKDOWN_IMAGE_OUTPUT_SAMPLE = `
+![title](/assets/images/ico-like-small.png "Yobi")
+`;
+
+const MARKDOWN_BLOCKQUOTE_SAMPLE = `
+> Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+>
+> Aenean commodo ligula eget dolor.
+`;
+
+const MARKDOWN_CODE_SAMPLE = `
+\`function test() {console.log("hello world");}\`
+
+\`\`\`javascript
+function test() {
+  console.log("hello world");
+}
+\`\`\`
+`;
+
+const MARKDOWN_TABLE_INPUT_SAMPLE = `
+| Default      | Align center | Align right |
+| ------------ | :----------: | ------: |
+| Carrot       | Red          | 1,000   |
+| Banana       | Yellow       | 32,000  |
+`;
+
+const MARKDOWN_TABLE_OUTPUT_SAMPLE = `
+| Default      | Align center | Align right |
+| ------------ | :----------: | ------: |
+| Carrot       | Red          | 1,000   |
+| Banana       | Yellow       | 32,000  |
+
+Also, you can copy & paste table from excel sheet
+`;
+
+const MARKDOWN_SHORT_LINK_SAMPLE = `
+Issue no: #2
+Mention: @yobi
+commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593
+`;
+
+function MarkdownSampleOutput({ sample }: { sample: string }) {
+  return (
+    <div className="markdown-wrap" {...{ markdown: "true" }}>
+      {sample}
+    </div>
+  );
+}
+
 export function LegacyMarkdownHelp() {
   return (
     <div className="markdown-help">
@@ -46,12 +146,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre># This is an H1 ## This is an H2 ### This is an H3</pre>
+              <pre>{MARKDOWN_HEADER_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                # This is an H1 ## This is an H2 ### This is an H3
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_HEADER_SAMPLE} />
             </div>
           </div>
         </li>
@@ -62,12 +160,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>*This is an italic* **This is an bold** ~~This is an strike~~</pre>
+              <pre>{MARKDOWN_STYLING_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                *This is an italic* **This is an bold** ~~This is an strike~~
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_STYLING_SAMPLE} />
             </div>
           </div>
         </li>
@@ -78,12 +174,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>[Site](http://yobi.io/ "Yobi Site") http://yobi.io/</pre>
+              <pre>{MARKDOWN_LINK_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                [Site](http://yobi.io/ "Yobi Site") http://yobi.io/
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_LINK_OUTPUT_SAMPLE} />
             </div>
           </div>
         </li>
@@ -94,12 +188,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>- Red 1. White 2. Blue - Green.</pre>
+              <pre>{MARKDOWN_LIST_INPUT_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                - Red 1. White 2. Blue - Green
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_LIST_OUTPUT_SAMPLE} />
             </div>
           </div>
         </li>
@@ -110,7 +202,7 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>- [ ] Todos - [x] To do A - [ ] To do B - [ ] To do C</pre>
+              <pre>{MARKDOWN_TASK_LIST_SAMPLE}</pre>
             </div>
             <div className="span6">
               <div className="markdown-wrap">
@@ -141,12 +233,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>![title](https://repo.yona.io/assets/images/ico-like-small.png "Yobi")</pre>
+              <pre>{MARKDOWN_IMAGE_INPUT_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                ![title](/assets/images/ico-like-small.png "Yobi")
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_IMAGE_OUTPUT_SAMPLE} />
             </div>
           </div>
         </li>
@@ -157,16 +247,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>
-                &gt; Lorem ipsum dolor sit amet, consectetuer adipiscing elit. &gt; &gt; Aenean
-                commodo ligula eget dolor.
-              </pre>
+              <pre>{MARKDOWN_BLOCKQUOTE_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                &gt; Lorem ipsum dolor sit amet, consectetuer adipiscing elit. &gt; &gt; Aenean
-                commodo ligula eget dolor.
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_BLOCKQUOTE_SAMPLE} />
             </div>
           </div>
         </li>
@@ -177,16 +261,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>
-                `function test() &#123;console.log("hello world");&#125;` ```javascript function
-                test() &#123; console.log("hello world"); &#125; ```
-              </pre>
+              <pre>{MARKDOWN_CODE_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                `function test() &#123;console.log("hello world");&#125;` ```javascript function
-                test() &#123; console.log("hello world"); &#125; ```
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_CODE_SAMPLE} />
             </div>
           </div>
         </li>
@@ -197,17 +275,10 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>
-                | Default | Align center | Align right | | ------------ | :----------: | ------: | |
-                Carrot | Red | 1,000 | | Banana | Yellow | 32,000 |
-              </pre>
+              <pre>{MARKDOWN_TABLE_INPUT_SAMPLE}</pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap" {...{ markdown: "true" }}>
-                | Default | Align center | Align right | | ------------ | :----------: | ------: | |
-                Carrot | Red | 1,000 | | Banana | Yellow | 32,000 | Also, you can copy &amp; paste
-                table from excel sheet
-              </div>
+              <MarkdownSampleOutput sample={MARKDOWN_TABLE_OUTPUT_SAMPLE} />
             </div>
           </div>
         </li>
@@ -218,10 +289,7 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>
-                Issue no: #2 Mention: @yobi commit: @763575 or
-                @763575f177a4ce8b9370954de3ea1a1410205593
-              </pre>
+              <pre>{MARKDOWN_SHORT_LINK_SAMPLE}</pre>
             </div>
             <div className="span6">
               <div className="markdown-wrap">

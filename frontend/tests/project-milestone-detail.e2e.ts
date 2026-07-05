@@ -426,6 +426,66 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain('hash="issues"');
 });
 
+test("project milestone detail E2E selectors stay anchored to legacy Scala HTML", () => {
+  const milestoneViewSource = readFileSync(
+    "../yona-original/app/views/milestone/view.scala.html",
+    "utf8",
+  );
+  const issueListSource = readFileSync(
+    "../yona-original/app/views/issue/partial_list.scala.html",
+    "utf8",
+  );
+  const massUpdateSource = readFileSync(
+    "../yona-original/app/views/issue/partial_massupdate.scala.html",
+    "utf8",
+  );
+
+  for (const snippet of [
+    '<div class="milesion-wrap">',
+    '<div class="actrow right-txt row-fluid"',
+    '<a href="@routes.MilestoneApp.milestones(project.owner, project.name)" class="ybtn pull-left">',
+    '<a href="#deleteConfirm" data-toggle="modal" class="ybtn ybtn-danger">',
+    '<a href="@routes.MilestoneApp.editMilestoneForm(project.owner, project.name, milestone.id)" class="ybtn">',
+    'data-request-uri="@routes.MilestoneApp.close(project.owner, project.name, milestone.id)" class="ybtn"',
+    '<div id="issues">',
+    '<ul class="nav nav-tabs">',
+    "@for(state <- Array(State.OPEN, State.CLOSED, State.ALL))",
+    '<div class="issues">',
+    '<div class="filter-wrap">',
+    "@issue.partial_massupdate(project, new SearchCondition())",
+    'data-toggle="item-search" data-items="issue-item"',
+    "issue.partial_list(project, milestone.sortedByNumberOfOpenIssue(), new SearchCondition(),0,0)",
+    '<div id="deleteConfirm" class="modal hide fade">',
+    '<h3>@Messages("milestone.delete")</h3>',
+    'data-request-method="delete" data-request-uri="@routes.MilestoneApp.deleteMilestone(project.owner, project.name, milestone.id)"',
+  ]) {
+    expect(milestoneViewSource).toContain(snippet);
+  }
+  expect(milestoneViewSource).not.toContain("milestone-wrap");
+
+  for (const snippet of [
+    '<ul class="post-list-wrap row-fluid">',
+    '<li class="post-item title" id="issue-item-@issue.id" data-item="issue-item"',
+    'name="checked-issue" data-toggle="issue-checkbox"',
+    '<div for="issue-@issue.id" class="issue-item-row">',
+    '<a href="#" class="label issue-label list-label active"',
+    '<div class="child-issue-list hide">',
+  ]) {
+    expect(issueListSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '<form id="mass-update-form" class="mass-update-form pull-left"',
+    '<div id="state" class="btn-group" data-name="state">',
+    '<div id="assignee" class="btn-group" data-name="assignee.id">',
+    '<div id="milestone" class="btn-group" data-name="milestone.id">',
+    '<div id="attaching-label" class="btn-group" data-name="attachingLabelIds">',
+    '<div id="detaching-label" class="btn-group" data-name="detachingLabelIds">',
+  ]) {
+    expect(massUpdateSource).toContain(snippet);
+  }
+});
+
 async function expectMilestoneDetailAssets(page: Page, basePath: string) {
   const markdownLink = page.locator(
     `link[href="${basePath}/assets/javascripts/lib/highlight/styles/default.css"]`,
