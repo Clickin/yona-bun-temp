@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+test.setTimeout(60_000);
+
 const EXPECTED_CREATE_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20">We are checking if the code is safe. Please wait for a while to complete this process.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option><option value="8">admin/fork</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5"><option></option><option value="7" selected="">admin/sample</option><option value="8">admin/fork</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="Add UI" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
@@ -28,7 +30,8 @@ test("project pull request create form matches legacy git/create.scala.html core
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
-  await mockProjectPullRequestCreateForm(page, postRequests);
+  const mergeResultRequests: string[] = [];
+  await mockProjectPullRequestCreateForm(page, postRequests, { mergeResultRequests });
 
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
   expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
@@ -44,6 +47,9 @@ test("project pull request create form matches legacy git/create.scala.html core
   );
   await expect(page.locator("#fromBranch")).toHaveAttribute("data-placeholder", "Select branch");
   await expect(page.locator("#toBranch")).toHaveAttribute("data-placeholder", "Select branch");
+  await expect(page.locator("#status")).toHaveText("This pull request can be merged safely.");
+  await expect(page.locator("#status")).toHaveClass(/alert-success/);
+  await expect(page.locator("#title")).toHaveValue("Add UI");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator('form.nm > ul.nav-tabs a[href="#__commits"]')).toHaveCount(0);
   await expect(
@@ -178,6 +184,23 @@ test("project pull request create form matches legacy git/create.scala.html core
     )
     .toBe("kept");
 
+  await page.locator("#title").dispatchEvent("keyup", { key: "Enter", keyCode: 13, which: 13 });
+  await expect(page.locator("#title")).toHaveValue("Add UI");
+  await page.locator("#title").clear();
+  await page.locator("#title").pressSequentially("Manual title");
+  await selectLegacyOption(page, "#fromBranch", "main");
+  await expect(page).toHaveURL(/fromBranch=main/u);
+  expect(mergeResultRequests.some((url) => url.includes("fromBranch=main"))).toBe(true);
+  await expect(page.locator("#title")).toHaveValue("Manual title");
+  await expect(page.locator("#mergeResult")).toHaveAttribute(
+    "data-pullrequest-title",
+    "Main branch change",
+  );
+
+  await selectLegacyOption(page, "#fromProjectId", "8");
+  await expect(page).toHaveURL(/fromProjectId=8/u);
+  await expect(page).toHaveURL(/toProjectId=7/u);
+
   await page.fill("#title", "Improve UI");
   await page.fill("#editor-body-body", "Body text");
   await page.click('form.nm button[type="submit"]');
@@ -189,13 +212,62 @@ test("project pull request create form matches legacy git/create.scala.html core
         attachmentIds: [],
         bodyMarkdown: "Body text",
         fromBranch: "feature/ui",
-        fromProjectId: 7,
+        fromProjectId: 8,
         title: "Improve UI",
         toBranch: "main",
         toProjectId: 7,
       },
     ]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
+});
+
+test("pull request create form preserves legacy yobi.git.Write submit validation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const postRequests: unknown[] = [];
+  await mockProjectPullRequestCreateForm(page, postRequests, { mergeMode: "empty" });
+  await page.goto(
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
+  const noChangesDialog = nextDialogMessage(page);
+  await page.click('form.nm button[type="submit"]');
+  await expect(noChangesDialog).resolves.toBe("No changes have been made.");
+  expect(postRequests).toEqual([]);
+
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await mockProjectPullRequestCreateForm(page, postRequests, { mergeMode: "normal" });
+  await page.goto(
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
+  await page.fill("#title", "");
+  const titleDialog = nextDialogMessage(page);
+  await page.click('form.nm button[type="submit"]');
+  await expect(titleDialog).resolves.toBe("Title is a required field.");
+  expect(postRequests).toEqual([]);
+
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await mockProjectPullRequestCreateForm(page, postRequests, { mergeMode: "conflict" });
+  await page.goto(
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe(
+      "This code seems to have conflicts when merging. Do you really want to continue?",
+    );
+    await dialog.dismiss();
+  });
+  await page.click('form.nm button[type="submit"]');
+  expect(postRequests).toEqual([]);
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toBe(
+      "This code seems to have conflicts when merging. Do you really want to continue?",
+    );
+    await dialog.accept();
+  });
+  await page.click('form.nm button[type="submit"]');
+  await expect.poll(() => postRequests.length).toBe(1);
 });
 
 test("pull request create editor and uploader omit legacy local raw injection", () => {
@@ -310,7 +382,14 @@ async function markdownHelpMetrics(page: Page) {
   });
 }
 
-async function mockProjectPullRequestCreateForm(page: Page, postRequests: unknown[]) {
+async function mockProjectPullRequestCreateForm(
+  page: Page,
+  postRequests: unknown[],
+  options: {
+    mergeMode?: "conflict" | "empty" | "normal";
+    mergeResultRequests?: string[];
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -364,23 +443,33 @@ async function mockProjectPullRequestCreateForm(page: Page, postRequests: unknow
   await page.route(
     "**/api/v1/owners/admin/projects/sample/pull-requests/form-options?*",
     async (route) => {
+      const url = new URL(route.request().url());
+      const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
+      const fromProjectId = Number(url.searchParams.get("fromProjectId")) || 7;
+      const toProjectId = Number(url.searchParams.get("toProjectId")) || 7;
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
           fromBranches: [
-            { name: "feature/ui", selected: true },
-            { name: "main", selected: false },
+            { name: "feature/ui", selected: fromBranch === "feature/ui" },
+            { name: "main", selected: fromBranch === "main" },
           ],
-          fromProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+          fromProjects: [
+            { id: 7, ownerName: "admin", projectName: "sample", selected: fromProjectId === 7 },
+            { id: 8, ownerName: "admin", projectName: "fork", selected: fromProjectId === 8 },
+          ],
           mode: "create",
           selected: {
-            fromBranch: "feature/ui",
-            fromProjectId: 7,
+            fromBranch,
+            fromProjectId,
             toBranch: "main",
-            toProjectId: 7,
+            toProjectId,
           },
           toBranches: [{ name: "main", selected: true }],
-          toProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+          toProjects: [
+            { id: 7, ownerName: "admin", projectName: "sample", selected: toProjectId === 7 },
+            { id: 8, ownerName: "admin", projectName: "fork", selected: toProjectId === 8 },
+          ],
         }),
       });
     },
@@ -388,20 +477,27 @@ async function mockProjectPullRequestCreateForm(page: Page, postRequests: unknow
   await page.route(
     "**/api/v1/owners/admin/projects/sample/pull-requests/merge-result?*",
     async (route) => {
+      const url = new URL(route.request().url());
+      options.mergeResultRequests?.push(url.toString());
+      const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
+      const commitMessage = fromBranch === "main" ? "Main branch change" : "Add UI";
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          commits: [
-            {
-              authorDateLabel: "Jul 2, 2026",
-              authorEmail: "dev@example.com",
-              commitId: "abcdef1234567890",
-              commitMessage: "Add UI",
-              commitShortId: "abcdef1",
-              state: "CURRENT",
-            },
-          ],
-          conflict: false,
+          commits:
+            options.mergeMode === "empty"
+              ? []
+              : [
+                  {
+                    authorDateLabel: "Jul 2, 2026",
+                    authorEmail: "dev@example.com",
+                    commitId: "abcdef1234567890",
+                    commitMessage,
+                    commitShortId: "abcdef1",
+                    state: "CURRENT",
+                  },
+                ],
+          conflict: options.mergeMode === "conflict",
           noHead: false,
         }),
       });
@@ -428,6 +524,27 @@ async function expectModernCancelControl(page: Page) {
   await expect(cancel).toHaveCount(1);
   await expect(cancel).toHaveText("Cancel");
   return cancel;
+}
+
+function nextDialogMessage(page: Page) {
+  return page.waitForEvent("dialog").then(async (dialog) => {
+    const message = dialog.message();
+    await dialog.dismiss();
+    return message;
+  });
+}
+
+async function selectLegacyOption(page: Page, selector: string, value: string) {
+  await page.locator(selector).evaluate(
+    (select, args) => {
+      if (!(select instanceof HTMLSelectElement)) {
+        throw new Error(`${args.selector} is not a select element`);
+      }
+      select.value = args.value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    },
+    { selector, value },
+  );
 }
 
 async function canonicalize(page: Page, selector: string) {

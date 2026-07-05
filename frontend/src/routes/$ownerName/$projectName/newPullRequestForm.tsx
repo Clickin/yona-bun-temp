@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -20,7 +20,9 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type PullRequestFormSearch = {
   fromBranch: string;
+  fromProjectId: number;
   toBranch: string;
+  toProjectId: number;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/newPullRequestForm")({
@@ -28,7 +30,9 @@ export const Route = createFileRoute("/$ownerName/$projectName/newPullRequestFor
   validateSearch(search: Record<string, unknown>): PullRequestFormSearch {
     return {
       fromBranch: stringSearch(search.fromBranch),
+      fromProjectId: numberSearch(search.fromProjectId),
       toBranch: stringSearch(search.toBranch),
+      toProjectId: numberSearch(search.toProjectId),
     };
   },
 });
@@ -54,14 +58,17 @@ function ProjectNewPullRequestScreen({ runtimeConfig }: { runtimeConfig: Runtime
   const legacySearch = legacyUrlSearch(locationHref);
   const query = {
     fromBranch: search.fromBranch || stringSearch(legacySearch.get("fromBranch")),
+    fromProjectId: search.fromProjectId || numberSearch(legacySearch.get("fromProjectId")),
     toBranch: search.toBranch || stringSearch(legacySearch.get("toBranch")),
+    toProjectId: search.toProjectId || numberSearch(legacySearch.get("toProjectId")),
   };
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const formOptionsQuery = useQuery(
-    pullRequestCreateFormOptionsQueryOptions(runtimeConfig, { ownerName, projectName, query }),
-  );
+  const formOptionsQuery = useQuery({
+    ...pullRequestCreateFormOptionsQueryOptions(runtimeConfig, { ownerName, projectName, query }),
+    placeholderData: (previousData) => previousData,
+  });
 
   if (!projectQuery.data || !formOptionsQuery.data) {
     return null;
@@ -95,9 +102,46 @@ function ProjectNewPullRequestBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const selected = formOptions.selected;
+  const titleRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [formValues, setFormValues] = useState<PullRequestFormSelected>(selected);
+  const [isUserHasTyped, setIsUserHasTyped] = useState(false);
+  const [forceSubmit, setForceSubmit] = useState(false);
   const mergeResultQuery = useQuery(
-    pullRequestMergeResultQueryOptions(runtimeConfig, { ownerName, projectName, query: selected }),
+    pullRequestMergeResultQueryOptions(runtimeConfig, {
+      ownerName,
+      projectName,
+      query: formValues,
+    }),
   );
+  const mergeResult = mergeResultQuery.data;
+  const mergeResultText = mergeResult ? mergeResultSuggestedText(mergeResult.commits) : null;
+  const mergeResultTitle = mergeResultText?.title ?? "";
+  const mergeResultBody = mergeResultText?.body ?? "";
+  const status = mergeStatus(mergeResult, t);
+
+  useEffect(() => {
+    setFormValues({
+      fromBranch: selected.fromBranch,
+      fromProjectId: selected.fromProjectId,
+      toBranch: selected.toBranch,
+      toProjectId: selected.toProjectId,
+    });
+    setForceSubmit(false);
+  }, [selected.fromBranch, selected.fromProjectId, selected.toBranch, selected.toProjectId]);
+
+  useEffect(() => {
+    if ((mergeResultTitle === "" && mergeResultBody === "") || isUserHasTyped) {
+      return;
+    }
+    if (titleRef.current) {
+      titleRef.current.value = mergeResultTitle;
+    }
+    if (bodyRef.current) {
+      bodyRef.current.value = mergeResultBody;
+    }
+  }, [isUserHasTyped, mergeResultBody, mergeResultTitle]);
+
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -136,13 +180,44 @@ function ProjectNewPullRequestBody({
             className="nm"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!validatePullRequestMergeResult(mergeResult, t)) {
+                return;
+              }
+              if (mergeResult?.conflict && !forceSubmit) {
+                if (!window.confirm(t("pullRequest.ignore.conflict"))) {
+                  return;
+                }
+                setForceSubmit(true);
+              }
+              if (!validatePullRequestRequiredFields(new FormData(event.currentTarget), t)) {
+                return;
+              }
               mutation.mutate(event.currentTarget);
             }}
           >
-            <PullRequestBranchSelectors formOptions={formOptions} selected={selected} />
+            <PullRequestBranchSelectors
+              formOptions={formOptions}
+              onChange={(nextValues, projectChanged) => {
+                setFormValues(nextValues);
+                setForceSubmit(false);
+                void router.navigate({
+                  to: "/$ownerName/$projectName/newPullRequestForm",
+                  params: { ownerName, projectName },
+                  search: projectChanged
+                    ? {
+                        fromBranch: "",
+                        fromProjectId: nextValues.fromProjectId,
+                        toBranch: "",
+                        toProjectId: nextValues.toProjectId,
+                      }
+                    : nextValues,
+                });
+              }}
+              selected={formValues}
+            />
             <span id="pullRequestState" data-value="OPEN"></span>
-            <div id="status" className="alert mt20 mb20">
-              {t("pullRequest.is.merging")}
+            <div id="status" className={`alert mt20 mb20 ${status.cssClass}`}>
+              {status.message}
             </div>
             <div>
               <input
@@ -152,9 +227,19 @@ function ProjectNewPullRequestBody({
                 maxLength={255}
                 className="text"
                 placeholder={t("title")}
+                ref={titleRef}
+                onKeyUp={(event) => {
+                  if (event.key !== "Enter") {
+                    setIsUserHasTyped(true);
+                  }
+                }}
               />
               <div style={{ position: "relative" }}>
-                <PullRequestMarkdownEditor value="" />
+                <PullRequestMarkdownEditor
+                  bodyRef={bodyRef}
+                  isUserHasTyped={isUserHasTyped}
+                  onUserTyped={() => setIsUserHasTyped(true)}
+                />
               </div>
               <PullRequestFileUploader />
               <div className="actions">
@@ -171,22 +256,22 @@ function ProjectNewPullRequestBody({
                 <button type="button" data-toggle="tab">
                   <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
                   <span id="numOfCommits" className="num-badge vmiddle-inline">
-                    {mergeResultQuery.data?.commits.length
-                      ? String(mergeResultQuery.data.commits.length)
-                      : ""}
+                    {mergeResult?.commits.length ? String(mergeResult.commits.length) : ""}
                   </span>
                 </button>
               </li>
             </ul>
             <div className="tab-content">
               <div id="__commits" className="code-browse-wrap tab-pane active">
-                {mergeResultQuery.data ? (
+                {mergeResult ? (
                   <MergeResult
-                    commits={mergeResultQuery.data.commits}
-                    conflict={mergeResultQuery.data.conflict}
+                    commits={mergeResult.commits}
+                    conflict={mergeResult.conflict}
                     noChangesLabel={t("pullRequest.diff.noChanges")}
                     ownerName={ownerName}
                     projectName={projectName}
+                    suggestedBody={mergeResultBody}
+                    suggestedTitle={mergeResultTitle}
                   />
                 ) : null}
               </div>
@@ -200,12 +285,27 @@ function ProjectNewPullRequestBody({
 
 function PullRequestBranchSelectors({
   formOptions,
+  onChange,
   selected,
 }: {
   formOptions: PullRequestFormOptionsResponse;
+  onChange: (nextValues: PullRequestFormSelected, projectChanged: boolean) => void;
   selected: PullRequestFormSelected;
 }) {
   const { t } = useLegacyMessages();
+  const changeValue = (
+    field: keyof PullRequestFormSelected,
+    value: string,
+    projectChanged = false,
+  ) => {
+    onChange(
+      {
+        ...selected,
+        [field]: field.endsWith("ProjectId") ? Number(value) || 0 : value,
+      },
+      projectChanged,
+    );
+  };
   return (
     <div className="pull-request-wrap">
       <div className="pull-left">
@@ -218,6 +318,8 @@ function PullRequestBranchSelectors({
           data-toggle="select2"
           className="mr5"
           defaultValue={String(selected.fromProjectId)}
+          key={`from-project-${selected.fromProjectId}`}
+          onChange={(event) => changeValue("fromProjectId", event.currentTarget.value, true)}
         >
           <option></option>
           {formOptions.fromProjects.map((project) => (
@@ -234,6 +336,8 @@ function PullRequestBranchSelectors({
           data-dropdown-css-class="branches"
           data-placeholder={t("pullRequest.select.branch")}
           defaultValue={selected.fromBranch}
+          key={`from-branch-${selected.fromBranch}`}
+          onChange={(event) => changeValue("fromBranch", event.currentTarget.value)}
         >
           <option></option>
           {formOptions.fromBranches.map((branch) => (
@@ -256,6 +360,8 @@ function PullRequestBranchSelectors({
           data-toggle="select2"
           className="mr5"
           defaultValue={String(selected.toProjectId)}
+          key={`to-project-${selected.toProjectId}`}
+          onChange={(event) => changeValue("toProjectId", event.currentTarget.value, true)}
         >
           <option></option>
           {formOptions.toProjects.map((project) => (
@@ -272,6 +378,8 @@ function PullRequestBranchSelectors({
           data-dropdown-css-class="branches"
           data-placeholder={t("pullRequest.select.branch")}
           defaultValue={selected.toBranch}
+          key={`to-branch-${selected.toBranch}`}
+          onChange={(event) => changeValue("toBranch", event.currentTarget.value)}
         >
           <option></option>
           {formOptions.toBranches.map((branch) => (
@@ -286,11 +394,13 @@ function PullRequestBranchSelectors({
 }
 
 function PullRequestMarkdownEditor({
+  bodyRef,
   isUserHasTyped = false,
-  value,
+  onUserTyped,
 }: {
+  bodyRef: RefObject<HTMLTextAreaElement | null>;
   isUserHasTyped?: boolean;
-  value: string;
+  onUserTyped: () => void;
 }) {
   const { t } = useLegacyMessages();
   const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
@@ -354,7 +464,12 @@ function PullRequestMarkdownEditor({
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-body-body"
-              defaultValue={value}
+              ref={bodyRef}
+              onKeyUp={(event) => {
+                if (event.key !== "Enter") {
+                  onUserTyped();
+                }
+              }}
               {...userTypedAttr}
               {...{ markdown: "true" }}
             ></textarea>
@@ -408,12 +523,16 @@ function MergeResult({
   noChangesLabel,
   ownerName,
   projectName,
+  suggestedBody,
+  suggestedTitle,
 }: {
   commits: PullRequestCommit[];
   conflict: boolean;
   noChangesLabel: string;
   ownerName: string;
   projectName: string;
+  suggestedBody: string;
+  suggestedTitle: string;
 }) {
   if (!commits.length) {
     return (
@@ -421,8 +540,8 @@ function MergeResult({
         id="mergeResult"
         className="code-browser-wrap"
         data-commits="0"
-        data-pullrequest-title=""
-        data-pullrequest-body=""
+        data-pullrequest-title={suggestedTitle}
+        data-pullrequest-body={suggestedBody}
       >
         <div>
           <h5>{noChangesLabel}</h5>
@@ -436,8 +555,8 @@ function MergeResult({
       id="mergeResult"
       className="code-browser-wrap"
       data-commits={String(commits.length)}
-      data-pullrequest-title=""
-      data-pullrequest-body=""
+      data-pullrequest-title={suggestedTitle}
+      data-pullrequest-body={suggestedBody}
       data-conflict={String(conflict)}
     >
       <div className="commit-wrap">
@@ -501,4 +620,62 @@ function stringFormValue(formData: FormData, name: string): string {
 
 function stringSearch(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function numberSearch(value: unknown): number {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function mergeResultSuggestedText(commits: PullRequestCommit[]): { body: string; title: string } {
+  if (commits.length === 0) {
+    return { body: "", title: "" };
+  }
+  if (commits.length === 1) {
+    const [title = "", ...bodyLines] = commits[0].commitMessage.split(/\r?\n/u);
+    return { body: bodyLines.join("\n").trim(), title };
+  }
+  return {
+    body: commits.map((commit) => commit.commitMessage.split(/\r?\n/u)[0] ?? "").join("\n"),
+    title: "",
+  };
+}
+
+function mergeStatus(
+  mergeResult: { commits: PullRequestCommit[]; conflict: boolean } | undefined,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+): { cssClass: string; message: string } {
+  if (!mergeResult) {
+    return { cssClass: "", message: t("pullRequest.is.merging") };
+  }
+  if (mergeResult.commits.length === 0) {
+    return { cssClass: "alert-info", message: t("pullRequest.diff.noChanges") };
+  }
+  return mergeResult.conflict
+    ? { cssClass: "alert-error", message: t("pullRequest.is.not.safe") }
+    : { cssClass: "alert-success", message: t("pullRequest.is.safe") };
+}
+
+function validatePullRequestMergeResult(
+  mergeResult: { commits: PullRequestCommit[]; conflict: boolean } | undefined,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+): boolean {
+  if (!mergeResult?.commits.length) {
+    window.alert(t("pullRequest.diff.noChanges"));
+    return false;
+  }
+  return true;
+}
+
+function validatePullRequestRequiredFields(
+  formData: FormData,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+): boolean {
+  for (const fieldName of ["title", "fromProjectId", "toProjectId", "fromBranch", "toBranch"]) {
+    if (!stringFormValue(formData, fieldName).trim()) {
+      window.alert(t(`pullRequest.${fieldName}.required`));
+      return false;
+    }
+  }
+  return true;
 }
