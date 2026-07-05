@@ -16,8 +16,8 @@ const NOTIFICATION_TYPES = [
   ["PULL_REQUEST_COMMIT_CHANGED", "Pull Request Commit Change"],
   ["NEW_COMMIT", "New commits on a project"],
   ["PULL_REQUEST_REVIEW_STATE_CHANGED", "Pull Request Review Action Changed"],
-  ["ISSUE_BODY_CHANGED", "Issue body changed"],
   ["ISSUE_REFERRED_FROM_PULL_REQUEST", "Issue mentioned in pull request"],
+  ["ISSUE_BODY_CHANGED", "Issue body changed"],
   ["REVIEW_THREAD_STATE_CHANGED", "Review Thread State Change"],
   ["ORGANIZATION_MEMBER_ENROLL_REQUEST", "Requests for joining group"],
   ["COMMENT_UPDATED", "Comment updated"],
@@ -226,7 +226,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="${basePath}/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="${basePath}/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="${basePath}/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="${basePath}/user/issues/new">New issue</a></li><li><a href="${basePath}/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="${basePath}/projectform">Create new project</a></li><li><a href="${basePath}/organizations/new">New Group</a></li></ul></li>
