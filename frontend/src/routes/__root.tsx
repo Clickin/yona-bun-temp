@@ -292,39 +292,13 @@ function RootResetShell() {
         return;
       }
 
-      const selectedItem = target?.closest<HTMLElement>(".btn-group[data-name] .dropdown-menu li");
-      if (selectedItem) {
-        const container = selectedItem.closest<HTMLElement>(".btn-group[data-name]");
-        const fieldName = container?.dataset.name;
-        if (
-          !container ||
-          container.dataset.activate === "manual" ||
-          !fieldName ||
-          selectedItem.dataset.value === undefined
-        ) {
-          event.preventDefault();
-          return;
-        }
-
-        const label = container.querySelector<HTMLElement>(".d-label");
-        if (label) {
-          label.innerHTML = selectedItem.innerHTML;
-        }
-        container.querySelectorAll(".dropdown-menu li.active").forEach((item) => {
-          item.classList.remove("active");
-        });
-        selectedItem.classList.add("active");
-
-        let hiddenInput = container.querySelector<HTMLInputElement>(
-          `input[type="hidden"][name="${CSS.escape(fieldName)}"]`,
-        );
-        if (!hiddenInput) {
-          hiddenInput = document.createElement("input");
-          hiddenInput.type = "hidden";
-          hiddenInput.name = fieldName;
-          container.append(hiddenInput);
-        }
-        hiddenInput.value = selectedItem.dataset.value ?? "";
+      const manualDropdownItem = target?.closest<HTMLElement>(
+        '.btn-group[data-activate="manual"] .dropdown-menu li',
+      );
+      if (manualDropdownItem) {
+        closeDropdowns();
+        event.preventDefault();
+        return;
       }
 
       if (!target?.closest(".btn-group.open, .dropdown.open")) {

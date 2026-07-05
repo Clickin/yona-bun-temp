@@ -1,3 +1,4 @@
+import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_UIKit")({
@@ -219,6 +220,10 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
 }
 
 function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
+  const [selectedValue, setSelectedValue] = React.useState("");
+  const [hasSelectedValue, setHasSelectedValue] = React.useState(false);
+  const selectedLabel = selectedValue === "0" ? "담당자 없음" : "전체";
+
   return (
     <dl>
       <dt>
@@ -226,20 +231,39 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
       </dt>
       <dd>
         <div className="btn-group" data-name="assigneeId">
-          <button className={`btn dropdown-toggle ${size}`} data-toggle="dropdown">
-            <span className="d-label">전체</span>
+          <button type="button" className={`btn dropdown-toggle ${size}`} data-toggle="dropdown">
+            <span className="d-label">{selectedLabel}</span>
             <span className="d-caret">
               <span className="caret" />
             </span>
           </button>
           <ul className="dropdown-menu">
-            <li data-value="" data-selected="true" className="active">
-              <button type="button">전체</button>
+            <li data-value="" data-selected="true" className={selectedValue === "" ? "active" : ""}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedValue("");
+                  setHasSelectedValue(true);
+                }}
+              >
+                전체
+              </button>
             </li>
-            <li data-value="0">
-              <button type="button">담당자 없음</button>
+            <li data-value="0" className={selectedValue === "0" ? "active" : ""}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedValue("0");
+                  setHasSelectedValue(true);
+                }}
+              >
+                담당자 없음
+              </button>
             </li>
           </ul>
+          {hasSelectedValue ? (
+            <input type="hidden" name="assigneeId" value={selectedValue} />
+          ) : null}
         </div>
       </dd>
     </dl>

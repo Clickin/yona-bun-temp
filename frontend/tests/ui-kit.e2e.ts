@@ -90,6 +90,14 @@ test("standalone UI kit route renders JSX without raw legacy body injection", as
   expect(routeSourceOutsideCodeSamples).not.toContain('href="javascript:void(0)"');
 });
 
+test("standalone UI kit dropdown stays on React handlers without route document listeners", async () => {
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("removeEventListener");
+  expect(UIKIT_ROUTE_SOURCE).toContain('data-toggle="dropdown"');
+  expect(UIKIT_ROUTE_SOURCE).toContain("setSelectedValue");
+  expect(UIKIT_ROUTE_SOURCE).toContain("setHasSelectedValue");
+});
+
 test("root shell does not own route comment edit toggles", async () => {
   expect(ROOT_ROUTE_SOURCE).not.toContain('data-toggle="comment-edit"');
   expect(ROOT_ROUTE_SOURCE).not.toContain("comment-editform-");
@@ -114,6 +122,13 @@ test("root shell does not own route tab, search scope, or notify bridge state", 
   expect(ROOT_ROUTE_SOURCE).not.toContain(".markdown-help-wrap");
   expect(ROOT_ROUTE_SOURCE).toContain("<RootToastContext.Provider value={setRootToast}>");
   expect(ROOT_ROUTE_SOURCE).toContain('<div id="yobiToasts" className="yobiToasts">');
+});
+
+test("root shell does not own route dropdown selection mutation", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain(".btn-group[data-name] .dropdown-menu li");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("label.innerHTML = selectedItem.innerHTML");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("CSS.escape(fieldName)");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("container.append(hiddenInput)");
 });
 
 test("root shell owns login dialog state without delegated document modal mutation", async () => {
@@ -223,6 +238,37 @@ test("standalone UI kit root shell skips yobi dropdown mutation for data-activat
   await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
   await expect(dropdown.locator("li.active")).toHaveCount(0);
   await expect(dropdown.locator('input[type="hidden"][name="branch"]')).toHaveCount(0);
+});
+
+test("standalone UI kit root shell does not auto-bind route-owned dropdown selection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<div id="delegated-dropdown-fixture" class="btn-group" data-name="watcherId">
+        <button class="btn dropdown-toggle large" data-toggle="dropdown">
+          <span class="d-label">HEAD</span>
+          <span class="d-caret"><span class="caret"></span></span>
+        </button>
+        <ul class="dropdown-menu">
+          <li data-value="0"><button type="button">Watcher 없음</button></li>
+        </ul>
+      </div>`,
+    );
+  });
+
+  const dropdown = page.locator("#delegated-dropdown-fixture");
+  await dropdown.locator('[data-toggle="dropdown"]').click();
+  await expect(dropdown).toHaveClass(/open/);
+
+  await dropdown.locator('li[data-value="0"] button').click();
+  await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
+  await expect(dropdown.locator("li.active")).toHaveCount(0);
+  await expect(dropdown.locator('input[type="hidden"][name="watcherId"]')).toHaveCount(0);
 });
 
 test("standalone UI kit root shell mounts legacy anonymous login dialog", async ({ page }) => {
