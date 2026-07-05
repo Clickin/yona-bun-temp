@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_TRANSFER_FORM = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -7,7 +7,7 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -103,10 +103,20 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
     "href",
     `${basePath}/admin`,
   );
+  await expectLegacyAnchor(page.locator(".project-breadcrumb .project-author a"), {
+    className: null,
+    href: `${basePath}/admin`,
+    text: "admin",
+  });
   await expect(page.locator(".project-breadcrumb .project-name a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample`,
   );
+  await expectLegacyAnchor(page.locator(".project-breadcrumb .project-name a"), {
+    className: null,
+    href: `${basePath}/admin/sample`,
+    text: "sample",
+  });
 
   const projectMenuLinks = page.locator(".project-menu-gruop > li > a");
   await expect(projectMenuLinks).toHaveCount(7);
@@ -127,6 +137,21 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
     "href",
     `${basePath}/admin/sample/setting`,
   );
+  await expectLegacyAnchor(projectMenuLinks.nth(0), {
+    className: null,
+    href: `${basePath}/admin/sample`,
+    text: "Project homeH",
+  });
+  await expectLegacyAnchor(projectMenuLinks.nth(1), {
+    className: null,
+    href: `${basePath}/admin/sample/code`,
+    text: "CodeC",
+  });
+  await expectLegacyAnchor(page.locator(".project-setting a"), {
+    className: null,
+    href: `${basePath}/admin/sample/setting`,
+    text: "Project configuration",
+  });
 
   const settingsTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabLinks).toHaveCount(7);
@@ -152,23 +177,18 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
     "href",
     `${basePath}/admin/sample/changeVCS`,
   );
-  expect(
-    await settingsTabLinks.evaluateAll((anchors) =>
-      anchors.map((anchor) => ({
-        ariaCurrent: anchor.getAttribute("aria-current"),
-        className: anchor.getAttribute("class"),
-        dataStatus: anchor.getAttribute("data-status"),
-      })),
-    ),
-  ).toEqual([
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-  ]);
+  await expectLegacyAnchor(settingsTabLinks.nth(0), {
+    className: null,
+    href: `${basePath}/admin/sample/setting`,
+    text: "Settings",
+  });
+  await expectLegacyAnchor(settingsTabLinks.nth(4), {
+    className: null,
+    href: `${basePath}/admin/sample/transfer`,
+    text: "Transfer",
+  });
+  await expectNoRouterActiveMarkers(settingsTabLinks);
+  await expectNoRouterActiveMarkers(page.locator(".project-breadcrumb a, .project-menu-outer a"));
   await expect(page.locator("#subMenuProjectTransfer")).toHaveClass("active");
   expect(await readProjectNavigationNativeLinkAudit(page)).toEqual([]);
 
@@ -192,12 +212,40 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
+test("project transfer fork origin link keeps legacy class without active markers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      isForkedFromOrigin: true,
+      originalOwnerName: "origin",
+      originalProjectName: "base",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator(".project-breadcrumb-wrap")).toHaveClass(
+    "project-breadcrumb-wrap fork",
+  );
+  await expectLegacyAnchor(page.locator(".project-origin-name"), {
+    className: "project-origin-name",
+    href: `${basePath}/origin/base`,
+    text: "origin / base",
+  });
+});
+
 test("project transfer settings tabs use direct TanStack Link targets", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url),
     "utf8",
   );
 
+  expect(source).not.toContain("createLink");
+  expect(source).not.toMatch(/<a\b/u);
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ProjectSettingLink");
   expect(source).not.toContain("as never");
@@ -446,6 +494,41 @@ test("project transfer header favorite star has no route-local native listener",
   );
   await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
+
+async function expectLegacyAnchor(
+  locator: Locator,
+  expected: { className: string | null; href: string; text: string },
+) {
+  await expect(locator).toHaveAttribute("href", expected.href);
+  await expect(locator).toHaveText(expected.text);
+  expect(
+    await locator.evaluate((anchor) => ({
+      ariaCurrent: anchor.getAttribute("aria-current"),
+      className: anchor.getAttribute("class"),
+      dataStatus: anchor.getAttribute("data-status"),
+    })),
+  ).toEqual({
+    ariaCurrent: null,
+    className: expected.className,
+    dataStatus: null,
+  });
+}
+
+async function expectNoRouterActiveMarkers(locator: Locator) {
+  expect(
+    await locator.evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        ariaCurrent: anchor.getAttribute("aria-current"),
+        dataStatus: anchor.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual(
+    Array.from({ length: await locator.count() }, () => ({
+      ariaCurrent: null,
+      dataStatus: null,
+    })),
+  );
+}
 
 async function readDesktopTransferMetrics(page: Page) {
   return page.evaluate(() => {

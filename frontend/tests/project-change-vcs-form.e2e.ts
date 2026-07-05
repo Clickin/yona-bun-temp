@@ -7,7 +7,7 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -211,6 +211,22 @@ test("project change-VCS internal project links keep legacy hrefs without route-
   await expect(headerLinks).toHaveCount(2);
   await expect(headerLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin`);
   await expect(headerLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample`);
+  expect(await readLegacyAnchorStates(page, ".project-header-outer a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin`,
+      text: "admin",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample`,
+      text: "sample",
+    },
+  ]);
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
   await expect(projectMenuLinks).toHaveCount(8);
@@ -228,6 +244,64 @@ test("project change-VCS internal project links keep legacy hrefs without route-
   );
   await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
   await expect(projectMenuLinks.nth(7)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  expect(await readLegacyAnchorStates(page, ".project-menu-outer a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample`,
+      text: "Project homeH",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/code`,
+      text: "CodeC",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/issues`,
+      text: "IssueI",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/pullRequests`,
+      text: "Pull requestP",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/reviews`,
+      text: "ReviewR",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/milestones`,
+      text: "MilestoneM",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/posts`,
+      text: "BoardB",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/setting`,
+      text: "Project configuration",
+    },
+  ]);
 
   const settingTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingTabLinks).toHaveCount(7);
@@ -250,13 +324,55 @@ test("project change-VCS internal project links keep legacy hrefs without route-
   expect(await readProjectSettingMenuAnchorState(page)).toEqual({
     activeItemClass: "active",
     anchors: [
-      { ariaCurrent: null, className: "", dataStatus: null },
-      { ariaCurrent: null, className: "", dataStatus: null },
-      { ariaCurrent: null, className: "", dataStatus: null },
-      { ariaCurrent: null, className: "", dataStatus: null },
-      { ariaCurrent: null, className: "", dataStatus: null },
-      { ariaCurrent: null, className: "", dataStatus: null },
-      { ariaCurrent: null, className: "", dataStatus: null },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/setting`,
+        text: "Settings",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/members`,
+        text: "Member",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/issue/labelsform`,
+        text: "Issue Label",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/webhooks`,
+        text: "Webhooks",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/transfer`,
+        text: "Transfer",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/deleteform`,
+        text: "Delete project",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/changeVCS`,
+        text: "Repository Type Change",
+      },
     ],
   });
   expect(await readProjectChangeVcsInternalLinkNativeAudit(page)).toEqual([]);
@@ -320,9 +436,14 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
 
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("ProjectSettingLink");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("to={`/${ownerName}/${projectName}/labels` as never}");
   expect(source).not.toContain("as never");
+  expect(source).not.toMatch(/<a\b/);
   expect(source).not.toMatch(/<a\s+href=\{(?:prefixBasePath|projectHref)/);
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
@@ -479,16 +600,24 @@ async function readDesktopChangeVcsMetrics(page: Page) {
 }
 
 async function readProjectSettingMenuAnchorState(page: Page) {
-  return page.evaluate(() => ({
-    activeItemClass: document.querySelector("#subMenuProjectChangeVCS")?.getAttribute("class"),
-    anchors: Array.from(document.querySelectorAll(".project-page-wrap > .nav.nav-tabs a")).map(
-      (anchor) => ({
+  return {
+    activeItemClass: await page.locator("#subMenuProjectChangeVCS").getAttribute("class"),
+    anchors: await readLegacyAnchorStates(page, ".project-page-wrap > .nav.nav-tabs a"),
+  };
+}
+
+async function readLegacyAnchorStates(page: Page, selector: string) {
+  return page.evaluate(
+    (input) =>
+      Array.from(document.querySelectorAll<HTMLAnchorElement>(input)).map((anchor) => ({
         ariaCurrent: anchor.getAttribute("aria-current"),
         className: anchor.getAttribute("class") ?? "",
         dataStatus: anchor.getAttribute("data-status"),
-      }),
-    ),
-  }));
+        href: anchor.getAttribute("href"),
+        text: (anchor.textContent ?? "").replace(/\s+/g, " ").trim(),
+      })),
+    selector,
+  );
 }
 
 async function mockProjectAdmin(

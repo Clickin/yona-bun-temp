@@ -11,7 +11,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -188,7 +188,12 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
 test("project delete form route has no TanStack route-cast escapes", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
   expect(source).not.toContain("as never");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("<a");
   expect(source).not.toContain("onMouseDown=");
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).toContain("onClick=");
 });
 
@@ -362,12 +367,43 @@ test("project delete header and project menu links preserve legacy hrefs and SPA
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectAdmin(page);
+  await mockProjectAdmin(page, {
+    project: {
+      isForkedFromOrigin: true,
+      originalOwnerName: "seed",
+      originalProjectName: "origin",
+    },
+  });
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
 
   await expect(page.locator(".project-author a")).toHaveAttribute("href", `${basePath}/admin`);
   await expect(page.locator(".project-name a")).toHaveAttribute("href", `${basePath}/admin/sample`);
+  expect(await readLegacyAnchorSnapshots(page, ".project-breadcrumb a, .project-origin a")).toEqual(
+    [
+      {
+        ariaCurrent: null,
+        className: null,
+        dataStatus: null,
+        href: `${basePath}/admin`,
+        text: "admin",
+      },
+      {
+        ariaCurrent: null,
+        className: null,
+        dataStatus: null,
+        href: `${basePath}/admin/sample`,
+        text: "sample",
+      },
+      {
+        ariaCurrent: null,
+        className: "project-origin-name",
+        dataStatus: null,
+        href: `${basePath}/seed/origin`,
+        text: "seed / origin",
+      },
+    ],
+  );
   expect(
     await page
       .locator(".project-menu-gruop > li > a")
@@ -381,9 +417,69 @@ test("project delete header and project menu links preserve legacy hrefs and SPA
     `${basePath}/admin/sample/milestones`,
     `${basePath}/admin/sample/posts`,
   ]);
+  expect(await readLegacyAnchorSnapshots(page, ".project-menu-gruop > li > a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample`,
+      text: "Project homeH",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/code`,
+      text: "CodeC",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/issues`,
+      text: "IssueI 3",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/pullRequests`,
+      text: "Pull requestP 2",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/reviews`,
+      text: "ReviewR 4",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/milestones`,
+      text: "MilestoneM",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/posts`,
+      text: "BoardB 5",
+    },
+  ]);
 
   const settingsCog = page.locator(".project-setting a");
   await expect(settingsCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  expect(await readLegacyAnchorSnapshots(page, ".project-setting a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/admin/sample/setting`,
+      text: "Project configuration",
+    },
+  ]);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
@@ -551,6 +647,18 @@ async function readSettingsMenuAnchorAttrs(page: Page) {
       ...(anchor.getAttribute("data-status") === null
         ? {}
         : { "data-status": anchor.getAttribute("data-status") }),
+    })),
+  );
+}
+
+async function readLegacyAnchorSnapshots(page: Page, selector: string) {
+  return page.locator(selector).evaluateAll((anchors) =>
+    anchors.map((anchor) => ({
+      ariaCurrent: anchor.getAttribute("aria-current"),
+      className: anchor.getAttribute("class"),
+      dataStatus: anchor.getAttribute("data-status"),
+      href: anchor.getAttribute("href"),
+      text: (anchor.textContent ?? "").replace(/\s+/g, " ").trim(),
     })),
   );
 }
