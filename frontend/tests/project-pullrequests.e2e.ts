@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const PROJECT_PULLREQUESTS_ROUTE_SOURCE = readFileSync(
   "src/routes/$ownerName/$projectName/pullRequests.tsx",
@@ -20,12 +20,6 @@ function expectedProjectPullRequestsEmpty(basePath: string) {
     .replace(
       '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
       '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
-    )
-    .replace(
-      '<a href="' +
-        basePath +
-        '/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">',
-      '<a href="' + basePath + '/sites/userList" class="usermenu-icon-button show-progress-bar">',
     )
     .replace(
       '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
@@ -57,6 +51,13 @@ test("project pull request empty list matches legacy git/list.scala.html DOM", a
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
   await expect(page.locator(".post-list-wrap #pagination")).toHaveCount(0);
+  await expectLegacyPlainListLink(page.locator(".pull-right > a.ybtn-success"));
+  await expectLegacyPlainListLink(
+    page.locator(".pullrequeset-tab-menu a").filter({ hasText: "Open" }),
+  );
+  await expectLegacyPlainListLink(
+    page.locator(".pullrequeset-tab-menu a").filter({ hasText: "Closed" }),
+  );
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedProjectPullRequestsEmpty(basePath)),
@@ -77,6 +78,7 @@ test("project pull request recently pushed branch prompt matches legacy partial 
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
   await expect(page.locator(".alert.alert-info a").first()).toHaveText("Pull request");
+  await expectLegacyPlainListLink(page.locator(".alert.alert-info a").first());
   await expect(page.locator('.alert.alert-info a.close[href="#"]')).toHaveCount(0);
   const closeControl = page.locator(".alert.alert-info button.close");
   await expect(closeControl).toHaveAttribute("type", "button");
@@ -250,6 +252,12 @@ test("project pull request populated row links use SPA navigation with legacy hr
     "href",
     `${basePath}/admin`,
   );
+  await expectLegacyPlainListLink(page.locator(".post-list-wrap .avatar-wrap.mlarge"));
+  await expectLegacyPlainListLink(page.locator(".post-list-wrap .infos-link-item"));
+  await expectLegacyPlainListLink(page.locator(".post-list-wrap .title-prefix"));
+  await expectLegacyPlainListLink(titleLink);
+  await expectLegacyPlainListLink(changesLink);
+  await expectLegacyPlainListLink(page.locator(".post-list-wrap .avatar-wrap.assinee"));
 
   await markPullRequestSpaSession(page);
   await titleLink.click();
@@ -268,6 +276,7 @@ test("project pull request populated row links use SPA navigation with legacy hr
     "href",
     `${basePath}/admin/sample/pullRequest/8#reviewers`,
   );
+  await expectLegacyPlainListLink(reviewersLink);
   await markPullRequestSpaSession(page);
   await reviewersLink.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/8#reviewers`);
@@ -298,8 +307,12 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("href={`${pullRequestHref}#reviewers`}");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('declare module "react"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("interface LiHTMLAttributes");
-  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("<a ");
-  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("<a\n");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("createLink");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("<Link");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("LEGACY_LIST_LINK_PROPS");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("tabId: undefined");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("type LegacyPjaxContainerAttrs");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
     'const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs',
@@ -425,6 +438,14 @@ async function expectPullRequestSpaSession(page: Page) {
   await expect
     .poll(() => page.evaluate(() => Reflect.get(window, "__pullRequestSpaMarker")))
     .toBe("kept");
+}
+
+async function expectLegacyPlainListLink(locator: Locator) {
+  await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.*/u);
+  await expect
+    .poll(async () => (await locator.getAttribute("class")) ?? "")
+    .not.toMatch(/\bactive\b/u);
 }
 
 test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {

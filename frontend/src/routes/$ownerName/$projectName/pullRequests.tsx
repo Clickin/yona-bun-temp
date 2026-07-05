@@ -23,6 +23,11 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
 type LegacyPullRequestRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
+const LEGACY_LIST_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 export type ProjectPullRequestsSearch = {
   filter: string;
   contributorId: number;
@@ -302,6 +307,7 @@ function ProjectPullRequestsBody({
               <Link
                 to="/$ownerName/$projectName/newPullRequestForm"
                 params={{ ownerName, projectName }}
+                {...LEGACY_LIST_LINK_PROPS}
                 className="ybtn ybtn-success"
               >
                 {t("pullRequest.new")}
@@ -312,7 +318,8 @@ function ProjectPullRequestsBody({
                 <Link
                   to="/$ownerName/$projectName/pullRequests"
                   params={{ ownerName, projectName }}
-                  search={searchFor()}
+                  search={{ ...searchFor(), tabId: undefined }}
+                  {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.open")}
                   <span className="num-badge">{pullRequests.openCount}</span>
@@ -322,7 +329,8 @@ function ProjectPullRequestsBody({
                 <Link
                   to="/$ownerName/$projectName/closedPullRequests"
                   params={{ ownerName, projectName }}
-                  search={searchFor()}
+                  search={{ ...searchFor(), tabId: undefined }}
+                  {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.closed")}
                   <span className="num-badge">{pullRequests.closedCount}</span>
@@ -333,7 +341,8 @@ function ProjectPullRequestsBody({
                   <Link
                     to="/$ownerName/$projectName/sentPullRequests"
                     params={{ ownerName, projectName }}
-                    search={searchFor(filterValue, "")}
+                    search={{ ...searchFor(filterValue, ""), tabId: undefined }}
+                    {...LEGACY_LIST_LINK_PROPS}
                   >
                     {t("pullRequest.sent")}
                     <span className="num-badge">
@@ -425,7 +434,10 @@ function ProjectRecentlyPushedBranches({
                 {`${branch.ownerName}/${branch.projectName}:${branch.shortName} ( ${branch.pushedLabel} )`}
               </span>
               &nbsp;-&nbsp;
-              <Link to={stripBasePath(runtimeConfig.basePath, newPullRequestHref)}>
+              <Link
+                to={stripBasePath(runtimeConfig.basePath, newPullRequestHref)}
+                {...LEGACY_LIST_LINK_PROPS}
+              >
                 {t("pullRequest")}
               </Link>
               {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy close hook keeps aria-hidden. */}
@@ -588,6 +600,7 @@ function ProjectPullRequestRow({
         <Link
           to="/$user"
           params={{ user: pullRequest.contributorLoginId }}
+          {...LEGACY_LIST_LINK_PROPS}
           className="avatar-wrap mlarge"
           title={pullRequest.contributorLoginId}
         >
@@ -601,6 +614,7 @@ function ProjectPullRequestRow({
               to="/$ownerName/$projectName/pullRequests"
               params={{ ownerName, projectName }}
               search={titlePrefixSearch(prefix)}
+              {...LEGACY_LIST_LINK_PROPS}
               className="title-prefix"
             >
               {prefix}
@@ -609,6 +623,7 @@ function ProjectPullRequestRow({
           <Link
             to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
             params={pullRequestParams}
+            {...LEGACY_LIST_LINK_PROPS}
             className={`title ${pullRequest.conflict ? "conflict" : ""}`}
           >
             {titleParts.title}
@@ -619,6 +634,7 @@ function ProjectPullRequestRow({
             <Link
               to="/$user"
               params={{ user: pullRequest.contributorLoginId }}
+              {...LEGACY_LIST_LINK_PROPS}
               className="infos-item infos-link-item"
               title={pullRequest.contributorLoginId}
             >
@@ -639,6 +655,7 @@ function ProjectPullRequestRow({
               <Link
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
                 params={pullRequestParams}
+                {...LEGACY_LIST_LINK_PROPS}
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
@@ -654,6 +671,7 @@ function ProjectPullRequestRow({
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
                 params={pullRequestParams}
                 hash="reviewers"
+                {...LEGACY_LIST_LINK_PROPS}
                 title={pullRequest.reviewerNames.join(", ")}
               >
                 <span className="vmiddle">{pullRequest.reviewerCount}</span>
@@ -669,6 +687,7 @@ function ProjectPullRequestRow({
             <Link
               to="/$user"
               params={{ user: pullRequest.receiverLoginId }}
+              {...LEGACY_LIST_LINK_PROPS}
               className="avatar-wrap assinee"
               title={pullRequest.receiverLabel}
             >
