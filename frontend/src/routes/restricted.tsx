@@ -1,5 +1,7 @@
+import type { ComponentPropsWithRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { currentSessionQueryOptions } from "../api/session";
 import type { YonaRecord } from "../api/types";
 import { YonaQueryProvider } from "../query-client";
@@ -27,6 +29,14 @@ const legacyPlainLinkActiveProps = {
   "data-status": undefined,
 };
 
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
+
 function RestrictedRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -38,6 +48,7 @@ function RestrictedRoute() {
 }
 
 function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const router = useRouter();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const session = asRecord(sessionQuery.data) ?? {};
   const localUser = asRecord(session.localUser) ?? asRecord(session.user);
@@ -48,6 +59,17 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const provider = stringValue(currentAuth?.provider) || "password";
   const authId = stringValue(currentAuth?.id) || stringValue(localUser?.loginId) || "";
   const expires = numberValue(currentAuth?.expires, -1);
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
+  const logoLinkProps = useLinkProps({
+    activeOptions: legacyPlainLinkActiveOptions,
+    activeProps: legacyPlainLinkActiveProps,
+    className: "logo logo-letter",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
 
   return (
     <>
@@ -64,14 +86,9 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
           <ul className="gnb-nav">
             <li>
-              <Link
-                to="/"
-                className="logo logo-letter"
-                activeOptions={legacyPlainLinkActiveOptions}
-                activeProps={legacyPlainLinkActiveProps}
-              >
+              <LegacyHrefAnchor {...logoLinkProps} legacyHref={homeHref}>
                 Y
-              </Link>
+              </LegacyHrefAnchor>
             </li>
             <li>
               <form

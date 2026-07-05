@@ -19,7 +19,7 @@ const EXPECTED_RESTRICTED_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -114,7 +114,7 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
   const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
   await expectLegacyAnchor(logoLink, {
     className: "logo logo-letter",
-    href: `${basePath}/`,
+    href: basePath,
     target: null,
     text: "Y",
   });
@@ -122,7 +122,7 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
 
   await expect
     .poll(() => page.evaluate(() => `${location.pathname}${location.hash}`))
-    .toBe(`${basePath}/`);
+    .toBe(basePath);
   await expect
     .poll(() => page.evaluate(() => sessionStorage.getItem("__restricted_doc_loads")))
     .toBe("1");
@@ -174,9 +174,12 @@ test("restricted footer links preserve legacy external anchors without router ma
 });
 
 test("restricted route source keeps internal navigation out of raw anchors", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('to="/"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('className="logo logo-letter"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps={legacyPlainLinkActiveProps}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("useLinkProps({");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('className: "logo logo-letter"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps: legacyPlainLinkActiveProps");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('to: "/"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("<LegacyHrefAnchor");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
 });
 
