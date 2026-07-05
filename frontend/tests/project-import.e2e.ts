@@ -158,7 +158,7 @@ const EXPECTED_PROJECT_IMPORT = `
         </div>
         <div class="actions mt20">
           <button class="ybtn ybtn-primary">Create a project</button>
-          <a href="__BASE_ROOT__" class="ybtn">Cancel</a>
+          <a href="__BASE_PATH__" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -390,7 +390,8 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
 
   const cancelLink = page.locator("#importGit .actions a.ybtn");
   await expect(cancelLink).toHaveText("Cancel");
-  await expect(cancelLink).toHaveAttribute("href", rootHref(basePath));
+  await expect(cancelLink).toHaveAttribute("href", basePath);
+  await expect(await cancelLink.getAttribute("href")).toBe(basePath);
   await expect(cancelLink).toHaveClass("ybtn");
   await expect(cancelLink).not.toHaveAttribute("title", /.*/u);
   await expect(cancelLink).not.toHaveAttribute("aria-current", /.*/u);
@@ -400,7 +401,7 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
   });
   await cancelLink.click();
-  await page.waitForURL((url) => url.pathname === rootHref(basePath));
+  await page.waitForURL((url) => url.pathname === basePath);
   await expect
     .poll(() =>
       page.evaluate(
@@ -408,19 +409,31 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
       ),
     )
     .toBe("alive");
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
 });
 
 test("project import form navigation links use TanStack Router Link in route source", () => {
   const routeSource = readFileSync(PROJECT_IMPORT_ROUTE_SOURCE, "utf8");
 
-  expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
+  expect(routeSource).toContain("import { Link, createFileRoute, useLinkProps, useRouter }");
+  expect(routeSource).toContain('import { jsx as reactJsx } from "react/jsx-runtime";');
   expect(routeSource).toContain("const legacyImportActionLinkActiveOptions =");
   expect(routeSource).toContain("const legacyImportActionLinkActiveProps =");
+  expect(routeSource).toContain(
+    'const cancelHref = runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath;',
+  );
+  expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
+  expect(routeSource).toContain("href: cancelHref,");
+  expect(routeSource).toContain("router.history.push(cancelHref);");
+  expect(routeSource).toContain('to: "/" as const,');
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('<Link\n                    to="/projectform"');
-  expect(routeSource).toContain('<Link\n                  to="/"');
+  expect(routeSource).toContain("<LegacyHrefAnchor {...cancelLinkProps} legacyHref={cancelHref}>");
+  expect(routeSource).toContain("function LegacyHrefAnchor({");
+  expect(routeSource).toContain("href: _href,");
+  expect(routeSource).toContain('return reactJsx("a", {');
   expect(routeSource).toContain("activeOptions={legacyImportActionLinkActiveOptions}");
   expect(routeSource).toContain("activeProps={legacyImportActionLinkActiveProps}");
   expect(routeSource).not.toContain("createLink");
@@ -429,8 +442,7 @@ test("project import form navigation links use TanStack Router Link in route sou
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(routeSource).not.toContain("<a\n                    href={prefixBasePath(");
-  expect(routeSource).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/")}');
+  expect(routeSource).not.toContain('<Link\n                  to="/"');
 });
 
 async function mockProjectImport(
@@ -482,7 +494,7 @@ async function mockProjectImport(
 }
 
 function rootHref(basePath: string) {
-  return basePath === "/" ? "/" : `${basePath}/`;
+  return basePath === "/" ? "/" : basePath;
 }
 
 async function canonicalizeScreenRoots(page: Page) {
