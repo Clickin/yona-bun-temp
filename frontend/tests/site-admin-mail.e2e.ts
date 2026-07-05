@@ -166,6 +166,16 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
+  expect(await siteSettingSidebarAnchorActiveMarkers(page)).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Users" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Posts" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Issues" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Projects" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Send email" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Send mass emails" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Software Update" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
+  ]);
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
   await expect(page.locator(".site-setting-nav li").nth(4)).toHaveClass("active");
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
@@ -373,6 +383,17 @@ async function siteSettingSidebarHrefs(page: Page) {
       }
       return new URL(href, window.location.origin).pathname;
     }),
+  );
+}
+
+async function siteSettingSidebarAnchorActiveMarkers(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.map((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
+      text: link.textContent?.trim() ?? "",
+    })),
   );
 }
 
