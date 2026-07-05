@@ -117,8 +117,36 @@ test("organization search category button stays inside the React SPA", async ({ 
   await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues0");
 });
 
+test("organization issue search pagination keeps legacy pageNum through SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockOrganizationSearch(page);
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/search?keyword=bug&searchType=issue&pageNum=1`,
+  );
+  const pagination = page.locator("#pagination.page-navigation-wrap");
+  await expect(pagination).toBeVisible();
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
+
+  const next = pagination.locator(".page-num.ikon a", { hasText: "Next" });
+  await expect(next).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/search?keyword=bug&pageNum=2&searchType=issue`,
+  );
+  await next.click();
+
+  await expect(page).toHaveURL(
+    `${basePath}/organizations/weblabs/search?keyword=bug&pageNum=2&searchType=issue`,
+  );
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+  expect(searchApi.pageNums).toContain(2);
+});
+
 async function mockOrganizationSearch(page: Page) {
-  const apiCalls = { count: 0 };
+  const apiCalls = { count: 0, pageNums: [] as number[] };
 
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -156,6 +184,9 @@ async function mockOrganizationSearch(page: Page) {
     const url = new URL(route.request().url());
     const keyword = url.searchParams.get("keyword") ?? "missing";
     const searchType = url.searchParams.get("searchType") ?? "project";
+    const pageNum = Number.parseInt(url.searchParams.get("pageNum") ?? "1", 10);
+    apiCalls.pageNums.push(pageNum);
+    const isPagedIssue = keyword === "bug" && searchType === "issue";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -166,7 +197,7 @@ async function mockOrganizationSearch(page: Page) {
         },
         counts: {
           issueComments: 0,
-          issues: 0,
+          issues: isPagedIssue ? 1 : 0,
           milestones: 0,
           postComments: 0,
           posts: 0,
@@ -174,14 +205,33 @@ async function mockOrganizationSearch(page: Page) {
           reviews: 0,
           users: 0,
         },
-        items: [],
+        items: isPagedIssue
+          ? [
+              {
+                authorLabel: "Alice",
+                authorLoginId: "alice",
+                createdLabel: "Jun 30, 2026",
+                href: "/admin/sample/issue/42",
+                id: "issue-42",
+                number: "42",
+                ownerName: "admin",
+                projectName: "sample",
+                snippets: [{ highlights: [], text: "Crash when saving", truncated: true }],
+                state: "open",
+                title: "Save button fails",
+                type: "issue",
+                updatedLabel: "",
+              },
+            ]
+          : [],
         keyword,
-        pageNum: 1,
+        pageNum,
         pageSize: 20,
         requestedSearchType: searchType,
         scope: "organization",
         searchType,
-        totalCount: 0,
+        totalCount: isPagedIssue ? 1 : 0,
+        totalPages: isPagedIssue ? 3 : 1,
       }),
     });
   });

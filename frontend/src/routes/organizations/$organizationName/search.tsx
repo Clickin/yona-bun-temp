@@ -19,7 +19,7 @@ import { OrganizationHeader, OrganizationMenu } from "../$organizationName";
 type OrganizationSearchRouteSearch = {
   keyword: string;
   pageNum: number;
-  routeInvalid: boolean;
+  routeInvalid?: boolean;
   searchType: SearchType;
 };
 
@@ -28,12 +28,17 @@ export const Route = createFileRoute("/organizations/$organizationName/search")(
   validateSearch: (search: Record<string, unknown>): OrganizationSearchRouteSearch => {
     const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
     const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
-    const rawPageNum = typeof search.pageNum === "string" ? Number.parseInt(search.pageNum, 10) : 1;
+    const rawPageNum =
+      typeof search.pageNum === "number"
+        ? search.pageNum
+        : typeof search.pageNum === "string"
+          ? Number.parseInt(search.pageNum, 10)
+          : 1;
     const validSearchType = isSearchType(rawSearchType);
     return {
       keyword: rawKeyword,
       pageNum: Number.isFinite(rawPageNum) && rawPageNum > 0 ? rawPageNum : 1,
-      routeInvalid: rawKeyword.length === 0 || !validSearchType,
+      routeInvalid: rawKeyword.length === 0 || !validSearchType ? true : undefined,
       searchType: validSearchType ? rawSearchType : "auto",
     };
   },
