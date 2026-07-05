@@ -241,6 +241,17 @@ test("project commit detail comment delete modal is route-owned React state", as
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("project SVN commit detail branch dropdown is route-owned React state", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("branchDropdownOpen");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBranchDropdownOpen((isOpen) => !isOpen)");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-toggle="dropdown"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.preventDefault();");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.stopPropagation();");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.addEventListener");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('querySelector("#branches');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("bootstrap.Dropdown");
+});
+
 test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
   page,
 }) => {
@@ -1298,6 +1309,22 @@ test("project SVN commit detail branch dropdown uses route-local state", async (
 
   await toggle.click();
   await expect(branches).toHaveClass("btn-group branches pull-right open");
+  expect(page.url()).toBe(urlBeforeOpen);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-branch-dropdown");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __yonaBranchDropdownDocumentBubble?: boolean })
+          .__yonaBranchDropdownDocumentBubble,
+    ),
+  ).toBe(false);
+
+  await toggle.click();
+  await expect(branches).toHaveClass("btn-group branches pull-right");
   expect(page.url()).toBe(urlBeforeOpen);
   expect(
     await page.evaluate(

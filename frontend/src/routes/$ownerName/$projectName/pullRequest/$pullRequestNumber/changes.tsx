@@ -704,6 +704,7 @@ function CommitDropdown({
   const { t } = useLegacyMessages();
   const [isOpen, setIsOpen] = useState(false);
   const changesPath = pullRequestChangesPath(pullRequest);
+  const closeDropdown = () => setIsOpen(false);
 
   return (
     <div id="commits" className={`btn-group auto mb10${isOpen ? " open" : ""}`}>
@@ -742,6 +743,7 @@ function CommitDropdown({
             search={legacyLinkInactiveSearch}
             activeOptions={legacyLinkActiveOptions}
             activeProps={legacyLinkActiveProps}
+            onClick={closeDropdown}
           >
             {t("pullRequest.changes.all")}
           </Link>
@@ -755,6 +757,7 @@ function CommitDropdown({
                 search={legacyLinkInactiveSearch}
                 activeOptions={legacyLinkActiveOptions}
                 activeProps={legacyLinkActiveProps}
+                onClick={closeDropdown}
               >
                 <strong className="blue-txt mr10 commit-hash">{commit.commitShortId}</strong>
                 <span>{commitSummary(commit)}</span>

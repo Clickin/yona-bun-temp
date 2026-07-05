@@ -500,6 +500,7 @@ function SvnCommitDetailBody({
               className="btn dropdown-toggle large"
               data-toggle="dropdown"
               onClick={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
                 setBranchDropdownOpen((isOpen) => !isOpen);
               }}

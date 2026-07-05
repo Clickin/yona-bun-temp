@@ -529,6 +529,7 @@ export function OrganizationHeader({
                     type="button"
                     data-toggle="dropdown"
                     onClick={(event) => {
+                      event.preventDefault();
                       event.stopPropagation();
                       setEnrollmentDropdownOpen((current) => !current);
                     }}

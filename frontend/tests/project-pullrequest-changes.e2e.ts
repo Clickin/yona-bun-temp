@@ -653,11 +653,15 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("querySelector");
+  expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("innerHTML");
+  expect(routeSource).not.toContain("click.dropdown");
+  expect(routeSource).not.toContain("dropdown.data-api");
+  expect(routeSource).not.toContain("$(document)");
   expect(routeSource).not.toContain('role="button"');
   expect(routeSource).not.toContain("onKeyDown");
   expect(routeSource).not.toContain("tabIndex");
@@ -689,6 +693,9 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain('type="button"');
   expect(routeSource).toContain("data-request-method");
   expect(routeSource).toContain("const [deleteRequestUri, setDeleteRequestUri] = useState");
+  expect(routeSource).toContain("const [isOpen, setIsOpen] = useState(false)");
+  expect(routeSource).toContain("const closeDropdown = () => setIsOpen(false)");
+  expect(routeSource).toContain("onClick={closeDropdown}");
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(routeSource).toContain("event.stopPropagation()");
 });
@@ -888,6 +895,19 @@ async function assertCommitDropdownOpensReactOwned(
   await expect(currentItem.locator(".commit-hash")).toHaveText(currentShortId);
   await expect(currentItem.locator("span")).toHaveText(currentLabel);
   await expect(currentItem).toHaveAttribute("href", currentHref);
+
+  if (currentHref === urlBeforeDropdownClick) {
+    await currentItem.click();
+    await expect(commits).toHaveClass("btn-group auto mb10");
+    expect(page.url()).toBe(urlBeforeDropdownClick);
+    expect(
+      await page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    ).toBe(marker);
+    await toggle.click();
+    await expect(commits).toHaveClass("btn-group auto mb10 open");
+  }
 
   await toggle.click();
   await expect(commits).toHaveClass("btn-group auto mb10");

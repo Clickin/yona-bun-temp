@@ -32,6 +32,7 @@ test("organization home header renders and posts legacy enrollment utility for g
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const enrollRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installOrganizationHomeDropdownDocumentBridgeAudit(page);
   await mockOrganizationHome(page, {
     enrollRequests,
     enrollmentRequested: false,
@@ -51,8 +52,19 @@ test("organization home header renders and posts legacy enrollment utility for g
   const enrollmentItem = page.locator(".project-util > li").first();
   await expect(page.locator("a#enrollBtn")).toHaveCount(0);
   await expect(page.locator("button#enrollBtn")).toHaveAttribute("type", "button");
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
   await page.locator(".project-util .dropdown-toggle").click();
   await expect(enrollmentItem).toHaveClass(/open/);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
   await page.locator(".project-util .dropdown-toggle").click();
   await expect(enrollmentItem).not.toHaveClass(/open/);
   await page.locator(".project-util .dropdown-toggle").click();
@@ -68,6 +80,7 @@ test("organization home header renders and posts legacy enrollment utility for g
   expect(enrollRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(enrollmentItem).not.toHaveClass(/open/);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  expect(await readOrganizationHomeDropdownDocumentBridgeAudit(page)).toEqual([]);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
@@ -315,9 +328,15 @@ test("organization home project card route source uses Link for internal card na
   const source = readFileSync(ORGANIZATION_HOME_ROUTE_SOURCE, "utf8");
 
   expect(source).not.toContain("OrganizationRouteLink");
+  expect(source).not.toContain("document.addEventListener");
+  expect(source).not.toContain("document.querySelector");
+  expect(source).not.toContain("classList");
+  expect(source).not.toContain("style.display");
   expect(source).not.toContain("const projectHref");
   expect(source).not.toContain("<a href={projectHref}");
   expect(source).not.toMatch(/<a\b/);
+  expect(source).toContain("event.preventDefault();");
+  expect(source).toContain("event.stopPropagation();");
   expect(source).toContain('hash="organization-home-active-sentinel"');
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${ownerName}`)}");
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${stringField(member.loginId");
@@ -826,6 +845,42 @@ async function readOrganizationHomeMenuNativeLinkAudit(page: Page) {
         window as Window &
           typeof globalThis & { __yonaOrganizationHomeMenuNativeLinkListeners?: string[] }
       ).__yonaOrganizationHomeMenuNativeLinkListeners ?? [],
+  );
+}
+
+async function installOrganizationHomeDropdownDocumentBridgeAudit(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Document.prototype.addEventListener;
+    const dropdownBridgeListeners: string[] = [];
+    Object.defineProperty(window, "__yonaOrganizationHomeDropdownDocumentBridgeListeners", {
+      configurable: true,
+      value: dropdownBridgeListeners,
+    });
+    Document.prototype.addEventListener =
+      function addEventListenerWithOrganizationHomeDropdownAudit(type, listener, options) {
+        const listenerSource = String(listener);
+        if (
+          type === "click" &&
+          (listenerSource.includes("dropdown-toggle") ||
+            listenerSource.includes("project-util") ||
+            listenerSource.includes("enrollBtn"))
+        ) {
+          dropdownBridgeListeners.push(listenerSource);
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+  });
+}
+
+async function readOrganizationHomeDropdownDocumentBridgeAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaOrganizationHomeDropdownDocumentBridgeListeners?: string[];
+          }
+      ).__yonaOrganizationHomeDropdownDocumentBridgeListeners ?? [],
   );
 }
 
