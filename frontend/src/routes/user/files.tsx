@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   listWorkspaceFilesRest,
   type WorkspaceFileItem,
@@ -152,6 +153,7 @@ function UserFileRow({
   attachment: WorkspaceFileItem;
   basePath: string;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
   const fileTo = attachment.url;
   const fileHref = prefixBasePath(basePath, attachment.url);
   const previewUrl = prefixBasePath(basePath, attachment.previewUrl);
@@ -164,7 +166,11 @@ function UserFileRow({
   const locationLabel = attachment.locationLabel || attachment.locationHref;
 
   return (
-    <div className="attachment-file-detail row">
+    <div
+      className={`attachment-file-detail row${isHovered ? " hover" : ""}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="file-preview span1">
         <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
           {attachment.mimeType.startsWith("image/") ? <img src={previewUrl} alt="" /> : null}
