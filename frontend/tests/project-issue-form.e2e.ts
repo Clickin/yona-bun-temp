@@ -40,6 +40,9 @@ test("project issue create form matches legacy issue/create.scala.html core form
 
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#title")).toBeFocused();
+  await page.locator("#title").press("Enter");
+  await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   const labelEdit = page.locator("dt .label-edit");
   await expect(labelEdit).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
@@ -189,7 +192,7 @@ test("project issue create form parent state matches legacy partial_select_subta
   );
 });
 
-test("project issue create form empty title submit renders legacy required error state", async ({
+test("project issue create form empty title submit uses legacy alert and refocus behavior", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -208,17 +211,49 @@ test("project issue create form empty title submit renders legacy required error
   await expect(page.locator("#title")).toHaveClass("text title ");
   await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
 
+  const dialogMessages: string[] = [];
+  page.once("dialog", async (dialog) => {
+    dialogMessages.push(dialog.message());
+    await dialog.accept();
+  });
   await page.locator("#button-save").click();
 
-  await expect(page.locator("#title")).toHaveClass("text title error");
-  await expect(page.locator("#issue-form dd > div.span12 + div.message")).toHaveCount(1);
-  await expect(page.locator("#issue-form dd > div.message > div")).toHaveText("Required field!");
-  await expect(page.locator("#issue-form dd > div.message + div.subtask-wrap")).toHaveCount(1);
+  expect(dialogMessages).toEqual(["Issue title is a required field."]);
+  await expect(page.locator("#title")).toHaveClass("text title ");
+  await expect(page.locator("#title")).toBeFocused();
+  await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
   expect(createRequestCount).toBe(0);
 
   await page.locator("#title").fill("Legacy title");
   await expect(page.locator("#title")).toHaveClass("text title ");
   await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
+});
+
+test("project issue create form invalid due date uses legacy notification and refocus behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueForm(page);
+  let createRequestCount = 0;
+  await page.route("**/api/v1/projects/admin/sample/issues", async (route) => {
+    createRequestCount += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      status: 500,
+      body: JSON.stringify({ message: "unexpected create request" }),
+    });
+  });
+
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await page.locator("#title").fill("Legacy title");
+  await page.locator("#issueDueDate").fill("not-a-date");
+  await page.locator("#button-save").click();
+
+  await expect(page.locator(".yobiToasts .toast .msg")).toHaveText(
+    "Issue due date is not valid date type.",
+  );
+  await expect(page.locator("#issueDueDate")).toBeFocused();
+  expect(createRequestCount).toBe(0);
 });
 
 test("project issue create form submits draft intent without mutating legacy hidden input DOM", async ({
@@ -280,7 +315,10 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).toContain('className="label-edit"');
   expect(source).toContain('import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";');
   expect(source).toContain("router.history.back()");
+  expect(source).toContain('t("issue.error.emptyTitle")');
+  expect(source).toContain('t("issue.error.invalid.duedate")');
   expect(source).not.toContain("window.history.back()");
+  expect(source).not.toContain('t("validation.required")');
   expect(source).not.toContain('querySelector<HTMLInputElement>("#isDraft")');
   expect(source).not.toContain('setAttribute("value", "true")');
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
