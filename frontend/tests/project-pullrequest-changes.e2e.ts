@@ -251,6 +251,26 @@ test("project pull request changes renders legacy file diff error row", async ({
   await expect(diffTable.locator("tbody > tr")).toHaveCount(1);
   await expect(diffTable.locator("tbody > tr > td")).toHaveAttribute("colspan", "3");
   await expect(diffTable.locator("tbody > tr > td")).toHaveText("This diff is too big to display.");
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "pull-request-file-diff-collapse";
+  });
+  const urlBeforeToggle = page.url();
+  const diffMeta = page.locator(".diff-partial-meta");
+  const diffCode = page.locator(".diff-partial-code");
+  await expect(diffMeta).toHaveCSS("cursor", "pointer");
+  await expect(diffCode).toBeVisible();
+  await diffMeta.click();
+  await expect(diffCode).toHaveCSS("display", "none");
+  await diffMeta.click();
+  await expect(diffCode).toBeVisible();
+  expect(page.url()).toBe(urlBeforeToggle);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("pull-request-file-diff-collapse");
 });
 
 test("project pull request selected commit changes matches legacy git/viewChanges.scala.html DOM", async ({

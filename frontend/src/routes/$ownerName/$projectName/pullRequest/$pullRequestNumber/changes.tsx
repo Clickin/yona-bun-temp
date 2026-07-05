@@ -564,17 +564,32 @@ function ReviewCard({
 
 function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }) {
   const errorMessageKey = fileDiffErrorMessageKey(file);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const codeStyle = isExpanded ? undefined : { display: "none" };
+  const toggleExpanded = () => setIsExpanded((current) => !current);
 
   return (
     <div className="diff-partial-outer">
       <div className="diff-partial-inner">
-        <div className="diff-partial-meta">
+        <div
+          className="diff-partial-meta"
+          onClick={toggleExpanded}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleExpanded();
+            }
+          }}
+          role="button"
+          style={{ cursor: "pointer" }}
+          tabIndex={0}
+        >
           <div className="diff-partial-file">
             <span className="filename">{file.path}</span>
           </div>
         </div>
         {errorMessageKey ? (
-          <div className="diff-partial-code" data-hashcode={file.path}>
+          <div className="diff-partial-code" data-hashcode={file.path} style={codeStyle}>
             <table
               className="diff-container show-comments"
               data-path-a={file.path}
@@ -587,7 +602,9 @@ function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }
             </table>
           </div>
         ) : (
-          <pre className="diff-body">{file.patch}</pre>
+          <div className="diff-partial-code" data-hashcode={file.path} style={codeStyle}>
+            <pre className="diff-body">{file.patch}</pre>
+          </div>
         )}
       </div>
     </div>
