@@ -47,6 +47,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   });
   const isSent = requested !== "";
   const errorMessage = error ? lostPasswordErrorMessage(error, t) : submitError;
+  const [isSuccessAlertDismissed, setIsSuccessAlertDismissed] = React.useState(false);
+  const [isErrorAlertDismissed, setIsErrorAlertDismissed] = React.useState(false);
   const shouldPrefillCurrentUser = sessionQuery.data?.isAnonymous === false;
   const currentUserLoginId =
     shouldPrefillCurrentUser && typeof sessionQuery.data?.loginId === "string"
@@ -77,6 +79,10 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       router.history.push(redirectPath);
     },
   });
+  React.useEffect(() => {
+    setIsSuccessAlertDismissed(false);
+    setIsErrorAlertDismissed(false);
+  }, [error, requested]);
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
@@ -89,18 +95,28 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         </div>
 
         <div className="login-form-wrap frm-wrap">
-          {isSent ? (
+          {isSent && !isSuccessAlertDismissed ? (
             <div className="alert alert-success">
-              <button type="button" className="close" data-dismiss="alert">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="alert"
+                onClick={() => setIsSuccessAlertDismissed(true)}
+              >
                 &times;
               </button>
               <h4>{t("site.mail.sended")}</h4>
             </div>
           ) : null}
 
-          {errorMessage ? (
+          {errorMessage && !isErrorAlertDismissed ? (
             <div className="alert alert-error">
-              <button type="button" className="close" data-dismiss="alert">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="alert"
+                onClick={() => setIsErrorAlertDismissed(true)}
+              >
                 &times;
               </button>
               <h4>{t("site.mail.fail")}</h4>

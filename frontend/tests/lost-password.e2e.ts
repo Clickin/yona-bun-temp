@@ -13,7 +13,7 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -43,7 +43,7 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
@@ -274,6 +274,50 @@ test("lost-password invalid error token renders legacy invalid-request copy", as
   await expect(alert).toContainText("Failed to send mail.");
   await expect(alert).toContainText("Invalid password reset request");
   await expect(alert).not.toContainText("invalid");
+});
+
+test("anonymous lost-password submit posts legacy login and email fields", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let resetRequest: {
+    csrfToken: string | null;
+    method: string;
+    payload: unknown;
+  } | null = null;
+
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-lost-password" },
+      body: JSON.stringify({ csrfToken: "csrf-lost-password" }),
+    });
+  });
+  await page.route("**/api/v1/auth/password-reset/request", async (route) => {
+    resetRequest = {
+      csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+      method: route.request().method(),
+      payload: JSON.parse(route.request().postData() ?? "{}") as unknown,
+    };
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ redirectPath: "/lostPassword?requested=1" }),
+    });
+  });
+
+  await page.goto(`${basePath}/lostPassword`);
+  await page.fill("#loginId", "doortts");
+  await page.fill("#emailAddress", "doortts@example.com");
+  await page.click(".login-form-wrap button[type='submit']");
+
+  await expect(page).toHaveURL(/\/lostPassword\?requested=1/u);
+  await expect(page.locator(".alert.alert-success")).toContainText("Mail has been sent.");
+  expect(resetRequest).toEqual({
+    csrfToken: "csrf-lost-password",
+    method: "POST",
+    payload: {
+      emailAddress: "doortts@example.com",
+      loginId: "doortts",
+    },
+  });
 });
 
 async function mockAuthenticatedSession(page: Page) {
