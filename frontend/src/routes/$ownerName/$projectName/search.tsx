@@ -27,7 +27,12 @@ export const Route = createFileRoute("/$ownerName/$projectName/search")({
   validateSearch: (search: Record<string, unknown>): ProjectSearchRouteSearch => {
     const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
     const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
-    const rawPageNum = typeof search.pageNum === "string" ? Number.parseInt(search.pageNum, 10) : 1;
+    const rawPageNum =
+      typeof search.pageNum === "number"
+        ? search.pageNum
+        : typeof search.pageNum === "string"
+          ? Number.parseInt(search.pageNum, 10)
+          : 1;
     const validSearchType = isSearchType(rawSearchType);
     return {
       keyword: rawKeyword,

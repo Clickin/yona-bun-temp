@@ -94,6 +94,31 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   await expect(page.locator(".search-result-wrap #pagination")).toBeEmpty();
 });
 
+test("project issue search pagination keeps legacy pageNum through SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockProjectSearch(page);
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=paged&searchType=issue&pageNum=1`);
+
+  const pagination = page.locator("#pagination.page-navigation-wrap");
+  await expect(pagination).toBeVisible();
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
+
+  const next = pagination.locator(".page-num.ikon a", { hasText: "Next" });
+  await expect(next).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/search?keyword=paged&pageNum=2&searchType=issue`,
+  );
+  await next.click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+  expect(searchApi.pageNums).toContain(2);
+});
+
 test("project search without required query renders legacy badrequest_default.scala.html shell", async ({
   page,
 }) => {
@@ -158,7 +183,11 @@ test("project search category and form navigation stay inside the React SPA", as
 });
 
 async function mockProjectSearch(page: Page) {
-  const apiCalls: { count: number; keywords: string[] } = { count: 0, keywords: [] };
+  const apiCalls: { count: number; keywords: string[]; pageNums: number[] } = {
+    count: 0,
+    keywords: [],
+    pageNums: [],
+  };
 
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -187,8 +216,11 @@ async function mockProjectSearch(page: Page) {
     const url = new URL(route.request().url());
     const keyword = url.searchParams.get("keyword") ?? "";
     const searchType = url.searchParams.get("searchType") ?? "review";
+    const pageNum = Number(url.searchParams.get("pageNum")) || 1;
     apiCalls.keywords.push(keyword);
+    apiCalls.pageNums.push(pageNum);
     const hasIssueResult = keyword === "sample" && searchType === "issue";
+    const hasPagedIssueResult = keyword === "paged" && searchType === "issue";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -199,7 +231,7 @@ async function mockProjectSearch(page: Page) {
         },
         counts: {
           issueComments: 0,
-          issues: hasIssueResult ? 1 : 0,
+          issues: hasIssueResult || hasPagedIssueResult ? 1 : 0,
           milestones: 0,
           postComments: 0,
           posts: 0,
@@ -207,32 +239,36 @@ async function mockProjectSearch(page: Page) {
           reviews: 0,
           users: 0,
         },
-        items: hasIssueResult
-          ? [
-              {
-                authorLabel: "Dev Member",
-                authorLoginId: "dev",
-                createdLabel: "Jul 1, 2026",
-                href: `${basePathFromRequest(route.request().url())}/admin/sample/issue/11`,
-                id: "issue-11",
-                number: "11",
-                ownerName: "admin",
-                projectName: "sample",
-                snippets: [{ highlights: [], text: "Sample body", truncated: true }],
-                state: "open",
-                title: "Fix sample issue",
-                type: "issue",
-                updatedLabel: "Jul 1, 2026",
-              },
-            ]
-          : [],
+        items:
+          hasIssueResult || hasPagedIssueResult
+            ? [
+                {
+                  authorLabel: "Dev Member",
+                  authorLoginId: "dev",
+                  createdLabel: "Jul 1, 2026",
+                  href: `${basePathFromRequest(route.request().url())}/admin/sample/issue/${
+                    hasPagedIssueResult ? 40 + pageNum : 11
+                  }`,
+                  id: hasPagedIssueResult ? `paged-${pageNum}` : "issue-11",
+                  number: hasPagedIssueResult ? String(40 + pageNum) : "11",
+                  ownerName: "admin",
+                  projectName: "sample",
+                  snippets: [{ highlights: [], text: "Sample body", truncated: true }],
+                  state: "open",
+                  title: hasPagedIssueResult ? `Paged issue ${pageNum}` : "Fix sample issue",
+                  type: "issue",
+                  updatedLabel: "Jul 1, 2026",
+                },
+              ]
+            : [],
         keyword,
-        pageNum: 1,
+        pageNum,
         pageSize: 20,
         requestedSearchType: searchType,
         scope: "project",
         searchType,
-        totalCount: hasIssueResult ? 1 : 0,
+        totalCount: hasIssueResult || hasPagedIssueResult ? 1 : 0,
+        totalPages: hasPagedIssueResult ? 3 : 1,
       }),
     });
   });
