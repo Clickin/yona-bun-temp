@@ -15,7 +15,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -389,7 +389,7 @@ test("shared shell logo keeps legacy navbar link without route-local href adapte
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
   await expect(logoLink).toHaveText("Y");
-  await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
+  await expect(logoLink).toHaveAttribute("href", basePath);
   await expect(logoLink).toHaveAttribute("class", "logo logo-letter");
   await expect(logoLink).not.toHaveAttribute("aria-current");
   await expect(logoLink).not.toHaveAttribute("data-status");
