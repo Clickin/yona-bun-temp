@@ -25,6 +25,27 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
         toggle.closest(".btn-group")?.id ?? "",
       ];
     });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const modalToggle = target.closest("[data-toggle='modal']");
+      const modalDismiss = target.closest("[data-dismiss='modal']");
+      if (!modalToggle && !modalDismiss) {
+        return;
+      }
+      const auditWindow = window as unknown as {
+        __milestoneModalDelegatedClicks?: string[];
+      };
+      auditWindow.__milestoneModalDelegatedClicks = [
+        ...(auditWindow.__milestoneModalDelegatedClicks ?? []),
+        modalToggle?.getAttribute("data-target") ??
+          modalToggle?.getAttribute("href") ??
+          modalDismiss?.closest(".modal")?.id ??
+          "",
+      ];
+    });
   });
   await mockProjectMilestoneDetail(page, stateRequests, deleteRequests);
 
@@ -57,7 +78,10 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     `${basePath}/admin/sample/milestones`,
   );
   await expect(page.locator('.actrow .ybtn[href$="/milestone/5/editform"]')).toHaveText("Edit");
-  await expect(page.locator('.actrow button.ybtn-danger:has-text("Delete")')).toHaveCount(1);
+  const deleteTrigger = page.locator(
+    '.actrow button.ybtn-danger[data-toggle="modal"][data-target="#deleteConfirm"]:has-text("Delete")',
+  );
+  await expect(deleteTrigger).toHaveCount(1);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
   expect(
     await page
@@ -340,14 +364,51 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   expect(stateRequests).toEqual([{ state: "closed" }]);
 
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
-  await page.click('.actrow button.ybtn-danger:has-text("Delete")');
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  const beforeDeleteModalUrl = page.url();
+  await deleteTrigger.click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page).toHaveURL(beforeDeleteModalUrl);
+  await expect(
+    page.evaluate(() => {
+      return (
+        (
+          window as unknown as {
+            __milestoneModalDelegatedClicks?: string[];
+          }
+        ).__milestoneModalDelegatedClicks ?? []
+      );
+    }),
+  ).resolves.toEqual([]);
   await expect(page.locator("#deleteConfirm .modal-header .close")).toHaveText("×");
+  await expect(page.locator("#deleteConfirm .modal-header .close")).toHaveAttribute(
+    "data-dismiss",
+    "modal",
+  );
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await expect(page.locator("#deleteConfirm [data-request-method='delete']")).toHaveAttribute(
     "data-request-uri",
     `${basePath}/admin/sample/milestone/5/delete`,
   );
+  await page.locator('#deleteConfirm [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(beforeDeleteModalUrl);
+  await expect(
+    page.evaluate(() => {
+      return (
+        (
+          window as unknown as {
+            __milestoneModalDelegatedClicks?: string[];
+          }
+        ).__milestoneModalDelegatedClicks ?? []
+      );
+    }),
+  ).resolves.toEqual([]);
+  await deleteTrigger.click();
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   const deleteResponse = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/milestones/5") &&
@@ -406,6 +467,9 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).not.toContain("legacyFor");
   expect(routeSource).not.toContain("as unknown as");
+  expect(routeSource).not.toContain("document.querySelector");
+  expect(routeSource).not.toContain("classList");
+  expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("<div for={`issue-");
   expect(routeSource).toContain(
     "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
@@ -424,6 +488,14 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain('type="button"');
   expect(routeSource).toContain('className="title-prefix"');
   expect(routeSource).toContain('hash="issues"');
+  expect(routeSource).toContain(
+    "const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)",
+  );
+  expect(routeSource).toContain('data-toggle="modal"');
+  expect(routeSource).toContain('data-target="#deleteConfirm"');
+  expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource).toContain("event.stopPropagation();");
+  expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
 });
 
 test("project milestone detail E2E selectors stay anchored to legacy Scala HTML", () => {

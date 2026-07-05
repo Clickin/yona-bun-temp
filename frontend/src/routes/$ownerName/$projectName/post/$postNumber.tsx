@@ -27,6 +27,8 @@ import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
+type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
+
 const LEGACY_EMPTY_PROFILE_SEARCH = {
   daysAgo: undefined!,
   selected: undefined!,
@@ -106,9 +108,10 @@ function ProjectPostDetailBody({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [openPostModal, setOpenPostModal] = useState<PostDetailModalId | null>(null);
   const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
-  const modalBackdropOpen = deleteModalOpen || commentDeleteRequestUri !== null;
+  const deleteModalOpen = openPostModal === "deleteConfirm";
+  const modalBackdropOpen = openPostModal !== null || commentDeleteRequestUri !== null;
   const ownerName = stringField(project.ownerName, post.ownerName);
   const projectName = stringField(project.projectName, post.projectName);
   const postNumber = stringField(post.postNumber);
@@ -255,7 +258,12 @@ function ProjectPostDetailBody({
                   <strong className="name">{t("common.noAuthor")}</strong>
                 )}
               </Link>
-              <PostingHistory historyMarkdown={post.historyMarkdown} />
+              <PostingHistory
+                historyMarkdown={post.historyMarkdown}
+                onClose={() => setOpenPostModal(null)}
+                onOpen={() => setOpenPostModal("postingHistory")}
+                open={openPostModal === "postingHistory"}
+              />
             </div>
             {post.bodyMarkdown ? (
               <>
@@ -309,7 +317,7 @@ function ProjectPostDetailBody({
                 canDelete={canDelete}
                 canUpdate={canUpdate}
                 editRoutePath={editRoutePath}
-                onDeleteClick={() => setDeleteModalOpen(true)}
+                onDeleteClick={() => setOpenPostModal("deleteConfirm")}
               />
             </div>
             <div className="watcher-list"></div>
@@ -360,7 +368,7 @@ function ProjectPostDetailBody({
                   canDelete={canDelete}
                   canUpdate={canUpdate}
                   editRoutePath={editRoutePath}
-                  onDeleteClick={() => setDeleteModalOpen(true)}
+                  onDeleteClick={() => setOpenPostModal("deleteConfirm")}
                   wrap={false}
                 />
               </div>
@@ -369,7 +377,11 @@ function ProjectPostDetailBody({
         </div>
 
         <div className="board-footer">
-          <BoardDetailKeymap />
+          <BoardDetailKeymap
+            onClose={() => setOpenPostModal(null)}
+            onOpen={() => setOpenPostModal("helpKeys")}
+            open={openPostModal === "helpKeys"}
+          />
         </div>
       </div>
 
@@ -386,7 +398,7 @@ function ProjectPostDetailBody({
             data-dismiss="modal"
             onClick={(event) => {
               event.stopPropagation();
-              setDeleteModalOpen(false);
+              setOpenPostModal(null);
             }}
           >
             ×
@@ -415,7 +427,7 @@ function ProjectPostDetailBody({
             data-dismiss="modal"
             onClick={(event) => {
               event.stopPropagation();
-              setDeleteModalOpen(false);
+              setOpenPostModal(null);
             }}
           >
             {t("button.no")}
@@ -442,9 +454,18 @@ function ProjectPostDetailBody({
   );
 }
 
-function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
+function PostingHistory({
+  historyMarkdown,
+  onClose,
+  onOpen,
+  open,
+}: {
+  historyMarkdown: string;
+  onClose: () => void;
+  onOpen: () => void;
+  open: boolean;
+}) {
   const { t } = useLegacyMessages();
-  const [open, setOpen] = useState(false);
 
   if (!historyMarkdown) {
     return null;
@@ -458,7 +479,7 @@ function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
         data-target="#-yona-posting-history"
         onClick={(event) => {
           event.stopPropagation();
-          setOpen(true);
+          onOpen();
         }}
       >
         {t("change.history")}
@@ -476,7 +497,7 @@ function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
             data-dismiss="modal"
             onClick={(event) => {
               event.stopPropagation();
-              setOpen(false);
+              onClose();
             }}
           >
             ×
@@ -492,14 +513,13 @@ function PostingHistory({ historyMarkdown }: { historyMarkdown: string }) {
             data-dismiss="modal"
             onClick={(event) => {
               event.stopPropagation();
-              setOpen(false);
+              onClose();
             }}
           >
             {t("button.confirm")}
           </button>
         </div>
       </div>
-      {open ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }
@@ -532,7 +552,15 @@ function CommentDeleteConfirm({
         aria-hidden={open ? "false" : undefined}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={onCancel}>
+          <button
+            type="button"
+            className="close"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCancel();
+            }}
+          >
             ×
           </button>
           <h3>{title}</h3>
@@ -555,7 +583,15 @@ function CommentDeleteConfirm({
           >
             {confirmLabel}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
+          <button
+            type="button"
+            className="ybtn"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCancel();
+            }}
+          >
             {cancelLabel}
           </button>
         </div>
@@ -949,7 +985,10 @@ function PostCommentRow({
                       data-toggle="comment-delete"
                       data-request-uri={deleteUri}
                       title={t("common.comment.delete")}
-                      onClick={() => onCommentDeleteRequest(deleteUri)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onCommentDeleteRequest(deleteUri);
+                      }}
                     >
                       <i className="yobicon-trash"></i>
                     </button>
@@ -1259,7 +1298,10 @@ function PostChildComment({
               data-toggle="comment-delete"
               data-request-uri={deleteUri}
               title={t("common.comment.delete")}
-              onClick={() => onCommentDeleteRequest(deleteUri)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onCommentDeleteRequest(deleteUri);
+              }}
             >
               x
             </button>
@@ -1453,9 +1495,16 @@ function TasklistBar() {
   );
 }
 
-function BoardDetailKeymap() {
+function BoardDetailKeymap({
+  onClose,
+  onOpen,
+  open,
+}: {
+  onClose: () => void;
+  onOpen: () => void;
+  open: boolean;
+}) {
   const { t } = useLegacyMessages();
-  const [open, setOpen] = useState(false);
   return (
     <div className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}>
       <button
@@ -1465,7 +1514,7 @@ function BoardDetailKeymap() {
         className="ybtn ybtn-inverse ybtn-mini"
         onClick={(event) => {
           event.stopPropagation();
-          setOpen(true);
+          onOpen();
         }}
       >
         {t("title.keymap")}
@@ -1518,14 +1567,13 @@ function BoardDetailKeymap() {
             data-dismiss="modal"
             onClick={(event) => {
               event.stopPropagation();
-              setOpen(false);
+              onClose();
             }}
           >
             Confirm
           </button>
         </p>
       </div>
-      {open ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }

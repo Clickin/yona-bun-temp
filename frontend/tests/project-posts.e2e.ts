@@ -57,6 +57,62 @@ async function expectNoTanStackActiveAttrs(locator: Locator) {
   await expect(locator).not.toHaveAttribute("data-status", /.+/u);
 }
 
+async function installRootModalBridgeGuard(page: Page, modalIds: string[]) {
+  await page.evaluate((ids) => {
+    type GuardedWindow = typeof window & {
+      __rootModalBridgeGuard?: {
+        documentClicks: string[];
+        getElementById: string[];
+      };
+      __rootModalBridgeNativeGetElementById?: typeof Document.prototype.getElementById;
+    };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__rootModalBridgeGuard = {
+      documentClicks: [],
+      getElementById: [],
+    };
+    guardedWindow.__rootModalBridgeNativeGetElementById ??= Document.prototype.getElementById;
+    const nativeGetElementById = guardedWindow.__rootModalBridgeNativeGetElementById;
+
+    Document.prototype.getElementById = function guardedGetElementById(id: string) {
+      if (ids.includes(id)) {
+        guardedWindow.__rootModalBridgeGuard?.getElementById.push(id);
+      }
+      return nativeGetElementById.call(this, id);
+    };
+
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridgeTarget = target?.closest(
+        '[data-toggle="modal"], [data-dismiss="modal"], [data-toggle="comment-delete"]',
+      );
+      if (bridgeTarget) {
+        guardedWindow.__rootModalBridgeGuard?.documentClicks.push(
+          `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
+        );
+      }
+    });
+  }, modalIds);
+}
+
+async function expectRootModalBridgeUnused(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const guard = (
+          window as typeof window & {
+            __rootModalBridgeGuard?: {
+              documentClicks: string[];
+              getElementById: string[];
+            };
+          }
+        ).__rootModalBridgeGuard;
+        return guard ?? { documentClicks: [], getElementById: [] };
+      }),
+    )
+    .toEqual({ documentClicks: [], getElementById: [] });
+}
+
 test("project board list keymap modal is route state owned", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page);
@@ -848,6 +904,7 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
   const { deleteRequests } = await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await installRootModalBridgeGuard(page, ["deleteConfirm"]);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-delete-modal";
   });
@@ -860,6 +917,7 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
     .locator('button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"]')
     .first()
     .click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
   await expect(page.locator("#deleteConfirm")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -875,6 +933,7 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
     .locator('#deleteConfirm [data-dismiss="modal"]')
     .last()
     .evaluate((button: HTMLButtonElement) => button.click());
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(deleteRequests).toEqual([]);
@@ -883,11 +942,30 @@ test("project board detail deletes through legacy confirmation modal", async ({ 
     .locator('button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"]')
     .first()
     .click();
+  await expectRootModalBridgeUnused(page);
   await page
     .locator("#deleteConfirm .ybtn-danger")
     .evaluate((button: HTMLButtonElement) => button.click());
+  await expectRootModalBridgeUnused(page);
   await expect(page).toHaveURL(`${basePath}/admin/sample/posts`);
   await expect.poll(() => deleteRequests).toEqual(["DELETE"]);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const bodySource = routeSource.slice(
+    routeSource.indexOf("function ProjectPostDetailBody"),
+    routeSource.indexOf("function PostingHistory"),
+  );
+  expect(routeSource).toContain('type PostDetailModalId = "deleteConfirm"');
+  expect(bodySource).toContain("const [openPostModal, setOpenPostModal]");
+  expect(bodySource).toContain('openPostModal === "deleteConfirm"');
+  expect(bodySource).toContain('setOpenPostModal("deleteConfirm")');
+  expect(bodySource).toContain("event.stopPropagation();");
+  expect(bodySource).not.toContain('document.getElementById("deleteConfirm")');
+  expect(bodySource).not.toContain("classList");
+  expect(bodySource).not.toContain("style.display");
 });
 
 test("project board detail deletes comments through legacy confirmation modal", async ({
@@ -897,9 +975,11 @@ test("project board detail deletes comments through legacy confirmation modal", 
   const { commentDeleteRequests } = await mockProjectPosts(page, "comment");
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await installRootModalBridgeGuard(page, ["comment-delete-modal"]);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
 
   await page.locator('#comment-21 [data-toggle="comment-delete"]').click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
   await expect(page.locator("#comment-delete-modal .modal-header h3")).toHaveText("Delete comment");
@@ -917,13 +997,29 @@ test("project board detail deletes comments through legacy confirmation modal", 
   expect(commentDeleteRequests).toEqual([]);
 
   await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   expect(commentDeleteRequests).toEqual([]);
 
   await page.locator('#comment-21 [data-toggle="comment-delete"]').click();
+  await expectRootModalBridgeUnused(page);
   await page.locator("#comment-delete-confirm").click();
+  await expectRootModalBridgeUnused(page);
   await expect.poll(() => commentDeleteRequests).toEqual(["DELETE"]);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const commentDeleteSource = routeSource.slice(
+    routeSource.indexOf("function CommentDeleteConfirm"),
+    routeSource.indexOf("function PostSelectedLabels"),
+  );
+  expect(commentDeleteSource).toContain("event.stopPropagation();");
+  expect(commentDeleteSource).not.toContain("document.");
+  expect(commentDeleteSource).not.toContain("classList");
+  expect(commentDeleteSource).not.toContain("style.display");
 });
 
 test("project board detail submits legacy comment form through REST", async ({ page }) => {
@@ -1177,6 +1273,7 @@ test("project board detail opens legacy keymap modal through data-toggle modal",
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await installRootModalBridgeGuard(page, ["helpKeys"]);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-keymap-modal";
   });
@@ -1190,6 +1287,7 @@ test("project board detail opens legacy keymap modal through data-toggle modal",
   await expect(keymapButton).toHaveClass(/ybtn ybtn-inverse ybtn-mini/);
   await expect(keymapButton).toHaveText("Keyboard shortcuts");
   await keymapButton.click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -1208,8 +1306,29 @@ test("project board detail opens legacy keymap modal through data-toggle modal",
   });
 
   await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const bodySource = routeSource.slice(
+    routeSource.indexOf("function ProjectPostDetailBody"),
+    routeSource.indexOf("function PostingHistory"),
+  );
+  const keymapSource = routeSource.slice(
+    routeSource.indexOf("function BoardDetailKeymap"),
+    routeSource.indexOf("function KeymapEntry"),
+  );
+  expect(bodySource).toContain('setOpenPostModal("helpKeys")');
+  expect(bodySource).toContain('open={openPostModal === "helpKeys"}');
+  expect(keymapSource).not.toContain("useState(false)");
+  expect(keymapSource).toContain("event.stopPropagation();");
+  expect(keymapSource).not.toContain("document.");
+  expect(keymapSource).not.toContain("classList");
+  expect(keymapSource).not.toContain("style.display");
 });
 
 test("project board detail opens legacy posting history modal", async ({ page }) => {
@@ -1217,6 +1336,7 @@ test("project board detail opens legacy posting history modal", async ({ page })
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await installRootModalBridgeGuard(page, ["-yona-posting-history"]);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-history-modal";
   });
@@ -1237,6 +1357,7 @@ test("project board detail opens legacy posting history modal", async ({ page })
   );
 
   await historyButton.click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#-yona-posting-history")).not.toHaveClass(/hide/);
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
@@ -1261,8 +1382,29 @@ test("project board detail opens legacy posting history modal", async ({ page })
   });
 
   await page.locator('#-yona-posting-history [data-dismiss="modal"]').last().click();
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#-yona-posting-history")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const bodySource = routeSource.slice(
+    routeSource.indexOf("function ProjectPostDetailBody"),
+    routeSource.indexOf("function PostingHistory"),
+  );
+  const historySource = routeSource.slice(
+    routeSource.indexOf("function PostingHistory"),
+    routeSource.indexOf("function CommentDeleteConfirm"),
+  );
+  expect(bodySource).toContain('setOpenPostModal("postingHistory")');
+  expect(bodySource).toContain('open={openPostModal === "postingHistory"}');
+  expect(historySource).not.toContain("useState(false)");
+  expect(historySource).toContain("event.stopPropagation();");
+  expect(historySource).not.toContain("document.");
+  expect(historySource).not.toContain("classList");
+  expect(historySource).not.toContain("style.display");
 });
 
 test("project board detail renders legacy read-only selected labels", async ({ page }) => {

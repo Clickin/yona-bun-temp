@@ -270,12 +270,44 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain('data-request-method="post"');
   expect(routeSource).toContain("data-request-uri={voteHref}");
   expect(routeSource).not.toMatch(
-    /document\.|querySelector|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
+    /document\.|querySelector|addEventListener|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
   );
   expect(routeSource).toContain('data-toggle="comment-edit"');
   expect(routeSource).toContain("setCommentEditOpen((current) => !current)");
   expect(routeSource).toContain("event.stopPropagation();");
 });
+
+async function armRootModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as typeof window & {
+      __rootModalBridgeHits?: string[];
+      __rootModalBridgeTrapArmed?: boolean;
+    };
+    win.__rootModalBridgeHits = [];
+    if (win.__rootModalBridgeTrapArmed) {
+      return;
+    }
+    win.__rootModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest(
+        '[data-toggle="modal"], [data-dismiss="modal"], [data-toggle="comment-delete"]',
+      );
+      if (bridged) {
+        win.__rootModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function rootModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as typeof window & { __rootModalBridgeHits?: string[] }).__rootModalBridgeHits ?? [],
+  );
+}
 
 async function expectIssueDetailAssets(page: Page, basePath: string) {
   const hrefs = [
@@ -552,12 +584,20 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "posting-history-modal";
   });
+  await armRootModalBridgeTrap(page);
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#-yona-posting-history")).toBeVisible();
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("posting-history-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.locator('#-yona-posting-history [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 });
 
 test("project issue detail renders legacy anonymous posting history login link", async ({
@@ -1334,19 +1374,22 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "delete-issue-modal";
   });
+  await armRootModalBridgeTrap(page);
   await trigger.first().click();
   await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
+  await expect(page.locator("#deleteConfirm")).toHaveClass("modal fade in");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("delete-issue-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(deleteRequests).toEqual([]);
 
-  await page
-    .locator('#deleteConfirm [data-dismiss="modal"]')
-    .last()
-    .evaluate((button: HTMLButtonElement) => button.click());
+  await page.locator('#deleteConfirm [data-dismiss="modal"]').last().click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(deleteRequests).toEqual([]);
 
   await trigger.first().click();
@@ -1366,6 +1409,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
 
+  await armRootModalBridgeTrap(page);
   await page.locator('#comment-77 .media-body > .meta-info [data-toggle="comment-delete"]').click();
   await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
@@ -1397,11 +1441,13 @@ test("project issue detail deletes comments through legacy confirmation modal", 
     top: 10,
     width: 562,
   });
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(commentDeleteRequests).toEqual([]);
 
   await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(commentDeleteRequests).toEqual([]);
 
   const childAuthor = page.locator("#comment-77 .subcomment-author");
@@ -1428,6 +1474,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
     "data-request-method",
     "delete",
   );
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -1665,12 +1712,21 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "issue-voters-modal";
   });
+  await armRootModalBridgeTrap(page);
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters")).toBeVisible();
+  await expect(page.locator("#voters")).toHaveClass("modal voters-dialog in");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("issue-voters-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.locator('#voters [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 });
 
 test("project issue detail renders legacy attachment file items", async ({ page }) => {
@@ -2572,12 +2628,16 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "comment-voters-modal";
   });
+  await armRootModalBridgeTrap(page);
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters-77")).toBeVisible();
+  await expect(page.locator("#voters-77")).toHaveClass("modal voters-dialog in");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("comment-voters-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(await commentVoterModalMetrics(page)).toEqual({
     avatarHeight: 40,
     avatarWidth: 40,
@@ -2594,6 +2654,9 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
 
   await page.locator('#voters-77 [data-dismiss="modal"]').last().click();
   await expect(page.locator("#voters-77")).toBeHidden();
+  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 });
 
 test("project issue detail renders legacy inline comment voter avatars", async ({ page }) => {

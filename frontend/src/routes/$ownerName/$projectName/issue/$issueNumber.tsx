@@ -726,7 +726,11 @@ function IssueDetailBody({
                 canUpdate={canUpdate}
                 issueNumber={issueNumber}
                 onEditClick={() => void router.navigate({ to: editIssuePath })}
-                onDeleteClick={() => setDeleteModalOpen(true)}
+                onDeleteClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDeleteModalOpen(true);
+                }}
                 ownerName={ownerName}
                 projectName={projectName}
               />
@@ -934,7 +938,11 @@ function IssueDetailBody({
                     canUpdate={canUpdate}
                     issueNumber={issueNumber}
                     onEditClick={() => void router.navigate({ to: editIssuePath })}
-                    onDeleteClick={() => setDeleteModalOpen(true)}
+                    onDeleteClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setDeleteModalOpen(true);
+                    }}
                     ownerName={ownerName}
                     projectName={projectName}
                     wrap={false}
@@ -1003,6 +1011,17 @@ function IssuePostingHistory({
   updatedLabel: string;
 }) {
   const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const openHistory = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(true);
+  };
+  const closeHistory = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(false);
+  };
 
   if (!historyMarkdown) {
     return null;
@@ -1018,7 +1037,12 @@ function IssuePostingHistory({
 
   return (
     <div className="posting-history">
-      <button type="button" data-toggle="modal" data-target="#-yona-posting-history">
+      <button
+        type="button"
+        data-toggle="modal"
+        data-target="#-yona-posting-history"
+        onClick={openHistory}
+      >
         {updatedByAuthorLabel || updatedLabel ? (
           <span className="lastUpdatedBy">
             <span>{updatedByAuthorLabel}</span>
@@ -1027,9 +1051,9 @@ function IssuePostingHistory({
         ) : null}
         <span>{t("change.edited")}</span>
       </button>
-      <div id="-yona-posting-history" className="modal hide">
+      <div id="-yona-posting-history" className={open ? "modal in" : "modal hide"}>
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal">
+          <button type="button" className="close" data-dismiss="modal" onClick={closeHistory}>
             ×
           </button>
           <h5 className="nm">{t("change.history")}</h5>
@@ -1038,11 +1062,12 @@ function IssuePostingHistory({
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
         </div>
         <div className="modal-footer">
-          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" onClick={closeHistory}>
             {t("button.confirm")}
           </button>
         </div>
       </div>
+      {open ? <div className="modal-backdrop in"></div> : null}
     </div>
   );
 }
@@ -1062,6 +1087,7 @@ function IssueVote({
   onIssueVote: () => void;
   voters: VoterLike[];
 }) {
+  const [votersOpen, setVotersOpen] = useState(false);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
@@ -1096,12 +1122,16 @@ function IssueVote({
             </span>
           </span>
         )}
-        {voters.length ? <IssueVoterAvatars voters={voters} /> : null}
+        {voters.length ? (
+          <IssueVoterAvatars onOpen={() => setVotersOpen(true)} voters={voters} />
+        ) : null}
       </div>
       {voters.length ? (
         <IssueVoterListDialog
           id="voters"
+          open={votersOpen}
           ownerName={ownerName}
+          onClose={() => setVotersOpen(false)}
           projectName={projectName}
           issueNumber={issueNumber}
           voters={voters}
@@ -1111,7 +1141,7 @@ function IssueVote({
   );
 }
 
-function IssueVoterAvatars({ voters }: { voters: VoterLike[] }) {
+function IssueVoterAvatars({ onOpen, voters }: { onOpen: () => void; voters: VoterLike[] }) {
   const visibleVoters = voters.slice(0, 3);
   const overflowVoters = voters.slice(3);
   const overflowTitle = overflowVoters
@@ -1137,7 +1167,16 @@ function IssueVoterAvatars({ voters }: { voters: VoterLike[] }) {
         ))}
         {overflowVoters.length ? (
           <li data-toggle="tooltip" data-html="true" title={overflowTitle}>
-            <button type="button" data-toggle="modal" data-target="#voters">
+            <button
+              type="button"
+              data-toggle="modal"
+              data-target="#voters"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onOpen();
+              }}
+            >
               {`and ${overflowVoters.length} others`}
             </button>
           </li>
@@ -1149,62 +1188,77 @@ function IssueVoterAvatars({ voters }: { voters: VoterLike[] }) {
 
 function IssueVoterListDialog({
   id,
+  onClose,
+  open = false,
   voters,
 }: {
   id: string;
   issueNumber?: string;
+  onClose?: () => void;
+  open?: boolean;
   ownerName?: string;
   projectName?: string;
   voters: VoterLike[];
 }) {
+  const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose?.();
+  };
+
   return (
-    <div id={id} className="modal hide voters-dialog">
-      <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal">
-          ×
-        </button>
-        <h5 className="nm">Issue Voters</h5>
+    <>
+      <div id={id} className={open ? "modal voters-dialog in" : "modal hide voters-dialog"}>
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal" onClick={closeDialog}>
+            ×
+          </button>
+          <h5 className="nm">Issue Voters</h5>
+        </div>
+        <div className="modal-body">
+          <ul className="unstyled">
+            {voters.map((voter) => (
+              <li key={stringField(voter.loginId)}>
+                <Link
+                  {...LEGACY_LINK_PROPS}
+                  to="/$user"
+                  params={{ user: stringField(voter.loginId) }}
+                  className="usf-group"
+                  target="_blank"
+                >
+                  <span className="avatar-wrap mlarge">
+                    <img src={stringField(voter.avatarUrl)} width="40" height="40" alt="" />
+                  </span>
+                  <strong className="name">{stringField(voter.userLabel)}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {stringField(voter.loginId)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="modal-footer">
+          <button
+            id="copyEmailBtn"
+            className="ybtn ybtn-info ybtn-small"
+            data-clipboard-text={voters
+              .map(
+                (voter) => `${stringField(voter.userLabel)} <${stringField(voter.emailAddress)}>;`,
+              )
+              .join("")}
+          >
+            Copy email
+          </button>
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" onClick={closeDialog}>
+            Close
+          </button>
+        </div>
       </div>
-      <div className="modal-body">
-        <ul className="unstyled">
-          {voters.map((voter) => (
-            <li key={stringField(voter.loginId)}>
-              <Link
-                {...LEGACY_LINK_PROPS}
-                to="/$user"
-                params={{ user: stringField(voter.loginId) }}
-                className="usf-group"
-                target="_blank"
-              >
-                <span className="avatar-wrap mlarge">
-                  <img src={stringField(voter.avatarUrl)} width="40" height="40" alt="" />
-                </span>
-                <strong className="name">{stringField(voter.userLabel)}</strong>
-                <span className="loginid">
-                  {" "}
-                  <strong>@</strong>
-                  {stringField(voter.loginId)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="modal-footer">
-        <button
-          id="copyEmailBtn"
-          className="ybtn ybtn-info ybtn-small"
-          data-clipboard-text={voters
-            .map((voter) => `${stringField(voter.userLabel)} <${stringField(voter.emailAddress)}>;`)
-            .join("")}
-        >
-          Copy email
-        </button>
-        <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
-          Close
-        </button>
-      </div>
-    </div>
+      {open ? <div className="modal-backdrop in"></div> : null}
+    </>
   );
 }
 
@@ -1803,7 +1857,7 @@ function IssueActionButtons({
   canUpdate: boolean;
   issueNumber: string;
   onEditClick: () => void;
-  onDeleteClick: () => void;
+  onDeleteClick: (event: MouseEvent<HTMLButtonElement>) => void;
   ownerName: string;
   projectName: string;
   wrap?: boolean;
@@ -3020,6 +3074,8 @@ function TasklistBar() {
 }
 
 function CommentVoters({ commentId, voters }: { commentId: string; voters: VoterLike[] }) {
+  const [open, setOpen] = useState(false);
+
   if (!voters.length) {
     return null;
   }
@@ -3041,11 +3097,21 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
             className="vote-description-people"
             data-toggle="modal"
             data-target={`#voters-${commentId}`}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setOpen(true);
+            }}
           >
             {voters.length} Agreements
           </button>
         </span>
-        <IssueVoterListDialog id={`voters-${commentId}`} voters={voters} />
+        <IssueVoterListDialog
+          id={`voters-${commentId}`}
+          onClose={() => setOpen(false)}
+          open={open}
+          voters={voters}
+        />
       </>
     );
   }
@@ -3189,32 +3255,46 @@ function DeleteConfirm({
   onConfirm: () => void;
   open: boolean;
 }) {
+  const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onCancel();
+  };
+  const confirmDelete = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onConfirm();
+  };
+
   return (
-    <div id="deleteConfirm" className={`modal ${open ? "" : "hide "}fade`}>
-      <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal" onClick={onCancel}>
-          ×
-        </button>
-        <h3>Delete issue</h3>
+    <>
+      <div id="deleteConfirm" className={open ? "modal fade in" : "modal hide fade"}>
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal" onClick={closeDialog}>
+            ×
+          </button>
+          <h3>Delete issue</h3>
+        </div>
+        <div className="modal-body">
+          <p>Are you sure you want to delete this post?</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            type="button"
+            className="ybtn ybtn-danger"
+            data-request-method="delete"
+            data-request-uri={issueHref}
+            onClick={confirmDelete}
+          >
+            Yes
+          </button>
+          <button type="button" className="ybtn" data-dismiss="modal" onClick={closeDialog}>
+            No
+          </button>
+        </div>
       </div>
-      <div className="modal-body">
-        <p>Are you sure you want to delete this post?</p>
-      </div>
-      <div className="modal-footer">
-        <button
-          type="button"
-          className="ybtn ybtn-danger"
-          data-request-method="delete"
-          data-request-uri={issueHref}
-          onClick={onConfirm}
-        >
-          Yes
-        </button>
-        <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
-          No
-        </button>
-      </div>
-    </div>
+      {open ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 
@@ -3237,16 +3317,28 @@ function CommentDeleteConfirm({
   requestUri: string | null;
   title: string;
 }) {
+  const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onCancel();
+  };
+  const confirmDelete = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (requestUri) {
+      onConfirm(requestUri);
+    }
+  };
+
   return (
     <>
       <div
         id="comment-delete-modal"
         className={`modal ${open ? "in " : "hide "}fade`}
-        style={open ? { display: "block" } : undefined}
         aria-hidden={open ? "false" : undefined}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={onCancel}>
+          <button type="button" className="close" data-dismiss="modal" onClick={closeDialog}>
             ×
           </button>
           <h3>{title}</h3>
@@ -3261,15 +3353,11 @@ function CommentDeleteConfirm({
             className="ybtn ybtn-danger"
             data-request-method={requestUri ? "delete" : undefined}
             data-request-uri={requestUri ?? undefined}
-            onClick={() => {
-              if (requestUri) {
-                onConfirm(requestUri);
-              }
-            }}
+            onClick={confirmDelete}
           >
             {confirmLabel}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal" onClick={onCancel}>
+          <button type="button" className="ybtn" data-dismiss="modal" onClick={closeDialog}>
             {cancelLabel}
           </button>
         </div>

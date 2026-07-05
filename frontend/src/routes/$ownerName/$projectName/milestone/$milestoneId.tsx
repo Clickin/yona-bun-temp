@@ -268,7 +268,11 @@ function ProjectMilestoneDetailBody({
               <button
                 type="button"
                 className="ybtn ybtn-danger"
-                onClick={() => {
+                data-toggle="modal"
+                data-target="#deleteConfirm"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
                   setDeleteConfirmOpen(true);
                 }}
               >
@@ -397,16 +401,15 @@ function ProjectMilestoneDetailBody({
         </div>
       </div>
 
-      <div
-        id="deleteConfirm"
-        className={deleteConfirmOpen ? "modal fade in" : "modal hide fade"}
-        style={deleteConfirmOpen ? { display: "block" } : undefined}
-      >
+      <div id="deleteConfirm" className={deleteConfirmOpen ? "modal fade in" : "modal hide fade"}>
         <div className="modal-header">
           <button
             type="button"
             className="close"
-            onClick={() => {
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
               setDeleteConfirmOpen(false);
             }}
           >
@@ -423,14 +426,21 @@ function ProjectMilestoneDetailBody({
             className="ybtn ybtn-danger"
             data-request-method="delete"
             data-request-uri={prefixBasePath(runtimeConfig.basePath, `${milestonePath}/delete`)}
-            onClick={() => deleteMutation.mutate()}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              deleteMutation.mutate();
+            }}
           >
             {t("button.yes")}
           </button>
           <button
             type="button"
             className="ybtn"
-            onClick={() => {
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
               setDeleteConfirmOpen(false);
             }}
           >
@@ -438,6 +448,7 @@ function ProjectMilestoneDetailBody({
           </button>
         </div>
       </div>
+      {deleteConfirmOpen ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }
