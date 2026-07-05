@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FocusEvent, type FormEvent } from "react";
 import {
   copyProjectLabelsRest,
   createProjectLabelRest,
+  deleteProjectLabelRest,
   listProjectLabelsQueryOptions,
+  updateProjectLabelCategoryRest,
+  updateProjectLabelRest,
 } from "../../../../api/project-labels";
 import {
   readProjectSettingsQueryOptions,
@@ -96,8 +99,6 @@ function ProjectLabelsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
-      <EditCategoryModal />
-      <EditLabelModal labels={labelsQuery.data.labels} />
     </>
   );
 }
@@ -114,6 +115,12 @@ function ProjectLabelsBody({
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const [newLabelColor, setNewLabelColor] = useState("");
+  const [isNewLabelColorsVisible, setIsNewLabelColorsVisible] = useState(false);
+  const [newLabelNameColor, setNewLabelNameColor] = useState("");
+  const [editingCategory, setEditingCategory] = useState<EditableCategory | null>(null);
+  const [editingLabel, setEditingLabel] = useState<EditableLabel | null>(null);
+  const newLabelColorInputRef = useRef<HTMLInputElement>(null);
   const copyMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -131,9 +138,16 @@ function ProjectLabelsBody({
     },
   });
   const createMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
+    mutationFn: async ({
+      categoryIsExclusive,
+      formData,
+    }: {
+      categoryIsExclusive?: boolean;
+      formData: FormData;
+    }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return createProjectLabelRest(runtimeConfig, csrfToken, {
+        categoryIsExclusive,
         categoryName: String(formData.get("category") ?? ""),
         labelColor: String(formData.get("color") ?? ""),
         labelName: String(formData.get("name") ?? ""),
@@ -147,6 +161,58 @@ function ProjectLabelsBody({
       });
     },
   });
+  const deleteMutation = useMutation({
+    mutationFn: async (labelId: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteProjectLabelRest(runtimeConfig, csrfToken, {
+        labelId: Number(labelId),
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.labels(ownerName, projectName),
+      });
+    },
+  });
+  const updateLabelMutation = useMutation({
+    mutationFn: async (label: EditableLabel) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateProjectLabelRest(runtimeConfig, csrfToken, {
+        categoryId: Number(label.categoryId),
+        labelColor: label.color,
+        labelId: Number(label.id),
+        labelName: label.name.trim(),
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      setEditingLabel(null);
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.labels(ownerName, projectName),
+      });
+    },
+  });
+  const updateCategoryMutation = useMutation({
+    mutationFn: async (category: EditableCategory) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateProjectLabelCategoryRest(runtimeConfig, csrfToken, {
+        categoryId: Number(category.id),
+        categoryIsExclusive: category.isExclusive,
+        categoryName: category.name.trim(),
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
+      setEditingCategory(null);
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.labels(ownerName, projectName),
+      });
+    },
+  });
 
   function onCopy(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -155,122 +221,259 @@ function ProjectLabelsBody({
 
   function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    createMutation.mutate(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const categoryName = String(formData.get("category") ?? "").trim();
+    const labelName = String(formData.get("name") ?? "").trim();
+    const refinedColor = refineHexColor(String(formData.get("color") ?? "").trim());
+    if (!categoryName || !labelName || !refinedColor) {
+      window.alert(`${t("label.failedTo", { args: [t("label.add")] })}\n${t("label.error.empty")}`);
+      return;
+    }
+    formData.set("category", categoryName);
+    formData.set("name", labelName);
+    formData.set("color", refinedColor);
+    if (isLabelExists(labels, categoryName, labelName)) {
+      window.alert(t("label.error.duplicated"));
+      return;
+    }
+    const existingCategory = groupedLabels(labels).some(
+      (category) => category.name === categoryName,
+    );
+    const categoryIsExclusive = existingCategory
+      ? undefined
+      : window.confirm(t("label.category.new.confirm", { args: [categoryName] }));
+    createMutation.mutate({ categoryIsExclusive, formData });
+  }
+
+  function onNameFocus(event: FocusEvent<HTMLInputElement>) {
+    const form = event.currentTarget.form;
+    setIsNewLabelColorsVisible(true);
+    if (!form || newLabelColor) {
+      return;
+    }
+    const categoryName = String(new FormData(form).get("category") ?? "").trim();
+    const existingCategory = groupedLabels(labels).find(
+      (category) => category.name === categoryName,
+    );
+    const fallbackColor =
+      stringField(
+        existingCategory?.labels[0] ? recordField(existingCategory.labels[0]).color : "",
+        "",
+      ) || NEW_LABEL_COLORS[new Date().getTime() % NEW_LABEL_COLORS.length];
+    const refinedColor = refineHexColor(fallbackColor) || fallbackColor;
+    setNewLabelColor(refinedColor);
+    setNewLabelNameColor(refinedColor);
+    if (newLabelColorInputRef.current) {
+      newLabelColorInputRef.current.value = refinedColor;
+    }
+  }
+
+  function onNewLabelColorChange(color: string) {
+    setNewLabelColor(color);
+    if (newLabelColorInputRef.current) {
+      newLabelColorInputRef.current.value = color;
+    }
+    const refinedColor = refineHexColor(color);
+    if (refinedColor) {
+      setNewLabelNameColor(refinedColor);
+    }
+  }
+
+  function onNewLabelColorBlur() {
+    const color = newLabelColorInputRef.current?.value ?? "";
+    if (!color) {
+      return;
+    }
+    const refinedColor = refineHexColor(color);
+    if (!refinedColor) {
+      window.alert(t("label.error.color", { args: [color] }));
+      return;
+    }
+    setNewLabelColor(refinedColor);
+    setNewLabelNameColor(refinedColor);
+    if (newLabelColorInputRef.current) {
+      newLabelColorInputRef.current.value = refinedColor;
+    }
   }
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap label-editor-wrap">
-        <ProjectSettingMenu
-          active="labels"
-          ownerName={ownerName}
-          project={project}
-          projectName={projectName}
-        />
-
-        {booleanField(project.viewerCanUpdate) ? (
-          <>
-            <form
-              id="copyLabel"
-              action={prefixBasePath(
-                runtimeConfig.basePath,
-                `/${ownerName}/${projectName}/labels/copy`,
-              )}
-              method="post"
-              className="new-label-wrap"
-              onSubmit={onCopy}
-            >
-              <strong className="form-legend">{t("label.copy.append")}</strong>
-              <div className="form-wrap">
-                <input
-                  type="text"
-                  name="owner"
-                  className="input-label mr5"
-                  placeholder={t("project.owner")}
-                />
-                <input
-                  type="text"
-                  name="projectName"
-                  className="input-label"
-                  placeholder={t("project.name")}
-                />
-              </div>
-              <button type="submit" className="ybtn ybtn-info btn-submit">
-                {t("label.copy")}
-              </button>
-              <div>{t("label.copy.description")}</div>
-              <div>{t("label.copy.description2")}</div>
-            </form>
-            <form
-              id="frmNewLabel"
-              action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/labels`)}
-              method="post"
-              className="new-label-wrap"
-              onSubmit={onCreate}
-            >
-              <strong className="form-legend">{t("label.new")}</strong>
-              <div className="form-wrap">
-                <div>
-                  <input
-                    type="text"
-                    name="category"
-                    className="input-label mr5"
-                    maxLength={250}
-                    data-provider="typeahead"
-                    autoComplete="off"
-                    placeholder={t("label.category")}
-                  />
-                  <input
-                    type="text"
-                    name="name"
-                    className="input-label"
-                    maxLength={250}
-                    autoComplete="off"
-                    placeholder={t("label.name")}
-                  />
-                </div>
-                <div className="label-preset-colors">
-                  {NEW_LABEL_COLORS.map((color) => (
-                    <ColorButton color={color} key={color} />
-                  ))}
-                  <input
-                    type="text"
-                    name="color"
-                    className="input-small input-label-color"
-                    placeholder={t("label.customColor")}
-                  />
-                </div>
-              </div>
-              <button type="submit" className="ybtn ybtn-primary btn-submit">
-                {t("label.add")}
-              </button>
-            </form>
-          </>
-        ) : null}
-
-        <div id="labelsList" className="issue-label-list-wrap">
-          <ProjectLabelsList
-            basePath={runtimeConfig.basePath}
-            labels={labels}
+    <>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap label-editor-wrap">
+          <ProjectSettingMenu
+            active="labels"
             ownerName={ownerName}
             project={project}
             projectName={projectName}
           />
+
+          {booleanField(project.viewerCanUpdate) ? (
+            <>
+              <form
+                id="copyLabel"
+                action={prefixBasePath(
+                  runtimeConfig.basePath,
+                  `/${ownerName}/${projectName}/copyLabels`,
+                )}
+                method="post"
+                className="new-label-wrap"
+                onSubmit={onCopy}
+              >
+                <strong className="form-legend">{t("label.copy.append")}</strong>
+                <div className="form-wrap">
+                  <input
+                    type="text"
+                    name="owner"
+                    className="input-label mr5"
+                    placeholder={t("project.owner")}
+                  />
+                  <input
+                    type="text"
+                    name="projectName"
+                    className="input-label"
+                    placeholder={t("project.name")}
+                  />
+                </div>
+                <button type="submit" className="ybtn ybtn-info btn-submit">
+                  {t("label.copy")}
+                </button>
+                <div>{t("label.copy.description")}</div>
+                <div>{t("label.copy.description2")}</div>
+              </form>
+              <form
+                id="frmNewLabel"
+                action={prefixBasePath(
+                  runtimeConfig.basePath,
+                  `/${ownerName}/${projectName}/issue/labels`,
+                )}
+                method="post"
+                className="new-label-wrap"
+                onSubmit={onCreate}
+              >
+                <strong className="form-legend">{t("label.new")}</strong>
+                <div className="form-wrap">
+                  <div>
+                    <input
+                      type="text"
+                      name="category"
+                      className="input-label mr5"
+                      maxLength={250}
+                      data-provider="typeahead"
+                      autoComplete="off"
+                      placeholder={t("label.category")}
+                    />
+                    <input
+                      type="text"
+                      name="name"
+                      maxLength={250}
+                      autoComplete="off"
+                      placeholder={t("label.name")}
+                      onFocus={onNameFocus}
+                      style={newLabelNameColor ? { backgroundColor: newLabelNameColor } : undefined}
+                      className={`input-label${contrastClass(newLabelNameColor)}`}
+                    />
+                  </div>
+                  <div
+                    className="label-preset-colors"
+                    style={isNewLabelColorsVisible ? { display: "inline-block" } : undefined}
+                  >
+                    {NEW_LABEL_COLORS.map((color) => (
+                      <ColorButton
+                        color={color}
+                        isActive={newLabelColor.toLowerCase() === color.toLowerCase()}
+                        key={color}
+                        onSelect={() => onNewLabelColorChange(color)}
+                      />
+                    ))}
+                    <input
+                      type="text"
+                      name="color"
+                      className="input-small input-label-color"
+                      placeholder={t("label.customColor")}
+                      ref={newLabelColorInputRef}
+                      onBlur={onNewLabelColorBlur}
+                      onChange={(event) => {
+                        setNewLabelColor(event.currentTarget.value);
+                        const refinedColor = refineHexColor(event.currentTarget.value);
+                        if (refinedColor) {
+                          setNewLabelNameColor(refinedColor);
+                        }
+                      }}
+                      style={colorInputStyle(newLabelNameColor)}
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="ybtn ybtn-primary btn-submit">
+                  {t("label.add")}
+                </button>
+              </form>
+            </>
+          ) : null}
+
+          <div id="labelsList" className="issue-label-list-wrap">
+            <ProjectLabelsList
+              basePath={runtimeConfig.basePath}
+              onDeleteLabel={(labelId) => {
+                if (window.confirm(t("label.confirm.delete"))) {
+                  deleteMutation.mutate(labelId);
+                }
+              }}
+              onEditCategory={setEditingCategory}
+              onEditLabel={setEditingLabel}
+              labels={labels}
+              ownerName={ownerName}
+              project={project}
+              projectName={projectName}
+            />
+          </div>
         </div>
       </div>
-    </div>
+      <EditCategoryModal
+        category={editingCategory}
+        onCancel={() => setEditingCategory(null)}
+        onChange={setEditingCategory}
+        onSubmit={() => {
+          if (editingCategory) {
+            updateCategoryMutation.mutate(editingCategory);
+          }
+        }}
+      />
+      <EditLabelModal
+        label={editingLabel}
+        labels={labels}
+        onCancel={() => setEditingLabel(null)}
+        onChange={setEditingLabel}
+        onSubmit={() => {
+          if (!editingLabel) {
+            return;
+          }
+          const refinedColor = refineHexColor(editingLabel.color);
+          if (!refinedColor) {
+            window.alert(t("label.error.color", { args: [editingLabel.color] }));
+            return;
+          }
+          updateLabelMutation.mutate({ ...editingLabel, color: refinedColor });
+        }}
+      />
+    </>
   );
 }
 
 function ProjectLabelsList({
   basePath,
   labels,
+  onDeleteLabel,
+  onEditCategory,
+  onEditLabel,
   ownerName,
   project,
   projectName,
 }: {
   basePath: string;
   labels: YonaRecord[];
+  onDeleteLabel: (labelId: string) => void;
+  onEditCategory: (category: EditableCategory) => void;
+  onEditLabel: (label: EditableLabel) => void;
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
@@ -333,6 +536,7 @@ function ProjectLabelsList({
                       basePath,
                       `/${ownerName}/${projectName}/issue/label/category/${category.id}`,
                     )}
+                    onClick={() => onEditCategory(category)}
                   >
                     {t("label.category.edit")}
                   </button>
@@ -369,6 +573,7 @@ function ProjectLabelsList({
                                 basePath,
                                 `/${ownerName}/${projectName}/issue/label/${labelId}/delete`,
                               )}
+                              onClick={() => onDeleteLabel(labelId)}
                             >
                               {t("button.delete")}
                             </button>
@@ -382,6 +587,14 @@ function ProjectLabelsList({
                                 basePath,
                                 `/${ownerName}/${projectName}/issue/label/${labelId}`,
                               )}
+                              onClick={() =>
+                                onEditLabel({
+                                  categoryId: category.id,
+                                  color: stringField(label.color, ""),
+                                  id: labelId,
+                                  name: labelName,
+                                })
+                              }
                             >
                               {t("button.edit")}
                             </button>
@@ -396,6 +609,11 @@ function ProjectLabelsList({
           </div>
         </div>
       ))}
+      <link
+        rel="stylesheet"
+        type="text/css"
+        href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labels.css`)}
+      />
     </>
   );
 }
@@ -426,37 +644,71 @@ function groupedLabels(labels: YonaRecord[]) {
   return Array.from(categories.values());
 }
 
-function EditCategoryModal() {
+type EditableCategory = {
+  id: string;
+  isExclusive: boolean;
+  name: string;
+};
+
+type EditableLabel = {
+  categoryId: string;
+  color: string;
+  id: string;
+  name: string;
+};
+
+function EditCategoryModal({
+  category,
+  onCancel,
+  onChange,
+  onSubmit,
+}: {
+  category: EditableCategory | null;
+  onCancel: () => void;
+  onChange: (category: EditableCategory) => void;
+  onSubmit: () => void;
+}) {
   const { t } = useLegacyMessages();
 
   return (
     <div
       id="editCategory"
-      className="modal hide yobiDialog"
+      className={`modal${category ? "" : " hide"} yobiDialog`}
       tabIndex={-1}
       role="dialog"
-      aria-hidden="true"
+      aria-hidden={category ? "false" : "true"}
     >
       <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" data-dismiss="modal">
+        <button type="button" className="btn-transparent" data-dismiss="modal" onClick={onCancel}>
           ×
         </button>
       </div>
       <div className="message edit-label-category-form">
         <div className="center-txt">
           <input
+            key={category ? `category-name-${category.id}` : "category-name-empty"}
             type="text"
             name="name"
             className="text category-name"
             placeholder={t("label.category")}
+            value={category?.name || undefined}
+            onChange={(event) =>
+              category && onChange({ ...category, name: event.currentTarget.value })
+            }
           />
 
           <div className="desc">
             {t("label.category.option")}
             <select
+              key={category ? `category-exclusive-${category.id}` : "category-exclusive-empty"}
               name="isExclusive"
               data-toggle="select2"
               data-dropdown-css-class="select2-without-searchbox"
+              value={category ? String(category.isExclusive) : undefined}
+              onChange={(event) =>
+                category &&
+                onChange({ ...category, isExclusive: event.currentTarget.value === "true" })
+              }
             >
               <option value="false">{t("label.category.option.multiple")}</option>
               <option value="true">{t("label.category.option.single")}</option>
@@ -465,10 +717,15 @@ function EditCategoryModal() {
         </div>
 
         <div className="center-txt buttons mt20 mb20">
-          <button type="button" className="ybtn ybtn-info btnSubmit">
+          <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
             {t("button.save")}
           </button>
-          <button type="button" className="ybtn ybtn-default" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn ybtn-default"
+            data-dismiss="modal"
+            onClick={onCancel}
+          >
             {t("button.cancel")}
           </button>
         </div>
@@ -477,7 +734,19 @@ function EditCategoryModal() {
   );
 }
 
-function EditLabelModal({ labels }: { labels: YonaRecord[] }) {
+function EditLabelModal({
+  label,
+  labels,
+  onCancel,
+  onChange,
+  onSubmit,
+}: {
+  label: EditableLabel | null;
+  labels: YonaRecord[];
+  onCancel: () => void;
+  onChange: (label: EditableLabel) => void;
+  onSubmit: () => void;
+}) {
   const { t } = useLegacyMessages();
   const categoriesById = new Map<string, { id: string; name: string }>();
   for (const label of labels) {
@@ -491,19 +760,27 @@ function EditLabelModal({ labels }: { labels: YonaRecord[] }) {
   return (
     <div
       id="editLabel"
-      className="modal hide yobiDialog"
+      className={`modal${label ? "" : " hide"} yobiDialog`}
       tabIndex={-1}
       role="dialog"
-      aria-hidden="true"
+      aria-hidden={label ? "false" : "true"}
     >
       <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" data-dismiss="modal">
+        <button type="button" className="btn-transparent" data-dismiss="modal" onClick={onCancel}>
           ×
         </button>
       </div>
       <div className="message edit-label-form">
         <div className="center-txt">
-          <select name="category.id" data-toggle="select2">
+          <select
+            key={label ? `label-category-${label.id}` : "label-category-empty"}
+            name="category.id"
+            data-toggle="select2"
+            value={label?.categoryId || undefined}
+            onChange={(event) =>
+              label && onChange({ ...label, categoryId: event.currentTarget.value })
+            }
+          >
             {categories.map((category) => (
               <option value={category.id} key={category.id}>
                 {category.name}
@@ -512,30 +789,50 @@ function EditLabelModal({ labels }: { labels: YonaRecord[] }) {
           </select>
 
           <input
+            key={label ? `label-name-${label.id}` : "label-name-empty"}
             type="text"
             name="name"
             className="text input-label-name"
             maxLength={250}
             placeholder={t("label.name")}
+            value={label?.name || undefined}
+            onChange={(event) => label && onChange({ ...label, name: event.currentTarget.value })}
+            style={label?.color ? { backgroundColor: label.color } : undefined}
           />
 
           <div className="label-preset-colors edit">
             {EDIT_LABEL_COLORS.map((color) => (
-              <ColorButton color={color} key={color} />
+              <ColorButton
+                color={color}
+                isActive={label?.color.toLowerCase() === color.toLowerCase()}
+                key={color}
+                onSelect={() => label && onChange({ ...label, color })}
+              />
             ))}
             <input
+              key={label ? `label-color-${label.id}` : "label-color-empty"}
               type="text"
               name="color"
               className="input-small input-label-color"
               placeholder={t("label.customColor")}
+              value={label?.color || undefined}
+              onChange={(event) =>
+                label && onChange({ ...label, color: event.currentTarget.value })
+              }
+              style={colorInputStyle(label?.color ?? "")}
             />
           </div>
         </div>
         <div className="center-txt buttons mt20 mb20">
-          <button type="button" className="ybtn ybtn-info btnSubmit">
+          <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
             {t("button.save")}
           </button>
-          <button type="button" className="ybtn ybtn-default" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn ybtn-default"
+            data-dismiss="modal"
+            onClick={onCancel}
+          >
             {t("button.cancel")}
           </button>
         </div>
@@ -544,12 +841,21 @@ function EditLabelModal({ labels }: { labels: YonaRecord[] }) {
   );
 }
 
-function ColorButton({ color }: { color: string }) {
+function ColorButton({
+  color,
+  isActive = false,
+  onSelect,
+}: {
+  color: string;
+  isActive?: boolean;
+  onSelect?: () => void;
+}) {
   return (
     <button
       type="button"
-      className="issue-label btn-preset-color"
+      className={`issue-label btn-preset-color${isActive ? " active" : ""}`}
       style={{ backgroundColor: color }}
+      onClick={onSelect}
     ></button>
   );
 }
@@ -948,4 +1254,50 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function isLabelExists(labels: YonaRecord[], categoryName: string, labelName: string) {
+  return labels.some(
+    (label) =>
+      stringField(label.category, "") === categoryName && stringField(label.name, "") === labelName,
+  );
+}
+
+function refineHexColor(color: string) {
+  const trimmed = color.trim();
+  const shortHex = /^#([0-9a-f]{3})$/i.exec(trimmed);
+  if (shortHex) {
+    return `#${shortHex[1]
+      .split("")
+      .map((channel) => channel + channel)
+      .join("")}`.toLowerCase();
+  }
+  if (/^#[0-9a-f]{6}$/i.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
+  const rgb = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i.exec(trimmed);
+  if (!rgb) {
+    return "";
+  }
+  const channels = rgb.slice(1).map(Number);
+  if (channels.some((channel) => channel < 0 || channel > 255)) {
+    return "";
+  }
+  return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function colorInputStyle(color: string) {
+  const refinedColor = refineHexColor(color);
+  return refinedColor ? { boxShadow: `inset 25px 0 0 ${refinedColor}` } : undefined;
+}
+
+function contrastClass(color: string) {
+  const refinedColor = refineHexColor(color);
+  if (!refinedColor) {
+    return "";
+  }
+  const red = Number.parseInt(refinedColor.slice(1, 3), 16);
+  const green = Number.parseInt(refinedColor.slice(3, 5), 16);
+  const blue = Number.parseInt(refinedColor.slice(5, 7), 16);
+  return red * 0.299 + green * 0.587 + blue * 0.114 > 186 ? " dimgray" : " white";
 }

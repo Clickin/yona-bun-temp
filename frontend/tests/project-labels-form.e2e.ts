@@ -50,6 +50,7 @@ const POPULATED_LABELS_LIST = `
     <div class="span3"><h5 class="right-txt mr20"><span class="category-name">priority</span><p class="mt5"><i class="category-exclusive yobicon-tag single" data-toggle="tooltip" data-html="true" title="In this category, you can choose<br>only a single label"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="4" data-category-name="priority" data-category-is-exclusive="true" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/4">Edit category</button></p></h5></div>
     <div class="span9"><table class="table nm"><tr data-label-id="10"><td><span class="issue-label active" data-label-id="10" data-label-name="high">high</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="priority" data-label-id="10" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/10/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="4" data-label-name="high" data-label-color="#ff9800" data-update-uri="__BASE_PATH__/admin/sample/issue/label/10">Edit</button></td></tr></table></div>
   </div>
+  <link rel="stylesheet" type="text/css" href="__BASE_PATH__/admin/sample/issue/labels.css">
 </div>`;
 
 const EXPECTED_PROJECT_LABELS = `
@@ -58,13 +59,13 @@ const EXPECTED_PROJECT_LABELS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" data-placement="bottom" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -72,7 +73,7 @@ const EXPECTED_PROJECT_LABELS = `
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/labels/copy" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'naver/yobi', then owner name is 'naver' and project name is 'yobi'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" data-provider="typeahead" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/copyLabels" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'naver/yobi', then owner name is 'naver' and project name is 'yobi'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/issue/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" data-provider="typeahead" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
 <div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent" data-dismiss="modal">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default" data-dismiss="modal">Cancel</button></div></div></div>
 <div id="editLabel" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent" data-dismiss="modal">×</button></div><div class="message edit-label-form"><div class="center-txt"><select name="category.id" data-toggle="select2"></select><input type="text" name="name" class="text input-label-name" maxlength="250" placeholder="Name"><div class="label-preset-colors edit">__EDIT_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default" data-dismiss="modal">Cancel</button></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
@@ -266,6 +267,102 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
   });
 });
 
+test("project labels translates legacy LabelEditor create, edit, and delete behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelRequests: { body: unknown; method: string; url: string }[] = [];
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+      {
+        category: "priority",
+        categoryId: "4",
+        categoryIsExclusive: true,
+        color: "#ff9800",
+        id: "10",
+        name: "high",
+      },
+    ],
+    { labelRequests },
+  );
+  page.on("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("new-type is a new category");
+    await dialog.accept();
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  await page.fill('#frmNewLabel input[name="category"]', "new-type");
+  await page.locator('#frmNewLabel input[name="name"]').focus();
+  await expect(page.locator("#frmNewLabel .label-preset-colors")).toBeVisible();
+  await page.locator("#frmNewLabel .btn-preset-color").nth(3).click();
+  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#3f51b5");
+  await page.fill('#frmNewLabel input[name="name"]', "feature");
+  await page.locator("#frmNewLabel").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
+    form.requestSubmit();
+  });
+  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(1);
+  expect(labelRequests[0]).toMatchObject({
+    body: {
+      categoryIsExclusive: true,
+      categoryName: "new-type",
+      labelColor: "#3f51b5",
+      labelName: "feature",
+    },
+    method: "POST",
+  });
+
+  await page.locator('#labelsList tr[data-label-id="8"] button[data-update-uri]').click();
+  await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator('#editLabel input[name="name"]')).toHaveValue("bug");
+  await page.fill('#editLabel input[name="name"]', "bugfix");
+  await page.locator("#editLabel .btn-preset-color").nth(1).click();
+  await page.locator("#editLabel .btnSubmit").click();
+  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(2);
+  expect(labelRequests[1]).toMatchObject({
+    body: { categoryId: 3, labelColor: "#f18ca7", labelName: "bugfix" },
+    method: "PATCH",
+  });
+  expect(labelRequests[1].url).toContain("/api/v1/owners/admin/projects/sample/labels/8");
+
+  await page
+    .locator('#labelsList .category-wrap[data-category="4"] button[data-category-update-uri]')
+    .click();
+  await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator('#editCategory input[name="name"]')).toHaveValue("priority");
+  await page.fill('#editCategory input[name="name"]', "severity");
+  await page.selectOption('#editCategory select[name="isExclusive"]', "false");
+  await page.locator("#editCategory .btnSubmit").click();
+  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(3);
+  expect(labelRequests[2]).toMatchObject({
+    body: { categoryIsExclusive: false, categoryName: "severity" },
+    method: "PATCH",
+  });
+  expect(labelRequests[2].url).toContain(
+    "/api/v1/owners/admin/projects/sample/labels/categories/4",
+  );
+
+  page.removeAllListeners("dialog");
+  page.on("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("Once you delete this label");
+    await dialog.accept();
+  });
+  await page.locator('#labelsList tr[data-label-id="10"] button[data-delete-uri]').click();
+  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(4);
+  expect(labelRequests[3]).toMatchObject({ body: null, method: "DELETE" });
+  expect(labelRequests[3].url).toContain("/api/v1/owners/admin/projects/sample/labels/10");
+});
+
 test("project labels header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -416,6 +513,7 @@ async function mockProjectLabels(
   overrides: {
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
+    labelRequests?: { body: unknown; method: string; url: string }[];
     project?: Partial<ReturnType<typeof projectSettings>>;
   } = {},
 ) {
@@ -455,7 +553,20 @@ async function mockProjectLabels(
       body: JSON.stringify({ ...projectSettings(), ...overrides.project }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/labels**", async (route) => {
+    const request = route.request();
+    if (request.method() !== "GET") {
+      overrides.labelRequests?.push({
+        body: request.postData() ? request.postDataJSON() : null,
+        method: request.method(),
+        url: request.url(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ labels, ownerName: "admin", projectName: "sample" }),
