@@ -251,6 +251,8 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("as never");
   expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("search={undefined");
+  expect(source).not.toContain("document.");
+  expect(source).not.toContain("classList");
   expect(source).not.toContain('style={isTransferModalOpen ? { display: "block" } : undefined}');
   expect(source).not.toContain("style.display");
   expect(source).not.toContain("<a href={prefixBasePath");
@@ -267,6 +269,15 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('to="/$ownerName/$projectName/transfer"');
   expect(source).toContain("params={{ ownerName, projectName }}");
+  expect(source).toContain("const insulateTransferModalButtonClick");
+  expect(source).toMatch(/id="btnTransfer"[\s\S]+?onClick=\{openTransferModal\}/u);
+  expect(source).toMatch(
+    /const openTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?setIsTransferModalOpen\(true\);/u,
+  );
+  expect(source).toMatch(/data-dismiss="modal"[\s\S]+?onClick=\{dismissTransferModal\}/u);
+  expect(source).toMatch(
+    /const dismissTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?closeTransferModal\(\);/u,
+  );
 });
 
 test("project transfer confirmation follows legacy accept gate and REST redirect flow", async ({
@@ -286,6 +297,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
+  const transferFormUrl = page.url();
 
   const alertTransfer = page.locator("#alertTransfer");
   await expect(alertTransfer).toHaveClass("modal hide");
@@ -299,32 +311,79 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
       resolve(message);
     });
   });
-  await page.locator("#btnTransfer").click();
+  await armRootTransferModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
   await expect(alertPromise).resolves.toBe("You should agree with the transfer of this project.");
   await expect(alertTransfer).toHaveClass("modal hide");
   await expect(alertTransfer).toBeHidden();
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
 
   await page.locator("#accept").check();
-  await page.locator("#btnTransfer").click();
+  await armRootTransferModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
   await expect(alertTransfer).toHaveClass("modal in");
   await expect(alertTransfer).toBeVisible();
   await expect(alertTransfer).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
 
-  await page.locator('#alertTransfer [data-dismiss="modal"]').last().click();
+  await armRootTransferModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(page.locator('#alertTransfer [data-dismiss="modal"]').last()),
+  ).toBe(false);
   await expect(alertTransfer).toHaveClass("modal hide");
   await expect(alertTransfer).toBeHidden();
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
 
-  await page.locator("#btnTransfer").click();
+  await armRootTransferModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
   await expect(alertTransfer).toHaveClass("modal in");
-  await page.locator("#alertTransfer .close").click();
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
+  await armRootTransferModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#alertTransfer .close"))).toBe(false);
   await expect(alertTransfer).toHaveClass("modal hide");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
 
   await page.locator("#owner").fill("target-owner");
-  await page.locator("#btnTransfer").click();
+  await armRootTransferModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
   const transferResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/transfer") &&
@@ -357,6 +416,49 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
     btnTransferMousedown: 0,
   });
 });
+
+async function armRootTransferModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as Window &
+      typeof globalThis & {
+        __yonaTransferModalBridgeHits?: string[];
+        __yonaTransferModalBridgeTrapArmed?: boolean;
+      };
+    win.__yonaTransferModalBridgeHits = [];
+    if (win.__yonaTransferModalBridgeTrapArmed) {
+      return;
+    }
+    win.__yonaTransferModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest('#btnTransfer, #alertTransfer [data-dismiss="modal"]');
+      if (bridged) {
+        win.__yonaTransferModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function rootTransferModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaTransferModalBridgeHits?: string[];
+          }
+      ).__yonaTransferModalBridgeHits ?? [],
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
+}
 
 test("project transfer confirmation sends only one request on repeated Yes clicks", async ({
   page,

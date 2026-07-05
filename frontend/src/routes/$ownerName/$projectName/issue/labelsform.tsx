@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type FocusEvent, type FormEvent } from "react";
+import { useRef, useState, type FocusEvent, type FormEvent, type MouseEvent } from "react";
 import {
   copyProjectLabelsRest,
   createProjectLabelRest,
@@ -657,6 +657,15 @@ type EditableLabel = {
   name: string;
 };
 
+function dismissIssueLabelModalButtonClick(
+  event: MouseEvent<HTMLButtonElement>,
+  onCancel: () => void,
+) {
+  event.preventDefault();
+  event.stopPropagation();
+  onCancel();
+}
+
 function EditCategoryModal({
   category,
   onCancel,
@@ -679,7 +688,12 @@ function EditCategoryModal({
       aria-hidden={category ? "false" : "true"}
     >
       <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" data-dismiss="modal" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn-transparent"
+          data-dismiss="modal"
+          onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
+        >
           ×
         </button>
       </div>
@@ -724,7 +738,7 @@ function EditCategoryModal({
             type="button"
             className="ybtn ybtn-default"
             data-dismiss="modal"
-            onClick={onCancel}
+            onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
           >
             {t("button.cancel")}
           </button>
@@ -766,7 +780,12 @@ function EditLabelModal({
       aria-hidden={label ? "false" : "true"}
     >
       <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" data-dismiss="modal" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn-transparent"
+          data-dismiss="modal"
+          onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
+        >
           ×
         </button>
       </div>
@@ -831,7 +850,7 @@ function EditLabelModal({
             type="button"
             className="ybtn ybtn-default"
             data-dismiss="modal"
-            onClick={onCancel}
+            onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
           >
             {t("button.cancel")}
           </button>

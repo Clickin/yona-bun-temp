@@ -101,7 +101,12 @@ function ProjectChangeVcsBody({
       window.alert(t("project.changeVCS.error"));
     },
   });
-  const openChangeVcsModal = () => {
+  const insulateChangeVcsModalButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const openChangeVcsModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateChangeVcsModalButtonClick(event);
     if (!acceptedChangeVcs) {
       window.alert(t("project.changeVCS.alert"));
       return;
@@ -110,8 +115,7 @@ function ProjectChangeVcsBody({
   };
   const closeChangeVcsModal = () => setChangeVcsModalOpen(false);
   const dismissChangeVcsModal = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateChangeVcsModalButtonClick(event);
     closeChangeVcsModal();
   };
 

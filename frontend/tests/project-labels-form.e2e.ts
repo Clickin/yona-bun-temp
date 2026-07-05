@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const NEW_COLORS = [
   "#f44336",
@@ -363,6 +363,94 @@ test("project labels translates legacy LabelEditor create, edit, and delete beha
   expect(labelRequests[3].url).toContain("/api/v1/owners/admin/projects/sample/labels/10");
 });
 
+test("project labels edit modals open and dismiss through route state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  await mockProjectLabels(page, [
+    {
+      category: "type",
+      categoryId: "3",
+      categoryIsExclusive: false,
+      color: "#e11d48",
+      id: "8",
+      name: "bug",
+    },
+    {
+      category: "priority",
+      categoryId: "4",
+      categoryIsExclusive: true,
+      color: "#ff9800",
+      id: "10",
+      name: "high",
+    },
+  ]);
+
+  await page.goto(labelsPageUrl);
+  await rememberSpaMarker(page, "project-labels-edit-modals");
+
+  await armProjectLabelsModalBridgeTrap(page);
+  await page
+    .locator('#labelsList .category-wrap[data-category="4"] button[data-category-update-uri]')
+    .click();
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-edit-modals");
+  await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#editCategory")).not.toHaveClass(/hide/u);
+  await expect(page.locator('#editCategory input[name="name"]')).toHaveValue("priority");
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(
+      page.locator('#editCategory .btn-dismiss [data-dismiss="modal"]'),
+    ),
+  ).toBe(false);
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-edit-modals");
+  await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#editCategory")).toHaveClass(/hide/u);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await armProjectLabelsModalBridgeTrap(page);
+  await page.locator('#labelsList tr[data-label-id="8"] button[data-update-uri]').click();
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-edit-modals");
+  await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#editLabel")).not.toHaveClass(/hide/u);
+  await expect(page.locator('#editLabel input[name="name"]')).toHaveValue("bug");
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(page.locator('#editLabel .buttons [data-dismiss="modal"]')),
+  ).toBe(false);
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-edit-modals");
+  await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#editLabel")).toHaveClass(/hide/u);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+});
+
+test("project labels edit modal source insulates delegated modal bridge", () => {
+  const routeSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(routeSource).toContain("function dismissIssueLabelModalButtonClick");
+  expect(routeSource).toContain("event.preventDefault();");
+  expect(routeSource).toContain("event.stopPropagation();");
+  expect(
+    routeSource.match(/dismissIssueLabelModalButtonClick\(event, onCancel\)/gu) ?? [],
+  ).toHaveLength(4);
+  expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource).not.toContain('data-toggle="modal"');
+  expect(routeSource).not.toContain('data-target="#editCategory"');
+  expect(routeSource).not.toContain('data-target="#editLabel"');
+  expect(routeSource).not.toContain("document.");
+  expect(routeSource).not.toContain("classList");
+  expect(routeSource).not.toContain("style.display");
+});
+
 test("project labels header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -505,6 +593,61 @@ async function favoriteSpanNativeListeners(page: Page) {
       (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
         .__yonaFavoriteSpanNativeListeners ?? [],
   );
+}
+
+async function armProjectLabelsModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as Window &
+      typeof globalThis & {
+        __yonaProjectLabelsModalBridgeHits?: string[];
+        __yonaProjectLabelsModalBridgeTrapArmed?: boolean;
+      };
+    win.__yonaProjectLabelsModalBridgeHits = [];
+    if (win.__yonaProjectLabelsModalBridgeTrapArmed) {
+      return;
+    }
+    win.__yonaProjectLabelsModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      if (bridged) {
+        win.__yonaProjectLabelsModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function projectLabelsModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaProjectLabelsModalBridgeHits?: string[];
+          }
+      ).__yonaProjectLabelsModalBridgeHits ?? [],
+  );
+}
+
+async function rememberSpaMarker(page: Page, marker: string) {
+  await page.evaluate((value) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = value;
+  }, marker);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
 }
 
 async function mockProjectLabels(

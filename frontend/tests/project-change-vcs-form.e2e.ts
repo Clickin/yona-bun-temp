@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -106,20 +106,32 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await mockProjectAdmin(page, { changeVcsRequests });
 
   await page.goto(`${basePath}/admin/sample/changeVCS`);
+  await installProjectChangeVcsModalBridgeAudit(page, ["alertChangeVCS"]);
+  await rememberSpaMarker(page, "change-vcs-modal");
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
+  expect(await spaMarker(page)).toBe("change-vcs-modal");
 
   page.once("dialog", async (dialog) => {
     expect(dialog.message()).toBe("You should agree with changing the repository type.");
     await dialog.accept();
   });
-  await page.locator("#btnChangeVCS").click();
+  expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
+  expect(await spaMarker(page)).toBe("change-vcs-modal");
+  await expect
+    .poll(() => projectChangeVcsModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
 
   await page.locator("#acceptChangeVCS").check();
-  await page.locator("#btnChangeVCS").click();
+  expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
   await expect(page.locator("#alertChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
@@ -128,22 +140,48 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await expect(
     page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }),
   ).toHaveAttribute("data-dismiss", "modal");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
+  expect(await spaMarker(page)).toBe("change-vcs-modal");
+  await expect
+    .poll(() => projectChangeVcsModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
 
-  await page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }).click();
+  expect(
+    await dispatchCancelableClick(
+      page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }),
+    ),
+  ).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
+  expect(await spaMarker(page)).toBe("change-vcs-modal");
+  await expect
+    .poll(() => projectChangeVcsModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
 
-  await page.locator("#btnChangeVCS").click();
+  expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
-  await page.locator("#alertChangeVCS .close").click();
+  expect(await dispatchCancelableClick(page.locator("#alertChangeVCS .close"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
+  expect(await spaMarker(page)).toBe("change-vcs-modal");
+  await expect
+    .poll(() => projectChangeVcsModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
 
-  await page.evaluate(() => {
-    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
-  });
-  await page.locator("#btnChangeVCS").click();
+  await rememberSpaMarker(page, "kept");
+  expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
   const postResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/change-vcs") &&
@@ -154,13 +192,13 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
 
   expect(changeVcsRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
   await expect
-    .poll(() =>
-      page.evaluate(
-        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
-      ),
-    )
-    .toBe("kept");
+    .poll(() => projectChangeVcsModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
   expect(await readChangeVcsNativeListenerAudit(page)).toEqual([]);
 });
 
@@ -455,6 +493,28 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).not.toContain("onMouseDown=");
   expect(source).toContain("onClick=");
   expect(source).toContain('data-dismiss="modal"');
+});
+
+test("project change-VCS confirmation modal source stays route-owned", () => {
+  const source = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/changeVCS.tsx", import.meta.url),
+    "utf8",
+  );
+  const modalSource = source.slice(
+    source.indexOf("const insulateChangeVcsModalButtonClick"),
+    source.indexOf("function ProjectHeader"),
+  );
+
+  expect(modalSource).toContain("event.preventDefault();");
+  expect(modalSource).toContain("event.stopPropagation();");
+  expect(modalSource).toContain("setChangeVcsModalOpen(true);");
+  expect(modalSource).toContain("setChangeVcsModalOpen(false);");
+  expect(modalSource).toContain("onClick={openChangeVcsModal}");
+  expect(modalSource).toContain("onClick={dismissChangeVcsModal}");
+  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toContain("classList");
+  expect(modalSource).not.toContain("style.display");
+  expect(modalSource).not.toContain("addEventListener(");
 });
 
 test("project change-VCS header favorite star posts and toggles starred class", async ({
@@ -756,6 +816,84 @@ async function readChangeVcsNativeListenerAudit(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __changeVcsNativeListenerAudit?: string[] })
         .__changeVcsNativeListenerAudit ?? [],
+  );
+}
+
+async function installProjectChangeVcsModalBridgeAudit(page: Page, modalIds: string[]) {
+  await page.evaluate((ids) => {
+    type GuardedWindow = typeof window & {
+      __projectChangeVcsModalBridgeAudit?: {
+        documentClicks: string[];
+        getElementById: string[];
+      };
+      __projectChangeVcsModalBridgeAuditArmed?: boolean;
+      __projectChangeVcsModalBridgeNativeGetElementById?: typeof Document.prototype.getElementById;
+    };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__projectChangeVcsModalBridgeAudit = {
+      documentClicks: [],
+      getElementById: [],
+    };
+    guardedWindow.__projectChangeVcsModalBridgeNativeGetElementById ??=
+      Document.prototype.getElementById;
+    const nativeGetElementById = guardedWindow.__projectChangeVcsModalBridgeNativeGetElementById;
+
+    Document.prototype.getElementById = function guardedGetElementById(id: string) {
+      if (ids.includes(id)) {
+        guardedWindow.__projectChangeVcsModalBridgeAudit?.getElementById.push(id);
+      }
+      return nativeGetElementById.call(this, id);
+    };
+
+    if (guardedWindow.__projectChangeVcsModalBridgeAuditArmed) {
+      return;
+    }
+
+    guardedWindow.__projectChangeVcsModalBridgeAuditArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridgeTarget = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      if (bridgeTarget) {
+        guardedWindow.__projectChangeVcsModalBridgeAudit?.documentClicks.push(
+          `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
+        );
+      }
+    });
+  }, modalIds);
+}
+
+async function projectChangeVcsModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __projectChangeVcsModalBridgeAudit?: {
+              documentClicks: string[];
+              getElementById: string[];
+            };
+          }
+      ).__projectChangeVcsModalBridgeAudit ?? { documentClicks: [], getElementById: [] },
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
+}
+
+async function rememberSpaMarker(page: Page, value: string) {
+  await page.evaluate((nextValue) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextValue;
+  }, value);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
   );
 }
 

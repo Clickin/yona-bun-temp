@@ -108,7 +108,12 @@ function ProjectTransferBody({
       window.alert(t("project.transfer.error"));
     },
   });
-  const openTransferModal = () => {
+  const insulateTransferModalButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const openTransferModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateTransferModalButtonClick(event);
     if (!acceptInputRef.current?.checked) {
       // oxlint-disable-next-line no-alert -- legacy project.Transfer.js uses $yobi.alert before opening the modal.
       window.alert(t("project.transfer.alert"));
@@ -120,8 +125,7 @@ function ProjectTransferBody({
     setIsTransferModalOpen(false);
   };
   const dismissTransferModal = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateTransferModalButtonClick(event);
     closeTransferModal();
   };
 
