@@ -292,7 +292,11 @@ function BoardPagination({
           {hasPrev ? (
             <Link
               activeOptions={{ exact: true }}
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               params={{ organizationName }}
               search={pageSearch(currentPage - 1)}
               to="/organizations/$organizationName/boards"
@@ -329,7 +333,11 @@ function BoardPagination({
           {hasNext ? (
             <Link
               activeOptions={{ exact: true }}
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               params={{ organizationName }}
               search={pageSearch(currentPage + 1)}
               to="/organizations/$organizationName/boards"

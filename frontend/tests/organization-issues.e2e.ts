@@ -194,6 +194,8 @@ test("organization issue aggregate renders legacy pagination links and input beh
   await expect(nextPageLink).toHaveAttribute("href", /filter=bug/);
   await expect(nextPageLink).toHaveAttribute("href", /state=open/);
   await expect(nextPageLink).toHaveAttribute("href", /labelIds=8/);
+  await expect(nextPageLink).not.toHaveAttribute("aria-current");
+  await expect(nextPageLink).not.toHaveAttribute("data-status");
   await expect(nextPageLink.locator(".btn-pg-next")).not.toHaveClass(/off/);
 
   await page.evaluate(() => {
@@ -205,10 +207,10 @@ test("organization issue aggregate renders legacy pagination links and input beh
     .poll(() => currentOrganizationIssueSearch(page))
     .toMatchObject({ filter: "bug", labelIds: "8", pageNum: "2", state: "open" });
   await expect.poll(() => spaMarker(page)).toBe("pagination");
-  await expect(pagination.locator("a").filter({ hasText: "Previous page" })).toHaveAttribute(
-    "href",
-    /pageNum=1/,
-  );
+  const previousPageLink = pagination.locator("a").filter({ hasText: "Previous page" });
+  await expect(previousPageLink).toHaveAttribute("href", /pageNum=1/);
+  await expect(previousPageLink).not.toHaveAttribute("aria-current");
+  await expect(previousPageLink).not.toHaveAttribute("data-status");
 
   await input.fill("9");
   await input.press("Enter");

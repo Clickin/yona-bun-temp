@@ -193,10 +193,12 @@ test("organization pull request pagination matches legacy link and input behavio
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
   await expect(pagination.locator(".page-num.delimiter")).toHaveText("/");
   await expect(pagination.locator(".page-num").nth(3)).toHaveText("2");
-  await expect(pagination.locator(".page-num.ikon").last().locator("a")).toHaveAttribute(
+  const nextPageLink = pagination.locator(".page-num.ikon").last().locator("a");
+  await expect(nextPageLink).toHaveAttribute(
     "href",
     `${basePath}/organizations/weblabs/pullrequests?filter=fix&pageNum=2`,
   );
+  await expectLegacyRouteLocalLinkMarkers(nextPageLink);
 
   const input = pagination.locator('input[name="pageNum"]');
   await input.evaluate((element) => {
@@ -215,17 +217,21 @@ test("organization pull request pagination matches legacy link and input behavio
     `${basePath}/organizations/weblabs/pullrequests?filter=fix&pageNum=2`,
   );
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
-  await expect(page.locator("#pagination .page-num.ikon").first().locator("a")).toHaveAttribute(
+  const previousPageLink = page.locator("#pagination .page-num.ikon").first().locator("a");
+  await expect(previousPageLink).toHaveAttribute(
     "href",
     `${basePath}/organizations/weblabs/pullrequests?filter=fix&pageNum=1`,
   );
+  await expectLegacyRouteLocalLinkMarkers(previousPageLink);
   await expect(page.locator("#pagination .btn-pg-next.off")).toHaveCount(1);
 
   await page.goto(`${basePath}/organizations/weblabs/closedPullrequests?filter=done&pageNum=1`);
-  await expect(page.locator("#pagination .page-num.ikon").last().locator("a")).toHaveAttribute(
+  const closedNextPageLink = page.locator("#pagination .page-num.ikon").last().locator("a");
+  await expect(closedNextPageLink).toHaveAttribute(
     "href",
     `${basePath}/organizations/weblabs/closedPullrequests?filter=done&pageNum=2`,
   );
+  await expectLegacyRouteLocalLinkMarkers(closedNextPageLink);
 });
 
 test("organization pullrequests menu board link preserves legacy href with SPA transition", async ({
@@ -309,6 +315,8 @@ test("organization pull request row links preserve legacy hrefs with SPA transit
   );
   await expect(page.locator(".avatar-wrap.assinee")).toHaveAttribute("href", `${basePath}/admin`);
   await expect(page.locator(".avatar-wrap.assinee img")).toHaveAttribute("alt", "Site Admin");
+  await expect(page.locator(".post-list-wrap a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".post-list-wrap a[data-status]")).toHaveCount(0);
 
   await expectOrganizationPullRequestSpaClick(
     page,
@@ -341,14 +349,11 @@ test("organization pull request title prefix filters the current legacy list", a
   await mockOrganizationPullRequests(page);
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=prefix-source`);
-  const prefix = page.locator(".title-wrap .title-prefix");
+  const prefix = page.locator('button.title-prefix[type="button"]');
   await expect(prefix).toHaveText("[UI]");
+  await expect(page.locator(".title-wrap a.title-prefix")).toHaveCount(0);
   await expect(page.locator(".title-wrap a.title")).toHaveText("Fix login redirect");
-  await expect(prefix).toHaveAttribute(
-    "href",
-    `${basePath}/organizations/weblabs/pullrequests?filter=%5BUI%5D&pageNum=1`,
-  );
-  await expect(prefix).not.toHaveAttribute("href", /javascript/u);
+  await expect(prefix).not.toHaveAttribute("href", /.*/u);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -374,6 +379,8 @@ test("organization pull request title prefix filters the current legacy list", a
       ),
     )
     .toBe("kept");
+  await expect(page.locator('button.title-prefix[type="button"]')).toHaveText("[UI]");
+  await expect(page.locator(".title-wrap a.title-prefix")).toHaveCount(0);
 });
 
 test("organization pull request route source keeps direct typed row links", async () => {
@@ -417,10 +424,26 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain("to={`/organizations/${organizationName}/settingform`}");
   expect(source).toContain("function splitHeaderWordsInBrackets");
   expect(source).toContain('className="title-prefix"');
+  expect(source).toContain('type="button"');
+  expect(source).toContain("const applyTitlePrefixFilter");
+  expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
   expect(headerBreadcrumb).toContain("<Link");
   expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
 });
+
+async function expectLegacyRouteLocalLinkMarkers(
+  locator: ReturnType<Page["locator"]>,
+  options: { allowClass?: string } = {},
+) {
+  await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.*/u);
+  if (options.allowClass) {
+    await expect(locator).toHaveAttribute("class", options.allowClass);
+  } else {
+    await expect(locator).not.toHaveAttribute("class", /.*/u);
+  }
+}
 
 async function installOrganizationPullRequestNativeLinkAudit(page: Page) {
   await page.addInitScript(() => {
@@ -553,7 +576,7 @@ async function mockOrganizationPullRequests(page: Page) {
                 reviewerCount: 1,
                 state: isClosed ? "merged" : "open",
                 title:
-                  !isClosed && filter === "prefix-source"
+                  !isClosed && (filter === "prefix-source" || filter === "[UI]")
                     ? "[UI] Fix login redirect"
                     : isClosed
                       ? "Ship release"

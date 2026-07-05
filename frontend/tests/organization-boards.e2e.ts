@@ -134,6 +134,8 @@ test("organization board aggregate renders legacy pagination and input behavior"
 
   const nextLink = pagination.locator(".page-num.ikon a").last();
   await expect(nextLink).toHaveText("Next page");
+  await expect(nextLink).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(nextLink).not.toHaveAttribute("data-status", /.+/u);
   const nextHref = await nextLink.getAttribute("href");
   expect(nextHref).toContain(`${basePath}/organizations/weblabs/boards`);
   expect(nextHref).toContain("filter=release");
@@ -157,6 +159,10 @@ test("organization board aggregate renders legacy pagination and input behavior"
   await input.press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
   await expect(input).toHaveValue("3");
+  const prevLink = pagination.locator(".page-num.ikon a").first();
+  await expect(prevLink).toHaveText("Previous page");
+  await expect(prevLink).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(prevLink).not.toHaveAttribute("data-status", /.+/u);
   await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
   await expect(pagination.locator(".page-num.ikon").last()).toHaveText("Next page");
 });

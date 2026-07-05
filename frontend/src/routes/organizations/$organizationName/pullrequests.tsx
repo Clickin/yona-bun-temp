@@ -317,6 +317,11 @@ function OrganizationPullRequestPagination({
         <li className="page-num ikon">
           {safeCurrentPage > 1 ? (
             <Link
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               params={{ organizationName }}
               search={{ filter: search.filter, pageNum: safeCurrentPage - 1 }}
               to={route}
@@ -351,6 +356,11 @@ function OrganizationPullRequestPagination({
         <li className="page-num ikon">
           {safeCurrentPage < totalPages ? (
             <Link
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               params={{ organizationName }}
               search={{ filter: search.filter, pageNum: safeCurrentPage + 1 }}
               to={route}
@@ -382,6 +392,7 @@ function OrganizationPullRequestItem({
   pullRequest: PullRequestListItem;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const projectParams = {
     ownerName: pullRequest.ownerName,
     projectName: pullRequest.projectName,
@@ -398,6 +409,18 @@ function OrganizationPullRequestItem({
   );
   const pullRequestRowAttrs = { href: pullRequestRowHref } satisfies LegacyListItemHrefAttrs;
   const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
+  const applyTitlePrefixFilter = (prefix: string) => {
+    const categoryPath = category === "closed" ? "closedPullrequests" : "pullrequests";
+    router.history.push(
+      prefixBasePath(
+        basePath,
+        `/organizations/${organizationName}/${categoryPath}?${new URLSearchParams({
+          filter: prefix,
+          pageNum: "1",
+        }).toString()}`,
+      ),
+    );
+  };
 
   return (
     <li className="post-item title" {...pullRequestRowAttrs}>
@@ -415,20 +438,14 @@ function OrganizationPullRequestItem({
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
           {titleParts.prefixes.map((prefix) => (
-            <Link
-              activeProps={{ className: undefined, "data-status": undefined }}
+            <button
               className="title-prefix"
               key={prefix}
-              params={{ organizationName }}
-              search={{ filter: prefix, pageNum: 1 }}
-              to={
-                category === "closed"
-                  ? "/organizations/$organizationName/closedPullrequests"
-                  : "/organizations/$organizationName/pullrequests"
-              }
+              onClick={() => applyTitlePrefixFilter(prefix)}
+              type="button"
             >
               {prefix}
-            </Link>
+            </button>
           ))}
           <Link
             params={pullRequestParams}
