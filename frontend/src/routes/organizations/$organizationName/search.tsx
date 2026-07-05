@@ -3,13 +3,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import { isSearchType, organizationSearchQueryOptions, type SearchType } from "../../../api/search";
-import { LegacyI18nProvider } from "../../../i18n";
+import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import {
   DefaultSearchErrorBody,
   emptySearchResult,
+  isDefaultForbiddenError,
+  isDefaultInternalServerError,
   isRequestTextTooLargeError,
   LegacySearchBody,
   RequestTextTooLargeErrorBody,
@@ -81,10 +83,6 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       scope: "organization",
     });
 
-  if (isRequestTextTooLargeError(searchQuery.error)) {
-    return <RequestTextTooLargeErrorBody />;
-  }
-
   if (search.routeInvalid) {
     return (
       <DefaultSearchErrorBody
@@ -92,6 +90,20 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         messageKey="error.badrequest"
         runtimeConfig={runtimeConfig}
         ybtnClassName="ybtn ybtn-info"
+      />
+    );
+  }
+
+  if (isRequestTextTooLargeError(searchQuery.error)) {
+    return <RequestTextTooLargeErrorBody />;
+  }
+
+  if (isDefaultInternalServerError(searchQuery.error)) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.internalServerError"
+        runtimeConfig={runtimeConfig}
       />
     );
   }
@@ -104,6 +116,25 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     typeof organizationQuery.data.logoUrl === "string" && organizationQuery.data.logoUrl.length > 0
       ? organizationQuery.data.logoUrl
       : "/assets/images/organization_default_logo.png";
+
+  if (isDefaultForbiddenError(searchQuery.error)) {
+    return (
+      <>
+        <OrganizationHeader
+          basePath={runtimeConfig.basePath}
+          logoUrl={logoUrl}
+          organizationName={organizationName}
+        />
+        <OrganizationMenu
+          basePath={runtimeConfig.basePath}
+          organizationName={organizationName}
+          viewerCanUpdate={Boolean(organizationQuery.data.viewerCanUpdate)}
+        />
+        <OrganizationSearchErrorBody messageKey="error.forbidden" />
+      </>
+    );
+  }
+
   return (
     <>
       <OrganizationHeader
@@ -123,5 +154,20 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         searchPath={`/organizations/${organizationName}/search`}
       />
     </>
+  );
+}
+
+function OrganizationSearchErrorBody({ messageKey }: { messageKey: string }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t(messageKey)}</p>
+        </div>
+      </div>
+    </div>
   );
 }

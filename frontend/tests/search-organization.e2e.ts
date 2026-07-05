@@ -61,6 +61,7 @@ test("organization search without required query renders legacy badrequest_defau
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const expectedHomeHref = basePath === "/" ? "/" : basePath.replace(/\/$/u, "");
   const searchApi = await mockOrganizationSearch(page);
 
   await page.goto(`${basePath}/organizations/weblabs/search`);
@@ -68,10 +69,71 @@ test("organization search without required query renders legacy badrequest_defau
   await expect(page.locator(".error-wrap p")).toHaveText(
     "The request cannot be fulfilled due to bad syntax",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute(
+    "href",
+    expectedHomeHref,
+  );
+  expect(await screenRootClassNames(page)).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".site-breadcrumb-outer")).toHaveCount(0);
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
+});
+
+test("organization search forbidden keeps the legacy organization shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const searchApi = await mockOrganizationSearch(page, { searchStatus: 403 });
+
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=blocked&searchType=project`);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
+  await expect(page.locator(".error-wrap .ybtn")).toHaveCount(0);
+  await expect(page.locator(".site-breadcrumb-outer")).toHaveCount(0);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  expect(await screenRootClassNames(page)).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "project-header-outer",
+    "project-menu-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
+  await expect.poll(() => searchApi.count).toBeGreaterThanOrEqual(1);
+});
+
+test("organization search internal server error keeps the legacy default error shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const expectedHomeHref = basePath === "/" ? "/" : basePath.replace(/\/$/u, "");
+  const searchApi = await mockOrganizationSearch(page, { searchStatus: 500 });
+
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=boom&searchType=project`);
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
+    "href",
+    expectedHomeHref,
+  );
+  await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".site-breadcrumb-outer")).toHaveCount(0);
+  await expect(page.locator("#searchInnerForm")).toHaveCount(0);
+  expect(await screenRootClassNames(page)).toEqual([
+    "unsupported hidden",
+    "gnb-outer",
+    "page-wrap-outer",
+    "page-footer-outer",
+  ]);
+  await expect.poll(() => searchApi.count).toBeGreaterThanOrEqual(1);
 });
 
 test("organization search preserves whitespace-only keyword and still calls scoped API", async ({
@@ -168,7 +230,12 @@ test("organization issue search pagination keeps legacy pageNum through SPA navi
   );
 });
 
-async function mockOrganizationSearch(page: Page) {
+async function mockOrganizationSearch(
+  page: Page,
+  options: {
+    searchStatus?: 403 | 500;
+  } = {},
+) {
   const apiCalls = { count: 0, pageNums: [] as number[] };
 
   await page.route("**/api/v1/session", async (route) => {
@@ -204,6 +271,20 @@ async function mockOrganizationSearch(page: Page) {
   });
   await page.route("**/api/v1/organizations/weblabs/search?**", async (route) => {
     apiCalls.count += 1;
+    if (options.searchStatus) {
+      await route.fulfill({
+        contentType: "application/json",
+        status: options.searchStatus,
+        body: JSON.stringify({
+          error: options.searchStatus === 403 ? "forbidden" : "internalServerError",
+          message:
+            options.searchStatus === 403
+              ? "You are not authorized"
+              : "Server error occurred; service is not available",
+        }),
+      });
+      return;
+    }
     const url = new URL(route.request().url());
     const keyword = url.searchParams.get("keyword") ?? "missing";
     const searchType = url.searchParams.get("searchType") ?? "project";
@@ -260,6 +341,14 @@ async function mockOrganizationSearch(page: Page) {
   });
 
   return apiCalls;
+}
+
+async function screenRootClassNames(page: Page) {
+  return page
+    .locator(
+      ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+    )
+    .evaluateAll((roots) => roots.map((root) => root.className));
 }
 
 async function canonicalizeScreenRoots(page: Page) {
