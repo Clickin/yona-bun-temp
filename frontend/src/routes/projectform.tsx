@@ -1,6 +1,8 @@
+import type { ComponentPropsWithoutRef } from "react";
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import {
   createProjectRest,
   projectCreateFormOptionsQueryOptions,
@@ -95,6 +97,15 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
+  const cancelLinkProps = useLinkProps({
+    className: "ybtn",
+    href: runtimeConfig.basePath,
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(runtimeConfig.basePath);
+    },
+    to: "/",
+  });
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -440,9 +451,9 @@ function ProjectCreateScreen({
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   {t("project.create")}
                 </button>
-                <Link to="/" className="ybtn">
+                <LegacyHrefAnchor {...cancelLinkProps} legacyHref={runtimeConfig.basePath}>
                   {t("button.cancel")}
-                </Link>
+                </LegacyHrefAnchor>
               </div>
             </form>
           </div>
@@ -450,6 +461,19 @@ function ProjectCreateScreen({
       </div>
     </SiteLayoutShell>
   );
+}
+
+function LegacyHrefAnchor({
+  children,
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", {
+    ...props,
+    href: legacyHref,
+    children,
+  });
 }
 
 function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {

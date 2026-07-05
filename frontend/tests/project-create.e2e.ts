@@ -141,7 +141,7 @@ const EXPECTED_PROJECT_CREATE = `
         </div>
         <div class="actions mt20">
           <button class="ybtn ybtn-success">Create a project</button>
-          <a href="__BASE_PATH__/" class="ybtn">Cancel</a>
+          <a href="__BASE_PATH__" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -165,6 +165,7 @@ test("project create form matches legacy project/create.scala.html DOM", async (
   await expect(page.locator("#newProjectForm")).toBeVisible();
   await expect(page.locator("#project-owner")).toHaveValue("admin");
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+  await expect(page.locator(".actions.mt20 .ybtn").last()).toHaveAttribute("href", basePath);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_CREATE.replaceAll("__BASE_PATH__", basePath)),
@@ -349,7 +350,45 @@ test("project create import link keeps legacy href and navigates through the SPA
   expect(documentRequests).toEqual([]);
 });
 
-test("project create route source keeps form internal navigation out of raw anchors", () => {
+test("project create cancel link keeps legacy bare-base href and navigates through the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCreate(page);
+
+  await page.goto(`${basePath}/projectform`);
+  const cancelLink = page.locator(".actions.mt20 .ybtn").last();
+
+  await expect(cancelLink).toHaveAttribute("href", basePath);
+
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+  await page.evaluate(() => {
+    (
+      window as Window & { __projectCreateCancelSpaMarker?: string }
+    ).__projectCreateCancelSpaMarker = "kept";
+  });
+
+  await cancelLink.click({ noWaitAfter: true });
+
+  await expect(page).toHaveURL(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __projectCreateCancelSpaMarker?: string })
+            .__projectCreateCancelSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(documentRequests).toEqual([]);
+});
+
+test("project create route source keeps cancel navigation on a local link-props legacy-href adapter", () => {
   const routeSource = readFileSync(
     fileURLToPath(new URL("../src/routes/projectform.tsx", import.meta.url)),
     "utf8",
@@ -357,10 +396,13 @@ test("project create route source keeps form internal navigation out of raw anch
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
 
   expect(routeSource).toContain(
-    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
+    'import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('to="/_import"');
-  expect(routeSource).toContain('to="/" className="ybtn"');
+  expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
+  expect(routeSource).toContain("legacyHref={runtimeConfig.basePath}");
+  expect(routeSource).toContain("router.history.push(runtimeConfig.basePath);");
+  expect(routeSource).not.toContain('<Link to="/" className="ybtn">');
   expect(
     rawAnchorBlocks.filter((block) => /(?:_import|prefixBasePath\([^)]*"\/")/u.test(block)),
   ).toEqual([]);
