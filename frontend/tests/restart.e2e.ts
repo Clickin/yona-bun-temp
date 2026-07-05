@@ -52,7 +52,7 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_RESTART_SCREEN.replace("__BASE_PATH__", `${basePath}/`),
+    EXPECTED_RESTART_SCREEN.replace("__BASE_PATH__", basePath),
   );
 
   expect(actual).toEqual(expected);
@@ -91,7 +91,7 @@ test("restart failed secret state adds the legacy manual update notice", async (
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_FAILED_SECRET_RESTART_SCREEN.replace("__BASE_PATH__", `${basePath}/`),
+    EXPECTED_FAILED_SECRET_RESTART_SCREEN.replace("__BASE_PATH__", basePath),
   );
 
   expect(actual).toEqual(expected);
@@ -102,7 +102,7 @@ test("restart logo uses TanStack navigation for the internal home href", async (
   await page.goto(`${basePath}/restart`);
 
   const logo = page.locator(".secret-wrap .logo");
-  await expect(logo).toHaveAttribute("href", `${basePath}/`);
+  await expect(logo).toHaveAttribute("href", basePath);
 
   await page.evaluate(() => {
     (window as Window & { __restartLogoSpaMarker?: string }).__restartLogoSpaMarker = "kept";
@@ -111,7 +111,7 @@ test("restart logo uses TanStack navigation for the internal home href", async (
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname), { timeout: 5_000 })
-    .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`));
+    .toBe(basePath);
 
   await expect
     .poll(() =>
@@ -122,15 +122,19 @@ test("restart logo uses TanStack navigation for the internal home href", async (
     .toBe("kept");
 });
 
-test("restart route source keeps internal home navigation out of raw anchors", async () => {
+test("restart route source keeps TanStack-owned home navigation with the legacy bare base href", async () => {
   const source = await readFile(new URL("../src/routes/restart.tsx", import.meta.url), "utf8");
 
-  expect(source).toContain('import { Link, createFileRoute } from "@tanstack/react-router";');
+  expect(source).toContain(
+    'import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";',
+  );
   expect(source).toContain("hasFailedToUpdateSecret");
-  expect(source).toContain('<Link to="/" className="logo">');
-  expect(source).not.toMatch(/<a\s+[^>]*href=\{[^}]*prefixBasePath\([^}]*,\s*["']\/["'][^}]*\}/);
+  expect(source).toContain("const logoLinkProps = useLinkProps({");
+  expect(source).toContain("router.history.push(basePath);");
+  expect(source).toContain("<LegacyHrefAnchor {...logoLinkProps} legacyHref={basePath}>");
+  expect(source).toContain('return reactJsx("a", {');
   expect(source).not.toMatch(
-    /dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
+    /<a\s+|dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
   );
 });
 
@@ -344,8 +348,4 @@ async function canonicalizeHtml(page: Page, html: string) {
     },
     { markup: html },
   );
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

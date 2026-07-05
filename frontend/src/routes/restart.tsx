@@ -1,4 +1,6 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import type { ComponentPropsWithoutRef } from "react";
+import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 
@@ -18,15 +20,28 @@ function RestartRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <RestartScreen siteName={runtimeConfig.siteName ?? "Yona"} />
+        <RestartScreen
+          basePath={runtimeConfig.basePath}
+          siteName={runtimeConfig.siteName ?? "Yona"}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function RestartScreen({ siteName }: { siteName: string }) {
+function RestartScreen({ basePath, siteName }: { basePath: string; siteName: string }) {
   const { hasFailedToUpdateSecret } = Route.useSearch();
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const logoLinkProps = useLinkProps({
+    className: "logo",
+    href: basePath,
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(basePath);
+    },
+    to: "/",
+  });
 
   return (
     <>
@@ -34,9 +49,9 @@ function RestartScreen({ siteName }: { siteName: string }) {
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <Link to="/" className="logo">
+              <LegacyHrefAnchor {...logoLinkProps} legacyHref={basePath}>
                 <span>{siteName}</span>
-              </Link>
+              </LegacyHrefAnchor>
 
               <h3>{t("app.restart.welcome")}</h3>
               <p className="secret-box txt-center">
@@ -56,4 +71,17 @@ function RestartScreen({ siteName }: { siteName: string }) {
       </footer>
     </>
   );
+}
+
+function LegacyHrefAnchor({
+  children,
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", {
+    ...props,
+    href: legacyHref,
+    children,
+  });
 }
