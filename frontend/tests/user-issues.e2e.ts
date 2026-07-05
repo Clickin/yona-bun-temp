@@ -171,6 +171,25 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
 
   await page.goto(`${basePath}/user/issues`);
   await expect(page.locator(".post-list-wrap.my-issues .post-item")).toHaveCount(2);
+  const topTabAnchors = page.locator(".page-wrap > .nav-tabs a");
+  await expect(topTabAnchors).toHaveText(["Notification", "My Issues", "My Files"]);
+  await expect(topTabAnchors.nth(0)).toHaveAttribute("href", `${basePath}/notifications`);
+  await expect(topTabAnchors.nth(1)).toHaveAttribute("href", `${basePath}/user/issues`);
+  await expect(topTabAnchors.nth(2)).toHaveAttribute("href", `${basePath}/user/files`);
+  await expect(page.locator(".page-wrap > .nav-tabs > li.active")).toHaveText("My Issues");
+  expect(
+    await topTabAnchors.evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        ariaCurrent: anchor.getAttribute("aria-current"),
+        className: anchor.getAttribute("class"),
+        dataStatus: anchor.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+  ]);
   const commentVotePair = page.locator("#issue-item-42 .title-cell > .item-count-groups");
   await expect(commentVotePair).toHaveClass("item-count-groups");
   await expect(commentVotePair).not.toHaveClass(/(^|\s)infos-item(\s|$)/);

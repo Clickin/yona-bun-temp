@@ -14,7 +14,7 @@ const EXPECTED_DATA_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -261,6 +261,11 @@ async function expectSiteAdminSidebar(page: Page, basePath: string) {
       `${basePath}/sites/update`,
       `${basePath}/sites/diagnostic`,
     ]);
+  await expect(links).toHaveClass(["", "", "", "", "", "", "", ""]);
+  await expect(page.locator(".site-setting-nav a[class]")).toHaveCount(0);
+  await expect(page.locator(".site-setting-nav a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".site-setting-nav a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".site-setting-nav li")).toHaveClass(["", "", "", "", "", "", "", ""]);
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(0);
 }
 

@@ -529,21 +529,43 @@ function MySeriesMenuTabs({
 }) {
   const { t } = useLegacyMessages();
   const defaultLoginPagePath = "user/issues";
+  const legacyTabActiveOptions = {
+    exact: true,
+    explicitUndefined: true,
+    includeSearch: true,
+  };
+  const legacyTabActiveProps = {
+    "aria-current": undefined,
+    className: undefined,
+    "data-status": undefined,
+  };
 
   return (
     <ul className="nav nav-tabs">
       <li>
-        <Link activeProps={{ className: undefined }} to="/notifications">
+        <Link
+          activeOptions={legacyTabActiveOptions}
+          activeProps={legacyTabActiveProps}
+          to="/notifications"
+        >
           {t("notification")}
         </Link>
       </li>
       <li className="active">
-        <Link activeProps={{ className: undefined }} to="/user/issues">
+        <Link
+          activeOptions={legacyTabActiveOptions}
+          activeProps={legacyTabActiveProps}
+          to="/user/issues"
+        >
           {t("issue.myIssue")}
         </Link>
       </li>
       <li>
-        <Link activeProps={{ className: undefined }} to="/user/files">
+        <Link
+          activeOptions={legacyTabActiveOptions}
+          activeProps={legacyTabActiveProps}
+          to="/user/files"
+        >
           {t("user.files")}
         </Link>
       </li>

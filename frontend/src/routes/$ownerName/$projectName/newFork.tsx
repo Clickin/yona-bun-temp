@@ -23,6 +23,18 @@ type ForkCloneProgress = {
   targetProjectName: string;
 };
 
+const legacyProjectShellLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+const legacyProjectShellLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/newFork")({
   component: ProjectForkRoute,
 });
@@ -243,7 +255,8 @@ function ProjectForkBody({
                             <Link
                               to={projectPath(forkOwnerName, forkProjectName)}
                               className="vmiddle primary-txt"
-                              activeProps={{ className: undefined }}
+                              activeOptions={legacyProjectShellLinkActiveOptions}
+                              activeProps={legacyProjectShellLinkActiveProps}
                             >
                               {`${forkOwnerName} / ${forkProjectName}`}
                             </Link>
@@ -344,7 +357,8 @@ function ProjectForkBody({
                   <Link
                     to={pullRequestsPath(ownerName, projectName)}
                     className="ybtn"
-                    activeProps={{ className: undefined }}
+                    activeOptions={legacyProjectShellLinkActiveOptions}
+                    activeProps={legacyProjectShellLinkActiveProps}
                   >
                     {t("button.cancel")}
                   </Link>
@@ -427,7 +441,11 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
           <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
-                <Link to={userPath(ownerName)} activeProps={{ className: undefined }}>
+                <Link
+                  to={userPath(ownerName)}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
+                >
                   {ownerName}
                 </Link>
               </span>
@@ -435,7 +453,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
               <span className="project-name">
                 <Link
                   to={projectPath(ownerName, projectName)}
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                 >
                   {projectName}
                 </Link>
@@ -481,7 +500,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                 <Link
                   to={projectPath(originalOwnerName, originalProjectName)}
                   className="project-origin-name"
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                 >
                   {originalOwnerName} / {originalProjectName}
                 </Link>
@@ -563,7 +583,8 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
               <li className="">
                 <Link
                   to={projectSubPath(ownerName, projectName, "setting")}
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">
@@ -593,7 +614,11 @@ function ProjectMenuItem({
 }) {
   return (
     <li className={className}>
-      <Link to={to} activeProps={{ className: undefined }}>
+      <Link
+        to={to}
+        activeOptions={legacyProjectShellLinkActiveOptions}
+        activeProps={legacyProjectShellLinkActiveProps}
+      >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
       </Link>

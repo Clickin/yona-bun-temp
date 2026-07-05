@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const PROJECT_FORK_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/newFork.tsx";
@@ -11,7 +11,7 @@ const EXPECTED_PROJECT_FORK_FORM = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__ROOT_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -39,6 +39,7 @@ const EXPECTED_PROJECT_FORK_EXISTING_BODY = `
 
 test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const rootPath = basePath.endsWith("/") ? basePath : `${basePath}/`;
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/newFork`);
@@ -49,7 +50,13 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   );
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath).replaceAll(
+        "__ROOT_PATH__",
+        rootPath,
+      ),
+    ),
   );
 });
 
@@ -117,6 +124,59 @@ test("project fork route-local links preserve legacy hrefs and navigate in the S
       ),
     )
     .toBe("fork-link");
+});
+
+test("project fork shell anchors keep legacy active state on owning list items", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdminWithExistingFork(page);
+
+  await page.goto(`${basePath}/admin/sample/newFork/devs`);
+
+  const breadcrumbOwnerLink = page.locator(".project-breadcrumb .project-author a");
+  await expect(breadcrumbOwnerLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(breadcrumbOwnerLink).toHaveText("admin");
+  await expectNoTanStackActiveMarkers(breadcrumbOwnerLink);
+
+  const breadcrumbProjectLink = page.locator(".project-breadcrumb .project-name a");
+  await expect(breadcrumbProjectLink).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(breadcrumbProjectLink).toHaveText("sample");
+  await expectNoTanStackActiveMarkers(breadcrumbProjectLink);
+
+  const pullRequestMenuItem = page.locator(".project-menu-gruop > li", {
+    has: page.locator('a[href$="/admin/sample/pullRequests"]'),
+  });
+  await expect(pullRequestMenuItem).toHaveClass("active");
+  const pullRequestMenuLink = pullRequestMenuItem.locator("a");
+  await expect(pullRequestMenuLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests`,
+  );
+  await expect(pullRequestMenuLink.locator(".menu-name")).toHaveText("Pull request");
+  await expect(pullRequestMenuLink).not.toHaveAttribute("class", /active/u);
+  await expectNoTanStackActiveMarkers(pullRequestMenuLink);
+
+  const projectAdminItem = page.locator(".project-setting .project-menu-nav > li");
+  await expect(projectAdminItem).toHaveClass("");
+  const projectAdminLink = projectAdminItem.locator("a");
+  await expect(projectAdminLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(projectAdminLink.locator(".menu-name")).toHaveText("Project configuration");
+  await expectNoTanStackActiveMarkers(projectAdminLink);
+
+  const existingForkLink = page.locator("#helpMessage a.vmiddle.primary-txt", {
+    hasText: "devs / sample",
+  });
+  await expect(existingForkLink).toHaveAttribute("href", `${basePath}/devs/sample`);
+  await expect(existingForkLink).toHaveClass("vmiddle primary-txt");
+  await expect(existingForkLink).toHaveText("devs / sample");
+  await expectNoTanStackActiveMarkers(existingForkLink);
+
+  const cancelLink = page.locator(".content-wrap.frm-wrap a.ybtn", { hasText: "Cancel" });
+  await expect(cancelLink).toHaveAttribute("href", `${basePath}/admin/sample/pullRequests`);
+  await expect(cancelLink).toHaveClass("ybtn");
+  await expect(cancelLink).toHaveText("Cancel");
+  await expectNoTanStackActiveMarkers(cancelLink);
 });
 
 test("project fork route has no raw route-local internal anchors", async () => {
@@ -266,6 +326,11 @@ test("project fork header favorite star has no route-local native listener", asy
   );
   await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
+
+async function expectNoTanStackActiveMarkers(locator: Locator) {
+  await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.+/u);
+}
 
 async function installFavoriteSpanNativeListenerAudit(page: Page) {
   await page.addInitScript(() => {
