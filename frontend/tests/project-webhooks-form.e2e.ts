@@ -237,6 +237,21 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
+test("project webhooks settings tab follows legacy enrolled user badge", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [], {
+    project: {
+      enrolledUsers: [{ loginId: "alice" }, { loginId: "bob" }],
+      enrollmentRequestCount: 99,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const memberTab = page.locator("#subMenuProjectMember a");
+  await expect(memberTab).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  await expect(memberTab.locator(".num-badge")).toHaveText("2");
+});
+
 test("project webhooks JSON type forces git push checkbox like legacy script", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
