@@ -21,6 +21,7 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_EDIT_FORM_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator("#editor-contents-content-body")).toHaveValue("Release scope");
@@ -206,6 +207,10 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).toContain('t("milestone.error.content")');
   expect(routeSource).toContain('t("milestone.error.duedateFormat")');
   expect(routeSource).toContain('event.key === "Enter"');
+  expect(routeSource).toContain("tabIndex={1}");
+  expect(routeSource).toContain("tabIndex={2}");
+  expect(routeSource).not.toContain('setAttribute("tabindex"');
+  expect(routeSource).not.toContain("tabIndexValue");
   expect(routeSource).not.toContain('t("validation.required")');
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("addEventListener");

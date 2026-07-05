@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy milestone/edit.scala.html requires positive tab order on title/content controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
@@ -146,13 +147,13 @@ function ProjectMilestoneEditFormBody({
                   <dd>
                     <LegacyTabIndexInput
                       focusRequest={titleFocusRequest}
-                      tabIndexValue="1"
                       type="text"
                       id="title"
                       name="title"
                       defaultValue={stringField(milestone.title, "")}
                       className="zen-mode text title "
                       maxLength={250}
+                      tabIndex={1}
                       placeholder={t("title")}
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
@@ -257,13 +258,9 @@ function ProjectMilestoneEditFormBody({
 
 function LegacyTabIndexInput({
   focusRequest = 0,
-  tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
   useEffect(() => {
     if (focusRequest > 0) {
       inputRef.current?.focus();
@@ -282,9 +279,6 @@ function MilestoneMarkdownEditor({
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const contentsRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    contentsRef.current?.setAttribute("tabindex", "2");
-  }, []);
   useEffect(() => {
     if (focusRequest > 0) {
       contentsRef.current?.focus();
@@ -354,6 +348,7 @@ function MilestoneMarkdownEditor({
               data-editor-mode="content-body"
               id="editor-contents-content-body"
               defaultValue={contents}
+              tabIndex={2}
               {...{ markdown: "true" }}
             ></textarea>
           </div>

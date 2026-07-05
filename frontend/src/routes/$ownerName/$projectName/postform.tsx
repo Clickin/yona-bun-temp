@@ -1,12 +1,7 @@
+/* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html requires positive tab order on title/body/save/cancel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ButtonHTMLAttributes,
-  type InputHTMLAttributes,
-} from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import {
   createProjectPostRest,
   readProjectPostFormOptionsQueryOptions,
@@ -176,7 +171,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               <dd>
                 <LegacyTabIndexInput
                   focusRequest={titleFocusRequest}
-                  tabIndexValue="1"
+                  tabIndex={1}
                   type="text"
                   id="title"
                   autoComplete="off"
@@ -207,7 +202,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                       {branch}: /{path}{" "}
                       {search.edit ? null : (
                         <LegacyTabIndexInput
-                          tabIndexValue="2"
+                          tabIndex={2}
                           type="text"
                           name="new-file-name"
                           className="new-file-name"
@@ -251,9 +246,9 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             </div>
 
             <div className="actions">
-              <LegacyTabIndexButton tabIndexValue="3" className="ybtn ybtn-success">
+              <button className="ybtn ybtn-success" tabIndex={3}>
                 {t("button.save")}
-              </LegacyTabIndexButton>
+              </button>
               <HistoryBackLink onCancel={() => router.history.back()}>
                 {t("button.cancel")}
               </HistoryBackLink>
@@ -267,13 +262,9 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
 
 function LegacyTabIndexInput({
   focusRequest = 0,
-  tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
   useEffect(() => {
     if (focusRequest > 0) {
       inputRef.current?.focus();
@@ -282,20 +273,8 @@ function LegacyTabIndexInput({
   return <input ref={inputRef} {...props} />;
 }
 
-function LegacyTabIndexButton({
-  tabIndexValue,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { tabIndexValue: string }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    buttonRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
-  return <button ref={buttonRef} {...props}></button>;
-}
-
 function HistoryBackLink({ children, onCancel }: { children: string; onCancel: () => void }) {
   return (
-    // oxlint-disable-next-line jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html sets tabindex="4" on Cancel.
     <button type="button" className="ybtn" tabIndex={4} onClick={onCancel}>
       {children}
     </button>
@@ -306,9 +285,6 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    bodyRef.current?.setAttribute("tabindex", "3");
-  }, []);
   useEffect(() => {
     if (focusRequest > 0) {
       bodyRef.current?.focus();
@@ -374,6 +350,7 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-body-body"
+              tabIndex={3}
               defaultValue={value}
               {...{ markdown: "true" }}
             ></textarea>

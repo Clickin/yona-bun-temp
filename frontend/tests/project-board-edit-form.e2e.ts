@@ -47,6 +47,12 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("classList");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("style.display");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("setAttribute('tabindex'");
+  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={1}");
+  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={2}");
+  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={3}");
+  expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={4}");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(EDITFORM_ROUTE_SOURCE).toContain("router.history.back()");
 
@@ -61,6 +67,13 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
+  await expect(page.locator("form.nm .actions .ybtn-info")).toHaveAttribute("tabindex", "3");
+  await expect(page.locator(".actions button.ybtn", { hasText: "Cancel" })).toHaveAttribute(
+    "tabindex",
+    "4",
+  );
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);

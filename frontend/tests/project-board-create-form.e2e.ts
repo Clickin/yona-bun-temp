@@ -36,6 +36,7 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("classList");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("style.display");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(POSTFORM_ROUTE_SOURCE).toContain("router.history.back()");
 
@@ -46,6 +47,7 @@ test("project board create form matches legacy board/create.scala.html core form
   await page.goto(`${basePath}/admin/sample/postform`);
   await expect(page.locator("form.nm")).toBeVisible();
   await expect(page.locator("#title")).toBeFocused();
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
   await page.locator("#title").press("Enter");
   await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
@@ -107,6 +109,7 @@ test("project board create form matches legacy board/create.scala.html core form
   });
 
   await expect(page.locator('.actions a[href^="javascript:"]')).toHaveCount(0);
+  await expect(page.locator("form.nm .actions .ybtn-success")).toHaveAttribute("tabindex", "3");
   const cancelButton = page.locator(".actions button.ybtn", { hasText: "Cancel" });
   await expect(cancelButton).toHaveAttribute("type", "button");
   await expect(cancelButton).toHaveAttribute("class", "ybtn");

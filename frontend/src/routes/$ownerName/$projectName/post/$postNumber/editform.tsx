@@ -1,12 +1,7 @@
+/* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets positive tabindex values on the edit form controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ButtonHTMLAttributes,
-  type InputHTMLAttributes,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import {
   readProjectPostQueryOptions,
@@ -57,6 +52,12 @@ function ProjectBoardEditFormBody({
   const canSendNotification = !post.readme && post.authorLoginId !== "";
   const [titleFocusRequest, setTitleFocusRequest] = useState(1);
   const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
+  const titleRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (titleFocusRequest > 0) {
+      titleRef.current?.focus();
+    }
+  }, [titleFocusRequest]);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -111,9 +112,9 @@ function ProjectBoardEditFormBody({
                 <label htmlFor="title">{t("title")}</label>
               </dt>
               <dd>
-                <LegacyTabIndexInput
-                  focusRequest={titleFocusRequest}
-                  tabIndexValue="1"
+                <input
+                  ref={titleRef}
+                  tabIndex={1}
                   type="text"
                   id="title"
                   name="title"
@@ -170,9 +171,9 @@ function ProjectBoardEditFormBody({
                 </span>
               ) : null}
               {canUpdate ? (
-                <LegacyTabIndexButton tabIndexValue="3" className="ybtn ybtn-info">
+                <button tabIndex={3} className="ybtn ybtn-info">
                   {t("button.save")}
-                </LegacyTabIndexButton>
+                </button>
               ) : null}
               <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
             </div>
@@ -183,39 +184,10 @@ function ProjectBoardEditFormBody({
   );
 }
 
-function LegacyTabIndexInput({
-  focusRequest = 0,
-  tabIndexValue,
-  ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
-  useEffect(() => {
-    if (focusRequest > 0) {
-      inputRef.current?.focus();
-    }
-  }, [focusRequest]);
-  return <input ref={inputRef} {...props} />;
-}
-
-function LegacyTabIndexButton({
-  tabIndexValue,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { tabIndexValue: string }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    buttonRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
-  return <button ref={buttonRef} {...props}></button>;
-}
-
 function HistoryBackLink({ children }: { children: string }) {
   const router = useRouter();
 
   return (
-    // oxlint-disable-next-line jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets tabindex="4" on Cancel.
     <button type="button" className="ybtn" tabIndex={4} onClick={() => router.history.back()}>
       {children}
     </button>
@@ -226,9 +198,6 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    bodyRef.current?.setAttribute("tabindex", "2");
-  }, []);
   useEffect(() => {
     if (focusRequest > 0) {
       bodyRef.current?.focus();
@@ -290,6 +259,7 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
           <div className="textarea-box">
             <textarea
               ref={bodyRef}
+              tabIndex={2}
               name="body"
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
