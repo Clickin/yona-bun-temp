@@ -303,7 +303,7 @@ function CommitMessage({
             className="commitMsg moreBtn"
             onClick={() => setIsExpanded((current) => !current)}
           >
-            <span>...</span>
+            <span>…</span>
           </button>
           <pre className={`commitMsg desc${isExpanded ? "" : " hidden"}`}>
             {lines.slice(1).join("\n")}
