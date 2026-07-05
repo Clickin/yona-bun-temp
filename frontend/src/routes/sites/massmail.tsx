@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { listProjectsQueryOptions } from "../../api/org-project";
 import { readSiteMailListRest, siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -116,9 +117,36 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
   const [mailingType, setMailingType] = useState<"all" | "projects">("all");
   const [selectedProjects, setSelectedProjects] = useState<SelectedProject[]>([]);
+  const [projectQuery, setProjectQuery] = useState("");
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const projectInputRef = useRef<HTMLInputElement>(null);
   const nextProjectId = useRef(1);
   const queryClient = useQueryClient();
+  const projectsQuery = useQuery({
+    ...listProjectsQueryOptions(runtimeConfig),
+    enabled: mailingType === "projects" && projectQuery.trim() !== "",
+  });
+  const projectSuggestions = useMemo(() => {
+    const normalizedQuery = projectQuery.trim().toLowerCase();
+    if (normalizedQuery === "") {
+      return [];
+    }
+
+    const suggestions: string[] = [];
+    for (const project of projectsQuery.data?.projects ?? projectsQuery.data?.items ?? []) {
+      const ownerName = typeof project.ownerName === "string" ? project.ownerName : "";
+      const projectName = typeof project.projectName === "string" ? project.projectName : "";
+      const fullProjectName =
+        ownerName && projectName ? `${ownerName}/${projectName}` : projectName;
+      if (fullProjectName.toLowerCase().split(normalizedQuery).length > 1) {
+        suggestions.push(fullProjectName);
+      }
+      if (suggestions.length === 10) {
+        break;
+      }
+    }
+    return suggestions;
+  }, [projectQuery, projectsQuery.data]);
   const mailListMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -136,12 +164,13 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     },
   });
 
-  function addProject() {
-    const projectName = projectInputRef.current?.value ?? "";
+  function addProject(projectName = projectInputRef.current?.value ?? "") {
     setSelectedProjects((current) => [
       ...current,
       { id: nextProjectId.current++, name: projectName },
     ]);
+    setProjectQuery("");
+    setActiveSuggestionIndex(0);
     if (projectInputRef.current) {
       projectInputRef.current.value = "";
     }
@@ -150,6 +179,16 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   function selectMailingType(nextMailingType: "all" | "projects") {
     setMailingType(nextMailingType);
     setSelectedProjects([]);
+    setProjectQuery("");
+    setActiveSuggestionIndex(0);
+    if (projectInputRef.current) {
+      projectInputRef.current.value = "";
+    }
+  }
+
+  function selectProjectSuggestion(projectName: string) {
+    addProject(projectName);
+    projectInputRef.current?.focus();
   }
 
   return (
@@ -196,10 +235,27 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             autoComplete="off"
             placeholder={t("project.name")}
             ref={projectInputRef}
+            onChange={(event) => {
+              setProjectQuery(event.currentTarget.value);
+              setActiveSuggestionIndex(0);
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
-                addProject();
+                addProject(projectSuggestions[activeSuggestionIndex] ?? projectQuery);
+                return;
+              }
+              if (event.key === "ArrowDown" && projectSuggestions.length > 0) {
+                event.preventDefault();
+                setActiveSuggestionIndex((current) => (current + 1) % projectSuggestions.length);
+                return;
+              }
+              if (event.key === "ArrowUp" && projectSuggestions.length > 0) {
+                event.preventDefault();
+                setActiveSuggestionIndex(
+                  (current) =>
+                    (current - 1 + projectSuggestions.length) % projectSuggestions.length,
+                );
               }
             }}
           />
@@ -215,6 +271,21 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           >
             <strong>{t("button.add")}</strong>
           </button>
+          {projectSuggestions.length > 0 ? (
+            <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+              {projectSuggestions.map((projectName, index) => (
+                <li
+                  className={index === activeSuggestionIndex ? "active" : undefined}
+                  data-value={projectName}
+                  key={projectName}
+                >
+                  <button type="button" onMouseDown={() => selectProjectSuggestion(projectName)}>
+                    {projectName}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
         <div id="selected-projects">
           {selectedProjects.map((project) => (

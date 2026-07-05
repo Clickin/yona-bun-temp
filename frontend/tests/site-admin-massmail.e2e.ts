@@ -214,6 +214,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockMailList(page, { delayMs: 1000 });
+  await mockProjectTypeahead(page);
   await captureWindowOpen(page);
 
   await page.goto(`${basePath}/sites/massmail`);
@@ -221,9 +222,20 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await page.locator("#mailtoPrj").click();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
   await expect(page.locator("#project-list-wrap")).toBeVisible();
-  await page.locator("#input-project").fill("admin/projectYobi");
-  await page.locator("#select-project").click();
+  await page.locator("#input-project").fill("o");
+  await expect(page.locator(".typeahead.dropdown-menu li")).toHaveText([
+    "admin/projectYobi",
+    "yona/docs",
+  ]);
+  await expect(page.locator(".typeahead.dropdown-menu li.active")).toHaveText("admin/projectYobi");
+  await expect(page.locator(".typeahead.dropdown-menu a[href]")).toHaveCount(0);
+  await expect(page.locator(".typeahead.dropdown-menu button").first()).toHaveAttribute(
+    "type",
+    "button",
+  );
+  await page.keyboard.press("Enter");
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  await expect(page.locator(".typeahead.dropdown-menu")).toHaveCount(0);
   await expect(page.locator("#selected-projects .label a[href]")).toHaveCount(0);
   await expect(page.locator("#selected-projects .label .selected-project-remove")).toHaveAttribute(
     "type",
@@ -460,6 +472,24 @@ async function mockMailOptions(page: Page) {
         notConfiguredItems: ["smtp.host", "smtp.port"],
         sender: "noreply@example.com",
         sent: false,
+      }),
+    });
+  });
+}
+
+async function mockProjectTypeahead(page: Page) {
+  await page.route("**/api/v1/projects", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          { ownerName: "admin", projectName: "projectYobi" },
+          { ownerName: "yona", projectName: "docs" },
+        ],
+        projects: [
+          { ownerName: "admin", projectName: "projectYobi" },
+          { ownerName: "yona", projectName: "docs" },
+        ],
       }),
     });
   });
