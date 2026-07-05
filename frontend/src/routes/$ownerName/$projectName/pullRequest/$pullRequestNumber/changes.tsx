@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import type { MouseEvent } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -162,6 +163,7 @@ function ProjectPullRequestChangesBody({
     : undefined;
   const hasReviewCards = changes.threads.length > 0;
   const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
+  const [deleteRequestUri, setDeleteRequestUri] = useState<string | null>(null);
 
   return (
     <>
@@ -239,6 +241,7 @@ function ProjectPullRequestChangesBody({
                       <NonRangedThread
                         currentUser={currentUser}
                         key={thread.id}
+                        onCommentDelete={setDeleteRequestUri}
                         pullRequest={pullRequest}
                         runtimeConfig={runtimeConfig}
                         thread={thread}
@@ -266,18 +269,20 @@ function ProjectPullRequestChangesBody({
           </div>
         </div>
       </div>
-      <CommentDeleteModal />
+      <CommentDeleteModal onClose={() => setDeleteRequestUri(null)} requestUri={deleteRequestUri} />
     </>
   );
 }
 
 function NonRangedThread({
   currentUser,
+  onCommentDelete,
   pullRequest,
   runtimeConfig,
   thread,
 }: {
   currentUser: CurrentUserSummary;
+  onCommentDelete: (requestUri: string) => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   thread: ReviewThread;
@@ -298,6 +303,7 @@ function NonRangedThread({
           <NonRangedThreadComment
             comment={comment}
             key={comment.id}
+            onCommentDelete={onCommentDelete}
             runtimeConfig={runtimeConfig}
           />
         ))}
@@ -361,12 +367,18 @@ function NonRangedThread({
 
 function NonRangedThreadComment({
   comment,
+  onCommentDelete,
   runtimeConfig,
 }: {
   comment: ReviewComment;
+  onCommentDelete: (requestUri: string) => void;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const deleteUri = prefixBasePath(
+    runtimeConfig.basePath,
+    `/comments/review_comment/${comment.id}`,
+  );
   return (
     <li id={`comment-${comment.id}`} className="comment">
       <div className="comment-avatar">
@@ -420,10 +432,12 @@ function NonRangedThreadComment({
               <button
                 className="btn-transparent pull-right close"
                 data-toggle="comment-delete"
-                data-request-uri={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `/comments/review_comment/${comment.id}`,
-                )}
+                data-request-uri={deleteUri}
+                onClick={(event: MouseEvent<HTMLButtonElement>) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCommentDelete(deleteUri);
+                }}
                 title={t("common.comment.delete")}
               >
                 <i className="yobicon-trash"></i>
@@ -443,28 +457,48 @@ function NonRangedThreadComment({
   );
 }
 
-function CommentDeleteModal() {
+function CommentDeleteModal({
+  onClose,
+  requestUri,
+}: {
+  onClose: () => void;
+  requestUri: string | null;
+}) {
   const { t } = useLegacyMessages();
+  const isOpen = requestUri !== null;
   return (
-    <div id="comment-delete-modal" className="modal hide fade">
-      <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal">
-          ×
-        </button>
-        <h3>{t("common.comment.delete")}</h3>
+    <>
+      <div
+        id="comment-delete-modal"
+        className={isOpen ? "modal fade in" : "modal hide fade"}
+        style={isOpen ? { display: "block" } : undefined}
+      >
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal" onClick={onClose}>
+            ×
+          </button>
+          <h3>{t("common.comment.delete")}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{t("common.comment.delete.confirm")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            id="comment-delete-confirm"
+            type="button"
+            className="ybtn ybtn-danger"
+            data-request-uri={requestUri ?? undefined}
+            data-request-method={isOpen ? "delete" : undefined}
+          >
+            {t("button.yes")}
+          </button>
+          <button type="button" className="ybtn" data-dismiss="modal" onClick={onClose}>
+            {t("button.no")}
+          </button>
+        </div>
       </div>
-      <div className="modal-body">
-        <p>{t("common.comment.delete.confirm")}</p>
-      </div>
-      <div className="modal-footer">
-        <button id="comment-delete-confirm" type="button" className="ybtn ybtn-danger">
-          {t("button.yes")}
-        </button>
-        <button type="button" className="ybtn" data-dismiss="modal">
-          {t("button.no")}
-        </button>
-      </div>
-    </div>
+      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 

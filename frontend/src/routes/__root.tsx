@@ -184,30 +184,6 @@ function RootResetShell() {
         return;
       }
 
-      const commentDelete = target?.closest<HTMLElement>('[data-toggle="comment-delete"]');
-      if (commentDelete) {
-        const modal = document.querySelector<HTMLElement>("#comment-delete-modal");
-        const confirm = document.querySelector<HTMLElement>("#comment-delete-confirm");
-        const requestUri = commentDelete.dataset.requestUri;
-        if (modal && confirm && requestUri) {
-          confirm.dataset.requestUri = requestUri;
-          confirm.dataset.requestMethod = "delete";
-          modal.classList.remove("hide");
-          modal.classList.add("in");
-          modal.style.display = "block";
-          modal.setAttribute("aria-hidden", "false");
-          if (!document.querySelector(".modal-backdrop")) {
-            const backdrop = document.createElement("div");
-            backdrop.className = modal.classList.contains("fade")
-              ? "modal-backdrop fade in"
-              : "modal-backdrop in";
-            document.body.append(backdrop);
-          }
-        }
-        event.preventDefault();
-        return;
-      }
-
       const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
       if (dismissAlert) {
         dismissAlert.closest<HTMLElement>(".alert")?.remove();

@@ -103,6 +103,12 @@ test("root shell does not own route comment edit toggles", async () => {
   expect(ROOT_ROUTE_SOURCE).not.toContain("comment-body-");
 });
 
+test("root shell does not own route comment delete toggles", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="comment-delete"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("comment-delete-modal");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("comment-delete-confirm");
+});
+
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 

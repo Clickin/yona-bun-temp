@@ -217,6 +217,30 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("project commit detail comment delete modal is route-owned React state", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setCommentDeleteRequestUri");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("openCommentDeleteModal(deleteUri)");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-toggle={isNonRanged ? undefined : "comment-delete"}',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('id="comment-delete-modal"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'className={isOpen ? "modal fade in" : "modal hide fade"}',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('className="modal-backdrop fade in"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-request-method={isOpen ? "delete" : undefined}',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("style.display");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("setAttribute");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("removeAttribute");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+});
+
 test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
   page,
 }) => {

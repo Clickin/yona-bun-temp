@@ -122,6 +122,7 @@ function ProjectCommitDetailScreen({
     }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
 
   if (!projectQuery.data || !detailQuery.data || !sessionQuery.data) {
     return null;
@@ -146,8 +147,12 @@ function ProjectCommitDetailScreen({
         detail={detailQuery.data}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
+        openCommentDeleteModal={setCommentDeleteRequestUri}
       />
-      <CommentDeleteModal />
+      <CommentDeleteModal
+        onClose={() => setCommentDeleteRequestUri(null)}
+        requestUri={commentDeleteRequestUri}
+      />
     </>
   );
 }
@@ -157,9 +162,11 @@ function ProjectCommitDetailBody({
   detail,
   project,
   runtimeConfig,
+  openCommentDeleteModal,
 }: {
   currentUser: CurrentUserSummary;
   detail: CodeCommitDetailResponse;
+  openCommentDeleteModal: (requestUri: string) => void;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -315,6 +322,7 @@ function ProjectCommitDetailBody({
                     key={file.path}
                     currentUser={currentUser}
                     deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
+                    openCommentDeleteModal={openCommentDeleteModal}
                     ownerName={ownerName}
                     projectName={projectName}
                     runtimeConfig={runtimeConfig}
@@ -344,6 +352,7 @@ function ProjectCommitDetailBody({
                       isNonRanged
                       currentUser={currentUser}
                       deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
+                      openCommentDeleteModal={openCommentDeleteModal}
                       key={thread.id}
                       ownerName={ownerName}
                       projectName={projectName}
@@ -597,6 +606,7 @@ function FileDiffView({
   currentUser,
   deleteComment,
   file,
+  openCommentDeleteModal,
   ownerName,
   projectName,
   runtimeConfig,
@@ -610,6 +620,7 @@ function FileDiffView({
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
   file: CommitFileDiff;
+  openCommentDeleteModal: (requestUri: string) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -708,6 +719,7 @@ function FileDiffView({
                         commitId={commitB}
                         currentUser={currentUser}
                         deleteComment={deleteComment}
+                        openCommentDeleteModal={openCommentDeleteModal}
                         key={diffLineKey(line)}
                         line={line}
                         ownerName={ownerName}
@@ -799,6 +811,7 @@ function FragmentWithInlineComments({
   currentUser,
   deleteComment,
   line,
+  openCommentDeleteModal,
   ownerName,
   projectName,
   runtimeConfig,
@@ -811,6 +824,7 @@ function FragmentWithInlineComments({
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
   line: Extract<ParsedDiffLine, { kind: "line" }>;
+  openCommentDeleteModal: (requestUri: string) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -827,6 +841,7 @@ function FragmentWithInlineComments({
           commitId={commitId}
           currentUser={currentUser}
           deleteComment={deleteComment}
+          openCommentDeleteModal={openCommentDeleteModal}
           ownerName={ownerName}
           projectName={projectName}
           runtimeConfig={runtimeConfig}
@@ -890,6 +905,7 @@ function InlineCommentRow({
   commitId,
   currentUser,
   deleteComment,
+  openCommentDeleteModal,
   ownerName,
   projectName,
   runtimeConfig,
@@ -901,6 +917,7 @@ function InlineCommentRow({
   commitId: string;
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
+  openCommentDeleteModal: (requestUri: string) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -916,6 +933,7 @@ function InlineCommentRow({
           <CodeCommentThreadView
             currentUser={currentUser}
             deleteComment={deleteComment}
+            openCommentDeleteModal={openCommentDeleteModal}
             key={thread.id}
             ownerName={ownerName}
             projectName={projectName}
@@ -939,6 +957,7 @@ function CodeCommentThreadView({
   currentUser,
   deleteComment,
   isNonRanged = false,
+  openCommentDeleteModal,
   ownerName,
   projectName,
   runtimeConfig,
@@ -950,6 +969,7 @@ function CodeCommentThreadView({
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
   isNonRanged?: boolean;
+  openCommentDeleteModal: (requestUri: string) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -1017,6 +1037,7 @@ function CodeCommentThreadView({
       <ul className="comments">
         {thread.comments.map((comment) => {
           const isEditing = editingCommentIds.has(comment.id);
+          const deleteUri = prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`);
 
           return (
             <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
@@ -1092,13 +1113,14 @@ function CodeCommentThreadView({
                         className="btn-transparent pull-right close"
                         data-request-method={isNonRanged ? "delete" : undefined}
                         data-toggle={isNonRanged ? undefined : "comment-delete"}
-                        data-request-uri={prefixBasePath(
-                          runtimeConfig.basePath,
-                          `/comments/${comment.id}`,
-                        )}
-                        onClick={() => {
+                        data-request-uri={deleteUri}
+                        onClick={(event) => {
                           if (isNonRanged) {
                             deleteComment(comment.id);
+                          } else {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openCommentDeleteModal(deleteUri);
                           }
                         }}
                         title={isNonRanged ? undefined : t("common.comment.delete")}
@@ -1623,28 +1645,48 @@ function ReviewCards({
   );
 }
 
-function CommentDeleteModal() {
+function CommentDeleteModal({
+  onClose,
+  requestUri,
+}: {
+  onClose: () => void;
+  requestUri: string | null;
+}) {
   const { t } = useLegacyMessages();
+  const isOpen = requestUri !== null;
   return (
-    <div id="comment-delete-modal" className="modal hide fade">
-      <div className="modal-header">
-        <button type="button" className="close" data-dismiss="modal">
-          ×
-        </button>
-        <h3>{t("common.comment.delete")}</h3>
+    <>
+      <div
+        id="comment-delete-modal"
+        className={isOpen ? "modal fade in" : "modal hide fade"}
+        style={isOpen ? { display: "block" } : undefined}
+      >
+        <div className="modal-header">
+          <button type="button" className="close" data-dismiss="modal" onClick={onClose}>
+            ×
+          </button>
+          <h3>{t("common.comment.delete")}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{t("common.comment.delete.confirm")}</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            id="comment-delete-confirm"
+            type="button"
+            className="ybtn ybtn-danger"
+            data-request-method={isOpen ? "delete" : undefined}
+            data-request-uri={requestUri ?? undefined}
+          >
+            {t("button.yes")}
+          </button>
+          <button type="button" className="ybtn" data-dismiss="modal" onClick={onClose}>
+            {t("button.no")}
+          </button>
+        </div>
       </div>
-      <div className="modal-body">
-        <p>{t("common.comment.delete.confirm")}</p>
-      </div>
-      <div className="modal-footer">
-        <button id="comment-delete-confirm" type="button" className="ybtn ybtn-danger">
-          {t("button.yes")}
-        </button>
-        <button type="button" className="ybtn" data-dismiss="modal">
-          {t("button.no")}
-        </button>
-      </div>
-    </div>
+      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 

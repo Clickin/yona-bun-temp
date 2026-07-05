@@ -498,6 +498,22 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
     "data-request-uri",
     `${basePath}/comments/review_comment/801`,
   );
+  await page.evaluate(() => {
+    (
+      window as Window & typeof globalThis & { __commentDeleteBubbles?: number }
+    ).__commentDeleteBubbles = 0;
+    document.addEventListener(
+      "click",
+      () => {
+        (
+          window as Window & typeof globalThis & { __commentDeleteBubbles?: number }
+        ).__commentDeleteBubbles =
+          ((window as Window & typeof globalThis & { __commentDeleteBubbles?: number })
+            .__commentDeleteBubbles ?? 0) + 1;
+      },
+      { once: true },
+    );
+  });
   await deleteButton.click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass("modal fade in");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
@@ -510,6 +526,13 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
     "data-request-method",
     "delete",
   );
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __commentDeleteBubbles?: number })
+          .__commentDeleteBubbles,
+    ),
+  ).toBe(0);
 });
 
 test("project pull request changes owns comment hash links through router", async ({ page }) => {
@@ -625,8 +648,13 @@ test("project pull request changes route source uses TanStack Links for navigati
   );
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("document.");
+  expect(routeSource).not.toContain("querySelector");
+  expect(routeSource).not.toContain("classList");
+  expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("innerHTML");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toMatch(/<a\s/u);
   expect(routeSource).toContain("<Link");
@@ -654,6 +682,9 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain("activeOptions={legacyHashLinkActiveOptions}");
   expect(routeSource).toContain('type="button"');
   expect(routeSource).toContain("data-request-method");
+  expect(routeSource).toContain("const [deleteRequestUri, setDeleteRequestUri] = useState");
+  expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(routeSource).toContain("event.stopPropagation()");
 });
 
 test("project pull request changes renders review cards for non-ranged-only threads", async ({
