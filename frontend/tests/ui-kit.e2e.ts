@@ -6,10 +6,6 @@ const LEGACY_UIKIT_TEMPLATE = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/help/UIKit.scala.html", import.meta.url)),
   "utf8",
 );
-const LEGACY_MARKDOWN_HELP_TEMPLATE = readFileSync(
-  fileURLToPath(new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url)),
-  "utf8",
-);
 const LEGACY_SELECT2_TEMPLATE = readFileSync(
   fileURLToPath(
     new URL("../../yona-original/app/views/common/select2.scala.html", import.meta.url),
@@ -25,9 +21,6 @@ const ROOT_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 const EXPECTED_UIKIT_BODY = extractBetween(LEGACY_UIKIT_TEMPLATE, "<body>", "</body>");
-const LEGACY_MARKDOWN_HELP_BODY = LEGACY_MARKDOWN_HELP_TEMPLATE.split(
-  '<script type="text/javascript">',
-)[0].replace('@Messages("title.markdown.help")', "Markdown Help");
 const SELECT2_TEMPLATE_IDS = [
   "tplSelect2FormatUser",
   "tplSelect2FormatMilestone",
@@ -116,6 +109,9 @@ test("root shell does not own route tab, search scope, or notify bridge state", 
   expect(ROOT_ROUTE_SOURCE).not.toContain("scanNotifySources");
   expect(ROOT_ROUTE_SOURCE).not.toContain("yobi:notify-scan");
   expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="yobi-notify"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="markdown-help"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain(".markdown-help-nav");
+  expect(ROOT_ROUTE_SOURCE).not.toContain(".markdown-help-wrap");
   expect(ROOT_ROUTE_SOURCE).toContain("<RootToastContext.Provider value={setRootToast}>");
   expect(ROOT_ROUTE_SOURCE).toContain('<div id="yobiToasts" className="yobiToasts">');
 });
@@ -206,92 +202,6 @@ test("standalone UI kit root shell skips yobi dropdown mutation for data-activat
   await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
   await expect(dropdown.locator("li.active")).toHaveCount(0);
   await expect(dropdown.locator('input[type="hidden"][name="branch"]')).toHaveCount(0);
-});
-
-test("standalone UI kit root shell applies legacy markdown help tab selection", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const expectedTargets = [
-    "markdownHeaders",
-    "markdownStyling",
-    "markdownLinks",
-    "markdownLists",
-    "markdownTaskList",
-    "markdownImages",
-    "markdownBlockquotes",
-    "markdownCodes",
-    "markdownTables",
-    "markdownShortLinks",
-  ];
-
-  await page.goto(`${basePath}/_UIKit`);
-  await page.locator(".page-wrap-outer").evaluate((container, markup) => {
-    container.insertAdjacentHTML("beforeend", markup);
-  }, LEGACY_MARKDOWN_HELP_BODY);
-
-  expect(await normalizedOuterHtml(page, ".markdown-help")).toEqual(
-    await normalizedFragmentOuterHtml(page, LEGACY_MARKDOWN_HELP_BODY, ".markdown-help"),
-  );
-  await expect(page.locator(".markdown-help-nav .help-nav")).toHaveCount(expectedTargets.length);
-  expect(
-    await page.locator(".markdown-help-nav .help-nav").evaluateAll((items) =>
-      items.map((item) => ({
-        target: item.getAttribute("data-target"),
-        toggle: item.getAttribute("data-toggle"),
-      })),
-    ),
-  ).toEqual(expectedTargets.map((target) => ({ target, toggle: "markdown-help" })));
-
-  await page.locator('[data-toggle="markdown-help"][data-target="markdownLinks"]').click();
-  await expect(page.locator('.markdown-help-nav [data-target="markdownLinks"]')).toHaveClass(
-    /active/,
-  );
-  await expect(page.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
-  await expect(page.locator(".markdown-help-wrap > .markdownHeaders")).not.toHaveClass(/active/);
-
-  await page.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
-  await expect(page.locator('.markdown-help-nav [data-target="markdownLinks"]')).not.toHaveClass(
-    /active/,
-  );
-  await expect(page.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(/active/);
-  await expect(page.locator('.markdown-help-nav [data-target="markdownLists"]')).toHaveClass(
-    /active/,
-  );
-  await expect(page.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
-  expect(await markdownHelpMetrics(page)).toEqual({
-    activeBorderBottomWidth: "0px",
-    activeBorderTopWidth: "0px",
-    activePadding: "10px",
-    activeTextColor: "rgb(51, 51, 51)",
-    firstHelpNavColor: "rgb(158, 158, 158)",
-    firstHelpNavCursor: "pointer",
-    firstHelpNavLineHeight: "20px",
-    firstHelpNavPadding: "5px 7px",
-    inactiveHeight: "0px",
-    inactiveOverflow: "hidden",
-    labelBackground: "rgb(199, 201, 201)",
-    labelTextShadow: "none",
-    markdownHelpMarginTop: "5px",
-    navBackground: "rgb(247, 247, 247)",
-    navBorderBottomWidth: "0px",
-    navBorderTopWidth: "1px",
-    navListStyleType: "none",
-    syntaxBorderTopWidth: "1px",
-    syntaxPadding: "10px",
-    theadBackground: "rgb(247, 247, 247)",
-    theadBorderTopWidth: "1px",
-    theadCellFontWeight: "700",
-    theadCellLineHeight: "30px",
-    wrapBackground: "rgb(255, 255, 255)",
-    wrapListStyleType: "none",
-  });
-
-  await page.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
-  await expect(page.locator('.markdown-help-nav [data-target="markdownLists"]')).not.toHaveClass(
-    /active/,
-  );
-  await expect(page.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(/active/);
 });
 
 test("standalone UI kit root shell mounts legacy anonymous login dialog", async ({ page }) => {
@@ -970,102 +880,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         .join("");
     },
     { markup: html },
-  );
-}
-
-async function normalizedOuterHtml(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => root.outerHTML);
-}
-
-async function markdownHelpMetrics(page: Page) {
-  return page.locator(".markdown-help").evaluate((root) => {
-    const nav = root.querySelector<HTMLElement>(".markdown-help-nav");
-    const firstHelpNav = root.querySelector<HTMLElement>(".markdown-help-nav .help-nav");
-    const activeHelpNav = root.querySelector<HTMLElement>(".markdown-help-nav .help-nav.active");
-    const label = root.querySelector<HTMLElement>(".markdown-help-nav .label");
-    const wrap = root.querySelector<HTMLElement>(".markdown-help-wrap");
-    const activeItem = root.querySelector<HTMLElement>(".markdown-help-wrap > .active");
-    const inactiveItem = root.querySelector<HTMLElement>(
-      ".markdown-help-wrap > .markdown-help-item:not(.active)",
-    );
-    const thead = activeItem?.querySelector<HTMLElement>(".thead");
-    const theadCell = thead?.querySelector<HTMLElement>("div");
-    const syntaxWrap = activeItem?.querySelector<HTMLElement>(".markdwon-syntax-wrap");
-    const syntax = activeItem?.querySelector<HTMLElement>(".markdwon-syntax");
-    const missing = Object.entries({
-      activeHelpNav,
-      activeItem,
-      firstHelpNav,
-      inactiveItem,
-      label,
-      nav,
-      syntax,
-      syntaxWrap,
-      thead,
-      theadCell,
-      wrap,
-    })
-      .filter(([, element]) => !element)
-      .map(([name]) => name);
-    if (missing.length > 0) {
-      throw new Error(`Expected markdown help metric targets are missing: ${missing.join(", ")}`);
-    }
-
-    const rootStyle = getComputedStyle(root);
-    const navStyle = getComputedStyle(nav!);
-    const firstHelpNavStyle = getComputedStyle(firstHelpNav!);
-    const activeHelpNavStyle = getComputedStyle(activeHelpNav!);
-    const labelStyle = getComputedStyle(label!);
-    const wrapStyle = getComputedStyle(wrap!);
-    const activeStyle = getComputedStyle(activeItem!);
-    const inactiveStyle = getComputedStyle(inactiveItem!);
-    const theadStyle = getComputedStyle(thead!);
-    const theadCellStyle = getComputedStyle(theadCell!);
-    const syntaxWrapStyle = getComputedStyle(syntaxWrap!);
-    const syntaxStyle = getComputedStyle(syntax!);
-
-    return {
-      activeBorderBottomWidth: activeStyle.borderBottomWidth,
-      activeBorderTopWidth: activeStyle.borderTopWidth,
-      activePadding: activeStyle.padding,
-      activeTextColor: activeHelpNavStyle.color,
-      firstHelpNavColor: firstHelpNavStyle.color,
-      firstHelpNavCursor: firstHelpNavStyle.cursor,
-      firstHelpNavLineHeight: firstHelpNavStyle.lineHeight,
-      firstHelpNavPadding: firstHelpNavStyle.padding,
-      inactiveHeight: inactiveStyle.height,
-      inactiveOverflow: inactiveStyle.overflow,
-      labelBackground: labelStyle.backgroundColor,
-      labelTextShadow: labelStyle.textShadow,
-      markdownHelpMarginTop: rootStyle.marginTop,
-      navBackground: navStyle.backgroundColor,
-      navBorderBottomWidth: navStyle.borderBottomWidth,
-      navBorderTopWidth: navStyle.borderTopWidth,
-      navListStyleType: navStyle.listStyleType,
-      syntaxBorderTopWidth: syntaxWrapStyle.borderTopWidth,
-      syntaxPadding: syntaxStyle.padding,
-      theadBackground: theadStyle.backgroundColor,
-      theadBorderTopWidth: theadStyle.borderTopWidth,
-      theadCellFontWeight: theadCellStyle.fontWeight,
-      theadCellLineHeight: theadCellStyle.lineHeight,
-      wrapBackground: wrapStyle.backgroundColor,
-      wrapListStyleType: wrapStyle.listStyleType,
-    };
-  });
-}
-
-async function normalizedFragmentOuterHtml(page: Page, html: string, selector: string) {
-  return page.evaluate(
-    ({ markup, rootSelector }) => {
-      const template = document.createElement("template");
-      template.innerHTML = markup.trim();
-      const root = template.content.querySelector(rootSelector);
-      if (!root) {
-        throw new Error(`Expected legacy root is missing: ${rootSelector}`);
-      }
-      return root.outerHTML;
-    },
-    { markup: html, rootSelector: selector },
   );
 }
 

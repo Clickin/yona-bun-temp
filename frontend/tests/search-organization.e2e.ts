@@ -128,10 +128,21 @@ test("organization issue search pagination keeps legacy pageNum through SPA navi
   );
   const pagination = page.locator("#pagination.page-navigation-wrap");
   await expect(pagination).toBeVisible();
+  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
+  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  await expect(pagination.locator("span.off")).toHaveText("Previous page");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
+  await expect(pagination.locator(".page-num").nth(3)).toHaveText("3");
 
   const next = pagination.locator(".page-num.ikon a", { hasText: "Next" });
+  await expect(next.locator("span")).toHaveText("Next page");
+  await expect(next.locator(".btn-pg-next")).toHaveClass("ico btn-pg-next");
+  await expect(next).not.toHaveAttribute("class");
+  await expect(next).not.toHaveAttribute("title");
+  await expect(next).not.toHaveAttribute("aria-current");
+  await expect(next).not.toHaveAttribute("data-status");
   await expect(next).toHaveAttribute(
     "href",
     `${basePath}/organizations/weblabs/search?keyword=bug&pageNum=2&searchType=issue`,
@@ -143,6 +154,18 @@ test("organization issue search pagination keeps legacy pageNum through SPA navi
   );
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
   expect(searchApi.pageNums).toContain(2);
+
+  const prev = pagination.locator(".page-num.ikon a", { hasText: "Previous" });
+  await expect(prev.locator("span")).toHaveText("Previous page");
+  await expect(prev.locator(".btn-pg-prev")).toHaveClass("ico btn-pg-prev");
+  await expect(prev).not.toHaveAttribute("class");
+  await expect(prev).not.toHaveAttribute("title");
+  await expect(prev).not.toHaveAttribute("aria-current");
+  await expect(prev).not.toHaveAttribute("data-status");
+  await expect(prev).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/weblabs/search?keyword=bug&pageNum=1&searchType=issue`,
+  );
 });
 
 async function mockOrganizationSearch(page: Page) {

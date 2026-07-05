@@ -132,6 +132,36 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expectMarkdownHelpPreText(page, ".markdownLists", EXPECTED_MARKDOWN_LIST_SAMPLE);
   await expectMarkdownHelpPreText(page, ".markdownCodes", EXPECTED_MARKDOWN_CODE_SAMPLE);
   await expectMarkdownHelpPreText(page, ".markdownTables", EXPECTED_MARKDOWN_TABLE_SAMPLE);
+  const markdownHelp = page.locator(".markdown-help");
+  await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
+  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLinks"]').click();
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
+  ).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownHeaders")).not.toHaveClass(
+    /active/,
+  );
+  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
+  ).not.toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(
+    /active/,
+  );
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
+  ).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toBeVisible();
+  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
+  ).not.toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
+    /active/,
+  );
   const uploader = page.locator("#upload.upload-wrap.content-footer");
   await expect(uploader).toHaveAttribute("data-resource-type", "ISSUE_POST");
   await expect(uploader.locator(".attach-wrap")).toBeVisible();
@@ -378,6 +408,10 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).not.toContain("tplAttachedFile");
   expect(source).not.toContain("tplDropFilesHere");
   expect(sharedMarkdownHelpSource).not.toMatch(/<a\b/u);
+  expect(sharedMarkdownHelpSource).not.toContain("document.");
+  expect(sharedMarkdownHelpSource).not.toContain("addEventListener");
+  expect(sharedMarkdownHelpSource).not.toContain("classList");
+  expect(sharedMarkdownHelpSource).not.toContain("style.display");
   expect(sharedMarkdownHelpSource).toContain('<Link to="http://demo.yobi.io/yobi/yobi/issue/2">');
 });
 

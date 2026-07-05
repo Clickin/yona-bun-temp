@@ -1,4 +1,6 @@
+/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy help/markdown.scala.html renders clickable help tabs as li[data-toggle="markdown-help"]. */
 import { Link } from "@tanstack/react-router";
+import { type MouseEvent, useState } from "react";
 
 const MARKDOWN_HEADER_SAMPLE = `
 # This is an H1
@@ -101,45 +103,106 @@ function MarkdownSampleOutput({ sample }: { sample: string }) {
 }
 
 export function LegacyMarkdownHelp() {
+  const [activeTarget, setActiveTarget] = useState<string | null>(null);
+
+  const activeClass = (target: string) => (activeTarget === target ? " active" : "");
+  const toggleActiveTarget = (event: MouseEvent<HTMLElement>) => {
+    const target = event.currentTarget.dataset.target;
+    if (!target) {
+      return;
+    }
+    setActiveTarget((current) => (current === target ? null : target));
+  };
+
   return (
     <div className="markdown-help">
       <ul className="markdown-help-nav">
         <li>
           <span className="label">Markdown help</span>
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownHeaders">
+        <li
+          className={`help-nav${activeClass("markdownHeaders")}`}
+          data-toggle="markdown-help"
+          data-target="markdownHeaders"
+          onClick={toggleActiveTarget}
+        >
           Header
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownStyling">
+        <li
+          className={`help-nav${activeClass("markdownStyling")}`}
+          data-toggle="markdown-help"
+          data-target="markdownStyling"
+          onClick={toggleActiveTarget}
+        >
           Text Style
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownLinks">
+        <li
+          className={`help-nav${activeClass("markdownLinks")}`}
+          data-toggle="markdown-help"
+          data-target="markdownLinks"
+          onClick={toggleActiveTarget}
+        >
           Link
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownLists">
+        <li
+          className={`help-nav${activeClass("markdownLists")}`}
+          data-toggle="markdown-help"
+          data-target="markdownLists"
+          onClick={toggleActiveTarget}
+        >
           List
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownTaskList">
+        <li
+          className={`help-nav${activeClass("markdownTaskList")}`}
+          data-toggle="markdown-help"
+          data-target="markdownTaskList"
+          onClick={toggleActiveTarget}
+        >
           Checklist
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownImages">
+        <li
+          className={`help-nav${activeClass("markdownImages")}`}
+          data-toggle="markdown-help"
+          data-target="markdownImages"
+          onClick={toggleActiveTarget}
+        >
           Image
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownBlockquotes">
+        <li
+          className={`help-nav${activeClass("markdownBlockquotes")}`}
+          data-toggle="markdown-help"
+          data-target="markdownBlockquotes"
+          onClick={toggleActiveTarget}
+        >
           Blockquote
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownCodes">
+        <li
+          className={`help-nav${activeClass("markdownCodes")}`}
+          data-toggle="markdown-help"
+          data-target="markdownCodes"
+          onClick={toggleActiveTarget}
+        >
           Code
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownTables">
+        <li
+          className={`help-nav${activeClass("markdownTables")}`}
+          data-toggle="markdown-help"
+          data-target="markdownTables"
+          onClick={toggleActiveTarget}
+        >
           Table
         </li>
-        <li className="help-nav" data-toggle="markdown-help" data-target="markdownShortLinks">
+        <li
+          className={`help-nav${activeClass("markdownShortLinks")}`}
+          data-toggle="markdown-help"
+          data-target="markdownShortLinks"
+          onClick={toggleActiveTarget}
+        >
           Short Link
         </li>
       </ul>
       <ul className="markdown-help-wrap">
-        <li className="markdown-help-item markdownHeaders">
+        <li className={`markdown-help-item markdownHeaders${activeClass("markdownHeaders")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -153,7 +216,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownStyling">
+        <li className={`markdown-help-item markdownStyling${activeClass("markdownStyling")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -167,7 +230,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownLinks">
+        <li className={`markdown-help-item markdownLinks${activeClass("markdownLinks")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -181,7 +244,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownLists">
+        <li className={`markdown-help-item markdownLists${activeClass("markdownLists")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -195,7 +258,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownTaskList">
+        <li className={`markdown-help-item markdownTaskList${activeClass("markdownTaskList")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -226,7 +289,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownImages">
+        <li className={`markdown-help-item markdownImages${activeClass("markdownImages")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -240,7 +303,9 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownBlockquotes">
+        <li
+          className={`markdown-help-item markdownBlockquotes${activeClass("markdownBlockquotes")}`}
+        >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -254,7 +319,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownCodes">
+        <li className={`markdown-help-item markdownCodes${activeClass("markdownCodes")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -268,7 +333,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownTables">
+        <li className={`markdown-help-item markdownTables${activeClass("markdownTables")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
@@ -282,7 +347,7 @@ export function LegacyMarkdownHelp() {
             </div>
           </div>
         </li>
-        <li className="markdown-help-item markdownShortLinks">
+        <li className={`markdown-help-item markdownShortLinks${activeClass("markdownShortLinks")}`}>
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
             <div className="span6">Markdown Output</div>
