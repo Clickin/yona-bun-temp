@@ -27,6 +27,15 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     `${basePath}/admin/sample/reviews?state=open&filter=comment&format=xls`,
   );
 
+  await page.goto(
+    `${basePath}/admin/sample/reviews?state=open&filter=comment&pageNum=3&orderBy=createdDate&orderDir=asc`,
+  );
+  await expect(page.locator('.pull-left a.ybtn.small[href$="format=xls"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/reviews?orderDir=asc&orderBy=createdDate&state=open&filter=comment&format=xls`,
+  );
+  await page.goto(`${basePath}/admin/sample/reviews?state=open&filter=comment`);
+
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,

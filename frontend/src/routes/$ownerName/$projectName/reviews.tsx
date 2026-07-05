@@ -150,7 +150,7 @@ function ProjectReviewsBody({
   const projectName = stringField(project.projectName);
   const baseRoute = `/${ownerName}/${projectName}/reviews`;
   const action = prefixBasePath(runtimeConfig.basePath, baseRoute);
-  const exportQuery = reviewsQuery(search, { format: "xls" });
+  const exportQuery = reviewsQuery(search, { format: "xls", pageNum: 1 });
   const currentUserId =
     numberField(project.viewerUserId) || numberField(project.currentUserId) || 1;
   const activeState = search.state || reviews.state || "open";
