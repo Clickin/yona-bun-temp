@@ -592,7 +592,7 @@ function MassUpdateShell({
                   }}
                 >
                   <span className="avatar-wrap smaller">
-                    <img src={user.avatarUrl} width="20" height="20" alt="" />
+                    <img src={normalizedAvatarUrl(user.avatarUrl)} width="20" height="20" alt="" />
                   </span>
                   <strong className="name">{user.label}</strong>
                   <span className="loginid">
@@ -1288,7 +1288,7 @@ function projectAssignableUserOptions(
   addUser(users, currentUser);
   for (const item of assignableUsers) {
     addUser(users, {
-      avatarUrl: stringField(item.avatarUrl, "/assets/images/default-avatar-32.png"),
+      avatarUrl: normalizedAvatarUrl(item.avatarUrl),
       id: stringField(item.userId, stringField(item.id)),
       label: stringField(item.displayName, stringField(item.userLabel, stringField(item.loginId))),
       loginId: stringField(item.loginId),
@@ -1296,13 +1296,13 @@ function projectAssignableUserOptions(
   }
   for (const issue of issues) {
     addUser(users, {
-      avatarUrl: stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+      avatarUrl: normalizedAvatarUrl(issue.assigneeAvatarUrl),
       id: stringField(issue.assigneeUserId),
       label: stringField(issue.assigneeLabel),
       loginId: stringField(issue.assigneeLoginId),
     });
     addUser(users, {
-      avatarUrl: stringField(issue.authorAvatarUrl, "/assets/images/default-avatar-32.png"),
+      avatarUrl: normalizedAvatarUrl(issue.authorAvatarUrl),
       id: stringField(issue.authorUserId),
       label: stringField(issue.authorLabel),
       loginId: stringField(issue.authorLoginId),
@@ -1323,6 +1323,11 @@ function addUser(
       loginId: user.loginId,
     });
   }
+}
+
+function normalizedAvatarUrl(value: unknown) {
+  const avatarUrl = stringField(value).trim();
+  return avatarUrl || "/assets/images/default-avatar-32.png";
 }
 
 function recordArray(value: unknown): Array<Record<string, unknown>> {

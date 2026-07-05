@@ -458,6 +458,49 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
   expect(deleteRequests).toEqual(["DELETE"]);
 });
 
+test("project milestone detail mass-update assignee avatar falls back for empty avatar URLs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleMessages: string[] = [];
+  page.on("console", (message) => {
+    consoleMessages.push(message.text());
+  });
+
+  await mockProjectMilestoneDetail(page, [], [], {
+    milestone: {
+      assignableUsers: [
+        {
+          avatarUrl: "/assets/images/admin-avatar.png",
+          displayName: "Site Admin",
+          loginId: "admin",
+          userId: 1,
+        },
+        {
+          avatarUrl: "",
+          displayName: "Dev Member",
+          loginId: "dev",
+          userId: 2,
+        },
+      ],
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestone/5?state=open`);
+  await page.check("#issue-41");
+  await page.click("#assignee > button");
+  await expect(page.locator('#assignee li[data-value="2"] img')).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
+  );
+  await expect(page.locator('#assignee li[data-value="2"] img[src=""]')).toHaveCount(0);
+  expect(
+    consoleMessages.filter((message) =>
+      message.includes('An empty string ("") was passed to the src attribute'),
+    ),
+  ).toEqual([]);
+});
+
 test("project milestone detail issue labels translate legacy href hash navigation to React buttons", async ({
   page,
 }) => {
@@ -651,7 +694,14 @@ async function mockProjectMilestoneDetail(
   page: Page,
   stateRequests: unknown[],
   deleteRequests: string[],
+  overrides?: {
+    milestone?: Record<string, unknown>;
+  },
 ) {
+  const milestone = {
+    ...milestoneFixture(),
+    ...(overrides?.milestone ?? {}),
+  };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -706,7 +756,7 @@ async function mockProjectMilestoneDetail(
     }
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ milestone: milestoneFixture() }),
+      body: JSON.stringify({ milestone }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/milestones/5/state", async (route) => {
@@ -715,7 +765,7 @@ async function mockProjectMilestoneDetail(
       contentType: "application/json",
       body: JSON.stringify({
         milestone: {
-          ...milestoneFixture(),
+          ...milestone,
           state: "closed",
         },
       }),
