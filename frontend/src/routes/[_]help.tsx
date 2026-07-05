@@ -1,7 +1,9 @@
 import * as React from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 const legacyAnswerLinkActiveOptions = {
@@ -14,6 +16,14 @@ const legacyAnswerLinkActiveProps = {
   "data-status": undefined,
 };
 
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
+
 export const Route = createFileRoute("/_help")({
   component: HelpTocRoute,
 });
@@ -25,17 +35,28 @@ function HelpTocRoute() {
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <HelpTocScreen />
+          <HelpTocScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function HelpTocScreen() {
+function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
   const appName = t("app.name");
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
+  const homeLinkProps = useLinkProps({
+    activeOptions: legacyAnswerLinkActiveOptions,
+    activeProps: legacyAnswerLinkActiveProps,
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
   const toggleQuestion = (index: number) => {
     setOpenQuestionIndexes((current) => {
       const next = new Set(current);
@@ -144,13 +165,9 @@ function HelpTocScreen() {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  <Link
-                    to="/"
-                    activeOptions={legacyAnswerLinkActiveOptions}
-                    activeProps={legacyAnswerLinkActiveProps}
-                  >
+                  <LegacyHrefAnchor {...homeLinkProps} legacyHref={homeHref}>
                     메인화면
-                  </Link>{" "}
+                  </LegacyHrefAnchor>{" "}
                   우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
                   있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
                   <Link

@@ -19,7 +19,7 @@ const EXPECTED_HELP_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -116,7 +116,7 @@ const EXPECTED_HELP_SCREEN = `
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer" style="width: 100%;">
-            <a href="__BASE_PATH__/">메인화면</a>
+            <a href="__BASE_PATH__">메인화면</a>
             우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다.
             자물쇠가 있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다.
             혹은 자신의 <a href="__BASE_PATH__/info">정보 페이지</a>에서도 확인하실수 있습니다.
@@ -191,7 +191,11 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\bcreateLink\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
-  expect(HELP_ROUTE_SOURCE).toContain('to="/"');
+  expect(HELP_ROUTE_SOURCE).toContain("useLinkProps");
+  expect(HELP_ROUTE_SOURCE).toContain('to: "/"');
+  expect(HELP_ROUTE_SOURCE).toContain('prefixBasePath(runtimeConfig.basePath, "/")');
+  expect(HELP_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
+  expect(HELP_ROUTE_SOURCE).toContain("legacyHref={homeHref}");
   expect(HELP_ROUTE_SOURCE).toContain('to="/info"');
   expect(HELP_ROUTE_SOURCE).not.toContain("href={infoHref}");
   expect(HELP_ROUTE_SOURCE).not.toContain('reloadDocument to="/info"');
@@ -227,7 +231,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       href: "https://github.com/doortts/yona#korean",
       text: "https://github.com/doortts/yona#korean",
     },
-    { href: `${basePath}/`, text: "메인화면" },
+    { href: `${basePath}`, text: "메인화면" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: "https://github.com/nforge/yobi/issues", text: "Yona 이슈트래커에 등록" },
@@ -244,7 +248,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      href: `${basePath}/`,
+      href: `${basePath}`,
       text: "메인화면",
     },
     {
@@ -341,6 +345,22 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
           .__helpFaqNativeListenerTypes,
     ),
   ).toEqual([]);
+
+  await questions.nth(2).click();
+  const homeLink = faqItems.nth(2).locator(".answer a", { hasText: "메인화면" });
+  await expect(homeLink).toHaveAttribute("href", basePath);
+  await page.evaluate(() => {
+    (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "home-link";
+  });
+  await homeLink.click();
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker,
+      ),
+    )
+    .toBe("home-link");
 });
 
 test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }) => {
