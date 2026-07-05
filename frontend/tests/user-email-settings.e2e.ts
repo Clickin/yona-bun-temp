@@ -108,27 +108,66 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     tableDisplay: "table",
   });
 
-  const tabLinks = page.locator(".page-wrap .nav.nav-tabs.mt20 > li > a");
+  const tabItems = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li");
+  const tabLinks = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li > a");
+  await expect(tabItems).toHaveCount(5);
+  expect(
+    await tabItems.evaluateAll((items) => items.map((item) => item.getAttribute("class"))),
+  ).toEqual([null, null, null, "active", null]);
   await expect(tabLinks).toHaveCount(5);
-  await expect(tabLinks).toHaveText([
-    "Edit profile",
-    "Change password",
-    "Notification settings",
-    "Email settings",
-    "User Token",
-  ]);
   expect(
-    await tabLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+    await tabLinks.evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+        href: link.getAttribute("href"),
+        text: link.textContent?.replace(/\s+/g, " ").trim(),
+      })),
+    ),
   ).toEqual([
-    `${basePath}/user/editform`,
-    `${basePath}/user/editform/password`,
-    `${basePath}/user/editform/notifications`,
-    `${basePath}/user/editform/emails`,
-    `${basePath}/user/editform/token`,
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/user/editform`,
+      text: "Edit profile",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/user/editform/password`,
+      text: "Change password",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/user/editform/notifications`,
+      text: "Notification settings",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/user/editform/emails`,
+      text: "Email settings",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/user/editform/token`,
+      text: "User Token",
+    },
   ]);
-  expect(
-    await tabLinks.evaluateAll((links) => links.map((link) => link.getAttribute("class"))),
-  ).toEqual([null, null, null, null, null]);
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li > a[aria-current]")).toHaveCount(
+    0,
+  );
+  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li > a[data-status]")).toHaveCount(
+    0,
+  );
   await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active")).toHaveCount(1);
   await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active > a")).toHaveText(
     "Email settings",
@@ -193,6 +232,9 @@ test("current-user email settings tab menu uses direct typed router links", () =
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("{...legacyHref}");
+  expect(source).toContain("const legacyEditTabLinkActiveProps = {");
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain('"data-status": undefined');
   expect(source).toContain("const requestHref = { href: requestUri };");
   expect(source).not.toContain("data-request-uri={requestUri}");
 });
