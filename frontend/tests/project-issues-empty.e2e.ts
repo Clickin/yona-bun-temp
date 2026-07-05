@@ -857,6 +857,18 @@ test("project issue row assignee avatar preserves legacy partial_list.scala.html
   await expect(assigneeAvatarLink).toHaveAttribute("title", "Assignee: Site Admin");
 });
 
+test("project issue row hides assignee avatar when legacy assigneeName is blank", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "blank-assignee-label");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await expect(page.locator("#issue-item-42")).toBeVisible();
+  await expect(page.locator("#issue-item-42 .avatar-wrap.assinee")).toHaveCount(0);
+  await expect(page.locator("#issue-item-42 .empty-avatar-wrap")).toHaveText("\u00a0");
+});
+
 test("project issue normal list hides other users' drafts like legacy partial_list.scala.html", async ({
   page,
 }) => {
@@ -2326,6 +2338,7 @@ async function mockProjectIssues(
   page: Page,
   state:
     | "anonymous"
+    | "blank-assignee-label"
     | "bulk"
     | "child-draft"
     | "children"
@@ -2582,10 +2595,21 @@ async function mockProjectIssues(
       contentType: "application/json",
       body: JSON.stringify(
         state === "populated" ||
+          state === "blank-assignee-label" ||
           state === "no-milestone-menu" ||
           state === "non-member" ||
           state === "project-wide-options"
-          ? populatedIssueResponse()
+          ? state === "blank-assignee-label"
+            ? {
+                ...populatedIssueResponse(),
+                items: [
+                  {
+                    ...populatedIssueResponse().items[0],
+                    assigneeLabel: "",
+                  },
+                ],
+              }
+            : populatedIssueResponse()
           : state === "normal-draft"
             ? {
                 ...populatedIssueResponse(),

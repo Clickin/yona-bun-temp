@@ -1461,6 +1461,7 @@ function ProjectIssueItem({
   const issueParams = { issueNumber, ownerName, projectName };
   const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const authorLoginId = stringField(issue.authorLoginId, "");
+  const assigneeLabel = stringField(issue.assigneeLabel, "");
   const assigneeLoginId = stringField(issue.assigneeLoginId, "");
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel, ""));
   const issueWeight = issue.weight ?? 0;
@@ -1762,7 +1763,7 @@ function ProjectIssueItem({
       </div>
       <div className="span3 hide-in-mobile">
         <div className="mt5 pull-right">
-          {assigneeLoginId ? (
+          {assigneeLoginId && assigneeLabel ? (
             <Link
               activeProps={{ className: undefined }}
               to="/$user"
@@ -1770,13 +1771,13 @@ function ProjectIssueItem({
               className="avatar-wrap assinee"
               data-toggle="tooltip"
               data-placement="top"
-              title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
+              title={`${t("issue.assignee")}: ${assigneeLabel}`}
             >
               <img
                 src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
                 width="32"
                 height="32"
-                alt={issue.assigneeLabel}
+                alt={assigneeLabel}
               />
             </Link>
           ) : (
