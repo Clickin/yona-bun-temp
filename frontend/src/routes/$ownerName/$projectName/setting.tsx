@@ -23,6 +23,9 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
+const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
+const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
+
 export const Route = createFileRoute("/$ownerName/$projectName/setting")({
   component: ProjectSettingRoute,
 });
@@ -166,7 +169,17 @@ function ProjectSettingBody({
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    mutation.mutate(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const nextProjectName = String(formData.get("name") ?? "");
+    if (!PROJECT_NAME_PATTERN.test(nextProjectName)) {
+      window.alert(t("project.name.alert"));
+      return;
+    }
+    if (RESERVED_PROJECT_NAMES.has(nextProjectName)) {
+      window.alert(t("project.name.reserved.alert"));
+      return;
+    }
+    mutation.mutate(formData);
   }
 
   function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
