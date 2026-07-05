@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
+const LEGACY_DEFAULT_AUTHOR_AVATAR_URL =
+  "https://www.gravatar.com/avatar/c160f8cc69a4f0bf2b0362752353d060?s=16&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png";
+
 const EXPECTED_POST_LIST_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -47,7 +50,7 @@ const EXPECTED_POST_LIST_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-toggle="tooltip" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" alt=""></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -99,7 +102,7 @@ const EXPECTED_POST_LIST_SCREEN = `
             </div>
             <div class="post-meta-wrap">
               <a href="__BASE_PATH__/alice" class="avatar-wrap">
-                <img src="https://www.gravatar.com/avatar/alice-default?s=16">
+                <img src="${LEGACY_DEFAULT_AUTHOR_AVATAR_URL}">
               </a>
               <a href="__BASE_PATH__/alice" class="post-meta-item">Alice</a>
               <span class="post-meta-item" title="2026-06-29 14:30">1 day ago</span>
@@ -359,6 +362,35 @@ test("site admin post list row links keep legacy hrefs and SPA navigation", asyn
   await expectSpaClick(page, ".post-meta-item", `${basePath}/alice`, "site-post-author");
 });
 
+test("site admin post list custom gravatar author avatar keeps legacy custom attributes", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockPosts(page, {
+    authorAvatarUrl: "https://www.gravatar.com/avatar/alice-custom?s=16&d=retro",
+    authorLabel: "Alice Custom",
+  });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/postList`);
+
+  const authorAvatar = page.locator(".post-meta-wrap > .avatar-wrap img");
+  await expect(authorAvatar).toHaveAttribute(
+    "src",
+    "https://www.gravatar.com/avatar/alice-custom?s=16&d=retro",
+  );
+  await expect(authorAvatar).toHaveAttribute("alt", "Alice Custom");
+  await expect(authorAvatar).toHaveAttribute("width", "16");
+  await expect(authorAvatar).toHaveAttribute("height", "16");
+});
+
 test("site admin post list route source keeps direct typed links", async () => {
   const source = await readFile("src/routes/sites/postList.tsx", "utf8");
 
@@ -414,8 +446,27 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockPosts(page: Page) {
-  await page.route("https://www.gravatar.com/avatar/alice-default?s=16", async (route) => {
+async function mockPosts(page: Page, postOverrides: Partial<SiteAdminPostFixture> = {}) {
+  const post = {
+    authorAvatarUrl: LEGACY_DEFAULT_AUTHOR_AVATAR_URL,
+    authorLabel: "Alice",
+    authorLoginId: "alice",
+    commentCount: 3,
+    createdLabel: "1 day ago",
+    createdTitle: "2026-06-29 14:30",
+    labels: [],
+    notice: false,
+    ownerName: "acme",
+    postNumber: "7",
+    projectLogoUrl: "/assets/images/default-project-logo.png",
+    projectName: "roadmap",
+    readme: false,
+    title: "Release checklist",
+    updatedLabel: "1 day ago",
+    ...postOverrides,
+  };
+
+  await page.route(post.authorAvatarUrl, async (route) => {
     await route.fulfill({
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
       contentType: "image/svg+xml",
@@ -431,31 +482,31 @@ async function mockPosts(page: Page) {
       body: JSON.stringify({
         page: pageNum,
         pageSize: 20,
-        posts: [
-          {
-            authorAvatarUrl: "https://www.gravatar.com/avatar/alice-default?s=16",
-            authorLabel: "Alice",
-            authorLoginId: "alice",
-            commentCount: 3,
-            createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 14:30",
-            labels: [],
-            notice: false,
-            ownerName: "acme",
-            postNumber: "7",
-            projectLogoUrl: "/assets/images/default-project-logo.png",
-            projectName: "roadmap",
-            readme: false,
-            title: "Release checklist",
-            updatedLabel: "1 day ago",
-          },
-        ],
+        posts: [post],
         total: 2,
         totalPages: 2,
       }),
     });
   });
 }
+
+type SiteAdminPostFixture = {
+  authorAvatarUrl: string;
+  authorLabel: string;
+  authorLoginId: string;
+  commentCount: number;
+  createdLabel: string;
+  createdTitle: string;
+  labels: Array<never>;
+  notice: boolean;
+  ownerName: string;
+  postNumber: string;
+  projectLogoUrl: string;
+  projectName: string;
+  readme: boolean;
+  title: string;
+  updatedLabel: string;
+};
 
 async function mockSiteUsers(page: Page) {
   await page.route("**/api/v1/site/users?*", async (route) => {
