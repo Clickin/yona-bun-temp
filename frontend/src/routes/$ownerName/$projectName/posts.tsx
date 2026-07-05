@@ -706,6 +706,7 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
             className="ybtn ybtn-info"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               setIsOpen(false);
             }}

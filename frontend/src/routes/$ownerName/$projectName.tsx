@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -55,6 +55,11 @@ function legacyQueryString(value: unknown) {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : "";
+}
+
+function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 function ProjectHomeRoute() {
@@ -171,6 +176,14 @@ function ProjectHomeBody({
       });
     },
   });
+  const openLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateProjectHomeModalButtonClick(event);
+    setLeaveModalOpen(true);
+  };
+  const closeLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateProjectHomeModalButtonClick(event);
+    setLeaveModalOpen(false);
+  };
 
   return (
     <div className="page-wrap-outer">
@@ -447,7 +460,7 @@ function ProjectHomeBody({
                     runtimeConfig.basePath,
                     `/${ownerName}/${projectName}/members/${currentUserId}`,
                   )}
-                  onClick={() => setLeaveModalOpen(true)}
+                  onClick={openLeaveModal}
                 >
                   {t("project.member.leave")}
                 </button>
@@ -457,16 +470,11 @@ function ProjectHomeBody({
         </div>
         <div
           id="alertLeave"
-          className={leaveModalOpen ? "modal" : "modal hide"}
+          className={leaveModalOpen ? "modal in" : "modal hide"}
           style={leaveModalOpen ? { display: "block" } : undefined}
         >
           <div className="modal-header">
-            <button
-              type="button"
-              className="close"
-              data-dismiss="modal"
-              onClick={() => setLeaveModalOpen(false)}
-            >
+            <button type="button" className="close" data-dismiss="modal" onClick={closeLeaveModal}>
               ×
             </button>
             <h3>{t("project.member.leave")}</h3>
@@ -479,7 +487,10 @@ function ProjectHomeBody({
               type="button"
               className="ybtn ybtn-info ybtn-mini"
               id="leaveBtn"
-              onClick={() => leaveMutation.mutate()}
+              onClick={(event) => {
+                insulateProjectHomeModalButtonClick(event);
+                leaveMutation.mutate();
+              }}
             >
               {t("button.yes")}
             </button>
@@ -487,12 +498,13 @@ function ProjectHomeBody({
               type="button"
               className="ybtn ybtn-mini"
               data-dismiss="modal"
-              onClick={() => setLeaveModalOpen(false)}
+              onClick={closeLeaveModal}
             >
               {t("button.no")}
             </button>
           </div>
         </div>
+        {leaveModalOpen ? <div className="modal-backdrop in"></div> : null}
       </div>
     </div>
   );

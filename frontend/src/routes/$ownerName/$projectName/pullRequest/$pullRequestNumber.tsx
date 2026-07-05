@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -30,6 +30,11 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+
+function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 function ProjectPullRequestOverviewRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -248,7 +253,7 @@ function PullRequestOverviewBody({
               data-toggle="modal"
               data-target="#helpMessage"
               onClick={(event) => {
-                event.stopPropagation();
+                insulateModalButtonClick(event);
                 setIsHelpMessageOpen(true);
               }}
             >
@@ -972,7 +977,7 @@ function PullRequestHelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             className="ybtn ybtn-info ybtn-small"
             data-dismiss="modal"
             onClick={(event) => {
-              event.stopPropagation();
+              insulateModalButtonClick(event);
               onClose();
             }}
           >

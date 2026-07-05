@@ -124,6 +124,7 @@ test("project board list keymap modal is route state owned", async ({ page }) =>
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  await installRootModalBridgeGuard(page, ["helpKeys"]);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-list-keymap";
   });
@@ -140,18 +141,30 @@ test("project board list keymap modal is route state owned", async ({ page }) =>
   const beforeUrl = page.url();
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
-  await keymapButton.click();
+  expect(await dispatchCancelableClick(keymapButton)).toBe(false);
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
-  expect(page.url()).toBe(beforeUrl);
-  expect(
-    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
-  ).toBe("board-list-keymap");
+  await expect(page).toHaveURL(beforeUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("board-list-keymap");
 
-  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  expect(await dispatchCancelableClick(page.locator('#helpKeys [data-dismiss="modal"]'))).toBe(
+    false,
+  );
+  await expectRootModalBridgeUnused(page);
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(beforeUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+    )
+    .toBe("board-list-keymap");
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
   const keymapSource = routeSource.slice(
@@ -162,6 +175,12 @@ test("project board list keymap modal is route state owned", async ({ page }) =>
   expect(keymapSource).toContain("event.stopPropagation();");
   expect(keymapSource).toContain("setIsOpen(true);");
   expect(keymapSource).toContain("setIsOpen(false);");
+  expect(keymapSource).toMatch(
+    /data-target="#helpKeys"[\s\S]+?event\.preventDefault\(\);[\s\S]+?event\.stopPropagation\(\);[\s\S]+?setIsOpen\(true\);/u,
+  );
+  expect(keymapSource).toMatch(
+    /data-dismiss="modal"[\s\S]+?event\.preventDefault\(\);[\s\S]+?event\.stopPropagation\(\);[\s\S]+?setIsOpen\(false\);/u,
+  );
   expect(keymapSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(keymapSource).not.toContain("document.");
   expect(keymapSource).not.toContain("classList");

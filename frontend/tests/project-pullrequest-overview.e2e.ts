@@ -392,6 +392,12 @@ test("project pull request overview route source uses direct Links", async () =>
     "<PullRequestHelpModal\n        isOpen={isHelpMessageOpen}\n        onClose={() => setIsHelpMessageOpen(false)}",
   );
   expect(routeSource).toContain(
+    "function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
+  );
+  expect(routeSource).toContain("event.preventDefault();");
+  expect(routeSource).toContain("event.stopPropagation();");
+  expect(routeSource.match(/insulateModalButtonClick\(event\);/g)?.length ?? 0).toBe(2);
+  expect(routeSource).toContain(
     'className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}',
   );
   expect(routeSource).toContain('{isOpen ? <div className="modal-backdrop fade in"');
@@ -405,6 +411,25 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).not.toMatch(/<a\b[^>]*data-request-method=/u);
   expect(routeSource).not.toMatch(/document\.|querySelector|classList|style\.display/u);
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project pull request overview help modal source insulates delegated modal bridge", async () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).toContain(
+    "function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
+  );
+  expect(routeSource).toContain("event.preventDefault();");
+  expect(routeSource).toContain("event.stopPropagation();");
+  expect(routeSource).toContain(
+    "const [isHelpMessageOpen, setIsHelpMessageOpen] = useState(false);",
+  );
+  expect(routeSource).toContain('data-target="#helpMessage"');
+  expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource.match(/insulateModalButtonClick\(event\);/g)?.length ?? 0).toBe(2);
 });
 
 test("project pull request overview renders legacy commit-changed event DOM", async ({ page }) => {
@@ -563,6 +588,20 @@ test("project pull request overview owns event hash links through router", async
       ),
     )
     .toBe("pull-request-event-hash");
+});
+
+test("project pull request overview opens help modal through route-owned React state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "pull-request-help-modal";
+  });
+
   await expect(page.locator('.right-txt a[href="#helpMessage"]')).toHaveCount(0);
   const helpButton = page.locator(
     '.right-txt button[type="button"][data-toggle="modal"][data-target="#helpMessage"]',
@@ -572,64 +611,74 @@ test("project pull request overview owns event hash links through router", async
 
   const beforeHelpUrl = page.url();
   await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("aria-hidden", /./u);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
-  await page.evaluate(() => {
-    const doc = document as Document & {
-      __yonaHelpModalOriginalQuerySelector?: Document["querySelector"];
-      __yonaHelpModalOriginalQuerySelectorAll?: Document["querySelectorAll"];
-    };
-    const win = window as Window & typeof globalThis & { __yonaRootModalLookups?: number };
-    win.__yonaRootModalLookups = 0;
-    if (!doc.__yonaHelpModalOriginalQuerySelector) {
-      doc.__yonaHelpModalOriginalQuerySelector = document.querySelector.bind(document);
-      doc.__yonaHelpModalOriginalQuerySelectorAll = document.querySelectorAll.bind(document);
-      document.querySelector = ((selector: string) => {
-        if (selector.includes("#helpMessage") || selector.includes(".modal-backdrop")) {
-          win.__yonaRootModalLookups = (win.__yonaRootModalLookups ?? 0) + 1;
-        }
-        return doc.__yonaHelpModalOriginalQuerySelector?.(selector) ?? null;
-      }) as Document["querySelector"];
-      document.querySelectorAll = ((selector: string) => {
-        if (selector.includes("#helpMessage") || selector.includes(".modal-backdrop")) {
-          win.__yonaRootModalLookups = (win.__yonaRootModalLookups ?? 0) + 1;
-        }
-        return doc.__yonaHelpModalOriginalQuerySelectorAll?.(selector) ?? [];
-      }) as Document["querySelectorAll"];
-    }
-  });
+  await armRootModalBridgeTrap(page);
   await helpButton.click();
-  expect(
-    await page.evaluate(
-      () =>
-        (window as Window & typeof globalThis & { __yonaRootModalLookups?: number })
-          .__yonaRootModalLookups,
-    ),
-  ).toBe(0);
+  await expect(page).toHaveURL(beforeHelpUrl);
   await expect(page.locator("#helpMessage")).not.toHaveClass(/hide/u);
   await expect(page.locator("#helpMessage")).toHaveClass(/in/u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("aria-hidden", /./u);
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
-  await page.evaluate(() => {
-    (
-      window as Window & typeof globalThis & { __yonaRootModalLookups?: number }
-    ).__yonaRootModalLookups = 0;
-  });
-  await page.locator('#helpMessage [data-dismiss="modal"]').click();
-  expect(
-    await page.evaluate(
-      () =>
-        (window as Window & typeof globalThis & { __yonaRootModalLookups?: number })
-          .__yonaRootModalLookups,
-    ),
-  ).toBe(0);
-  await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
-  expect(page.url()).toBe(beforeHelpUrl);
-  expect(
-    await page.evaluate(
+  await expect(
+    page.evaluate(
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
-  ).toBe("pull-request-event-hash");
+  ).resolves.toBe("pull-request-help-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await armRootModalBridgeTrap(page);
+  await page.locator('#helpMessage [data-dismiss="modal"]').click();
+  await expect(page).toHaveURL(beforeHelpUrl);
+  await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("aria-hidden", /./u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(
+    page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).resolves.toBe("pull-request-help-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 });
+
+async function armRootModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as Window &
+      typeof globalThis & {
+        __yonaRootModalBridgeHits?: string[];
+        __yonaRootModalBridgeTrapArmed?: boolean;
+      };
+    win.__yonaRootModalBridgeHits = [];
+    if (win.__yonaRootModalBridgeTrapArmed) {
+      return;
+    }
+    win.__yonaRootModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      if (bridged) {
+        win.__yonaRootModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function rootModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaRootModalBridgeHits?: string[];
+          }
+      ).__yonaRootModalBridgeHits ?? [],
+  );
+}
 
 async function pullRequestEventMetrics(page: Page) {
   return page.locator("#comment-94").evaluate((event) => {

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const EXPECTED_PROJECT_HOME = `
@@ -131,21 +131,51 @@ test("project home README tab treats an empty README file as an existing README"
 test("project home leave modal posts legacy leave action", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const leaveRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installProjectHomeLeaveModalBridgeAudit(page);
   await mockProjectHome(page, { leaveRequests });
 
   await page.goto(`${basePath}/admin/sample`);
-  await page.locator("#projectLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+  await rememberSpaMarker(page, "project-home-leave-modal");
+  expect(await dispatchCancelableClick(page.locator("#projectLeaveBtn"))).toBe(false);
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-leave-modal");
+  await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
 
-  await page.locator('#alertLeave [data-dismiss="modal"]').last().click();
-  await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  expect(
+    await dispatchCancelableClick(page.locator('#alertLeave [data-dismiss="modal"]').last()),
+  ).toBe(false);
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-leave-modal");
   expect(leaveRequests).toEqual([]);
+  await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
 
   await page.locator("#projectLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await page.locator("#leaveBtn").click();
   await expect(page).toHaveURL(`${basePath}/admin`);
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  const leaveModalSource = routeSource.slice(
+    routeSource.indexOf("function insulateProjectHomeModalButtonClick"),
+    routeSource.indexOf("function YobiToast"),
+  );
+  expect(leaveModalSource).toContain("event.preventDefault();");
+  expect(leaveModalSource).toContain("event.stopPropagation();");
+  expect(leaveModalSource).toContain("setLeaveModalOpen(true);");
+  expect(leaveModalSource).toContain("setLeaveModalOpen(false);");
+  expect(leaveModalSource).toContain('className={leaveModalOpen ? "modal in" : "modal hide"}');
+  expect(leaveModalSource).toContain(
+    '{leaveModalOpen ? <div className="modal-backdrop in"></div> : null}',
+  );
+  expect(leaveModalSource).not.toContain("document.");
+  expect(leaveModalSource).not.toContain("classList");
+  expect(leaveModalSource).not.toContain("style.display");
 });
 
 test("project home description edit mirrors legacy toggle and save", async ({ page }) => {
@@ -595,6 +625,37 @@ async function favoriteSpanNativeListeners(page: Page) {
   );
 }
 
+async function installProjectHomeLeaveModalBridgeAudit(page: Page) {
+  await page.addInitScript(() => {
+    const hits: string[] = [];
+    Object.defineProperty(window, "__yonaProjectHomeLeaveModalBridgeHits", {
+      configurable: true,
+      value: hits,
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const delegatedTarget = target.closest(
+        '#projectLeaveBtn, #alertLeave [data-dismiss="modal"]',
+      );
+      if (!delegatedTarget) {
+        return;
+      }
+      hits.push(delegatedTarget.id || delegatedTarget.textContent?.trim() || "unknown");
+    });
+  });
+}
+
+async function projectHomeLeaveModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaProjectHomeLeaveModalBridgeHits?: string[] })
+        .__yonaProjectHomeLeaveModalBridgeHits ?? [],
+  );
+}
+
 async function installProjectHomeDropdownDocumentBridgeAudit(page: Page) {
   await page.addInitScript(() => {
     const hits: string[] = [];
@@ -634,6 +695,13 @@ async function projectHomeDropdownDocumentBridgeAuditHits(page: Page) {
           typeof globalThis & { __yonaProjectHomeDropdownDocumentBridgeHits?: string[] }
       ).__yonaProjectHomeDropdownDocumentBridgeHits ?? [],
   );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
 }
 
 async function mockProjectHome(
