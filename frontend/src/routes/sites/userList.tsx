@@ -663,7 +663,10 @@ function legacyLastStateModifiedDate(user: SiteUser) {
 }
 
 function isDefaultUserAvatar(avatarUrl: string) {
-  return avatarUrl.includes("gravatar.com/avatar/");
+  return (
+    avatarUrl.includes("gravatar.com/avatar/") ||
+    /\/assets\/images\/default-avatar-\d+\.png$/u.test(avatarUrl)
+  );
 }
 
 function PasswordResetAlert({ newPassword }: { newPassword: string }) {

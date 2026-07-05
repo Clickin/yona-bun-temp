@@ -455,6 +455,27 @@ test("site admin user profile links preserve legacy hrefs and use SPA navigation
   ).toBe("site-users-profile");
 });
 
+test("site admin user default avatar branch renders legacy bare image", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page, { avatarUrl: "/assets/images/default-avatar-32.png" });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
+
+  const defaultAvatar = page.locator(".user-list-wrap .list-avatar img");
+  await expect(defaultAvatar).toHaveAttribute("src", "/assets/images/default-avatar-32.png");
+  await expect(defaultAvatar).not.toHaveAttribute("alt");
+  await expect(defaultAvatar).not.toHaveAttribute("width");
+  await expect(defaultAvatar).not.toHaveAttribute("height");
+});
+
 test("site admin user pagination input selects and clamps like legacy yobi.Pagination", async ({
   page,
 }) => {
@@ -736,7 +757,12 @@ async function mockSiteAdminSession(page: Page) {
 
 async function mockSiteUsers(
   page: Page,
-  options: { deleteForbidden?: boolean; resetFails?: boolean; resetLogicalFailure?: boolean } = {},
+  options: {
+    avatarUrl?: string;
+    deleteForbidden?: boolean;
+    resetFails?: boolean;
+    resetLogicalFailure?: boolean;
+  } = {},
 ) {
   const requests = {
     deletedLoginIds: [] as string[],
@@ -771,7 +797,7 @@ async function mockSiteUsers(
         totalPages: 2,
         users: [
           {
-            avatarUrl: "/avatars/doortts.png",
+            avatarUrl: options.avatarUrl ?? "/avatars/doortts.png",
             createdAt: "2026-06-28 12:00:00",
             displayName: "Door TTS",
             emailAddress: "doortts@example.com",
