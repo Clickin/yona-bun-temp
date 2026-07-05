@@ -64,7 +64,7 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_NOT_FOUND_SCREEN.replaceAll("__BASE_HOME__", `${basePath}/`).replaceAll(
+    EXPECTED_NOT_FOUND_SCREEN.replaceAll("__BASE_HOME__", basePath).replaceAll(
       "__BASE_PATH__",
       basePath,
     ),
@@ -97,6 +97,49 @@ test("unmatched route matches legacy error/notfound_default.scala.html screen DO
     projectPageWrapMarginTop: "20px",
     providerFontSize: "9px",
   });
+});
+
+test("unmatched route logo and home links preserve bare base path href with SPA transition", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const missingRoutePath = `${basePath}/missing-legacy-route/unknown/screen`;
+
+  await page.goto(missingRoutePath);
+  const logoLink = page.locator(".gnb-inner > .logo");
+  const homeLink = page.locator(".error-wrap > .ybtn.ybtn-info");
+
+  await expect(logoLink).toHaveAttribute("href", basePath);
+  await expect(homeLink).toHaveAttribute("href", basePath);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await homeLink.click();
+
+  await expect(page).toHaveURL(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await page.goto(missingRoutePath);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await logoLink.click();
+
+  await expect(page).toHaveURL(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
 });
 
 test("unmatched route keeps legacy mobile error shell proportions", async ({ page }) => {

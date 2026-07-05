@@ -4,8 +4,11 @@ import {
   Navigate,
   Outlet,
   createRootRouteWithContext,
+  useLinkProps,
+  useRouter,
   useRouterState,
 } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { readAuthUiCapabilitiesRest } from "../api/auth";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
@@ -15,6 +18,19 @@ import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
 }
+
+const legacyPlainLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+
+const legacyPlainLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 type RootToast = {
   key: string;
@@ -774,8 +790,17 @@ export function RootAliasNotFound() {
 
 type RootNotFoundUsermenuTab = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
 
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
+
 function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const [activeUsermenuTab, setActiveUsermenuTab] =
     React.useState<RootNotFoundUsermenuTab>("myOrganizationList");
   const handleUsermenuTabClick =
@@ -795,6 +820,27 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const logoutPath: string = "/logout";
   const naverCorpUrl: string = "http://navercorp.com/";
   const d2ProgramUrl: string = "https://developers.naver.com/d2/";
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
+  const logoLinkProps = useLinkProps({
+    activeOptions: legacyPlainLinkActiveOptions,
+    activeProps: legacyPlainLinkActiveProps,
+    className: "logo",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
+  const homeButtonLinkProps = useLinkProps({
+    activeOptions: legacyPlainLinkActiveOptions,
+    activeProps: legacyPlainLinkActiveProps,
+    className: "ybtn ybtn-info",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
 
   if (pathname === "/reset-password") {
     return <Navigate to="/resetPassword" search={resetPasswordSearch} replace />;
@@ -804,9 +850,9 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <Link to="/" className="logo">
+          <LegacyHrefAnchor {...logoLinkProps} legacyHref={homeHref}>
             <h1 className="blind">{runtimeConfig.siteName ?? "Yona"}</h1>
-          </Link>
+          </LegacyHrefAnchor>
           <ul className="gnb-nav">
             <li>
               <Link to={projectListPath} href={prefixBasePath(runtimeConfig.basePath, "/projects")}>
@@ -899,6 +945,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                 to={loginFormPath}
                 href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
                 className="user-item-btn"
+                data-login="required"
               >
                 {t("title.login")}
               </Link>
@@ -921,9 +968,9 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           <div className="error-wrap">
             <i className="ico ico-err2" />
             <p>{t("error.notfound")}</p>
-            <Link to="/" className="ybtn ybtn-info">
+            <LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>
               {t("menu.home")}
-            </Link>
+            </LegacyHrefAnchor>
           </div>
         </div>
       </div>
