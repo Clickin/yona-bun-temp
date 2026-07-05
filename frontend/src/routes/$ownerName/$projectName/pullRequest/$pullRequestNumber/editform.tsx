@@ -85,6 +85,7 @@ function ProjectPullRequestEditBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const pullRequest = formOptions.pullRequest;
+  const [forceSubmit, setForceSubmit] = useState(false);
   const mergeResultQuery = useQuery(
     pullRequestMergeResultQueryOptions(runtimeConfig, {
       ownerName,
@@ -92,6 +93,8 @@ function ProjectPullRequestEditBody({
       query: formOptions.selected,
     }),
   );
+  const mergeResult = mergeResultQuery.data;
+  const status = mergeStatus(mergeResult, t);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -132,6 +135,18 @@ function ProjectPullRequestEditBody({
             className="nm"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!validatePullRequestMergeResult(mergeResult, t)) {
+                return;
+              }
+              if (mergeResult?.conflict && !forceSubmit) {
+                if (!window.confirm(t("pullRequest.ignore.conflict"))) {
+                  return;
+                }
+                setForceSubmit(true);
+              }
+              if (!validatePullRequestRequiredFields(new FormData(event.currentTarget), t)) {
+                return;
+              }
               mutation.mutate(event.currentTarget);
             }}
           >
@@ -141,8 +156,8 @@ function ProjectPullRequestEditBody({
             />
             <span id="pullRequestState" data-value={pullRequest.state}></span>
             {pullRequest.state === "OPEN" || pullRequest.state === "open" ? (
-              <div id="status" className="alert mt20 mb20">
-                {t("pullRequest.is.merging")}
+              <div id="status" className={`alert mt20 mb20 ${status.cssClass}`}>
+                {status.message}
               </div>
             ) : null}
             <div>
@@ -174,22 +189,20 @@ function ProjectPullRequestEditBody({
                 <button type="button" data-toggle="tab">
                   <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
                   <span id="numOfCommits" className="num-badge vmiddle-inline">
-                    {mergeResultQuery.data?.commits.length
-                      ? String(mergeResultQuery.data.commits.length)
-                      : ""}
+                    {mergeResult?.commits.length ? String(mergeResult.commits.length) : ""}
                   </span>
                 </button>
               </li>
             </ul>
             <div className="tab-content">
               <div id="__commits" className="code-browse-wrap tab-pane active">
-                {mergeResultQuery.data ? (
+                {mergeResult ? (
                   <MergeResult
                     authorLabel={t("code.author")}
                     commitDateLabel={t("code.commitDate")}
                     commitMessageLabel={t("code.commitMsg")}
-                    commits={mergeResultQuery.data.commits}
-                    conflict={mergeResultQuery.data.conflict}
+                    commits={mergeResult.commits}
+                    conflict={mergeResult.conflict}
                     noChangesLabel={t("pullRequest.diff.noChanges")}
                     ownerName={ownerName}
                     projectName={projectName}
@@ -510,4 +523,43 @@ function MergeResult({
 function stringFormValue(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function mergeStatus(
+  mergeResult: { commits: PullRequestCommit[]; conflict: boolean } | undefined,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+): { cssClass: string; message: string } {
+  if (!mergeResult) {
+    return { cssClass: "", message: t("pullRequest.is.merging") };
+  }
+  if (mergeResult.commits.length === 0) {
+    return { cssClass: "alert-info", message: t("pullRequest.diff.noChanges") };
+  }
+  return mergeResult.conflict
+    ? { cssClass: "alert-error", message: t("pullRequest.is.not.safe") }
+    : { cssClass: "alert-success", message: t("pullRequest.is.safe") };
+}
+
+function validatePullRequestMergeResult(
+  mergeResult: { commits: PullRequestCommit[]; conflict: boolean } | undefined,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+): boolean {
+  if (!mergeResult?.commits.length) {
+    window.alert(t("pullRequest.diff.noChanges"));
+    return false;
+  }
+  return true;
+}
+
+function validatePullRequestRequiredFields(
+  formData: FormData,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+): boolean {
+  for (const fieldName of ["title", "fromProjectId", "toProjectId", "fromBranch", "toBranch"]) {
+    if (!stringFormValue(formData, fieldName).trim()) {
+      window.alert(t(`pullRequest.${fieldName}.required`));
+      return false;
+    }
+  }
+  return true;
 }

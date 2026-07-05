@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/9/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="7"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20">We are checking if the code is safe. Please wait for a while to complete this process.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title" data-is-user-has-typed="true"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" data-is-user-has-typed="true">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/7/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" data-toggle="select2" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="fromBranch" name="fromBranch" data-toggle="select2" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="7"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" data-toggle="select2" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-toggle="select2" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title" data-is-user-has-typed="true"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" data-is-user-has-typed="true">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button" data-toggle="tab"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -42,14 +42,14 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   const patchRequests: unknown[] = [];
   await mockProjectPullRequestEditForm(page, patchRequests);
 
-  await page.goto(`${basePath}/admin/sample/pullRequest/9/editform`);
+  await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
   const editFormUrl = page.url();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
   await expect(page.locator("form.nm")).toHaveAttribute(
     "action",
-    `${basePath}/admin/sample/pullRequest/9/edit`,
+    `${basePath}/admin/sample/pullRequest/7/edit`,
   );
   await expect(page.locator("#fromBranch")).toBeDisabled();
   await expect(page.locator("#toBranch")).toBeDisabled();
@@ -153,8 +153,8 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await page.evaluate((url) => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
     window.history.pushState({ cancelTest: true }, "", url);
-  }, `${basePath}/admin/sample/pullRequest/9/editform?cancel-test=1`);
-  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/9/editform?cancel-test=1`);
+  }, `${basePath}/admin/sample/pullRequest/7/editform?cancel-test=1`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequest/7/editform?cancel-test=1`);
   await cancelButton.click();
   await expect(page).toHaveURL(editFormUrl);
   await expect
@@ -194,6 +194,79 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await page.fill("#editor-body-body", "Updated body");
   await page.click('form.nm button[type="submit"]');
 
+  await expect
+    .poll(() => patchRequests)
+    .toEqual([{ attachmentIds: [], bodyMarkdown: "Updated body", title: "Updated title" }]);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
+});
+
+test("project pull request edit form blocks submit when merge result has no commits", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+  await mockProjectPullRequestEditForm(page, patchRequests, {
+    mergeResult: { commits: [], conflict: false, noHead: false },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
+  await expect(page.locator("#mergeResult")).toHaveAttribute("data-commits", "0");
+  await expect(page.locator("#status")).toHaveText("No changes have been made.");
+  await expect(page.locator("#status")).toHaveClass(/alert-info/);
+
+  const alert = waitForDialog(page, "alert");
+  await page.click('form.nm button[type="submit"]');
+  expect(await alert).toBe("No changes have been made.");
+  await expect.poll(() => patchRequests).toEqual([]);
+});
+
+test("project pull request edit form blocks submit when legacy required title is empty", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+  await mockProjectPullRequestEditForm(page, patchRequests);
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
+  await expect(page.locator("#mergeResult")).toHaveAttribute("data-commits", "1");
+
+  await page.fill("#title", "   ");
+  const alert = waitForDialog(page, "alert");
+  await page.click('form.nm button[type="submit"]');
+  expect(await alert).toBe("Title is a required field.");
+  await expect.poll(() => patchRequests).toEqual([]);
+});
+
+test("project pull request edit form confirms conflicting merge result before submit", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+  await mockProjectPullRequestEditForm(page, patchRequests, {
+    mergeResult: { commits: [defaultPullRequestCommit()], conflict: true, noHead: false },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
+  await expect(page.locator("#mergeResult")).toHaveAttribute("data-conflict", "true");
+  await expect(page.locator("#status")).toHaveText(
+    "A conflict occurred when merging. This pull request cannot be merged safely.",
+  );
+  await expect(page.locator("#status")).toHaveClass(/alert-error/);
+
+  await page.fill("#title", "Updated title");
+  await page.fill("#editor-body-body", "Updated body");
+  const dismissed = waitForDialog(page, "confirm", false);
+  await page.click('form.nm button[type="submit"]');
+  expect(await dismissed).toBe(
+    "This code seems to have conflicts when merging. Do you really want to continue?",
+  );
+  await expect.poll(() => patchRequests).toEqual([]);
+
+  const accepted = waitForDialog(page, "confirm", true);
+  await page.click('form.nm button[type="submit"]');
+  expect(await accepted).toBe(
+    "This code seems to have conflicts when merging. Do you really want to continue?",
+  );
   await expect
     .poll(() => patchRequests)
     .toEqual([{ attachmentIds: [], bodyMarkdown: "Updated body", title: "Updated title" }]);
@@ -311,7 +384,37 @@ function expectPullRequestEditorUsesSharedMarkdownHelp() {
   expect(ROUTE_SOURCE).not.toContain('replace(/@Messages("title.markdown.help")');
 }
 
-async function mockProjectPullRequestEditForm(page: Page, patchRequests: unknown[]) {
+async function waitForDialog(page: Page, expectedType: "alert" | "confirm", accept = true) {
+  return page.waitForEvent("dialog").then(async (dialog) => {
+    expect(dialog.type()).toBe(expectedType);
+    const message = dialog.message();
+    if (accept) {
+      await dialog.accept();
+    } else {
+      await dialog.dismiss();
+    }
+    return message;
+  });
+}
+
+type MockProjectPullRequestEditFormOptions = {
+  mergeResult?: {
+    commits: ReturnType<typeof defaultPullRequestCommit>[];
+    conflict: boolean;
+    noHead: boolean;
+  };
+};
+
+async function mockProjectPullRequestEditForm(
+  page: Page,
+  patchRequests: unknown[],
+  options: MockProjectPullRequestEditFormOptions = {},
+) {
+  const mergeResult = options.mergeResult ?? {
+    commits: [defaultPullRequestCommit()],
+    conflict: false,
+    noHead: false,
+  };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -363,7 +466,7 @@ async function mockProjectPullRequestEditForm(page: Page, patchRequests: unknown
     });
   });
   await page.route(
-    "**/api/v1/owners/admin/projects/sample/pull-requests/9/form-options",
+    "**/api/v1/owners/admin/projects/sample/pull-requests/7/form-options",
     async (route) => {
       await route.fulfill({
         contentType: "application/json",
@@ -392,24 +495,11 @@ async function mockProjectPullRequestEditForm(page: Page, patchRequests: unknown
     async (route) => {
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({
-          commits: [
-            {
-              authorDateLabel: "Jul 2, 2026",
-              authorEmail: "dev@example.com",
-              commitId: "abcdef1234567890",
-              commitMessage: "Add UI",
-              commitShortId: "abcdef1",
-              state: "CURRENT",
-            },
-          ],
-          conflict: false,
-          noHead: false,
-        }),
+        body: JSON.stringify(mergeResult),
       });
     },
   );
-  await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/9", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/7", async (route) => {
     if (route.request().method() === "PATCH") {
       patchRequests.push(route.request().postDataJSON());
       await route.fulfill({
@@ -422,6 +512,17 @@ async function mockProjectPullRequestEditForm(page: Page, patchRequests: unknown
     }
     await route.fallback();
   });
+}
+
+function defaultPullRequestCommit() {
+  return {
+    authorDateLabel: "Jul 2, 2026",
+    authorEmail: "dev@example.com",
+    commitId: "abcdef1234567890",
+    commitMessage: "Add UI",
+    commitShortId: "abcdef1",
+    state: "CURRENT",
+  };
 }
 
 function pullRequestDetail(overrides: Partial<{ bodyMarkdown: string; title: string }> = {}) {
@@ -458,7 +559,7 @@ function pullRequestDetail(overrides: Partial<{ bodyMarkdown: string; title: str
       canUpdateState: true,
     },
     projectName: "sample",
-    pullRequestNumber: 9,
+    pullRequestNumber: 7,
     receiver: {
       avatarUrl: "/assets/images/default-avatar-32.png",
       loginId: "admin",
