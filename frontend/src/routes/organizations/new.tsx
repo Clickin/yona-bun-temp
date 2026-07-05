@@ -1,6 +1,8 @@
+import type { ComponentPropsWithoutRef } from "react";
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { createOrganizationRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -47,6 +49,16 @@ function OrganizationNewScreen({
   const queryClient = useQueryClient();
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
+  const cancelLinkProps = useLinkProps({
+    activeOptions: { exact: true },
+    className: "ybtn",
+    href: prefixBasePath(runtimeConfig.basePath, ""),
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(runtimeConfig.basePath);
+    },
+    to: "/",
+  });
   const createMutation = useMutation({
     mutationFn: async (input: { description: string; organizationName: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -147,9 +159,9 @@ function OrganizationNewScreen({
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   <i className="yobicon-friends" /> {t("organization.create")}
                 </button>
-                <Link to="/" activeOptions={{ exact: true }} className="ybtn">
+                <LegacyHrefAnchor {...cancelLinkProps} legacyHref={runtimeConfig.basePath}>
                   {t("button.cancel")}
-                </Link>
+                </LegacyHrefAnchor>
               </div>
             </form>
           </div>
@@ -157,4 +169,17 @@ function OrganizationNewScreen({
       </div>
     </SiteLayoutShell>
   );
+}
+
+function LegacyHrefAnchor({
+  children,
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", {
+    ...props,
+    href: legacyHref,
+    children,
+  });
 }

@@ -281,14 +281,23 @@ test("organization create route source keeps cancel navigation out of raw anchor
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
 
   expect(routeSource).toContain(
-    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
+    'import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('data-errtype="name"');
+  expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
+  expect(routeSource).toContain('href: prefixBasePath(runtimeConfig.basePath, ""),');
+  expect(routeSource).toContain("router.history.push(runtimeConfig.basePath);");
+  expect(routeSource).toContain(
+    "<LegacyHrefAnchor {...cancelLinkProps} legacyHref={runtimeConfig.basePath}>",
+  );
   expect(routeSource).not.toContain('setAttribute("data-errType"');
-  expect(routeSource).toContain('to="/" activeOptions={{ exact: true }} className="ybtn"');
   expect(
     rawAnchorBlocks.filter((block) => /Cancel|button\.cancel|prefixBasePath/u.test(block)),
   ).toEqual([]);
+  expect(routeSource).not.toContain(
+    '<Link to="/" activeOptions={{ exact: true }} className="ybtn">',
+  );
+  expect(routeSource).not.toContain("<Link {...cancelLinkProps}>");
   expect(routeSource).not.toMatch(
     /dangerouslySetInnerHTML|document\.|addEventListener|classList|\.style\.display/u,
   );
@@ -349,7 +358,7 @@ async function mockAuthenticatedSession(page: Page) {
 }
 
 function rootHref(basePath: string) {
-  return basePath === "/" ? "/" : `${basePath}/`;
+  return basePath;
 }
 
 async function canonicalizeScreenRoots(page: Page) {
