@@ -135,7 +135,16 @@ test("current-user notification settings page matches legacy user/edit_notificat
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("notifications-project-tab");
-  await page.locator('[id="2"] input[data-href$="/noti/toggle/2/NEW_COMMENT"]').click();
+  const newCommentSwitch = page.locator('[id="2"] input[data-href$="/noti/toggle/2/NEW_COMMENT"]');
+  await expect(newCommentSwitch).toBeChecked();
+  const toggleResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/workspace/notifications") &&
+      response.request().method() === "POST",
+  );
+  await newCommentSwitch.click();
+  await toggleResponse;
+  await expect(newCommentSwitch).not.toBeChecked();
 });
 
 test("current-user notification settings route uses typed tab Links without a route-local generic adapter", async () => {

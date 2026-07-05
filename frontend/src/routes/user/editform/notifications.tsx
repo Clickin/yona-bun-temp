@@ -79,12 +79,18 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const activeProjectId = selectedProjectId || activeProjectIdFromHash(watchedProjects);
   const toggleMutation = useMutation({
-    mutationFn: async (input: { eventType: string; projectId: string }) => {
+    mutationFn: async (input: { checked: boolean; eventType: string; projectId: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleWorkspaceNotificationRest(runtimeConfig, csrfToken, input);
+      return toggleWorkspaceNotificationRest(runtimeConfig, csrfToken, {
+        eventType: input.eventType,
+        projectId: input.projectId,
+      });
     },
-    onSuccess: (workspace) => {
-      queryClient.setQueryData(["workspace", "overview"], workspace);
+    onSuccess: (workspace, input) => {
+      queryClient.setQueryData(
+        ["workspace", "overview"],
+        updateWorkspaceNotification(workspace, input),
+      );
     },
   });
 
@@ -151,8 +157,9 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                                   type="checkbox"
                                   data-toggle="switch"
                                   checked={isNotificationEnabled(notifications, eventType)}
-                                  onChange={() =>
+                                  onChange={(event) =>
                                     toggleMutation.mutate({
+                                      checked: event.currentTarget.checked,
                                       eventType,
                                       projectId,
                                     })
@@ -187,6 +194,36 @@ function isNotificationEnabled(notifications: NotificationRow[], eventType: stri
   return notifications.some(
     (notification) => notification.eventType === eventType && notification.enabled === true,
   );
+}
+
+function updateWorkspaceNotification(
+  workspace: unknown,
+  input: { checked: boolean; eventType: string; projectId: string },
+) {
+  if (!isRecord(workspace) || !Array.isArray(workspace.watchedProjects)) {
+    return workspace;
+  }
+  return {
+    ...workspace,
+    watchedProjects: workspace.watchedProjects.map((project) => {
+      if (!isRecord(project) || stringValue(project.projectId) !== input.projectId) {
+        return project;
+      }
+      const notifications = Array.isArray(project.notifications) ? project.notifications : [];
+      return {
+        ...project,
+        notifications: notifications.map((notification) =>
+          isRecord(notification) && notification.eventType === input.eventType
+            ? { ...notification, enabled: input.checked }
+            : notification,
+        ),
+      };
+    }),
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function stringValue(value: unknown): string {
