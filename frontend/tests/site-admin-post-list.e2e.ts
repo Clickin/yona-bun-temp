@@ -178,6 +178,16 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   ]);
   await expect(page.locator(".site-setting-nav li").nth(1)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  expect(await siteSidebarAnchorActiveAttrs(page)).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Users" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Posts" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Issues" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Projects" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Send email" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Send mass emails" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Software Update" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
+  ]);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("alt", /.*/);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("width", /.*/);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute(
@@ -315,6 +325,36 @@ test("site admin post list renders legacy update notification badge", async ({ p
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin post list sidebar active state stays on legacy li at pageNum=1", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockPosts(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/postList?pageNum=1`);
+
+  await expect(page.locator(".site-setting-nav li").nth(1)).toHaveClass("active");
+  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  expect(await siteSidebarAnchorActiveAttrs(page)).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Users" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Posts" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Issues" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Projects" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Send email" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Send mass emails" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Software Update" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
+  ]);
+});
+
 test("site admin post list row links keep legacy hrefs and SPA navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -424,6 +464,17 @@ async function expectSpaClick(page: Page, selector: string, expectedUrl: string,
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe(marker);
+}
+
+async function siteSidebarAnchorActiveAttrs(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.map((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
+      text: link.textContent?.trim() ?? "",
+    })),
+  );
 }
 
 async function mockSiteAdminSession(page: Page) {
