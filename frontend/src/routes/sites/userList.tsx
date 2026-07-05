@@ -34,6 +34,10 @@ const LEGACY_SITE_SETTING_NAV_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
+  activeOptions: { explicitUndefined: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -359,7 +363,7 @@ function UserListPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
               search={search(currentPage - 1)}
               to="/sites/userList"
             >
@@ -414,7 +418,7 @@ function UserListPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
               search={search(currentPage + 1)}
               to="/sites/userList"
             >
@@ -502,7 +506,7 @@ function UserStateTabs({
       {items.map((item) => (
         <li className={item.state === currentState ? "active" : ""} key={item.state}>
           <Link
-            activeProps={{ className: undefined }}
+            {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
             search={{ state: item.state }}
             to="/sites/userList"
           >
@@ -543,7 +547,7 @@ function UserListItem({
     <li className="row-fluid listitem">
       <div className="span3 listitem-col">
         <Link
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
           className="avatar-wrap list-avatar"
           params={{ user: user.loginId }}
           to="/$user"
@@ -556,7 +560,7 @@ function UserListItem({
           )}
         </Link>
         <Link
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
           className="user-name"
           params={{ user: user.loginId }}
           to="/$user"
@@ -564,7 +568,7 @@ function UserListItem({
           {user.displayName}
         </Link>
         <Link
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
           className="user-id"
           params={{ user: user.loginId }}
           to="/$user"

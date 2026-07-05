@@ -3,7 +3,6 @@ import { Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   useEffect,
-  useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
@@ -30,6 +29,17 @@ const ALL_SEARCH_CATEGORIES: SearchCategory[] = [
   { countKey: "postComments", labelKey: "search.menu.board.comments", type: "post_comment" },
   { countKey: "reviews", labelKey: "search.menu.reviews", type: "review" },
 ];
+
+const legacySearchPaginationLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeSearch: true,
+} as const;
+const legacySearchPaginationLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+} as const;
 
 export type SearchBodyInput = {
   includeProjectCategory: boolean;
@@ -565,8 +575,8 @@ function SearchPagination({ result, searchPath }: { result: SearchResponse; sear
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeOptions={{ exact: true }}
-              activeProps={{ className: undefined }}
+              activeOptions={legacySearchPaginationLinkActiveOptions}
+              activeProps={legacySearchPaginationLinkActiveProps}
               from={searchPath}
               search={pageSearch(currentPage - 1)}
               to={searchPath}
@@ -602,8 +612,8 @@ function SearchPagination({ result, searchPath }: { result: SearchResponse; sear
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeOptions={{ exact: true }}
-              activeProps={{ className: undefined }}
+              activeOptions={legacySearchPaginationLinkActiveOptions}
+              activeProps={legacySearchPaginationLinkActiveProps}
               from={searchPath}
               search={pageSearch(currentPage + 1)}
               to={searchPath}
@@ -650,13 +660,8 @@ function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {
 }
 
 function LegacyProjectLogoImage({ src }: { src: string }) {
-  const imageRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    imageRef.current?.removeAttribute("alt");
-  }, []);
-
-  return <img alt="" ref={imageRef} src={src} />;
+  /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
+  return <img src={src} />;
 }
 
 function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {

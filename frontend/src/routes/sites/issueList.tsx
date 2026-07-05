@@ -22,6 +22,11 @@ const legacySiteSidebarLinkProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
+const legacyIssueListLinkProps = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
   validateSearch: (search: Record<string, unknown>): IssueListSearch => ({
@@ -140,7 +145,7 @@ function IssueListPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...legacyIssueListLinkProps}
               pjax-page=""
               search={pageSearch(currentPage - 1)}
               to="/sites/issueList"
@@ -175,7 +180,7 @@ function IssueListPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...legacyIssueListLinkProps}
               pjax-page=""
               search={pageSearch(currentPage + 1)}
               to="/sites/issueList"
@@ -255,7 +260,7 @@ function IssueStateTab({ selected, state }: { selected: SiteIssueState; state: S
 
   return (
     <li className={selected === state ? "active" : ""}>
-      <Link activeProps={{ className: undefined }} search={{ state }} to="/sites/issueList">
+      <Link {...legacyIssueListLinkProps} search={{ state }} to="/sites/issueList">
         {t(`issue.state.${state}`)}
       </Link>
     </li>

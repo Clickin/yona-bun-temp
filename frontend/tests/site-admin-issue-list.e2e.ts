@@ -14,7 +14,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -185,6 +185,29 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "href",
     `${basePath}/sites/issueList?state=open`,
   );
+  await expect(page.locator(".span10 > .nav.nav-tabs li").first()).toHaveClass("active");
+  await expect(page.locator(".span10 > .nav.nav-tabs li").nth(1)).toHaveClass("");
+  await expect(page.locator(".span10 > .nav.nav-tabs a")).toHaveText(["Open", "Closed"]);
+  expect(await legacyLinkSnapshot(page, ".span10 > .nav.nav-tabs a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=open`,
+      pjaxPage: null,
+      text: "Open",
+      title: null,
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=closed`,
+      pjaxPage: null,
+      text: "Closed",
+      title: null,
+    },
+  ]);
   const closedTab = page.getByRole("link", { exact: true, name: "Closed" });
   await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
@@ -227,6 +250,17 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     `${basePath}/sites/issueList?state=open&pageNum=2`,
   );
   await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  expect(await legacyLinkSnapshot(page, "#pagination a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=open&pageNum=2`,
+      pjaxPage: "",
+      text: "Next page",
+      title: null,
+    },
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -278,6 +312,17 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "href",
     `${basePath}/sites/issueList?state=open&pageNum=1`,
   );
+  expect(await legacyLinkSnapshot(page, "#pagination a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=open&pageNum=1`,
+      pjaxPage: "",
+      text: "Previous page",
+      title: null,
+    },
+  ]);
   await page.locator('#pagination input[name="pageNum"]').fill("1");
   await page.locator('#pagination input[name="pageNum"]').press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
@@ -310,8 +355,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-posts-nav");
 
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
+  expect(routeSource).toContain("const legacyIssueListLinkProps = {");
+  expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).not.toContain("LegacyInternalLink");
-  expect(routeSource).not.toContain("<a href=");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("<a");
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toContain("projectPath");
   expect(routeSource).not.toContain("issuePath");
   expect(routeSource).not.toContain("authorPath");
@@ -589,6 +640,20 @@ async function siteSettingNavActiveMarkerLeaks(page: Page) {
       );
       return leaked.map((name) => `${link.textContent?.trim() ?? ""}:${name}`);
     }),
+  );
+}
+
+async function legacyLinkSnapshot(page: Page, selector: string) {
+  return page.locator(selector).evaluateAll((links) =>
+    links.map((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
+      href: link.getAttribute("href"),
+      pjaxPage: link.getAttribute("pjax-page"),
+      text: link.textContent?.trim() ?? "",
+      title: link.getAttribute("title"),
+    })),
   );
 }
 

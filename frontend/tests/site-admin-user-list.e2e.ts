@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_USER_LIST_SCREEN = `
 <div class="unsupported hidden">
@@ -14,7 +14,7 @@ const EXPECTED_USER_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -261,11 +261,34 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     "href",
     `${basePath}/sites/userList?pageNum=2&state=ACTIVE`,
   );
+  await expect(nextPageLink).toHaveText("Next page");
+  await expect(nextPageLink).not.toHaveAttribute("class", "");
+  await expect(nextPageLink).not.toHaveAttribute("title", "");
+  expect(await linkActiveMarkerLeaks(nextPageLink)).toEqual([]);
   await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
   const lockedTab = page.getByRole("link", { exact: true, name: "Locked user" });
   await expect(lockedTab).toHaveAttribute("href", `${basePath}/sites/userList?state=LOCKED`);
+  await expect(lockedTab).toHaveText("Locked user");
+  await expect(lockedTab).not.toHaveAttribute("class", "");
+  await expect(lockedTab).not.toHaveAttribute("title", "");
+  expect(await linkActiveMarkerLeaks(lockedTab)).toEqual([]);
   await expect(page.locator(".nav-tabs .num-badge")).toHaveText("2");
+  const userNameAnchor = page.locator(".user-list-wrap .user-name");
+  await expect(userNameAnchor).toHaveAttribute("href", `${basePath}/doortts`);
+  await expect(userNameAnchor).toHaveText("Door TTS");
+  await expect(userNameAnchor).toHaveClass("user-name");
+  await expect(userNameAnchor).not.toHaveAttribute("title", "");
+  expect(await linkActiveMarkerLeaks(userNameAnchor)).toEqual([]);
   const routeSource = readFileSync("src/routes/sites/userList.tsx", "utf8");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toMatch(/<a\b/u);
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
+  expect(routeSource).toContain("LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS");
+  expect(routeSource).toContain("explicitUndefined: true");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain('"pjax-page": ""');
@@ -286,13 +309,13 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     /<button\s+type="button"\s+className="ybtn ybtn-small ybtn-danger"[\s\S]*?data-toggle="account-delete"/u,
   );
   expect(routeSource).toMatch(
-    /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="avatar-wrap list-avatar"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
+    /<Link\s+\{\.\.\.LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS\}\s+className="avatar-wrap list-avatar"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
   );
   expect(routeSource).toMatch(
-    /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="user-name"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
+    /<Link\s+\{\.\.\.LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS\}\s+className="user-name"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
   );
   expect(routeSource).toMatch(
-    /<Link\s+activeProps=\{\{ className: undefined \}\}\s+className="user-id"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
+    /<Link\s+\{\.\.\.LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS\}\s+className="user-id"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
   );
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
@@ -393,6 +416,8 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     "href",
     `${basePath}/sites/userList?pageNum=2&query=door&state=LOCKED`,
   );
+  await expect(nextPageWithQueryLink).toHaveText("Next page");
+  expect(await linkActiveMarkerLeaks(nextPageWithQueryLink)).toEqual([]);
   await expect(nextPageWithQueryLink).not.toHaveAttribute("pjax-page", "");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -1066,6 +1091,12 @@ async function siteSettingNavActiveMarkerLeaks(page: Page) {
       });
       return leaked.map((name) => `${link.getAttribute("href") ?? ""}:${name}`);
     }),
+  );
+}
+
+async function linkActiveMarkerLeaks(locator: Locator) {
+  return locator.evaluate((link) =>
+    ["aria-current", "data-status"].filter((name) => link.hasAttribute(name)),
   );
 }
 

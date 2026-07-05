@@ -428,13 +428,21 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(resultListSource).not.toMatch(/<a[\s>]/u);
   expect(resultListSource).not.toContain("</a>");
   expect(resultListSource).not.toContain("InternalResultLink");
-  expect(resultListSource).not.toContain('data-toggle="tooltip"');
-  expect(resultListSource).not.toContain('data-placement="top"');
   expect(resultListSource).toContain("isDefaultUserSearchAvatar(item.avatarUrl)");
   expect(resultListSource).toContain("<Link");
   expect(resultListSource).toContain("to={itemLink.to}");
   expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
   expect(routeBodySource).toContain('<button\n                          type="button"');
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toMatch(/<a[\s>]/u);
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
+  expect(routeSource).toContain("const legacySearchPaginationLinkActiveOptions =");
+  expect(routeSource).toContain("const legacySearchPaginationLinkActiveProps =");
+  expect(routeSource).toContain("explicitUndefined: true");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
 });
 
 test("global search category button uses React SPA navigation", async ({ page }) => {
@@ -590,15 +598,28 @@ test("global issue search renders legacy pagination when result pages exceed one
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
   await expect(pagination.locator(".page-num").nth(3)).toHaveText("3");
 
-  const nextHref = await pagination.locator("a", { hasText: "Next page" }).getAttribute("href");
+  const nextLink = pagination.locator("a", { hasText: "Next page" });
+  await expect(nextLink.locator("span")).toHaveText("Next page");
+  await expect(nextLink.locator(".btn-pg-next")).toHaveClass("ico btn-pg-next");
+  await expect(nextLink.locator("..")).toHaveClass("page-num ikon");
+  await expect(nextLink).not.toHaveAttribute("class");
+  await expect(nextLink).not.toHaveAttribute("title");
+  await expect(nextLink).not.toHaveAttribute("aria-current");
+  await expect(nextLink).not.toHaveAttribute("data-status");
+
+  const nextHref = await nextLink.getAttribute("href");
   expect(nextHref).not.toBeNull();
   const nextUrl = new URL(nextHref ?? "", page.url());
   expect(nextUrl.pathname).toBe(`${basePath}/search`);
   expect(nextUrl.searchParams.get("keyword")).toBe("paged");
   expect(nextUrl.searchParams.get("searchType")).toBe("issue");
   expect(nextUrl.searchParams.get("pageNum")).toBe("2");
+  await expect(nextLink).toHaveAttribute(
+    "href",
+    `${basePath}/search?keyword=paged&pageNum=2&searchType=issue`,
+  );
 
-  await pagination.locator("a", { hasText: "Next page" }).click();
+  await nextLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
@@ -608,10 +629,26 @@ test("global issue search renders legacy pagination when result pages exceed one
   await expect(page).toHaveURL(pageTwoUrl);
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
-  const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
+  const prevLink = pagination.locator("a", { hasText: "Previous page" });
+  await expect(prevLink.locator("span")).toHaveText("Previous page");
+  await expect(prevLink.locator(".btn-pg-prev")).toHaveClass("ico btn-pg-prev");
+  await expect(prevLink.locator("..")).toHaveClass("page-num ikon");
+  await expect(prevLink).not.toHaveAttribute("class");
+  await expect(prevLink).not.toHaveAttribute("title");
+  await expect(prevLink).not.toHaveAttribute("aria-current");
+  await expect(prevLink).not.toHaveAttribute("data-status");
+
+  const prevHref = await prevLink.getAttribute("href");
   expect(prevHref).not.toBeNull();
   const prevUrl = new URL(prevHref ?? "", page.url());
+  expect(prevUrl.pathname).toBe(`${basePath}/search`);
+  expect(prevUrl.searchParams.get("keyword")).toBe("paged");
+  expect(prevUrl.searchParams.get("searchType")).toBe("issue");
   expect(prevUrl.searchParams.get("pageNum")).toBe("1");
+  await expect(prevLink).toHaveAttribute(
+    "href",
+    `${basePath}/search?keyword=paged&pageNum=1&searchType=issue`,
+  );
 
   await pagination.locator('input[name="pageNum"]').fill("9");
   await pagination.locator('input[name="pageNum"]').press("Enter");
