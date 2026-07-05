@@ -1,4 +1,4 @@
-/* oxlint-disable jsx-a11y/tabindex-no-positive */
+/* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/tabindex-no-positive */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
@@ -16,7 +16,6 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type IssueFormSearch = {
   commentId: string;
@@ -35,11 +34,15 @@ export const Route = createFileRoute("/$ownerName/$projectName/issueform")({
 
 function ProjectIssueFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+        >
           <ProjectIssueFormScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -54,6 +57,35 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   const legacySearch = legacyUrlSearch(locationHref);
   const parentIssueId = search.parentIssueId || stringSearch(legacySearch.get("parentIssueId"));
   const commentId = search.commentId || stringSearch(legacySearch.get("commentId"));
+
+  return (
+    <ProjectIssueFormProjectScreen
+      ownerName={ownerName}
+      projectName={projectName}
+      parentIssueId={parentIssueId}
+      referCommentId={commentId}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+}
+
+export function ProjectIssueFormProjectScreen({
+  initialBodyMarkdown = "",
+  ownerName,
+  parentIssueId,
+  referCommentId,
+  runtimeConfig,
+  projectName,
+  showSubtaskOptionOnMount = false,
+}: {
+  initialBodyMarkdown?: string;
+  ownerName: string;
+  parentIssueId?: string;
+  referCommentId?: string;
+  runtimeConfig: RuntimeConfig;
+  projectName: string;
+  showSubtaskOptionOnMount?: boolean;
+}) {
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -85,32 +117,252 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <IssueFormProjectHeader project={projectQuery.data} />
+      <IssueFormProjectMenu active="issue" project={projectQuery.data} />
       <ProjectIssueFormBody
+        initialBodyMarkdown={initialBodyMarkdown}
         labels={labelsQuery.data.labels}
         milestones={openMilestonesQuery.data.milestones}
-        parentIssueId={parentIssueId}
+        ownerName={ownerName}
+        parentIssueId={parentIssueId ?? ""}
         parentOptions={parentOptionsQuery.data.items}
         project={projectQuery.data}
-        referCommentId={commentId}
+        projectName={projectName}
+        referCommentId={referCommentId ?? ""}
         runtimeConfig={runtimeConfig}
+        showSubtaskOptionOnMount={showSubtaskOptionOnMount}
       />
     </>
   );
 }
 
+function IssueFormProjectHeader({ project }: { project: ProjectContainer }) {
+  const { t } = useLegacyMessages();
+  const ownerName = stringField(project.ownerName, "owner");
+  const projectName = stringField(project.projectName, "project");
+  const backgroundImageUrl =
+    stringField((project as YonaRecord).backgroundImageUrl, "") ||
+    stringField((project as YonaRecord).backgroundUrl, "") ||
+    "/assets/images/bg-default-project.png";
+  const isForked =
+    booleanField((project as YonaRecord).isForkedFromOrigin) ||
+    booleanField((project as YonaRecord).isForked);
+  const originalOwnerName =
+    stringField((project as YonaRecord).originalOwnerName, "") ||
+    stringField((project as YonaRecord).originOwnerName, "");
+  const originalProjectName =
+    stringField((project as YonaRecord).originalProjectName, "") ||
+    stringField((project as YonaRecord).originProjectName, "");
+
+  return (
+    <div
+      className="project-header-outer"
+      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
+    >
+      <div className="project-header-inner">
+        <div className="project-header-wrap">
+          <div className="project-header-avatar">
+            <img src={projectLogoUrl(project)} alt="" />
+          </div>
+          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
+            <div className="project-breadcrumb">
+              <span className="project-author hide-in-mobile">
+                <Link to="/$user" params={{ user: ownerName }}>
+                  {ownerName}
+                </Link>
+              </span>
+              <span className="project-separator hide-in-mobile">/</span>
+              <span className="project-name">
+                <Link to="/$ownerName/$projectName" params={{ ownerName, projectName }}>
+                  {projectName}
+                </Link>
+              </span>
+              <span className="user-project-list" data-project-id={stringField(project.id, "")}>
+                <i
+                  className={`${booleanField((project as YonaRecord).isFavorite) ? "starred" : ""} star material-icons va-text-top`}
+                >
+                  star
+                </i>
+              </span>
+              {booleanField((project as YonaRecord).isPrivate) ? (
+                <span className="project-private">
+                  <i className="yobicon-lock"></i>
+                </span>
+              ) : null}
+              {booleanField((project as YonaRecord).isProtected) ? (
+                <span className="project-protected" title="Group Project">
+                  G
+                </span>
+              ) : null}
+            </div>
+            {isForked ? (
+              <div className="project-origin">
+                <span className="project-origin-title">{t("fork.original")}</span>
+                <Link
+                  to="/$ownerName/$projectName"
+                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
+                  className="project-origin-name"
+                >
+                  {originalOwnerName} / {originalProjectName}
+                </Link>
+              </div>
+            ) : null}
+          </div>
+          <div className="project-util-wrap">
+            <ul className="project-util"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueFormProjectMenu({
+  active,
+  project,
+}: {
+  active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
+  project: ProjectContainer;
+}) {
+  const { t } = useLegacyMessages();
+  const ownerName = stringField(project.ownerName, "owner");
+  const projectName = stringField(project.projectName, "project");
+  const menuSetting = (project as YonaRecord).menuSetting as YonaRecord | undefined;
+  const enrolledUsers = Array.isArray((project as YonaRecord).enrolledUsers)
+    ? ((project as YonaRecord).enrolledUsers as unknown[])
+    : [];
+
+  return (
+    <div className="project-menu-outer">
+      <div className="project-menu-inner">
+        <ul className="project-menu-nav project-menu-gruop">
+          <IssueFormProjectMenuItem
+            active={active === "home"}
+            label={t("title.projectHome")}
+            params={{ ownerName, projectName }}
+            short="H"
+            to="/$ownerName/$projectName"
+          />
+          {booleanField(menuSetting?.code) ? (
+            <IssueFormProjectMenuItem
+              active={active === "code"}
+              className="code-menu "
+              label={t("menu.code")}
+              params={{ ownerName, projectName }}
+              short="C"
+              to="/$ownerName/$projectName/code"
+            />
+          ) : null}
+          {booleanField(menuSetting?.issue) ? (
+            <IssueFormProjectMenuItem
+              active={active === "issue"}
+              label={t("menu.issue")}
+              params={{ ownerName, projectName }}
+              short="I"
+              to="/$ownerName/$projectName/issues"
+            />
+          ) : null}
+          {booleanField(menuSetting?.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
+            <IssueFormProjectMenuItem
+              active={active === "pullRequest"}
+              label={t("menu.pullRequest")}
+              params={{ ownerName, projectName }}
+              short="P"
+              to="/$ownerName/$projectName/pullRequests"
+            />
+          ) : null}
+          {booleanField(menuSetting?.review) ? (
+            <IssueFormProjectMenuItem
+              active={active === "review"}
+              label={t("menu.review")}
+              params={{ ownerName, projectName }}
+              short="R"
+              to="/$ownerName/$projectName/reviews"
+            />
+          ) : null}
+          {booleanField(menuSetting?.milestone) ? (
+            <IssueFormProjectMenuItem
+              active={active === "milestone"}
+              label={t("milestone")}
+              params={{ ownerName, projectName }}
+              short="M"
+              to="/$ownerName/$projectName/milestones"
+            />
+          ) : null}
+          {booleanField(menuSetting?.board) ? (
+            <IssueFormProjectMenuItem
+              active={active === "board"}
+              label={t("menu.board")}
+              params={{ ownerName, projectName }}
+              short="B"
+              to="/$ownerName/$projectName/posts"
+            />
+          ) : null}
+        </ul>
+        {booleanField(project.viewerCanUpdate) ? (
+          <div className="project-setting">
+            <ul className="project-menu-nav">
+              <li className="">
+                <Link to="/$ownerName/$projectName/setting" params={{ ownerName, projectName }}>
+                  <i className="yobicon-cog"></i>
+                  <span className="blind">
+                    <span className="menu-name">{t("menu.admin")}</span>
+                  </span>
+                  {enrolledUsers.length > 0 ? (
+                    <span className="project-menu-count">{enrolledUsers.length}</span>
+                  ) : null}
+                </Link>
+              </li>
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function IssueFormProjectMenuItem({
+  active = false,
+  className = "",
+  label,
+  params,
+  short,
+  to,
+}: {
+  active?: boolean;
+  className?: string;
+  label: string;
+  params: { ownerName: string; projectName: string };
+  short: string;
+  to: string;
+}) {
+  return (
+    <li className={`${className}${active ? "active" : ""}`}>
+      <Link to={to} params={params}>
+        <span className="menu-name">{label}</span>
+        <span className="short-menu">{short}</span>
+      </Link>
+    </li>
+  );
+}
+
 function ProjectIssueFormBody({
+  initialBodyMarkdown,
   labels,
   milestones,
+  ownerName,
   parentIssueId,
   parentOptions,
   project,
+  projectName,
   referCommentId,
   runtimeConfig,
+  showSubtaskOptionOnMount,
 }: {
+  initialBodyMarkdown: string;
   labels: YonaRecord[];
   milestones: ProjectMilestone[];
+  ownerName: string;
   parentIssueId: string;
   parentOptions: Array<{
     id: bigint | number;
@@ -119,13 +371,14 @@ function ProjectIssueFormBody({
     title: string;
   }>;
   project: ProjectContainer;
+  projectName: string;
   referCommentId: string;
   runtimeConfig: RuntimeConfig;
+  showSubtaskOptionOnMount: boolean;
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { ownerName, projectName } = Route.useParams();
   const menuSetting = (project as YonaRecord).menuSetting;
   const showMilestoneOption =
     typeof menuSetting === "object" &&
@@ -134,8 +387,18 @@ function ProjectIssueFormBody({
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const [titleFocusRequest, setTitleFocusRequest] = useState(1);
   const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
+  const [isSubtaskOptionVisible, setIsSubtaskOptionVisible] = useState(
+    parentIssueId !== "" || showSubtaskOptionOnMount,
+  );
+  const [isSubtaskMessageOn, setIsSubtaskMessageOn] = useState(showSubtaskOptionOnMount);
   const dueDateRef = useRef<HTMLInputElement>(null);
   const draftSubmitRef = useRef(false);
+
+  useEffect(() => {
+    setIsSubtaskOptionVisible(parentIssueId !== "" || showSubtaskOptionOnMount);
+    setIsSubtaskMessageOn(showSubtaskOptionOnMount);
+  }, [parentIssueId, showSubtaskOptionOnMount]);
+
   const mutation = useMutation({
     mutationFn: async ({ form, isDraft }: { form: HTMLFormElement; isDraft: boolean }) => {
       const formData = new FormData(form);
@@ -224,12 +487,24 @@ function ProjectIssueFormBody({
                           }}
                         />
                       </div>
-                      <div className="span1 subtask-message">{t("issue.option")}</div>
+                      <div
+                        className={`span1 subtask-message${isSubtaskMessageOn ? " option-on" : ""}`}
+                        onClick={() => {
+                          setIsSubtaskOptionVisible((current) => {
+                            const next = !current;
+                            setIsSubtaskMessageOn(next);
+                            return next;
+                          });
+                        }}
+                      >
+                        {t("issue.option")}
+                      </div>
                     </div>
                     <SubtaskSelects
-                      parentIssueId={parentIssueId}
                       parentOptions={parentOptions}
                       project={project}
+                      parentIssueId={parentIssueId}
+                      showOption={isSubtaskOptionVisible}
                     />
                   </dd>
                 </dl>
@@ -239,7 +514,10 @@ function ProjectIssueFormBody({
                 <div className="span9 span-left-pane">
                   <dl>
                     <dd style={{ position: "relative" }}>
-                      <IssueMarkdownEditor focusRequest={bodyFocusRequest} />
+                      <IssueMarkdownEditor
+                        focusRequest={bodyFocusRequest}
+                        initialBodyMarkdown={parentIssueId === "" ? initialBodyMarkdown : ""}
+                      />
                     </dd>
                   </dl>
 
@@ -339,7 +617,13 @@ function LegacyTabIndexInput({
   return <input ref={inputRef} {...props} />;
 }
 
-function IssueMarkdownEditor({ focusRequest }: { focusRequest: number }) {
+function IssueMarkdownEditor({
+  focusRequest,
+  initialBodyMarkdown,
+}: {
+  focusRequest: number;
+  initialBodyMarkdown: string;
+}) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -408,9 +692,10 @@ function IssueMarkdownEditor({ focusRequest }: { focusRequest: number }) {
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-body-body"
+              defaultValue={initialBodyMarkdown}
               tabIndex={2}
               {...{ markdown: "true" }}
-            ></textarea>
+            />
           </div>
         </div>
         <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
@@ -504,6 +789,7 @@ function SubtaskSelects({
   parentIssueId,
   parentOptions,
   project,
+  showOption,
 }: {
   parentIssueId: string;
   parentOptions: Array<{
@@ -513,9 +799,9 @@ function SubtaskSelects({
     title: string;
   }>;
   project: ProjectContainer;
+  showOption: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const showOption = parentIssueId !== "";
 
   return (
     <div className={`subtask-wrap ${showOption ? "show" : ""}`}>
