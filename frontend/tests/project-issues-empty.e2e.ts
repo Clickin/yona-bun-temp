@@ -339,6 +339,10 @@ function withPopulatedSearchUsers(html: string) {
 }
 
 test("project issue list route source uses Link for navigation and buttons for side effects", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("activeProps={{ className: undefined }}");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("activeProps={legacyRouteLocalActiveProps}");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("ComponentType");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
@@ -388,6 +392,16 @@ test("project issue list route source does not inject route-local bootstrap scri
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('$yobi.loadModule("issue.List")');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
+});
+
+test("project issue list anchors do not leak TanStack active markers", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page);
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".issue-list-wrap a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".issue-list-wrap a[data-status]")).toHaveCount(0);
 });
 
 test("project issue search due-date validation uses React-owned input access", async () => {
@@ -448,6 +462,8 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     "data-format",
     "milestone",
   );
+  await expect(page.locator(".issue-list-wrap a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".issue-list-wrap a[data-status]")).toHaveCount(0);
   await expect(page.locator("#milestoneId optgroup[label='Open'] option")).toHaveText("v1.0");
   await expect(page.locator("#milestoneId optgroup[label='Closed'] option")).toHaveText("v0.9");
   expect(await issueListAssetSources(page, basePath)).toEqual([

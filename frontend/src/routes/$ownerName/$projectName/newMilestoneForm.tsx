@@ -1,6 +1,7 @@
+/* oxlint-disable jsx-a11y/tabindex-no-positive */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { createProjectMilestone, readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -121,15 +122,15 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
               <div className="span12">
                 <dl>
                   <dd>
-                    <LegacyTabIndexInput
-                      inputRef={titleRef}
-                      tabIndexValue="1"
+                    <input
+                      ref={titleRef}
                       type="text"
                       id="title"
                       name="title"
                       defaultValue=""
                       className="zen-mode text title "
                       maxLength={250}
+                      tabIndex={1}
                       placeholder={t("title")}
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
@@ -224,20 +225,6 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
   );
 }
 
-function LegacyTabIndexInput({
-  inputRef,
-  tabIndexValue,
-  ...props
-}: InputHTMLAttributes<HTMLInputElement> & {
-  inputRef: RefObject<HTMLInputElement | null>;
-  tabIndexValue: string;
-}) {
-  useEffect(() => {
-    inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [inputRef, tabIndexValue]);
-  return <input ref={inputRef} {...props} />;
-}
-
 function MilestoneMarkdownEditor({
   contentsRef,
 }: {
@@ -245,9 +232,6 @@ function MilestoneMarkdownEditor({
 }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  useEffect(() => {
-    contentsRef.current?.setAttribute("tabindex", "2");
-  }, [contentsRef]);
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
@@ -311,6 +295,7 @@ function MilestoneMarkdownEditor({
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-contents-content-body"
+              tabIndex={2}
               {...{ markdown: "true" }}
             ></textarea>
           </div>

@@ -566,7 +566,7 @@ function ProjectIssuesBody({
           <div className="span10 span-hard-wrap" id="span10">
             <div className="pull-right">
               <Link
-                activeProps={{ className: undefined }}
+                activeProps={legacyRouteLocalActiveProps}
                 to="/$ownerName/$projectName/issueform"
                 params={{ ownerName, projectName }}
                 className="ybtn ybtn-success"
@@ -1600,7 +1600,7 @@ function ProjectIssueItem({
         <div {...issueRowLegacyForAttrs} className="issue-item-row">
           <div className="title-wrap" onClickCapture={handleTitleWrapClick}>
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
               className="title"
@@ -1639,7 +1639,7 @@ function ProjectIssueItem({
             ) : null}
             {titleParts.prefixes.map((prefix) => (
               <Link
-                activeProps={{ className: undefined }}
+                activeProps={legacyRouteLocalActiveProps}
                 className={
                   hoveredTitlePrefix === prefix ? "title-prefix title-prefix-hover" : "title-prefix"
                 }
@@ -1656,7 +1656,7 @@ function ProjectIssueItem({
               </Link>
             ))}
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
               className="title"
@@ -1667,7 +1667,7 @@ function ProjectIssueItem({
           <div className="infos">
             {issue.authorLabel ? (
               <Link
-                activeProps={{ className: undefined }}
+                activeProps={legacyRouteLocalActiveProps}
                 to="/$user"
                 params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
@@ -1692,7 +1692,7 @@ function ProjectIssueItem({
             {showMilestone && issue.milestoneId ? (
               <span className="mileston-tag">
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeProps={legacyRouteLocalActiveProps}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ milestoneId: String(issue.milestoneId), ownerName, projectName }}
                   data-toggle="tooltip"
@@ -1707,7 +1707,7 @@ function ProjectIssueItem({
               <span className="infos-item item-count-groups">
                 {issue.commentCount > 0 ? (
                   <Link
-                    activeProps={{ className: undefined }}
+                    activeProps={legacyRouteLocalActiveProps}
                     to="/$ownerName/$projectName/issue/$issueNumber"
                     params={issueParams}
                     hash="comments"
@@ -1721,7 +1721,7 @@ function ProjectIssueItem({
                 ) : null}
                 {issue.voterCount > 0 ? (
                   <Link
-                    activeProps={{ className: undefined }}
+                    activeProps={legacyRouteLocalActiveProps}
                     to="/$ownerName/$projectName/issue/$issueNumber"
                     params={issueParams}
                     hash="vote"
@@ -1784,7 +1784,7 @@ function ProjectIssueItem({
         <div className="mt5 pull-right">
           {assigneeLoginId && assigneeLabel ? (
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               to="/$user"
               params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
@@ -1944,7 +1944,7 @@ function IssueChildRow({
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
       <Link
-        activeProps={{ className: undefined }}
+        activeProps={legacyRouteLocalActiveProps}
         className="twoColumeModeTarget"
         to="/$ownerName/$projectName/issue/$issueNumber"
         params={issueParams}
@@ -1962,7 +1962,7 @@ function IssueChildRow({
       </span>
       {labels.map((label) => (
         <Link
-          activeProps={{ className: undefined }}
+          activeProps={legacyRouteLocalActiveProps}
           to={childLabelRoutePath(String(label.id))}
           className="label issue-label list-label active twoColumeModeTarget"
           data-category-id={label.categoryId ?? ""}
@@ -2008,7 +2008,7 @@ function IssueChildCommentAndVotePair({
     <span className="item-count-groups">
       {commentCount ? (
         <Link
-          activeProps={{ className: undefined }}
+          activeProps={legacyRouteLocalActiveProps}
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={issueParams}
           hash="comments"
@@ -2022,7 +2022,7 @@ function IssueChildCommentAndVotePair({
       ) : null}
       {voterCount ? (
         <Link
-          activeProps={{ className: undefined }}
+          activeProps={legacyRouteLocalActiveProps}
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={issueParams}
           hash="vote"
@@ -2080,7 +2080,7 @@ function IssueSubtaskSummary({
       {parentIssueNumber ? (
         <span className="infos-item subtask">
           <Link
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
             to="/$ownerName/$projectName/issue/$issueNumber"
             params={{ issueNumber: parentIssueNumber, ownerName, projectName }}
           >
@@ -2548,7 +2548,7 @@ function IssueSearchForm({
         <div className="labels-wrap">
           {labelControls.showManageLink ? (
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/labelsform"
               params={{ ownerName, projectName }}
               className="ybtn ybtn-default ybtn-mini pull-right"
@@ -2595,7 +2595,7 @@ function SearchMilestoneStatus({
     <div className="milestone-info">
       <div className="meta-info">
         <Link
-          activeProps={{ className: undefined }}
+          activeProps={legacyRouteLocalActiveProps}
           to="/$ownerName/$projectName/milestone/$milestoneId"
           params={{ milestoneId, ownerName, projectName }}
           className="title"
@@ -2671,7 +2671,7 @@ function IssueSearchLabelSelect({
         {t("label")}{" "}
         {showLabelEdit ? (
           <Link
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
             to="/$ownerName/$projectName/issue/labelsform"
             params={{ ownerName, projectName }}
             target="_blank"

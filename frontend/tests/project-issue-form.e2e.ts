@@ -41,6 +41,7 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator("#issue-form")).toBeVisible();
   await expect(page.locator("#title")).toBeFocused();
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
   await page.locator("#title").press("Enter");
   await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
@@ -209,6 +210,7 @@ test("project issue create form empty title submit uses legacy alert and refocus
 
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator("#title")).toHaveClass("text title ");
+  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
   await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
 
   const dialogMessages: string[] = [];
@@ -321,6 +323,9 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).not.toContain('t("validation.required")');
   expect(source).not.toContain('querySelector<HTMLInputElement>("#isDraft")');
   expect(source).not.toContain('setAttribute("value", "true")');
+  expect(source).not.toMatch(/setAttribute\(["']tabindex["']/u);
+  expect(source).toContain("tabIndex={1}");
+  expect(source).toContain("tabIndex={2}");
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain("legacyMarkdownHelpHtml");

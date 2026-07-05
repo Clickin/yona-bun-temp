@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/tabindex-no-positive */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
@@ -205,13 +206,13 @@ function ProjectIssueFormBody({
                       <div className="span11">
                         <LegacyTabIndexInput
                           focusRequest={titleFocusRequest}
-                          tabIndexValue="1"
                           type="text"
                           id="title"
                           name="title"
                           defaultValue=""
                           className="text title "
                           maxLength={250}
+                          tabIndex={1}
                           placeholder={t("title")}
                           autoComplete="off"
                           title={t("title.help.key")}
@@ -327,13 +328,9 @@ function ProjectIssueFormBody({
 
 function LegacyTabIndexInput({
   focusRequest = 0,
-  tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
   useEffect(() => {
     if (focusRequest > 0) {
       inputRef.current?.focus();
@@ -346,9 +343,6 @@ function IssueMarkdownEditor({ focusRequest }: { focusRequest: number }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    bodyRef.current?.setAttribute("tabindex", "2");
-  }, []);
   useEffect(() => {
     if (focusRequest > 0) {
       bodyRef.current?.focus();
@@ -414,6 +408,7 @@ function IssueMarkdownEditor({ focusRequest }: { focusRequest: number }) {
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-body-body"
+              tabIndex={2}
               {...{ markdown: "true" }}
             ></textarea>
           </div>
