@@ -440,7 +440,14 @@ function IssuePagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <Link activeProps={{ className: undefined }} to={pageRoutePath(currentPage - 1)}>
+            <Link
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              to={pageRoutePath(currentPage - 1)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
             </Link>
@@ -470,7 +477,14 @@ function IssuePagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <Link activeProps={{ className: undefined }} to={pageRoutePath(currentPage + 1)}>
+            <Link
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
+              to={pageRoutePath(currentPage + 1)}
+            >
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </Link>

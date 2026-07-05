@@ -803,6 +803,8 @@ test("current-user issues pagination follows legacy yobi.Pagination input behavi
     "href",
     `${basePath}/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=2&state=open`,
   );
+  await expect(nextPage).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(nextPage).not.toHaveAttribute("data-status", /.+/u);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "user-issues-pagination";
   });
@@ -813,6 +815,9 @@ test("current-user issues pagination follows legacy yobi.Pagination input behavi
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("user-issues-pagination");
+  await expect(page.locator("#pagination a")).toHaveCount(2);
+  await expect(page.locator("#pagination a[aria-current]")).toHaveCount(0);
+  await expect(page.locator("#pagination a[data-status]")).toHaveCount(0);
 
   const pageInput = page.locator('#pagination input[name="pageNum"][type="number"]');
   await expect(pageInput).toHaveAttribute("max", "3");
