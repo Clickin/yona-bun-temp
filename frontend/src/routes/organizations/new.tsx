@@ -45,6 +45,7 @@ function OrganizationNewScreen({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
   const legacyNameErrorTypeRef = React.useCallback((node: HTMLDivElement | null) => {
     node?.setAttribute("data-errType", "name");
@@ -64,6 +65,10 @@ function OrganizationNewScreen({
       );
     },
   });
+
+  React.useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,6 +122,7 @@ function OrganizationNewScreen({
                 </dt>
                 <dd>
                   <input
+                    ref={nameInputRef}
                     id="name"
                     type="text"
                     name="name"

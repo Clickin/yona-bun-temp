@@ -114,6 +114,7 @@ test("organization create form matches legacy organization/create.scala.html DOM
 
   await page.goto(`${basePath}/organizations/new`);
   await expect(page.locator('form[name="new-org"]')).toBeVisible();
+  await expect(page.locator("#name")).toBeFocused();
   await expect(page.locator(".n-alert")).toHaveAttribute("data-errType", "name");
   await expect(page.locator(".wrongName")).toBeHidden();
   const cancelLink = page.locator('form[name="new-org"] .actions a.ybtn', { hasText: "Cancel" });
