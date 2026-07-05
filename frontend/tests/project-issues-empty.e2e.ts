@@ -753,6 +753,30 @@ test("anonymous project issue list hides current-user quick search links like le
   await expect(page.locator(".left-menu .lst-stacked", { hasText: "Commented" })).toHaveCount(0);
 });
 
+test("project issue search keeps member self-filters without update controls like legacy partial_searchform.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "member-no-update");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".mass-update-wrap")).toHaveCount(0);
+  await expect(page.locator(".mass-update-check")).toHaveCount(0);
+  await expect(page.locator("#authorId option")).toHaveText([
+    "All",
+    "Created",
+    "Dev Member",
+    "Site Admin",
+  ]);
+  await expect(page.locator("#assigneeId option")).toHaveText([
+    "All",
+    "No assignee",
+    "Assigned",
+    "Site Admin",
+  ]);
+});
+
 test("populated project issue list matches legacy partial_list.scala.html DOM", async ({
   page,
 }) => {
@@ -2617,6 +2641,7 @@ async function mockProjectIssues(
     | "empty"
     | "foreign-draft"
     | "labels-unsorted"
+    | "member-no-update"
     | "milestone-selected"
     | "no-milestone-menu"
     | "non-member"
@@ -2674,7 +2699,11 @@ async function mockProjectIssues(
         ownerName: "admin",
         projectName: "sample",
         vcs: "GIT",
-        viewerCanUpdate: state !== "non-member" && state !== "project-labels-non-manager",
+        viewerCanUpdate:
+          state !== "member-no-update" &&
+          state !== "non-member" &&
+          state !== "project-labels-non-manager",
+        viewerIsProjectMember: state !== "anonymous" && state !== "non-member",
       }),
     });
   });

@@ -519,6 +519,7 @@ function ProjectIssuesBody({
   };
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
+  const showMemberCurrentUserSearchOptions = projectMemberSearchOptionsEnabled(project);
   const showLabelManagement = projectIssueLabelCreatable(project);
   const showLabelEdit = projectManagerControlsEnabled(project);
 
@@ -551,7 +552,7 @@ function ProjectIssuesBody({
               ownerName={ownerName}
               projectName={projectName}
               search={search}
-              showCurrentUserOptions={showMassUpdateControls}
+              showCurrentUserOptions={showMemberCurrentUserSearchOptions}
               onSearchSubmit={(nextSearch) => {
                 void navigate({
                   to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
@@ -3438,6 +3439,14 @@ function projectMilestoneMenuEnabled(project: ProjectContainer) {
 
 function projectMemberControlsEnabled(project: ProjectContainer) {
   return booleanField((project as Record<string, unknown>).viewerCanUpdate);
+}
+
+function projectMemberSearchOptionsEnabled(project: ProjectContainer) {
+  const record = project as Record<string, unknown>;
+  if ("viewerIsProjectMember" in record) {
+    return booleanField(record.viewerIsProjectMember);
+  }
+  return projectMemberControlsEnabled(project);
 }
 
 function projectManagerControlsEnabled(project: ProjectContainer) {
