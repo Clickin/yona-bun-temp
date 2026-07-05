@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -10,6 +10,7 @@ import {
   toggleSiteUserAdminRest,
   toggleSiteUserGuestRest,
   type SiteUser,
+  type SiteUserListResponse,
   type SiteUserPasswordResetResponse,
   type SiteUserState,
 } from "../../api/site-admin";
@@ -48,6 +49,11 @@ export const Route = createFileRoute("/sites/userList")({
   }),
 });
 
+function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 function SiteUserListRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -72,23 +78,50 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const [passwordResetByLoginId, setPasswordResetByLoginId] = useState<
     Record<string, SiteUserPasswordResetResponse | "pending">
   >({});
-  const query = useQuery(
-    siteUsersQueryOptions(runtimeConfig, {
-      page: search.pageNum,
-      query: search.query,
-      state: search.state,
-    }),
-  );
+  const usersQueryOptions = siteUsersQueryOptions(runtimeConfig, {
+    page: search.pageNum,
+    query: search.query,
+    state: search.state,
+  });
+  const query = useQuery(usersQueryOptions);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
   const response = query.data;
+  const closeDeleteModal = () => {
+    setDeleteUser(null);
+    setDeleteModalClosed(true);
+  };
+  const openDeleteModal = (event: MouseEvent<HTMLButtonElement>, user: SiteUser) => {
+    insulateSiteUserDeleteModalButtonClick(event);
+    setDeleteUser(user);
+    setDeleteModalClosed(false);
+  };
+  const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateSiteUserDeleteModalButtonClick(event);
+    closeDeleteModal();
+  };
+  const submitDelete = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateSiteUserDeleteModalButtonClick(event);
+    if (deleteUser) {
+      deleteMutation.mutate(deleteUser.loginId);
+    }
+  };
   const deleteMutation = useMutation({
     mutationFn: async (loginId: string) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return deleteSiteUserRest(runtimeConfig, csrfToken, loginId);
     },
-    onSuccess() {
-      queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
-      router.history.go(0);
+    onSuccess(response) {
+      closeDeleteModal();
+      queryClient.setQueryData<SiteUserListResponse>(usersQueryOptions.queryKey, (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          users: current.users.filter((user) => user.loginId !== response.user.loginId),
+        };
+      });
     },
     onError(error) {
       if (error instanceof RestApiError && error.status === 403) {
@@ -229,10 +262,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     key={user.id}
                     query={search.query}
                     runtimeConfig={runtimeConfig}
-                    onDeleteClick={(target) => {
-                      setDeleteUser(target);
-                      setDeleteModalClosed(false);
-                    }}
+                    onDeleteClick={openDeleteModal}
                     onResetPasswordClick={(loginId) => resetPasswordMutation.mutate(loginId)}
                     onToggleClick={(loginId, action) =>
                       toggleUserMutation.mutate({ action, loginId })
@@ -260,17 +290,14 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                       ? "modal fade hide"
                       : "modal fade"
                 }
-                style={deleteUser ? { display: "block" } : undefined}
+                style={deleteUser ? { display: "block" } : { display: "none" }}
               >
                 <div className="modal-header">
                   <button
                     type="button"
                     className="close"
                     data-dismiss="modal"
-                    onClick={() => {
-                      setDeleteUser(null);
-                      setDeleteModalClosed(true);
-                    }}
+                    onClick={dismissDeleteModal}
                   >
                     ×
                   </button>
@@ -291,11 +318,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     type="button"
                     id="accountToggleBtn"
                     className="ybtn ybtn-danger"
-                    onClick={() => {
-                      if (deleteUser) {
-                        deleteMutation.mutate(deleteUser.loginId);
-                      }
-                    }}
+                    onClick={submitDelete}
                   >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
@@ -303,15 +326,13 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     type="button"
                     className="ybtn"
                     data-dismiss="modal"
-                    onClick={() => {
-                      setDeleteUser(null);
-                      setDeleteModalClosed(true);
-                    }}
+                    onClick={dismissDeleteModal}
                   >
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>
               </div>
+              {deleteUser ? <div className="modal-backdrop fade in"></div> : null}
             </div>
           </div>
         </div>
@@ -531,7 +552,7 @@ function UserListItem({
   state,
   user,
 }: {
-  onDeleteClick: (user: SiteUser) => void;
+  onDeleteClick: (event: MouseEvent<HTMLButtonElement>, user: SiteUser) => void;
   onResetPasswordClick: (loginId: string) => void;
   onToggleClick: (loginId: string, action: UserToggleAction) => void;
   passwordReset?: SiteUserPasswordResetResponse | "pending";
@@ -647,7 +668,7 @@ function UserListItem({
             data-href={prefixBasePath(runtimeConfig.basePath, `/sites/user/delete${user.id}`)}
             data-user-id={user.loginId}
             data-user-name={user.displayName}
-            onClick={() => onDeleteClick(user)}
+            onClick={(event) => onDeleteClick(event, user)}
           >
             {t("button.delete")}
           </button>

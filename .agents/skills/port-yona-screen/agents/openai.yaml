@@ -1,0 +1,4 @@
+interface:
+  display_name: "Port Yona Screen"
+  short_description: "Port one Yona screen with layout parity"
+  default_prompt: "Use $port-yona-screen to port one legacy Yona Scala HTML screen into the React/TanStack SPA."

@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+const SITE_USER_LIST_ROUTE_SOURCE = new URL("../src/routes/sites/userList.tsx", import.meta.url);
+
 const EXPECTED_USER_LIST_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -279,7 +281,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(userNameAnchor).toHaveClass("user-name");
   await expect(userNameAnchor).not.toHaveAttribute("title", "");
   expect(await linkActiveMarkerLeaks(userNameAnchor)).toEqual([]);
-  const routeSource = readFileSync("src/routes/sites/userList.tsx", "utf8");
+  const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toMatch(/<a\b/u);
   expect(routeSource).not.toContain("setAttribute");
@@ -590,13 +592,15 @@ test("site admin deleted user tab renders legacy leave column without action but
     `${basePath}/sites/userList?state=ACTIVE`,
   );
 
-  const routeSource = readFileSync("src/routes/sites/userList.tsx", "utf8");
+  const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
   expect(routeSource).toContain("legacyLastStateModifiedDate(user)");
   expect(routeSource).toContain("lastStateModifiedDate");
   expect(routeSource).toMatch(/state !== "DELETED" \? \(/u);
 });
 
-test("site admin user actions follow legacy confirmation and alert flow", async ({ page }) => {
+test("site admin user delete modal stays route-owned across open dismiss and confirm", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
   const requests = await mockSiteUsers(page);
@@ -609,21 +613,95 @@ test("site admin user actions follow legacy confirmation and alert flow", async 
   });
 
   await page.goto(`${basePath}/sites/userList`);
+  await installSiteUserDeleteModalBridgeAudit(page, ["alertDeletionWrap"]);
+  await rememberSpaMarker(page, "site-user-delete-modal");
+  const userListUrl = page.url();
+  const deleteButton = page.locator('[data-toggle="account-delete"]');
+  const deleteModal = page.locator("#alertDeletionWrap");
+  const closeButton = page.locator("#alertDeletionWrap .close");
+  const noButton = page.locator("#alertDeletionWrap .modal-footer .ybtn").filter({
+    hasText: "No",
+  });
+  const confirmButton = page.locator("#accountToggleBtn");
 
-  await page.locator('[data-toggle="account-delete"]').click();
+  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(userListUrl);
+  expect(await spaMarker(page)).toBe("site-user-delete-modal");
+
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
-  await expect(page.locator("#alertDeletionWrap")).not.toHaveClass(/hide/);
+  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(noButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(page).toHaveURL(userListUrl);
+  expect(await spaMarker(page)).toBe("site-user-delete-modal");
+  await expect
+    .poll(() => siteUserDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
   expect(requests.deletedLoginIds).toEqual([]);
 
-  await page.locator('#alertDeletionWrap [data-dismiss="modal"]').last().click();
-  await expect(page.locator("#alertDeletionWrap")).toHaveClass(/hide/);
+  expect(await dispatchCancelableClick(noButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(userListUrl);
+  expect(await spaMarker(page)).toBe("site-user-delete-modal");
+  await expect
+    .poll(() => siteUserDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
   expect(requests.deletedLoginIds).toEqual([]);
 
-  await page.locator('[data-toggle="account-delete"]').click();
-  const deleteReloadPromise = page.waitForEvent("framenavigated");
-  await page.locator("#accountToggleBtn").click();
-  await deleteReloadPromise;
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade in");
+  expect(await dispatchCancelableClick(closeButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(userListUrl);
+  expect(await spaMarker(page)).toBe("site-user-delete-modal");
+  await expect
+    .poll(() => siteUserDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
+
+  await rememberSpaMarker(page, "kept");
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/site/users/doortts") &&
+      response.request().method() === "DELETE",
+  );
+  await confirmButton.click();
+  await deleteResponsePromise;
+
   await expect.poll(() => requests.deletedLoginIds).toEqual(["doortts"]);
+  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(0);
+  await expect(page).toHaveURL(userListUrl);
+  expect(await spaMarker(page)).toBe("kept");
+  await expect
+    .poll(() => siteUserDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
+});
+
+test("site admin user actions follow legacy reset-password alert flow", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockSiteUsers(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
 
   await page.locator('[data-toggle="reset-password"]').click();
   await expect(page.locator(".action-buttons .alert-success h4")).toHaveText(
@@ -652,6 +730,7 @@ test("site admin user delete forbidden reloads legacy page", async ({ page }) =>
 
   await page.locator('[data-toggle="account-delete"]').click();
   await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
+  await expect(page.locator("#alertDeletionWrap")).toHaveClass("modal fade in");
 
   const reloadPromise = page.waitForEvent("framenavigated");
   await page.locator("#accountToggleBtn").click();
@@ -661,6 +740,39 @@ test("site admin user delete forbidden reloads legacy page", async ({ page }) =>
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBeUndefined();
+});
+
+test("site admin user delete modal source insulates delegated modal bridge", () => {
+  const source = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
+  const modalSource = source.slice(
+    source.indexOf("function insulateSiteUserDeleteModalButtonClick"),
+    source.indexOf("function legacyLastStateModifiedDate"),
+  );
+
+  expect(modalSource).toContain(
+    "function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
+  );
+  expect(modalSource).toContain("event.preventDefault();");
+  expect(modalSource).toContain("event.stopPropagation();");
+  expect(modalSource).toContain(
+    "const openDeleteModal = (event: MouseEvent<HTMLButtonElement>, user: SiteUser) => {",
+  );
+  expect(modalSource).toContain(
+    "const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {",
+  );
+  expect(modalSource).toContain("const submitDelete = (event: MouseEvent<HTMLButtonElement>) => {");
+  expect(modalSource).toContain(
+    "queryClient.setQueryData<SiteUserListResponse>(usersQueryOptions.queryKey",
+  );
+  expect(modalSource).toContain("closeDeleteModal();");
+  expect(modalSource).toContain('data-toggle="account-delete"');
+  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).toContain("onDeleteClick={openDeleteModal}");
+  expect(modalSource).toContain("onClick={dismissDeleteModal}");
+  expect(modalSource).toContain("onClick={submitDelete}");
+  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toContain("classList");
+  expect(modalSource).not.toContain("addEventListener(");
 });
 
 test("site admin user reset password failure uses legacy alert text", async ({ page }) => {
@@ -1146,7 +1258,18 @@ async function userListMetrics(page: Page) {
     const userNameRect = userName.getBoundingClientRect();
     const userIdRect = userId.getBoundingClientRect();
     const paginationRect = pagination.getBoundingClientRect();
+    const modalInlineDisplay = modal.style.display;
+    const modalInlineVisibility = modal.style.visibility;
+    const modalWasHidden = getComputedStyle(modal).display === "none";
+    if (modalWasHidden) {
+      modal.style.visibility = "hidden";
+      modal.style.display = "block";
+    }
     const modalRect = modal.getBoundingClientRect();
+    if (modalWasHidden) {
+      modal.style.display = modalInlineDisplay;
+      modal.style.visibility = modalInlineVisibility;
+    }
 
     return {
       actionColumnRatio: Number((actionColumnRect.width / firstRowRect.width).toFixed(2)),
@@ -1258,4 +1381,84 @@ async function canonicalizeHtml(page: Page, html: string) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
   }, html);
+}
+
+async function installSiteUserDeleteModalBridgeAudit(page: Page, modalIds: string[]) {
+  await page.evaluate((ids) => {
+    type GuardedWindow = typeof window & {
+      __siteUserDeleteModalBridgeAudit?: {
+        documentClicks: string[];
+        getElementById: string[];
+      };
+      __siteUserDeleteModalBridgeAuditArmed?: boolean;
+      __siteUserDeleteModalBridgeNativeGetElementById?: typeof Document.prototype.getElementById;
+    };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__siteUserDeleteModalBridgeAudit = {
+      documentClicks: [],
+      getElementById: [],
+    };
+    guardedWindow.__siteUserDeleteModalBridgeNativeGetElementById ??=
+      Document.prototype.getElementById;
+    const nativeGetElementById = guardedWindow.__siteUserDeleteModalBridgeNativeGetElementById;
+
+    Document.prototype.getElementById = function guardedGetElementById(id: string) {
+      if (ids.includes(id)) {
+        guardedWindow.__siteUserDeleteModalBridgeAudit?.getElementById.push(id);
+      }
+      return nativeGetElementById.call(this, id);
+    };
+
+    if (guardedWindow.__siteUserDeleteModalBridgeAuditArmed) {
+      return;
+    }
+
+    guardedWindow.__siteUserDeleteModalBridgeAuditArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridgeTarget = target?.closest(
+        '[data-toggle="account-delete"], [data-dismiss="modal"]',
+      );
+      if (bridgeTarget) {
+        guardedWindow.__siteUserDeleteModalBridgeAudit?.documentClicks.push(
+          `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
+        );
+      }
+    });
+  }, modalIds);
+}
+
+async function siteUserDeleteModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __siteUserDeleteModalBridgeAudit?: {
+              documentClicks: string[];
+              getElementById: string[];
+            };
+          }
+      ).__siteUserDeleteModalBridgeAudit ?? { documentClicks: [], getElementById: [] },
+  );
+}
+
+async function rememberSpaMarker(page: Page, marker: string) {
+  await page.evaluate((nextMarker) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextMarker;
+  }, marker);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
 }

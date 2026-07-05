@@ -1,0 +1,57 @@
+# Harnesses And Verification
+
+Use these references when porting one Yona screen from Scala HTML to React/TanStack SPA.
+
+## Mandatory Guards
+
+- `tools/scala-html-goal-guard.mjs`: blocks route TSX changes that add raw `<a>`, jQuery/direct DOM escapes, `createElement`, `dangerouslySetInnerHTML`, placeholder `Link href="#"`/`javascript:`, noisy legacy custom attributes on `Link`, route changes without focused E2E, or route changes without `docs/provenance/frontend-scala-html-goal-violation-audit.md`.
+- `tools/yona-design-harness.mjs`: checks frontend design changes against `DESIGN.md`, legacy Yona tokens, `frontend/src/app.css`, and forbidden temporary design drift.
+- `tools/yona-parity-gate.mjs`: checks staged implementation changes for corresponding tests/provenance evidence.
+- `tools/precommit-verify.mjs`: runs lint/format/design/Scala HTML/parity checks on staged files; it is invoked by the turn commit hook.
+
+## Useful Commands
+
+- Focused E2E: `pnpm --dir frontend test:e2e <frontend/tests/name.e2e.ts>`
+- Frontend typecheck: `pnpm --dir frontend check`
+- Dev script contracts: `pnpm test:dev-scripts`
+- Legacy page audit: `pnpm smoke:legacy-html-pages`
+- Legacy anchor coverage: `pnpm smoke:legacy-anchor-coverage`
+- Legacy route coverage: `pnpm smoke:legacy-route-coverage`
+- Visual sweep: `node scripts/visual-parity-sweep.mjs` with `YORAM_SWEEP_PATHS=/path`
+- Turn commit hook: `pnpm agent:turn-commit -- -m "<summary>"`
+
+Run cargo only through the repo wrappers and outside the sandbox, per `AGENTS.md`, when Rust verification is needed.
+
+## Evidence To Capture
+
+- Target route and screen state.
+- Legacy root Scala HTML and included partials.
+- Legacy LESS/JS/message files consulted.
+- Focused E2E file and exact assertions added.
+- Layout metric assertions added for fragile placement: navbar/search containment, filter/input alignment, tab/action row alignment, list/table column alignment, modal geometry, and no-overlap checks.
+- API/query/mutation boundary used.
+- Any intentionally dropped legacy attributes or behavior, labeled as `gap`, `deviation`, or `deferred`.
+
+## Layout Metric Pattern
+
+Prefer explicit Playwright box checks over visual guesswork:
+
+```ts
+const navbarBox = await page.locator(".gnb-outer").boundingBox();
+const searchBox = await page.locator("#search").boundingBox();
+expect(navbarBox).not.toBeNull();
+expect(searchBox).not.toBeNull();
+expect(searchBox!.top).toBeGreaterThanOrEqual(navbarBox!.top);
+expect(searchBox!.bottom).toBeLessThanOrEqual(navbarBox!.bottom);
+expect(searchBox!.right).toBeLessThanOrEqual(navbarBox!.right);
+```
+
+Use the same pattern for list columns, form rows, modal parts, tab bars, and any element that previously drifted or could plausibly overflow.
+
+## Attribute Guidance
+
+Legacy Scala HTML often uses attributes for jQuery plugins or server-rendered helpers. For React SPA ports:
+
+- Preserve attributes that change visible rendering, submitted data, CSS matching, accessibility, downloads, or stable deep links.
+- Drop attributes that only powered legacy JS after translating behavior into React state/events or TanStack Query mutations.
+- Do not attach legacy JS-only attributes such as `data-request-*`, `data-url`, `data-action`, `pjax-*`, or `data-toggle` to `Link` unless a harness explicitly requires the rendered DOM and the choice is documented.

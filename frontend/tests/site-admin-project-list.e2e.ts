@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+const SITE_PROJECT_LIST_ROUTE_SOURCE = "src/routes/sites/projectList.tsx";
+
 const EXPECTED_PROJECT_LIST_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -387,8 +389,48 @@ test("site admin project list row project links use SPA navigation", async ({ pa
   ).toBe("site-project-row");
 });
 
-test("site admin project delete waits for legacy confirmation modal", async ({ page }) => {
+test("site admin project delete modal source stays route-owned", () => {
+  const routeSource = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
+  const modalSource = routeSource.slice(
+    routeSource.indexOf("function insulateProjectDeleteModalButtonClick"),
+    routeSource.indexOf("function LegacyMessage"),
+  );
+
+  expect(modalSource).toContain(
+    "function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
+  );
+  expect(modalSource).toContain("event.preventDefault();");
+  expect(modalSource).toContain("event.stopPropagation();");
+  expect(modalSource).toContain(
+    "const openDeleteModal = (selectedProject: SiteProject, event: MouseEvent<HTMLButtonElement>) => {",
+  );
+  expect(modalSource).toContain(
+    "const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {",
+  );
+  expect(modalSource).toContain(
+    "const confirmDeleteProject = (event: MouseEvent<HTMLButtonElement>) => {",
+  );
+  expect(modalSource).toContain("setDeleteProject(selectedProject);");
+  expect(modalSource).toContain("setDeleteModalClosed(false);");
+  expect(modalSource).toContain("closeDeletionModal();");
+  expect(modalSource).toContain('data-toggle="delete-project"');
+  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).toContain("onClick={dismissDeleteModal}");
+  expect(modalSource).toContain(
+    '{deleteProject ? <div className="modal-backdrop fade in"></div> : null}',
+  );
+  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toContain("classList");
+  expect(modalSource).not.toContain("style.display");
+  expect(modalSource).not.toContain("addEventListener(");
+  expect(modalSource).not.toContain("router.history.go(0)");
+});
+
+test("site admin project delete modal opens, dismisses, deletes, and stays on the SPA route", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await auditSiteProjectDeleteNativeListeners(page);
   await mockSiteAdminSession(page);
   const requests = await mockProjects(page);
   await mockUpdate(page, {
@@ -400,29 +442,79 @@ test("site admin project delete waits for legacy confirmation modal", async ({ p
   });
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
-  await page.locator('[data-toggle="delete-project"]').click();
-
-  await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
-  await expect(page.locator("#alertDeletionWrap")).not.toHaveClass(/hide/);
-  expect(requests.deletedProjectIds).toEqual([]);
-
-  await page.locator('#alertDeletionWrap [data-dismiss="modal"]').last().click();
-  await expect(page.locator("#alertDeletionWrap")).toHaveClass(/hide/);
-  expect(requests.deletedProjectIds).toEqual([]);
-
-  await page.evaluate(() => {
-    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "project-delete";
+  await installSiteProjectDeleteModalBridgeAudit(page);
+  await rememberSpaMarker(page, "site-project-delete-modal");
+  const projectListUrl = page.url();
+  const deleteButton = page.locator('[data-toggle="delete-project"]');
+  const deleteModal = page.locator("#alertDeletionWrap");
+  const closeButton = page.locator("#alertDeletionWrap .close");
+  const noButton = page.locator("#alertDeletionWrap .modal-footer .ybtn").filter({
+    hasText: "No",
   });
-  await page.locator('[data-toggle="delete-project"]').click();
-  const reloadPromise = page.waitForEvent("framenavigated");
+  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(projectListUrl);
+  expect(await spaMarker(page)).toBe("site-project-delete-modal");
+
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
+  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(noButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(page).toHaveURL(projectListUrl);
+  expect(await spaMarker(page)).toBe("site-project-delete-modal");
+  expect(requests.deletedProjectIds).toEqual([]);
+  await expect
+    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], listClicks: [] });
+
+  expect(await dispatchCancelableClick(noButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(projectListUrl);
+  expect(await spaMarker(page)).toBe("site-project-delete-modal");
+  expect(requests.deletedProjectIds).toEqual([]);
+  await expect
+    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], listClicks: [] });
+
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade in");
+  expect(await dispatchCancelableClick(closeButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(projectListUrl);
+  expect(await spaMarker(page)).toBe("site-project-delete-modal");
+  await expect
+    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], listClicks: [] });
+
+  await rememberSpaMarker(page, "kept");
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/site/projects/77") &&
+      response.request().method() === "DELETE",
+  );
   await page.locator("#projectDeleteBtn").click();
-  await reloadPromise;
+  await deleteResponsePromise;
 
   await expect.poll(() => requests.deletedProjectIds).toEqual(["77"]);
+  await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(0);
+  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(projectListUrl);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
-  expect(
-    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
-  ).toBeUndefined();
+  await expect.poll(() => spaMarker(page)).toBe("kept");
+  await expect
+    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], listClicks: [] });
+  expect(await readSiteProjectDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
 test("site admin project list renders legacy update notification badge", async ({ page }) => {
@@ -446,7 +538,7 @@ test("site admin project list renders legacy update notification badge", async (
 });
 
 test("site admin project list uses direct typed links", () => {
-  const routeSource = readFileSync("src/routes/sites/projectList.tsx", "utf8");
+  const routeSource = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
 
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("LegacyInternalLink");
@@ -481,6 +573,120 @@ async function expectLegacyPaginationLink(link: Locator, expected: { href: strin
   await expect(link).not.toHaveAttribute("data-status", /.+/);
 }
 
+async function auditSiteProjectDeleteNativeListeners(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = Element.prototype.addEventListener;
+    const records: string[] = [];
+    Element.prototype.addEventListener = function addEventListenerWithSiteProjectDeleteAudit(
+      type,
+      listener,
+      options,
+    ) {
+      if (
+        this instanceof Element &&
+        (this.matches('[data-toggle="delete-project"]') ||
+          this.id === "alertDeletionWrap" ||
+          this.id === "projectDeleteBtn" ||
+          Boolean(this.closest("#alertDeletionWrap")))
+      ) {
+        records.push(`${this.id || this.className}:${type}`);
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+    (
+      window as Window & typeof globalThis & { __siteProjectDeleteNativeListenerAudit?: string[] }
+    ).__siteProjectDeleteNativeListenerAudit = records;
+  });
+}
+
+async function readSiteProjectDeleteNativeListenerAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __siteProjectDeleteNativeListenerAudit?: string[];
+          }
+      ).__siteProjectDeleteNativeListenerAudit ?? [],
+  );
+}
+
+async function installSiteProjectDeleteModalBridgeAudit(page: Page) {
+  await page.evaluate(() => {
+    type GuardedWindow = typeof window & {
+      __siteProjectDeleteModalBridgeAudit?: {
+        documentClicks: string[];
+        listClicks: string[];
+      };
+      __siteProjectDeleteModalBridgeAuditArmed?: boolean;
+    };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__siteProjectDeleteModalBridgeAudit = { documentClicks: [], listClicks: [] };
+
+    if (guardedWindow.__siteProjectDeleteModalBridgeAuditArmed) {
+      return;
+    }
+
+    guardedWindow.__siteProjectDeleteModalBridgeAuditArmed = true;
+    const recordBridgeHit = (
+      bucket: "documentClicks" | "listClicks",
+      target: EventTarget | null,
+    ) => {
+      const element = target instanceof Element ? target : null;
+      const bridgeTarget = element?.closest(
+        '[data-toggle="delete-project"], #alertDeletionWrap [data-dismiss="modal"]',
+      );
+      if (bridgeTarget) {
+        guardedWindow.__siteProjectDeleteModalBridgeAudit?.[bucket].push(
+          `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
+        );
+      }
+    };
+
+    document.addEventListener("click", (event) => {
+      recordBridgeHit("documentClicks", event.target);
+    });
+    document.querySelector(".project-list-wrap")?.addEventListener("click", (event) => {
+      recordBridgeHit("listClicks", event.target);
+    });
+  });
+}
+
+async function siteProjectDeleteModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __siteProjectDeleteModalBridgeAudit?: {
+              documentClicks: string[];
+              listClicks: string[];
+            };
+          }
+      ).__siteProjectDeleteModalBridgeAudit ?? { documentClicks: [], listClicks: [] },
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
+}
+
+async function rememberSpaMarker(page: Page, marker: string) {
+  await page.evaluate((nextMarker) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextMarker;
+  }, marker);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+  );
+}
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -505,37 +711,46 @@ async function mockProjects(page: Page) {
   const requests = {
     deletedProjectIds: [] as string[],
   };
+  const projects = [
+    {
+      createdAt: "2026-06-29",
+      id: 77,
+      ownerName: "acme",
+      overview: "Release planning",
+      projectLogoUrl: "/assets/images/default-project-logo.png",
+      projectName: "roadmap",
+    },
+  ];
+  let total = 2;
+  let totalPages = 2;
 
   await page.route("**/api/v1/site/projects?*", async (route) => {
     const url = new URL(route.request().url());
     const pageNum =
       Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
+    const filter = url.searchParams.get("filter") ?? "";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        filter: "road",
+        filter,
         page: pageNum,
         pageSize: 20,
-        projects: [
-          {
-            createdAt: "2026-06-29",
-            id: 77,
-            ownerName: "acme",
-            overview: "Release planning",
-            projectLogoUrl: "/assets/images/default-project-logo.png",
-            projectName: "roadmap",
-          },
-        ],
-        total: 2,
-        totalPages: 2,
+        projects,
+        total,
+        totalPages,
       }),
     });
   });
   await page.route("**/api/v1/site/projects/*", async (route) => {
     if (route.request().method() === "DELETE") {
-      requests.deletedProjectIds.push(
-        new URL(route.request().url()).pathname.split("/").pop() ?? "",
-      );
+      const deletedProjectId = new URL(route.request().url()).pathname.split("/").pop() ?? "";
+      requests.deletedProjectIds.push(deletedProjectId);
+      const deletedIndex = projects.findIndex((project) => String(project.id) === deletedProjectId);
+      if (deletedIndex >= 0) {
+        projects.splice(deletedIndex, 1);
+      }
+      total = 0;
+      totalPages = 0;
     }
     await route.fulfill({
       contentType: "application/json",

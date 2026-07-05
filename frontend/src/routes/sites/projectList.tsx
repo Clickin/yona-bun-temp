@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
   siteUpdateQueryOptions,
   type SiteProject,
+  type SiteProjectListResponse,
 } from "../../api/site-admin";
 import { apiQueryKeys } from "../../api/query-keys";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -23,6 +24,11 @@ const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+
+function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 export const Route = createFileRoute("/sites/projectList")({
   component: SiteProjectListRoute,
@@ -54,16 +60,69 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const currentPage = pageNum ?? 1;
-  const query = useQuery(siteProjectsQueryOptions(runtimeConfig, { filter, page: currentPage }));
+  const projectsQuery = siteProjectsQueryOptions(runtimeConfig, { filter, page: currentPage });
+  const query = useQuery(projectsQuery);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
+  const closeDeletionModal = () => {
+    setDeleteModalClosed(true);
+    setDeleteProject(null);
+  };
+  const openDeleteModal = (selectedProject: SiteProject, event: MouseEvent<HTMLButtonElement>) => {
+    insulateProjectDeleteModalButtonClick(event);
+    setDeleteModalClosed(false);
+    setDeleteProject(selectedProject);
+  };
+  const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateProjectDeleteModalButtonClick(event);
+    closeDeletionModal();
+  };
+  const confirmDeleteProject = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateProjectDeleteModalButtonClick(event);
+    if (deleteProject) {
+      deleteMutation.mutate(deleteProject.id);
+    }
+    closeDeletionModal();
+  };
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return deleteSiteProjectRest(runtimeConfig, csrfToken, projectId);
     },
-    onSuccess() {
-      queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
-      router.history.go(0);
+    onSuccess(_response, deletedProjectId) {
+      let navigateToPreviousPage = false;
+
+      queryClient.setQueryData<SiteProjectListResponse>(projectsQuery.queryKey, (current) => {
+        if (!current) {
+          return current;
+        }
+
+        const nextProjects = current.projects.filter((project) => project.id !== deletedProjectId);
+        if (nextProjects.length === current.projects.length) {
+          return current;
+        }
+
+        const nextTotal = Math.max(0, current.total - 1);
+        const nextTotalPages = nextTotal === 0 ? 0 : Math.ceil(nextTotal / current.pageSize);
+        navigateToPreviousPage =
+          nextProjects.length === 0 && current.page > 1 && nextTotalPages > 0;
+
+        return {
+          ...current,
+          page: navigateToPreviousPage ? current.page - 1 : current.page,
+          projects: nextProjects,
+          total: nextTotal,
+          totalPages: nextTotalPages,
+        };
+      });
+
+      void queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
+
+      if (navigateToPreviousPage) {
+        void router.navigate({
+          search: { filter: filter || undefined, pageNum: currentPage - 1 },
+          to: "/sites/projectList",
+        });
+      }
     },
   });
 
@@ -142,10 +201,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 {(query.data?.projects ?? []).map((project) => (
                   <ProjectListItem
                     key={project.id}
-                    onDelete={(selectedProject) => {
-                      setDeleteModalClosed(false);
-                      setDeleteProject(selectedProject);
-                    }}
+                    onDelete={openDeleteModal}
                     project={project}
                     runtimeConfig={runtimeConfig}
                   />
@@ -174,10 +230,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                     type="button"
                     className="close"
                     data-dismiss="modal"
-                    onClick={() => {
-                      setDeleteModalClosed(true);
-                      setDeleteProject(null);
-                    }}
+                    onClick={dismissDeleteModal}
                   >
                     ×
                   </button>
@@ -196,13 +249,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                     type="button"
                     id="projectDeleteBtn"
                     className="ybtn ybtn-danger"
-                    onClick={() => {
-                      if (deleteProject) {
-                        deleteMutation.mutate(deleteProject.id);
-                      }
-                      setDeleteModalClosed(true);
-                      setDeleteProject(null);
-                    }}
+                    onClick={confirmDeleteProject}
                   >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
@@ -210,15 +257,13 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                     type="button"
                     className="ybtn"
                     data-dismiss="modal"
-                    onClick={() => {
-                      setDeleteModalClosed(true);
-                      setDeleteProject(null);
-                    }}
+                    onClick={dismissDeleteModal}
                   >
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>
               </div>
+              {deleteProject ? <div className="modal-backdrop fade in"></div> : null}
             </div>
           </div>
         </div>
@@ -380,7 +425,7 @@ function ProjectListItem({
   project,
   runtimeConfig,
 }: {
-  onDelete: (project: SiteProject) => void;
+  onDelete: (project: SiteProject, event: MouseEvent<HTMLButtonElement>) => void;
   project: SiteProject;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -411,7 +456,7 @@ function ProjectListItem({
           data-project-name={`${project.ownerName}/${project.projectName}`}
           data-toggle="delete-project"
           data-href={prefixBasePath(runtimeConfig.basePath, `/sites/project/delete/${project.id}`)}
-          onClick={() => onDelete(project)}
+          onClick={(event) => onDelete(project, event)}
         >
           <LegacyMessage messageKey="button.delete" />
         </button>
