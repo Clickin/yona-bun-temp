@@ -193,6 +193,39 @@ test("current-user email settings tab menu uses direct typed router links", () =
   expect(source).not.toContain("data-request-uri={requestUri}");
 });
 
+test("current-user email settings table keeps legacy avatar src shape when API rows omit avatars", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedSession(page);
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify({ csrfToken: "csrf-token" }),
+    });
+  });
+  await page.route("**/api/v1/workspace", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(workspaceBodyWithoutEmailAvatars()),
+    });
+  });
+
+  await page.goto(`${basePath}/user/editform/emails`);
+
+  const tableImages = page.locator("table.table.mt20 img");
+  await expect(tableImages).toHaveCount(3);
+  const imageSources = await tableImages.evaluateAll((images) =>
+    images.map((image) => image.getAttribute("src")),
+  );
+  expect(imageSources).toEqual([
+    "/assets/images/default-avatar-128.png",
+    "/assets/images/default-avatar-128.png",
+    "/assets/images/default-avatar-128.png",
+  ]);
+});
+
 async function mockAuthenticatedSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -243,6 +276,18 @@ function workspaceBody() {
     pullRequestItems: [],
     recentProjects: [],
     watchedProjects: [],
+  };
+}
+
+function workspaceBodyWithoutEmailAvatars() {
+  const body = workspaceBody();
+  return {
+    ...body,
+    emails: body.emails.map(({ avatarUrl: _avatarUrl, ...email }) => email),
+    profile: {
+      ...body.profile,
+      avatarUrl: "",
+    },
   };
 }
 

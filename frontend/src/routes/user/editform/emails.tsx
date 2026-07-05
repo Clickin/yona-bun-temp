@@ -24,6 +24,8 @@ type WorkspaceEmailRow = {
   valid?: unknown;
 };
 
+const DEFAULT_EMAIL_AVATAR_SRC = "/assets/images/default-avatar-128.png";
+
 function UserEmailSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -130,7 +132,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               <tr>
                 <td>
                   {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
-                  <img src={profile?.avatarUrl || undefined} width="40" height="40" />
+                  <img src={avatarSrc(profile?.avatarUrl)} width="40" height="40" />
                   <strong className="ml10">{profile?.primaryEmailAddress ?? ""}</strong>
                   <span className="label-head vmiddle ml10">{t("emails.main.email")}</span>
                 </td>
@@ -149,7 +151,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   <tr key={id || stringValue(row.emailAddress)}>
                     <td>
                       {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
-                      <img src={stringValue(row.avatarUrl) || undefined} width="40" height="40" />
+                      <img src={avatarSrc(row.avatarUrl)} width="40" height="40" />
                       <span className="ml10">{stringValue(row.emailAddress)}</span>
                     </td>
                     <td style={{ textAlign: "right", verticalAlign: "middle" }}>
@@ -206,6 +208,10 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function avatarSrc(value: unknown): string {
+  return stringValue(value) || DEFAULT_EMAIL_AVATAR_SRC;
 }
 
 function EditTabMenu({ active }: { active: string }) {
