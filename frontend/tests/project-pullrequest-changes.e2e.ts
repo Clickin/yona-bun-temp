@@ -259,6 +259,9 @@ test("project pull request changes renders legacy file diff error row", async ({
   const urlBeforeToggle = page.url();
   const diffMeta = page.locator(".diff-partial-meta");
   const diffCode = page.locator(".diff-partial-code");
+  await expect(diffMeta).toHaveJSProperty("tagName", "DIV");
+  await expect(diffMeta).not.toHaveAttribute("role", "button");
+  await expect(diffMeta).not.toHaveAttribute("tabindex", "0");
   await expect(diffMeta).toHaveCSS("cursor", "pointer");
   await expect(diffCode).toBeVisible();
   await diffMeta.click();
@@ -655,6 +658,9 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("innerHTML");
+  expect(routeSource).not.toContain('role="button"');
+  expect(routeSource).not.toContain("onKeyDown");
+  expect(routeSource).not.toContain("tabIndex");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toMatch(/<a\s/u);
   expect(routeSource).toContain("<Link");

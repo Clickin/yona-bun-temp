@@ -109,6 +109,17 @@ test("root shell does not own route comment delete toggles", async () => {
   expect(ROOT_ROUTE_SOURCE).not.toContain("comment-delete-confirm");
 });
 
+test("root shell does not own route tab, search scope, or notify bridge state", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="tab"], [data-toggle="pill"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="search-scope"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("gnb-search-scope-title");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("scanNotifySources");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("yobi:notify-scan");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="yobi-notify"]');
+  expect(ROOT_ROUTE_SOURCE).toContain("<RootToastContext.Provider value={setRootToast}>");
+  expect(ROOT_ROUTE_SOURCE).toContain('<div id="yobiToasts" className="yobiToasts">');
+});
+
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -195,42 +206,6 @@ test("standalone UI kit root shell skips yobi dropdown mutation for data-activat
   await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
   await expect(dropdown.locator("li.active")).toHaveCount(0);
   await expect(dropdown.locator('input[type="hidden"][name="branch"]')).toHaveCount(0);
-});
-
-test("standalone UI kit root shell applies legacy navbar search scope selection", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-
-  await page.goto(`${basePath}/_UIKit`);
-  await page.locator(".page-wrap-outer").evaluate((container) => {
-    container.insertAdjacentHTML(
-      "afterbegin",
-      `<form action="/yona/search" class="input-prepend gnb-search-form" name="gnb-search-form" style="position: fixed; top: 0; left: 0; z-index: 10000; width: 320px;">
-        <input type="hidden" name="searchType" value="auto">
-        <div class="btn-group open">
-          <button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">
-            Project
-          </button>
-          <ul class="dropdown-menu flat right">
-            <li><a href="#" data-toggle="search-scope" data-action="/yona/search/project/yona">Project</a></li>
-            <li><a href="#" data-toggle="search-scope" data-action="/yona/search/group/yona">Group</a></li>
-            <li><a href="#" data-toggle="search-scope" data-action="/yona/search">All</a></li>
-          </ul>
-        </div>
-      </form>`,
-    );
-  });
-
-  await page
-    .locator('[data-toggle="search-scope"][data-action="/yona/search/group/yona"]')
-    .dispatchEvent("click");
-
-  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
-    "action",
-    "/yona/search/group/yona",
-  );
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("Group");
 });
 
 test("standalone UI kit root shell applies legacy markdown help tab selection", async ({

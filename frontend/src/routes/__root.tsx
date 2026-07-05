@@ -50,10 +50,8 @@ function RootResetShell() {
     if (rendersPlainResponseState) {
       return;
     }
-    scanNotifySources();
     scanOriginalMessageSources();
     const timeoutId = window.setTimeout(() => {
-      scanNotifySources();
       scanOriginalMessageSources();
     }, 0);
     return () => window.clearTimeout(timeoutId);
@@ -63,10 +61,8 @@ function RootResetShell() {
     if (rendersPlainResponseState) {
       return;
     }
-    document.addEventListener("yobi:notify-scan", scanNotifySources);
     document.addEventListener("yobi:original-message-scan", scanOriginalMessageSources);
     return () => {
-      document.removeEventListener("yobi:notify-scan", scanNotifySources);
       document.removeEventListener("yobi:original-message-scan", scanOriginalMessageSources);
     };
   }, [rendersPlainResponseState]);
@@ -156,34 +152,6 @@ function RootResetShell() {
         return;
       }
 
-      const tabToggle = target?.closest<HTMLElement>('[data-toggle="tab"], [data-toggle="pill"]');
-      if (tabToggle) {
-        const selector =
-          tabToggle.dataset.target ?? tabToggle.getAttribute("href")?.match(/#[^\s]*$/u)?.[0];
-        const pane = selector?.startsWith("#") ? document.getElementById(selector.slice(1)) : null;
-        const nav = tabToggle.closest<HTMLElement>("ul:not(.dropdown-menu)");
-        const item = tabToggle.closest<HTMLElement>("li");
-        if (nav && item && pane) {
-          nav.querySelectorAll(":scope > .active").forEach((active) => {
-            active.classList.remove("active");
-            active.querySelectorAll(":scope > .dropdown-menu > .active").forEach((dropdownItem) => {
-              dropdownItem.classList.remove("active");
-            });
-          });
-          item.classList.add("active");
-
-          pane.parentElement?.querySelectorAll(":scope > .active").forEach((activePane) => {
-            activePane.classList.remove("active", "in");
-          });
-          pane.classList.add("active");
-          if (pane.classList.contains("fade")) {
-            pane.classList.add("in");
-          }
-        }
-        event.preventDefault();
-        return;
-      }
-
       const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
       if (dismissAlert) {
         dismissAlert.closest<HTMLElement>(".alert")?.remove();
@@ -209,22 +177,6 @@ function RootResetShell() {
               .querySelector(`.markdown-help-wrap > .${CSS.escape(targetName)}`)
               ?.classList.add("active");
           }
-        }
-        event.preventDefault();
-        return;
-      }
-
-      const searchScope = target?.closest<HTMLElement>('[data-toggle="search-scope"]');
-      if (searchScope) {
-        const action = searchScope.dataset.action;
-        if (action) {
-          document
-            .querySelector<HTMLFormElement>('form[name="gnb-search-form"]')
-            ?.setAttribute("action", action);
-        }
-        const scopeTitle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-        if (scopeTitle) {
-          scopeTitle.textContent = searchScope.textContent ?? "";
         }
         event.preventDefault();
         return;
@@ -324,26 +276,6 @@ function RootResetShell() {
       document.removeEventListener("submit", handleDocumentSubmit);
     };
   }, [rendersPlainResponseState, runtimeConfig]);
-
-  function scanNotifySources() {
-    document.querySelectorAll<HTMLElement>('[data-toggle="yobi-notify"]').forEach((source) => {
-      if (source.dataset.yobiNotified === "true") {
-        return;
-      }
-      const message = source.dataset.message ?? source.textContent ?? "";
-      const container = document.querySelector("#yobiToasts");
-      if (!container || message.trim() === "") {
-        return;
-      }
-
-      source.dataset.yobiNotified = "true";
-      setRootToast({
-        key: `notify:${source.dataset.message ?? source.textContent ?? ""}`,
-        message,
-      });
-      source.remove();
-    });
-  }
 
   function scanOriginalMessageSources() {
     document.querySelectorAll<HTMLElement>("[data-via-email]").forEach((target) => {

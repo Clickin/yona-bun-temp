@@ -623,19 +623,9 @@ function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }
   return (
     <div className="diff-partial-outer">
       <div className="diff-partial-inner">
-        <div
-          className="diff-partial-meta"
-          onClick={toggleExpanded}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              toggleExpanded();
-            }
-          }}
-          role="button"
-          style={{ cursor: "pointer" }}
-          tabIndex={0}
-        >
+        {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
+        {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
+        <div className="diff-partial-meta" onClick={toggleExpanded} style={{ cursor: "pointer" }}>
           <div className="diff-partial-file">
             <span className="filename">{file.path}</span>
           </div>

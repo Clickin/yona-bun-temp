@@ -454,29 +454,18 @@ function NotificationStreamItem({
     toggleLearnMore();
   }
 
-  function handleLearnMoreKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-
-    event.preventDefault();
-    toggleLearnMore();
-  }
-
   return (
     <li className="notification-stream">
       <div className={`stream-type ${notification.typeIcon}`}>
         <i className={`yobicon-${notification.typeIcon}`} />
       </div>
-      {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy notification row uses a div as the learn-more activator. */}
+      {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       <div
         className="stream-desc"
         data-target={`message-${notification.id}`}
         data-toggle="learnmore"
         onClick={handleLearnMoreClick}
-        onKeyDown={handleLearnMoreKeyDown}
-        role="button"
-        tabIndex={0}
       >
         <div className="stream-info">
           <div className="title">

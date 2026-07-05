@@ -139,7 +139,7 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
   `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc" data-target="message-42" data-toggle="learnmore" role="button" tabindex="0">
+    <div class="stream-desc" data-target="message-42" data-toggle="learnmore">
       <div class="stream-info">
         <div class="title"><a href="__BASE_PATH__/admin/sample/issue/1">Issue #1 updated</a></div>
         <div class="message-wrap nowrap" id="message-42">
@@ -1246,8 +1246,8 @@ test("direct notifications route preserves legacy notification row expand target
 
   await expect(streamDesc).toHaveAttribute("data-target", "message-42");
   await expect(streamDesc).toHaveAttribute("data-toggle", "learnmore");
-  await expect(streamDesc).toHaveAttribute("role", "button");
-  await expect(streamDesc).toHaveAttribute("tabindex", "0");
+  await expect(streamDesc).not.toHaveAttribute("role");
+  await expect(streamDesc).not.toHaveAttribute("tabindex");
   await expect(messageWrap).toHaveClass(/nowrap/);
   await expect(messageWrap).not.toHaveAttribute("style", /min-height/u);
   await expect
@@ -1296,6 +1296,8 @@ test("direct notifications route preserves legacy notification row expand target
   expect(notificationStreamItemSource).not.toContain("document.getElementById");
   expect(notificationStreamItemSource).not.toContain("classList");
   expect(notificationStreamItemSource).not.toContain("style.minHeight");
+  expect(notificationStreamItemSource).not.toContain('role="button"');
+  expect(notificationStreamItemSource).not.toContain("tabIndex=");
 });
 
 test("direct notifications route shows legacy overflowing row more marker", async ({ page }) => {
@@ -1410,7 +1412,7 @@ function expectedNotificationRows(
     .map(
       (item) => `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc" data-target="message-${item.id}" data-toggle="learnmore" role="button" tabindex="0">
+    <div class="stream-desc" data-target="message-${item.id}" data-toggle="learnmore">
       <div class="stream-info">
         <div class="title"><a href="${basePath}/admin/sample/issue/1">${item.targetTitle}</a></div>
         <div class="message-wrap nowrap" id="message-${item.id}">
