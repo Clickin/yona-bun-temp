@@ -566,8 +566,10 @@ export function SiteLayoutShell({
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"project" | "all">(
     "project",
   );
+  const [isSearchScopeMenuOpen, setIsSearchScopeMenuOpen] = React.useState(false);
   React.useEffect(() => {
     setSelectedSearchScope("project");
+    setIsSearchScopeMenuOpen(false);
   }, [projectSearchAction]);
   const gnbSearchAction =
     projectSearchAction && selectedSearchScope === "project"
@@ -577,6 +579,29 @@ export function SiteLayoutShell({
     projectSearchAction && selectedSearchScope === "project"
       ? t("search.scope.project")
       : t("search.scope.all");
+  const handleSearchScopeToggleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsSearchScopeMenuOpen((value) => !value);
+    },
+    [],
+  );
+  const handleSearchScopeBlur = React.useCallback((event: React.FocusEvent<HTMLDivElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+    setIsSearchScopeMenuOpen(false);
+  }, []);
+  const handleSearchScopeItemClick = React.useCallback(
+    (scope: "project" | "all") => (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setSelectedSearchScope(scope);
+      setIsSearchScopeMenuOpen(false);
+    },
+    [],
+  );
 
   return (
     <>
@@ -640,12 +665,16 @@ export function SiteLayoutShell({
               >
                 <input type="hidden" name="searchType" value="auto" />
                 {projectSearchAction ? (
-                  <div className="btn-group">
+                  <div
+                    className={isSearchScopeMenuOpen ? "btn-group open" : "btn-group"}
+                    onBlur={handleSearchScopeBlur}
+                  >
                     <button
                       className="ybtn dropdown-toggle"
                       data-toggle="dropdown"
                       type="button"
                       id="gnb-search-scope-title"
+                      onClick={handleSearchScopeToggleClick}
                     >
                       {gnbSearchScopeTitle}
                     </button>
@@ -655,7 +684,7 @@ export function SiteLayoutShell({
                           type="button"
                           data-toggle="search-scope"
                           data-action={projectSearchAction}
-                          onClick={() => setSelectedSearchScope("project")}
+                          onClick={handleSearchScopeItemClick("project")}
                         >
                           {t("search.scope.project")}
                         </button>
@@ -665,7 +694,7 @@ export function SiteLayoutShell({
                           type="button"
                           data-toggle="search-scope"
                           data-action={allProjectsSearchAction}
-                          onClick={() => setSelectedSearchScope("all")}
+                          onClick={handleSearchScopeItemClick("all")}
                         >
                           {t("search.scope.all")}
                         </button>
@@ -765,6 +794,28 @@ function AuthenticatedSiteUserMenu({
   const isGuest = booleanField(session, "isGuest", false);
   const navbarCustomLinkName = runtimeConfig.navbarCustomLinkName?.trim() ?? "";
   const navbarCustomLinkUrl = runtimeConfig.navbarCustomLinkUrl?.trim() ?? "";
+  const handleSidebarToggleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsSidebarOpen((value) => !value);
+    },
+    [],
+  );
+  const handleCreateMenuToggleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsCreateMenuOpen((value) => !value);
+    },
+    [],
+  );
+  const handleCreateMenuBlur = React.useCallback((event: React.FocusEvent<HTMLLIElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+    setIsCreateMenuOpen(false);
+  }, []);
 
   return (
     <>
@@ -899,7 +950,7 @@ function AuthenticatedSiteUserMenu({
             data-toggle="tooltip"
             data-placement="bottom"
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
-            onClick={() => setIsSidebarOpen((value) => !value)}
+            onClick={handleSidebarToggleClick}
           >
             <span className="avatar-wrap smaller">
               <img src={avatarUrl} alt="" />
@@ -907,12 +958,15 @@ function AuthenticatedSiteUserMenu({
             <span className="caret"></span>
           </button>
         </li>
-        <li className={isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"}>
+        <li
+          className={isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"}
+          onBlur={handleCreateMenuBlur}
+        >
           <button
             type="button"
             className="gnb-dropdown-toggle dropdwon-box-btn"
             data-toggle="dropdown"
-            onClick={() => setIsCreateMenuOpen((value) => !value)}
+            onClick={handleCreateMenuToggleClick}
           >
             <i className="yobicon-plus"></i>
             <span className="caret"></span>

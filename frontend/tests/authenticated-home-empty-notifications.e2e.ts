@@ -756,10 +756,11 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   });
 });
 
-test("authenticated root user menu toggles use React buttons without navigation", async ({
+test("authenticated root user menu toggles stay route-local buttons without navigation", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installAuthenticatedHomeDropdownBubbleAudit(page);
   await mockAuthenticatedEmptyNotifications(page);
   await mockWorkspaceSidebarProjects(page);
 
@@ -778,6 +779,10 @@ test("authenticated root user menu toggles use React buttons without navigation"
   await expect(createToggle).toHaveAttribute("type", "button");
   await expect(createMenu.locator("a.gnb-dropdown-toggle.dropdwon-box-btn")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu a[href^='javascript:']")).toHaveCount(0);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "home-user-menu-toggles";
+  });
 
   await sidebarToggle.click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
@@ -796,6 +801,47 @@ test("authenticated root user menu toggles use React buttons without navigation"
     "New Group",
   ]);
   expect(page.url()).toBe(initialUrl);
+  await createToggle.click();
+  await expect(createMenu.locator(".dropdown-menu")).toBeHidden();
+  expect(page.url()).toBe(initialUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("home-user-menu-toggles");
+  expect(await authenticatedHomeDropdownBubbleClicks(page)).toEqual([]);
+});
+
+test("shared shell keeps dropdown ownership inside route-local handlers", () => {
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const siteLayoutShellSource = routeSource.slice(
+    routeSource.indexOf("export function SiteLayoutShell"),
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+  );
+  const authenticatedUserMenuSource = routeSource.slice(
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+    routeSource.indexOf("function AnonymousSiteUserMenu"),
+  );
+
+  expect(siteLayoutShellSource).toContain("handleSearchScopeToggleClick");
+  expect(siteLayoutShellSource).toContain("handleSearchScopeItemClick");
+  expect(siteLayoutShellSource).toContain("setIsSearchScopeMenuOpen");
+  expect(siteLayoutShellSource).toContain("event.preventDefault();");
+  expect(siteLayoutShellSource).toContain("event.stopPropagation();");
+  expect(siteLayoutShellSource).not.toContain("document.addEventListener");
+  expect(siteLayoutShellSource).not.toContain("classList");
+  expect(siteLayoutShellSource).not.toContain("style.display");
+
+  expect(authenticatedUserMenuSource).toContain("handleSidebarToggleClick");
+  expect(authenticatedUserMenuSource).toContain("handleCreateMenuToggleClick");
+  expect(authenticatedUserMenuSource).toContain("handleCreateMenuBlur");
+  expect(authenticatedUserMenuSource).toContain("event.preventDefault();");
+  expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
+  expect(authenticatedUserMenuSource).not.toContain("document.addEventListener");
+  expect(authenticatedUserMenuSource).not.toContain("classList");
+  expect(authenticatedUserMenuSource).not.toContain("style.display");
 });
 
 test("authenticated root keeps retired legacy index/sidebar framed shell absent", async ({
@@ -1890,6 +1936,38 @@ async function readMobileNotificationStreamMetrics(page: Page) {
       titleFontSize: titleStyle.fontSize,
     };
   });
+}
+
+async function installAuthenticatedHomeDropdownBubbleAudit(page: Page) {
+  await page.addInitScript(() => {
+    const dropdownClicks: string[] = [];
+    Object.defineProperty(window, "__yonaAuthenticatedHomeDropdownBubbleClicks", {
+      configurable: true,
+      value: dropdownClicks,
+    });
+    document.addEventListener("click", (event) => {
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+      if (event.target.closest("#sidebar-open-btn .gnb-dropdown-toggle")) {
+        dropdownClicks.push("sidebar-toggle");
+        return;
+      }
+      if (event.target.closest(".gnb-usermenu-dropdown .gnb-dropdown-toggle.dropdwon-box-btn")) {
+        dropdownClicks.push("create-toggle");
+      }
+    });
+  });
+}
+
+async function authenticatedHomeDropdownBubbleClicks(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __yonaAuthenticatedHomeDropdownBubbleClicks?: string[] }
+      ).__yonaAuthenticatedHomeDropdownBubbleClicks ?? [],
+  );
 }
 
 async function mockAuthenticatedEmptyNotifications(page: Page) {

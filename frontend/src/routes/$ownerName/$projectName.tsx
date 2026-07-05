@@ -1389,6 +1389,7 @@ export function ProjectHeader({
                         type="button"
                         data-toggle="dropdown"
                         onClick={(event) => {
+                          event.preventDefault();
                           event.stopPropagation();
                           toggleProjectUtilDropdown("enrollment");
                         }}
@@ -1406,6 +1407,7 @@ export function ProjectHeader({
                             className="ybtn enrollBtn"
                             id="enrollBtn"
                             onClick={(event) => {
+                              event.preventDefault();
                               event.stopPropagation();
                               setProjectUtilDropdown(null);
                               enrollmentMutation.mutate(false);
@@ -1423,6 +1425,7 @@ export function ProjectHeader({
                         type="button"
                         data-toggle="dropdown"
                         onClick={(event) => {
+                          event.preventDefault();
                           event.stopPropagation();
                           toggleProjectUtilDropdown("enrollment");
                         }}
@@ -1443,6 +1446,7 @@ export function ProjectHeader({
                             className="ybtn ybtn-info enrollBtn"
                             id="enrollBtn"
                             onClick={(event) => {
+                              event.preventDefault();
                               event.stopPropagation();
                               setProjectUtilDropdown(null);
                               enrollmentMutation.mutate(true);
@@ -1519,6 +1523,7 @@ export function ProjectHeader({
                           type="button"
                           className="ybtn ybtn-watching watchBtn"
                           onClick={(event) => {
+                            event.preventDefault();
                             event.stopPropagation();
                             setProjectUtilDropdown(null);
                             watchMutation.mutate(!watchState.isWatching);
@@ -1536,6 +1541,7 @@ export function ProjectHeader({
                       type="button"
                       data-toggle="dropdown"
                       onClick={(event) => {
+                        event.preventDefault();
                         event.stopPropagation();
                         toggleProjectUtilDropdown("watch");
                       }}

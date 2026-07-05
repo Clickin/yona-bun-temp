@@ -542,6 +542,7 @@ function MassUpdateShell({
             data-toggle="dropdown"
             disabled={!hasCheckedIssues}
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               toggleDropdown("assignee", !hasCheckedIssues);
             }}
@@ -556,6 +557,7 @@ function MassUpdateShell({
               <button
                 type="button"
                 onClick={(event) => {
+                  event.preventDefault();
                   event.stopPropagation();
                   closeDropdown();
                 }}
@@ -568,6 +570,7 @@ function MassUpdateShell({
                 <button
                   type="button"
                   onClick={(event) => {
+                    event.preventDefault();
                     event.stopPropagation();
                     closeDropdown();
                   }}
@@ -583,6 +586,7 @@ function MassUpdateShell({
                   type="button"
                   className="usf-group"
                   onClick={(event) => {
+                    event.preventDefault();
                     event.stopPropagation();
                     closeDropdown();
                   }}
@@ -678,6 +682,7 @@ function MassUpdateDropdown({
         data-toggle="dropdown"
         disabled={disabled}
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           onToggle(id, disabled);
         }}
@@ -696,6 +701,7 @@ function MassUpdateDropdown({
               <button
                 type="button"
                 onClick={(event) => {
+                  event.preventDefault();
                   event.stopPropagation();
                   onClose();
                 }}
@@ -745,6 +751,7 @@ function LabelMassUpdateDropdown({
         data-toggle="dropdown"
         disabled={disabled}
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           onToggle(id, disabled);
         }}
@@ -784,6 +791,7 @@ function LabelMassUpdateGroup({
           <button
             type="button"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onClose();
             }}

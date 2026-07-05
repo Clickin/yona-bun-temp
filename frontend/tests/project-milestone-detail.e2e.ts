@@ -30,6 +30,23 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
       if (!(target instanceof Element)) {
         return;
       }
+      const optionButton = target.closest(".mass-update-wrap .mass-update-list button");
+      if (!optionButton) {
+        return;
+      }
+      const auditWindow = window as unknown as {
+        __massUpdateDropdownOptionShimClicks?: string[];
+      };
+      auditWindow.__massUpdateDropdownOptionShimClicks = [
+        ...(auditWindow.__massUpdateDropdownOptionShimClicks ?? []),
+        optionButton.closest("li")?.getAttribute("data-value") ?? "",
+      ];
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
       const modalToggle = target.closest("[data-toggle='modal']");
       const modalDismiss = target.closest("[data-dismiss='modal']");
       if (!modalToggle && !modalDismiss) {
@@ -199,41 +216,61 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     window.sessionStorage.setItem("milestone-detail-spa-marker", "kept");
   });
   const beforeMassUpdateOptionUrl = page.url();
+  const expectMassUpdateDropdownRouteOwnership = async () => {
+    await expect(page).toHaveURL(beforeMassUpdateOptionUrl);
+    await expect(
+      page.evaluate(() => window.sessionStorage.getItem("milestone-detail-spa-marker")),
+    ).resolves.toBe("kept");
+    await expect(
+      page.evaluate(() => {
+        return (
+          (
+            window as unknown as {
+              __massUpdateDropdownShimClicks?: string[];
+            }
+          ).__massUpdateDropdownShimClicks ?? []
+        );
+      }),
+    ).resolves.toEqual([]);
+    await expect(
+      page.evaluate(() => {
+        return (
+          (
+            window as unknown as {
+              __massUpdateDropdownOptionShimClicks?: string[];
+            }
+          ).__massUpdateDropdownOptionShimClicks ?? []
+        );
+      }),
+    ).resolves.toEqual([]);
+  };
   await page.click("#state > button");
   await expect(page.locator("#state")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
   await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expectMassUpdateDropdownRouteOwnership();
   await page.click("#assignee > button");
   await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
   await expect(page.locator("#assignee")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expectMassUpdateDropdownRouteOwnership();
   await page.click("#milestone > button");
   await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
   await expect(page.locator("#milestone")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
-  await expect(
-    page.evaluate(() => {
-      return (
-        (
-          window as unknown as {
-            __massUpdateDropdownShimClicks?: string[];
-          }
-        ).__massUpdateDropdownShimClicks ?? []
-      );
-    }),
-  ).resolves.toEqual([]);
+  await expectMassUpdateDropdownRouteOwnership();
   await page.click('#milestone .mass-update-list li[data-value="5"] button');
   await expect(page.locator("#milestone")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expectMassUpdateDropdownRouteOwnership();
   await page.click("#state > button");
   await page.click('#state .mass-update-list li[data-value="OPEN"] button');
   await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expectMassUpdateDropdownRouteOwnership();
   await page.click("#assignee > button");
   await page.click('#assignee .mass-update-list li[data-value="0"] button');
   await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expectMassUpdateDropdownRouteOwnership();
   await page.click("#attaching-label > button");
   await page.click('#attach-label-list li[data-value="8"][data-category="3"] button');
   await expect(page.locator("#attaching-label")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
-  await expect(page).toHaveURL(beforeMassUpdateOptionUrl);
-  await expect(
-    page.evaluate(() => window.sessionStorage.getItem("milestone-detail-spa-marker")),
-  ).resolves.toBe("kept");
+  await expectMassUpdateDropdownRouteOwnership();
   await expect(page.locator("#issue-item-41")).toContainText("#11[UI]Open milestone issue");
   await expect(page.locator('#issue-item-41 .title[href$="/issue/11"]')).toHaveCount(2);
   await expect(page.locator("#issue-item-41 .weight-up-arrow")).toHaveAttribute(
@@ -458,6 +495,16 @@ test("project milestone detail route uses direct Links", () => {
     "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
     "utf8",
   );
+  const massUpdateSection = routeSource.slice(
+    routeSource.indexOf("function MassUpdateShell"),
+    routeSource.indexOf("function MilestoneIssueRow"),
+  );
+  const massUpdatePreventDefaultCount = (
+    massUpdateSection.match(/event\.preventDefault\(\);/g) ?? []
+  ).length;
+  const massUpdateStopPropagationCount = (
+    massUpdateSection.match(/event\.stopPropagation\(\);/g) ?? []
+  ).length;
 
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
@@ -495,6 +542,9 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain('data-target="#deleteConfirm"');
   expect(routeSource).toContain('data-dismiss="modal"');
   expect(routeSource).toContain("event.stopPropagation();");
+  expect(massUpdateSection).not.toContain("document.addEventListener");
+  expect(massUpdateStopPropagationCount).toBeGreaterThan(0);
+  expect(massUpdatePreventDefaultCount).toBe(massUpdateStopPropagationCount);
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
 });
 

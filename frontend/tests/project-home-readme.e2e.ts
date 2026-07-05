@@ -274,6 +274,7 @@ test("project home header renders legacy watch utility for watchable projects", 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await installProjectHomeDropdownDocumentBridgeAudit(page);
   await mockProjectHome(page, {
     project: {
       isWatching: false,
@@ -292,10 +293,20 @@ test("project home header renders legacy watch utility for watchable projects", 
   );
 
   const watchItem = page.locator(".project-util > li").first();
+  await rememberSpaMarker(page, "project-home-watch-dropdown");
   await page.locator(".watch-btn .down-arrow").click();
   await expect(watchItem).toHaveClass(/open/);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-watch-dropdown");
   await page.locator(".watch-btn .down-arrow").click();
   await expect(watchItem).not.toHaveClass(/open/);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-watch-dropdown");
+  await page.locator(".watch-btn .down-arrow").click();
+  await expect(watchItem).toHaveClass(/open/);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-watch-dropdown");
+  await expect.poll(() => projectHomeDropdownDocumentBridgeAuditHits(page)).toEqual([]);
 });
 
 test("project home header renders and posts legacy enrollment utility for guest projects", async ({
@@ -303,6 +314,7 @@ test("project home header renders and posts legacy enrollment utility for guest 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const enrollRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installProjectHomeDropdownDocumentBridgeAudit(page);
   await mockProjectHome(page, {
     enrollRequests,
     project: {
@@ -325,13 +337,19 @@ test("project home header renders and posts legacy enrollment utility for guest 
   const enrollmentItem = page.locator(".project-util > li").first();
   await expect(page.locator("a#enrollBtn")).toHaveCount(0);
   await expect(page.locator("button#enrollBtn")).toHaveAttribute("type", "button");
+  await rememberSpaMarker(page, "project-home-enroll");
   await page.locator(".project-util .dropdown-toggle").click();
   await expect(enrollmentItem).toHaveClass(/open/);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-enroll");
   await page.locator(".project-util .dropdown-toggle").click();
   await expect(enrollmentItem).not.toHaveClass(/open/);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-enroll");
   await page.locator(".project-util .dropdown-toggle").click();
   await expect(enrollmentItem).toHaveClass(/open/);
-  await rememberSpaMarker(page, "project-home-enroll");
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-enroll");
   const enrollResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/enroll") &&
@@ -344,6 +362,7 @@ test("project home header renders and posts legacy enrollment utility for guest 
   await expect(enrollmentItem).not.toHaveClass(/open/);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-enroll");
+  await expect.poll(() => projectHomeDropdownDocumentBridgeAuditHits(page)).toEqual([]);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
@@ -395,6 +414,7 @@ test("project home header enrollment utility cancels pending guest request", asy
 test("project home header watch action posts and renders watching branch", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installProjectHomeDropdownDocumentBridgeAudit(page);
   await mockProjectHome(page, {
     project: {
       isWatching: false,
@@ -408,9 +428,11 @@ test("project home header watch action posts and renders watching branch", async
   const watchItem = page.locator(".project-util > li").first();
   await expect(page.locator("a.watchBtn")).toHaveCount(0);
   await expect(page.locator("button.watchBtn")).toHaveAttribute("type", "button");
+  await rememberSpaMarker(page, "project-home-watch");
   await page.locator(".watch-btn .down-arrow").click();
   await expect(watchItem).toHaveClass(/open/);
-  await rememberSpaMarker(page, "project-home-watch");
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  expect(await spaMarker(page)).toBe("project-home-watch");
   const watchResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/watch") &&
@@ -423,6 +445,7 @@ test("project home header watch action posts and renders watching branch", async
   await expect(watchItem).not.toHaveClass(/open/);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-watch");
+  await expect.poll(() => projectHomeDropdownDocumentBridgeAuditHits(page)).toEqual([]);
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
@@ -475,6 +498,18 @@ test("project home header unwatch action deletes and renders not-watching branch
 
 test("project home route owns project-util dropdown state and explicit Link semantics", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  const enrollmentDropdownHandlers = source.match(
+    /event\.preventDefault\(\);\s*event\.stopPropagation\(\);\s*toggleProjectUtilDropdown\("enrollment"\);/gu,
+  );
+  const enrollmentActionHandlers = source.match(
+    /event\.preventDefault\(\);\s*event\.stopPropagation\(\);\s*setProjectUtilDropdown\(null\);\s*enrollmentMutation\.mutate\((?:false|true)\);/gu,
+  );
+  const watchDropdownHandlers = source.match(
+    /event\.preventDefault\(\);\s*event\.stopPropagation\(\);\s*toggleProjectUtilDropdown\("watch"\);/gu,
+  );
+  const watchActionHandlers = source.match(
+    /event\.preventDefault\(\);\s*event\.stopPropagation\(\);\s*setProjectUtilDropdown\(null\);\s*watchMutation\.mutate\(!watchState\.isWatching\);/gu,
+  );
 
   expect(source).not.toMatch(/<a\b/u);
   expect(source).not.toMatch(/<\/a>/u);
@@ -483,6 +518,7 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).not.toContain("useLinkProps");
   expect(source).not.toContain("function isRoutedHref");
   expect(source).not.toContain("createElement");
+  expect(source).not.toContain("document.addEventListener");
   expect(source).not.toContain("document.dispatchEvent");
   expect(source).not.toContain("yobi:notify-scan");
   expect(source).not.toContain('data-toggle="yobi-notify"');
@@ -509,6 +545,10 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain('overviewMutation.mutate(descriptionInputRef.current?.value ?? "")');
   expect(source).toContain('className={projectUtilDropdown === "enrollment" ? "open" : undefined}');
   expect(source).toContain('className={projectUtilDropdown === "watch" ? "open" : undefined}');
+  expect(enrollmentDropdownHandlers).toHaveLength(2);
+  expect(enrollmentActionHandlers).toHaveLength(2);
+  expect(watchDropdownHandlers).toHaveLength(1);
+  expect(watchActionHandlers).toHaveLength(1);
   expect(source).not.toMatch(/<a\s+className="ybtn enrollBtn"/u);
   expect(source).not.toMatch(/<a\s+className="ybtn ybtn-info enrollBtn"/u);
   expect(source).not.toMatch(/<a\s+className="ybtn ybtn-watching watchBtn"/u);
@@ -552,6 +592,47 @@ async function favoriteSpanNativeListeners(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
         .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
+
+async function installProjectHomeDropdownDocumentBridgeAudit(page: Page) {
+  await page.addInitScript(() => {
+    const hits: string[] = [];
+    Object.defineProperty(window, "__yonaProjectHomeDropdownDocumentBridgeHits", {
+      configurable: true,
+      value: hits,
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const delegatedTarget = target.closest(
+        '.project-util [data-toggle="dropdown"], .project-util .watchBtn, .project-util #enrollBtn',
+      );
+      if (!delegatedTarget) {
+        return;
+      }
+      if (delegatedTarget.matches('[data-toggle="dropdown"]')) {
+        hits.push("trigger");
+        return;
+      }
+      if (delegatedTarget.matches(".watchBtn")) {
+        hits.push("watch-action");
+        return;
+      }
+      hits.push("enroll-action");
+    });
+  });
+}
+
+async function projectHomeDropdownDocumentBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __yonaProjectHomeDropdownDocumentBridgeHits?: string[] }
+      ).__yonaProjectHomeDropdownDocumentBridgeHits ?? [],
   );
 }
 
