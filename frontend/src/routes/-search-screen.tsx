@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
+import { Link, Link as RouterLink, useLinkProps, useRouter } from "@tanstack/react-router";
 import {
+  type ComponentPropsWithoutRef,
   Fragment,
   useEffect,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { apiQueryKeys } from "../api/query-keys";
@@ -63,7 +65,7 @@ export function isDefaultInternalServerError(error: unknown) {
 export function DefaultSearchErrorBody({
   iconClassName,
   messageKey,
-  runtimeConfig: _runtimeConfig,
+  runtimeConfig,
   ybtnClassName = "ybtn ybtn-primary",
 }: {
   iconClassName: string;
@@ -72,6 +74,18 @@ export function DefaultSearchErrorBody({
   ybtnClassName?: string;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const homeHref =
+    runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath.replace(/\/$/u, "");
+  const homeButtonLinkProps = useLinkProps({
+    className: ybtnClassName,
+    href: homeHref,
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/" as const,
+  });
 
   return (
     <div className="page-wrap-outer">
@@ -79,9 +93,9 @@ export function DefaultSearchErrorBody({
         <div className="error-wrap">
           <i className={iconClassName}></i>
           <p>{t(messageKey)}</p>
-          <Link to="/" className={ybtnClassName}>
+          <LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>
             {t("menu.home")}
-          </Link>
+          </LegacyHrefAnchor>
         </div>
       </div>
     </div>
@@ -657,6 +671,14 @@ function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {
       : hrefWithoutHash || "/";
 
   return { hash, to };
+}
+
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
 }
 
 function LegacyProjectLogoImage({ src }: { src: string }) {

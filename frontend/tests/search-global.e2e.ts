@@ -440,6 +440,11 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveOptions =");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveProps =");
+  expect(routeSource).toContain("const homeButtonLinkProps = useLinkProps({");
+  expect(routeSource).toContain("router.history.push(homeHref);");
+  expect(routeSource).toContain(
+    "<LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>",
+  );
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
@@ -482,6 +487,7 @@ test("global search without required query renders legacy badrequest_default.sca
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const homeHref = basePath === "/" ? "/" : basePath;
   const searchApi = await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search`);
@@ -489,7 +495,7 @@ test("global search without required query renders legacy badrequest_default.sca
   await expect(page.locator(".error-wrap p")).toHaveText(
     "The request cannot be fulfilled due to bad syntax",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", homeHref);
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
 
@@ -804,15 +810,14 @@ test("global search renders legacy request text too large error shell", async ({
 
 test("global search renders legacy error/forbidden_default.scala.html shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const homeHref = basePath === "/" ? "/" : basePath;
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=forbidden&searchType=issue&pageNum=1`);
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
-  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
-    "href",
-    `${basePath}/`,
-  );
+  const homeButton = page.locator(".error-wrap .ybtn.ybtn-primary");
+  await expect(homeButton).toHaveAttribute("href", homeHref);
   await expect(page.locator(".search-box-wrap")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -846,12 +851,16 @@ test("global search renders legacy error/forbidden_default.scala.html shell", as
     pageWrapOuterMinHeight: "450px",
     projectPageWrapMarginTop: "20px",
   });
+  await rememberSpaMarker(page, "forbidden-default-home");
+  await homeButton.click();
+  await expectExactSpaPath(page, homeHref, "forbidden-default-home");
 });
 
 test("global search renders legacy error/internalServerError_default.scala.html shell", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const homeHref = basePath === "/" ? "/" : basePath;
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=server-error&searchType=issue&pageNum=1`);
@@ -859,10 +868,8 @@ test("global search renders legacy error/internalServerError_default.scala.html 
   await expect(page.locator(".error-wrap p")).toHaveText(
     "Server error occurred; service is not available",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
-    "href",
-    `${basePath}/`,
-  );
+  const homeButton = page.locator(".error-wrap .ybtn.ybtn-primary");
+  await expect(homeButton).toHaveAttribute("href", homeHref);
   await expect(page.locator(".search-box-wrap")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -896,6 +903,9 @@ test("global search renders legacy error/internalServerError_default.scala.html 
     pageWrapOuterMinHeight: "450px",
     projectPageWrapMarginTop: "20px",
   });
+  await rememberSpaMarker(page, "internal-server-default-home");
+  await homeButton.click();
+  await expectExactSpaPath(page, homeHref, "internal-server-default-home");
 });
 
 async function readRequestTextTooLargeMetrics(page: Page) {
@@ -1734,9 +1744,30 @@ function expectedDefaultSearchErrorScreen({
     <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="${basePath}/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="${basePath}/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
   </div>
 </header>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${basePath}/" class="${buttonClass}">Home</a></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${basePath}" class="${buttonClass}">Home</a></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
+}
+
+async function rememberSpaMarker(page: Page, marker: string) {
+  await page.evaluate((nextMarker) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextMarker;
+  }, marker);
+}
+
+async function expectExactSpaPath(page: Page, expectedPath: string, marker: string) {
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return `${url.pathname}${url.search}${url.hash}`;
+    })
+    .toBe(expectedPath);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe(marker);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
