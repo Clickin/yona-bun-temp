@@ -146,6 +146,18 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   ]);
   await expect(page.locator(".site-setting-nav li").nth(6)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect
+    .poll(() => siteSettingSidebarAnchorMarkers(page))
+    .toEqual([
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+    ]);
   const diagnosticsLink = page.locator(".site-setting-nav a", { hasText: "Diagnostics" });
   await expect(diagnosticsLink).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
@@ -420,6 +432,16 @@ async function mockDiagnostics(
       body: JSON.stringify(response),
     });
   });
+}
+
+async function siteSettingSidebarAnchorMarkers(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.map((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
+    })),
+  );
 }
 
 async function canonicalizeScreenRoots(page: Page) {
