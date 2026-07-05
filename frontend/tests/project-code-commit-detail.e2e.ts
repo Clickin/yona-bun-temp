@@ -203,6 +203,20 @@ test("project commit detail markdown help uses shared React helper", async () =>
   );
 });
 
+test("project commit detail comment edit toggle is route-owned React state", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setEditingCommentIds");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-toggle="comment-edit"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.stopPropagation();");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("style.display");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("setAttribute");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("removeAttribute");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+});
+
 test("project commit detail internal nav links keep legacy hrefs with SPA navigation", async ({
   page,
 }) => {

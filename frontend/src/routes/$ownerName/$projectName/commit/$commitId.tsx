@@ -971,6 +971,19 @@ function CodeCommentThreadView({
     projectName,
     thread.commitId,
   );
+  const [editingCommentIds, setEditingCommentIds] = useState<Set<number>>(() => new Set());
+
+  function setCommentEditing(commentId: number, isEditing: boolean) {
+    setEditingCommentIds((current) => {
+      const next = new Set(current);
+      if (isEditing) {
+        next.add(commentId);
+      } else {
+        next.delete(commentId);
+      }
+      return next;
+    });
+  }
 
   return (
     <div
@@ -1002,114 +1015,128 @@ function CodeCommentThreadView({
       )}
 
       <ul className="comments">
-        {thread.comments.map((comment) => (
-          <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
-            <div className="comment-avatar">
-              <Link
-                to="/$user"
-                params={{ user: comment.authorLoginId }}
-                activeOptions={{ exact: true }}
-                className="avatar-wrap"
-                data-toggle="tooltip"
-                data-placement="top"
-                title={comment.authorLabel}
-              >
-                <img
-                  src={comment.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
-                  width="32"
-                  height="32"
-                  alt={comment.authorLoginId}
-                />
-              </Link>
-            </div>
-            <div className="media-body">
-              <div className="meta-info">
-                <span className="comment_author pull-left">
-                  <Link
-                    to="/$user"
-                    params={{ user: comment.authorLoginId }}
-                    activeOptions={{ exact: true }}
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    title={comment.authorLabel}
-                  >
-                    <strong>{`${comment.authorLoginId} `}</strong>
-                  </Link>
-                </span>
-                <span className="ago">
-                  <Link
-                    to="."
-                    hash={`comment-${comment.id}`}
-                    search={hashSearch}
-                    activeOptions={{ includeHash: true }}
-                    activeProps={{
-                      "aria-current": undefined,
-                      className: undefined,
-                      "data-status": undefined,
-                    }}
-                    title={comment.createdLabel}
-                  >
-                    {comment.createdLabel}
-                  </Link>
-                </span>
-                {comment.canUpdate ? (
-                  <span className="edit pull-right">
-                    <button
-                      type="button"
-                      className="btn-transparent pull-right"
-                      data-toggle="comment-edit"
-                      data-comment-id={comment.id}
-                      title={t("common.comment.edit")}
-                    >
-                      <i className="yobicon-edit-2"></i>
-                    </button>
-                  </span>
-                ) : null}
-                {comment.canDelete ? (
-                  <span className="edit pull-right">
-                    <button
-                      className="btn-transparent pull-right close"
-                      data-request-method={isNonRanged ? "delete" : undefined}
-                      data-toggle={isNonRanged ? undefined : "comment-delete"}
-                      data-request-uri={prefixBasePath(
-                        runtimeConfig.basePath,
-                        `/comments/${comment.id}`,
-                      )}
-                      onClick={() => {
-                        if (isNonRanged) {
-                          deleteComment(comment.id);
-                        }
-                      }}
-                      title={isNonRanged ? undefined : t("common.comment.delete")}
-                    >
-                      <i className="yobicon-trash"></i>
-                    </button>
-                  </span>
-                ) : null}
-              </div>
-              <CodeCommentUpdateForm
-                action={prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`)}
-                basePath={runtimeConfig.basePath}
-                comment={comment}
-                onSubmit={(contentsMarkdown) => updateComment(comment.id, contentsMarkdown)}
-              />
-              <div id={`comment-body-${comment.id}`}>
-                <div
-                  className="comment-body markdown-wrap"
-                  data-via-email={String(comment.viaEmail)}
+        {thread.comments.map((comment) => {
+          const isEditing = editingCommentIds.has(comment.id);
+
+          return (
+            <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
+              <div className="comment-avatar">
+                <Link
+                  to="/$user"
+                  params={{ user: comment.authorLoginId }}
+                  activeOptions={{ exact: true }}
+                  className="avatar-wrap"
+                  data-toggle="tooltip"
+                  data-placement="top"
+                  title={comment.authorLabel}
                 >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {comment.contentsMarkdown}
-                  </ReactMarkdown>
-                </div>
-                <div
-                  className="attachments"
-                  data-attachments={JSON.stringify(comment.attachments ?? [])}
-                ></div>
+                  <img
+                    src={comment.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+                    width="32"
+                    height="32"
+                    alt={comment.authorLoginId}
+                  />
+                </Link>
               </div>
-            </div>
-          </li>
-        ))}
+              <div className="media-body">
+                <div className="meta-info">
+                  <span className="comment_author pull-left">
+                    <Link
+                      to="/$user"
+                      params={{ user: comment.authorLoginId }}
+                      activeOptions={{ exact: true }}
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title={comment.authorLabel}
+                    >
+                      <strong>{`${comment.authorLoginId} `}</strong>
+                    </Link>
+                  </span>
+                  <span className="ago">
+                    <Link
+                      to="."
+                      hash={`comment-${comment.id}`}
+                      search={hashSearch}
+                      activeOptions={{ includeHash: true }}
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: undefined,
+                        "data-status": undefined,
+                      }}
+                      title={comment.createdLabel}
+                    >
+                      {comment.createdLabel}
+                    </Link>
+                  </span>
+                  {comment.canUpdate ? (
+                    <span className="edit pull-right">
+                      <button
+                        type="button"
+                        className="btn-transparent pull-right"
+                        data-toggle="comment-edit"
+                        data-comment-id={comment.id}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setCommentEditing(comment.id, true);
+                        }}
+                        title={t("common.comment.edit")}
+                      >
+                        <i className="yobicon-edit-2"></i>
+                      </button>
+                    </span>
+                  ) : null}
+                  {comment.canDelete ? (
+                    <span className="edit pull-right">
+                      <button
+                        className="btn-transparent pull-right close"
+                        data-request-method={isNonRanged ? "delete" : undefined}
+                        data-toggle={isNonRanged ? undefined : "comment-delete"}
+                        data-request-uri={prefixBasePath(
+                          runtimeConfig.basePath,
+                          `/comments/${comment.id}`,
+                        )}
+                        onClick={() => {
+                          if (isNonRanged) {
+                            deleteComment(comment.id);
+                          }
+                        }}
+                        title={isNonRanged ? undefined : t("common.comment.delete")}
+                      >
+                        <i className="yobicon-trash"></i>
+                      </button>
+                    </span>
+                  ) : null}
+                </div>
+                <CodeCommentUpdateForm
+                  action={prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`)}
+                  basePath={runtimeConfig.basePath}
+                  comment={comment}
+                  isEditing={isEditing}
+                  onCancel={() => setCommentEditing(comment.id, false)}
+                  onSubmit={(contentsMarkdown) => updateComment(comment.id, contentsMarkdown)}
+                />
+                <div
+                  id={`comment-body-${comment.id}`}
+                  style={isEditing ? { display: "none" } : undefined}
+                >
+                  <div
+                    className="comment-body markdown-wrap"
+                    data-via-email={String(comment.viaEmail)}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {comment.contentsMarkdown}
+                    </ReactMarkdown>
+                  </div>
+                  <div
+                    className="attachments"
+                    data-attachments={JSON.stringify(comment.attachments ?? [])}
+                  ></div>
+                </div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="write-comment-form">
@@ -1177,18 +1204,26 @@ function CodeCommentUpdateForm({
   action,
   basePath,
   comment,
+  isEditing,
+  onCancel,
   onSubmit,
 }: {
   action: string;
   basePath: string;
   comment: CodeReviewComment;
+  isEditing: boolean;
+  onCancel: () => void;
   onSubmit: (contentsMarkdown: string) => void;
 }) {
   const { t } = useLegacyMessages();
   const commentId = String(comment.id);
 
   return (
-    <div id={`comment-editform-${commentId}`} className="comment-update-form">
+    <div
+      id={`comment-editform-${commentId}`}
+      className="comment-update-form"
+      style={isEditing ? { display: "block" } : undefined}
+    >
       <form
         action={action}
         method="post"
@@ -1225,7 +1260,16 @@ function CodeCommentUpdateForm({
                   multiple
                 />
               </span>
-              <button type="button" className="ybtn ybtn-cancel" data-comment-id={commentId}>
+              <button
+                type="button"
+                className="ybtn ybtn-cancel"
+                data-comment-id={commentId}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCancel();
+                }}
+              >
                 {t("button.cancel")}
               </button>
               {comment.canUpdate ? (
