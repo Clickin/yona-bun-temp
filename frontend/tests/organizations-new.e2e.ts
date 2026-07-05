@@ -146,6 +146,17 @@ test("organization create form matches legacy organization/create.scala.html DOM
   });
 });
 
+test("organization create name alert keeps legacy data error attribute declaratively", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedSession(page);
+
+  await page.goto(`${basePath}/organizations/new`);
+  await expect(page.locator(".n-alert")).toHaveAttribute("data-errType", "name");
+  await expect(page.locator(".wrongName")).toBeHidden();
+});
+
 test("organization create form validates name and posts REST payload", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const requests = await mockAuthenticatedSession(page);
@@ -272,6 +283,8 @@ test("organization create route source keeps cancel navigation out of raw anchor
   expect(routeSource).toContain(
     'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
   );
+  expect(routeSource).toContain('data-errtype="name"');
+  expect(routeSource).not.toContain('setAttribute("data-errType"');
   expect(routeSource).toContain('to="/" activeOptions={{ exact: true }} className="ybtn"');
   expect(
     rawAnchorBlocks.filter((block) => /Cancel|button\.cancel|prefixBasePath/u.test(block)),

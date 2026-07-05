@@ -132,6 +132,8 @@ test("organizations list matches legacy organization/list.scala.html DOM", async
 
   await page.goto(`${basePath}/orgs?filter=weblabs`);
   await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect(page.locator('#search input[name="filter"]')).toHaveAttribute("autofocus", "");
+  await expect(page.locator('#search input[name="filter"]')).toBeFocused();
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -140,6 +142,18 @@ test("organizations list matches legacy organization/list.scala.html DOM", async
   );
 
   expect(actual).toEqual(expected);
+});
+
+test("organization list filter input preserves legacy autofocus declaratively", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(page);
+
+  await page.goto(`${basePath}/orgs?filter=weblabs`);
+  const filterInput = page.locator('#search input[name="filter"]');
+  await expect(filterInput).toHaveAttribute("autofocus", "");
+  await expect(filterInput).toBeFocused();
 });
 
 test("organization directory card links keep legacy hrefs and use SPA navigation", async ({
@@ -423,6 +437,9 @@ test("organization directory source uses Link for internal route anchors", () =>
   expect(source).not.toContain("organizationHref");
   expect(source).not.toContain("href={organizationHref}");
   expect(source).not.toContain("prefixBasePath(basePath, `/organizations/${organizationName}`)");
+  expect(source).not.toContain('setAttribute("autofocus"');
+  expect(source).toContain("autoFocus");
+  expect(source).toContain('autofocus: ""');
   expect(source).toContain('to="/projects"');
   expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/organizations/$organizationName"');

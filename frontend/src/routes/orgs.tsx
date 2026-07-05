@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/no-autofocus -- legacy organization/list.scala.html sets autofocus on the directory filter input. */
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -59,9 +60,6 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     positiveIntegerField(organizationsQuery.data, "page", 1),
   );
   const currentPage = clampPageNum(search.pageNum ?? responsePage, totalPages);
-  const autofocusRef = (node: HTMLInputElement | null) => {
-    node?.setAttribute("autofocus", "");
-  };
 
   return (
     <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
@@ -106,7 +104,8 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <form action={prefixBasePath(runtimeConfig.basePath, "/orgs")} method="get">
                 <div className="search-bar">
                   <input
-                    ref={autofocusRef}
+                    autoFocus
+                    {...{ autofocus: "" }}
                     name="filter"
                     className="textbox"
                     type="text"

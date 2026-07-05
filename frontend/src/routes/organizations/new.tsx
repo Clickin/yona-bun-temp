@@ -47,9 +47,6 @@ function OrganizationNewScreen({
   const queryClient = useQueryClient();
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
-  const legacyNameErrorTypeRef = React.useCallback((node: HTMLDivElement | null) => {
-    node?.setAttribute("data-errType", "name");
-  }, []);
   const createMutation = useMutation({
     mutationFn: async (input: { description: string; organizationName: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -100,7 +97,7 @@ function OrganizationNewScreen({
               <legend>{t("title.newOrganization")}</legend>
               <dl>
                 <dt>
-                  <div className="n-alert" ref={legacyNameErrorTypeRef}>
+                  <div className="n-alert" data-errtype="name">
                     <div className="orange-txt">
                       {warning ? (
                         <span

@@ -1,3 +1,4 @@
+/* oxlint-disable jsx-a11y/no-autofocus -- legacy project/list.scala.html sets autofocus on the directory filter input. */
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -70,9 +71,6 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     positiveIntegerField(projectsQuery.data, "page", 1),
   );
   const currentPage = clampPageNum(search.pageNum ?? responsePage, totalPages);
-  const autofocusRef = (node: HTMLInputElement | null) => {
-    node?.setAttribute("autofocus", "");
-  };
 
   return (
     <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
@@ -116,12 +114,13 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <form action={prefixBasePath(runtimeConfig.basePath, "/projects")} method="get">
                 <div className="search-bar">
                   <input
-                    ref={autofocusRef}
                     name="filter"
                     className="textbox"
                     type="text"
                     placeholder={t("site.project.filter")}
                     defaultValue={filter}
+                    autoFocus
+                    {...{ autofocus: "" }}
                   />
                   <button type="submit" className="search-btn">
                     <i className="yobicon-search"></i>
