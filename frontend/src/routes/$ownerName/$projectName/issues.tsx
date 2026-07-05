@@ -1087,6 +1087,15 @@ function MassUpdateToolbar({
     }
     mutateMassUpdate(input);
   };
+  const handleMassUpdateOptionClick = (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    name: string,
+    value: string,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    submitMassUpdate(name, value);
+  };
 
   return (
     <div className="mass-update-wrap hide-in-mobile">
@@ -1147,7 +1156,7 @@ function MassUpdateToolbar({
               <button
                 type="button"
                 style={massUpdateOptionButtonStyle}
-                onClick={() => submitMassUpdate("assignee.id", "0")}
+                onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", "0")}
               >
                 {t("issue.noAssignee")}
               </button>
@@ -1156,7 +1165,9 @@ function MassUpdateToolbar({
               <button
                 type="button"
                 style={massUpdateOptionButtonStyle}
-                onClick={() => submitMassUpdate("assignee.id", currentUserId)}
+                onClick={(event) =>
+                  handleMassUpdateOptionClick(event, "assignee.id", currentUserId)
+                }
               >
                 {t("issue.assignToMe")}
               </button>
@@ -1168,7 +1179,7 @@ function MassUpdateToolbar({
                   type="button"
                   className="usf-group"
                   style={massUpdateOptionButtonStyle}
-                  onClick={() => submitMassUpdate("assignee.id", user.id)}
+                  onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", user.id)}
                 >
                   <span className="avatar-wrap smaller">
                     <img src={user.avatarUrl} width="20" height="20" alt="" />
@@ -1254,6 +1265,14 @@ function MassUpdateDropdown({
   onToggle: (id: string) => void;
   options: Array<{ divider?: boolean; label?: string; value: string }>;
 }) {
+  const handleMassUpdateOptionClick = (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    value: string,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onSelect(name, value);
+  };
   return (
     <div id={id} className={massUpdateDropdownGroupClassName(isOpen)} data-name={name}>
       <button
@@ -1280,7 +1299,7 @@ function MassUpdateDropdown({
               <button
                 type="button"
                 style={massUpdateOptionButtonStyle}
-                onClick={() => onSelect(name, option.value)}
+                onClick={(event) => handleMassUpdateOptionClick(event, option.value)}
               >
                 {option.label}
               </button>
@@ -1371,6 +1390,14 @@ function LabelMassUpdateGroup({
 }) {
   const categoryHidden =
     group.labels.length > 0 && group.labels.every((label) => hiddenLabelIds?.has(label.id));
+  const handleMassUpdateOptionClick = (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    value: string,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onSelect(name, value);
+  };
   return (
     <>
       <li className="disabled" data-category={group.categoryId} hidden={categoryHidden}>
@@ -1386,7 +1413,7 @@ function LabelMassUpdateGroup({
           <button
             type="button"
             style={massUpdateOptionButtonStyle}
-            onClick={() => onSelect(name, label.id)}
+            onClick={(event) => handleMassUpdateOptionClick(event, label.id)}
           >
             <span className="issue-label active list-label" data-label-id={label.id}>
               {label.name}

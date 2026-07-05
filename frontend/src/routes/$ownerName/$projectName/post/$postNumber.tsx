@@ -397,6 +397,7 @@ function ProjectPostDetailBody({
             className="close"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               setOpenPostModal(null);
             }}
@@ -426,6 +427,7 @@ function ProjectPostDetailBody({
             className="ybtn"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               setOpenPostModal(null);
             }}
@@ -478,6 +480,7 @@ function PostingHistory({
         data-toggle="modal"
         data-target="#-yona-posting-history"
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           onOpen();
         }}
@@ -496,6 +499,7 @@ function PostingHistory({
             className="close"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onClose();
             }}
@@ -512,6 +516,7 @@ function PostingHistory({
             className="ybtn ybtn-info ybtn-small"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onClose();
             }}
@@ -557,6 +562,7 @@ function CommentDeleteConfirm({
             className="close"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onCancel();
             }}
@@ -588,6 +594,7 @@ function CommentDeleteConfirm({
             className="ybtn"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onCancel();
             }}
@@ -677,6 +684,7 @@ function PostActionButtons({
           data-target="#deleteConfirm"
           title={t("button.delete")}
           onClick={(event) => {
+            event.preventDefault();
             event.stopPropagation();
             onDeleteClick();
           }}
@@ -986,6 +994,7 @@ function PostCommentRow({
                       data-request-uri={deleteUri}
                       title={t("common.comment.delete")}
                       onClick={(event) => {
+                        event.preventDefault();
                         event.stopPropagation();
                         onCommentDeleteRequest(deleteUri);
                       }}
@@ -1299,6 +1308,7 @@ function PostChildComment({
               data-request-uri={deleteUri}
               title={t("common.comment.delete")}
               onClick={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
                 onCommentDeleteRequest(deleteUri);
               }}
@@ -1513,6 +1523,7 @@ function BoardDetailKeymap({
         data-target="#helpKeys"
         className="ybtn ybtn-inverse ybtn-mini"
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           onOpen();
         }}
@@ -1566,6 +1577,7 @@ function BoardDetailKeymap({
             className="ybtn ybtn-info"
             data-dismiss="modal"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onClose();
             }}

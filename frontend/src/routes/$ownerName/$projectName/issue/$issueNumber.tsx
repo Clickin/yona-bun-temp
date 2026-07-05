@@ -37,6 +37,11 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
+function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber")({
   component: ProjectIssueDetailRoute,
 });
@@ -550,6 +555,11 @@ function IssueDetailBody({
     }
   }
 
+  const openDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateModalButtonClick(event);
+    setDeleteModalOpen(true);
+  };
+
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap board-view">
@@ -571,6 +581,7 @@ function IssueDetailBody({
               className="favorite-issue"
               data-issue-id={issueId}
               onClick={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
                 favoriteIssueMutation.mutate();
               }}
@@ -726,11 +737,7 @@ function IssueDetailBody({
                 canUpdate={canUpdate}
                 issueNumber={issueNumber}
                 onEditClick={() => void router.navigate({ to: editIssuePath })}
-                onDeleteClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setDeleteModalOpen(true);
-                }}
+                onDeleteClick={openDeleteModal}
                 ownerName={ownerName}
                 projectName={projectName}
               />
@@ -938,11 +945,7 @@ function IssueDetailBody({
                     canUpdate={canUpdate}
                     issueNumber={issueNumber}
                     onEditClick={() => void router.navigate({ to: editIssuePath })}
-                    onDeleteClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setDeleteModalOpen(true);
-                    }}
+                    onDeleteClick={openDeleteModal}
                     ownerName={ownerName}
                     projectName={projectName}
                     wrap={false}
@@ -1013,13 +1016,11 @@ function IssuePostingHistory({
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
   const openHistory = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     setOpen(true);
   };
   const closeHistory = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     setOpen(false);
   };
 
@@ -1092,6 +1093,14 @@ function IssueVote({
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
   const voteHref = `${issueHref}/${hasVoted ? "unvote" : "vote"}`;
+  const openVotersDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateModalButtonClick(event);
+    setVotersOpen(true);
+  };
+  const closeVotersDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateModalButtonClick(event);
+    setVotersOpen(false);
+  };
 
   return (
     <>
@@ -1122,16 +1131,14 @@ function IssueVote({
             </span>
           </span>
         )}
-        {voters.length ? (
-          <IssueVoterAvatars onOpen={() => setVotersOpen(true)} voters={voters} />
-        ) : null}
+        {voters.length ? <IssueVoterAvatars onOpen={openVotersDialog} voters={voters} /> : null}
       </div>
       {voters.length ? (
         <IssueVoterListDialog
           id="voters"
           open={votersOpen}
           ownerName={ownerName}
-          onClose={() => setVotersOpen(false)}
+          onClose={closeVotersDialog}
           projectName={projectName}
           issueNumber={issueNumber}
           voters={voters}
@@ -1141,7 +1148,13 @@ function IssueVote({
   );
 }
 
-function IssueVoterAvatars({ onOpen, voters }: { onOpen: () => void; voters: VoterLike[] }) {
+function IssueVoterAvatars({
+  onOpen,
+  voters,
+}: {
+  onOpen: (event: MouseEvent<HTMLButtonElement>) => void;
+  voters: VoterLike[];
+}) {
   const visibleVoters = voters.slice(0, 3);
   const overflowVoters = voters.slice(3);
   const overflowTitle = overflowVoters
@@ -1167,16 +1180,7 @@ function IssueVoterAvatars({ onOpen, voters }: { onOpen: () => void; voters: Vot
         ))}
         {overflowVoters.length ? (
           <li data-toggle="tooltip" data-html="true" title={overflowTitle}>
-            <button
-              type="button"
-              data-toggle="modal"
-              data-target="#voters"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onOpen();
-              }}
-            >
+            <button type="button" data-toggle="modal" data-target="#voters" onClick={onOpen}>
               {`and ${overflowVoters.length} others`}
             </button>
           </li>
@@ -1194,23 +1198,17 @@ function IssueVoterListDialog({
 }: {
   id: string;
   issueNumber?: string;
-  onClose?: () => void;
+  onClose?: (event: MouseEvent<HTMLButtonElement>) => void;
   open?: boolean;
   ownerName?: string;
   projectName?: string;
   voters: VoterLike[];
 }) {
-  const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onClose?.();
-  };
-
   return (
     <>
       <div id={id} className={open ? "modal voters-dialog in" : "modal hide voters-dialog"}>
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={closeDialog}>
+          <button type="button" className="close" data-dismiss="modal" onClick={onClose}>
             ×
           </button>
           <h5 className="nm">Issue Voters</h5>
@@ -1252,7 +1250,7 @@ function IssueVoterListDialog({
           >
             Copy email
           </button>
-          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" onClick={closeDialog}>
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" onClick={onClose}>
             Close
           </button>
         </div>
@@ -1741,13 +1739,11 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
   const openKeymap = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     setOpen(true);
   };
   const closeKeymap = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     setOpen(false);
   };
 
@@ -2569,8 +2565,7 @@ function IssueCommentRow({
                 data-request-uri={deleteUri}
                 title="Delete comment"
                 onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
+                  insulateModalButtonClick(event);
                   onCommentDeleteRequest(deleteUri);
                 }}
               >
@@ -2804,8 +2799,7 @@ function ChildComment({
               data-request-uri={deleteUri}
               title="Delete comment"
               onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
+                insulateModalButtonClick(event);
                 onCommentDeleteRequest(deleteUri);
               }}
             >
@@ -3075,6 +3069,14 @@ function TasklistBar() {
 
 function CommentVoters({ commentId, voters }: { commentId: string; voters: VoterLike[] }) {
   const [open, setOpen] = useState(false);
+  const openDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateModalButtonClick(event);
+    setOpen(true);
+  };
+  const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateModalButtonClick(event);
+    setOpen(false);
+  };
 
   if (!voters.length) {
     return null;
@@ -3097,18 +3099,14 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
             className="vote-description-people"
             data-toggle="modal"
             data-target={`#voters-${commentId}`}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setOpen(true);
-            }}
+            onClick={openDialog}
           >
             {voters.length} Agreements
           </button>
         </span>
         <IssueVoterListDialog
           id={`voters-${commentId}`}
-          onClose={() => setOpen(false)}
+          onClose={closeDialog}
           open={open}
           voters={voters}
         />
@@ -3256,13 +3254,11 @@ function DeleteConfirm({
   open: boolean;
 }) {
   const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     onCancel();
   };
   const confirmDelete = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     onConfirm();
   };
 
@@ -3318,13 +3314,11 @@ function CommentDeleteConfirm({
   title: string;
 }) {
   const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     onCancel();
   };
   const confirmDelete = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    insulateModalButtonClick(event);
     if (requestUri) {
       onConfirm(requestUri);
     }

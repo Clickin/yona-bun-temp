@@ -369,6 +369,45 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="usf-group"');
 });
 
+test("project issue list mass update option buttons keep click ownership route-local", async () => {
+  const massUpdateToolbarSource =
+    PROJECT_ISSUES_ROUTE_SOURCE.match(
+      /function MassUpdateToolbar\([\s\S]*?\nfunction MassUpdateDropdown/u,
+    )?.[0] ?? "";
+  const massUpdateDropdownSource =
+    PROJECT_ISSUES_ROUTE_SOURCE.match(
+      /function MassUpdateDropdown\([\s\S]*?\nfunction LabelMassUpdateDropdown/u,
+    )?.[0] ?? "";
+  const labelMassUpdateGroupSource =
+    PROJECT_ISSUES_ROUTE_SOURCE.match(
+      /function LabelMassUpdateGroup\([\s\S]*?\nfunction massUpdateDropdownGroupClassName/u,
+    )?.[0] ?? "";
+
+  expect(massUpdateToolbarSource).toContain("const handleMassUpdateOptionClick = (");
+  expect(massUpdateToolbarSource).toContain("submitMassUpdate(name, value)");
+  expect(massUpdateToolbarSource).toContain(
+    'handleMassUpdateOptionClick(event, "assignee.id", "0")',
+  );
+  expect(massUpdateToolbarSource).toContain(
+    'handleMassUpdateOptionClick(event, "assignee.id", user.id)',
+  );
+  expect(massUpdateToolbarSource).not.toContain("onClick={() => submitMassUpdate(");
+
+  expect(massUpdateDropdownSource).toContain("const handleMassUpdateOptionClick = (");
+  expect(massUpdateDropdownSource).toContain("onSelect(name, value)");
+  expect(massUpdateDropdownSource).toContain(
+    "onClick={(event) => handleMassUpdateOptionClick(event, option.value)}",
+  );
+  expect(massUpdateDropdownSource).not.toContain("onClick={() => onSelect(name, option.value)}");
+
+  expect(labelMassUpdateGroupSource).toContain("const handleMassUpdateOptionClick = (");
+  expect(labelMassUpdateGroupSource).toContain("onSelect(name, value)");
+  expect(labelMassUpdateGroupSource).toContain(
+    "onClick={(event) => handleMassUpdateOptionClick(event, label.id)}",
+  );
+  expect(labelMassUpdateGroupSource).not.toContain("onClick={() => onSelect(name, label.id)}");
+});
+
 test("project issue list route source does not duplicate common Select2 templates", async () => {
   const routeLocalSelect2Source =
     PROJECT_ISSUES_ROUTE_SOURCE.match(
@@ -1712,6 +1751,7 @@ test("project issue list mass update dropdown opens through route-local React st
   await page.evaluate(() => {
     window.sessionStorage.setItem("mass-update-dropdown-marker", "alive");
   });
+  await installMassUpdateDelegatedOptionClickProbe(page);
 
   await page.locator("#state > button").click();
   await expect(page.locator("#state")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
@@ -1735,6 +1775,52 @@ test("project issue list mass update dropdown opens through route-local React st
   expect(
     await page.evaluate(() => window.sessionStorage.getItem("mass-update-dropdown-marker")),
   ).toBe("alive");
+  expect(await massUpdateDelegatedOptionClickMarker(page)).toBeUndefined();
+});
+
+test("project issue list mass update assignee option click stays route-local", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await page.locator("#issue-42").check();
+
+  const initialUrl = page.url();
+  await page.evaluate(() => {
+    window.sessionStorage.setItem("mass-update-dropdown-marker", "alive");
+  });
+  await installMassUpdateDelegatedOptionClickProbe(page);
+
+  await page.locator("#assignee > button").click();
+  await expect(page.locator("#assignee")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  expect(page.url()).toBe(initialUrl);
+  await expect(page.locator("#assignee .mass-update-list a")).toHaveCount(0);
+  const assignToMeButton = page
+    .locator('#assignee .mass-update-list li[data-value="1"] button[type="button"]')
+    .first();
+  await expect(assignToMeButton).toHaveText("Assign to me");
+  expect(
+    await page.evaluate(() => window.sessionStorage.getItem("mass-update-dropdown-marker")),
+  ).toBe("alive");
+
+  const massUpdateRequest = page.waitForRequest((request) => {
+    return request.method() === "POST" && request.url().includes("/issues/mass-update");
+  });
+  await assignToMeButton.click();
+
+  const request = await massUpdateRequest;
+  expect(request.postDataJSON()).toMatchObject({
+    assigneeLoginId: "admin",
+    assigneeUpdate: true,
+    issueNumbers: [11],
+  });
+  await expect(page.locator("#assignee")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(() => window.sessionStorage.getItem("mass-update-dropdown-marker")),
+  ).toBe("alive");
+  expect(await massUpdateDelegatedOptionClickMarker(page)).toBeUndefined();
 });
 
 test("project issue list mass update state posts selected issues through REST", async ({
@@ -2321,6 +2407,29 @@ async function massUpdateButtonsDisabled(page: Page) {
       }
       return button.disabled;
     }),
+  );
+}
+
+async function installMassUpdateDelegatedOptionClickProbe(page: Page) {
+  await page.evaluate(() => {
+    (
+      window as Window & { __massUpdateDelegatedOptionClick?: string }
+    ).__massUpdateDelegatedOptionClick = undefined;
+    document.addEventListener("click", (event) => {
+      if ((event.target as Element | null)?.closest("#mass-update-form .mass-update-list button")) {
+        (
+          window as Window & { __massUpdateDelegatedOptionClick?: string }
+        ).__massUpdateDelegatedOptionClick = "delegated";
+      }
+    });
+  });
+}
+
+async function massUpdateDelegatedOptionClickMarker(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & { __massUpdateDelegatedOptionClick?: string })
+        .__massUpdateDelegatedOptionClick,
   );
 }
 
