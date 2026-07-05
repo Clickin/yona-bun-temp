@@ -2450,7 +2450,7 @@ function IssueCommentRow({
           <span className="act-row pull-right">
             <span className="new-issue-by">
               <Link {...LEGACY_LINK_PROPS} to={`/user/issues/new?commentId=${commentId}`}>
-                New issue by this comment
+                Reference in new issue
               </Link>
             </span>
             <CommentVoters commentId={commentId} voters={voters} />
