@@ -115,7 +115,8 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   const canShowNotice = Boolean(options?.canMarkNotice) && !issueTemplate && !isOnlineCommit;
   const canShowUploader = Boolean(options?.canAttachFiles) && !issueTemplate && !isOnlineCommit;
   const canShowReadme = Boolean(options?.canMarkReadme) && search.readme && !issueTemplate;
-  const [titleHasError, setTitleHasError] = useState(false);
+  const [titleFocusRequest, setTitleFocusRequest] = useState(1);
+  const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -163,7 +164,8 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
             if (stringFormValue(formData, "title").trim() === "") {
-              setTitleHasError(true);
+              window.alert(t("post.error.emptyTitle"));
+              setTitleFocusRequest((current) => current + 1);
               return;
             }
             mutation.mutate(event.currentTarget);
@@ -173,26 +175,23 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             <dl>
               <dd>
                 <LegacyTabIndexInput
+                  focusRequest={titleFocusRequest}
                   tabIndexValue="1"
                   type="text"
                   id="title"
                   autoComplete="off"
                   name="title"
-                  className={`zen-mode text title ${titleHasError ? "error" : ""}`}
+                  className="zen-mode text title "
                   maxLength={250}
                   defaultValue={title}
-                  onChange={(event) => {
-                    if (event.currentTarget.value.trim() !== "") {
-                      setTitleHasError(false);
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      setBodyFocusRequest((current) => current + 1);
                     }
                   }}
                   placeholder={isOnlineCommit ? t("code.commitMsg") : t("title")}
                 />
-                {titleHasError ? (
-                  <div className="message">
-                    <div>{t("validation.required")}</div>
-                  </div>
-                ) : null}
               </dd>
               <dd>
                 {issueTemplate ? (
@@ -221,7 +220,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                 ) : null}
               </dd>
               <dd style={{ position: "relative" }}>
-                <BoardPostMarkdownEditor value={body} />
+                <BoardPostMarkdownEditor focusRequest={bodyFocusRequest} value={body} />
               </dd>
             </dl>
 
@@ -267,13 +266,19 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
 }
 
 function LegacyTabIndexInput({
+  focusRequest = 0,
   tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.setAttribute("tabindex", tabIndexValue);
   }, [tabIndexValue]);
+  useEffect(() => {
+    if (focusRequest > 0) {
+      inputRef.current?.focus();
+    }
+  }, [focusRequest]);
   return <input ref={inputRef} {...props} />;
 }
 
@@ -297,13 +302,18 @@ function HistoryBackLink({ children, onCancel }: { children: string; onCancel: (
   );
 }
 
-function BoardPostMarkdownEditor({ value }: { value: string }) {
+function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number; value: string }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     bodyRef.current?.setAttribute("tabindex", "3");
   }, []);
+  useEffect(() => {
+    if (focusRequest > 0) {
+      bodyRef.current?.focus();
+    }
+  }, [focusRequest]);
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">

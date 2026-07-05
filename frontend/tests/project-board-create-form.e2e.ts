@@ -45,6 +45,9 @@ test("project board create form matches legacy board/create.scala.html core form
 
   await page.goto(`${basePath}/admin/sample/postform`);
   await expect(page.locator("form.nm")).toBeVisible();
+  await expect(page.locator("#title")).toBeFocused();
+  await page.locator("#title").press("Enter");
+  await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "3");
@@ -150,14 +153,22 @@ test("project board create form matches legacy board/create.scala.html core form
     )
     .toBe("kept");
 
+  let emptyTitleAlert: { message: string; type: string } | null = null;
+  page.once("dialog", async (dialog) => {
+    emptyTitleAlert = { message: dialog.message(), type: dialog.type() };
+    await dialog.accept();
+  });
   await page.click("form.nm .actions .ybtn-success");
-  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
-  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  expect(emptyTitleAlert).toEqual({
+    message: "Title is a required field.",
+    type: "alert",
+  });
+  await expect(page.locator("#title")).toBeFocused();
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await expect(page.locator("#title + .message")).toHaveCount(0);
   expect(postRequests).toEqual([]);
 
   await page.fill("#title", "Board draft");
-  await expect(page.locator("#title")).not.toHaveClass(/error/);
-  await expect(page.locator("#title + .message")).toHaveCount(0);
   await page.fill("#editor-body-body", "Body **markdown**");
   await page.check("#notice");
   const postResponsePromise = page.waitForResponse(
