@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const PROJECT_MEMBERS_ROUTE_SOURCE = new URL(
   "../src/routes/$ownerName/$projectName/members.tsx",
@@ -12,7 +12,7 @@ const EXPECTED_PROJECT_MEMBERS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -139,40 +139,74 @@ test("project members converted internal links render legacy hrefs and navigate 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectMembers(page);
+  await mockProjectMembers(page, {
+    project: {
+      isForkedFromOrigin: true,
+      originalOwnerName: "origin-admin",
+      originalProjectName: "origin-sample",
+    },
+  });
 
   await page.goto(`${basePath}/admin/sample/members`);
-  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".project-breadcrumb .project-author a"),
     `${basePath}/admin`,
+    "admin",
+    null,
   );
-  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".project-breadcrumb .project-name a"),
     `${basePath}/admin/sample`,
+    "sample",
+    null,
   );
-  await expect(page.locator(".project-menu-gruop a").nth(0)).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".project-origin a"),
+    `${basePath}/origin-admin/origin-sample`,
+    "origin-admin / origin-sample",
+    "project-origin-name",
+  );
+  await expectLegacyAnchor(
+    page.locator(".project-menu-gruop a").nth(0),
     `${basePath}/admin/sample`,
+    "Project homeH",
+    null,
   );
-  await expect(page.locator(".project-menu-gruop a").nth(1)).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".project-menu-gruop a").nth(1),
     `${basePath}/admin/sample/code`,
+    "CodeC",
+    null,
   );
-  await expect(page.locator(".project-setting .project-menu-nav a")).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".project-setting .project-menu-nav a"),
     `${basePath}/admin/sample/setting`,
+    "Project configuration1",
+    null,
   );
-  await expect(page.locator(".members.project .avatar-wrap").nth(0)).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".members.project .avatar-wrap").nth(0),
     `${basePath}/admin`,
+    "",
+    "avatar-wrap mlarge pull-left mr10",
   );
-  await expect(page.locator(".members.project .avatar-wrap").nth(1)).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".members.project .avatar-wrap").nth(1),
     `${basePath}/alice`,
+    "",
+    "avatar-wrap mlarge pull-left mr10",
   );
-  await expect(page.locator(".row-fluid .span2 .pull-left a").nth(0)).toHaveAttribute(
-    "href",
+  await expectLegacyAnchor(
+    page.locator(".row-fluid .span2 .pull-left a").nth(0),
     `${basePath}/bob`,
+    "",
+    null,
+  );
+  await expectLegacyAnchor(
+    page.locator(".row-fluid .span2 span a"),
+    `${basePath}/bob`,
+    "Bob Smith",
+    null,
   );
 
   await page.evaluate(() => {
@@ -193,7 +227,11 @@ test("project members converted internal links render legacy hrefs and navigate 
 test("project members route source keeps navigation in Link and mutation URLs in data-href", () => {
   const source = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
 
+  expect(source).not.toContain("createLink");
   expect(source).not.toMatch(/<a\b/);
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("as never");
   expect(source).not.toContain("search={undefined");
   expect(source).not.toContain("${projectName}/labels");
@@ -395,6 +433,23 @@ async function roleButtonMetrics(locator: ReturnType<Page["locator"]>) {
       width: Math.round(button.getBoundingClientRect().width),
     };
   });
+}
+
+async function expectLegacyAnchor(
+  locator: Locator,
+  href: string,
+  text: string,
+  className: string | null,
+) {
+  await expect(locator).toHaveAttribute("href", href);
+  await expect(locator).toHaveText(text);
+  if (className === null) {
+    await expect(locator).not.toHaveAttribute("class", /.+/);
+  } else {
+    await expect(locator).toHaveAttribute("class", className);
+  }
+  await expect(locator).not.toHaveAttribute("aria-current", /.+/);
+  await expect(locator).not.toHaveAttribute("data-status", /.+/);
 }
 
 test("project members renders legacy error/badrequest.scala.html shell", async ({ page }) => {

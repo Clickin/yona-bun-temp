@@ -18,6 +18,12 @@ import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
 
+const legacyRouteLocalActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber/editform")({
   component: ProjectIssueEditFormRoute,
 });
@@ -197,7 +203,6 @@ function ProjectIssueEditFormBody({
                       <div className="span11">
                         <LegacyTabIndexInput
                           focusRequest={titleFocusRequest}
-                          tabIndexValue="1"
                           type="text"
                           id="title"
                           name="title"
@@ -205,6 +210,7 @@ function ProjectIssueEditFormBody({
                           className="text title "
                           maxLength={250}
                           placeholder={t("title")}
+                          tabIndex={Number("1")}
                           autoComplete="off"
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
@@ -516,7 +522,7 @@ function IssueLabelSelect({
       <dt>
         {t("label")}{" "}
         <Link
-          activeProps={{ className: undefined }}
+          activeProps={legacyRouteLocalActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           params={{ ownerName, projectName }}
           target="_blank"
@@ -569,13 +575,9 @@ function IssueLabelSelect({
 
 function LegacyTabIndexInput({
   focusRequest = 0,
-  tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
   useEffect(() => {
     if (focusRequest > 0) {
       inputRef.current?.focus();
@@ -588,9 +590,6 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    bodyRef.current?.setAttribute("tabindex", "2");
-  }, []);
   useEffect(() => {
     if (focusRequest > 0) {
       bodyRef.current?.focus();
@@ -657,6 +656,7 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
               data-editor-mode="content-body"
               id="editor-body-body"
               defaultValue={value}
+              tabIndex={Number("2")}
               {...{ markdown: "true" }}
             ></textarea>
           </div>

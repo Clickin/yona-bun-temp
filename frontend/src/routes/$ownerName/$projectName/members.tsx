@@ -23,6 +23,13 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
+const legacyLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+const legacyLinkActiveOptions = { exact: true };
+
 export const Route = createFileRoute("/$ownerName/$projectName/members")({
   component: ProjectMembersRoute,
 });
@@ -293,7 +300,8 @@ function ProjectMemberListItem({
   return (
     <li className="member span6 span-hard-wrap">
       <Link
-        activeProps={{ className: undefined }}
+        activeOptions={legacyLinkActiveOptions}
+        activeProps={legacyLinkActiveProps}
         to="/$user"
         params={{ user: loginId }}
         className="avatar-wrap mlarge pull-left mr10"
@@ -397,7 +405,12 @@ function EnrollmentRequest({
   return (
     <div className="span2">
       <div className="pull-left mr10">
-        <Link activeProps={{ className: undefined }} to="/$user" params={{ user: loginId }}>
+        <Link
+          activeOptions={legacyLinkActiveOptions}
+          activeProps={legacyLinkActiveProps}
+          to="/$user"
+          params={{ user: loginId }}
+        >
           <img
             src={stringField(user.avatarUrl, "/assets/images/default-avatar-32.png")}
             height="65"
@@ -409,7 +422,12 @@ function EnrollmentRequest({
       </div>
       <div className="pull-left" style={{ width: "60px" }}>
         <span>
-          <Link activeProps={{ className: undefined }} to="/$user" params={{ user: loginId }}>
+          <Link
+            activeOptions={legacyLinkActiveOptions}
+            activeProps={legacyLinkActiveProps}
+            to="/$user"
+            params={{ user: loginId }}
+          >
             <strong>{stringField(user.userLabel, loginId)}</strong>
           </Link>
         </span>
@@ -499,7 +517,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyLinkActiveOptions}
+                  activeProps={legacyLinkActiveProps}
                   to="/$user"
                   params={{ user: ownerName }}
                 >
@@ -509,7 +528,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
               <span className="project-separator hide-in-mobile">/</span>
               <span className="project-name">
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyLinkActiveOptions}
+                  activeProps={legacyLinkActiveProps}
                   to="/$ownerName/$projectName"
                   params={{ ownerName, projectName }}
                 >
@@ -548,7 +568,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
               <div className="project-origin">
                 <span className="project-origin-title">{t("fork.original")}</span>
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyLinkActiveOptions}
+                  activeProps={legacyLinkActiveProps}
                   to="/$ownerName/$projectName"
                   params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
                   className="project-origin-name"
@@ -645,7 +666,8 @@ function ProjectMenu({
             <ul className="project-menu-nav">
               <li className={active === "setting" ? "active" : ""}>
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyLinkActiveOptions}
+                  activeProps={legacyLinkActiveProps}
                   to="/$ownerName/$projectName/setting"
                   params={{ ownerName, projectName }}
                 >
@@ -688,7 +710,12 @@ function ProjectMenuItem({
 }) {
   return (
     <li className={`${active ? "active" : ""}${className ? ` ${className}` : ""}`}>
-      <Link activeProps={{ className: undefined }} to={to} params={params}>
+      <Link
+        activeOptions={legacyLinkActiveOptions}
+        activeProps={legacyLinkActiveProps}
+        to={to}
+        params={params}
+      >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
       </Link>
@@ -715,11 +742,7 @@ function ProjectSettingMenu({
       <li id="subMenuProjectSetting" className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/setting"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -730,11 +753,7 @@ function ProjectSettingMenu({
       <li id="subMenuProjectMember" className={active === "members" ? "active" : ""}>
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/members"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -746,11 +765,7 @@ function ProjectSettingMenu({
       <li id="subMenuIssueLabel" className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -761,11 +776,7 @@ function ProjectSettingMenu({
       <li id="subMenuWebhook" className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/webhooks"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -776,11 +787,7 @@ function ProjectSettingMenu({
       <li id="subMenuProjectTransfer" className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/transfer"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -791,11 +798,7 @@ function ProjectSettingMenu({
       <li id="subMenuProjectDelete" className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/deleteform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -810,11 +813,7 @@ function ProjectSettingMenu({
       >
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeProps={legacyLinkActiveProps}
           to="/$ownerName/$projectName/changeVCS"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}

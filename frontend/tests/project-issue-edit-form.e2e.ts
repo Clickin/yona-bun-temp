@@ -41,9 +41,17 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(labelEditLink).toHaveClass("label-edit");
   await expect(labelEditLink).toHaveText("[Edit]");
   await expect(labelEditLink).not.toHaveAttribute("data-status", "active");
+  await expect(labelEditLink).not.toHaveAttribute("aria-current", "page");
   expect(ROUTE_SOURCE).toContain("<Link");
   expect(ROUTE_SOURCE).toContain('className="label-edit"');
-  expect(ROUTE_SOURCE).not.toMatch(/<a\b[^>]*className="label-edit"/u);
+  expect(ROUTE_SOURCE).toContain("legacyRouteLocalActiveProps");
+  expect(ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(ROUTE_SOURCE).not.toContain("createLink");
+  expect(ROUTE_SOURCE).not.toMatch(/<a[\s>]/u);
+  expect(ROUTE_SOURCE).not.toContain("setAttribute");
+  expect(ROUTE_SOURCE).not.toContain("removeAttribute");
+  expect(ROUTE_SOURCE).not.toContain("activeProps={{ className: undefined }}");
   expect(ROUTE_SOURCE).toContain(
     'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";',
   );

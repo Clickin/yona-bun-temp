@@ -16,7 +16,7 @@ const EXPECTED_PROJECT_WEBHOOKS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -44,8 +44,16 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
 
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain(" as never");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("<a ");
+  expect(source).toContain("const LEGACY_LINK_PROPS = {");
+  expect(source).toContain(
+    'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
+  );
   expect(source).toContain('<LegacyWebhookHelp help={t("project.webhook.help")} />');
   expect(source).toContain("help.split(/\\s*<br\\s*\\/?>/iu)");
   expect(source).toContain('{" "}');
@@ -157,7 +165,11 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   const headerOwnerLink = page.locator(".project-breadcrumb .project-author a");
   const headerProjectLink = page.locator(".project-breadcrumb .project-name a");
   await expect(headerOwnerLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(headerOwnerLink).toHaveText("admin");
+  await assertNoTanStackActiveMarkers(headerOwnerLink);
   await expect(headerProjectLink).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(headerProjectLink).toHaveText("sample");
+  await assertNoTanStackActiveMarkers(headerProjectLink);
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
   await expect(projectMenuLinks).toHaveCount(8);
@@ -175,6 +187,25 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   );
   await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
   await expect(projectMenuLinks.nth(7)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  expect(
+    await projectMenuLinks.evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+        text: link.textContent?.replace(/\s+/gu, " ").trim(),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Project homeH" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "CodeC" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "IssueI" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Pull requestP" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "ReviewR" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "MilestoneM" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "BoardB" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Project configuration" },
+  ]);
 
   const settingsTabLinks = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabLinks).toHaveCount(7);
@@ -184,16 +215,17 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
         ariaCurrent: link.getAttribute("aria-current"),
         className: link.getAttribute("class"),
         dataStatus: link.getAttribute("data-status"),
+        text: link.textContent?.replace(/\s+/gu, " ").trim(),
       })),
     ),
   ).toEqual([
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
-    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Settings" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Member" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Issue Label" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Webhooks" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Transfer" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Delete project" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Repository Type Change" },
   ]);
   await expect(page.locator("#subMenuWebhook")).toHaveClass("active");
   await expect(settingsTabLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
@@ -253,6 +285,28 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
     .toBe("kept");
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
   await expect(page.locator("#saveSetting")).toBeVisible();
+});
+
+test("project webhooks fork origin link preserves legacy class without active markers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [], {
+    project: {
+      isForkedFromOrigin: true,
+      originalOwnerName: "origin",
+      originalProjectName: "root",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const originLink = page.locator(".project-origin a.project-origin-name");
+  await expect(page.locator(".project-origin-title")).toHaveText("Forked from");
+  await expect(originLink).toHaveAttribute("href", `${basePath}/origin/root`);
+  await expect(originLink).toHaveText("origin / root");
+  await expect(originLink).toHaveAttribute("class", "project-origin-name");
+  await expect(originLink).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(originLink).not.toHaveAttribute("data-status", /.*/u);
 });
 
 test("project webhooks settings tab follows legacy enrolled user badge", async ({ page }) => {
@@ -624,6 +678,12 @@ async function webhookListMetrics(page: Page) {
       webhookType: cells[2]?.textContent?.trim(),
     };
   });
+}
+
+async function assertNoTanStackActiveMarkers(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).not.toHaveAttribute("class", /.*/u);
+  await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.*/u);
 }
 
 async function webhookFormMetrics(page: Page) {
