@@ -294,7 +294,7 @@ function IssueListItem({ issue }: { issue: SiteIssue }) {
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
             <img src={issue.authorAvatarUrl} />
           ) : (
-            <img src={issue.authorAvatarUrl} alt={issue.authorLabel} width="16" height="16" />
+            <img src={issue.authorAvatarUrl} alt={authorAvatarAlt(issue)} width="16" height="16" />
           )}
         </Link>
         <Link to="/$user" params={{ user: issue.authorLoginId }} className="post-meta-item">
@@ -329,4 +329,8 @@ function LegacyMessage({ messageKey }: { messageKey: string }) {
 
 function isDefaultAuthorAvatar(avatarUrl: string) {
   return avatarUrl.includes("gravatar.com/avatar/");
+}
+
+function authorAvatarAlt(issue: SiteIssue) {
+  return (issue as SiteIssue & { authorName?: string }).authorName || issue.authorLabel;
 }

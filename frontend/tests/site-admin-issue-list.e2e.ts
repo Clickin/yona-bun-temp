@@ -338,6 +338,30 @@ test("site admin issue list renders legacy update notification badge", async ({ 
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin issue list custom author avatar alt uses legacy user name", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockIssuesWithCustomAuthorAvatar(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=open`);
+
+  const authorAvatar = page.locator(".post-meta-wrap > .avatar-wrap img");
+  await expect(authorAvatar).toHaveAttribute("src", "/avatars/alice-custom.png");
+  await expect(authorAvatar).toHaveAttribute("alt", "Alice Legal Name");
+  await expect(authorAvatar).toHaveAttribute("width", "16");
+  await expect(authorAvatar).toHaveAttribute("height", "16");
+  await expect(page.locator(".post-meta-wrap > .post-meta-item").first()).toHaveText(
+    "Alice Display",
+  );
+});
+
 test("site admin issue list resets decimal pagination input without navigation", async ({
   page,
 }) => {
@@ -461,6 +485,44 @@ async function mockIssues(page: Page) {
         state: "open",
         total: 2,
         totalPages: 2,
+      }),
+    });
+  });
+}
+
+async function mockIssuesWithCustomAuthorAvatar(page: Page) {
+  await page.route("**/api/v1/site/issues?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        issues: [
+          {
+            assigneeLabel: "",
+            authorAvatarUrl: "/avatars/alice-custom.png",
+            authorLabel: "Alice Display",
+            authorLoginId: "alice",
+            authorName: "Alice Legal Name",
+            commentCount: 5,
+            createdLabel: "1 day ago",
+            createdTitle: "2026-06-29 13:00",
+            issueNumber: "42",
+            labels: [],
+            milestoneTitle: "",
+            ownerName: "acme",
+            projectLogoUrl: "/assets/images/default-project-logo.png",
+            projectName: "roadmap",
+            state: "open",
+            title: "Fix release blocker",
+            updatedLabel: "1 day ago",
+            voterCount: 0,
+            watcherCount: 0,
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        state: "open",
+        total: 1,
+        totalPages: 1,
       }),
     });
   });
