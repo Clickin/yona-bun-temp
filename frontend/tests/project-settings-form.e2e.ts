@@ -142,6 +142,15 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
   await page.goto(`${basePath}/admin/sample/setting`);
   const settingsTabs = page.locator(".project-page-wrap > .nav.nav-tabs a");
   await expect(settingsTabs).toHaveCount(7);
+  await expect(settingsTabs).toHaveText([
+    "Settings",
+    "Member",
+    "Issue Label",
+    "Webhooks",
+    "Transfer",
+    "Delete project",
+    "Repository Type Change",
+  ]);
   expect(
     await settingsTabs.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
@@ -171,6 +180,24 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
     { ariaCurrent: null, className: null, dataStatus: null },
   ]);
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator(".project-setting li")).toHaveClass("active");
+  await expect(page.locator(".project-setting li.active a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/setting`,
+  );
+  expect(
+    await page.locator(".project-setting li.active a").evaluate((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
+      text: link.textContent?.trim(),
+    })),
+  ).toEqual({
+    ariaCurrent: null,
+    className: null,
+    dataStatus: null,
+    text: "Project configuration",
+  });
   expect(
     await page.evaluate(
       () =>

@@ -25,6 +25,17 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
+const legacyProjectSettingsMenuActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeSearch: true,
+};
+const legacyProjectSettingsMenuActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+const legacyProjectSettingsCogSearch = { __legacyProjectSettingsCogActiveMarker: undefined };
 
 export const Route = createFileRoute("/$ownerName/$projectName/setting")({
   component: ProjectSettingRoute,
@@ -820,8 +831,10 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
             <ul className="project-menu-nav">
               <li className="active">
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectSettingsMenuActiveOptions}
+                  activeProps={legacyProjectSettingsMenuActiveProps}
                   to="/$ownerName/$projectName/setting"
+                  search={legacyProjectSettingsCogSearch}
                   params={{ ownerName, projectName }}
                 >
                   <i className="yobicon-cog"></i>
@@ -881,12 +894,8 @@ function ProjectSettingMenu({
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className={active === "setting" ? "active" : ""}>
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/setting"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -896,12 +905,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectMember" className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/members"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -912,12 +917,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuIssueLabel" className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -927,12 +928,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuWebhook" className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/webhooks"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -942,12 +939,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectTransfer" className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/transfer"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -957,12 +950,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectDelete" className="">
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/deleteform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -976,12 +965,8 @@ function ProjectSettingMenu({
         style={showCode ? undefined : { display: "none" }}
       >
         <Link
-          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
+          activeOptions={legacyProjectSettingsMenuActiveOptions}
+          activeProps={legacyProjectSettingsMenuActiveProps}
           to="/$ownerName/$projectName/changeVCS"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
