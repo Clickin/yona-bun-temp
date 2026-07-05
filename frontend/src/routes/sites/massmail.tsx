@@ -183,8 +183,9 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         {t("site.massMail.toProjects")}
       </label>
       <div
-        className={mailingType === "projects" ? "control-group" : "control-group hide"}
+        className="control-group hide"
         id="project-list-wrap"
+        style={mailingType === "projects" ? { display: "block" } : undefined}
       >
         <div className="controls">
           <input

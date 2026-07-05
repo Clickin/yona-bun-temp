@@ -213,13 +213,14 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
-  const requests = await mockMailList(page, { delayMs: 100 });
+  const requests = await mockMailList(page, { delayMs: 1000 });
   await captureWindowOpen(page);
 
   await page.goto(`${basePath}/sites/massmail`);
 
   await page.locator("#mailtoPrj").click();
-  await expect(page.locator("#project-list-wrap")).not.toHaveClass(/hide/);
+  await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+  await expect(page.locator("#project-list-wrap")).toBeVisible();
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
