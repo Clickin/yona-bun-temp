@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   pullRequestMergeResultQueryOptions,
   pullRequestEditFormOptionsQueryOptions,
@@ -86,6 +86,9 @@ function ProjectPullRequestEditBody({
   const queryClient = useQueryClient();
   const pullRequest = formOptions.pullRequest;
   const [forceSubmit, setForceSubmit] = useState(false);
+  const [conflictConfirmOpen, setConflictConfirmOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitLockedRef = useRef(false);
   const mergeResultQuery = useQuery(
     pullRequestMergeResultQueryOptions(runtimeConfig, {
       ownerName,
@@ -116,7 +119,28 @@ function ProjectPullRequestEditBody({
         prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/pullRequests`),
       );
     },
+    onSettled() {
+      submitLockedRef.current = false;
+    },
   });
+
+  const submitForm = (form: HTMLFormElement, conflictConfirmed = false) => {
+    if (submitLockedRef.current || mutation.isPending) {
+      return;
+    }
+    if (!validatePullRequestMergeResult(mergeResult, t)) {
+      return;
+    }
+    if (mergeResult?.conflict && !forceSubmit && !conflictConfirmed) {
+      setConflictConfirmOpen(true);
+      return;
+    }
+    if (!validatePullRequestRequiredFields(new FormData(form), t)) {
+      return;
+    }
+    submitLockedRef.current = true;
+    mutation.mutate(form);
+  };
 
   if (!pullRequest) {
     return null;
@@ -127,6 +151,7 @@ function ProjectPullRequestEditBody({
       <div className="project-page-wrap">
         <div className="content-wrap frm-wrap">
           <form
+            ref={formRef}
             action={prefixBasePath(
               runtimeConfig.basePath,
               `/${ownerName}/${projectName}/pullRequest/${prNumber}/edit`,
@@ -135,19 +160,7 @@ function ProjectPullRequestEditBody({
             className="nm"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!validatePullRequestMergeResult(mergeResult, t)) {
-                return;
-              }
-              if (mergeResult?.conflict && !forceSubmit) {
-                if (!window.confirm(t("pullRequest.ignore.conflict"))) {
-                  return;
-                }
-                setForceSubmit(true);
-              }
-              if (!validatePullRequestRequiredFields(new FormData(event.currentTarget), t)) {
-                return;
-              }
-              mutation.mutate(event.currentTarget);
+              submitForm(event.currentTarget);
             }}
           >
             <PullRequestDisabledBranchSelectors
@@ -211,9 +224,72 @@ function ProjectPullRequestEditBody({
               </div>
             </div>
           </form>
+          <PullRequestConflictConfirmModal
+            open={conflictConfirmOpen}
+            onClose={() => setConflictConfirmOpen(false)}
+            onConfirm={() => {
+              const form = formRef.current;
+              setConflictConfirmOpen(false);
+              setForceSubmit(true);
+              if (form) {
+                submitForm(form, true);
+              }
+            }}
+          />
         </div>
       </div>
     </div>
+  );
+}
+
+function PullRequestConflictConfirmModal({
+  onClose,
+  onConfirm,
+  open,
+}: {
+  onClose: () => void;
+  onConfirm: () => void;
+  open: boolean;
+}) {
+  const { t } = useLegacyMessages();
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <>
+      <div
+        id="pullRequestConflictConfirm"
+        className="modal in yobiDialog"
+        tabIndex={-1}
+        role="dialog"
+        aria-hidden={false}
+        aria-modal="true"
+        style={{ display: "block" }}
+      >
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent" onClick={onClose}>
+            &times;
+          </button>
+        </div>
+        <div className="message">
+          <div className="center-text">
+            <p className="msg">{t("pullRequest.ignore.conflict")}</p>
+            <p className="desc"></p>
+          </div>
+          <div className="center-txt buttons">
+            <button type="button" className="ybtn ybtn-default" onClick={onClose}>
+              {t("button.cancel")}
+            </button>
+            <button type="button" className="ybtn ybtn-primary" onClick={onConfirm}>
+              {t("button.confirm")}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="modal-backdrop in"></div>
+    </>
   );
 }
 

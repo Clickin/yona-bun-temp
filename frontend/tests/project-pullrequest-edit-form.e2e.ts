@@ -242,35 +242,74 @@ test("project pull request edit form confirms conflicting merge result before su
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const patchRequests: unknown[] = [];
+  const dialogs: Array<{ message: string; type: string }> = [];
   await mockProjectPullRequestEditForm(page, patchRequests, {
     mergeResult: { commits: [defaultPullRequestCommit()], conflict: true, noHead: false },
   });
+  page.on("dialog", async (dialog) => {
+    dialogs.push({ message: dialog.message(), type: dialog.type() });
+    await dialog.dismiss();
+  });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
+  const editFormUrl = page.url();
   await expect(page.locator("#mergeResult")).toHaveAttribute("data-conflict", "true");
   await expect(page.locator("#status")).toHaveText(
     "A conflict occurred when merging. This pull request cannot be merged safely.",
   );
   await expect(page.locator("#status")).toHaveClass(/alert-error/);
+  expectPullRequestEditConflictConfirmUsesRouteOwnedModal();
 
   await page.fill("#title", "Updated title");
   await page.fill("#editor-body-body", "Updated body");
-  const dismissed = waitForDialog(page, "confirm", false);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
   await page.click('form.nm button[type="submit"]');
-  expect(await dismissed).toBe(
+
+  const conflictConfirm = page.locator("#pullRequestConflictConfirm");
+  await expect(conflictConfirm).toBeVisible();
+  await expect(conflictConfirm.locator(".message .msg")).toHaveText(
     "This code seems to have conflicts when merging. Do you really want to continue?",
   );
+  await expect(conflictConfirm.locator(".buttons .ybtn")).toHaveCount(2);
+  await expect(conflictConfirm.locator(".buttons .ybtn").nth(0)).toHaveText("Cancel");
+  await expect(conflictConfirm.locator(".buttons .ybtn").nth(1)).toHaveText("Confirm");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(editFormUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(dialogs).toEqual([]);
   await expect.poll(() => patchRequests).toEqual([]);
 
-  const accepted = waitForDialog(page, "confirm", true);
+  await conflictConfirm.locator(".buttons .ybtn").nth(0).click();
+  await expect(conflictConfirm).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(editFormUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect.poll(() => patchRequests).toEqual([]);
+
   await page.click('form.nm button[type="submit"]');
-  expect(await accepted).toBe(
-    "This code seems to have conflicts when merging. Do you really want to continue?",
-  );
+  await expect(conflictConfirm).toBeVisible();
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await conflictConfirm.locator(".buttons .ybtn").nth(1).click();
+  await expect(conflictConfirm).toHaveCount(0);
   await expect
     .poll(() => patchRequests)
     .toEqual([{ attachmentIds: [], bodyMarkdown: "Updated body", title: "Updated title" }]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
+  expect(dialogs).toEqual([]);
 });
 
 async function editFormMetrics(page: Page) {
@@ -382,6 +421,14 @@ function expectPullRequestEditorUsesSharedMarkdownHelp() {
   expect(ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
   expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(ROUTE_SOURCE).not.toContain('replace(/@Messages("title.markdown.help")');
+}
+
+function expectPullRequestEditConflictConfirmUsesRouteOwnedModal() {
+  expect(ROUTE_SOURCE).not.toContain("window.confirm");
+  expect(ROUTE_SOURCE).toContain("PullRequestConflictConfirmModal");
+  expect(ROUTE_SOURCE).toContain('id="pullRequestConflictConfirm"');
+  expect(ROUTE_SOURCE).toContain('t("pullRequest.ignore.conflict")');
+  expect(ROUTE_SOURCE).toContain("setConflictConfirmOpen(true)");
 }
 
 async function waitForDialog(page: Page, expectedType: "alert" | "confirm", accept = true) {
