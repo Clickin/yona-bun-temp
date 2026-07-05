@@ -38,6 +38,11 @@ const LEGACY_EMPTY_POST_FORM_SEARCH = {
   path: undefined!,
   readme: undefined!,
 };
+const legacyRouteLocalActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber")({
   component: ProjectPostDetailRoute,
@@ -226,7 +231,7 @@ function ProjectPostDetailBody({
                 to="/$user"
                 params={{ user: stringField(post.authorLoginId) }}
                 search={LEGACY_EMPTY_PROFILE_SEARCH}
-                activeProps={{ className: undefined }}
+                activeProps={legacyRouteLocalActiveProps}
                 className="usf-group"
               >
                 <span className="avatar-wrap smaller">
@@ -335,7 +340,7 @@ function ProjectPostDetailBody({
                       to="/$ownerName/$projectName/postform"
                       params={{ ownerName, projectName }}
                       search={LEGACY_EMPTY_POST_FORM_SEARCH}
-                      activeProps={{ className: undefined }}
+                      activeProps={legacyRouteLocalActiveProps}
                       className="ybtn ybtn-success"
                     >
                       {t("post.write")}
@@ -579,7 +584,7 @@ function PostSelectedLabels({
         {labels.map((label) => (
           <Link
             to={`/${ownerName}/${projectName}/posts?labelIds=${label.id}`}
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
             className="label issue-label active static"
             key={label.id}
             style={{ background: label.color }}
@@ -618,7 +623,7 @@ function PostActionButtons({
           <i className="yobicon-edit-2"></i>
         </button>
       ) : (
-        <Link to={editRoutePath} activeProps={{ className: undefined }}>
+        <Link to={editRoutePath} activeProps={legacyRouteLocalActiveProps}>
           <button
             type="button"
             className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
@@ -859,7 +864,7 @@ function PostCommentRow({
           to="/$user"
           params={{ user: authorLoginId }}
           search={LEGACY_EMPTY_PROFILE_SEARCH}
-          activeProps={{ className: undefined }}
+          activeProps={legacyRouteLocalActiveProps}
           className={"avatar-wrap"}
         >
           <img src={avatarUrl} width="32" height="32" alt={authorLoginId} />
@@ -873,7 +878,7 @@ function PostCommentRow({
                 to="/$user"
                 params={{ user: authorLoginId }}
                 search={LEGACY_EMPTY_PROFILE_SEARCH}
-                activeProps={{ className: undefined }}
+                activeProps={legacyRouteLocalActiveProps}
                 className={"avatar-wrap"}
               >
                 <img src={avatarUrl} width="32" height="32" alt={authorLabel} />
@@ -883,7 +888,7 @@ function PostCommentRow({
               to="/$user"
               params={{ user: authorLoginId }}
               search={LEGACY_EMPTY_PROFILE_SEARCH}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
             >
               <strong>{authorLabel}</strong>
             </Link>
@@ -893,7 +898,7 @@ function PostCommentRow({
               to="."
               hash={`comment-${commentId}`}
               activeOptions={{ includeHash: true }}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               className="ago"
               title={comment.createdLabel}
             >
@@ -903,7 +908,7 @@ function PostCommentRow({
               to="."
               hash={`comment-${commentId}`}
               activeOptions={{ includeHash: true }}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               className="share-link"
               style={{ display: "none" }}
             >
@@ -1224,7 +1229,7 @@ function PostChildComment({
             search={LEGACY_EMPTY_PROFILE_SEARCH}
             className="usf-group"
             activeOptions={{ exact: true }}
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
           >
             <strong>{authorLabel}</strong>
           </Link>{" "}
@@ -1232,7 +1237,7 @@ function PostChildComment({
             to="."
             hash={`comment-${commentId}`}
             activeOptions={{ includeHash: true }}
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
             className="ago"
             title={comment.createdLabel}
           >

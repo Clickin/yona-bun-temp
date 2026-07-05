@@ -1053,9 +1053,33 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890?branch=main#comment-601`,
   );
+  await expect(page.locator("#comment-601 .ago a")).toHaveAttribute("title", "Jul 1, 2026");
+  await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("class", /.+/);
+  await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("aria-current", /.+/);
+  await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("data-status", /.+/);
   await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890?branch=main#thread-88`,
+  );
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
+    "class",
+    "review-card open",
+  );
+  await expect(page.locator("#reviewcards-open .review-card.open")).not.toHaveAttribute(
+    "title",
+    /.+/,
+  );
+  await expect(page.locator("#reviewcards-open .review-card.open")).not.toHaveAttribute(
+    "aria-current",
+    /.+/,
+  );
+  await expect(page.locator("#reviewcards-open .review-card.open")).not.toHaveAttribute(
+    "data-status",
+    /.+/,
+  );
+  await expect(page.locator("#reviewcards-open .review-card.open .date")).toHaveAttribute(
+    "title",
+    "Jul 1, 2026",
   );
   expect(await readNonRangedThreadMetrics(page)).toEqual({
     commentPadding: "2px 0px",

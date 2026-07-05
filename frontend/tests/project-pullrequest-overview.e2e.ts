@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PULL_REQUEST_OVERVIEW = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body"><div class="author-info left-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" data-toggle="tooltip" data-original-title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" data-toggle="tooltip" data-original-title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div><div class="content markdown-wrap"><p>Initial body</p></div><div class="attachments" data-attachments="[]"></div></div><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="board-footer board-actrow"><div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-toggle="button" data-watching="false">Watch</button></div><div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/close" class="ybtn">Close</button></div></div><hr class="nm"><div class="board-comment-wrap"></div><div class="right-txt"><button type="button" class="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" data-target="#helpMessage">Help</button></div></div></div><div id="helpMessage" class="modal hide fade pullreq-info"><div class="modal-header"><h5>You can check commits and descriptions on received code.</h5></div><div class="modal-body"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="/assets/images/fork-pull/merge.jpg"><br></div><div class="pull-left help-messages mt10"><p>If members of the original project accept the code, it will be merged into the original project.</p><p>You can't accept code if the code is not safe to merge.</p><p>When you can't accept code, you may postpone or delete the pull request.</p></div></div></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div>
@@ -146,14 +146,56 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     "href",
     `${basePath}/dev`,
   );
+  await expectLegacyAnchor(page.locator(".author-info > .usf-group.pull-left"), {
+    class: "usf-group pull-left",
+    href: `${basePath}/dev`,
+    text: "Dev Member @dev",
+  });
+  await expectLegacyAnchor(page.locator('.nav-tabs a[href$="/pullRequest/9"]'), {
+    href: `${basePath}/admin/sample/pullRequest/9`,
+    text: "Overview",
+  });
+  await expect(page.locator('.nav-tabs a[href$="/pullRequest/9"]').locator("xpath=..")).toHaveClass(
+    "active",
+  );
+  await expectLegacyAnchor(page.locator('.nav-tabs a[href$="/pullRequest/9/changes"]'), {
+    href: `${basePath}/admin/sample/pullRequest/9/changes`,
+    text: "Changes",
+  });
+  await expect(
+    page.locator('.nav-tabs a[href$="/pullRequest/9/changes"]').locator("xpath=.."),
+  ).not.toHaveClass("active");
+  await expectLegacyAnchor(page.locator(".pullRequest-branchInfo .from a").nth(0), {
+    href: `${basePath}/admin`,
+    text: "admin",
+  });
+  await expectLegacyAnchor(page.locator(".pullRequest-branchInfo .from a").nth(1), {
+    href: `${basePath}/admin/sample`,
+    text: "sample",
+  });
   await expect(page.locator(".pullRequest-branchInfo .from .branchName")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/feature%2Fui`,
   );
+  await expectLegacyAnchor(page.locator(".pullRequest-branchInfo .from .branchName"), {
+    class: "branchName",
+    href: `${basePath}/admin/sample/code/feature%2Fui`,
+    text: "feature/ui",
+  });
+  await expectLegacyAnchor(page.locator(".pullRequest-branchInfo .to .branchName"), {
+    class: "branchName",
+    href: `${basePath}/admin/sample/code/main`,
+    text: "main",
+  });
   await expect(page.locator(".board-footer .mr5 .ybtn").first()).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequest/9/editform`,
   );
+  await expectLegacyAnchor(page.locator(".board-footer .mr5 .ybtn").first(), {
+    class: "ybtn",
+    href: `${basePath}/admin/sample/pullRequest/9/editform`,
+    text: "Edit",
+  });
   await expect(page.locator('.board-footer button[data-request-method="post"]')).toHaveAttribute(
     "data-request-uri",
     `${basePath}/admin/sample/pullRequest/9/close`,
@@ -319,6 +361,10 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")',
   );
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("LegacyLink");
+  expect(routeSource).not.toContain("AnchorHTMLAttributes");
+  expect(routeSource).not.toMatch(/<a\b/u);
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("React.ComponentType");
   expect(routeSource).not.toContain(
@@ -391,10 +437,48 @@ test("project pull request overview renders legacy commit-changed event DOM", as
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes/1234567890abcdef`,
   );
+  await expectLegacyAnchor(event.locator(".usf-group").nth(0), {
+    class: "usf-group",
+    href: `${basePath}/dev`,
+    text: "",
+    title: "dev",
+  });
+  await expectLegacyAnchor(event.locator(".usf-group").nth(1), {
+    class: "usf-group",
+    href: `${basePath}/dev`,
+    text: "Dev Member",
+    title: "dev",
+  });
+  await expectLegacyAnchor(event.locator(".date a"), {
+    href: `${basePath}/admin/sample/pullRequest/9#event-94`,
+    text: "Jul 3, 2026",
+    title: "Jul 3, 2026",
+  });
+  await expectLegacyAnchor(event.locator(".ybtn.ybtn-mini"), {
+    class: "ybtn ybtn-mini",
+    href: `${basePath}/admin/sample/compare/basehash...headhash`,
+    text: "Additional changes",
+  });
+  await expectLegacyAnchor(event.locator(".commit-id").first(), {
+    class: "commit-id",
+    href: `${basePath}/admin/sample/pullRequest/9/changes/1234567890abcdef`,
+    text: "1234567",
+  });
+  await expectLegacyAnchor(event.locator(".avatar-wrap.small.hide-in-mobile").first(), {
+    class: "avatar-wrap small hide-in-mobile",
+    href: `${basePath}/dev`,
+    text: "dev@example.com",
+    title: "Dev Member",
+  });
   await expect(event.locator(".commitMsg.short").first()).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequest/9/changes/1234567890abcdef`,
   );
+  await expectLegacyAnchor(event.locator(".commitMsg.short").first(), {
+    class: "commitMsg short",
+    href: `${basePath}/admin/sample/pullRequest/9/changes/1234567890abcdef`,
+    text: "Fix login",
+  });
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -1253,6 +1337,26 @@ async function mockPullRequestOverview(
   );
 
   return { watchRequests };
+}
+
+async function expectLegacyAnchor(
+  locator: Locator,
+  attrs: { class?: string; href: string; text: string; title?: string },
+) {
+  await expect(locator).toHaveAttribute("href", attrs.href);
+  if (attrs.class === undefined) {
+    await expect(locator).not.toHaveAttribute("class", /.+/u);
+  } else {
+    await expect(locator).toHaveAttribute("class", attrs.class);
+  }
+  if (attrs.title === undefined) {
+    await expect(locator).not.toHaveAttribute("title", /.+/u);
+  } else {
+    await expect(locator).toHaveAttribute("title", attrs.title);
+  }
+  await expect(locator).toHaveText(attrs.text);
+  await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.+/u);
 }
 
 async function canonicalizeAll(page: Page, selector: string) {

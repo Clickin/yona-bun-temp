@@ -26,6 +26,11 @@ export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pull
   component: ProjectPullRequestOverviewRoute,
 });
 
+const LEGACY_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 function ProjectPullRequestOverviewRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -142,7 +147,7 @@ function PullRequestOverviewBody({
                 to="/$user"
                 params={{ user: pullRequest.contributor.loginId }}
                 className="usf-group pull-left"
-                activeProps={{ className: undefined }}
+                {...LEGACY_LINK_PROPS}
               >
                 <span className="avatar-wrap smaller">
                   <img src={pullRequest.contributor.avatarUrl} width="32" height="32" alt="" />
@@ -199,7 +204,7 @@ function PullRequestOverviewBody({
                     pullRequestNumber: String(pullRequest.pullRequestNumber),
                   }}
                   className="ybtn"
-                  activeProps={{ className: undefined }}
+                  {...LEGACY_LINK_PROPS}
                 >
                   {t("button.edit")}
                 </Link>
@@ -331,7 +336,7 @@ function PullRequestEventItem({
             revisionRange: compareRevisionRange(event.oldValue),
           }}
           className="ybtn ybtn-mini"
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_PROPS}
         >
           {t("pullRequest.additional.changes")}
         </Link>
@@ -380,7 +385,7 @@ function PullRequestStateEventMessage({
           projectName: pullRequest.projectName,
         }}
         title={t("code.showCommit")}
-        activeProps={{ className: undefined }}
+        {...LEGACY_LINK_PROPS}
       >
         {commitId.slice(0, 7)}
       </Link>
@@ -422,7 +427,7 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         data-toggle="tooltip"
         data-placement="top"
         title={event.senderLoginId}
-        activeProps={{ className: undefined }}
+        {...LEGACY_LINK_PROPS}
       >
         <img src={avatarUrl} className="avatar-wrap small" alt="" />
       </Link>
@@ -433,7 +438,7 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         data-toggle="tooltip"
         data-placement="top"
         title={event.senderLoginId}
-        activeProps={{ className: undefined }}
+        {...LEGACY_LINK_PROPS}
       >
         <strong>{label}</strong>
       </Link>
@@ -444,13 +449,7 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
 function PullRequestEventDate({ event }: { event: PullRequestEvent }) {
   return (
     <span className="date">
-      <Link
-        to="."
-        hash={`event-${event.id}`}
-        activeOptions={{ includeHash: true }}
-        activeProps={{ className: undefined }}
-        title={event.createdLabel}
-      >
+      <Link to="." hash={`event-${event.id}`} {...LEGACY_LINK_PROPS} title={event.createdLabel}>
         {event.createdLabel}
       </Link>
     </span>
@@ -483,7 +482,7 @@ function PullRequestEventCommit({
         to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"
         params={commitChangeParams}
         className="commit-id"
-        activeProps={{ className: undefined }}
+        {...LEGACY_LINK_PROPS}
       >
         {commit.commitShortId}
       </Link>
@@ -494,7 +493,7 @@ function PullRequestEventCommit({
         data-toggle="tooltip"
         data-placement="top"
         title={event.senderLabel || event.senderLoginId}
-        activeProps={{ className: undefined }}
+        {...LEGACY_LINK_PROPS}
       >
         <img src={event.senderAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />{" "}
         {commit.authorEmail}
@@ -530,7 +529,7 @@ function CommitMessage({
         to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"
         params={params}
         className="commitMsg short"
-        activeProps={{ className: undefined }}
+        {...LEGACY_LINK_PROPS}
       >
         {summary}
       </Link>
@@ -607,7 +606,7 @@ export function PullRequestHeader({
                   data-toggle="tooltip"
                   data-placement="top"
                   title={reviewer.userLabel}
-                  activeProps={{ className: undefined }}
+                  {...LEGACY_LINK_PROPS}
                 >
                   <img src={reviewer.avatarUrl} className="avatar-wrap small" alt="" />
                 </Link>
@@ -671,7 +670,8 @@ export function PullRequestHeader({
               projectName: pullRequest.projectName,
               pullRequestNumber: String(pullRequest.pullRequestNumber),
             }}
-            activeProps={{ className: undefined }}
+            search={{ __legacyActiveSuppression: undefined }}
+            {...LEGACY_LINK_PROPS}
           >
             {t("pullRequest.menu.overview")}
           </Link>
@@ -684,7 +684,7 @@ export function PullRequestHeader({
               projectName: pullRequest.projectName,
               pullRequestNumber: String(pullRequest.pullRequestNumber),
             }}
-            activeProps={{ className: undefined }}
+            {...LEGACY_LINK_PROPS}
           >
             {t("pullRequest.menu.changes")}
             {openThreadCount > 0 ? <span className="num-badge">{openThreadCount}</span> : null}
@@ -708,11 +708,7 @@ export function PullRequestBranchInfo({
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
       <code className="from" data-toggle="tooltip" data-original-title={t("pullRequest.from")}>
-        <Link
-          to="/$user"
-          params={{ user: pullRequest.fromOwnerName }}
-          activeProps={{ className: undefined }}
-        >
+        <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.fromOwnerName}
         </Link>
         <span>/</span>
@@ -722,7 +718,7 @@ export function PullRequestBranchInfo({
             ownerName: pullRequest.fromOwnerName,
             projectName: pullRequest.fromProjectName,
           }}
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_PROPS}
         >
           {pullRequest.fromProjectName}
         </Link>
@@ -735,25 +731,21 @@ export function PullRequestBranchInfo({
             projectName: pullRequest.fromProjectName,
           }}
           className="branchName"
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_PROPS}
         >
           {fromBranchName}
         </Link>
       </code>
       <i className="yobicon-right-2 ml10"></i>
       <code className="to" data-toggle="tooltip" data-original-title={t("pullRequest.to")}>
-        <Link
-          to="/$user"
-          params={{ user: pullRequest.ownerName }}
-          activeProps={{ className: undefined }}
-        >
+        <Link to="/$user" params={{ user: pullRequest.ownerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.ownerName}
         </Link>
         <span>/</span>
         <Link
           to="/$ownerName/$projectName"
           params={{ ownerName: pullRequest.ownerName, projectName: pullRequest.projectName }}
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_PROPS}
         >
           {pullRequest.projectName}
         </Link>
@@ -766,7 +758,7 @@ export function PullRequestBranchInfo({
             projectName: pullRequest.projectName,
           }}
           className="branchName"
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_PROPS}
         >
           {toBranchName}
         </Link>
@@ -794,7 +786,7 @@ export function PullRequestStateInfo({
           to="/$user"
           params={{ user: pullRequest.receiver.loginId }}
           className="usf-group"
-          activeProps={{ className: undefined }}
+          {...LEGACY_LINK_PROPS}
         >
           <span className="avatar-wrap smaller">
             <img src={pullRequest.receiver.avatarUrl} width="25" height="25" alt="" />
@@ -930,7 +922,7 @@ function PullRequestConflictGuide({
                 pullRequestNumber: String(pullRequest.pullRequestNumber),
               }}
               className="ybtn ybtn-mini ybtn-primary"
-              activeProps={{ className: undefined }}
+              {...LEGACY_LINK_PROPS}
             >
               {t("button.page.refresh")}
             </Link>

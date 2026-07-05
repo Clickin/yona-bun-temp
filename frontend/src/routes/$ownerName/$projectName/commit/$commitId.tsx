@@ -1042,7 +1042,11 @@ function CodeCommentThreadView({
                     hash={`comment-${comment.id}`}
                     search={hashSearch}
                     activeOptions={{ includeHash: true }}
-                    activeProps={{ className: undefined }}
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
                     title={comment.createdLabel}
                   >
                     {comment.createdLabel}
@@ -1544,7 +1548,11 @@ function ReviewCards({
           hash={`thread-${thread.id}`}
           search={hashSearch}
           activeOptions={{ includeHash: true }}
-          activeProps={{ className: undefined }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           className={`review-card ${thread.state.toLowerCase()}`}
           key={thread.id}
         >

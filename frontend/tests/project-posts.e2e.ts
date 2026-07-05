@@ -1222,18 +1222,40 @@ test("project board detail internal links are router-owned", async ({ page }) =>
 
   await page.goto(`${basePath}/admin/sample/post/3`);
 
-  await expect(page.locator(".author-info .usf-group")).toHaveAttribute("href", `${basePath}/dev`);
-  await expect(
-    page.locator(".issue-info.board-labels .project-btn-item .ybtn-success"),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/postform`);
-  await expect(
-    page.locator(".issue-info.board-labels .label.issue-label.active.static"),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/posts?labelIds=8`);
+  const authorProfile = page.locator(".author-info .usf-group");
+  await expect(authorProfile).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(authorProfile).toHaveClass("usf-group");
+  await expect(authorProfile.locator(".name")).toHaveText("Dev Member");
+  await expect(authorProfile.locator(".loginid")).toHaveText("@dev");
+  await expectNoTanStackActiveAttrs(authorProfile);
+
+  const newPost = page.locator(".issue-info.board-labels .project-btn-item .ybtn-success");
+  await expect(newPost).toHaveAttribute("href", `${basePath}/admin/sample/postform`);
+  await expect(newPost).toHaveClass("ybtn ybtn-success");
+  await expect(newPost).toHaveText("New post");
+  await expectNoTanStackActiveAttrs(newPost);
+
+  const selectedLabel = page.locator(".issue-info.board-labels .label.issue-label.active.static");
+  await expect(selectedLabel).toHaveAttribute("href", `${basePath}/admin/sample/posts?labelIds=8`);
+  await expect(selectedLabel).toHaveClass("label issue-label active static");
+  await expect(selectedLabel).toHaveText("bug");
+  await expectNoTanStackActiveAttrs(selectedLabel);
+
+  const showOriginalLinks = page.locator(".board-actrow > span > a, .right-menu-icons > a");
+  await expect(showOriginalLinks).toHaveCount(2);
+  for (const showOriginalLink of await showOriginalLinks.all()) {
+    await expect(showOriginalLink).toHaveAttribute(
+      "href",
+      `${basePath}/admin/sample/post/3/editform`,
+    );
+    await expect(showOriginalLink.locator("button")).toHaveAttribute("title", "See text");
+    await expectNoTanStackActiveAttrs(showOriginalLink);
+  }
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-detail-label-link";
   });
-  await page.locator(".issue-info.board-labels .label.issue-label.active.static").click();
+  await selectedLabel.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/posts?labelIds=8`);
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
@@ -1253,6 +1275,9 @@ test("project board detail internal links are router-owned", async ({ page }) =>
     "href",
     `${basePath}/admin`,
   );
+  await expectNoTanStackActiveAttrs(page.locator("#comment-21 .comment-avatar .avatar-wrap"));
+  await expectNoTanStackActiveAttrs(page.locator("#comment-21 .comment_author > a"));
+  await expectNoTanStackActiveAttrs(page.locator("#comment-21 .subcomment-author .usf-group"));
 
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
@@ -1265,6 +1290,9 @@ test("project board detail internal links are router-owned", async ({ page }) =>
   expect(routeSource).not.toContain("text/x-jquery-tmpl");
   expect(routeSource).toContain("const LEGACY_EMPTY_PROFILE_SEARCH");
   expect(routeSource).toContain("const LEGACY_EMPTY_POST_FORM_SEARCH");
+  expect(routeSource).toContain("const legacyRouteLocalActiveProps");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain("to={`/${ownerName}/${projectName}/posts?labelIds=${label.id}`}");
   expect(routeSource).not.toContain("legacySingleLabelIds");
   expect(routeSource).not.toContain("toJSON");
@@ -1321,11 +1349,14 @@ test("project board detail owns comment hash links through router", async ({ pag
   await expect(parentShare).toHaveText("[Link]");
   await expect(parentShare).toHaveCSS("display", "none");
   await expect(parentShare).toHaveAttribute("href", `${basePath}/admin/sample/post/3#comment-21`);
+  await expectNoTanStackActiveAttrs(parentAgo);
+  await expectNoTanStackActiveAttrs(parentShare);
 
   const childAgo = page.locator("#comment-21 .subcomment-author .ago");
   await expect(childAgo).toHaveText("Jul 4, 2026");
   await expect(childAgo).toHaveAttribute("title", "Jul 4, 2026");
   await expect(childAgo).toHaveAttribute("href", `${basePath}/admin/sample/post/3#comment-22`);
+  await expectNoTanStackActiveAttrs(childAgo);
   await expect(page.locator('#comment-21 .subcomment-author .ago[href^="#comment-"]')).toHaveCount(
     0,
   );
