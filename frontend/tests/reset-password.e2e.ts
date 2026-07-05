@@ -143,7 +143,7 @@ const EXPECTED_RESET_BAD_REQUEST_SCREEN = `
     <div class="error-wrap">
       <i class="ico-404"></i>
       <p>Wrong url to reset password.</p>
-      <a href="__BASE_PATH__/" class="ybtn ybtn-info">Home</a>
+      <a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a>
     </div>
   </div>
 </div>
@@ -302,7 +302,7 @@ test("reset password error home link is SPA navigation with legacy rendered href
   await page.goto(`${basePath}/resetPassword?error=invalid&s=reset-token`);
 
   const homeLink = page.locator(".error-wrap .ybtn-info", { hasText: "Home" });
-  await expect(homeLink).toHaveAttribute("href", `${basePath}/`);
+  await expect(homeLink).toHaveAttribute("href", basePath);
   await expect(homeLink).toHaveText("Home");
 
   await page.evaluate(() => {
@@ -328,14 +328,21 @@ test("reset password error home link is SPA navigation with legacy rendered href
 test("reset password route keeps route-local internal anchors on TanStack Link", () => {
   expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=\{?prefixBasePath/u);
   expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=(?:["'`]\s*\/|\{["'`]\s*\/)/u);
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('<Link to="/" className="ybtn ybtn-info">');
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
+    'const homeHref = prefixBasePath(runtimeConfig.basePath, "")',
+  );
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("const homeButtonLinkProps = useLinkProps({");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("router.history.push(homeHref);");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
+    "<LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>",
+  );
 });
 
 test("reset password shared site shell keeps legacy navbar and login-link attributes", () => {
   expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
-    'legacyHref={prefixBasePath(runtimeConfig.basePath, "")}',
+    'const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");',
   );
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("<LegacyHrefLink");
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("<LegacyHrefAnchor");
   expect(HOME_ROUTE_SCREEN_SOURCE).toContain('data-login="required"');
 });
 

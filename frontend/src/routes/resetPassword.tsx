@@ -1,17 +1,36 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { apiQueryKeys } from "../api/query-keys";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import { type RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
   error: string;
   s: string;
 };
+
+const legacyAnchorActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+} as const;
+const legacyAnchorActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
@@ -204,6 +223,18 @@ function BadRequestPage({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "");
+  const homeButtonLinkProps = useLinkProps({
+    activeOptions: legacyAnchorActiveOptions,
+    activeProps: legacyAnchorActiveProps,
+    className: "ybtn ybtn-info",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <div className="page-wrap-outer">
@@ -211,9 +242,9 @@ function BadRequestPage({
           <div className="error-wrap">
             <i className="ico-404" />
             <p>{message}</p>
-            <Link to="/" className="ybtn ybtn-info">
+            <LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>
               {t("menu.home")}
-            </Link>
+            </LegacyHrefAnchor>
           </div>
         </div>
       </div>
