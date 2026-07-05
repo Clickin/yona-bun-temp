@@ -43,9 +43,9 @@ const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
     </div>
     <div class="box-wrap bottom"><button id="btnChangeVCS" type="button" class="ybtn ybtn-danger"><i class="yobicon-database"></i> Change Repository Type.</button></div>
     <div id="alertChangeVCS" class="modal hide">
-      <div class="modal-header"><button type="button" class="close">×</button><h3>Do you want to change the repository to Subversion?</h3></div>
+      <div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Do you want to change the repository to Subversion?</h3></div>
       <div class="modal-body"><p>If the repository is changed, all code and history will be deleted.</p><p>Are you sure?</p></div>
-      <div class="modal-footer"><button id="btnChangeVCSExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div>
+      <div class="modal-footer"><button id="btnChangeVCSExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div>
     </div>
   </div>
 </div>
@@ -121,8 +121,13 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await page.locator("#acceptChangeVCS").check();
   await page.locator("#btnChangeVCS").click();
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator("#alertChangeVCS .close")).toHaveAttribute("data-dismiss", "modal");
+  await expect(
+    page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }),
+  ).toHaveAttribute("data-dismiss", "modal");
 
   await page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }).click();
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
@@ -316,6 +321,7 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).toContain("params={{ ownerName, projectName }}");
   expect(source).not.toContain("onMouseDown=");
   expect(source).toContain("onClick=");
+  expect(source).toContain('data-dismiss="modal"');
 });
 
 test("project change-VCS header favorite star posts and toggles starred class", async ({

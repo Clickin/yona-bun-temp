@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -102,6 +102,11 @@ function ProjectChangeVcsBody({
     setChangeVcsModalOpen(true);
   };
   const closeChangeVcsModal = () => setChangeVcsModalOpen(false);
+  const dismissChangeVcsModal = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeChangeVcsModal();
+  };
 
   return (
     <>
@@ -156,7 +161,12 @@ function ProjectChangeVcsBody({
             style={changeVcsModalOpen ? { display: "block" } : undefined}
           >
             <div className="modal-header">
-              <button type="button" className="close" onClick={closeChangeVcsModal}>
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={dismissChangeVcsModal}
+              >
                 ×
               </button>
               <h3>{t("project.changeVCS.requestion", { args: [nextVcs] })}</h3>
@@ -174,7 +184,12 @@ function ProjectChangeVcsBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" onClick={closeChangeVcsModal}>
+              <button
+                type="button"
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={dismissChangeVcsModal}
+              >
                 {t("button.no")}
               </button>
             </div>
