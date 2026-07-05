@@ -312,6 +312,7 @@ async function expectProfileEditTabs(page: Page, basePath: string) {
     `${basePath}/user/editform/token`,
   ]);
   await expect(tabs.locator("li")).toHaveClass(["active", "", "", "", ""]);
+  await expect(tabs.locator("a")).toHaveClass(["", "", "", "", ""]);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
@@ -366,17 +367,6 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string) {
-      if (
-        name === "class" &&
-        current.tagName.toLowerCase() === "a" &&
-        current.closest(".page-wrap .nav-tabs")
-      ) {
-        const className = (current.getAttribute(name) ?? "")
-          .split(/\s+/)
-          .filter((value) => value && value !== "active")
-          .join(" ");
-        return className ? `${name}=${JSON.stringify(className)}` : "";
-      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
@@ -443,17 +433,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string) {
-        if (
-          name === "class" &&
-          current.tagName.toLowerCase() === "a" &&
-          current.closest(".page-wrap .nav-tabs")
-        ) {
-          const className = (current.getAttribute(name) ?? "")
-            .split(/\s+/)
-            .filter((value) => value && value !== "active")
-            .join(" ");
-          return className ? `${name}=${JSON.stringify(className)}` : "";
-        }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
