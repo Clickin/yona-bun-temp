@@ -32,6 +32,11 @@ type ProjectPostsSearch = {
 };
 
 type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
+const legacyRouteLocalActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 export const Route = createFileRoute("/$ownerName/$projectName/posts")({
   component: ProjectPostsRoute,
@@ -155,7 +160,7 @@ function ProjectPostsBody({
           <div className="pull-right">
             <Link
               to={`/${ownerName}/${projectName}/postform`}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               className="ybtn ybtn-success"
             >
               {t("post.write")}
@@ -237,7 +242,7 @@ function BoardLabels({
           {t("label")}{" "}
           <Link
             to={`/${ownerName}/${projectName}/issue/labelsform`}
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
             target="_blank"
             className="label-edit"
           >
@@ -338,7 +343,7 @@ function BoardFilters({
                 orderBy: filter.field,
                 orderDir: active ? nextDir : "desc",
               })}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
               className={active ? "filter active" : "filter"}
               key={filter.field}
             >
@@ -406,7 +411,7 @@ function BoardPagination({
           {hasPrev ? (
             <Link
               to={boardListHref("", ownerName, projectName, pageSearch(currentPage - 1))}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
             >
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
@@ -438,7 +443,7 @@ function BoardPagination({
           {hasNext ? (
             <Link
               to={boardListHref("", ownerName, projectName, pageSearch(currentPage + 1))}
-              activeProps={{ className: undefined }}
+              activeProps={legacyRouteLocalActiveProps}
             >
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
@@ -482,7 +487,7 @@ function ProjectBoardPost({
     <li {...legacyPostItemAttrs}>
       <Link
         to={authorRoutePath}
-        activeProps={{ className: undefined }}
+        activeProps={legacyRouteLocalActiveProps}
         className="avatar-wrap mlarge hide-in-mobile"
         data-toggle="tooltip"
         data-placement="bottom"
@@ -513,7 +518,7 @@ function ProjectBoardPost({
             {prefix}
           </LegacyTitlePrefixButton>
         ))}
-        <Link to={postRoutePath} activeProps={{ className: undefined }} className="title">
+        <Link to={postRoutePath} activeProps={legacyRouteLocalActiveProps} className="title">
           {titleParts.title}
         </Link>
       </div>
@@ -521,7 +526,7 @@ function ProjectBoardPost({
         {post.authorLabel ? (
           <Link
             to={authorRoutePath}
-            activeProps={{ className: undefined }}
+            activeProps={legacyRouteLocalActiveProps}
             className="infos-item infos-link-item"
             data-toggle="tooltip"
             data-placement="bottom"
@@ -541,7 +546,7 @@ function ProjectBoardPost({
           {post.createdLabel}
         </span>
         <span className="infos-item item-count-groups">
-          <Link to={postRoutePath} hash="comments" activeProps={{ className: undefined }}>
+          <Link to={postRoutePath} hash="comments" activeProps={legacyRouteLocalActiveProps}>
             <span className="count-groups item-icon ">
               <i className="yobicon-comments"></i>
             </span>

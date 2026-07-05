@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -29,12 +29,12 @@ const EXPECTED_PROJECT_POSTS = `
 function modernizeBoardListExpected(html: string) {
   return html
     .replace(
-      '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
-      '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
+      '<a href="__BASE_PATH__/" class="logo logo-letter">',
+      '<a href="__BASE_PATH__" class="logo logo-letter">',
     )
     .replace(
-      '<a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">',
-      '<a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">',
+      '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
+      '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
     )
     .replace(
       '<li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li>',
@@ -55,6 +55,12 @@ const EXPECTED_PROJECT_POSTS_PREFIX = EXPECTED_PROJECT_POSTS_CURRENT.replace(
   '<span class="post-id">3</span><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
   '<span class="post-id">3</span><button type="button" class="title-prefix">[P1]</button><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
 );
+
+async function expectNoTanStackActiveAttrs(locator: Locator) {
+  await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.+/u);
+}
+
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
@@ -113,6 +119,8 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
   await expect(page.locator("#option_form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+  await expect(page.locator(".project-menu-gruop li.active")).toHaveCount(1);
+  expect(await projectShellLinkActiveMarkers(page)).toEqual([]);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
   await expect(page.locator(".board-labels #labelIds")).toHaveAttribute(
     "data-container-css-class",
@@ -188,6 +196,16 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   ).toBe("board-list-keymap");
 });
 
+test("project board shared shell anchors keep active markers on li only", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  await expect(page.locator(".project-menu-gruop li.active")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+  expect(await projectShellLinkActiveMarkers(page)).toEqual([]);
+});
+
 test("project board list row internal links are router-owned", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page);
@@ -205,6 +223,10 @@ test("project board list row internal links are router-owned", async ({ page }) 
     "href",
     `${basePath}/admin/sample/post/3#comments`,
   );
+  await expectNoTanStackActiveAttrs(row.locator(".avatar-wrap.mlarge"));
+  await expectNoTanStackActiveAttrs(row.locator(".title-wrap .title"));
+  await expectNoTanStackActiveAttrs(row.locator(".infos-link-item"));
+  await expectNoTanStackActiveAttrs(row.locator(".item-count-groups a"));
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-row-title";
@@ -249,6 +271,7 @@ test("project board list row internal links are router-owned", async ({ page }) 
   expect(rowSource).not.toContain("`${postHref}#comments`");
   expect(rowSource).toContain("<Link");
   expect(rowSource).toContain('hash="comments"');
+  expect(rowSource).toContain("activeProps={legacyRouteLocalActiveProps}");
 });
 
 test("project board list top navigation and filters are router-owned", async ({ page }) => {
@@ -260,28 +283,32 @@ test("project board list top navigation and filters are router-owned", async ({ 
   const newPost = page.locator(".search-wrap .pull-right .ybtn-success");
   await expect(newPost).toHaveAttribute("href", `${basePath}/admin/sample/postform`);
   await expect(newPost).toHaveText("New post");
+  await expectNoTanStackActiveAttrs(newPost);
 
   const labelEdit = page.locator(".board-labels .label-edit");
   await expect(labelEdit).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
   await expect(labelEdit).toHaveAttribute("target", "_blank");
   await expect(labelEdit).toHaveText("[Edit]");
+  await expectNoTanStackActiveAttrs(labelEdit);
 
   await expect(page.locator(".filter-wrap.board .filters .filter")).toHaveCount(3);
-  await expect(page.locator(".filter-wrap.board .filters .filter").nth(0)).toHaveAttribute(
+  const filterLinks = page.locator(".filter-wrap.board .filters .filter");
+  await expect(filterLinks.nth(0)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=updatedDate&orderDir=asc`,
   );
-  await expect(page.locator(".filter-wrap.board .filters .filter").nth(0)).toHaveClass(
-    "filter active",
-  );
-  await expect(page.locator(".filter-wrap.board .filters .filter").nth(1)).toHaveAttribute(
+  await expect(filterLinks.nth(0)).toHaveClass("filter active");
+  await expect(filterLinks.nth(1)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=createdDate&orderDir=desc`,
   );
-  await expect(page.locator(".filter-wrap.board .filters .filter").nth(2)).toHaveAttribute(
+  await expect(filterLinks.nth(2)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/posts?pageNum=1&filter=release&labelIds=8&orderBy=numOfComments&orderDir=desc`,
   );
+  for (const filterLink of await filterLinks.all()) {
+    await expectNoTanStackActiveAttrs(filterLink);
+  }
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-filter";
@@ -313,6 +340,8 @@ test("project board list top navigation and filters are router-owned", async ({ 
   expect(bodySource).toContain("<Link");
   expect(labelsSource).toContain("<Link");
   expect(filtersSource).toContain("<Link");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
 });
 
 test("project board list pagination matches legacy yobi.Pagination behavior", async ({ page }) => {
@@ -348,6 +377,8 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
     "href",
     `${basePath}/admin/sample/posts?pageNum=3&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
   );
+  await expectNoTanStackActiveAttrs(pagination.locator("li.page-num.ikon").first().locator("a"));
+  await expectNoTanStackActiveAttrs(pagination.locator("li.page-num.ikon").last().locator("a"));
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-pagination-next";
@@ -2387,8 +2418,8 @@ async function canonicalize(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            // TanStack Router annotates shared-shell active links; the legacy DOM comparison
-            // is scoped to board template parity.
+            // TanStack Router annotates route-local active links; dedicated assertions cover
+            // the shared project shell links that must remain legacy-clean.
             attr.name !== "aria-current" &&
             attr.name !== "data-status",
         )
@@ -2436,8 +2467,8 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            // TanStack Router annotates shared-shell active links; the legacy DOM comparison
-            // is scoped to board template parity.
+            // TanStack Router annotates route-local active links; dedicated assertions cover
+            // the shared project shell links that must remain legacy-clean.
             attr.name !== "aria-current" &&
             attr.name !== "data-status",
         )
@@ -2471,6 +2502,20 @@ async function canonicalizeScreenRoots(page: Page) {
         );
     }
   });
+}
+
+async function projectShellLinkActiveMarkers(page: Page) {
+  return page.locator(".project-header-outer a, .project-menu-outer a").evaluateAll((links) =>
+    links.flatMap((link) => {
+      const leaked = ["class", "aria-current", "data-status"].filter((name) => {
+        if (name === "class") {
+          return link.classList.contains("active");
+        }
+        return link.hasAttribute(name);
+      });
+      return leaked.map((name) => `${link.getAttribute("href") ?? ""}:${name}`);
+    }),
+  );
 }
 
 async function canonicalizeHtml(page: Page, html: string) {

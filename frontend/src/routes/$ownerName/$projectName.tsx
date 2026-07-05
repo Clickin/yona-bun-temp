@@ -22,6 +22,17 @@ import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { RootAliasNotFound } from "../__root";
 
+const legacyProjectShellLinkActiveOptions = {
+  exact: true,
+  includeSearch: true,
+  explicitUndefined: true,
+} as const;
+const legacyProjectShellLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
   notFoundComponent: RootAliasNotFound,
@@ -1298,7 +1309,8 @@ export function ProjectHeader({
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
                 <Link
-                  activeProps={{}}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                   to={toRoutePath(basePath, prefixBasePath(basePath, `/${ownerName}`))}
                 >
                   {ownerName}
@@ -1307,7 +1319,8 @@ export function ProjectHeader({
               <span className="project-separator hide-in-mobile">/</span>
               <span className="project-name">
                 <Link
-                  activeProps={{}}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                   to={toRoutePath(basePath, projectHref(basePath, ownerName, projectName))}
                 >
                   {projectName}
@@ -1352,7 +1365,8 @@ export function ProjectHeader({
               <div className="project-origin">
                 <span className="project-origin-title">{t("fork.original")}</span>
                 <Link
-                  activeProps={{}}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                   to={toRoutePath(
                     basePath,
                     projectHref(basePath, originalOwnerName, originalProjectName),
@@ -1636,7 +1650,8 @@ export function ProjectMenu({
             <ul className="project-menu-nav">
               <li className="">
                 <Link
-                  activeProps={{}}
+                  activeOptions={legacyProjectShellLinkActiveOptions}
+                  activeProps={legacyProjectShellLinkActiveProps}
                   to={toRoutePath(
                     basePath,
                     prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`),
@@ -1677,7 +1692,11 @@ function ProjectMenuItem({
       : "";
   return (
     <li className={itemClassName}>
-      <Link activeProps={{}} to={to}>
+      <Link
+        activeOptions={legacyProjectShellLinkActiveOptions}
+        activeProps={legacyProjectShellLinkActiveProps}
+        to={to}
+      >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
       </Link>
