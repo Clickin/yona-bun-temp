@@ -844,6 +844,123 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(authenticatedUserMenuSource).not.toContain("style.display");
 });
 
+test("authenticated home create dropdown direct issue links keep legacy hrefs without reloadDocument", () => {
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const authenticatedUserMenuSource = routeSource.slice(
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+    routeSource.indexOf("function AnonymousSiteUserMenu"),
+  );
+
+  expect(authenticatedUserMenuSource).toContain(
+    `<Link
+                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
+              >`,
+  );
+  expect(authenticatedUserMenuSource).not.toContain(
+    `<Link
+                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
+                reloadDocument
+              >`,
+  );
+  expect(authenticatedUserMenuSource).toContain(
+    `<Link
+                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
+              >`,
+  );
+  expect(authenticatedUserMenuSource).not.toContain(
+    `<Link
+                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
+                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
+                reloadDocument
+              >`,
+  );
+});
+
+test("authenticated home create dropdown new issue link preserves legacy href and uses SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+  await mockDirectIssueFormDestination(page, {
+    selectedProject: { ownerName: "admin", projectName: "sample" },
+  });
+
+  await page.goto(`${basePath}/`);
+
+  const createMenu = page.locator(".gnb-usermenu-dropdown:has(.dropdwon-box-btn)");
+  const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
+  const newIssueLink = createMenu.locator(".dropdown-menu a", { hasText: /^New issue$/ });
+
+  await createToggle.click();
+  await expect(createMenu.locator(".dropdown-menu")).toBeVisible();
+  await expect(newIssueLink).toHaveAttribute("href", `${basePath}/user/issues/new`);
+  await page.evaluate(() => {
+    (
+      window as Window & { __authenticatedHomeCreateMenuSpaMarker?: string }
+    ).__authenticatedHomeCreateMenuSpaMarker = "new-issue";
+  });
+
+  await newIssueLink.click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/issues/new`);
+  await expect(page.locator("header.gnb-outer")).toHaveCount(1);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __authenticatedHomeCreateMenuSpaMarker?: string })
+            .__authenticatedHomeCreateMenuSpaMarker,
+      ),
+    )
+    .toBe("new-issue");
+});
+
+test("authenticated home create dropdown personal inbox link preserves legacy href and uses SPA navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  await mockWorkspaceSidebarProjects(page);
+  await mockDirectIssueFormDestination(page, {
+    selectedProject: { ownerName: "dev", projectName: "inbox" },
+  });
+
+  await page.goto(`${basePath}/`);
+
+  const createMenu = page.locator(".gnb-usermenu-dropdown:has(.dropdwon-box-btn)");
+  const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
+  const personalInboxLink = createMenu.locator(".dropdown-menu a", {
+    hasText: /^New issue - personal inbox$/,
+  });
+
+  await createToggle.click();
+  await expect(createMenu.locator(".dropdown-menu")).toBeVisible();
+  await expect(personalInboxLink).toHaveAttribute("href", `${basePath}/user/issues/new/mine`);
+  await page.evaluate(() => {
+    (
+      window as Window & { __authenticatedHomeCreateMenuSpaMarker?: string }
+    ).__authenticatedHomeCreateMenuSpaMarker = "mine";
+  });
+
+  await personalInboxLink.click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/issues/new/mine`);
+  await expect(page.locator("header.gnb-outer")).toHaveCount(1);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __authenticatedHomeCreateMenuSpaMarker?: string })
+            .__authenticatedHomeCreateMenuSpaMarker,
+      ),
+    )
+    .toBe("mine");
+});
+
 test("authenticated root keeps retired legacy index/sidebar framed shell absent", async ({
   page,
 }) => {
@@ -2185,6 +2302,117 @@ async function mockAuthenticatedNotificationsByPage(
       body: JSON.stringify(resolveResponse(url)),
     });
   });
+}
+
+async function mockDirectIssueFormDestination(
+  page: Page,
+  options: {
+    bodyMarkdown?: string;
+    referCommentId?: string;
+    selectedProject: {
+      ownerName: string;
+      projectName: string;
+    };
+  },
+) {
+  const { bodyMarkdown = "", referCommentId = "", selectedProject } = options;
+
+  await page.route("**/api/v1/user/issues/new-options**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        bodyMarkdown,
+        referCommentId,
+        selectedProject,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/*/projects/*/container", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const match = path.match(/\/owners\/([^/]+)\/projects\/([^/]+)\/container$/u);
+    const ownerName = match?.[1] ?? selectedProject.ownerName;
+    const projectName = match?.[2] ?? selectedProject.projectName;
+
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(directIssueProjectContainer(ownerName, projectName)),
+    });
+  });
+  await page.route("**/api/v1/owners/*/projects/*/labels", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        labels: [
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "type",
+            color: "#51aacc",
+            id: "8",
+            name: "bug",
+          },
+        ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/projects/*/*/issues/parent-options**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/*/projects/*/milestones", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        milestones: [
+          {
+            attachments: [],
+            closedIssueCount: 0,
+            closedIssues: [],
+            completionPercent: 0,
+            contentsHtml: "",
+            contentsMarkdown: "",
+            dueDateLabel: "",
+            id: "5",
+            openIssueCount: 0,
+            openIssues: [],
+            state: "open",
+            title: "Sprint 1",
+            viewerCanDelete: true,
+            viewerCanUpdate: true,
+          },
+        ],
+      }),
+    });
+  });
+}
+
+function directIssueProjectContainer(ownerName: string, projectName: string) {
+  return {
+    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    enrollmentRequestCount: 0,
+    id: ownerName === "dev" ? 9 : 7,
+    isFavorite: false,
+    isForkedFromOrigin: false,
+    isPrivate: ownerName === "dev",
+    isProtected: false,
+    logoUrl: "/assets/images/project_default_logo.png",
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+    },
+    ownerName,
+    projectName,
+    vcs: "GIT",
+    viewerCanUpdate: true,
+  };
 }
 
 async function canonicalizeScreenRoots(page: Page) {

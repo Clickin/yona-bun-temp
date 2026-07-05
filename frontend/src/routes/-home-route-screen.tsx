@@ -987,7 +987,6 @@ function AuthenticatedSiteUserMenu({
               <Link
                 to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
                 href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
-                reloadDocument
               >
                 {t("issue.menu.new")}
               </Link>
@@ -996,7 +995,6 @@ function AuthenticatedSiteUserMenu({
               <Link
                 to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
                 href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
-                reloadDocument
               >
                 {t("issue.menu.new.mine")}
               </Link>
