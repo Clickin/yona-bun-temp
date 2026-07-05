@@ -9,7 +9,7 @@ const EXPECTED_USER_TOKEN_SCREEN = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -22,7 +22,7 @@ const EXPECTED_USER_TOKEN_SCREEN = `
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
@@ -42,9 +42,9 @@ const EXPECTED_USER_TOKEN_SCREEN = `
       <li class="active"><a href="__BASE_PATH__/user/editform/token">User Token</a></li>
     </ul>
     <div class="token-generate">
-      <form id="frmBasic" method="post" action="__BASE_PATH__/user/editform/token_reset" class="pull-left">
+      <form id="frmBasic" method="post" action="__BASE_PATH__/user/editform/token_reset" class="pull-left" style="width: 100%;">
         <div>User Token</div>
-        <div><input size="45" type="text" name="name" class="text" value="token-before" readonly=""></div>
+        <div><input size="45" style="width: 90%;" type="text" name="name" class="text" value="token-before" readonly=""></div>
         <div><button type="submit" class="ybtn ybtn-success">Recreate User Token</button></div>
       </form>
     </div>
@@ -221,6 +221,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "value",
         "readonly",
         "size",
+        "style",
         "autocomplete",
         "accesskey",
         "href",
@@ -255,6 +256,9 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string) {
+      if (name === "style" && current instanceof HTMLElement) {
+        return `${name}=${JSON.stringify(current.style.cssText)}`;
+      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
@@ -282,6 +286,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "value",
           "readonly",
           "size",
+          "style",
           "autocomplete",
           "accesskey",
           "href",
@@ -316,6 +321,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string) {
+        if (name === "style" && current instanceof HTMLElement) {
+          return `${name}=${JSON.stringify(current.style.cssText)}`;
+        }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");

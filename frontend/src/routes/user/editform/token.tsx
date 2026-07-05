@@ -28,6 +28,7 @@ function UserTokenSettingsRoute() {
 function UserTokenSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const tokenResetAction = prefixBasePath(runtimeConfig.basePath, "/user/editform/token_reset");
   const workspaceQuery = useQuery({
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
     queryKey: ["workspace", "overview"],
@@ -58,7 +59,7 @@ function UserTokenSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             <form
               id="frmBasic"
               method="post"
-              action={prefixBasePath(runtimeConfig.basePath, "/user/editform/token_reset")}
+              action={tokenResetAction}
               className="pull-left"
               style={{ width: "100%" }}
               onSubmit={(event) => {
