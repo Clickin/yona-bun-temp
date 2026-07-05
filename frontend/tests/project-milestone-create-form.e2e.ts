@@ -122,9 +122,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "create-cancel";
   });
   await page.click('.actrow a.ybtn:has-text("Cancel")');
-  await expect(page).toHaveURL(
-    `${basePath}/admin/sample/milestones?orderBy=dueDate&orderDir=asc&state=open`,
-  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestones`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("create-cancel");
@@ -152,7 +150,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/9?state=open`);
 });
 
-test("project milestone create form renders legacy title required validation state", async ({
+test("project milestone create form preserves legacy write validation and focus behavior", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -160,16 +158,34 @@ test("project milestone create form renders legacy title required validation sta
   await mockProjectMilestoneCreateForm(page, postRequests);
 
   await page.goto(`${basePath}/admin/sample/newMilestoneForm`);
-  await page.click('#milestone-form button[type="submit"]');
+  await expect(page.locator("#title")).toBeFocused();
+  await page.locator("#title").press("Enter");
+  await expect(page.locator("#editor-contents-content-body")).toBeFocused();
 
-  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
-  await expect(page.locator("#title + .message")).toHaveCount(1);
-  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  const titleDialogPromise = acceptNextAlert(page);
+  await page.click('#milestone-form button[type="submit"]');
+  await expect(titleDialogPromise).resolves.toBe("Milestone title is a required field.");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
+  expect(postRequests).toEqual([]);
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await expect(page.locator("#title + .message")).toHaveCount(0);
+
+  await page.fill("#title", "v3.1");
+  const contentDialogPromise = acceptNextAlert(page);
+  await page.click('#milestone-form button[type="submit"]');
+  await expect(contentDialogPromise).resolves.toBe("Milestone description is a required field");
   await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
   expect(postRequests).toEqual([]);
 
-  await page.fill("#title", "v3.1");
-  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await page.fill("#editor-contents-content-body", "Create scope");
+  await page.fill("#dueDate", "09/30/2026");
+  const dueDateDialogPromise = acceptNextAlert(page);
+  await page.click('#milestone-form button[type="submit"]');
+  await expect(dueDateDialogPromise).resolves.toBe(
+    "Invalid format. Enter the due date in YYYY-MM-DD format.",
+  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
+  expect(postRequests).toEqual([]);
   await expect(page.locator("#title + .message")).toHaveCount(0);
 });
 
@@ -196,13 +212,17 @@ test("project milestone create form uploader has no route-local jQuery template 
   expect(routeSource).not.toContain("dropFilesHereTemplate");
 });
 
-test("project milestone create form route keeps validation behavior in React state", () => {
+test("project milestone create form route keeps legacy write behavior in React events", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
     "utf8",
   );
 
-  expect(routeSource).toContain('t("validation.required")');
+  expect(routeSource).toContain('t("milestone.error.title")');
+  expect(routeSource).toContain('t("milestone.error.content")');
+  expect(routeSource).toContain('t("milestone.error.duedateFormat")');
+  expect(routeSource).toContain('event.key === "Enter"');
+  expect(routeSource).not.toContain('t("validation.required")');
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("classList");
@@ -316,6 +336,16 @@ async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ milestones: [] }),
+    });
+  });
+}
+
+function acceptNextAlert(page: Page) {
+  return new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      const message = dialog.message();
+      await dialog.accept();
+      resolve(message);
     });
   });
 }

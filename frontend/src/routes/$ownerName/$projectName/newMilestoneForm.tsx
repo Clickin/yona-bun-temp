@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type RefObject } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { createProjectMilestone, readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -56,7 +56,8 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
   const router = useRouter();
   const queryClient = useQueryClient();
   const { ownerName, projectName } = Route.useParams();
-  const [titleErrors, setTitleErrors] = useState<string[]>([]);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const contentsRef = useRef<HTMLTextAreaElement>(null);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
       const formData = new FormData(form);
@@ -79,6 +80,9 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
       router.navigate({ to: `/${ownerName}/${projectName}/milestone/${createdId}` });
     },
   });
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
 
   return (
     <div className="page-wrap-outer">
@@ -94,12 +98,22 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
             onSubmit={(event) => {
               event.preventDefault();
               const form = event.currentTarget;
-              const title = stringFormValue(new FormData(form), "title");
+              const formData = new FormData(form);
+              const title = stringFormValue(formData, "title");
+              const contents = stringFormValue(formData, "contents");
+              const dueDate = stringFormValue(formData, "dueDate");
               if (title.trim() === "") {
-                setTitleErrors([t("validation.required")]);
+                window.alert(t("milestone.error.title"));
                 return;
               }
-              setTitleErrors([]);
+              if (contents.trim() === "") {
+                window.alert(t("milestone.error.content"));
+                return;
+              }
+              if (dueDate.trim() !== "" && !/\d{4}-\d{2}-\d{2}$/.test(dueDate.trim())) {
+                window.alert(t("milestone.error.duedateFormat"));
+                return;
+              }
               mutation.mutate(form);
             }}
           >
@@ -108,31 +122,22 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                 <dl>
                   <dd>
                     <LegacyTabIndexInput
+                      inputRef={titleRef}
                       tabIndexValue="1"
                       type="text"
                       id="title"
                       name="title"
                       defaultValue=""
-                      className={
-                        titleErrors.length > 0
-                          ? "zen-mode text title error"
-                          : "zen-mode text title "
-                      }
+                      className="zen-mode text title "
                       maxLength={250}
                       placeholder={t("title")}
-                      onChange={(event) => {
-                        if (event.currentTarget.value.trim() !== "") {
-                          setTitleErrors([]);
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          contentsRef.current?.focus();
                         }
                       }}
                     />
-                    {titleErrors.length > 0 ? (
-                      <div className="message">
-                        {titleErrors.map((error) => (
-                          <div key={error}>{error}</div>
-                        ))}
-                      </div>
-                    ) : null}
                   </dd>
                 </dl>
               </div>
@@ -141,7 +146,7 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
                 <div className="span9 span-left-pane">
                   <dl>
                     <dd style={{ position: "relative" }}>
-                      <MilestoneMarkdownEditor />
+                      <MilestoneMarkdownEditor contentsRef={contentsRef} />
                     </dd>
                   </dl>
 
@@ -220,23 +225,29 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
 }
 
 function LegacyTabIndexInput({
+  inputRef,
   tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { tabIndexValue: string }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+}: InputHTMLAttributes<HTMLInputElement> & {
+  inputRef: RefObject<HTMLInputElement | null>;
+  tabIndexValue: string;
+}) {
   useEffect(() => {
     inputRef.current?.setAttribute("tabindex", tabIndexValue);
-  }, [tabIndexValue]);
+  }, [inputRef, tabIndexValue]);
   return <input ref={inputRef} {...props} />;
 }
 
-function MilestoneMarkdownEditor() {
+function MilestoneMarkdownEditor({
+  contentsRef,
+}: {
+  contentsRef: RefObject<HTMLTextAreaElement | null>;
+}) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
-  const contentsRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     contentsRef.current?.setAttribute("tabindex", "2");
-  }, []);
+  }, [contentsRef]);
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
