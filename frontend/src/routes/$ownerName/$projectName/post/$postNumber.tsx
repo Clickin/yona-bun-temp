@@ -1424,8 +1424,12 @@ function AttachedFiles({
   attachments: BoardAttachment[];
   basePath: string;
 }) {
+  if (!attachments.length) {
+    return null;
+  }
+
   return (
-    <>
+    <ul className="attaches wm">
       {attachments.map((file) => {
         const id = stringField(file.id);
         const name = stringField(file.name);
@@ -1451,7 +1455,7 @@ function AttachedFiles({
           </li>
         );
       })}
-    </>
+    </ul>
   );
 }
 

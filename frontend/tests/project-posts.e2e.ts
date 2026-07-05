@@ -1844,13 +1844,27 @@ test("project board detail renders legacy comment update form", async ({ page })
 
 test("project board detail renders legacy post and comment attachments", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleMessages: string[] = [];
+  page.on("console", (message) => {
+    consoleMessages.push(message.text());
+  });
   await mockProjectPosts(page, "attachments");
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator(".span-left-pane > #attachments > ul.attaches.wm")).toHaveCount(1);
+  await expect(
+    page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attached-file"),
+  ).toHaveCount(1);
+  await expect(page.locator(".span-left-pane > #attachments > .attached-file")).toHaveCount(0);
   await expect(page.locator("#attachments .attached-file")).toHaveAttribute(
     "data-href",
     `${basePath}/files/31`,
   );
+  await expect(page.locator("#comment-body-21 > .attachments > ul.attaches.wm")).toHaveCount(1);
+  await expect(
+    page.locator("#comment-body-21 > .attachments > ul.attaches.wm > li.attached-file"),
+  ).toHaveCount(1);
+  await expect(page.locator("#comment-body-21 > .attachments > .attached-file")).toHaveCount(0);
   await expect(page.locator("#comment-body-21 .attachments .attached-file")).toHaveAttribute(
     "data-href",
     `${basePath}/files/41`,
@@ -1861,7 +1875,7 @@ test("project board detail renders legacy post and comment attachments", async (
 
   const postAttachments = [{ id: "31", mimeType: "text/plain", name: "post-note.txt", size: 1024 }];
   const expectedPostAttachments =
-    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><li class="attached-file" data-name="post-note.txt" data-href="__BASE_PATH__/files/31" data-mime="text/plain" data-size="1024"><strong>post-note.txt(1024)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></div>`.replaceAll(
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="post-note.txt" data-href="__BASE_PATH__/files/31" data-mime="text/plain" data-size="1024"><strong>post-note.txt(1024)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -1873,7 +1887,7 @@ test("project board detail renders legacy post and comment attachments", async (
     { id: "41", mimeType: "image/png", name: "comment-shot.png", size: 2048 },
   ];
   const expectedCommentAttachments =
-    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/41" data-mime="image/png" data-size="2048"><strong>comment-shot.png(2048)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></div>`.replaceAll(
+    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/41" data-mime="image/png" data-size="2048"><strong>comment-shot.png(2048)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -1898,11 +1912,17 @@ test("project board detail renders legacy post and comment attachments", async (
     routeSource.indexOf("function AttachedFiles"),
     routeSource.indexOf("function TasklistBar"),
   );
+  expect(attachmentSource).toContain('<ul className="attaches wm">');
   expect(routeSource).not.toContain("function attachedFilesHtml");
   expect(routeSource).not.toContain("function attachmentFileHtml");
   expect(attachmentSource).not.toContain("dangerouslySetInnerHTML");
   expect(attachmentSource).toContain('<button type="button" className="attached-delete">');
   expect(attachmentSource).toContain('className="attached-file attached-file-marker"');
+  expect(
+    consoleMessages.some((message) =>
+      /validateDOMNesting|<li> cannot (?:be|appear) as a child of <div>/u.test(message),
+    ),
+  ).toBe(false);
 });
 
 test("project board detail renders legacy child comments", async ({ page }) => {
