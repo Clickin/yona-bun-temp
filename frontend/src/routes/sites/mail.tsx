@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, createLink, Link, type CreateLinkProps } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, type ReactNode } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
@@ -12,19 +12,6 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-
-const legacyHtmlAnchorTag = "a";
-
-type LegacyHtmlAnchorProps = CreateLinkProps & {
-  legacyHref?: string;
-};
-
-function LegacyHtmlAnchor({ legacyHref, href, ...props }: LegacyHtmlAnchorProps) {
-  const Anchor = legacyHtmlAnchorTag;
-  return <Anchor {...props} href={legacyHref ?? href} />;
-}
-
-const LegacyHtmlLink = createLink(LegacyHtmlAnchor);
 
 interface SiteMailSearch {
   errorMessage: string;
@@ -289,45 +276,72 @@ function LegacyMessage({ messageKey }: { messageKey: string }) {
 }
 
 function renderLegacyHtmlMessage(message: string) {
-  const nodes: ReactNode[] = [];
-  const tokenPattern = new RegExp(
-    String.raw`<br\s*\/?>|<` + String.raw`a\s+href="([^"]+)"\s+target="([^"]+)">([^<>]+)<\/a>`,
-    "gi",
-  );
-  let offset = 0;
-
-  for (const match of message.matchAll(tokenPattern)) {
-    if (match.index === undefined) {
-      continue;
-    }
-
-    if (match.index > offset) {
-      nodes.push(<Fragment key={offset}>{message.slice(offset, match.index)}</Fragment>);
-    }
-
-    const [rawToken, href, target, label] = match;
-    if (/^<br\s*\/?>$/i.test(rawToken)) {
-      nodes.push(<br key={match.index} />);
-    } else {
-      nodes.push(
-        <LegacyHtmlLink
-          href={href}
-          key={match.index}
-          legacyHref={href}
-          reloadDocument
-          target={target}
-        >
-          {label}
-        </LegacyHtmlLink>,
-      );
-    }
-
-    offset = match.index + rawToken.length;
+  if (typeof DOMParser === "undefined") {
+    return message;
   }
 
-  if (offset < message.length) {
-    nodes.push(<Fragment key={offset}>{message.slice(offset)}</Fragment>);
+  const document = new DOMParser().parseFromString(`<body>${message}</body>`, "text/html");
+  const nodes = Array.from(document.body.childNodes).flatMap((node, index) =>
+    renderLegacyHtmlNode(node, `legacy-html-${index}`),
+  );
+
+  if (nodes.length === 0) {
+    return message;
   }
 
   return nodes;
+}
+
+function renderLegacyHtmlNode(node: ChildNode, key: string): ReactNode[] {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ? [<Fragment key={key}>{node.textContent}</Fragment>] : [];
+  }
+
+  if (!(node instanceof HTMLElement)) {
+    return [];
+  }
+
+  if (node.tagName === "BR") {
+    return [<br key={key} />];
+  }
+
+  if (node.tagName === "A") {
+    const href = node.getAttribute("href");
+    if (!href || !isRenderableLegacyLinkHref(href)) {
+      return flattenLegacyHtmlChildren(node, key);
+    }
+
+    return [
+      <Link
+        href={href}
+        key={key}
+        reloadDocument
+        to={href}
+        target={node.getAttribute("target") ?? undefined}
+      >
+        {flattenLegacyHtmlChildren(node, `${key}-child`)}
+      </Link>,
+    ];
+  }
+
+  return flattenLegacyHtmlChildren(node, key);
+}
+
+function flattenLegacyHtmlChildren(node: HTMLElement, keyPrefix: string) {
+  return Array.from(node.childNodes).flatMap((child, index) =>
+    renderLegacyHtmlNode(child, `${keyPrefix}-${index}`),
+  );
+}
+
+function isRenderableLegacyLinkHref(href: string) {
+  if (href.startsWith("/") || href.startsWith("./") || href.startsWith("../")) {
+    return true;
+  }
+
+  try {
+    new URL(href);
+    return true;
+  } catch {
+    return false;
+  }
 }

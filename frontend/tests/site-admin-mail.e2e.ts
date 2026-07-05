@@ -314,7 +314,13 @@ test("site admin mail renders legacy Html error message line breaks", async ({ p
   });
 
   await page.goto(`${basePath}/sites/mail?errorMessage=common.experimental.description`);
-  await expect(page.locator(".span10 > .alert-error p").nth(1).locator("br")).toHaveCount(1);
+  const message = page.locator(".span10 > .alert-error p").nth(1);
+  await expect(message).toContainText(
+    "Work on this function is underway; it can be modified or interrupted at any moment.",
+  );
+  await expect(message).toContainText("Thanks for your patience.");
+  await expect(message.locator("br")).toHaveCount(1);
+  await expect(message.locator("a")).toHaveCount(0);
 });
 
 test("site admin mail renders legacy Html error message external link", async ({ page }) => {
@@ -347,11 +353,10 @@ test("site admin mail renders legacy Html error message arbitrary anchor", async
   });
 
   await page.goto(`${basePath}/sites/mail?errorMessage=notification.linkToViewHtml`);
-  const link = page.locator(".span10 > .alert-error p").nth(1).locator("a");
-
-  await expect(link).toHaveText("View it on {0}");
-  await expect(link).toHaveAttribute("href", "{1}");
-  await expect(link).toHaveAttribute("target", "{2}");
+  const message = page.locator(".span10 > .alert-error p").nth(1);
+  await expect(message).toHaveText("View it on {0}");
+  await expect(message.locator("a")).toHaveCount(0);
+  await expect(message.locator("br")).toHaveCount(0);
 });
 
 test("site admin mail renders legacy update notification badge", async ({ page }) => {
@@ -371,7 +376,13 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
   const source = await readFile("src/routes/sites/mail.tsx", "utf8");
 
   expect(source).not.toContain("LegacyInternalLink");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("legacyHtmlAnchorTag");
+  expect(source).not.toContain("matchAll(tokenPattern)");
+  expect(source).not.toContain("new RegExp(");
   expect(source).not.toContain("to={item.href}");
+  expect(source).toContain("new DOMParser()");
+  expect(source).toContain("<Link");
 });
 
 async function siteSettingSidebarHrefs(page: Page) {
