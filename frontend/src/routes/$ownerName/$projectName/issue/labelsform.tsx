@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type FocusEvent, type FormEvent, type MouseEvent } from "react";
+import {
+  Fragment,
+  useRef,
+  useState,
+  type FocusEvent,
+  type FormEvent,
+  type MouseEvent,
+} from "react";
 import {
   copyProjectLabelsRest,
   createProjectLabelRest,
@@ -120,6 +127,9 @@ function ProjectLabelsBody({
   const [newLabelNameColor, setNewLabelNameColor] = useState("");
   const [editingCategory, setEditingCategory] = useState<EditableCategory | null>(null);
   const [editingLabel, setEditingLabel] = useState<EditableLabel | null>(null);
+  const [pendingCategoryCreation, setPendingCategoryCreation] =
+    useState<PendingCategoryCreation | null>(null);
+  const [pendingLabelDeletion, setPendingLabelDeletion] = useState<string | null>(null);
   const newLabelColorInputRef = useRef<HTMLInputElement>(null);
   const copyMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -139,18 +149,22 @@ function ProjectLabelsBody({
   });
   const createMutation = useMutation({
     mutationFn: async ({
+      categoryName,
       categoryIsExclusive,
-      formData,
+      labelColor,
+      labelName,
     }: {
+      categoryName: string;
       categoryIsExclusive?: boolean;
-      formData: FormData;
+      labelColor: string;
+      labelName: string;
     }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return createProjectLabelRest(runtimeConfig, csrfToken, {
         categoryIsExclusive,
-        categoryName: String(formData.get("category") ?? ""),
-        labelColor: String(formData.get("color") ?? ""),
-        labelName: String(formData.get("name") ?? ""),
+        categoryName,
+        labelColor,
+        labelName,
         ownerName,
         projectName,
       });
@@ -239,10 +253,16 @@ function ProjectLabelsBody({
     const existingCategory = groupedLabels(labels).some(
       (category) => category.name === categoryName,
     );
-    const categoryIsExclusive = existingCategory
-      ? undefined
-      : window.confirm(t("label.category.new.confirm", { args: [categoryName] }));
-    createMutation.mutate({ categoryIsExclusive, formData });
+    const draft = {
+      categoryName,
+      labelColor: refinedColor,
+      labelName,
+    };
+    if (!existingCategory) {
+      setPendingCategoryCreation(draft);
+      return;
+    }
+    createMutation.mutate(draft);
   }
 
   function onNameFocus(event: FocusEvent<HTMLInputElement>) {
@@ -413,11 +433,7 @@ function ProjectLabelsBody({
           <div id="labelsList" className="issue-label-list-wrap">
             <ProjectLabelsList
               basePath={runtimeConfig.basePath}
-              onDeleteLabel={(labelId) => {
-                if (window.confirm(t("label.confirm.delete"))) {
-                  deleteMutation.mutate(labelId);
-                }
-              }}
+              onDeleteLabel={setPendingLabelDeletion}
               onEditCategory={setEditingCategory}
               onEditLabel={setEditingLabel}
               labels={labels}
@@ -455,6 +471,58 @@ function ProjectLabelsBody({
           updateLabelMutation.mutate({ ...editingLabel, color: refinedColor });
         }}
       />
+      {pendingCategoryCreation ? (
+        <IssueLabelConfirmModal
+          buttons={[
+            {
+              className: "ybtn confirm-button-vertical",
+              label: t("label.category.option.multiple"),
+              onClick: () => {
+                const draft = pendingCategoryCreation;
+                setPendingCategoryCreation(null);
+                createMutation.mutate({ ...draft, categoryIsExclusive: false });
+              },
+            },
+            {
+              className: "ybtn confirm-button-vertical",
+              label: t("label.category.option.single"),
+              onClick: () => {
+                const draft = pendingCategoryCreation;
+                setPendingCategoryCreation(null);
+                createMutation.mutate({ ...draft, categoryIsExclusive: true });
+              },
+            },
+          ]}
+          id="newCategoryConfirm"
+          message={t("label.category.new.confirm", {
+            args: [pendingCategoryCreation.categoryName],
+          })}
+          onDismiss={() => setPendingCategoryCreation(null)}
+        />
+      ) : null}
+      {pendingLabelDeletion ? (
+        <IssueLabelConfirmModal
+          buttons={[
+            {
+              className: "ybtn ybtn-default",
+              label: t("button.cancel"),
+              onClick: () => setPendingLabelDeletion(null),
+            },
+            {
+              className: "ybtn ybtn-primary",
+              label: t("button.confirm"),
+              onClick: () => {
+                const labelId = pendingLabelDeletion;
+                setPendingLabelDeletion(null);
+                deleteMutation.mutate(labelId);
+              },
+            },
+          ]}
+          id="deleteLabelConfirm"
+          message={t("label.confirm.delete")}
+          onDismiss={() => setPendingLabelDeletion(null)}
+        />
+      ) : null}
     </>
   );
 }
@@ -657,13 +725,106 @@ type EditableLabel = {
   name: string;
 };
 
+type PendingCategoryCreation = {
+  categoryName: string;
+  labelColor: string;
+  labelName: string;
+};
+
+type IssueLabelConfirmButton = {
+  className: string;
+  label: string;
+  onClick: () => void;
+};
+
+function handleIssueLabelModalButtonClick(
+  event: MouseEvent<HTMLButtonElement>,
+  onClick: () => void,
+) {
+  event.preventDefault();
+  event.stopPropagation();
+  onClick();
+}
+
 function dismissIssueLabelModalButtonClick(
   event: MouseEvent<HTMLButtonElement>,
   onCancel: () => void,
 ) {
-  event.preventDefault();
-  event.stopPropagation();
-  onCancel();
+  handleIssueLabelModalButtonClick(event, onCancel);
+}
+
+function LegacyDialogText({ className, text }: { className: string; text: string }) {
+  const lineOccurrences = new Map<string, number>();
+  const lines = text.split(/<br\s*\/?>/iu).map((line) => {
+    const occurrence = (lineOccurrences.get(line) ?? 0) + 1;
+    lineOccurrences.set(line, occurrence);
+    return {
+      isFirst: lineOccurrences.size === 1 && occurrence === 1,
+      key: `${line}:${occurrence}`,
+      line,
+    };
+  });
+
+  return (
+    <p className={className}>
+      {lines.map((line) => (
+        <Fragment key={line.key}>
+          {line.isFirst ? null : <br />}
+          {line.line}
+        </Fragment>
+      ))}
+    </p>
+  );
+}
+
+function IssueLabelConfirmModal({
+  buttons,
+  description = "",
+  id,
+  message,
+  onDismiss,
+}: {
+  buttons: IssueLabelConfirmButton[];
+  description?: string;
+  id: string;
+  message: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <>
+      <div id={id} className="modal in yobiDialog" tabIndex={-1} role="dialog" aria-hidden="false">
+        <div className="btn-dismiss">
+          <button
+            type="button"
+            className="btn-transparent"
+            data-dismiss="modal"
+            onClick={(event) => dismissIssueLabelModalButtonClick(event, onDismiss)}
+          >
+            ×
+          </button>
+        </div>
+        <div className="message">
+          <div className="center-text">
+            <LegacyDialogText className="msg" text={message} />
+            <LegacyDialogText className="desc" text={description} />
+          </div>
+          <div className="center-txt buttons">
+            {buttons.map((button) => (
+              <button
+                type="button"
+                className={button.className}
+                key={button.label}
+                onClick={(event) => handleIssueLabelModalButtonClick(event, button.onClick)}
+              >
+                {button.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="modal-backdrop in"></div>
+    </>
+  );
 }
 
 function EditCategoryModal({

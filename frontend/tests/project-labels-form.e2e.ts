@@ -59,7 +59,7 @@ const EXPECTED_PROJECT_LABELS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -267,9 +267,135 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
   });
 });
 
-test("project labels translates legacy LabelEditor create, edit, and delete behavior", async ({
+test("project labels new-category confirm modal preserves legacy option semantics", async ({
   page,
 }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  const labelRequests: { body: unknown; method: string; url: string }[] = [];
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+      {
+        category: "priority",
+        categoryId: "4",
+        categoryIsExclusive: true,
+        color: "#ff9800",
+        id: "10",
+        name: "high",
+      },
+    ],
+    { labelRequests },
+  );
+  await page.goto(labelsPageUrl);
+  await rememberSpaMarker(page, "project-labels-new-category-confirm");
+
+  await page.fill('#frmNewLabel input[name="category"]', "needs-triage");
+  await page.locator('#frmNewLabel input[name="name"]').focus();
+  await expect(page.locator("#frmNewLabel .label-preset-colors")).toBeVisible();
+  await page.locator("#frmNewLabel .btn-preset-color").nth(3).click();
+  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#3f51b5");
+  await page.fill('#frmNewLabel input[name="name"]', "feature");
+
+  await page.locator("#frmNewLabel").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
+    form.requestSubmit();
+  });
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-new-category-confirm");
+  await expect(page.locator("#newCategoryConfirm")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#newCategoryConfirm")).toHaveClass("modal in yobiDialog");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator("#newCategoryConfirm .message .msg")).toContainText(
+    "needs-triage is a new category.",
+  );
+  await expect(page.locator("#newCategoryConfirm .message .msg")).toContainText(
+    "In this category, you can choose",
+  );
+  await expect(
+    page.locator("#newCategoryConfirm .center-txt.buttons .confirm-button-vertical"),
+  ).toHaveText(["multiple labels", "only a single label"]);
+  expect(labelRequests).toHaveLength(0);
+
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(
+      page.locator('#newCategoryConfirm .btn-dismiss [data-dismiss="modal"]'),
+    ),
+  ).toBe(false);
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-new-category-confirm");
+  await expect(page.locator("#newCategoryConfirm")).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  expect(labelRequests).toHaveLength(0);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.locator("#frmNewLabel").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
+    form.requestSubmit();
+  });
+  await expect(page.locator("#newCategoryConfirm")).toHaveAttribute("aria-hidden", "false");
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(
+      page.locator("#newCategoryConfirm .center-txt.buttons .confirm-button-vertical").first(),
+    ),
+  ).toBe(false);
+  await expect.poll(() => labelRequests.length).toBe(1);
+  expect(labelRequests[0]).toMatchObject({
+    body: {
+      categoryIsExclusive: false,
+      categoryName: "needs-triage",
+      labelColor: "#3f51b5",
+      labelName: "feature",
+    },
+    method: "POST",
+  });
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-new-category-confirm");
+  await expect(page.locator("#newCategoryConfirm")).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.fill('#frmNewLabel input[name="category"]', "severity");
+  await page.fill('#frmNewLabel input[name="name"]', "critical");
+  await page.locator("#frmNewLabel").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
+    form.requestSubmit();
+  });
+  await expect(page.locator("#newCategoryConfirm")).toHaveAttribute("aria-hidden", "false");
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(
+      page.locator("#newCategoryConfirm .center-txt.buttons .confirm-button-vertical").nth(1),
+    ),
+  ).toBe(false);
+  await expect.poll(() => labelRequests.length).toBe(2);
+  expect(labelRequests[1]).toMatchObject({
+    body: {
+      categoryIsExclusive: true,
+      categoryName: "severity",
+      labelColor: "#3f51b5",
+      labelName: "critical",
+    },
+    method: "POST",
+  });
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-new-category-confirm");
+  await expect(page.locator("#newCategoryConfirm")).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+});
+
+test("project labels edit modals submit through route mutations", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const labelRequests: { body: unknown; method: string; url: string }[] = [];
   await mockProjectLabels(
@@ -294,46 +420,20 @@ test("project labels translates legacy LabelEditor create, edit, and delete beha
     ],
     { labelRequests },
   );
-  page.on("dialog", async (dialog) => {
-    expect(dialog.message()).toContain("new-type is a new category");
-    await dialog.accept();
-  });
 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
-
-  await page.fill('#frmNewLabel input[name="category"]', "new-type");
-  await page.locator('#frmNewLabel input[name="name"]').focus();
-  await expect(page.locator("#frmNewLabel .label-preset-colors")).toBeVisible();
-  await page.locator("#frmNewLabel .btn-preset-color").nth(3).click();
-  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#3f51b5");
-  await page.fill('#frmNewLabel input[name="name"]', "feature");
-  await page.locator("#frmNewLabel").evaluate((form) => {
-    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
-    form.requestSubmit();
-  });
-  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(1);
-  expect(labelRequests[0]).toMatchObject({
-    body: {
-      categoryIsExclusive: true,
-      categoryName: "new-type",
-      labelColor: "#3f51b5",
-      labelName: "feature",
-    },
-    method: "POST",
-  });
-
   await page.locator('#labelsList tr[data-label-id="8"] button[data-update-uri]').click();
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator('#editLabel input[name="name"]')).toHaveValue("bug");
   await page.fill('#editLabel input[name="name"]', "bugfix");
   await page.locator("#editLabel .btn-preset-color").nth(1).click();
   await page.locator("#editLabel .btnSubmit").click();
-  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(2);
-  expect(labelRequests[1]).toMatchObject({
+  await expect.poll(() => labelRequests.length).toBe(1);
+  expect(labelRequests[0]).toMatchObject({
     body: { categoryId: 3, labelColor: "#f18ca7", labelName: "bugfix" },
     method: "PATCH",
   });
-  expect(labelRequests[1].url).toContain("/api/v1/owners/admin/projects/sample/labels/8");
+  expect(labelRequests[0].url).toContain("/api/v1/owners/admin/projects/sample/labels/8");
 
   await page
     .locator('#labelsList .category-wrap[data-category="4"] button[data-category-update-uri]')
@@ -343,24 +443,94 @@ test("project labels translates legacy LabelEditor create, edit, and delete beha
   await page.fill('#editCategory input[name="name"]', "severity");
   await page.selectOption('#editCategory select[name="isExclusive"]', "false");
   await page.locator("#editCategory .btnSubmit").click();
-  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(3);
-  expect(labelRequests[2]).toMatchObject({
+  await expect.poll(() => labelRequests.length).toBe(2);
+  expect(labelRequests[1]).toMatchObject({
     body: { categoryIsExclusive: false, categoryName: "severity" },
     method: "PATCH",
   });
-  expect(labelRequests[2].url).toContain(
+  expect(labelRequests[1].url).toContain(
     "/api/v1/owners/admin/projects/sample/labels/categories/4",
   );
+});
 
-  page.removeAllListeners("dialog");
-  page.on("dialog", async (dialog) => {
-    expect(dialog.message()).toContain("Once you delete this label");
-    await dialog.accept();
-  });
+test("project labels delete confirm modal preserves legacy dismiss and accept flow", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  const labelRequests: { body: unknown; method: string; url: string }[] = [];
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+      {
+        category: "priority",
+        categoryId: "4",
+        categoryIsExclusive: true,
+        color: "#ff9800",
+        id: "10",
+        name: "high",
+      },
+    ],
+    { labelRequests },
+  );
+
+  await page.goto(labelsPageUrl);
+  await rememberSpaMarker(page, "project-labels-delete-confirm");
+
+  await armProjectLabelsModalBridgeTrap(page);
   await page.locator('#labelsList tr[data-label-id="10"] button[data-delete-uri]').click();
-  await expect.poll(() => labelRequests.length).toBeGreaterThanOrEqual(4);
-  expect(labelRequests[3]).toMatchObject({ body: null, method: "DELETE" });
-  expect(labelRequests[3].url).toContain("/api/v1/owners/admin/projects/sample/labels/10");
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-delete-confirm");
+  await expect(page.locator("#deleteLabelConfirm")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#deleteLabelConfirm")).toHaveClass("modal in yobiDialog");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator("#deleteLabelConfirm .message .msg")).toContainText(
+    "Once you delete this label",
+  );
+  await expect(page.locator("#deleteLabelConfirm .center-txt.buttons .ybtn")).toHaveText([
+    "Cancel",
+    "Confirm",
+  ]);
+  expect(labelRequests).toHaveLength(0);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(
+      page.locator("#deleteLabelConfirm .center-txt.buttons .ybtn").first(),
+    ),
+  ).toBe(false);
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-delete-confirm");
+  await expect(page.locator("#deleteLabelConfirm")).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  expect(labelRequests).toHaveLength(0);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.locator('#labelsList tr[data-label-id="10"] button[data-delete-uri]').click();
+  await expect(page.locator("#deleteLabelConfirm")).toHaveAttribute("aria-hidden", "false");
+  await armProjectLabelsModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(
+      page.locator("#deleteLabelConfirm .center-txt.buttons .ybtn").nth(1),
+    ),
+  ).toBe(false);
+  await expect.poll(() => labelRequests.length).toBe(1);
+  expect(labelRequests[0]).toMatchObject({ body: null, method: "DELETE" });
+  expect(labelRequests[0].url).toContain("/api/v1/owners/admin/projects/sample/labels/10");
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-delete-confirm");
+  await expect(page.locator("#deleteLabelConfirm")).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 });
 
 test("project labels edit modals open and dismiss through route state", async ({ page }) => {
@@ -431,21 +601,24 @@ test("project labels edit modals open and dismiss through route state", async ({
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 });
 
-test("project labels edit modal source insulates delegated modal bridge", () => {
+test("project labels modal source insulates delegated modal bridge and removes native confirm", () => {
   const routeSource = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
     "utf8",
   );
+  expect(routeSource).toContain("function handleIssueLabelModalButtonClick");
   expect(routeSource).toContain("function dismissIssueLabelModalButtonClick");
   expect(routeSource).toContain("event.preventDefault();");
   expect(routeSource).toContain("event.stopPropagation();");
-  expect(
-    routeSource.match(/dismissIssueLabelModalButtonClick\(event, onCancel\)/gu) ?? [],
-  ).toHaveLength(4);
+  expect(routeSource).toContain('id="newCategoryConfirm"');
+  expect(routeSource).toContain('id="deleteLabelConfirm"');
+  expect(routeSource).toContain("confirm-button-vertical");
   expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource).not.toContain("window.confirm");
   expect(routeSource).not.toContain('data-toggle="modal"');
   expect(routeSource).not.toContain('data-target="#editCategory"');
   expect(routeSource).not.toContain('data-target="#editLabel"');
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
