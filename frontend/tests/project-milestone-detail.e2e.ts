@@ -1,7 +1,181 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
-test("project milestone detail matches legacy milestone/view.scala.html core DOM", async ({
+const MILESTONE_DETAIL_CHILD_ISSUES = `
+<div class="child-issues">
+  <div class="issue-item child-issue">
+    <span class="state-label open"></span>
+    <a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/21">
+      <span class="item-name">
+        <span class="subtask-number">#21</span>
+        <span>Open child issue</span>
+        <span> - Dev Member</span>
+      </span>
+    </a>
+    <span class="font12 no-border-at-child">
+      <span class="item-count-groups">
+        <a class="comments-count comments-count-color" href="__BASE_PATH__/admin/sample/issue/21#comments">
+          <span class="count-groups item-icon"><i class="yobicon-comment2"></i></span>
+          <span class="count-groups item-count">1</span>
+        </a>
+        <a class="vote-count vote-color" href="__BASE_PATH__/admin/sample/issue/21#vote">
+          <span class="count-groups item-icon"><i class="yobicon-hearts"></i></span>
+          <span class="count-groups item-count strong">2</span>
+        </a>
+      </span>
+    </span>
+    <a class="label issue-label list-label active twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" style="background:rgb(81,170,204)">bug</a>
+    <span class="child-issue-date" title="2026-06-02">2026-06-02</span>
+  </div>
+  <div class="issue-item child-issue">
+    <span class="state-label closed"><i class=" yobicon-checkmark"></i></span>
+    <a class="twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issue/22">
+      <span class="item-name">
+        <span class="subtask-number">#22</span>
+        <span>Closed child issue</span>
+        <span></span>
+      </span>
+    </a>
+    <span class="font12 no-border-at-child"></span>
+    <span class="child-issue-date" title="2026-06-03">2026-06-03</span>
+  </div>
+</div>`;
+
+const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
+<div class="page-wrap-outer">
+  <div class="project-page-wrap">
+    <div class="milesion-wrap">
+      <h4>
+        <a class="title active" href="__BASE_PATH__/admin/sample/milestone/5">v1.0</a>
+        <small class="ml10">
+          <span class="due-date">Due Date <strong>2026-06-30</strong></span>
+          <span class="date">(Overdue)</span>
+          <span class="badge badge-issue-open margin-left-5">Open</span>
+        </small>
+      </h4>
+      <div class="progress progress-success"><div class="bar" style="width:50%"></div></div>
+      <div class="milestone-desc">
+        <div class="markdown-wrap"><p>Release scope</p></div>
+        <div class="attachments" data-attachments='[{"id":501,"name":"scope.txt","url":"/files/501"}]'></div>
+      </div>
+      <div class="actrow right-txt row-fluid" style="clear:both;padding:15px 0px">
+        <a class="ybtn pull-left" href="__BASE_PATH__/admin/sample/milestones">List</a>
+        <button class="ybtn ybtn-danger" data-target="#deleteConfirm" data-toggle="modal" type="button">Delete</button>
+        <a class="ybtn" href="__BASE_PATH__/admin/sample/milestone/5/editform">Edit</a>
+        <button class="ybtn" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/milestone/5/close" type="button">Close milestone</button>
+      </div>
+      <div id="issues">
+        <ul class="nav nav-tabs">
+          <li class="active"><a class="active" href="__BASE_PATH__/admin/sample/milestone/5?state=open#issues">Open<span class="num-badge">1</span></a></li>
+          <li><a href="__BASE_PATH__/admin/sample/milestone/5?state=closed#issues">Closed<span class="num-badge">1</span></a></li>
+          <li><a href="__BASE_PATH__/admin/sample/milestone/5?state=all#issues">All<span class="num-badge">2</span></a></li>
+        </ul>
+        <div class="issues">
+          <div class="filter-wrap">
+            <div class="mass-update-wrap hide-in-mobile">
+              <form action="__BASE_PATH__/admin/sample/issues" class="mass-update-form pull-left" id="mass-update-form" method="post">
+                <div class="btn-group check-all">
+                  <label aria-label="check-all" for="check-all"><input data-target="checked-issue" id="check-all" type="checkbox"></label>
+                </div>
+                <div class="btn-group" data-name="state" id="state">
+                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <ul class="dropdown-menu mass-update-list">
+                    <li data-value="OPEN"><button type="button">Open</button></li>
+                    <li data-value="CLOSED"><button type="button">Closed</button></li>
+                  </ul>
+                </div>
+                <div class="btn-group" data-name="assignee.id" id="assignee">
+                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <ul class="dropdown-menu mass-update-list">
+                    <li data-value="0"><button type="button">No assignee</button></li>
+                    <li data-value="1"><button type="button">Assign to me</button></li>
+                    <li class="divider"></li>
+                    <li data-value="1"><button class="usf-group" type="button"><span class="avatar-wrap smaller"><img height="20" src="/assets/images/default-avatar-32.png" width="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li>
+                    <li data-value="2"><button class="usf-group" type="button"><span class="avatar-wrap smaller"><img height="20" src="/assets/images/dev-avatar.png" width="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li>
+                  </ul>
+                </div>
+                <div class="btn-group" data-name="milestone.id" id="milestone">
+                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <ul class="dropdown-menu mass-update-list">
+                    <li data-value="-1"><button type="button">No milestone</button></li>
+                    <li class="divider"></li>
+                    <li data-value="5"><button type="button">v1.0</button></li>
+                  </ul>
+                </div>
+                <div class="btn-group" data-name="attachingLabelIds" id="attaching-label">
+                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <ul class="dropdown-menu mass-update-list" id="attach-label-list">
+                    <li class="disabled" data-category="3"><span>type</span></li>
+                    <li data-category="3" data-value="8"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li>
+                    <li class="divider" data-category="3"></li>
+                  </ul>
+                </div>
+                <div class="btn-group" data-name="detachingLabelIds" id="detaching-label">
+                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <ul class="dropdown-menu mass-update-list" id="delete-label-list">
+                    <li class="disabled" data-category="3"><span>type</span></li>
+                    <li data-category="3" data-value="8"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li>
+                    <li class="divider" data-category="3"></li>
+                  </ul>
+                </div>
+              </form>
+            </div>
+            <div class="pull-right search search-bar">
+              <input class="textbox" data-items="issue-item" data-toggle="item-search" name="filter" placeholder="search at current milestone" type="text" value="">
+              <button class="search-btn" type="submit"><i class="yobicon-search"></i></button>
+            </div>
+          </div>
+          <ul class="post-list-wrap row-fluid">
+            <li class="post-item title" data-item="issue-item" data-value="dev 11 [UI] Open milestone issue" href="__BASE_PATH__/admin/sample/issue/11" id="issue-item-41">
+              <div class="span9 span-hard-wrap">
+                <label aria-label="issue-41" class="mass-update-check hide-in-mobile" for="issue-41"><input data-issue-id="41" data-issue-labels="type,8,bug,3,false|" data-toggle="issue-checkbox" id="issue-41" name="checked-issue" type="checkbox"></label>
+                <div class="issue-item-row" for="issue-41">
+                  <div class="title-wrap">
+                    <a class="title" href="__BASE_PATH__/admin/sample/issue/11"><span class="post-id">#11</span></a>
+                    <span class="weight-up-arrow" data-placement="right" data-toggle="tooltip" title="Issue weight 2"><i class="yobicon-angle-circled-up"></i></span>
+                    <button class="title-prefix" type="button">[UI]</button>
+                    <a class="title" href="__BASE_PATH__/admin/sample/issue/11">Open milestone issue</a>
+                  </div>
+                  <div class="infos">
+                    <a class="infos-item infos-link-item" href="__BASE_PATH__/dev" title="dev">Dev Member</a>
+                    <span class="infos-item" data-placement="bottom" data-toggle="tooltip" title="2026-06-01">2026-06-01</span>
+                    <div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width:50%" title="Subtask"></div></div>
+                    <span class="subtask-progress completion-ratio">1/2</span>
+                    <span class="mileston-tag"><a class="active" href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>
+                    <span class="infos-item item-count-groups">
+                      <a class="comments-count comments-count-color" href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a>
+                      <a class="vote-count vote-color" href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a>
+                      <button class="sharer-color" data-placement="bottom" data-toggle="tooltip" title="Issue Sharer" type="button"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">1</span></button>
+                    </span>
+                    <button class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="background:rgb(81,170,204)" type="button">bug</button>
+                    <div class="child-issue-list hide">${MILESTONE_DETAIL_CHILD_ISSUES}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="span3 hide-in-mobile">
+                <div class="mt5 pull-right"><a class="avatar-wrap assinee" href="__BASE_PATH__/dev" title="Assignee: Dev Member"><img height="32" src="/assets/images/dev-avatar.png" width="32"></a></div>
+                <div class="mr20 mt10 pull-right" data-placement="top" data-toggle="tooltip" title="2026-06-20"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">3 days left</span></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal hide fade" id="deleteConfirm">
+  <div class="modal-header">
+    <button class="close" data-dismiss="modal" type="button">×</button>
+    <h3>Delete milestone</h3>
+  </div>
+  <div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div>
+  <div class="modal-footer">
+    <button class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/milestone/5/delete" type="button">Yes</button>
+    <button class="ybtn" data-dismiss="modal" type="button">No</button>
+  </div>
+</div>`;
+
+test("project milestone detail open state matches legacy milestone/view.scala.html whole route DOM", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -210,6 +384,12 @@ test("project milestone detail matches legacy milestone/view.scala.html core DOM
     "type,8,bug,3,false|",
   );
   await expect(page.locator("#issue-item-41 .issue-item-row")).toHaveAttribute("for", "issue-41");
+  expect(await canonicalizeMilestoneRouteRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
   await page.check("#issue-41");
   await expect(page.locator("#state > button")).toBeEnabled();
   await page.evaluate(() => {
@@ -523,7 +703,9 @@ test("project milestone detail issue labels translate legacy href hash navigatio
   );
   await expect(labelChip).toHaveText("bug");
   await expect(labelChip).toHaveAttribute("type", "button");
-  await expect(page.locator("#issue-item-41 a.issue-label")).toHaveCount(0);
+  await expect(
+    page.locator('#issue-item-41 .infos > a.issue-label[data-category-id="3"][data-label-id="8"]'),
+  ).toHaveCount(0);
 
   await labelChip.click();
   await expect(page).toHaveURL(/\/admin\/sample\/issues/u);
@@ -604,6 +786,14 @@ test("project milestone detail E2E selectors stay anchored to legacy Scala HTML"
     "../yona-original/app/views/issue/partial_massupdate.scala.html",
     "utf8",
   );
+  const childIssueListSource = readFileSync(
+    "../yona-original/app/views/issue/partial_view_childIssueListOnly.scala.html",
+    "utf8",
+  );
+  const childIssueSource = readFileSync(
+    "../yona-original/app/views/issue/partial_view_child.scala.html",
+    "utf8",
+  );
 
   for (const snippet of [
     '<div class="milesion-wrap">',
@@ -648,6 +838,24 @@ test("project milestone detail E2E selectors stay anchored to legacy Scala HTML"
     '<div id="detaching-label" class="btn-group" data-name="detachingLabelIds">',
   ]) {
     expect(massUpdateSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '<div class="child-issues">',
+    '@partial_view_child("open", childIssue, issue)',
+    '@partial_view_child("closed", childIssue, issue)',
+  ]) {
+    expect(childIssueListSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '<div class="issue-item @if(childIssue.id == parentIssue.id){selected-child} child-issue">',
+    '<span class="state-label @state">',
+    '<a class="twoColumeModeTarget" href="@routes.IssueApp.issue(childIssue.project.owner, childIssue.project.name, childIssue.getNumber)">',
+    '<span class="font12 no-border-at-child">@common.commentAndVoterPairDisplay(childIssue, parentIssue.project)</span>',
+    '<span class="child-issue-date" title="@JodaDateUtil.getDateString(childIssue.createdDate)">',
+  ]) {
+    expect(childIssueSource).toContain(snippet);
   }
 });
 
@@ -817,6 +1025,35 @@ function milestoneFixture() {
         assigneeUserId: 2,
         childClosedCount: 1,
         childOpenCount: 1,
+        childIssues: [
+          {
+            assigneeLabel: "Dev Member",
+            commentCount: 1,
+            createdLabel: "2026-06-02",
+            id: 61,
+            issueNumber: 21,
+            labels: [
+              {
+                categoryId: "3",
+                categoryName: "type",
+                color: "#51aacc",
+                id: "8",
+                name: "bug",
+              },
+            ],
+            state: "open",
+            title: "Open child issue",
+            voterCount: 2,
+          },
+          {
+            createdLabel: "2026-06-03",
+            id: 62,
+            issueNumber: 22,
+            labels: [],
+            state: "closed",
+            title: "Closed child issue",
+          },
+        ],
         commentCount: 2,
         createdLabel: "2026-06-01",
         dueDateLabel: "2026-06-20",
@@ -908,4 +1145,116 @@ async function milestoneDetailMetrics(page: Page) {
       progressBarBackgroundColor: getComputedStyle(progressBar).backgroundColor,
     };
   });
+}
+
+async function canonicalizeMilestoneRouteRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(document.querySelectorAll(".page-wrap-outer, #deleteConfirm"));
+    const routeRoots = Array.from(new Set(roots));
+    const routeRootSet = new Set(routeRoots);
+    return routeRoots.map((root) => visit(root, root)).join("");
+
+    function visit(node: Node, currentRoot: Element): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      if (node !== currentRoot && routeRootSet.has(node)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter((attr) => shouldKeepAttr(node, attr))
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child, currentRoot))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      return value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+    }
+
+    function shouldKeepAttr(node: Element, attr: Attr) {
+      if (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status" ||
+        (node.tagName === "A" && attr.name.startsWith("data-"))
+      ) {
+        return false;
+      }
+      return attr.name !== "class" || normalizeAttr(attr) !== "";
+    }
+  });
+}
+
+async function canonicalizeHtml(page: Page, html: string) {
+  return page.evaluate((input) => {
+    const template = document.createElement("template");
+    template.innerHTML = input;
+    return Array.from(template.content.children)
+      .map((root) => visit(root))
+      .join("");
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter((attr) => shouldKeepAttr(node, attr))
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    }
+
+    function normalizeStyleAttr(value: string) {
+      return value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+    }
+
+    function shouldKeepAttr(node: Element, attr: Attr) {
+      if (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status" ||
+        (node.tagName === "A" && attr.name.startsWith("data-"))
+      ) {
+        return false;
+      }
+      return attr.name !== "class" || normalizeAttr(attr) !== "";
+    }
+  }, html);
 }

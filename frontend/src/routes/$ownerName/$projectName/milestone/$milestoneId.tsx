@@ -378,6 +378,7 @@ function ProjectMilestoneDetailBody({
                     checked={checkedIssueIds.includes(
                       stringField(issue.id, stringField(issue.issueNumber)),
                     )}
+                    currentUserLoginId={currentUser.loginId}
                     filter={filter}
                     issue={issue}
                     onCheckedChange={(issueId, checked) => {
@@ -809,6 +810,7 @@ function LabelMassUpdateGroup({
 
 function MilestoneIssueRow({
   checked,
+  currentUserLoginId,
   filter,
   issue,
   milestoneId,
@@ -820,6 +822,7 @@ function MilestoneIssueRow({
   runtimeConfig,
 }: {
   checked: boolean;
+  currentUserLoginId: string;
   filter: string;
   issue: ProjectMilestoneIssue;
   milestoneId: string;
@@ -1046,7 +1049,15 @@ function MilestoneIssueRow({
                 {stringField(label.name)}
               </button>
             ))}
-            <div className="child-issue-list hide"></div>
+            <div className="child-issue-list hide">
+              <MilestoneIssueChildRows
+                childIssues={issue.childIssues}
+                currentUserLoginId={currentUserLoginId}
+                ownerName={ownerName}
+                parentIssueId={issueId}
+                projectName={projectName}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1158,6 +1169,178 @@ function IssueSubtaskSummary({
         </span>
       ) : null}
     </>
+  );
+}
+
+function MilestoneIssueChildRows({
+  childIssues,
+  currentUserLoginId,
+  ownerName,
+  parentIssueId,
+  projectName,
+}: {
+  childIssues: unknown;
+  currentUserLoginId: string;
+  ownerName: string;
+  parentIssueId: string;
+  projectName: string;
+}) {
+  const visibleChildIssues = recordArray(childIssues).filter(
+    (childIssue) =>
+      !booleanField(childIssue.isDraft) ||
+      stringField(childIssue.authorLoginId) === currentUserLoginId,
+  );
+  const openChildIssues = visibleChildIssues.filter(
+    (childIssue) => stringField(childIssue.state) !== "closed",
+  );
+  const closedChildIssues = visibleChildIssues.filter(
+    (childIssue) => stringField(childIssue.state) === "closed",
+  );
+  const orderedChildIssues = [...openChildIssues, ...closedChildIssues];
+  if (!orderedChildIssues.length) {
+    return null;
+  }
+
+  return (
+    <div className="child-issues">
+      {orderedChildIssues.map((childIssue) => (
+        <MilestoneIssueChildRow
+          childIssue={childIssue}
+          key={`${stringField(childIssue.state)}-${stringField(childIssue.issueNumber)}`}
+          ownerName={ownerName}
+          parentIssueId={parentIssueId}
+          projectName={projectName}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MilestoneIssueChildRow({
+  childIssue,
+  ownerName,
+  parentIssueId,
+  projectName,
+}: {
+  childIssue: Record<string, unknown>;
+  ownerName: string;
+  parentIssueId: string;
+  projectName: string;
+}) {
+  const issueId = stringField(childIssue.id);
+  const issueNumber = stringField(childIssue.issueNumber);
+  const assigneeLabel = stringField(childIssue.assigneeLabel);
+  const childIssueClassName =
+    issueId && issueId === parentIssueId
+      ? "issue-item selected-child child-issue"
+      : "issue-item child-issue";
+  const childIssueParams = { ownerName, projectName, issueNumber };
+  const childIssueLabels = recordArray(childIssue.labels)
+    .map((label) => ({
+      categoryId: stringField(label.categoryId),
+      color: stringField(label.color),
+      id: stringField(label.id),
+      name: stringField(label.name),
+    }))
+    .sort((left, right) => compareIssueLabels(left, right));
+
+  return (
+    <div className={childIssueClassName}>
+      <span
+        className={`state-label ${stringField(childIssue.state) === "closed" ? "closed" : "open"}`}
+      >
+        {stringField(childIssue.state) === "closed" ? <i className=" yobicon-checkmark"></i> : null}
+      </span>
+      <Link
+        to="/$ownerName/$projectName/issue/$issueNumber"
+        params={childIssueParams}
+        className="twoColumeModeTarget"
+      >
+        <span className="item-name">
+          <span className="subtask-number">
+            {booleanField(childIssue.isDraft) ? (
+              <span className="draft-number">#Draft</span>
+            ) : (
+              `#${issueNumber}`
+            )}
+          </span>
+          <span>{stringField(childIssue.title)}</span>
+          <span>{assigneeLabel ? ` - ${assigneeLabel}` : ""}</span>
+        </span>
+      </Link>
+      <span className="font12 no-border-at-child">
+        <MilestoneIssueChildCommentAndVotePair
+          commentCount={numberField(childIssue.commentCount)}
+          issueNumber={issueNumber}
+          ownerName={ownerName}
+          projectName={projectName}
+          voterCount={numberField(childIssue.voterCount)}
+        />
+      </span>
+      {childIssueLabels.map((label) => (
+        <Link
+          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${encodeURIComponent(label.id)}`}
+          className="label issue-label list-label active twoColumeModeTarget"
+          key={label.id}
+          style={label.color ? { background: cssBackgroundColor(label.color) } : undefined}
+        >
+          {label.name}
+        </Link>
+      ))}
+      <span className="child-issue-date" title={stringField(childIssue.createdLabel)}>
+        {stringField(childIssue.createdLabel)}
+      </span>
+    </div>
+  );
+}
+
+function MilestoneIssueChildCommentAndVotePair({
+  commentCount,
+  issueNumber,
+  ownerName,
+  projectName,
+  voterCount,
+}: {
+  commentCount: number;
+  issueNumber: string;
+  ownerName: string;
+  projectName: string;
+  voterCount: number;
+}) {
+  if (!commentCount && !voterCount) {
+    return null;
+  }
+
+  const childIssueParams = { ownerName, projectName, issueNumber };
+  return (
+    <span className="item-count-groups">
+      {commentCount ? (
+        <Link
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={childIssueParams}
+          hash="comments"
+          className="comments-count comments-count-color"
+        >
+          <span className="count-groups item-icon">
+            <i className="yobicon-comment2"></i>
+          </span>
+          <span className="count-groups item-count">{commentCount}</span>
+        </Link>
+      ) : null}
+      {voterCount ? (
+        <Link
+          to="/$ownerName/$projectName/issue/$issueNumber"
+          params={childIssueParams}
+          hash="vote"
+          className="vote-count vote-color"
+        >
+          <span className="count-groups item-icon">
+            <i className="yobicon-hearts"></i>
+          </span>
+          <span className="count-groups item-count strong">{voterCount}</span>
+        </Link>
+      ) : null}
+    </span>
   );
 }
 
