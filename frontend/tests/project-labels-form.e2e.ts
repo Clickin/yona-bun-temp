@@ -139,6 +139,25 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
   expect(routeSource).not.toMatch(/\bconst\s+LegacyLink\b/);
 });
 
+test("project labels member badges use enrolled users count instead of enrollment requests", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectLabels(page, [], {
+    project: {
+      enrolledUsers: [{ id: 101 }, { id: 102 }],
+      enrollmentRequestCount: 5,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
+  await expect(page.locator(".project-setting .project-menu-count")).not.toHaveText("5");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).not.toHaveText("5");
+});
+
 test("project labels internal links preserve legacy hrefs with SPA transition", async ({
   page,
 }) => {
@@ -606,6 +625,8 @@ test("project labels modal source insulates delegated modal bridge and removes n
     new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
     "utf8",
   );
+  expect(routeSource).toContain("function enrolledUserCount");
+  expect(routeSource).not.toContain("project.enrollmentRequestCount");
   expect(routeSource).toContain("function handleIssueLabelModalButtonClick");
   expect(routeSource).toContain("function dismissIssueLabelModalButtonClick");
   expect(routeSource).toContain("event.preventDefault();");

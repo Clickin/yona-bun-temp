@@ -1167,6 +1167,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const menuSetting = projectMenuSetting(project);
+  const memberCount = enrolledUserCount(project);
 
   return (
     <div className="project-menu-outer">
@@ -1241,7 +1242,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                  <CountBadge count={memberCount} />
                 </Link>
               </li>
             </ul>
@@ -1288,6 +1289,7 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const menuSetting = projectMenuSetting(project);
+  const memberCount = enrolledUserCount(project);
 
   return (
     <ul className="nav nav-tabs">
@@ -1307,7 +1309,7 @@ function ProjectSettingMenu({
           params={{ ownerName, projectName }}
         >
           {t("project.member")}
-          <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
+          <CountBadge count={memberCount} className="num-badge" />
         </Link>
       </li>
       <li id="subMenuIssueLabel" className={active === "labels" ? "active" : ""}>
@@ -1376,6 +1378,11 @@ function CountBadge({
   count: number;
 }) {
   return count > 0 ? <span className={className}>{count}</span> : null;
+}
+
+function enrolledUserCount(project: ProjectContainer) {
+  const enrolledUsers = recordField(project).enrolledUsers;
+  return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
 function projectMenuSetting(project: ProjectContainer) {
