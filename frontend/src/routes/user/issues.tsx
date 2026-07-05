@@ -1137,7 +1137,7 @@ function UserIssueChildCommentAndVotePair({
   return (
     <span className="item-count-groups">
       {issue.commentCount ? (
-        <Link className="comments-count comments-count-color" to={`${issuePath}#comments`}>
+        <Link className="comments-count comments-count-color" to={issuePath} hash="comments">
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
@@ -1145,7 +1145,7 @@ function UserIssueChildCommentAndVotePair({
         </Link>
       ) : null}
       {issue.voterCount ? (
-        <Link className="vote-count vote-color" to={`${issuePath}#vote`}>
+        <Link className="vote-count vote-color" to={issuePath} hash="vote">
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>
@@ -1210,7 +1210,7 @@ function CommentVoteCounts({ issue, issuePath }: { issue: RestIssueListItem; iss
   return (
     <span className="item-count-groups">
       {issue.commentCount ? (
-        <Link to={`${issuePath}#comments`} className="comments-count">
+        <Link to={issuePath} hash="comments" className="comments-count">
           <span className="count-groups item-icon">
             <i className="yobicon-comment2"></i>
           </span>
@@ -1218,7 +1218,7 @@ function CommentVoteCounts({ issue, issuePath }: { issue: RestIssueListItem; iss
         </Link>
       ) : null}
       {issue.voterCount ? (
-        <Link to={`${issuePath}#vote`} className="vote-count">
+        <Link to={issuePath} hash="vote" className="vote-count">
           <span className="count-groups item-icon">
             <i className="yobicon-hearts"></i>
           </span>

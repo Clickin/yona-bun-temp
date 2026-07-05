@@ -333,6 +333,10 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("const pjaxContainer");
   expect(routeSource).not.toContain("const pjaxFilter");
   expect(routeSource).not.toContain("const legacyState =");
+  expect(routeSource).not.toContain("to={`${issuePath}#comments`}");
+  expect(routeSource).not.toContain("to={`${issuePath}#vote`}");
+  expect(routeSource).toContain('to={issuePath} hash="comments"');
+  expect(routeSource).toContain('to={issuePath} hash="vote"');
   expect(routeSource).toContain(
     "type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
