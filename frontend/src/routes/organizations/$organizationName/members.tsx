@@ -244,9 +244,13 @@ function OrganizationMembersBody({
                 type="button"
                 className="ybtn ybtn-info ybtn-mini"
                 id="deleteBtn"
-                onClick={() => {
+                onClick={async () => {
                   if (deleteUserId !== null) {
-                    deleteMutation.mutate(deleteUserId);
+                    try {
+                      await deleteMutation.mutateAsync(deleteUserId);
+                    } catch (error) {
+                      window.alert(organizationMemberDeleteErrorMessage(t, error));
+                    }
                   }
                   setDeleteUserId(null);
                 }}
@@ -684,6 +688,19 @@ function roleLabel(organization: OrganizationAdminView, role: string) {
     (roleOption: YonaRecord) => stringField(roleOption.role, "") === role,
   );
   return stringField(option?.label, role);
+}
+
+function organizationMemberDeleteErrorMessage(t: (key: string) => string, error: unknown) {
+  if (error instanceof RestApiError) {
+    if (error.status === 403) {
+      const ownerCannotLeave = t("project.member.ownerCannotLeave");
+      return error.message.includes(ownerCannotLeave) ? ownerCannotLeave : t("error.forbidden");
+    }
+    if (error.status === 404) {
+      return t("organization.member.unknownOrganization");
+    }
+  }
+  return t("error.badrequest");
 }
 
 function stringField(value: unknown, fallback: string) {

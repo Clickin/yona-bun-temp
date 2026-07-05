@@ -312,6 +312,29 @@ test("organization members delete waits for legacy confirmation modal", async ({
   await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
 });
 
+test("organization members delete failure shows legacy alert mapping", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockOrganizationMembers(page, {
+    deleteErrorMessage: "Project owner cannot leave his own project.",
+    deleteStatus: 403,
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  await page.locator('.members.project [data-action="delete"]').first().click();
+  await expect(page.locator("#alertDeletion")).not.toHaveClass(/hide/);
+
+  const alertMessage = page.waitForEvent("dialog").then(async (dialog) => {
+    const message = dialog.message();
+    await dialog.accept();
+    return message;
+  });
+  await page.locator("#deleteBtn").click();
+
+  await expect(alertMessage).resolves.toBe("Project owner cannot leave his own project.");
+  await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
+});
+
 test("organization members menu settings link preserves legacy href with SPA transition", async ({
   page,
 }) => {
@@ -398,7 +421,10 @@ test("organization members menu board link preserves legacy href with SPA transi
   await expect(page.locator("#option_form")).toBeVisible();
 });
 
-async function mockOrganizationMembers(page: Page, options: { adminStatus?: number } = {}) {
+async function mockOrganizationMembers(
+  page: Page,
+  options: { adminStatus?: number; deleteErrorMessage?: string; deleteStatus?: number } = {},
+) {
   const requests = {
     acceptedUserIds: [] as string[],
     addedLoginIds: [] as string[],
@@ -526,6 +552,21 @@ async function mockOrganizationMembers(page: Page, options: { adminStatus?: numb
     const request = route.request();
     if (request.method() === "DELETE") {
       requests.deletedUserIds.push(new URL(request.url()).pathname.split("/").pop() ?? "");
+      if (options.deleteStatus) {
+        await route.fulfill({
+          contentType: "application/json",
+          status: options.deleteStatus,
+          body: JSON.stringify({
+            error: {
+              code: "delete_failed",
+              message:
+                options.deleteErrorMessage ?? `REST request failed with ${options.deleteStatus}.`,
+              status: options.deleteStatus,
+            },
+          }),
+        });
+        return;
+      }
     }
     if (request.method() === "PATCH") {
       const body = request.postDataJSON() as { role?: string };
