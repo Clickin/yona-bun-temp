@@ -101,6 +101,18 @@ test("project members settings tab anchors keep legacy hrefs without route-local
     "href",
     `${basePath}/admin/sample/changeVCS`,
   );
+  expect(
+    await settingsTabLinks.evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual(
+    Array.from({ length: 7 }, () => ({ ariaCurrent: null, className: null, dataStatus: null })),
+  );
+  await expect(page.locator("#subMenuProjectMember")).toHaveClass("active");
   expect(await readProjectSettingsTabNativeLinkAudit(page)).toEqual([]);
 
   const settingsLink = page.locator("#subMenuProjectSetting a");
@@ -895,8 +907,8 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            (isProjectSettingMenuAnchor(node) ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -918,6 +930,10 @@ async function canonicalizeScreenRoots(page: Page) {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function isProjectSettingMenuAnchor(node: Element) {
+      return node.matches(".project-page-wrap > .nav.nav-tabs a");
     }
   });
 }
@@ -1025,8 +1041,8 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            (isProjectSettingMenuAnchor(node) ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1048,6 +1064,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function isProjectSettingMenuAnchor(node: Element) {
+      return node.matches(".project-page-wrap > .nav.nav-tabs a");
     }
   }, html);
 }
