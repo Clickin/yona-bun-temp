@@ -309,7 +309,7 @@ test("project webhooks fork origin link preserves legacy class without active ma
   await expect(originLink).not.toHaveAttribute("data-status", /.*/u);
 });
 
-test("project webhooks settings tab follows legacy enrolled user badge", async ({ page }) => {
+test("project webhooks settings surfaces follow legacy enrolled user badge", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page, [], {
     project: {
@@ -322,6 +322,9 @@ test("project webhooks settings tab follows legacy enrolled user badge", async (
   const memberTab = page.locator("#subMenuProjectMember a");
   await expect(memberTab).toHaveAttribute("href", `${basePath}/admin/sample/members`);
   await expect(memberTab.locator(".num-badge")).toHaveText("2");
+  const adminCog = page.locator(".project-setting a");
+  await expect(adminCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(adminCog.locator(".project-menu-count")).toHaveText("2");
 });
 
 test("project webhooks JSON type forces git push checkbox like legacy script", async ({ page }) => {
