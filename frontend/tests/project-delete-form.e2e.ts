@@ -405,6 +405,7 @@ test("project delete settings tab follows legacy enrolled user badge and hidden 
   const memberTab = page.locator("#subMenuProjectMember a");
   await expect(memberTab).toHaveAttribute("href", `${basePath}/admin/sample/members`);
   await expect(memberTab.locator(".num-badge")).toHaveText("2");
+  await expect(page.locator(".project-setting a .project-menu-count")).toHaveText("2");
 
   const changeVcsTab = page.locator("#subMenuProjectChangeVCS");
   await expect(changeVcsTab).toHaveAttribute("style", "display: none;");

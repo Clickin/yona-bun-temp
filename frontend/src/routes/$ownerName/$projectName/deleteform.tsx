@@ -322,6 +322,10 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const menuSetting = recordField(project.menuSetting);
+  const enrolledMemberCount = countField(
+    project.enrolledUsers,
+    numberField(project.enrollmentRequestCount),
+  );
 
   return (
     <div className="project-menu-outer">
@@ -401,7 +405,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                  <CountBadge count={enrolledMemberCount} />
                 </Link>
               </li>
             </ul>
