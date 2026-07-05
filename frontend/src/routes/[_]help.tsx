@@ -2,8 +2,17 @@ import * as React from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
+
+const legacyAnswerLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+} as const;
+const legacyAnswerLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 export const Route = createFileRoute("/_help")({
   component: HelpTocRoute,
@@ -16,18 +25,17 @@ function HelpTocRoute() {
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <HelpTocScreen runtimeConfig={runtimeConfig} />
+          <HelpTocScreen />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function HelpTocScreen() {
   const { t } = useLegacyMessages();
   const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
   const appName = t("app.name");
-  const infoHref = prefixBasePath(runtimeConfig.basePath, "/info");
   const toggleQuestion = (index: number) => {
     setOpenQuestionIndexes((current) => {
       const next = new Set(current);
@@ -136,12 +144,20 @@ function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  <Link to="/" activeProps={{ className: undefined }}>
+                  <Link
+                    to="/"
+                    activeOptions={legacyAnswerLinkActiveOptions}
+                    activeProps={legacyAnswerLinkActiveProps}
+                  >
                     메인화면
                   </Link>{" "}
                   우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
                   있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
-                  <Link href={infoHref} reloadDocument to="/info">
+                  <Link
+                    to="/info"
+                    activeOptions={legacyAnswerLinkActiveOptions}
+                    activeProps={legacyAnswerLinkActiveProps}
+                  >
                     정보 페이지
                   </Link>
                   에서도 확인하실수 있습니다.
@@ -164,7 +180,11 @@ function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <i className="yobicon-a a" />
                 <Answer>
                   자신의{" "}
-                  <Link href={infoHref} reloadDocument to="/info">
+                  <Link
+                    to="/info"
+                    activeOptions={legacyAnswerLinkActiveOptions}
+                    activeProps={legacyAnswerLinkActiveProps}
+                  >
                     정보 페이지
                   </Link>
                   에서 참여하고 있는 프로젝트 목록을 볼 수있고 탈퇴도 할수 있습니다. 자신이

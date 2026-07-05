@@ -77,7 +77,7 @@ function ProjectMilestoneEditFormBody({
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const numericMilestoneId = Number(milestoneId) || 0;
   const state = stringField(milestone.state, "open").toUpperCase() === "CLOSED" ? "CLOSED" : "OPEN";
-  const [titleFocusRequest, setTitleFocusRequest] = useState(1);
+  const [titleFocusRequest] = useState(1);
   const [contentFocusRequest, setContentFocusRequest] = useState(0);
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
@@ -185,7 +185,11 @@ function ProjectMilestoneEditFormBody({
                     <Link
                       to="/$ownerName/$projectName/milestones"
                       params={{ ownerName, projectName }}
-                      activeProps={{ className: undefined }}
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: "ybtn",
+                        "data-status": undefined,
+                      }}
                       className="ybtn"
                     >
                       {t("button.cancel")}

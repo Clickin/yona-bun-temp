@@ -49,7 +49,7 @@ const EXPECTED_HELP_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
@@ -188,10 +188,15 @@ const EXPECTED_HELP_SCREEN = `
 test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/\bcreateLink\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
-  expect(HELP_ROUTE_SOURCE).toContain('<Link to="/"');
-  expect(HELP_ROUTE_SOURCE).toContain("href={infoHref}");
+  expect(HELP_ROUTE_SOURCE).toContain('to="/"');
+  expect(HELP_ROUTE_SOURCE).toContain('to="/info"');
+  expect(HELP_ROUTE_SOURCE).not.toContain("href={infoHref}");
+  expect(HELP_ROUTE_SOURCE).not.toContain('reloadDocument to="/info"');
+  expect(HELP_ROUTE_SOURCE).toContain('"aria-current": undefined');
+  expect(HELP_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/nforge/yobi/issues"');
 
   await page.addInitScript(() => {
@@ -226,6 +231,43 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: "https://github.com/nforge/yobi/issues", text: "Yona 이슈트래커에 등록" },
+  ]);
+  expect(await renderedHelpAnswerLinkActiveMarkers(page)).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: "https://github.com/doortts/yona#korean",
+      text: "https://github.com/doortts/yona#korean",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/`,
+      text: "메인화면",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/info`,
+      text: "정보 페이지",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/info`,
+      text: "정보 페이지",
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: "https://github.com/nforge/yobi/issues",
+      text: "Yona 이슈트래커에 등록",
+    },
   ]);
 
   const actual = await canonicalizeScreenRoots(page);
@@ -330,6 +372,18 @@ test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }
 async function renderedHelpAnswerLinks(page: Page) {
   return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
     links.map((link) => ({
+      href: link.getAttribute("href"),
+      text: link.textContent?.trim(),
+    })),
+  );
+}
+
+async function renderedHelpAnswerLinkActiveMarkers(page: Page) {
+  return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
+    links.map((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
       href: link.getAttribute("href"),
       text: link.textContent?.trim(),
     })),

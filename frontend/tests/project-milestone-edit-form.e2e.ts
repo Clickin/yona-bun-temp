@@ -61,9 +61,12 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
   await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
   const cancelLink = page.locator('.actrow a.ybtn:has-text("Cancel")');
+  await expect(cancelLink).toHaveCount(1);
   await expect(cancelLink).toHaveAttribute("href", `${basePath}/admin/sample/milestones`);
   await expect(cancelLink).toHaveAttribute("class", "ybtn");
   await expect(cancelLink).toHaveText("Cancel");
+  await expect(cancelLink).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(cancelLink).not.toHaveAttribute("data-status", /.+/u);
   expect(await readMilestoneEditFormMetrics(page)).toEqual({
     actionRowDisplay: "block",
     actionRowMarginTop: "20px",
@@ -179,11 +182,15 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   );
 
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
+  expect(routeSource).not.toContain("createLink");
   expect(routeSource).toContain(
     'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";',
   );
   expect(routeSource).toContain("<LegacyMarkdownHelp />");
-  expect(routeSource).toContain("activeProps={{ className: undefined }}");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('className: "ybtn"');
+  expect(routeSource).toContain('"data-status": undefined');
+  expect(routeSource).not.toContain("<a");
   expect(routeSource).not.toContain("<a\n                      href={prefixBasePath");
   expect(routeSource).not.toContain("help/markdown.scala.html");
   expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
