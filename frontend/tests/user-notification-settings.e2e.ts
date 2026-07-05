@@ -111,10 +111,20 @@ test("current-user notification settings page matches legacy user/edit_notificat
   ]);
   await expect(editTabs.nth(2)).toHaveClass("active");
   expect(
-    await editTabs
-      .locator("a")
-      .evaluateAll((links) => links.map((link) => link.getAttribute("class"))),
-  ).toEqual([null, null, null, null, null]);
+    await editTabs.locator("a").evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+  ]);
 
   await expect(page.locator('.nav-tabs a:has-text("Email settings")')).toHaveAttribute(
     "href",
@@ -158,9 +168,10 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("to={href}");
-  expect(source).toContain(
-    '<Link to="/user/editform/notifications" activeProps={{ className: undefined }}>',
-  );
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain('"data-status": undefined');
+  expect(source).toContain("activeProps={legacyEditTabLinkActiveProps}");
+  expect(source).toContain("activeOptions={legacyEditTabLinkActiveOptions}");
 });
 
 async function mockAuthenticatedSession(page: Page) {
