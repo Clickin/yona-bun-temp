@@ -142,10 +142,98 @@ test("project search without required query renders legacy badrequest_default.sc
   await expect(page.locator(".error-wrap p")).toHaveText(
     "The request cannot be fulfilled due to bad syntax",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
-  await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  const homeButton = page.locator(".error-wrap .ybtn.ybtn-info");
+  await expect(homeButton).toHaveAttribute("href", basePath);
+  await expectProjectSearchErrorShell(page, {
+    expectProjectHeader: false,
+    expectProjectMenu: false,
+    expectSiteBreadcrumb: false,
+    expectedRootOrder: ["unsupported hidden", "gnb-outer", "page-wrap-outer", "page-footer-outer"],
+  });
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
+  await markSearchSpaSession(page);
+  await homeButton.click();
+  await expectExactProjectSearchSpaPath(page, basePath);
+});
+
+test("project search renders legacy error/forbidden.scala.html shell for anonymous viewers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page, { anonymousViewer: true });
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=forbidden&searchType=issue&pageNum=1`);
+  await expectProjectSearchErrorShell(page, {
+    expectProjectHeader: true,
+    expectProjectMenu: true,
+    expectSiteBreadcrumb: false,
+    expectedRootOrder: [
+      "unsupported hidden",
+      "gnb-outer",
+      "project-header-outer",
+      "project-menu-outer",
+      "page-wrap-outer",
+      "page-footer-outer",
+    ],
+  });
+  await expect(page.locator(".project-menu-outer .project-menu-gruop > li.active")).toHaveCount(1);
+  await expect(
+    page.locator(".project-menu-outer .project-menu-gruop > li.active a"),
+  ).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
+  await expect(page.locator(".search-box-wrap")).toHaveCount(0);
+  const loginButton = page.locator(".error-wrap .ybtn.ybtn-primary");
+  await expect(loginButton).toHaveText("Log in");
+  await expect(loginButton).toHaveAttribute(
+    "href",
+    `${basePath}/users/loginform?redirectUrl=${encodeURIComponent(
+      `${basePath}/admin/sample/search?keyword=forbidden&searchType=issue&pageNum=1`,
+    )}`,
+  );
+  await markSearchSpaSession(page);
+  await loginButton.click();
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return {
+        pathname: url.pathname,
+        redirectUrl: url.searchParams.get("redirectUrl"),
+      };
+    })
+    .toEqual({
+      pathname: `${basePath}/users/loginform`,
+      redirectUrl: `${basePath}/admin/sample/search?keyword=forbidden&searchType=issue&pageNum=1`,
+    });
+  await expectSearchSpaSession(page);
+});
+
+test("project search renders legacy error/internalServerError_default.scala.html shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page);
+
+  await page.goto(
+    `${basePath}/admin/sample/search?keyword=server-error&searchType=issue&pageNum=1`,
+  );
+  await expectProjectSearchErrorShell(page, {
+    expectProjectHeader: false,
+    expectProjectMenu: false,
+    expectSiteBreadcrumb: false,
+    expectedRootOrder: ["unsupported hidden", "gnb-outer", "page-wrap-outer", "page-footer-outer"],
+  });
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".search-box-wrap")).toHaveCount(0);
+  const homeButton = page.locator(".error-wrap .ybtn.ybtn-primary");
+  await expect(homeButton).toHaveAttribute("href", basePath);
+  await markSearchSpaSession(page);
+  await homeButton.click();
+  await expectExactProjectSearchSpaPath(page, basePath);
 });
 
 test("project search preserves whitespace-only keyword and calls scoped search API", async ({
@@ -225,7 +313,13 @@ async function expectProjectSearchForm(
   await expect(form.locator("button[type='submit'].ybtn")).toHaveText("Search");
 }
 
-async function mockProjectSearch(page: Page) {
+async function mockProjectSearch(
+  page: Page,
+  options: {
+    anonymousViewer?: boolean;
+  } = {},
+) {
+  const anonymousViewer = options.anonymousViewer ?? false;
   const apiCalls: { count: number; keywords: string[]; pageNums: number[] } = {
     count: 0,
     keywords: [],
@@ -236,15 +330,15 @@ async function mockProjectSearch(page: Page) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        actorId: 1,
+        actorId: anonymousViewer ? 0 : 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
         defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
+        emailAddress: anonymousViewer ? "" : "admin@example.com",
+        isAnonymous: anonymousViewer,
+        isConfirmed: !anonymousViewer,
+        isSiteAdmin: !anonymousViewer,
+        loginId: anonymousViewer ? "anonymous" : "admin",
+        userLabel: anonymousViewer ? "Anonymous" : "Site Admin",
       }),
     });
   });
@@ -262,6 +356,34 @@ async function mockProjectSearch(page: Page) {
     const pageNum = Number(url.searchParams.get("pageNum")) || 1;
     apiCalls.keywords.push(keyword);
     apiCalls.pageNums.push(pageNum);
+    if (keyword === "forbidden") {
+      await route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "forbidden",
+            message: "You are not authorized",
+            status: 403,
+          },
+        }),
+      });
+      return;
+    }
+    if (keyword === "server-error") {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "internal_server_error",
+            message: "Server error occurred; service is not available",
+            status: 500,
+          },
+        }),
+      });
+      return;
+    }
     const hasIssueResult = keyword === "sample" && searchType === "issue";
     const hasPagedIssueResult = keyword === "paged" && searchType === "issue";
     await route.fulfill({
@@ -723,4 +845,34 @@ async function expectSearchSpaSession(page: Page) {
   await expect
     .poll(() => page.evaluate(() => window.sessionStorage.getItem("project-search-spa-marker")))
     .toBe("alive");
+}
+
+async function expectExactProjectSearchSpaPath(page: Page, expectedPath: string) {
+  await expect.poll(() => new URL(page.url()).pathname).toBe(expectedPath);
+  await expectSearchSpaSession(page);
+}
+
+async function expectProjectSearchErrorShell(
+  page: Page,
+  options: {
+    expectProjectHeader: boolean;
+    expectProjectMenu: boolean;
+    expectSiteBreadcrumb: boolean;
+    expectedRootOrder: string[];
+  },
+) {
+  await expect(page.locator(".project-header-outer")).toHaveCount(
+    options.expectProjectHeader ? 1 : 0,
+  );
+  await expect(page.locator(".project-menu-outer")).toHaveCount(options.expectProjectMenu ? 1 : 0);
+  await expect(page.locator(".site-breadcrumb-outer")).toHaveCount(
+    options.expectSiteBreadcrumb ? 1 : 0,
+  );
+  expect(
+    await page
+      .locator(
+        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      )
+      .evaluateAll((roots) => roots.map((root) => root.className)),
+  ).toEqual(options.expectedRootOrder);
 }
