@@ -1679,7 +1679,7 @@ export function ProjectMenu({
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={numberField(project.enrollmentRequestCount)} />
+                  <CountBadge count={arrayField(project.enrolledUsers).length} />
                 </Link>
               </li>
             </ul>

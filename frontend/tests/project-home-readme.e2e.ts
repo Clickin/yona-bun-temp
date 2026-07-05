@@ -526,6 +526,29 @@ test("project home header unwatch action deletes and renders not-watching branch
   );
 });
 
+test("project home admin cog badge uses enrolled-user count instead of request count", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    project: {
+      enrolledUsers: [{ id: 11 }, { id: 22 }, { id: 33 }],
+    },
+    enrollmentRequestCount: 7,
+  });
+
+  await page.goto(`${basePath}/admin/sample`);
+
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveText("3");
+  await expect(page.locator(".project-setting .project-menu-count")).not.toHaveText("7");
+  expect(await canonicalizeLocator(page, ".project-setting")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">3</span></a></li></ul></div>`,
+    ),
+  );
+});
+
 test("project home route owns project-util dropdown state and explicit Link semantics", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
   const enrollmentDropdownHandlers = source.match(
@@ -566,6 +589,8 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain('className="milestone-info"');
   expect(source).toContain("projectCurrentMilestone(project)");
   expect(source).toContain("booleanField(menuSetting.milestone) && currentMilestone");
+  expect(source).toContain("project.enrolledUsers");
+  expect(source).not.toContain("project.enrollmentRequestCount");
   expect(source).not.toContain("function toggleProjectUtilDropdown(toggle: HTMLElement)");
   expect(source).not.toContain("function closeProjectUtilDropdown");
   expect(source).not.toContain('querySelectorAll(".project-util li.open")');
@@ -707,6 +732,7 @@ async function dispatchCancelableClick(locator: Locator) {
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
+    enrollmentRequestCount: number;
     enrollRequests: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited: boolean;
     favoriteRequests: { hasCsrfToken: boolean; method: string }[];
@@ -846,7 +872,7 @@ async function mockProjectHome(
           pullRequests: [],
           unassignedOpenIssueCount: 0,
         },
-        enrollmentRequestCount: 0,
+        enrollmentRequestCount: overrides.enrollmentRequestCount ?? 0,
         history: { items: [] },
         id: 7,
         isFavorite: false,
