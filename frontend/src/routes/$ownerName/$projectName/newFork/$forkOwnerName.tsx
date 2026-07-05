@@ -11,6 +11,7 @@ function ProjectForkOwnerRoute() {
 
   return (
     <ProjectForkRouteContent
+      key={`${ownerName}/${projectName}/${forkOwnerName}`}
       forkOwnerName={forkOwnerName}
       ownerName={ownerName}
       projectName={projectName}
