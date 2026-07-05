@@ -178,7 +178,12 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await page.locator("#frmPassword button[type=submit]").click();
   await page.waitForURL("**/users/loginform*");
   expect(passwordPostCount).toBe(1);
-  expect(new URL(page.url()).pathname).toBe(`${basePath}/users/loginform`);
+  const redirectedUrl = new URL(page.url());
+  expect(redirectedUrl.pathname).toBe(`${basePath}/users/loginform`);
+  expect(redirectedUrl.searchParams.get("password")).toBe("reset");
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "Please log in with the new password!",
+  );
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("password-submit");

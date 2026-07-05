@@ -56,7 +56,10 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries();
-      await router.navigate({ search: { password: "", redirectUrl: "" }, to: "/users/loginform" });
+      await router.navigate({
+        search: { password: "reset", redirectUrl: "" },
+        to: "/users/loginform",
+      });
     },
   });
 
