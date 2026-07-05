@@ -16,6 +16,19 @@ type UserFilesSearch = {
   pageNum?: number;
 };
 
+const legacyRouteLocalActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+const legacyRouteLocalActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+const legacyEmptyUserFilesSearch = { filter: undefined, pageNum: undefined };
+
 export const Route = createFileRoute("/user/files")({
   component: UserFilesRoute,
   validateSearch(search: Record<string, unknown>): UserFilesSearch {
@@ -89,17 +102,22 @@ function UserFilesScreen({
       <div className="page-wrap">
         <ul className="nav nav-tabs">
           <li>
-            <Link activeProps={{ className: undefined }} to="/notifications">
+            <Link activeProps={legacyRouteLocalActiveProps} to="/notifications">
               {t("notification")}
             </Link>
           </li>
           <li>
-            <Link activeProps={{ className: undefined }} to="/user/issues">
+            <Link activeProps={legacyRouteLocalActiveProps} to="/user/issues">
               {t("issue.myIssue")}
             </Link>
           </li>
           <li className="active">
-            <Link activeProps={{ className: undefined }} to="/user/files">
+            <Link
+              activeOptions={legacyRouteLocalActiveOptions}
+              activeProps={legacyRouteLocalActiveProps}
+              search={legacyEmptyUserFilesSearch}
+              to="/user/files"
+            >
               {t("user.files")}
             </Link>
           </li>
@@ -227,8 +245,8 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeOptions={{ exact: true }}
-              activeProps={{ className: undefined }}
+              activeOptions={legacyRouteLocalActiveOptions}
+              activeProps={legacyRouteLocalActiveProps}
               search={pageSearch(currentPage - 1)}
               to="/user/files"
             >
@@ -278,8 +296,8 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeOptions={{ exact: true }}
-              activeProps={{ className: undefined }}
+              activeOptions={legacyRouteLocalActiveOptions}
+              activeProps={legacyRouteLocalActiveProps}
               search={pageSearch(currentPage + 1)}
               to="/user/files"
             >

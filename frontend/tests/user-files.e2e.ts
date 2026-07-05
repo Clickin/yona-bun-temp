@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_USER_FILES_SCREEN = `
 <div class="unsupported hidden">
@@ -186,6 +186,9 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
     "href",
     `${basePath}/user/files`,
   );
+  for (const tabText of ["Notification", "My Issues", "My Files"]) {
+    await expectLegacyPlainAnchor(page.locator(".page-wrap > .nav-tabs a", { hasText: tabText }));
+  }
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-my-issues";
   });
@@ -214,6 +217,10 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   expect(prevUrl.pathname).toBe(`${basePath}/user/files`);
   expect(prevUrl.searchParams.get("filter")).toBe("avatar");
   expect(prevUrl.searchParams.get("pageNum")).toBe("1");
+  await expect(pagination.locator("li.page-num.ikon").first()).toHaveClass("page-num ikon");
+  await expectLegacyPlainAnchor(pagination.locator("a", { hasText: "Previous page" }));
+  await expect(pagination.locator("li.page-num.ikon").nth(1)).toHaveClass("page-num ikon");
+  await expect(pagination.locator("li.page-num.ikon").nth(1).locator("a")).toHaveCount(0);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-page-1";
   });
@@ -230,6 +237,10 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   expect(nextUrl.pathname).toBe(`${basePath}/user/files`);
   expect(nextUrl.searchParams.get("filter")).toBe("avatar");
   expect(nextUrl.searchParams.get("pageNum")).toBe("2");
+  await expect(pagination.locator("li.page-num.ikon").first()).toHaveClass("page-num ikon");
+  await expect(pagination.locator("li.page-num.ikon").first().locator("a")).toHaveCount(0);
+  await expect(pagination.locator("li.page-num.ikon").nth(1)).toHaveClass("page-num ikon");
+  await expectLegacyPlainAnchor(pagination.locator("a", { hasText: "Next page" }));
 
   await pagination.locator('input[name="pageNum"]').click();
   await pagination.locator('input[name="pageNum"]').fill("9");
@@ -381,6 +392,12 @@ async function readUserFilesMetrics(page: Page) {
       searchMargin: getComputedStyle(search).margin,
     };
   });
+}
+
+async function expectLegacyPlainAnchor(locator: Locator) {
+  await expect(locator).not.toHaveAttribute("class", /./);
+  await expect(locator).not.toHaveAttribute("aria-current", /./);
+  await expect(locator).not.toHaveAttribute("data-status", /./);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
