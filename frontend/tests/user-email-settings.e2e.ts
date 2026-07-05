@@ -126,6 +126,10 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     `${basePath}/user/editform/emails`,
     `${basePath}/user/editform/token`,
   ]);
+  expect(
+    await tabLinks.evaluateAll((links) => links.map((link) => link.getAttribute("class"))),
+  ).toEqual([null, null, null, null, null]);
+  await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active")).toHaveCount(1);
   await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active > a")).toHaveText(
     "Email settings",
   );
@@ -363,17 +367,6 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string) {
-      if (
-        name === "class" &&
-        current.tagName.toLowerCase() === "a" &&
-        current.closest(".page-wrap .nav-tabs")
-      ) {
-        const className = (current.getAttribute(name) ?? "")
-          .split(/\s+/)
-          .filter((value) => value && value !== "active")
-          .join(" ");
-        return className ? `${name}=${JSON.stringify(className)}` : "";
-      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
@@ -438,17 +431,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string) {
-        if (
-          name === "class" &&
-          current.tagName.toLowerCase() === "a" &&
-          current.closest(".page-wrap .nav-tabs")
-        ) {
-          const className = (current.getAttribute(name) ?? "")
-            .split(/\s+/)
-            .filter((value) => value && value !== "active")
-            .join(" ");
-          return className ? `${name}=${JSON.stringify(className)}` : "";
-        }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
       const template = document.createElement("template");
