@@ -100,7 +100,10 @@ function ProjectIssueEditFormBody({
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const numericIssueNumber = Number(issueNumber) || 0;
   const issueRecord = issue as YonaRecord;
-  const [isTitleRequired, setIsTitleRequired] = useState(false);
+  const [titleFocusRequest, setTitleFocusRequest] = useState(1);
+  const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
+  const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
+  const dueDateRef = useRef<HTMLInputElement>(null);
   const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -158,13 +161,22 @@ function ProjectIssueEditFormBody({
               formData.set("isDraft", submitIntent === "draft" ? "true" : "false");
               formData.set("isPublish", submitIntent === "publish" ? "true" : "false");
               if (stringFormValue(formData, "title").trim() === "") {
-                setIsTitleRequired(true);
+                window.alert(t("issue.error.emptyTitle"));
+                setTitleFocusRequest((current) => current + 1);
                 return;
               }
-              setIsTitleRequired(false);
+              if (!isValidIssueDueDate(stringFormValue(formData, "dueDate"))) {
+                setInvalidDueDateNoticeKey((currentKey) => currentKey + 1);
+                dueDateRef.current?.focus();
+                return;
+              }
               mutation.mutate(formData);
             }}
           >
+            <YobiToast
+              noticeKey={invalidDueDateNoticeKey}
+              message={t("issue.error.invalid.duedate")}
+            />
             <input type="hidden" name="authorId" value={authorId} />
             <input type="hidden" id="isDraft" name="isDraft" value="false" />
             <input type="hidden" id="isPublish" name="isPublish" value="false" />
@@ -184,25 +196,26 @@ function ProjectIssueEditFormBody({
                     <div className="span12">
                       <div className="span11">
                         <LegacyTabIndexInput
+                          focusRequest={titleFocusRequest}
                           tabIndexValue="1"
                           type="text"
                           id="title"
                           name="title"
                           defaultValue={stringField(issue.title, "")}
-                          className={`text title ${isTitleRequired ? "error" : ""}`}
+                          className="text title "
                           maxLength={250}
                           placeholder={t("title")}
                           autoComplete="off"
-                          onChange={() => setIsTitleRequired(false)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              setBodyFocusRequest((current) => current + 1);
+                            }
+                          }}
                         />
                       </div>
                       <div className="span1 subtask-message">{t("issue.option")}</div>
                     </div>
-                    {isTitleRequired ? (
-                      <div className="message">
-                        <div>{t("validation.required")}</div>
-                      </div>
-                    ) : null}
                     <SubtaskSelects issue={issue} parentOptions={parentOptions} project={project} />
                   </dd>
                 </dl>
@@ -211,7 +224,10 @@ function ProjectIssueEditFormBody({
                 <div className="span9 span-left-pane">
                   <dl>
                     <dd style={{ position: "relative" }}>
-                      <IssueEditMarkdownEditor value={stringField(issue.bodyMarkdown, "")} />
+                      <IssueEditMarkdownEditor
+                        focusRequest={bodyFocusRequest}
+                        value={stringField(issue.bodyMarkdown, "")}
+                      />
                     </dd>
                   </dl>
 
@@ -303,6 +319,7 @@ function ProjectIssueEditFormBody({
                           name="dueDate"
                           className="textbox full"
                           defaultValue={stringField(issueRecord.dueDateLabel, "")}
+                          ref={dueDateRef}
                         />
                         <button type="button" className="search-btn btn-calendar">
                           <i className="yobicon-calendar2"></i>
@@ -551,23 +568,34 @@ function IssueLabelSelect({
 }
 
 function LegacyTabIndexInput({
+  focusRequest = 0,
   tabIndexValue,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { tabIndexValue: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { focusRequest?: number; tabIndexValue: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.setAttribute("tabindex", tabIndexValue);
   }, [tabIndexValue]);
+  useEffect(() => {
+    if (focusRequest > 0) {
+      inputRef.current?.focus();
+    }
+  }, [focusRequest]);
   return <input ref={inputRef} {...props} />;
 }
 
-function IssueEditMarkdownEditor({ value }: { value: string }) {
+function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number; value: string }) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     bodyRef.current?.setAttribute("tabindex", "2");
   }, []);
+  useEffect(() => {
+    if (focusRequest > 0) {
+      bodyRef.current?.focus();
+    }
+  }, [focusRequest]);
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
@@ -706,6 +734,33 @@ function projectLogoUrl(project: ProjectContainer) {
 function stringFormValue(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function isValidIssueDueDate(value: string) {
+  const trimmed = value.trim();
+  return trimmed === "" || !Number.isNaN(Date.parse(trimmed));
+}
+
+function YobiToast({ message, noticeKey }: { message: string; noticeKey: number }) {
+  if (noticeKey === 0) {
+    return null;
+  }
+
+  return (
+    <div className="yobiToasts" key={noticeKey}>
+      <div className="toast" tabIndex={-1} key={noticeKey}>
+        <div className="btn-dismiss">
+          <button type="button" className="btn-transparent">
+            &times;
+          </button>
+        </div>
+        <div className="center-text">
+          <span className="v"></span>
+          <div className="msg">{message}</div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function stringField(value: unknown, fallback: string) {

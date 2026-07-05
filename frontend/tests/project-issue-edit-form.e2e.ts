@@ -231,7 +231,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     .toBe("kept");
 });
 
-test("project issue edit form renders legacy title required validation state", async ({ page }) => {
+test("project issue edit form translates legacy write validation behavior", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   let updateRequests = 0;
   let updateBody: Record<string, unknown> | undefined;
@@ -248,26 +248,38 @@ test("project issue edit form renders legacy title required validation state", a
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
   await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#title")).toBeFocused();
   await expect(page.locator("#title")).toHaveClass(/^text title\s*$/u);
   await expect(page.locator("dd > .message")).toHaveCount(0);
 
+  await page.locator("#title").press("Enter");
+  await expect(page.locator("#editor-body-body")).toBeFocused();
+  expect(updateRequests).toBe(0);
+
   await page.locator("#title").fill("");
+  let emptyTitleMessage = "";
+  page.once("dialog", async (dialog) => {
+    emptyTitleMessage = dialog.message();
+    await dialog.accept();
+  });
   await page.locator("#button-save").click();
 
-  await expect(page.locator("#title")).toHaveClass("text title error");
-  const message = page.locator("dd > .message");
-  await expect(message).toHaveCount(1);
-  await expect(message.locator("> div")).toHaveText("Required field!");
-  expect(
-    await message.evaluate((element) =>
-      element.nextElementSibling?.classList.contains("subtask-wrap"),
-    ),
-  ).toBe(true);
+  expect(emptyTitleMessage).toBe("Issue title is a required field.");
+  await expect(page.locator("#title")).toBeFocused();
+  await expect(page.locator("#title")).toHaveClass(/^text title\s*$/u);
+  await expect(page.locator("dd > .message")).toHaveCount(0);
   expect(updateRequests).toBe(0);
 
   await page.locator("#title").fill("Editable issue updated");
-  await expect(page.locator("#title")).toHaveClass(/^text title\s*$/u);
-  await expect(page.locator("dd > .message")).toHaveCount(0);
+  await page.locator("#issueDueDate").fill("not-a-date");
+  await page.locator("#button-save").click();
+  await expect(page.locator(".yobiToasts .toast .msg")).toHaveText(
+    "Issue due date is not valid date type.",
+  );
+  await expect(page.locator("#issueDueDate")).toBeFocused();
+  expect(updateRequests).toBe(0);
+
+  await page.locator("#issueDueDate").fill("2026-08-03");
   await page.locator("#button-save").click();
   await expect.poll(() => updateRequests).toBe(1);
   expect(updateBody?.isDraft).toBe(false);
