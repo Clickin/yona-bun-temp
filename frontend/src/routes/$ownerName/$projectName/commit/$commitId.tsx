@@ -173,7 +173,7 @@ function ProjectCommitDetailBody({
   const openThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const [reviewCardTab, setReviewCardTab] = useState<"closed" | "open">("open");
-  const nonRangedThreads = detail.threads.filter((thread) => thread.startLine === undefined);
+  const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
   const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
     branch: branch ?? "",
@@ -929,6 +929,10 @@ function InlineCommentRow({
       </td>
     </tr>
   );
+}
+
+function isNonRangedThread(thread: CodeReviewThread) {
+  return thread.startLine == null && thread.endLine == null;
 }
 
 function CodeCommentThreadView({
