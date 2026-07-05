@@ -252,6 +252,11 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await expect(projectLogoLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectNameLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(ownerNameLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(projectNameLink).toHaveClass("black");
+  await expect(ownerNameLink).toHaveClass("owner-name-small");
+  await expectNoActiveMarker(projectLogoLink);
+  await expectNoActiveMarker(projectNameLink);
+  await expectNoActiveMarker(ownerNameLink);
 
   await page.evaluate(() => {
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "project";
@@ -294,6 +299,7 @@ test("project directory labels keep legacy header links and query", async ({ pag
   await expect(projectLabel).toHaveClass("project-label bug");
   await expect(projectLabel).toHaveText("bug");
   await expect(projectLabel).toHaveAttribute("href", `${basePath}/projects?labelIds=8`);
+  await expectNoActiveMarker(projectLabel);
 
   await page.evaluate(() => {
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "label";
@@ -332,7 +338,10 @@ test("projects list renders legacy pagination controls for multi-page project li
   await expect(pagination.locator(".page-num").nth(2)).toHaveText("/");
   await expect(pagination.locator(".page-num").nth(3)).toHaveText("3");
 
-  const nextHref = await pagination.locator("a", { hasText: "Next page" }).getAttribute("href");
+  const nextPageLink = pagination.locator("a", { hasText: "Next page" });
+  await expectNoActiveMarker(nextPageLink);
+
+  const nextHref = await nextPageLink.getAttribute("href");
   expect(nextHref).not.toBeNull();
   const nextUrl = new URL(nextHref ?? "", page.url());
   expect(nextUrl.pathname).toBe(`${basePath}/projects`);
@@ -344,7 +353,7 @@ test("projects list renders legacy pagination controls for multi-page project li
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker =
       "pagination";
   });
-  await pagination.locator("a", { hasText: "Next page" }).click();
+  await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
   await expect
@@ -355,7 +364,10 @@ test("projects list renders legacy pagination controls for multi-page project li
     )
     .toBe("pagination");
 
-  const prevHref = await pagination.locator("a", { hasText: "Previous page" }).getAttribute("href");
+  const prevPageLink = pagination.locator("a", { hasText: "Previous page" });
+  await expectNoActiveMarker(prevPageLink);
+
+  const prevHref = await prevPageLink.getAttribute("href");
   expect(prevHref).not.toBeNull();
   const prevUrl = new URL(prevHref ?? "", page.url());
   expect(prevUrl.pathname).toBe(`${basePath}/projects`);
@@ -389,6 +401,7 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).toContain('name="pageNum"');
   expect(source).toContain("router.navigate");
   expect(source).toContain('"data-status": undefined');
+  expect(source).toContain('"aria-current": undefined');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');
   expect(source).not.toContain("const projectHref =");
@@ -396,6 +409,11 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).not.toContain("<a href={projectHref}");
   expect(source).not.toContain("<a href={ownerHref}");
 });
+
+async function expectNoActiveMarker(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).not.toHaveAttribute("aria-current", /./);
+  await expect(locator).not.toHaveAttribute("data-status", /./);
+}
 
 async function mockAuthenticatedProjects(page: Page, payload: Record<string, unknown> = {}) {
   await page.route("**/api/v1/session", async (route) => {

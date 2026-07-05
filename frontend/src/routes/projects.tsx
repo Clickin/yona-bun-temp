@@ -210,7 +210,11 @@ function ProjectsPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               search={pageSearch(currentPage - 1)}
               to="/projects"
             >
@@ -245,7 +249,11 @@ function ProjectsPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               search={pageSearch(currentPage + 1)}
               to="/projects"
             >
@@ -305,7 +313,11 @@ function ProjectListItem({
           <Link
             to="/$ownerName/$projectName"
             params={{ ownerName, projectName }}
-            activeProps={{ className: undefined }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
           >
             <img src={logoUrl} alt={projectName} />
           </Link>
@@ -316,7 +328,11 @@ function ProjectListItem({
               to="/$ownerName/$projectName"
               params={{ ownerName, projectName }}
               className="black"
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: "black",
+                "data-status": undefined,
+              }}
             >
               {projectName}
             </Link>
@@ -361,7 +377,11 @@ function ProjectListItem({
               to="/$user"
               params={{ user: ownerName }}
               className="owner-name-small"
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: "owner-name-small",
+                "data-status": undefined,
+              }}
             >
               {ownerName}
             </Link>{" "}
