@@ -50,6 +50,7 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
   expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("<a ");
+  expect(source).not.toContain("project.enrollmentRequestCount");
   expect(source).toContain("const LEGACY_LINK_PROPS = {");
   expect(source).toContain(
     'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
@@ -325,6 +326,27 @@ test("project webhooks settings surfaces follow legacy enrolled user badge", asy
   const adminCog = page.locator(".project-setting a");
   await expect(adminCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   await expect(adminCog.locator(".project-menu-count")).toHaveText("2");
+});
+
+test("project webhooks hides legacy member badges when enrolledUsers is absent", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [], {
+    project: {
+      enrolledUsers: undefined,
+      enrollmentRequestCount: 99,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  const memberTab = page.locator("#subMenuProjectMember a");
+  await expect(memberTab).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  await expect(memberTab).toHaveText("Member");
+  await expect(memberTab.locator(".num-badge")).toHaveCount(0);
+  const adminCog = page.locator(".project-setting a");
+  await expect(adminCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(adminCog.locator(".project-menu-count")).toHaveCount(0);
 });
 
 test("project webhooks JSON type forces git push checkbox like legacy script", async ({ page }) => {

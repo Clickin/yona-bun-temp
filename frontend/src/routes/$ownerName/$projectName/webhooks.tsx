@@ -625,10 +625,7 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const menuSetting = recordField(project.menuSetting);
-  const memberEnrollmentCount = countField(
-    project.enrolledUsers,
-    numberField(project.enrollmentRequestCount),
-  );
+  const memberEnrollmentCount = countField(project.enrolledUsers, 0);
 
   return (
     <ul className="nav nav-tabs">
@@ -733,10 +730,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
 }
 
 function countField(value: unknown, fallback: number) {
