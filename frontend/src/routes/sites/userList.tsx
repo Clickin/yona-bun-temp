@@ -30,6 +30,10 @@ type UserListSearch = {
 type UserToggleAction = "account-lock" | "guest" | "site-admin";
 
 const USER_STATES: SiteUserState[] = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"];
+const LEGACY_SITE_SETTING_NAV_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -433,43 +437,43 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
     <ul className="site-setting-nav">
       <li className="active">
-        <Link activeProps={{ className: undefined }} to="/sites/userList">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/userList">
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/postList">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/postList">
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/issueList">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/issueList">
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/projectList">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/projectList">
           <LegacyMessage messageKey="site.sidebar.projectList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/mail">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/mail">
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/massmail">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/massmail">
           <LegacyMessage messageKey="site.sidebar.massMail" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/update">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/update">
           <LegacyMessage messageKey="site.sidebar.update" />
           {showUpdateBadge ? <span className="notification-badge">1</span> : null}
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/diagnostic">
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/diagnostic">
           <LegacyMessage messageKey="site.sidebar.diagnostics" />
         </Link>
       </li>

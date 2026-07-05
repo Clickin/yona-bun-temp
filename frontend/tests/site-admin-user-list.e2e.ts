@@ -209,6 +209,11 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ]);
   await expect(page.locator(".site-setting-nav li").nth(0)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList`,
+  );
+  expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   await expect(page.locator('.site-setting-nav a[href$="/sites/setting"]')).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
   await expect(page.locator(".action-buttons a[data-request-method]")).toHaveCount(0);
@@ -491,6 +496,8 @@ test("site admin user pagination input selects and clamps like legacy yobi.Pagin
   });
 
   await page.goto(`${basePath}/sites/userList?state=ACTIVE&pageNum=2`);
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   const pageNumInput = page.locator('#pagination input[name="pageNum"]');
   await expect(pageNumInput).toHaveValue("2");
   await pageNumInput.click();
@@ -1048,6 +1055,17 @@ async function siteLayoutRootOrder(page: Page) {
       ),
       (element) => element.getAttribute("class"),
     ),
+  );
+}
+
+async function siteSettingNavActiveMarkerLeaks(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.flatMap((link) => {
+      const leaked = ["class", "aria-current", "data-status"].filter((name) => {
+        return link.hasAttribute(name);
+      });
+      return leaked.map((name) => `${link.getAttribute("href") ?? ""}:${name}`);
+    }),
   );
 }
 
