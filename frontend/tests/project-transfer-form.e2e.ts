@@ -235,6 +235,40 @@ test("project transfer fork origin link keeps legacy class without active marker
   });
 });
 
+test("project transfer member badges use enrolled user count instead of enrollment requests", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      enrolledUsers: [{ loginId: "alice" }, { loginId: "bob" }],
+      enrollmentRequestCount: 5,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
+  await expect(page.locator(".project-setting .project-menu-count")).not.toHaveText("5");
+  await expect(page.locator("#subMenuProjectMember .num-badge")).not.toHaveText("5");
+});
+
+test("project transfer member badges stay hidden when enrolled user count is zero", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      enrolledUsers: [],
+      enrollmentRequestCount: 4,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveCount(0);
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveCount(0);
+});
+
 test("project transfer settings tabs use direct TanStack Link targets", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url),
@@ -939,6 +973,7 @@ function transferProject() {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     destination: "",
+    enrolledUsers: [],
     enrollmentRequestCount: 0,
     id: 7,
     isFavorite: false,
