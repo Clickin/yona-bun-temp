@@ -16,8 +16,10 @@ type OrgsSearch = {
 type OrganizationDirectoryItem = YonaRecord & {
   createdLabel?: string;
   createdTitle?: string;
+  descr?: string;
   description?: string;
   logoUrl?: string;
+  name?: string;
   organizationName?: string;
 };
 
@@ -128,7 +130,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <ul className="all-projects">
                 {organizations.map((organization) => (
                   <OrganizationListItem
-                    key={organization.organizationName ?? ""}
+                    key={organizationDisplayName(organization)}
                     organization={organization}
                   />
                 ))}
@@ -248,7 +250,7 @@ function OrganizationsPagination({
 }
 
 function OrganizationListItem({ organization }: { organization: OrganizationDirectoryItem }) {
-  const organizationName = stringField(organization, "organizationName", "");
+  const organizationName = organizationDisplayName(organization);
   if (!organizationIsReadable(organization)) {
     return (
       <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
@@ -291,7 +293,7 @@ function OrganizationListItem({ organization }: { organization: OrganizationDire
               {organizationName}
             </Link>
           </div>
-          <div className="desc">{stringField(organization, "description", "")}</div>
+          <div className="desc">{organizationDescription(organization)}</div>
           <p className="name-tag">
             created <strong title={createdTitle}>{createdLabel}</strong>
           </p>
@@ -354,6 +356,14 @@ function organizationTotalPages(payload: unknown): number {
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function organizationDisplayName(record: YonaRecord): string {
+  return stringField(record, "organizationName", stringField(record, "name", ""));
+}
+
+function organizationDescription(record: YonaRecord): string {
+  return stringField(record, "description", stringField(record, "descr", ""));
 }
 
 function positiveInteger(value: unknown): number | undefined {

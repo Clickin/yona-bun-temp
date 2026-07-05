@@ -14,7 +14,7 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li>
@@ -50,7 +50,7 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -169,6 +169,35 @@ test("organization directory card links keep legacy hrefs and use SPA navigation
       ),
     )
     .toBe("kept");
+});
+
+test("organization directory card falls back to legacy org.name and org.descr fields", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedOrganizations(page, [
+    {
+      createdLabel: "just now",
+      createdTitle: "2026-06-30",
+      descr: "Legacy group description",
+      logoUrl: "",
+      name: "legacy-labs",
+    },
+  ]);
+
+  await page.goto(`${basePath}/orgs?filter=legacy`);
+  const card = page.locator(".all-projects .project").first();
+
+  await expect(card.locator(".owner-avatar-wrap a")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/legacy-labs`,
+  );
+  await expect(card.locator(".header a.black")).toHaveAttribute(
+    "href",
+    `${basePath}/organizations/legacy-labs`,
+  );
+  await expect(card.locator(".header a.black")).toHaveText("legacy-labs");
+  await expect(card.locator(".desc")).toHaveText("Legacy group description");
 });
 
 test("organization directory top tabs keep legacy hrefs without active marker leakage", async ({
