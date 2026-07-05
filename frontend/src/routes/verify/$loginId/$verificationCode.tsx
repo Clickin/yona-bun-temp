@@ -40,7 +40,15 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   }
 
   if (!verificationQuery.data) {
-    return <>{t("common.loading")}</>;
+    return (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <div className="page full">
+          <div className="center-wrap tag-line-wrap reset-password">
+            <p className="tag-line">{t("common.loading")}</p>
+          </div>
+        </div>
+      </SiteLayoutShell>
+    );
   }
 
   const verifiedLoginId =
