@@ -1726,6 +1726,61 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
   );
 });
 
+test("project issue list mass update toolbar affixes on scroll like legacy issue.MassUpdate.js", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "bulk");
+  await page.setViewportSize({ width: 1440, height: 1200 });
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
+  const toolbar = page.locator(".mass-update-wrap");
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await expect(toolbar).not.toHaveClass(/(?:^|\s)affix(?:\s|$)/u);
+
+  await page.evaluate(() => {
+    const spacer = document.createElement("div");
+    spacer.id = "issue-list-affix-spacer";
+    spacer.style.height = "3000px";
+    document.body.appendChild(spacer);
+  });
+  await page.evaluate(() => {
+    const toolbar = document.querySelector(".mass-update-wrap");
+    if (!(toolbar instanceof HTMLElement)) {
+      throw new Error("Expected mass update toolbar");
+    }
+    const top = toolbar.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(0, top);
+  });
+
+  await expect(toolbar).toHaveClass(/(?:^|\s)affix(?:\s|$)/u);
+  expect(
+    await toolbar.evaluate((element) => {
+      const style = window.getComputedStyle(element as HTMLElement);
+      return {
+        backgroundColor: style.backgroundColor,
+        paddingBottom: style.paddingBottom,
+        paddingTop: style.paddingTop,
+        position: style.position,
+        top: style.top,
+        zIndex: style.zIndex,
+      };
+    }),
+  ).toEqual({
+    backgroundColor: "rgb(255, 255, 255)",
+    paddingBottom: "15px",
+    paddingTop: "15px",
+    position: "fixed",
+    top: "0px",
+    zIndex: "900",
+  });
+
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
+  await expect(toolbar).not.toHaveClass(/(?:^|\s)affix(?:\s|$)/u);
+});
+
 async function expectMassUpdateReactRuntime(page: Page) {
   await expect(page.locator('script#labelListItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
   await expect(page.locator('script#labelCatetoryItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);

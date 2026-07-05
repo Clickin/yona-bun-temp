@@ -989,8 +989,10 @@ function MassUpdateToolbar({
   const selectedIssues = issues.filter((issue) =>
     selectedIssueIds.has(stringField(issue.id, String(issue.issueNumber))),
   );
+  const massUpdateWrapRef = useRef<HTMLDivElement>(null);
   const selectedIssueCount = selectedIssues.length;
   const hasSelectedIssues = selectedIssueCount > 0;
+  const [massUpdateAffixed, setMassUpdateAffixed] = useState(false);
   const [openMassUpdateDropdown, setOpenMassUpdateDropdown] = useState<string | null>(null);
   const allVisibleIssuesSelected =
     visibleIssueIds.length > 0 && visibleIssueIds.every((issueId) => selectedIssueIds.has(issueId));
@@ -1021,6 +1023,53 @@ function MassUpdateToolbar({
       setOpenMassUpdateDropdown(null);
     }
   }, [hasSelectedIssues]);
+  useEffect(() => {
+    const wrap = massUpdateWrapRef.current;
+    const affixAnchor = wrap?.parentElement;
+    if (!wrap || !affixAnchor || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) {
+          setMassUpdateAffixed(false);
+          return;
+        }
+        setMassUpdateAffixed(entry.intersectionRatio < 1);
+      },
+      {
+        root: null,
+        rootMargin: "-15px 0px 0px 0px",
+        threshold: [1],
+      },
+    );
+    observer.observe(affixAnchor);
+    return () => {
+      observer.disconnect();
+      setMassUpdateAffixed(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!massUpdateAffixed) {
+      return;
+    }
+    const wrap = massUpdateWrapRef.current;
+    if (!wrap) {
+      setMassUpdateAffixed(false);
+      return;
+    }
+    const affixAnchor = wrap.parentElement;
+    if (!affixAnchor) {
+      setMassUpdateAffixed(false);
+      return;
+    }
+    const anchorTop = affixAnchor.getBoundingClientRect().top;
+    if (anchorTop >= 15) {
+      setMassUpdateAffixed(false);
+    }
+  }, [massUpdateAffixed, selectedIssueIds]);
   const toggleMassUpdateDropdown = (dropdownId: string) => {
     if (!hasSelectedIssues) {
       return;
@@ -1099,7 +1148,14 @@ function MassUpdateToolbar({
   };
 
   return (
-    <div className="mass-update-wrap hide-in-mobile">
+    <div
+      ref={massUpdateWrapRef}
+      className={
+        massUpdateAffixed
+          ? "mass-update-wrap hide-in-mobile affix"
+          : "mass-update-wrap hide-in-mobile"
+      }
+    >
       <form
         id="mass-update-form"
         className="mass-update-form pull-left"
