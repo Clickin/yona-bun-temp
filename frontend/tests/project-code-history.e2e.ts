@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const ROUTE_SOURCE_PATH = "src/routes/$ownerName/$projectName/commits/$branch.tsx";
@@ -15,25 +15,61 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   await page.goto(`${basePath}/admin/sample/commits/main`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
-  await expect(page.locator(".nav-tabs a", { hasText: "Files" })).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/code/main`,
-  );
-  await expect(page.locator(".commit-id a", { hasText: "abcdef1" })).toHaveAttribute(
+  const filesTabLink = page.locator(".nav-tabs a", { hasText: "Files" });
+  const commitsTabLink = page.locator(".nav-tabs a", { hasText: "Commit" });
+  const branchesTabLink = page.locator(".nav-tabs a", { hasText: "Branches" });
+  const commitIdLink = page.locator(".commit-id a", { hasText: "abcdef1" });
+  const commitMessageLink = page.locator(".messages a.commitMsg.short", {
+    hasText: "Initial commit",
+  });
+  const authorAvatarLink = page.locator(".author a.avatar-wrap");
+  const olderPagerLink = page.locator(".actrow a.ybtn", { hasText: "Older" });
+  await expect(filesTabLink).toHaveText("Files");
+  await expect(filesTabLink).toHaveAttribute("href", `${basePath}/admin/sample/code/main`);
+  await expect(filesTabLink).not.toHaveAttribute("class", /.*/u);
+  await expect(filesTabLink).not.toHaveAttribute("title", /.*/u);
+  await expectNoTanStackActiveMarkers(filesTabLink);
+  await expect(commitsTabLink).toHaveText("Commit");
+  await expect(commitsTabLink).toHaveAttribute("href", `${basePath}/admin/sample/commits/main`);
+  await expect(commitsTabLink).not.toHaveAttribute("class", /.*/u);
+  await expect(commitsTabLink).not.toHaveAttribute("title", /.*/u);
+  await expectNoTanStackActiveMarkers(commitsTabLink);
+  await expect(branchesTabLink).toHaveText("Branches");
+  await expect(branchesTabLink).toHaveAttribute("href", `${basePath}/admin/sample/branches`);
+  await expect(branchesTabLink).not.toHaveAttribute("class", /.*/u);
+  await expect(branchesTabLink).not.toHaveAttribute("title", /.*/u);
+  await expectNoTanStackActiveMarkers(branchesTabLink);
+  await expect(commitIdLink).toHaveText("abcdef1");
+  await expect(commitIdLink).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890?branch=main`,
   );
-  await expect(
-    page.locator(".messages a.commitMsg.short", { hasText: "Initial commit" }),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
-  await expect(page.locator(".author a.avatar-wrap")).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(commitIdLink).not.toHaveAttribute("class", /.*/u);
+  await expect(commitIdLink).toHaveAttribute("title", "View commit");
+  await expectNoTanStackActiveMarkers(commitIdLink);
+  await expect(commitMessageLink).toHaveText("Initial commit");
+  await expect(commitMessageLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef1234567890?branch=main`,
+  );
+  await expect(commitMessageLink).toHaveClass("commitMsg short");
+  await expect(commitMessageLink).not.toHaveAttribute("title", /.*/u);
+  await expectNoTanStackActiveMarkers(commitMessageLink);
+  await expect(authorAvatarLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(authorAvatarLink).toHaveClass("avatar-wrap");
+  await expect(authorAvatarLink).toHaveAttribute("title", "admin");
+  await expectNoTanStackActiveMarkers(authorAvatarLink);
   await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("width");
   await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("height");
   await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("alt");
-  await expect(page.locator(".actrow a.ybtn", { hasText: "Older" })).toHaveAttribute(
+  await expect(olderPagerLink).toHaveText("Older");
+  await expect(olderPagerLink).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commits/main?page=2`,
   );
+  await expect(olderPagerLink).toHaveClass("ybtn pull-left");
+  await expect(olderPagerLink).not.toHaveAttribute("title", /.*/u);
+  await expectNoTanStackActiveMarkers(olderPagerLink);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_HISTORY_BODY.replaceAll("__BASE_PATH__", basePath)),
@@ -162,23 +198,34 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source).toContain("const showCommitSearch = commitDetailSearch(selectedBranch);");
   expect(source).toContain("return { branch };");
   expect(source).toMatch(/projectRoutePath\(\s*ownerName,\s*projectName,\s*"commit",/u);
+  expect(source).not.toContain("createLink");
   expect(source).not.toMatch(/<a(?:\s|>)/u);
   expect(source).not.toContain("</a>");
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("href={commitHref");
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("as never");
   expect(source).not.toContain("legacyInactiveLinkOptions");
   expect(source).not.toMatch(/\bdocument\./u);
   expect(source).not.toContain("addEventListener");
   expect(source).not.toContain("classList");
   expect(source).not.toContain("style.display");
-  expect(
-    source.match(
-      /activeOptions=\{\{\s*exact: true,\s*includeHash: true,\s*includeSearch: true,?\s*\}\}/gu,
-    ),
-  ).toHaveLength(8);
-  expect(source.match(/activeProps=\{\{ className: undefined \}\}/gu)).toHaveLength(8);
+  expect(source).toContain("const legacyCodeHistoryLinkActiveOptions = {");
+  expect(source).toContain("explicitUndefined: true");
+  expect(source).toContain("const legacyCodeHistoryLinkActiveProps = {");
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain("className: undefined");
+  expect(source).toContain('"data-status": undefined');
+  expect(source.match(/activeOptions=\{legacyCodeHistoryLinkActiveOptions\}/gu)).toHaveLength(8);
+  expect(source.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(8);
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
 });
+
+async function expectNoTanStackActiveMarkers(locator: Locator) {
+  await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.*/u);
+}
 
 async function historyLayoutMetrics(page: Page) {
   return page.locator("#history.commit-wrap").evaluate((history) => {

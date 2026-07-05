@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PULL_REQUEST_CHANGES_BASE = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body mb20"><div class="author-info right-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" data-toggle="tooltip" data-original-title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" data-toggle="tooltip" data-original-title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div></div><div class="codediff-wrap mt10 diffs-only"><div id="changes" class="diffs-wrap"><div id="commits" class="btn-group auto mb10"><button class="btn dropdown-toggle auto" data-toggle="dropdown"><span class="d-label">All commit changes</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="All"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">All commit changes</a></li><li class="divider"></li></ul></div><div class="diff-body diffs-wrap-scroll"><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button></div><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-review" markdown="true"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></div></div></div></div>
@@ -559,38 +559,59 @@ test("project pull request changes internal navigation links render legacy hrefs
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
 
-  await expect(page.locator(".author-info > .usf-group")).toHaveAttribute(
-    "href",
-    `${basePath}/dev`,
-  );
+  await assertLegacyAnchor(page.locator(".author-info > .usf-group"), {
+    className: "usf-group pull-left",
+    href: `${basePath}/dev`,
+    text: "Dev Member @dev",
+  });
+  await assertLegacyAnchor(page.locator("#review-form .author-info .avatar-wrap.medium"), {
+    className: "avatar-wrap medium",
+    href: `${basePath}/admin`,
+    text: "",
+    title: "",
+  });
   await expect(page.locator("#review-form .author-info .avatar-wrap.medium")).toHaveAttribute(
-    "href",
-    `${basePath}/admin`,
+    "data-original-title",
+    "Site Admin",
   );
-  await expect(page.locator("#thread-92 .author-info .avatar-wrap.medium")).toHaveAttribute(
-    "href",
-    `${basePath}/admin`,
-  );
-  await expect(page.locator("#comment-801 .comment-avatar .avatar-wrap")).toHaveAttribute(
-    "href",
-    `${basePath}/dev`,
-  );
-  await expect(page.locator("#comment-801 .comment_author a")).toHaveAttribute(
-    "href",
-    `${basePath}/dev`,
-  );
-  await expect(page.locator('#commits li[data-value="All"] a')).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/pullRequest/9/changes`,
-  );
-  await expect(page.locator(`#commits li[data-value="${SELECTED_COMMIT_ID}"] a`)).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`,
-  );
-  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
-  );
+  await assertLegacyAnchor(page.locator("#thread-92 .author-info .avatar-wrap.medium"), {
+    className: "avatar-wrap medium",
+    href: `${basePath}/admin`,
+    text: "",
+    title: "Site Admin",
+  });
+  await assertLegacyAnchor(page.locator("#comment-801 .comment-avatar .avatar-wrap"), {
+    className: "avatar-wrap",
+    href: `${basePath}/dev`,
+    text: "",
+    title: "Dev Member",
+  });
+  await assertLegacyAnchor(page.locator("#comment-801 .comment_author a"), {
+    href: `${basePath}/dev`,
+    text: "dev",
+    title: "Dev Member",
+  });
+  await assertLegacyAnchor(page.locator("#comment-801 .ago a"), {
+    href: `${basePath}/admin/sample/pullRequest/9/changes#comment-801`,
+    text: "Jul 7, 2026",
+    title: "Jul 7, 2026",
+  });
+  await assertLegacyAnchor(page.locator('#commits li[data-value="All"] a'), {
+    href: `${basePath}/admin/sample/pullRequest/9/changes`,
+    text: "All commit changes",
+  });
+  await assertLegacyAnchor(page.locator(`#commits li[data-value="${SELECTED_COMMIT_ID}"] a`), {
+    href: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}`,
+    text: "abcdef1Add UI",
+  });
+  await expect(
+    page.locator(`#commits li[data-value="${SELECTED_COMMIT_ID}"] a .commit-hash`),
+  ).toHaveClass("blue-txt mr10 commit-hash");
+  await assertLegacyAnchor(page.locator("#reviewcards-open .review-card.open"), {
+    className: "review-card open",
+    href: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
+    text: "General **note**OutdatedJul 7, 2026",
+  });
 });
 
 test("project pull request changes route source uses TanStack Links for navigation", async () => {
@@ -603,8 +624,22 @@ test("project pull request changes route source uses TanStack Links for navigati
     '"/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toMatch(/<a\s/u);
   expect(routeSource).toContain("<Link");
+  expect(routeSource).toContain("const legacyLinkActiveProps");
+  expect(routeSource).toContain(
+    "const legacyLinkActiveOptions = { exact: true, explicitUndefined: true }",
+  );
+  expect(routeSource).toContain(
+    "const legacyHashLinkActiveOptions = { exact: true, explicitUndefined: true, includeHash: true }",
+  );
+  expect(routeSource).toContain("const legacyLinkInactiveSearch = { __legacyActive: undefined }");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain(
     'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
   );
@@ -616,7 +651,7 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain('to="."');
   expect(routeSource).toContain("hash={`comment-${comment.id}`}");
   expect(routeSource).toContain("hash={`thread-${thread.id}`}");
-  expect(routeSource).toContain("activeOptions={{ includeHash: true }}");
+  expect(routeSource).toContain("activeOptions={legacyHashLinkActiveOptions}");
   expect(routeSource).toContain('type="button"');
   expect(routeSource).toContain("data-request-method");
 });
@@ -681,6 +716,32 @@ test("project pull request changes renders legacy outdated review-card class", a
     ),
   );
 });
+
+async function assertLegacyAnchor(
+  locator: Locator,
+  {
+    className,
+    href,
+    text,
+    title,
+  }: {
+    className?: string;
+    href: string;
+    text: string;
+    title?: string;
+  },
+) {
+  await expect(locator).toHaveAttribute("href", href);
+  await expect(locator).toHaveText(text);
+  if (className !== undefined) {
+    await expect(locator).toHaveClass(className);
+  }
+  if (title !== undefined) {
+    await expect(locator).toHaveAttribute("title", title);
+  }
+  await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.+/u);
+}
 
 async function assertEditorTabsAreReactOwned(page: Page, includesThread = false) {
   const editors = page.locator('.codediff-wrap [data-toggle="markdown-editor"]');

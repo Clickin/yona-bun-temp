@@ -28,14 +28,45 @@ test("project code file history matches legacy code/history.scala.html path DOM"
     "href",
     `${basePath}/admin/sample/commits/main`,
   );
-  await expect(page.locator("#history .commit-id a")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/commit/abcdef1234567890?branch=main&path=README.md#README-md`,
-  );
-  await expect(page.locator("#history .browse a")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/code/abcdef1/README.md`,
-  );
+  await assertLegacyAnchorNoActiveMarkers(page.locator("#breadcrumbs a").first(), {
+    href: `${basePath}/admin/sample/commits/main`,
+    text: "sample",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator("#breadcrumbs a").nth(1), {
+    href: `${basePath}/admin/sample/commits/main/README.md`,
+    text: "README.md",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator("#history .commit-id a"), {
+    href: `${basePath}/admin/sample/commit/abcdef1234567890?branch=main&path=README.md#README-md`,
+    text: "abcdef1",
+    title: "View commit",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator("#history .messages a.commitMsg.short"), {
+    className: "commitMsg short",
+    href: `${basePath}/admin/sample/commit/abcdef1234567890?branch=main&path=README.md#README-md`,
+    text: "Initial commit",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator("#history .browse a"), {
+    className: "ybtn",
+    href: `${basePath}/admin/sample/code/abcdef1/README.md`,
+    text: "Browse code",
+    title: "Browse code at this point",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator("#history .author a.avatar-wrap"), {
+    className: "avatar-wrap",
+    href: `${basePath}/admin`,
+    title: "admin",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator(".actrow a", { hasText: "Newer" }), {
+    className: "ybtn pull-left",
+    href: `${basePath}/admin/sample/commits/main/README.md?page=1`,
+    text: "Newer",
+  });
+  await assertLegacyAnchorNoActiveMarkers(page.locator(".actrow a", { hasText: "Older" }), {
+    className: "ybtn pull-left",
+    href: `${basePath}/admin/sample/commits/main/README.md?page=3`,
+    text: "Older",
+  });
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "code-history-file";
@@ -74,17 +105,23 @@ test("project code file history route uses TanStack Link for internal anchors", 
   );
   const removedAdapterName = ["legacy", "Inactive", "Link", "Options"].join("");
 
-  expect(routeSource).not.toMatch(/<a\s+href=/u);
+  expect(routeSource).not.toMatch(/<a\b/u);
   expect(routeSource).not.toContain("commitHref(");
+  expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("projectHref(");
   expect(routeSource).not.toContain(removedAdapterName);
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).toContain('import { Link, createFileRoute } from "@tanstack/react-router"');
   expect(
     routeSource.match(
       /activeOptions=\{\{\s*exact: true,\s*includeHash: true,\s*includeSearch: true,?\s*\}\}/gu,
     ),
   ).toHaveLength(8);
-  expect(routeSource.match(/activeProps=\{\{\s*className: undefined\s*\}\}/gu)).toHaveLength(8);
+  expect(routeSource.match(/activeProps=\{legacyActiveMarkerSuppressionProps\}/gu)).toHaveLength(8);
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
 });
 
 async function mockProjectCodeFileHistory(page: Page, historyRequests: string[], filePath: string) {
@@ -201,6 +238,33 @@ async function canonicalize(page: Page, selector: string) {
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
+}
+
+async function assertLegacyAnchorNoActiveMarkers(
+  locator: ReturnType<Page["locator"]>,
+  expected: {
+    className?: string;
+    href: string;
+    text?: string;
+    title?: string;
+  },
+) {
+  await expect(locator).toHaveAttribute("href", expected.href);
+  if (expected.text !== undefined) {
+    await expect(locator).toHaveText(expected.text);
+  }
+  if (expected.className !== undefined) {
+    await expect(locator).toHaveAttribute("class", expected.className);
+  } else {
+    await expect(locator).not.toHaveAttribute("class", /.*/u);
+  }
+  if (expected.title !== undefined) {
+    await expect(locator).toHaveAttribute("title", expected.title);
+  } else {
+    await expect(locator).not.toHaveAttribute("title", /.*/u);
+  }
+  await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(locator).not.toHaveAttribute("data-status", /.*/u);
 }
 
 async function canonicalizeHtml(page: Page, html: string) {

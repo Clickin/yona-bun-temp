@@ -27,6 +27,14 @@ import {
 } from "../$pullRequestNumber";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
+const legacyLinkActiveOptions = { exact: true, explicitUndefined: true };
+const legacyHashLinkActiveOptions = { exact: true, explicitUndefined: true, includeHash: true };
+const legacyLinkInactiveSearch = { __legacyActive: undefined };
+const legacyLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 type CurrentUserSummary = {
   avatarUrl: string;
@@ -171,7 +179,9 @@ function ProjectPullRequestChangesBody({
               <div className="author-info right-txt" style={{ marginTop: "20px" }}>
                 <Link
                   to={`/${pullRequest.contributor.loginId}`}
-                  activeProps={{ className: undefined }}
+                  search={legacyLinkInactiveSearch}
+                  activeOptions={legacyLinkActiveOptions}
+                  activeProps={legacyLinkActiveProps}
                   className="usf-group pull-left"
                 >
                   <span className="avatar-wrap smaller">
@@ -305,7 +315,9 @@ function NonRangedThread({
             <div className="author-info">
               <Link
                 to={`/${currentUser.loginId}`}
-                activeProps={{ className: undefined }}
+                search={legacyLinkInactiveSearch}
+                activeOptions={legacyLinkActiveOptions}
+                activeProps={legacyLinkActiveProps}
                 className="avatar-wrap medium"
                 title={currentUser.userLabel}
                 data-toggle="tooltip"
@@ -360,7 +372,9 @@ function NonRangedThreadComment({
       <div className="comment-avatar">
         <Link
           to={`/${comment.authorLoginId}`}
-          activeProps={{ className: undefined }}
+          search={legacyLinkInactiveSearch}
+          activeOptions={legacyLinkActiveOptions}
+          activeProps={legacyLinkActiveProps}
           className="avatar-wrap"
           data-toggle="tooltip"
           data-placement="top"
@@ -379,7 +393,9 @@ function NonRangedThreadComment({
           <span className="comment_author pull-left">
             <Link
               to={`/${comment.authorLoginId}`}
-              activeProps={{ className: undefined }}
+              search={legacyLinkInactiveSearch}
+              activeOptions={legacyLinkActiveOptions}
+              activeProps={legacyLinkActiveProps}
               data-toggle="tooltip"
               data-placement="top"
               title={comment.authorLabel}
@@ -391,8 +407,9 @@ function NonRangedThreadComment({
             <Link
               to="."
               hash={`comment-${comment.id}`}
-              activeOptions={{ includeHash: true }}
-              activeProps={{ className: undefined }}
+              search={legacyLinkInactiveSearch}
+              activeOptions={legacyHashLinkActiveOptions}
+              activeProps={legacyLinkActiveProps}
               title={comment.createdLabel}
             >
               {comment.createdLabel}
@@ -536,8 +553,9 @@ function ReviewCard({
     <Link
       to={reviewThreadPath(pullRequest, thread)}
       hash={`thread-${thread.id}`}
-      activeOptions={{ includeHash: true }}
-      activeProps={{ className: undefined }}
+      search={legacyLinkInactiveSearch}
+      activeOptions={legacyHashLinkActiveOptions}
+      activeProps={legacyLinkActiveProps}
       className={`review-card ${thread.state.toLowerCase()}${thread.isOutdated ? " outdated" : ""}`}
     >
       <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
@@ -695,7 +713,12 @@ function CommitDropdown({
       </button>
       <ul className="dropdown-menu">
         <li data-value="All">
-          <Link to={changesPath} activeProps={{ className: undefined }}>
+          <Link
+            to={changesPath}
+            search={legacyLinkInactiveSearch}
+            activeOptions={legacyLinkActiveOptions}
+            activeProps={legacyLinkActiveProps}
+          >
             {t("pullRequest.changes.all")}
           </Link>
         </li>
@@ -705,7 +728,9 @@ function CommitDropdown({
             <li data-value={commit.commitId} key={commit.commitId}>
               <Link
                 to={`${changesPath}/${encodeURIComponent(commit.commitId)}`}
-                activeProps={{ className: undefined }}
+                search={legacyLinkInactiveSearch}
+                activeOptions={legacyLinkActiveOptions}
+                activeProps={legacyLinkActiveProps}
               >
                 <strong className="blue-txt mr10 commit-hash">{commit.commitShortId}</strong>
                 <span>{commitSummary(commit)}</span>
@@ -764,7 +789,9 @@ function ReviewForm({ action, currentUser }: { action: string; currentUser: Curr
           <div className="author-info">
             <Link
               to={`/${currentUser.loginId}`}
-              activeProps={{ className: undefined }}
+              search={legacyLinkInactiveSearch}
+              activeOptions={legacyLinkActiveOptions}
+              activeProps={legacyLinkActiveProps}
               className="avatar-wrap medium"
               data-toggle="tooltip"
               data-placement="top"

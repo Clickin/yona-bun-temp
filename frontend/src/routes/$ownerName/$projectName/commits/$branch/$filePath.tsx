@@ -24,6 +24,12 @@ export type ProjectCodeFileHistoryRouteParams = {
   projectName: string;
 };
 
+const legacyActiveMarkerSuppressionProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 function ProjectCodeFileHistoryRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const routeParams = Route.useParams();
@@ -120,7 +126,7 @@ function ProjectCodeFileHistoryBody({
               <Link
                 to={projectRoutePath(ownerName, projectName, "commits", encodedBranch)}
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                activeProps={{ className: undefined }}
+                activeProps={legacyActiveMarkerSuppressionProps}
               >
                 {projectName}
               </Link>
@@ -128,7 +134,7 @@ function ProjectCodeFileHistoryBody({
                 <Link
                   to={projectRoutePath(ownerName, projectName, "commits", encodedBranch, item.path)}
                   activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                  activeProps={{ className: undefined }}
+                  activeProps={legacyActiveMarkerSuppressionProps}
                   key={item.path}
                 >
                   {item.name}
@@ -192,7 +198,7 @@ function ProjectCodeFileHistoryBody({
                                 includeHash: true,
                                 includeSearch: true,
                               }}
-                              activeProps={{ className: undefined }}
+                              activeProps={legacyActiveMarkerSuppressionProps}
                               title={t("code.showCommit")}
                             >
                               {commit.commitShortId}
@@ -228,7 +234,7 @@ function ProjectCodeFileHistoryBody({
                                 includeHash: true,
                                 includeSearch: true,
                               }}
-                              activeProps={{ className: undefined }}
+                              activeProps={legacyActiveMarkerSuppressionProps}
                             >
                               {t("code.showCode")}
                             </Link>
@@ -253,7 +259,7 @@ function ProjectCodeFileHistoryBody({
                 search={{ page: Math.max(0, history.page - 1) }}
                 className="ybtn pull-left"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                activeProps={{ className: undefined }}
+                activeProps={legacyActiveMarkerSuppressionProps}
               >
                 {t("code.newer")}
               </Link>
@@ -264,7 +270,7 @@ function ProjectCodeFileHistoryBody({
                 search={{ page: history.page + 1 }}
                 className="ybtn pull-left"
                 activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                activeProps={{ className: undefined }}
+                activeProps={legacyActiveMarkerSuppressionProps}
               >
                 {t("code.older")}
               </Link>
@@ -301,7 +307,7 @@ function CommitMessage({
         hash={hash}
         className="commitMsg short"
         activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-        activeProps={{ className: undefined }}
+        activeProps={legacyActiveMarkerSuppressionProps}
       >
         {summary}
       </Link>
@@ -327,7 +333,7 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         to={authorPath}
         className="avatar-wrap"
         activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-        activeProps={{ className: undefined }}
+        activeProps={legacyActiveMarkerSuppressionProps}
         data-toggle="tooltip"
         data-placement="top"
         title={commit.authorLoginId}

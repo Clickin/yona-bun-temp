@@ -13,6 +13,18 @@ type ProjectCodeHistorySearch = {
   page?: number;
 };
 
+const legacyCodeHistoryLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+const legacyCodeHistoryLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch")({
   component: ProjectCodeHistoryRoute,
   validateSearch(search): ProjectCodeHistorySearch {
@@ -123,8 +135,8 @@ function ProjectCodeHistoryBody({
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
                   params={{ branch: selectedBranch || "HEAD", ownerName, projectName }}
-                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
                 >
                   {t("code.files")}
                 </Link>
@@ -134,8 +146,8 @@ function ProjectCodeHistoryBody({
                   to="/$ownerName/$projectName/commits/$branch"
                   params={{ branch: selectedBranch, ownerName, projectName }}
                   search={{}}
-                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
                 >
                   {t("code.commits")}
                 </Link>
@@ -144,8 +156,8 @@ function ProjectCodeHistoryBody({
                 <Link
                   to="/$ownerName/$projectName/branches"
                   params={{ ownerName, projectName }}
-                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyCodeHistoryLinkActiveOptions}
+                  activeProps={legacyCodeHistoryLinkActiveProps}
                 >
                   {t("title.branches")}
                 </Link>
@@ -200,12 +212,8 @@ function ProjectCodeHistoryBody({
                             <Link
                               to={showCommitPath}
                               search={showCommitSearch}
-                              activeOptions={{
-                                exact: true,
-                                includeHash: true,
-                                includeSearch: true,
-                              }}
-                              activeProps={{ className: undefined }}
+                              activeOptions={legacyCodeHistoryLinkActiveOptions}
+                              activeProps={legacyCodeHistoryLinkActiveProps}
                               title={t("code.showCommit")}
                             >
                               {commit.commitShortId}
@@ -243,8 +251,8 @@ function ProjectCodeHistoryBody({
                 to="/$ownerName/$projectName/commits/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
                 search={{ page: Math.max(0, history.page - 1) }}
-                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                activeProps={{ className: undefined }}
+                activeOptions={legacyCodeHistoryLinkActiveOptions}
+                activeProps={legacyCodeHistoryLinkActiveProps}
                 className="ybtn pull-left"
               >
                 {t("code.newer")}
@@ -255,8 +263,8 @@ function ProjectCodeHistoryBody({
                 to="/$ownerName/$projectName/commits/$branch"
                 params={{ branch: selectedBranch, ownerName, projectName }}
                 search={{ page: history.page + 1 }}
-                activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                activeProps={{ className: undefined }}
+                activeOptions={legacyCodeHistoryLinkActiveOptions}
+                activeProps={legacyCodeHistoryLinkActiveProps}
                 className="ybtn pull-left"
               >
                 {t("code.older")}
@@ -290,8 +298,8 @@ function CommitMessage({
       <Link
         to={to}
         search={search}
-        activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-        activeProps={{ className: undefined }}
+        activeOptions={legacyCodeHistoryLinkActiveOptions}
+        activeProps={legacyCodeHistoryLinkActiveProps}
         className="commitMsg short"
       >
         {summary}
@@ -323,9 +331,9 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
     return (
       <Link
         to={authorPath}
-        activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
+        activeOptions={legacyCodeHistoryLinkActiveOptions}
         className="avatar-wrap"
-        activeProps={{ className: undefined }}
+        activeProps={legacyCodeHistoryLinkActiveProps}
         data-toggle="tooltip"
         data-placement="top"
         title={commit.authorLoginId}
