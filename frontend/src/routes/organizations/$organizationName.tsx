@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type MouseEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -76,6 +76,27 @@ function OrganizationHomeBody({
   );
   const viewerCanUpdate = booleanField(organization.viewerCanUpdate);
   const showLeaveButton = viewerCanLeave && viewerCanLeaveAfterValidation;
+
+  function insulateLeaveModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function openLeaveModal(event: MouseEvent<HTMLButtonElement>) {
+    insulateLeaveModalButtonClick(event);
+    setLeaveModalOpen(true);
+  }
+
+  function dismissLeaveModal(event: MouseEvent<HTMLButtonElement>) {
+    insulateLeaveModalButtonClick(event);
+    setLeaveModalOpen(false);
+  }
+
+  function submitLeave(event: MouseEvent<HTMLButtonElement>) {
+    insulateLeaveModalButtonClick(event);
+    leaveMutation.mutate();
+  }
+
   const leaveMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -171,7 +192,7 @@ function OrganizationHomeBody({
               <MemberPanel
                 basePath={runtimeConfig.basePath}
                 members={organization.adminMembers}
-                onLeaveClick={() => setLeaveModalOpen(true)}
+                onLeaveClick={openLeaveModal}
                 organizationName={organizationName}
                 showLeave={showLeaveButton && viewerCanUpdate}
                 title={t("user.role.org_admin")}
@@ -180,7 +201,7 @@ function OrganizationHomeBody({
                 basePath={runtimeConfig.basePath}
                 className="bubble-wrap gray project-home mt10"
                 members={organization.memberMembers}
-                onLeaveClick={() => setLeaveModalOpen(true)}
+                onLeaveClick={openLeaveModal}
                 organizationName={organizationName}
                 showLeave={showLeaveButton && !viewerCanUpdate}
                 title={t("user.role.org_member")}
@@ -189,18 +210,9 @@ function OrganizationHomeBody({
           </div>
         </div>
       </div>
-      <div
-        id="alertLeave"
-        className={leaveModalOpen ? "modal" : "modal hide"}
-        style={leaveModalOpen ? { display: "block" } : undefined}
-      >
+      <div id="alertLeave" className={leaveModalOpen ? "modal in" : "modal hide"}>
         <div className="modal-header">
-          <button
-            type="button"
-            className="close"
-            data-dismiss="modal"
-            onClick={() => setLeaveModalOpen(false)}
-          >
+          <button type="button" className="close" data-dismiss="modal" onClick={dismissLeaveModal}>
             ×
           </button>
           <h3>{t("organization.member.leave")}</h3>
@@ -213,7 +225,7 @@ function OrganizationHomeBody({
             type="button"
             className="ybtn ybtn-info ybtn-mini"
             id="leaveBtn"
-            onClick={() => leaveMutation.mutate()}
+            onClick={submitLeave}
           >
             {t("button.yes")}
           </button>
@@ -221,12 +233,13 @@ function OrganizationHomeBody({
             type="button"
             className="ybtn ybtn-mini"
             data-dismiss="modal"
-            onClick={() => setLeaveModalOpen(false)}
+            onClick={dismissLeaveModal}
           >
             {t("button.no")}
           </button>
         </div>
       </div>
+      {leaveModalOpen ? <div className="modal-backdrop in"></div> : null}
     </>
   );
 }
@@ -364,7 +377,7 @@ function MemberPanel({
   basePath: string;
   className?: string;
   members: YonaUserItem[];
-  onLeaveClick: () => void;
+  onLeaveClick: (event: MouseEvent<HTMLButtonElement>) => void;
   organizationName: string;
   showLeave: boolean;
   title: string;

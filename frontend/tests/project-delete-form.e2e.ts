@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_DELETE_FORM = `
 <div class="unsupported hidden">
@@ -113,11 +113,11 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
     </div>
     <div class="box-wrap bottom">
-      <button id="btnDelete" type="button" class="ybtn ybtn-danger"><i class="yobicon-database-remove"></i> Delete this project</button>
+      <button id="btnDelete" type="button" class="ybtn ybtn-danger" data-target="#alertDeletion" data-toggle="modal"><i class="yobicon-database-remove"></i> Delete this project</button>
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
-        <button type="button" class="close">×</button>
+        <button type="button" class="close" data-dismiss="modal">×</button>
         <h3>Do you want to delete this project?</h3>
       </div>
       <div class="modal-body">
@@ -126,7 +126,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
       <div class="modal-footer">
         <button id="btnDeleteExec" type="button" class="ybtn ybtn-danger">Yes</button>
-        <button type="button" class="ybtn">No</button>
+        <button type="button" class="ybtn" data-dismiss="modal">No</button>
       </div>
     </div>
   </div>
@@ -197,7 +197,29 @@ test("project delete form route has no TanStack route-cast escapes", async () =>
   expect(source).toContain("onClick=");
 });
 
-test("project delete confirmation modal opens, closes, deletes, and redirects through SPA", async ({
+test("project delete confirmation modal source stays route-owned", async () => {
+  const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
+  const modalSource = source.slice(
+    source.indexOf("const insulateDeletionModalButtonClick"),
+    source.indexOf("function ProjectHeader"),
+  );
+
+  expect(modalSource).toContain("event.preventDefault();");
+  expect(modalSource).toContain("event.stopPropagation();");
+  expect(modalSource).toContain('data-toggle="modal"');
+  expect(modalSource).toContain('data-target="#alertDeletion"');
+  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).toContain("setDeletionModalOpen(true);");
+  expect(modalSource).toContain("setDeletionModalOpen(false);");
+  expect(modalSource).toContain("onClick={openDeletionModal}");
+  expect(modalSource).toContain("onClick={dismissDeletionModal}");
+  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toContain("classList");
+  expect(modalSource).not.toContain("style.display");
+  expect(modalSource).not.toContain("addEventListener(");
+});
+
+test("project delete confirmation modal opens, dismisses, deletes, and redirects through SPA", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -206,39 +228,69 @@ test("project delete confirmation modal opens, closes, deletes, and redirects th
   await mockProjectAdmin(page, { deleteRequests });
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
+  const deleteFormUrl = page.url();
+  await rememberSpaMarker(page, "kept");
   await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
-  page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toBe("You should agree to delete this project.");
-    await dialog.accept();
+  const alertDeletion = page.locator("#alertDeletion");
+  const rejectedAlertPromise = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      const message = dialog.message();
+      await dialog.accept();
+      resolve(message);
+    });
   });
-  await page.locator("#btnDelete").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await armRootDeleteModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
+  await expect(rejectedAlertPromise).resolves.toBe("You should agree to delete this project.");
+  await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(deleteFormUrl);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
 
   await page.locator("#accept").check();
-  await page.locator("#btnDelete").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
-  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "block");
+  await armRootDeleteModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
+  await expect(alertDeletion).toHaveClass("modal hide in");
+  await expect(alertDeletion).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page).toHaveURL(deleteFormUrl);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
 
-  await page.locator("#alertDeletion .modal-footer .ybtn").filter({ hasText: "No" }).click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
-  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await armRootDeleteModalBridgeTrap(page);
+  expect(
+    await dispatchCancelableClick(page.locator('#alertDeletion [data-dismiss="modal"]').last()),
+  ).toBe(false);
+  await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(deleteFormUrl);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
 
-  await page.locator("#btnDelete").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
-  await page.locator("#alertDeletion .close").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await armRootDeleteModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
+  await expect(alertDeletion).toHaveClass("modal hide in");
+  await expect(page).toHaveURL(deleteFormUrl);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
+
+  await armRootDeleteModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#alertDeletion .close"))).toBe(false);
+  await expect(alertDeletion).toHaveClass("modal hide");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(deleteFormUrl);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
 
-  await page.evaluate(() => {
-    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
-  });
-  await page.locator("#btnDelete").click();
+  await armRootDeleteModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
   const deleteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample") &&
@@ -841,6 +893,62 @@ async function readDeleteNativeListenerAudit(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __deleteNativeListenerAudit?: string[] })
         .__deleteNativeListenerAudit ?? [],
+  );
+}
+
+async function armRootDeleteModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as Window &
+      typeof globalThis & {
+        __yonaDeleteModalBridgeHits?: string[];
+        __yonaDeleteModalBridgeTrapArmed?: boolean;
+      };
+    win.__yonaDeleteModalBridgeHits = [];
+    if (win.__yonaDeleteModalBridgeTrapArmed) {
+      return;
+    }
+    win.__yonaDeleteModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest('#btnDelete, #alertDeletion [data-dismiss="modal"]');
+      if (bridged) {
+        win.__yonaDeleteModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function rootDeleteModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaDeleteModalBridgeHits?: string[];
+          }
+      ).__yonaDeleteModalBridgeHits ?? [],
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
+}
+
+async function rememberSpaMarker(page: Page, value: string) {
+  await page.evaluate((nextValue) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextValue;
+  }, value);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
   );
 }
 

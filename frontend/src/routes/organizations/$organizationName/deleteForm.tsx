@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -13,6 +13,11 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 export const Route = createFileRoute("/organizations/$organizationName/deleteForm")({
   component: OrganizationDeleteFormRoute,
 });
+
+function insulateOrganizationDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 function OrganizationDeleteFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -53,8 +58,15 @@ function OrganizationDeleteFormBody({
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
   const [deletionModalOpen, setDeletionModalOpen] = useState(false);
-  const openDeletionModal = () => setDeletionModalOpen(true);
   const closeDeletionModal = () => setDeletionModalOpen(false);
+  const openDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateOrganizationDeleteModalButtonClick(event);
+    setDeletionModalOpen(true);
+  };
+  const dismissDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateOrganizationDeleteModalButtonClick(event);
+    closeDeletionModal();
+  };
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -116,6 +128,8 @@ function OrganizationDeleteFormBody({
               id="btnDelete"
               type="button"
               className="ybtn ybtn-danger"
+              data-toggle="modal"
+              data-target="#alertDeletion"
               onClick={openDeletionModal}
             >
               {t("organization.delete.this")}
@@ -132,7 +146,7 @@ function OrganizationDeleteFormBody({
                 type="button"
                 className="close"
                 data-dismiss="modal"
-                onClick={closeDeletionModal}
+                onClick={dismissDeletionModal}
               >
                 ×
               </button>
@@ -154,7 +168,7 @@ function OrganizationDeleteFormBody({
                 type="button"
                 className="ybtn"
                 data-dismiss="modal"
-                onClick={closeDeletionModal}
+                onClick={dismissDeletionModal}
               >
                 {t("button.no")}
               </button>

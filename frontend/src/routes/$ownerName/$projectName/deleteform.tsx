@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -88,7 +88,12 @@ function ProjectDeleteFormBody({
       window.alert(t("project.delete.error"));
     },
   });
-  const openDeletionModal = () => {
+  const insulateDeletionModalButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const openDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateDeletionModalButtonClick(event);
     if (!acceptedDeletion) {
       window.alert(t("project.delete.alert"));
       return;
@@ -96,6 +101,10 @@ function ProjectDeleteFormBody({
     setDeletionModalOpen(true);
   };
   const closeDeletionModal = () => setDeletionModalOpen(false);
+  const dismissDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateDeletionModalButtonClick(event);
+    closeDeletionModal();
+  };
 
   return (
     <>
@@ -130,6 +139,8 @@ function ProjectDeleteFormBody({
               id="btnDelete"
               type="button"
               className="ybtn ybtn-danger"
+              data-toggle="modal"
+              data-target="#alertDeletion"
               onClick={openDeletionModal}
             >
               <i className="yobicon-database-remove"></i> {t("project.delete.this")}
@@ -141,7 +152,12 @@ function ProjectDeleteFormBody({
             style={deletionModalOpen ? { display: "block" } : undefined}
           >
             <div className="modal-header">
-              <button type="button" className="close" onClick={closeDeletionModal}>
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={dismissDeletionModal}
+              >
                 ×
               </button>
               <h3>{t("project.delete.requestion")}</h3>
@@ -159,7 +175,12 @@ function ProjectDeleteFormBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" onClick={closeDeletionModal}>
+              <button
+                type="button"
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={dismissDeletionModal}
+              >
                 {t("button.no")}
               </button>
             </div>

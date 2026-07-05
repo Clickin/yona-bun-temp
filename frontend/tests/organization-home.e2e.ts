@@ -307,6 +307,7 @@ test("organization home project card links preserve legacy hrefs with SPA transi
     .toBe("kept");
 
   await page.goto(`${basePath}/organizations/weblabs`);
+  await expect(page.locator("#groupLeaveBtn")).toBeVisible();
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
@@ -411,24 +412,121 @@ test("organization home keeps legacy view.scala.html layout metrics", async ({ p
   expect(metrics.memberRow.color).toBe("rgb(153, 153, 153)");
 });
 
-test("organization home leave modal posts legacy leave action", async ({ page }) => {
+test("organization home leave modal stays route-owned across open dismiss and confirm", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const leaveRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installOrganizationHomeLeaveModalBridgeAudit(page);
   await mockOrganizationHome(page, { leaveRequests });
 
   await page.goto(`${basePath}/organizations/weblabs`);
-  await page.locator("#groupLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
+  await expect(page.locator("#groupLeaveBtn")).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
 
-  await page.locator('#alertLeave [data-dismiss="modal"]').last().click();
+  await dispatchCancelableClick(page, "#groupLeaveBtn");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
+
+  await dispatchCancelableClick(page, '#alertLeave .modal-footer [data-dismiss="modal"]');
   await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
   expect(leaveRequests).toEqual([]);
+  expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
-  await page.locator("#groupLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).not.toHaveClass(/hide/);
-  await page.locator("#leaveBtn").click();
+  await dispatchCancelableClick(page, "#groupLeaveBtn");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await dispatchCancelableClick(page, '#alertLeave .modal-header [data-dismiss="modal"]');
+  await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
+
+  await dispatchCancelableClick(page, "#groupLeaveBtn");
+  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  const leaveResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/organizations/weblabs/leave") &&
+      response.request().method() === "POST",
+  );
+  await dispatchCancelableClick(page, "#leaveBtn");
+  await leaveResponsePromise;
   await expect(page).toHaveURL(`${basePath}/organizations`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
+});
+
+test("organization home leave modal source insulates delegated modal bridge", () => {
+  const source = readFileSync(ORGANIZATION_HOME_ROUTE_SOURCE, "utf8");
+
+  expect(source).toContain("function insulateLeaveModalButtonClick");
+  expect(source).toContain("function openLeaveModal");
+  expect(source).toContain("function dismissLeaveModal");
+  expect(source).toContain("function submitLeave");
+  expect(source).toContain("event.preventDefault();");
+  expect(source).toContain("event.stopPropagation();");
+  expect(source).toContain('className={leaveModalOpen ? "modal in" : "modal hide"}');
+  expect(source).toContain('className="modal-backdrop in"');
+  expect(source).toContain("onClick={dismissLeaveModal}");
+  expect(source).toContain("onClick={submitLeave}");
+  expect(source).not.toContain('data-toggle="modal"');
+  expect(source).not.toContain("document.");
+  expect(source).not.toContain("classList");
+  expect(source).not.toContain("style.display");
+  expect(source).not.toContain('modal("show")');
+  expect(source).not.toContain('modal("hide")');
 });
 
 test("organization home hides leave button when legacy leave validation fails", async ({
@@ -882,6 +980,64 @@ async function readOrganizationHomeDropdownDocumentBridgeAudit(page: Page) {
           }
       ).__yonaOrganizationHomeDropdownDocumentBridgeListeners ?? [],
   );
+}
+
+async function installOrganizationHomeLeaveModalBridgeAudit(page: Page) {
+  await page.addInitScript(() => {
+    const modalBridgeHits: string[] = [];
+    Object.defineProperty(window, "__yonaOrganizationHomeLeaveModalBridgeHits", {
+      configurable: true,
+      value: modalBridgeHits,
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) {
+        return;
+      }
+      if (target.closest("#groupLeaveBtn")) {
+        modalBridgeHits.push("#groupLeaveBtn");
+        return;
+      }
+      if (target.closest("#leaveBtn")) {
+        modalBridgeHits.push("#leaveBtn");
+        return;
+      }
+      if (target.closest('#alertLeave .modal-header [data-dismiss="modal"]')) {
+        modalBridgeHits.push("header-dismiss");
+        return;
+      }
+      if (target.closest('#alertLeave .modal-footer [data-dismiss="modal"]')) {
+        modalBridgeHits.push("footer-dismiss");
+      }
+    });
+  });
+}
+
+async function readOrganizationHomeLeaveModalBridgeAudit(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaOrganizationHomeLeaveModalBridgeHits?: string[];
+          }
+      ).__yonaOrganizationHomeLeaveModalBridgeHits ?? [],
+  );
+}
+
+async function dispatchCancelableClick(page: Page, selector: string) {
+  await page.evaluate((targetSelector) => {
+    const element = document.querySelector(targetSelector);
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`Missing selector: ${targetSelector}`);
+    }
+    element.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }, selector);
 }
 
 async function canonicalizeLocator(page: Page, selector: string) {
