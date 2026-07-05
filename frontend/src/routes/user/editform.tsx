@@ -17,6 +17,19 @@ export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
 });
 
+const legacyEditTabLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+const legacyEditTabLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+const legacyEditTabLinkInactiveSearch = { __legacyEditTabActiveMarker: undefined };
+
 function UserProfileSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -283,27 +296,52 @@ function EditTabMenu({ active }: { active: string }) {
   return (
     <ul className="nav nav-tabs mt20">
       <li className={active === "profile" ? "active" : undefined}>
-        <Link to="/user/editform" activeProps={{ className: undefined }}>
+        <Link
+          to="/user/editform"
+          search={legacyEditTabLinkInactiveSearch}
+          activeOptions={legacyEditTabLinkActiveOptions}
+          activeProps={legacyEditTabLinkActiveProps}
+        >
           {t("userinfo.editProfile")}
         </Link>
       </li>
       <li className={active === "password" ? "active" : undefined}>
-        <Link to="/user/editform/password" activeProps={{ className: undefined }}>
+        <Link
+          to="/user/editform/password"
+          search={legacyEditTabLinkInactiveSearch}
+          activeOptions={legacyEditTabLinkActiveOptions}
+          activeProps={legacyEditTabLinkActiveProps}
+        >
           {t("userinfo.changePassword")}
         </Link>
       </li>
       <li className={active === "notifications" ? "active" : undefined}>
-        <Link to="/user/editform/notifications" activeProps={{ className: undefined }}>
+        <Link
+          to="/user/editform/notifications"
+          search={legacyEditTabLinkInactiveSearch}
+          activeOptions={legacyEditTabLinkActiveOptions}
+          activeProps={legacyEditTabLinkActiveProps}
+        >
           {t("userinfo.changeNotifications")}
         </Link>
       </li>
       <li className={active === "emails" ? "active" : undefined}>
-        <Link to="/user/editform/emails" activeProps={{ className: undefined }}>
+        <Link
+          to="/user/editform/emails"
+          search={legacyEditTabLinkInactiveSearch}
+          activeOptions={legacyEditTabLinkActiveOptions}
+          activeProps={legacyEditTabLinkActiveProps}
+        >
           {t("userinfo.changeEmails")}
         </Link>
       </li>
       <li className={active === "token" ? "active" : undefined}>
-        <Link to="/user/editform/token" activeProps={{ className: undefined }}>
+        <Link
+          to="/user/editform/token"
+          search={legacyEditTabLinkInactiveSearch}
+          activeOptions={legacyEditTabLinkActiveOptions}
+          activeProps={legacyEditTabLinkActiveProps}
+        >
           {t("userinfo.token")}
         </Link>
       </li>

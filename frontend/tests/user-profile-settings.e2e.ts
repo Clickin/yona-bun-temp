@@ -313,6 +313,22 @@ async function expectProfileEditTabs(page: Page, basePath: string) {
   ]);
   await expect(tabs.locator("li")).toHaveClass(["active", "", "", "", ""]);
   await expect(tabs.locator("a")).toHaveClass(["", "", "", "", ""]);
+  expect(
+    await tabs.locator("a").evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        ariaCurrent: anchor.getAttribute("aria-current"),
+        className: anchor.getAttribute("class"),
+        dataStatus: anchor.getAttribute("data-status"),
+        text: anchor.textContent?.trim(),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Edit profile" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Change password" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Notification settings" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Email settings" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "User Token" },
+  ]);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
