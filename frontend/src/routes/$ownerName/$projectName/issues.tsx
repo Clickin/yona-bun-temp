@@ -86,6 +86,17 @@ type LegacyOrderAttributes = HTMLAttributes<HTMLButtonElement> & {
   orderby: string;
   orderdir: string;
 };
+const legacyRouteLocalActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+  includeHash: true,
+  includeSearch: true,
+} as const;
+const legacyRouteLocalActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
 
 export const Route = createFileRoute("/$ownerName/$projectName/issues")({
   component: ProjectIssuesRoute,
@@ -792,7 +803,11 @@ function IssuePagination({
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
-            <Link activeProps={{ className: undefined }} to={pageRoutePath(currentPage - 1)}>
+            <Link
+              activeOptions={legacyRouteLocalActiveOptions}
+              activeProps={legacyRouteLocalActiveProps}
+              to={pageRoutePath(currentPage - 1)}
+            >
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
             </Link>
@@ -822,7 +837,11 @@ function IssuePagination({
         <li className="page-num">{totalPages}</li>
         <li className="page-num ikon">
           {hasNext ? (
-            <Link activeProps={{ className: undefined }} to={pageRoutePath(currentPage + 1)}>
+            <Link
+              activeOptions={legacyRouteLocalActiveOptions}
+              activeProps={legacyRouteLocalActiveProps}
+              to={pageRoutePath(currentPage + 1)}
+            >
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </Link>

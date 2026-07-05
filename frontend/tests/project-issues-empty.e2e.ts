@@ -937,6 +937,31 @@ test("project issue pagination updates route like legacy yobi.Pagination through
   ).toBe("issue-pagination");
 });
 
+test("project issue pagination anchors do not leak TanStack active markers on page 2", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&pageNum=2&state=open`);
+  const prevPage = page.locator("#pagination a").first();
+  const nextPage = page.locator("#pagination a").last();
+
+  await expect(prevPage).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=updatedDate&orderDir=desc&pageNum=1&state=open`,
+  );
+  await expect(nextPage).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?filter=bug&orderBy=updatedDate&orderDir=desc&pageNum=3&state=open`,
+  );
+  for (const paginationLink of [prevPage, nextPage]) {
+    await expect(paginationLink).not.toHaveAttribute("class", /.*/u);
+    await expect(paginationLink).not.toHaveAttribute("aria-current", /.*/u);
+    await expect(paginationLink).not.toHaveAttribute("data-status", /.*/u);
+  }
+});
+
 test("project issue pagination input clamps and routes like legacy yobi.Pagination keydown", async ({
   page,
 }) => {
