@@ -110,6 +110,11 @@ test("current-user notification settings page matches legacy user/edit_notificat
     `${basePath}/user/editform/token`,
   ]);
   await expect(editTabs.nth(2)).toHaveClass("active");
+  expect(
+    await editTabs
+      .locator("a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("class"))),
+  ).toEqual([null, null, null, null, null]);
 
   await expect(page.locator('.nav-tabs a:has-text("Email settings")')).toHaveAttribute(
     "href",
@@ -153,7 +158,9 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("to={href}");
-  expect(source).toContain('<Link to="/user/editform/notifications">');
+  expect(source).toContain(
+    '<Link to="/user/editform/notifications" activeProps={{ className: undefined }}>',
+  );
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -380,17 +387,6 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttribute(current: Element, name: string) {
-      if (
-        name === "class" &&
-        current.tagName.toLowerCase() === "a" &&
-        current.closest(".page-wrap .nav-tabs")
-      ) {
-        const className = (current.getAttribute(name) ?? "")
-          .split(/\s+/)
-          .filter((value) => value && value !== "active")
-          .join(" ");
-        return className ? `${name}=${JSON.stringify(className)}` : "";
-      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
@@ -464,17 +460,6 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
 
       function normalizeAttribute(current: Element, name: string) {
-        if (
-          name === "class" &&
-          current.tagName.toLowerCase() === "a" &&
-          current.closest(".page-wrap .nav-tabs")
-        ) {
-          const className = (current.getAttribute(name) ?? "")
-            .split(/\s+/)
-            .filter((value) => value && value !== "active")
-            .join(" ");
-          return className ? `${name}=${JSON.stringify(className)}` : "";
-        }
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
 
