@@ -110,17 +110,32 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
     "Email settings",
     "User Token",
   ]);
-  await expect(editTabs.locator("a")).toHaveClass(["", "", "", "", ""]);
+  const editTabLinks = editTabs.locator("a");
+  await expect(editTabLinks).toHaveClass(["", "", "", "", ""]);
   expect(
-    await editTabs
-      .locator("a")
-      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+    await editTabLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/user/editform`,
     `${basePath}/user/editform/password`,
     `${basePath}/user/editform/notifications`,
     `${basePath}/user/editform/emails`,
     `${basePath}/user/editform/token`,
+  ]);
+  expect(
+    await editTabLinks.evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+        text: link.textContent?.trim(),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Edit profile" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Change password" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Notification settings" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "Email settings" },
+    { ariaCurrent: null, className: null, dataStatus: null, text: "User Token" },
   ]);
   await expect(editTabs.nth(4)).toHaveClass("active");
   await page.evaluate(() => {
@@ -143,9 +158,9 @@ test("current-user token settings route uses typed tab Links without a route-loc
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("to={href}");
-  expect(source).toContain(
-    '<Link to="/user/editform/token" activeProps={{ className: undefined }}>',
-  );
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain('"data-status": undefined');
+  expect(source).toContain("activeProps={legacyEditTabLinkActiveProps}");
 });
 
 async function mockAuthenticatedSession(page: Page) {
