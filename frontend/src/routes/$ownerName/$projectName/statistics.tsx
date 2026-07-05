@@ -242,6 +242,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                           type="button"
                           className="ybtn ybtn-watching watchBtn"
                           onClick={(event) => {
+                            event.preventDefault();
                             event.stopPropagation();
                             setWatchDropdownOpen(false);
                             watchMutation.mutate(!isWatchingProject);
@@ -257,6 +258,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                       type="button"
                       data-toggle="dropdown"
                       onClick={(event) => {
+                        event.preventDefault();
                         event.stopPropagation();
                         setWatchDropdownOpen((open) => !open);
                       }}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -297,6 +297,19 @@ function ProjectMemberListItem({
     }
   }
 
+  function onRoleToggleClick(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsRoleMenuOpen((current) => !current);
+  }
+
+  function onRoleItemClick(event: MouseEvent<HTMLButtonElement>, roleName: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsRoleMenuOpen(false);
+    updateRoleMutation.mutate(roleName);
+  }
+
   return (
     <li className="member span6 span-hard-wrap">
       <Link
@@ -328,10 +341,7 @@ function ProjectMemberListItem({
               <button
                 className="btn dropdown-toggle large"
                 data-toggle="dropdown"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setIsRoleMenuOpen((current) => !current);
-                }}
+                onClick={onRoleToggleClick}
               >
                 <span className="d-label">{roleLabel(members, stringField(member.role, ""))}</span>
                 <span className="d-caret">
@@ -358,11 +368,7 @@ function ProjectMemberListItem({
                           `/${ownerName}/${projectName}/member/${userId}/edit`,
                         )}
                         data-loginid={loginId}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setIsRoleMenuOpen(false);
-                          updateRoleMutation.mutate(roleName);
-                        }}
+                        onClick={(event) => onRoleItemClick(event, roleName)}
                       >
                         {stringField(role.label, roleName)}
                       </button>

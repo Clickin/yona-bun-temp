@@ -12,7 +12,7 @@ const EXPECTED_PROJECT_STATISTICS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -113,7 +113,13 @@ test("project statistics route TSX has no route-local raw anchor elements", () =
   expect(STATISTICS_ROUTE_SOURCE).toContain("Link");
   expect(STATISTICS_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(STATISTICS_ROUTE_SOURCE).toContain("onClick=");
+  expect(STATISTICS_ROUTE_SOURCE).toContain("event.preventDefault();");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("onMouseDown=");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("document.");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("classList");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("style.display");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("<a ");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("</a>");
 });
@@ -197,6 +203,7 @@ test("project statistics header renders legacy watch dropdown and toggles projec
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installProjectWatchDropdownBubbleAudit(page);
   await mockProjectAdmin(page, { watchRequests });
 
   await page.goto(`${basePath}/admin/sample/statistics`);
@@ -207,10 +214,40 @@ test("project statistics header renders legacy watch dropdown and toggles projec
   await expect(watcherCount).toHaveText("3");
   await expect(watchButton).toHaveText("Watch");
 
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "project-statistics-watch-dropdown";
+  });
+  const urlBeforeWatchDropdown = page.url();
+
   await watchButton.click();
   await expect(page.locator(".project-util > li")).toHaveClass("open");
+  await expect(page.locator(".project-util .watch-btn")).toHaveClass(
+    "btn-group dropdown watch-btn open",
+  );
   await expect(page.locator(".project-util .pop-title")).toHaveText(
     "You are not watching the sample project.",
+  );
+  expect(page.url()).toBe(urlBeforeWatchDropdown);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("project-statistics-watch-dropdown");
+  await expect.poll(() => projectWatchDropdownBubbleClicks(page)).toEqual([]);
+
+  await watchButton.click();
+  await expect(page.locator(".project-util > li")).not.toHaveClass("open");
+  await expect(page.locator(".project-util .watch-btn")).toHaveClass(
+    "btn-group dropdown watch-btn",
+  );
+  expect(page.url()).toBe(urlBeforeWatchDropdown);
+  await expect.poll(() => projectWatchDropdownBubbleClicks(page)).toEqual([]);
+
+  await watchButton.click();
+  await expect(page.locator(".project-util > li")).toHaveClass("open");
+  await expect(page.locator(".project-util .watch-btn")).toHaveClass(
+    "btn-group dropdown watch-btn open",
   );
   await expect(page.locator(".project-util .btn-wrap .ybtn").first()).toHaveAttribute(
     "href",
@@ -226,6 +263,14 @@ test("project statistics header renders legacy watch dropdown and toggles projec
   await watchResponsePromise;
 
   expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(page.url()).toBe(urlBeforeWatchDropdown);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("project-statistics-watch-dropdown");
+  await expect.poll(() => projectWatchDropdownBubbleClicks(page)).toEqual([]);
+  await expect(page.locator(".project-util > li")).not.toHaveClass("open");
   await expect(watcherCount).toHaveText("4");
   await expect(watcherCount).toHaveClass(/watch-on/);
   await expect(watchButton).toHaveText("Unwatch");
@@ -322,6 +367,36 @@ async function pushStateCalls(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __yonaPushStateCalls?: string[] })
         .__yonaPushStateCalls?.length ?? 0,
+  );
+}
+
+async function installProjectWatchDropdownBubbleAudit(page: Page) {
+  await page.addInitScript(() => {
+    const dropdownClicks: string[] = [];
+    Object.defineProperty(window, "__yonaProjectWatchDropdownBubbleClicks", {
+      configurable: true,
+      value: dropdownClicks,
+    });
+    document.addEventListener("click", (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest(
+          ".project-util .watch-btn .down-arrow[data-toggle='dropdown'], .project-util .watch-btn .watchBtn",
+        )
+      ) {
+        dropdownClicks.push(
+          event.target.closest("[data-toggle='dropdown']") ? "watch:toggle" : "watch:action",
+        );
+      }
+    });
+  });
+}
+
+async function projectWatchDropdownBubbleClicks(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __yonaProjectWatchDropdownBubbleClicks?: string[] })
+        .__yonaProjectWatchDropdownBubbleClicks ?? [],
   );
 }
 

@@ -306,6 +306,13 @@ test("project members role and delete side effects use React buttons", async ({ 
     )
     .toBe("kept");
   await expect.poll(() => documentDropdownBubbleClicks(page)).toEqual([]);
+  await roleToggle.click();
+  await expect(roleGroup).toHaveAttribute("class", "btn-group");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+  await expect.poll(() => documentDropdownBubbleClicks(page)).toEqual([]);
+  await roleToggle.click();
+  await expect(roleGroup).toHaveClass("btn-group open");
+  await expect.poll(() => documentDropdownBubbleClicks(page)).toEqual([]);
   await expect
     .poll(() => roleButtonMetrics(roleApply))
     .toEqual({
@@ -338,6 +345,7 @@ test("project members role and delete side effects use React buttons", async ({ 
   );
   await roleApply.click();
   await roleResponse;
+  await expect.poll(() => documentDropdownBubbleClicks(page)).toEqual([]);
 
   await expect
     .poll(() => requests.roleUpdates)
@@ -655,9 +663,15 @@ async function installDocumentDropdownBubbleAudit(page: Page) {
     document.addEventListener("click", (event) => {
       if (
         event.target instanceof Element &&
-        event.target.closest('.members.project [data-name="roleof-alice"] [data-toggle="dropdown"]')
+        event.target.closest(
+          '.members.project [data-name="roleof-alice"] [data-toggle="dropdown"], .members.project [data-name="roleof-alice"] [data-action="apply"]',
+        )
       ) {
-        dropdownClicks.push("roleof-alice");
+        dropdownClicks.push(
+          event.target.closest('[data-toggle="dropdown"]')
+            ? "roleof-alice:toggle"
+            : "roleof-alice:item",
+        );
       }
     });
   });

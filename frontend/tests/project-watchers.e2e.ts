@@ -15,7 +15,7 @@ const EXPECTED_PROJECT_WATCHERS = `
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
     </ul>
@@ -109,6 +109,8 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain("toggleProjectWatchRest");
   expect(source).toContain("onClick={(event) =>");
+  expect(source).toContain("event.preventDefault();");
+  expect(source).toContain("event.stopPropagation();");
   expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("legacyUserSearch");
   expect(source).not.toContain("daysAgo: undefined");
@@ -204,9 +206,16 @@ test("project watchers header renders legacy watch dropdown and toggles project 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await installWatchDropdownDelegatedClickTrap(page);
   await mockProjectAdmin(page, { watchRequests, watchResponseCount: 1 });
 
   await page.goto(`${basePath}/admin/sample/watchers`);
+  const initialUrl = page.url();
+  await page.evaluate(() => {
+    (
+      window as Window & typeof globalThis & { __watchDropdownSpaMarker?: string }
+    ).__watchDropdownSpaMarker = "kept";
+  });
   const watchButtonGroup = page.locator(".project-util .watch-btn");
   await expect(watchButtonGroup.locator(".watcher-count")).toHaveAttribute(
     "href",
@@ -220,6 +229,21 @@ test("project watchers header renders legacy watch dropdown and toggles project 
   await expect(watchButtonGroup.locator(".watcher-count")).toHaveClass(/watch-on/);
   await expect(watchButtonGroup.locator(".down-arrow")).toHaveText("Unwatch");
 
+  await watchButtonGroup.locator(".down-arrow").click();
+  await expect(watchButtonGroup).toHaveClass(/open/);
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __watchDropdownSpaMarker?: string })
+          .__watchDropdownSpaMarker,
+    ),
+  ).toBe("kept");
+  await expect.poll(() => watchDropdownDelegatedClickTrapHits(page)).toEqual([]);
+  await watchButtonGroup.locator(".down-arrow").click();
+  await expect(watchButtonGroup).not.toHaveClass(/open/);
+  expect(page.url()).toBe(initialUrl);
+  await expect.poll(() => watchDropdownDelegatedClickTrapHits(page)).toEqual([]);
   await watchButtonGroup.locator(".down-arrow").click();
   await expect(watchButtonGroup).toHaveClass(/open/);
   await expect(watchButtonGroup.locator(".pop-title")).toHaveText(
@@ -239,8 +263,18 @@ test("project watchers header renders legacy watch dropdown and toggles project 
   await watchResponsePromise;
 
   expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __watchDropdownSpaMarker?: string })
+          .__watchDropdownSpaMarker,
+    ),
+  ).toBe("kept");
+  await expect.poll(() => watchDropdownDelegatedClickTrapHits(page)).toEqual([]);
   await expect(watchButtonGroup.locator(".watcher-count")).toHaveText("1");
   await expect(watchButtonGroup.locator(".watcher-count")).not.toHaveClass(/watch-on/);
+  await expect(watchButtonGroup).not.toHaveClass(/open/);
   await expect(watchButtonGroup.locator(".down-arrow")).toHaveText("Watch");
 });
 
@@ -418,6 +452,38 @@ async function favoriteSpanNativeListeners(page: Page) {
     () =>
       (window as Window & typeof globalThis & { __yonaFavoriteSpanNativeListeners?: string[] })
         .__yonaFavoriteSpanNativeListeners ?? [],
+  );
+}
+
+async function installWatchDropdownDelegatedClickTrap(page: Page) {
+  await page.addInitScript(() => {
+    const hits: string[] = [];
+    Object.defineProperty(window, "__yonaWatchDropdownDelegatedClickTrapHits", {
+      configurable: true,
+      value: hits,
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const delegatedTarget = target.closest(
+        '.watch-btn [data-toggle="dropdown"], .watch-btn .watchBtn',
+      );
+      if (delegatedTarget) {
+        hits.push(delegatedTarget.matches('[data-toggle="dropdown"]') ? "trigger" : "watch-action");
+      }
+    });
+  });
+}
+
+async function watchDropdownDelegatedClickTrapHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __yonaWatchDropdownDelegatedClickTrapHits?: string[] }
+      ).__yonaWatchDropdownDelegatedClickTrapHits ?? [],
   );
 }
 
