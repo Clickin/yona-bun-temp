@@ -129,7 +129,8 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             <tbody>
               <tr>
                 <td>
-                  <img src={profile?.avatarUrl || undefined} width="40" height="40" alt="" />
+                  {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
+                  <img src={profile?.avatarUrl || undefined} width="40" height="40" />
                   <strong className="ml10">{profile?.primaryEmailAddress ?? ""}</strong>
                   <span className="label-head vmiddle ml10">{t("emails.main.email")}</span>
                 </td>
@@ -147,12 +148,8 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                 return (
                   <tr key={id || stringValue(row.emailAddress)}>
                     <td>
-                      <img
-                        src={stringValue(row.avatarUrl) || undefined}
-                        width="40"
-                        height="40"
-                        alt=""
-                      />
+                      {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
+                      <img src={stringValue(row.avatarUrl) || undefined} width="40" height="40" />
                       <span className="ml10">{stringValue(row.emailAddress)}</span>
                     </td>
                     <td style={{ textAlign: "right", verticalAlign: "middle" }}>

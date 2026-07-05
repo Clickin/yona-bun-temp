@@ -22,7 +22,7 @@ const EXPECTED_USER_EMAIL_SETTINGS_SCREEN = `
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
@@ -129,6 +129,12 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active > a")).toHaveText(
     "Email settings",
   );
+  await expect(page.locator("table.table.mt20 img")).toHaveCount(3);
+  expect(
+    await page
+      .locator("table.table.mt20 img")
+      .evaluateAll((images) => images.map((image) => image.hasAttribute("alt"))),
+  ).toEqual([false, false, false]);
 
   const setMainButton = page.locator('button[href$="/user/email/setAsMain/11"]');
   const sendValidationButton = page.locator('button[href$="/user/email/sendValidationEmail/12"]');
