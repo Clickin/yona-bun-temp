@@ -409,10 +409,14 @@ function MilestoneIssueLink({
 }
 
 function issueSearchText(issue: ProjectMilestoneIssue) {
+  const issueNumber = stringField(issue.issueNumber);
+  const title = stringField(issue.title);
+  const assignee = stringField(issue.assigneeLabel);
   return [
-    stringField(issue.issueNumber),
-    stringField(issue.title),
-    stringField(issue.assigneeLabel),
+    issueNumber,
+    `#${issueNumber}`,
+    title,
+    assignee ? `${title} - ${assignee}` : title,
     ...issue.labels.map((label) => stringField(label.name)),
   ]
     .join(" ")

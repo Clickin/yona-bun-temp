@@ -103,6 +103,17 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     page.locator('.issue-link[href$="/issue/12"]').filter({ hasText: "#12" }),
   ).toBeVisible();
 
+  await page.fill('.filter-wrap.milestone input[name="filter"]', "#11");
+  await expect(
+    page.locator('.issue-link[href$="/issue/11"]').filter({ hasText: "#11" }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.issue-link[href$="/issue/12"]').filter({ hasText: "#12" }),
+  ).toBeHidden();
+  await expect(page.locator('.issue-label[data-category-id="3"][data-label-id="8"] a')).toHaveCount(
+    0,
+  );
+
   await page.click('.nav-tabs a:has-text("Closed")');
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestones?state=closed`);
 });
