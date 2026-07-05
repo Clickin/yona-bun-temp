@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
 import { RestApiError } from "../api/rest-client";
@@ -22,6 +23,14 @@ const legacyAnchorActiveProps = {
   "data-status": undefined,
 };
 
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
+
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
 });
@@ -42,9 +51,19 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
   const siteName = runtimeConfig.siteName ?? "Yona";
   const welcome = lookupLegacyMessage(language, "app.welcome", { args: [siteName] });
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
+  const logoLinkProps = useLinkProps({
+    activeProps: legacyAnchorActiveProps,
+    className: "logo",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
   const capabilitiesQuery = useQuery({
     queryFn: () => readAuthUiCapabilitiesRest(runtimeConfig),
     queryKey: apiQueryKeys.auth.capabilities(),
@@ -97,9 +116,9 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <Link to="/" className="logo" activeProps={legacyAnchorActiveProps}>
+              <LegacyHrefAnchor {...logoLinkProps} legacyHref={homeHref}>
                 <span>{siteName}</span>
-              </Link>
+              </LegacyHrefAnchor>
 
               <h3>{welcome}</h3>
 
@@ -254,15 +273,35 @@ function FieldErrorLabels({ errors }: { errors?: string[] }) {
 
 function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
   const siteName = runtimeConfig.siteName ?? "Yona";
+  const logoLinkProps = useLinkProps({
+    activeProps: legacyAnchorActiveProps,
+    className: "logo",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
+  const homeButtonLinkProps = useLinkProps({
+    activeProps: legacyAnchorActiveProps,
+    className: "ybtn ybtn-info",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    to: "/",
+  });
 
   return (
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <Link to="/" className="logo" activeProps={legacyAnchorActiveProps}>
+          <LegacyHrefAnchor {...logoLinkProps} legacyHref={homeHref}>
             <h1 className="blind">{siteName}</h1>
-          </Link>
+          </LegacyHrefAnchor>
           <ul className="gnb-nav">
             <li>
               <Link to="/projects" activeProps={legacyAnchorActiveProps}>
@@ -292,9 +331,9 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <div className="error-wrap">
             <i className="ico ico-err2" />
             <p>{t("error.notfound")}</p>
-            <Link to="/" className="ybtn ybtn-info" activeProps={legacyAnchorActiveProps}>
+            <LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>
               {t("menu.home")}
-            </Link>
+            </LegacyHrefAnchor>
           </div>
         </div>
       </div>

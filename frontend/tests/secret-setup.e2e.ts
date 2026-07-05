@@ -123,7 +123,7 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_SECRET_SCREEN.replace("__ROOT_HREF__", tanStackRootHref(basePath)),
+    EXPECTED_SECRET_SCREEN.replace("__ROOT_HREF__", legacyRootHref(basePath)),
   );
 
   expect(actual).toEqual(expected);
@@ -183,11 +183,11 @@ test("first-run secret setup logo is SPA-owned internal navigation", async ({ pa
   await page.goto(`${basePath}/secret`);
   await expect(page.locator(".secret-wrap .logo")).toHaveAttribute(
     "href",
-    tanStackRootHref(basePath),
+    legacyRootHref(basePath),
   );
   await expectLegacyAnchor(page, ".secret-wrap .logo", {
     className: "logo",
-    href: tanStackRootHref(basePath),
+    href: legacyRootHref(basePath),
     text: "Yona",
   });
   await expect(page.locator(".secret-wrap .logo span")).toHaveText("Yona");
@@ -200,12 +200,7 @@ test("first-run secret setup logo is SPA-owned internal navigation", async ({ pa
   });
 
   await page.locator(".secret-wrap .logo").click();
-  await page.waitForFunction((expectedBasePath) => {
-    const normalizedRoot = expectedBasePath === "/" ? "/" : `${expectedBasePath}/`;
-    return (
-      window.location.pathname === expectedBasePath || window.location.pathname === normalizedRoot
-    );
-  }, basePath);
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
   expect(documentRequests).toEqual([]);
 });
 
@@ -381,14 +376,14 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
     page,
     EXPECTED_SECRET_NOT_FOUND_SCREEN.replaceAll("__BASE_PATH__", basePath).replaceAll(
       "__ROOT_HREF__",
-      tanStackRootHref(basePath),
+      legacyRootHref(basePath),
     ),
   );
 
   expect(actual).toEqual(expected);
   await expectLegacyAnchor(page, ".gnb-inner > .logo", {
     className: "logo",
-    href: tanStackRootHref(basePath),
+    href: legacyRootHref(basePath),
     text: "Yona",
   });
   await expectLegacyAnchor(page, ".gnb-nav a >> nth=0", {
@@ -406,7 +401,7 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
   });
   await expectLegacyAnchor(page, ".error-wrap .ybtn", {
     className: "ybtn ybtn-info",
-    href: tanStackRootHref(basePath),
+    href: legacyRootHref(basePath),
     text: "Home",
   });
   await expectLegacyAnchor(page, ".page-footer .provider > a >> nth=0", {
@@ -420,20 +415,36 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
     target: "_blank",
     text: "D2 Program",
   });
+
+  await page.evaluate(() => {
+    (
+      window as typeof window & { __secretDisabledHomeSpaMarker?: string }
+    ).__secretDisabledHomeSpaMarker = "home";
+  });
+  await page.locator(".error-wrap .ybtn").click();
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __secretDisabledHomeSpaMarker?: string })
+            .__secretDisabledHomeSpaMarker,
+      ),
+    )
+    .toBe("home");
 });
 
 test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
+  expect(SECRET_ROUTE_SOURCE).toContain("useLinkProps");
+  expect(SECRET_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
+  expect(SECRET_ROUTE_SOURCE).toContain("legacyHref={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).toContain('className: "logo"');
+  expect(SECRET_ROUTE_SOURCE).toContain('className: "ybtn ybtn-info"');
   expect(SECRET_ROUTE_SOURCE).toContain('"aria-current": undefined');
   expect(SECRET_ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(SECRET_ROUTE_SOURCE).toMatch(
-    /<Link\s+to="\/"\s+className="logo"\s+activeProps=\{legacyAnchorActiveProps\}>/u,
-  );
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
-  expect(SECRET_ROUTE_SOURCE).toMatch(
-    /<Link\s+to="\/"\s+className="ybtn ybtn-info"\s+activeProps=/u,
-  );
   expect(SECRET_ROUTE_SOURCE).toMatch(
     /href="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+to="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+target="_blank"/u,
   );
@@ -604,8 +615,8 @@ async function readMobileSecretMetrics(page: Page) {
   });
 }
 
-function tanStackRootHref(basePath: string) {
-  return basePath === "/" ? "/" : `${basePath}/`;
+function legacyRootHref(basePath: string) {
+  return basePath;
 }
 
 async function canonicalizeScreenRoots(page: Page) {
