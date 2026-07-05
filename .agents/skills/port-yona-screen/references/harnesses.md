@@ -38,19 +38,24 @@ Run cargo only through the repo wrappers and outside the sandbox, per `AGENTS.md
 
 ## Layout Metric Pattern
 
-Prefer explicit Playwright box checks over visual guesswork:
+Prefer explicit box checks over visual guesswork. This repo's existing E2E tests use `page.evaluate(() => el.getBoundingClientRect())` plus `toBeGreaterThanOrEqual` / `toBeLessThanOrEqual` / `toBeCloseTo` (not Playwright's `.boundingBox()` helper) — follow that convention so new tests match the codebase:
 
 ```ts
-const navbarBox = await page.locator(".gnb-outer").boundingBox();
-const searchBox = await page.locator("#search").boundingBox();
-expect(navbarBox).not.toBeNull();
-expect(searchBox).not.toBeNull();
-expect(searchBox!.top).toBeGreaterThanOrEqual(navbarBox!.top);
-expect(searchBox!.bottom).toBeLessThanOrEqual(navbarBox!.bottom);
-expect(searchBox!.right).toBeLessThanOrEqual(navbarBox!.right);
+const boxes = await page.evaluate(() => {
+  const navbar = document.querySelector(".gnb-outer");
+  const search = document.querySelector("#search");
+  if (!navbar || !search) return null;
+  const n = navbar.getBoundingClientRect();
+  const s = search.getBoundingClientRect();
+  return { navbar: n, search: s };
+});
+expect(boxes).not.toBeNull();
+expect(boxes!.search.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+expect(boxes!.search.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+expect(boxes!.search.right).toBeLessThanOrEqual(boxes!.navbar.right);
 ```
 
-Use the same pattern for list columns, form rows, modal parts, tab bars, and any element that previously drifted or could plausibly overflow.
+For percentage-width comparisons (e.g. split panes), capture widths in `page.evaluate` and assert with `toBeCloseTo(expected, 1)` like `frontend/tests/project-home-readme.e2e.ts`. Remember these metric checks are necessary but not sufficient — see the Layout Parity Gate for the mandatory visual confirmation against a legacy render.
 
 ## Attribute Guidance
 

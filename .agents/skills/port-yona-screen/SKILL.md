@@ -20,15 +20,15 @@ For harness details and command selection, read [references/harnesses.md](refere
 
 ## Workflow
 
-1. Read context for your role. Main agent on a `/goal` turn: read `AGENTS.md`, the relevant `SPEC.md` section, `docs/agents/01-frontend-architecture.md`, `docs/agents/02-testing-migration.md`, `docs/agents/05-agent-execution-guidelines.md`, and `DESIGN.md` for styling work. Worker subagent: read only the legacy Scala HTML root, partials, LESS, JS-as-behavior-evidence, and message/copy keys for the one assigned screen state — do not re-read the full doc set every worker turn.
+1. Read context for your role. Main agent on a `/goal` turn: read `AGENTS.md`, the relevant `SPEC.md` section, `docs/agents/01-frontend-architecture.md`, `docs/agents/02-testing-migration.md`, `docs/agents/05-agent-execution-guidelines.md`, and `DESIGN.md` for styling work. Worker subagent: read only the legacy Scala HTML root, partials, message/copy keys, and the **full LESS `@import` chain** that the assigned screen actually depends on (follow imports transitively; do not read unrelated screen stylesheets) — plus legacy JS only as behavior evidence. Do not re-read the full doc set every worker turn.
 2. Define the target as one route and one visible state. If there are multiple independent screens, split the work and follow the repo's subagent/write-scope rules.
 3. Identify the legacy source before editing:
    - root `yona-original/app/views/**/*.scala.html`
    - included partials and helper templates
-   - relevant legacy LESS under `yona-original/app/assets/stylesheets/**`
+   - the full transitive LESS `@import` chain the screen depends on under `yona-original/app/assets/stylesheets/**` (not just one file — LESS cascades via imports)
    - relevant legacy JS only as behavior evidence
    - message keys/copy used by the rendered screen
-4. Write or update a focused Playwright E2E test RED from legacy Scala HTML or live legacy-rendered HTML. Assert stable DOM order, visible copy, layout metrics, interaction behavior, and REST/TanStack Query boundaries that matter for this screen.
+4. Write or update a focused Playwright E2E test and confirm it is RED (fails without the implementation) by running it locally against the current route. Assert stable DOM order, visible copy, layout metrics, interaction behavior, and REST/TanStack Query boundaries that matter for this screen. RED is a local working state only — do not commit E2E without the route TSX; both land in the same staged change in step 8.
 5. Rebuild the target `frontend/src/routes/**/*.tsx` from the legacy template skeleton. Do not preserve an existing React screen when it disagrees with Scala HTML; replace the screen-level skeleton instead.
 6. Translate behavior into React state/events/components plus TanStack Router navigation and TanStack Query `useQuery`/`useMutation`/cache invalidation.
 7. Update `docs/provenance/frontend-scala-html-goal-violation-audit.md` in the same staged change as the route TSX. Add exactly one new audit row naming the route file, the legacy `.scala.html` root and included partials, and the focused E2E file. The guard rejects a memo-only touch that adds no `.scala.html` source line, and rejects more than one new audit row per commit.
@@ -39,13 +39,15 @@ For harness details and command selection, read [references/harnesses.md](refere
 
 Do not accept a port until the rendered layout is pinned by browser measurements. DOM snapshots alone are insufficient.
 
+Numeric metric assertions are a **necessary** gate, not a **sufficient** one. A screen can pass every bounding-box / `getBoundingClientRect()` check and still look wrong to a human: fonts, colors, backgrounds, borders, letter-spacing, text wrapping, icon rendering, hover/focus/active states, and z-order are not captured by box metrics. Treat metrics as the floor; visual confirmation against legacy is the actual parity signal.
+
 - Compare key element bounding boxes against legacy-rendered HTML or legacy-derived expected metrics: navbar, search inputs, sidebars, tab bars, filters, primary content columns, row actions, modals, and form footers.
 - Assert containment for fragile areas. Example: a search input inside the top navbar must have `inputBox.top >= navbarBox.top`, `inputBox.bottom <= navbarBox.bottom`, and its right edge must stay inside the expected navbar/search container.
 - Assert alignment between paired controls: label/input baselines, button rows, table/list columns, avatar/title/meta rows, tab top/bottom positions, modal header/body/footer widths.
 - Assert no visible overlap by checking representative `boundingBox()` pairs for non-overlap or expected containment.
 - Run at least the target desktop viewport. Add a mobile viewport assertion when legacy has responsive behavior for the screen.
-- Use screenshots or `scripts/visual-parity-sweep.mjs` as supporting evidence, but prefer numeric Playwright assertions for the exact drift that would be hard for LLMs to judge visually.
-- If live legacy is unavailable, derive metrics from legacy LESS/Bootstrap/Yobi classes and record that limitation in the E2E/provenance note.
+- Capture visual confirmation against a real legacy render for every port: run `scripts/visual-parity-sweep.mjs` (which fetches both legacy and local and stores screenshots), or save side-by-side screenshots of the legacy render and the new render for the same viewport and screen state. Note that `scripts/visual-parity-comparison.mjs` only diffs error-page status, HTTP status, body text length, and stylesheet rule count — it does **not** do pixel/screenshot diffing, and the sweep is not wired into the precommit guard. So a human (or a vision-capable review) must actually look at both renders; do not claim visual parity from metric assertions or from the sweep's non-zero exit code alone.
+- If a live legacy render is genuinely unavailable, LESS/Bootstrap/Yobi classes can set *expected* metrics but cannot establish visual parity. Record this as a `gap` (`parity: unverified against legacy render`) in the E2E/provenance note and never assert or imply that visual parity was confirmed for that screen.
 
 ## Porting Rules
 
@@ -61,7 +63,7 @@ Do not accept a port until the rendered layout is pinned by browser measurements
 
 - Use TanStack Router `Link` for anchor semantics. In route TSX, do not add raw `<a>` tags.
 - Use `Link to` for internal SPA routes.
-- Use `Link to` plus `hash` for shareable in-page anchors.
+- Use `Link to` plus `hash` for shareable in-page anchors, e.g. `<Link to="/project/$owner/$name" params={{ owner, name }} hash="readme">`.
 - Use `Link href` for external, download, and `mailto:` URLs.
 - Convert legacy `href="#"` and `href="javascript:..."` into `button type="button"` with React event handlers unless there is a real shareable URL.
 - Keep `target`, `rel`, `download`, `title`, `className`, and `id` when they are part of visible behavior or the legacy DOM contract.
@@ -78,13 +80,13 @@ Do not accept a port until the rendered layout is pinned by browser measurements
 
 - Never set `YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY`, `YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE`, or `YONA_ALLOW_SCALA_HTML_MULTI_SCREEN` in automated or unattended runs. These are human-supervised manual commit escape hatches only and require a durable audit note (route, reason, follow-up). The mandatory `pnpm agent:turn-commit` path refuses them by default.
 - Route TSX, focused E2E, and the new audit row are not separable. `tools/scala-html-goal-guard.mjs` enforces same-staged-change coupling and exactly one new audit row per commit — splitting them or adding multiple rows just produces blocked commits.
-- Run cargo/rustc/rustfmt only via `pnpm agent:cargo -- --outside-sandbox ...` or `pnpm agent:cargo-test -- --outside-sandbox ...` from an escalated tool call. Never inside the Codex sandbox; the macOS seatbelt makes file access expensive and skews the feedback loop.
+- For ports that also touch the Rust backend or the `/api/v1` contract, run cargo/rustc/rustfmt only via `pnpm agent:cargo -- --outside-sandbox ...` or `pnpm agent:cargo-test -- --outside-sandbox ...` from an escalated tool call. Never inside the Codex sandbox; the macOS seatbelt makes file access expensive and skews the feedback loop. Pure frontend ports do not need cargo.
 
 ## Acceptance Checklist
 
 - Legacy root template, partials, LESS, JS behavior evidence, and message/copy source are named in notes or provenance.
 - The focused E2E test fails before implementation and passes after implementation.
-- Browser-rendered layout is pinned by metric assertions for containment, alignment, ordering, and no-overlap of the screen's fragile areas.
+- Browser-rendered layout is pinned by metric assertions for containment, alignment, ordering, and no-overlap of the screen's fragile areas, **and** a real visual confirmation against a legacy render is captured (screenshots saved or sweep run). Metric-only parity is not acceptable.
 - Top navbars, search/filter bars, tab rows, sidebars, action rows, and modals are explicitly checked when present.
 - Route TSX has no raw anchors, direct DOM mutation, jQuery, `dangerouslySetInnerHTML`, or legacy placeholder `Link href="#"`.
 - `Link` usage keeps real navigation behavior and drops legacy JS-only attributes unless justified.
