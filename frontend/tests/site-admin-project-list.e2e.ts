@@ -195,6 +195,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     ]);
   await expect(page.locator(".site-setting-nav li").nth(3)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".project-list-wrap .list-avatar")).toHaveAttribute(
     "href",
@@ -442,6 +443,9 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain("navItems.map");
+  expect(routeSource).toContain("activeOptions: { exact: true");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('to="/sites/projectList"');
   expect(routeSource).toContain('to="/$ownerName/$projectName"');
   expect(routeSource).toContain("key={filter}");
@@ -530,6 +534,17 @@ async function mockUpdate(
       body: JSON.stringify(response),
     });
   });
+}
+
+async function siteSettingNavActiveMarkerLeaks(page: Page) {
+  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+    links.flatMap((link) => {
+      const leaked = ["class", "aria-current", "data-status"].filter((name) =>
+        link.hasAttribute(name),
+      );
+      return leaked.map((name) => `${link.textContent?.trim() ?? ""}:${name}`);
+    }),
+  );
 }
 
 async function mockPosts(page: Page) {
