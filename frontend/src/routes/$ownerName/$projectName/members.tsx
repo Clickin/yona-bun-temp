@@ -48,6 +48,15 @@ function ProjectMembersRoute() {
   );
 }
 
+function insulateProjectMemberDeleteConfirmClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function focusProjectMemberDeleteConfirmButton(button: HTMLButtonElement | null) {
+  button?.focus();
+}
+
 function ProjectMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
@@ -121,10 +130,29 @@ function ProjectMembersBody({
   const { t } = useLegacyMessages();
   const addMemberInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const [deleteTarget, setDeleteTarget] = useState<null | {
+    loginId: string;
+    userId: number;
+  }>(null);
   const addMutation = useMutation({
     mutationFn: async (loginId: string) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return addProjectMemberRest(runtimeConfig, csrfToken, { loginId, ownerName, projectName });
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.members(ownerName, projectName),
+      });
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return deleteProjectMemberRest(runtimeConfig, csrfToken, {
+        ownerName,
+        projectName,
+        userId,
+      });
     },
     onSuccess() {
       queryClient.invalidateQueries({
@@ -147,6 +175,33 @@ function ProjectMembersBody({
     }
     input.value = loginId;
     input.form.requestSubmit();
+  }
+
+  function openDeleteConfirm(event: MouseEvent<HTMLButtonElement>, member: ProjectMemberEntry) {
+    insulateProjectMemberDeleteConfirmClick(event);
+    setDeleteTarget({
+      loginId: stringField(member.loginId, ""),
+      userId: numberField(member.userId),
+    });
+  }
+
+  function dismissDeleteConfirm(event: MouseEvent<HTMLButtonElement>) {
+    insulateProjectMemberDeleteConfirmClick(event);
+    setDeleteTarget(null);
+  }
+
+  async function confirmDeleteMember(event: MouseEvent<HTMLButtonElement>) {
+    insulateProjectMemberDeleteConfirmClick(event);
+    const target = deleteTarget;
+    if (!target) {
+      return;
+    }
+    setDeleteTarget(null);
+    try {
+      await deleteMutation.mutateAsync(target.userId);
+    } catch (error) {
+      window.alert(projectMemberDeleteErrorMessage(t, error));
+    }
   }
 
   useEffect(() => {
@@ -205,6 +260,7 @@ function ProjectMembersBody({
               key={stringField(member.userId, member.loginId)}
               member={member}
               members={members}
+              onDeleteRequest={openDeleteConfirm}
               ownerName={ownerName}
               projectName={projectName}
               runtimeConfig={runtimeConfig}
@@ -228,6 +284,53 @@ function ProjectMembersBody({
             </div>
           </>
         ) : null}
+        {deleteTarget ? (
+          <>
+            <div
+              id="projectMemberDeleteConfirm"
+              className="modal yobiDialog in"
+              tabIndex={-1}
+              role="dialog"
+              aria-hidden={false}
+              style={{ display: "block" }}
+            >
+              <div className="btn-dismiss">
+                <button
+                  type="button"
+                  className="btn-transparent"
+                  onClick={dismissDeleteConfirm}
+                  aria-label={t("button.no")}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="message">
+                <div className="center-text">
+                  <p className="msg">{t("project.member.deleteConfirm")}</p>
+                  <p className="desc"></p>
+                </div>
+                <div className="center-txt buttons">
+                  <button
+                    type="button"
+                    className="ybtn ybtn-default"
+                    onClick={dismissDeleteConfirm}
+                  >
+                    {t("button.no")}
+                  </button>
+                  <button
+                    type="button"
+                    className="ybtn ybtn-danger"
+                    onClick={confirmDeleteMember}
+                    ref={focusProjectMemberDeleteConfirmButton}
+                  >
+                    {t("button.yes")}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="modal-backdrop in"></div>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -237,6 +340,7 @@ function ProjectMemberListItem({
   basePath,
   member,
   members,
+  onDeleteRequest,
   ownerName,
   projectName,
   runtimeConfig,
@@ -244,6 +348,7 @@ function ProjectMemberListItem({
   basePath: string;
   member: ProjectMemberEntry;
   members: ProjectMembersResponse;
+  onDeleteRequest: (event: MouseEvent<HTMLButtonElement>, member: ProjectMemberEntry) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -270,32 +375,6 @@ function ProjectMemberListItem({
       });
     },
   });
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return deleteProjectMemberRest(runtimeConfig, csrfToken, {
-        ownerName,
-        projectName,
-        userId,
-      });
-    },
-    onSuccess() {
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.members(ownerName, projectName),
-      });
-    },
-  });
-
-  async function onDeleteMember() {
-    if (!window.confirm(t("project.member.deleteConfirm"))) {
-      return;
-    }
-    try {
-      await deleteMutation.mutateAsync();
-    } catch (error) {
-      window.alert(projectMemberDeleteErrorMessage(t, error));
-    }
-  }
 
   function onRoleToggleClick(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -385,7 +464,7 @@ function ProjectMemberListItem({
                 `/${ownerName}/${projectName}/member/${userId}/delete`,
               )}
               className="ybtn ybtn-danger ybtn-small"
-              onClick={onDeleteMember}
+              onClick={(event) => onDeleteRequest(event, member)}
             >
               {t("button.delete")}
             </button>

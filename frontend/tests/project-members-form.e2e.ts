@@ -224,7 +224,7 @@ test("project members converted internal links render legacy hrefs and navigate 
     .toBe("kept");
 });
 
-test("project members route source keeps navigation in Link and mutation URLs in data-href", () => {
+test("project members route source keeps navigation in Link, mutation URLs in data-href, and a route-owned delete confirm", () => {
   const source = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
 
   expect(source).not.toContain("createLink");
@@ -240,10 +240,23 @@ test("project members route source keeps navigation in Link and mutation URLs in
   expect(source).not.toMatch(/(?<!data-)\bhref=\{projectHref/);
   expect(source).not.toContain('href="javascript:void(0)"');
   expect(source).not.toContain('href="#"');
+  expect(source).not.toContain("window.confirm");
+  expect(source).not.toContain('data-toggle="modal"');
+  expect(source).not.toContain('data-dismiss="modal"');
   expect(source).toContain("data-href={prefixBasePath(");
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('to="/$user"');
+  expect(source).toContain("function insulateProjectMemberDeleteConfirmClick");
+  expect(source).toContain("function openDeleteConfirm");
+  expect(source).toContain("function dismissDeleteConfirm");
+  expect(source).toContain("async function confirmDeleteMember");
+  expect(source).toContain("event.preventDefault();");
+  expect(source).toContain("event.stopPropagation();");
+  expect(source).toContain('id="projectMemberDeleteConfirm"');
+  expect(source).toContain('className="modal yobiDialog in"');
+  expect(source).toContain('className="ybtn ybtn-default"');
+  expect(source).toContain('className="ybtn ybtn-danger"');
 });
 
 test("project members enrollment Add posts selected login like legacy member module", async ({
@@ -259,14 +272,20 @@ test("project members enrollment Add posts selected login like legacy member mod
   await expect(page.locator("#loginId")).toHaveValue("bob");
 });
 
-test("project members role and delete side effects use React buttons", async ({ page }) => {
+test("project members role dropdown and delete confirm stay route-owned", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await installDocumentDropdownBubbleAudit(page);
   const requests = await mockProjectMembers(page);
 
   await page.goto(`${basePath}/admin/sample/members`);
+  await installProjectMembersDeleteModalBridgeAudit(page);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  const dialogMessages: string[] = [];
+  page.on("dialog", async (dialog) => {
+    dialogMessages.push(dialog.message());
+    await dialog.accept();
   });
 
   const roleGroup = page.locator('.members.project [data-name="roleof-alice"]');
@@ -336,6 +355,7 @@ test("project members role and delete side effects use React buttons", async ({ 
   );
   await expect(deleteControl).toHaveAttribute("class", "ybtn ybtn-danger ybtn-small");
   await expect(deleteControl).toHaveText("Delete");
+  await expect(deleteControl).not.toHaveAttribute("data-toggle", /.+/);
   await expect(page.locator('[data-action="delete"][href="javascript:void(0)"]')).toHaveCount(0);
 
   const roleResponse = page.waitForResponse(
@@ -359,25 +379,32 @@ test("project members role and delete side effects use React buttons", async ({ 
   await expect(page.locator('[data-name="roleof-alice"]')).toHaveAttribute("class", "btn-group");
   await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
 
-  const confirmMessage = page.waitForEvent("dialog").then(async (dialog) => {
-    const message = dialog.message();
-    await dialog.accept();
-    return message;
-  });
-  const deleteResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/v1/owners/admin/projects/sample/members/2") &&
-      response.request().method() === "DELETE",
-  );
-  await deleteControl.click();
-  await expect(confirmMessage).resolves.toBe(
+  expect(await dispatchCancelableClick(deleteControl)).toBe(false);
+  const deleteConfirm = page.locator("#projectMemberDeleteConfirm");
+  const deleteConfirmDismiss = deleteConfirm.locator(".buttons .ybtn").nth(0);
+  const deleteConfirmAccept = deleteConfirm.locator(".buttons .ybtn").nth(1);
+  const deleteConfirmClose = deleteConfirm.locator(".btn-dismiss .btn-transparent");
+  await expect(deleteConfirm).toHaveClass("modal yobiDialog in");
+  await expect(deleteConfirm).toHaveCSS("display", "block");
+  await expect(deleteConfirm.locator(".message .msg")).toHaveText(
     "Are you sure you want this user to leave this project?",
   );
-  await deleteResponse;
-
-  await expect.poll(() => requests.deletedUserIds).toEqual(["2"]);
-  await expect(page.locator(".members.project .member")).toHaveCount(1);
-  await expect(page.locator(".members.project .member-id", { hasText: "@alice" })).toHaveCount(0);
+  await expect(deleteConfirm.locator(".message .desc")).toHaveText("");
+  await expect(deleteConfirmDismiss).toHaveText("No");
+  await expect(deleteConfirmDismiss).toHaveAttribute("class", "ybtn ybtn-default");
+  await expect(deleteConfirmAccept).toHaveText("Yes");
+  await expect(deleteConfirmAccept).toHaveAttribute("class", "ybtn ybtn-danger");
+  await expect(deleteConfirmAccept).toBeFocused();
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await projectMemberDeleteModalMetrics(page)).toEqual({
+    borderTopWidth: "10px",
+    buttonTextAlign: "center",
+    messageFontSize: "18px",
+    messageFontWeight: "700",
+    rectWidth: 560,
+    width: "500px",
+  });
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -385,9 +412,67 @@ test("project members role and delete side effects use React buttons", async ({ 
       ),
     )
     .toBe("kept");
+  await expect.poll(() => requests.deletedUserIds).toEqual([]);
+  await expect.poll(() => projectMembersDeleteModalBridgeAuditHits(page)).toEqual([]);
+  await expect.poll(() => dialogMessages).toEqual([]);
+
+  expect(await dispatchCancelableClick(deleteConfirmDismiss)).toBe(false);
+  await expect(deleteConfirm).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect.poll(() => requests.deletedUserIds).toEqual([]);
+  await expect.poll(() => projectMembersDeleteModalBridgeAuditHits(page)).toEqual([]);
+
+  expect(await dispatchCancelableClick(deleteControl)).toBe(false);
+  await expect(deleteConfirm).toHaveClass("modal yobiDialog in");
+  expect(await dispatchCancelableClick(deleteConfirmClose)).toBe(false);
+  await expect(deleteConfirm).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect.poll(() => requests.deletedUserIds).toEqual([]);
+  await expect.poll(() => projectMembersDeleteModalBridgeAuditHits(page)).toEqual([]);
+  await expect.poll(() => dialogMessages).toEqual([]);
+
+  expect(await dispatchCancelableClick(deleteControl)).toBe(false);
+  await expect(deleteConfirm).toHaveClass("modal yobiDialog in");
+  const deleteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/members/2") &&
+      response.request().method() === "DELETE",
+  );
+  expect(await dispatchCancelableClick(deleteConfirmAccept)).toBe(false);
+  await deleteResponse;
+
+  await expect.poll(() => requests.deletedUserIds).toEqual(["2"]);
+  await expect(page.locator(".members.project .member")).toHaveCount(1);
+  await expect(page.locator(".members.project .member-id", { hasText: "@alice" })).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect.poll(() => projectMembersDeleteModalBridgeAuditHits(page)).toEqual([]);
+  await expect.poll(() => dialogMessages).toEqual([]);
 });
 
-test("project members delete cancel and errors preserve legacy confirm alert UX", async ({
+test("project members delete errors keep legacy alert mapping after route-owned confirm accept", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -397,34 +482,49 @@ test("project members delete cancel and errors preserve legacy confirm alert UX"
   });
 
   await page.goto(`${basePath}/admin/sample/members`);
-  const deleteControl = page.locator('.members.project [data-action="delete"]');
-
-  const cancelConfirm = page.waitForEvent("dialog").then(async (dialog) => {
-    const message = dialog.message();
-    await dialog.dismiss();
-    return message;
+  await installProjectMembersDeleteModalBridgeAudit(page);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
-  await deleteControl.click();
-  await expect(cancelConfirm).resolves.toBe(
-    "Are you sure you want this user to leave this project?",
-  );
-  await expect.poll(() => requests.deletedUserIds).toEqual([]);
-  await expect(page.locator(".members.project .member")).toHaveCount(2);
-
+  const deleteControl = page.locator('.members.project [data-action="delete"]');
   const dialogMessages: string[] = [];
   page.on("dialog", async (dialog) => {
     dialogMessages.push(dialog.message());
     await dialog.accept();
   });
-  await deleteControl.click();
-  await expect
-    .poll(() => dialogMessages)
-    .toEqual([
-      "Are you sure you want this user to leave this project?",
-      "Project owner cannot leave his own project.",
-    ]);
+
+  expect(await dispatchCancelableClick(deleteControl)).toBe(false);
+  const deleteConfirm = page.locator("#projectMemberDeleteConfirm");
+  const deleteConfirmAccept = deleteConfirm.locator(".buttons .ybtn").nth(1);
+  await expect(deleteConfirm.locator(".message .msg")).toHaveText(
+    "Are you sure you want this user to leave this project?",
+  );
+  await expect.poll(() => requests.deletedUserIds).toEqual([]);
+  await expect.poll(() => dialogMessages).toEqual([]);
+  await expect.poll(() => projectMembersDeleteModalBridgeAuditHits(page)).toEqual([]);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+
+  const deleteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/members/2") &&
+      response.request().method() === "DELETE",
+  );
+  expect(await dispatchCancelableClick(deleteConfirmAccept)).toBe(false);
+  await deleteResponse;
+  await expect.poll(() => dialogMessages).toEqual(["Project owner cannot leave his own project."]);
   await expect.poll(() => requests.deletedUserIds).toEqual(["2"]);
   await expect(page.locator(".members.project .member")).toHaveCount(2);
+  await expect(page.locator("#projectMemberDeleteConfirm")).toHaveCount(0);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/members`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+  await expect.poll(() => projectMembersDeleteModalBridgeAuditHits(page)).toEqual([]);
 });
 
 async function roleButtonMetrics(locator: ReturnType<Page["locator"]>) {
@@ -439,6 +539,68 @@ async function roleButtonMetrics(locator: ReturnType<Page["locator"]>) {
       padding: style.padding,
       textAlign: style.textAlign,
       width: Math.round(button.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function installProjectMembersDeleteModalBridgeAudit(page: Page) {
+  await page.evaluate(() => {
+    type GuardedWindow = Window &
+      typeof globalThis & {
+        __projectMembersDeleteModalBridgeHits?: string[];
+        __projectMembersDeleteModalBridgeArmed?: boolean;
+      };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__projectMembersDeleteModalBridgeHits = [];
+    if (guardedWindow.__projectMembersDeleteModalBridgeArmed) {
+      return;
+    }
+    guardedWindow.__projectMembersDeleteModalBridgeArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridgeTarget = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      if (bridgeTarget) {
+        guardedWindow.__projectMembersDeleteModalBridgeHits?.push(
+          `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
+        );
+      }
+    });
+  });
+}
+
+async function projectMembersDeleteModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __projectMembersDeleteModalBridgeHits?: string[];
+          }
+      ).__projectMembersDeleteModalBridgeHits ?? [],
+  );
+}
+
+async function dispatchCancelableClick(locator: Locator) {
+  return locator.evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
+}
+
+async function projectMemberDeleteModalMetrics(page: Page) {
+  return page.locator("#projectMemberDeleteConfirm").evaluate((modal) => {
+    const msg = modal.querySelector<HTMLElement>(".message .msg");
+    const buttons = modal.querySelector<HTMLElement>(".buttons");
+    if (!msg || !buttons) {
+      throw new Error("Delete confirm shell is missing legacy message/button wrappers.");
+    }
+    return {
+      borderTopWidth: getComputedStyle(modal).borderTopWidth,
+      buttonTextAlign: getComputedStyle(buttons).textAlign,
+      messageFontSize: getComputedStyle(msg).fontSize,
+      messageFontWeight: getComputedStyle(msg).fontWeight,
+      rectWidth: Math.round(modal.getBoundingClientRect().width),
+      width: getComputedStyle(modal).width,
     };
   });
 }
