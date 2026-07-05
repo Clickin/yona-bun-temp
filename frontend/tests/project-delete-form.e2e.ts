@@ -197,6 +197,13 @@ test("project delete form route has no TanStack route-cast escapes", async () =>
   expect(source).toContain("onClick=");
 });
 
+test("project delete member badges stay sourced from enrolledUsers only", async () => {
+  const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
+
+  expect(source).not.toContain("project.enrollmentRequestCount");
+  expect(source).not.toMatch(/countField\(\s*project\.enrolledUsers\s*,/);
+});
+
 test("project delete confirmation modal source stays route-owned", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
   const modalSource = source.slice(
@@ -414,6 +421,25 @@ test("project delete settings tab follows legacy enrolled user badge and hidden 
     "href",
     `${basePath}/admin/sample/changeVCS`,
   );
+});
+
+test("project delete settings tab hides member badges when enrolledUsers is absent", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      enrolledUsers: undefined,
+      enrollmentRequestCount: 99,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+
+  const memberTab = page.locator("#subMenuProjectMember a");
+  await expect(memberTab).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  await expect(memberTab.locator(".num-badge")).toHaveCount(0);
+  await expect(page.locator(".project-setting a .project-menu-count")).toHaveCount(0);
 });
 
 test("project delete header and project menu links preserve legacy hrefs and SPA navigation", async ({

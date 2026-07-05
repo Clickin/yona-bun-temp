@@ -322,10 +322,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const menuSetting = recordField(project.menuSetting);
-  const enrolledMemberCount = countField(
-    project.enrolledUsers,
-    numberField(project.enrollmentRequestCount),
-  );
+  const enrolledMemberCount = countField(project.enrolledUsers);
 
   return (
     <div className="project-menu-outer">
@@ -466,10 +463,7 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const menuSetting = recordField(project.menuSetting);
-  const memberEnrollmentCount = countField(
-    project.enrolledUsers,
-    numberField(project.enrollmentRequestCount),
-  );
+  const memberEnrollmentCount = countField(project.enrolledUsers);
 
   return (
     <ul className="nav nav-tabs">
@@ -587,8 +581,8 @@ function numberField(value: unknown) {
   return typeof value === "number" ? value : 0;
 }
 
-function countField(value: unknown, fallback: number) {
-  return Array.isArray(value) ? value.length : fallback;
+function countField(value: unknown) {
+  return Array.isArray(value) ? value.length : 0;
 }
 
 function booleanField(value: unknown) {
