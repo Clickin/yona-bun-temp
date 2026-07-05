@@ -13,7 +13,7 @@ const EXPECTED_PROJECT_IMPORT = `
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_ROOT__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_PROJECT_IMPORT = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -242,6 +242,43 @@ test("project import form mirrors legacy auth, owner, and menu dependencies", as
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project import form mirrors legacy project.New focus and project-name validation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let importPosts = 0;
+  await mockProjectImport(page);
+  await page.route("**/api/v1/projects/import", async (route) => {
+    importPosts += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ redirectPath: "/admin/imported" }),
+    });
+  });
+
+  await page.goto(`${basePath}/_import?owner=admin`);
+  await expect(page.locator("#url")).toBeFocused();
+
+  await page.locator("#project-name").fill("imported project");
+  await page.locator("#project-name").blur();
+  await expect(page.locator("#project-name")).toHaveValue("imported-project");
+
+  await page.locator("#url").fill("https://github.com/yona-projects/yona.git");
+  await page.locator("#project-name").fill("");
+  await page.locator("#importGit .actions button.ybtn-primary").click();
+  await expect(page.locator("#project-name + .popover .popover-content")).toHaveText(
+    "Enter name in alphabetnumerical or symbol characters(_-.)",
+  );
+  await expect(page.locator("#project-name")).toHaveAttribute("aria-invalid", "true");
+
+  await page.locator("#project-name").fill(".git");
+  await page.locator("#importGit .actions button.ybtn-primary").click();
+  await expect(page.locator("#project-name + .popover .popover-content")).toHaveText(
+    "You can't use reserved names.",
+  );
+  await expect.poll(() => importPosts).toBe(0);
+});
+
 test("project import form renders legacy server auth and owner validation state", async ({
   page,
 }) => {
@@ -264,6 +301,7 @@ test("project import form renders legacy server auth and owner validation state"
   await page.goto(`${basePath}/_import?owner=admin`);
 
   await expect(page.locator("#useRepoAuth")).toBeChecked();
+  await expect(page.locator("#repoAuth input[name='authId']")).toBeFocused();
   await expect(page.locator("#repoAuth")).toBeVisible();
   await expect(page.locator("#repoAuth")).toHaveAttribute("style", "display: block;");
   await expect(page.locator("#repoAuth input[name='authId']")).toHaveValue("deploy-bot");

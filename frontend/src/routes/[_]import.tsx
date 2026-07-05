@@ -88,6 +88,10 @@ function ProjectImportScreen({
   const [menuPullRequestChecked, setMenuPullRequestChecked] = React.useState(true);
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
   const [urlError, setUrlError] = React.useState<string | null>(null);
+  const [projectNameError, setProjectNameError] = React.useState<string | null>(null);
+  const authIdRef = React.useRef<HTMLInputElement>(null);
+  const didFocusInitialFieldRef = React.useRef(false);
+  const urlRef = React.useRef<HTMLInputElement>(null);
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -101,6 +105,21 @@ function ProjectImportScreen({
   React.useEffect(() => {
     setProjectScope(initialProjectScope);
   }, [initialProjectScope]);
+  React.useEffect(() => {
+    if (
+      didFocusInitialFieldRef.current ||
+      !optionsQuery.isSuccess ||
+      usesRepoAuth !== initiallyUsesRepoAuth
+    ) {
+      return;
+    }
+    didFocusInitialFieldRef.current = true;
+    if (usesRepoAuth) {
+      authIdRef.current?.focus();
+    } else {
+      urlRef.current?.focus();
+    }
+  }, [initiallyUsesRepoAuth, optionsQuery.isSuccess, usesRepoAuth]);
   const importMutation = useMutation({
     mutationFn: async (input: {
       authId: string;
@@ -131,11 +150,14 @@ function ProjectImportScreen({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const url = String(formData.get("url") ?? "");
-    if (url.trim().length === 0) {
-      setUrlError(t("project.import.error.empty.url"));
+    const projectName = String(formData.get("name") ?? "");
+    const nextProjectNameError = validateProjectName(projectName, t);
+    const nextUrlError = url.trim().length === 0 ? t("project.import.error.empty.url") : null;
+    setProjectNameError(nextProjectNameError);
+    setUrlError(nextUrlError);
+    if (nextProjectNameError || nextUrlError) {
       return;
     }
-    setUrlError(null);
     importMutation.mutate({
       authId: String(formData.get("authId") ?? ""),
       authPw: String(formData.get("authPw") ?? ""),
@@ -195,6 +217,7 @@ function ProjectImportScreen({
                     name="url"
                     className="text"
                     placeholder={t("project.git.url.alert")}
+                    ref={urlRef}
                     key={initialUrl}
                     defaultValue={initialUrl}
                     onChange={() => {
@@ -238,6 +261,7 @@ function ProjectImportScreen({
                             type="text"
                             name="authId"
                             className="text"
+                            ref={authIdRef}
                             key={initialAuthId}
                             defaultValue={initialAuthId}
                             disabled={repoAuthChanged && !usesRepoAuth}
@@ -310,7 +334,24 @@ function ProjectImportScreen({
                     key={initialProjectName}
                     defaultValue={initialProjectName}
                     placeholder={t("project.name.alert")}
+                    onBlur={(event) => {
+                      event.currentTarget.value = event.currentTarget.value
+                        .trim()
+                        .replaceAll(" ", "-");
+                    }}
+                    onChange={() => {
+                      if (projectNameError) {
+                        setProjectNameError(null);
+                      }
+                    }}
+                    aria-invalid={projectNameError ? true : undefined}
                   />
+                  {projectNameError ? (
+                    <div className="popover fade left in">
+                      <div className="arrow" />
+                      <div className="popover-content">{projectNameError}</div>
+                    </div>
+                  ) : null}
                 </dd>
 
                 <dt>
@@ -477,6 +518,16 @@ function firstError(error: string | string[] | undefined) {
 function normalizeProjectScope(scope: string | undefined) {
   const normalized = scope?.toUpperCase();
   return normalized === "PROTECTED" || normalized === "PRIVATE" ? normalized : "PUBLIC";
+}
+
+function validateProjectName(projectName: string, t: (key: string) => string) {
+  if (projectName.length === 0 || !/^[0-9A-Za-z-_\.가-힣]+$/.test(projectName)) {
+    return t("project.name.alert");
+  }
+  if (projectName === "." || projectName === ".." || projectName === ".git") {
+    return t("project.name.reserved.alert");
+  }
+  return null;
 }
 
 function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
