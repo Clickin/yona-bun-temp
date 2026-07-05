@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_LIST_SCREEN = `
 <div class="unsupported hidden">
@@ -14,7 +14,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -221,6 +221,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     `${basePath}/sites/projectList?filter=road&pageNum=2`,
   );
   await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expectLegacyPaginationLink(nextPageLink, {
+    href: `${basePath}/sites/projectList?filter=road&pageNum=2`,
+    text: "Next page",
+  });
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
@@ -283,6 +287,10 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     `${basePath}/sites/projectList?filter=road&pageNum=1`,
   );
   await expect(prevPageLink).toHaveAttribute("pjax-page", "");
+  await expectLegacyPaginationLink(prevPageLink, {
+    href: `${basePath}/sites/projectList?filter=road&pageNum=1`,
+    text: "Previous page",
+  });
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "site-project-pagination-prev";
@@ -440,10 +448,20 @@ test("site admin project list renders legacy update notification badge", async (
 test("site admin project list uses direct typed links", () => {
   const routeSource = readFileSync("src/routes/sites/projectList.tsx", "utf8");
 
+  expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toMatch(/<a(?:\s|>)/u);
+  expect(routeSource).not.toContain("<a ");
+  expect(routeSource).not.toContain("<a>");
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).not.toContain("navItems.map");
+  expect(routeSource).toContain("const legacyLinkSuppressionProps = {");
   expect(routeSource).toContain("activeOptions: { exact: true");
+  expect(routeSource).toContain("explicitUndefined: true");
+  expect(routeSource).toContain("className: undefined");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('to="/sites/projectList"');
@@ -452,6 +470,16 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).not.toContain("<a href={projectPath}");
   expect(routeSource).toContain('pjax-page=""');
 });
+
+async function expectLegacyPaginationLink(link: Locator, expected: { href: string; text: string }) {
+  await expect(link).toHaveText(expected.text);
+  await expect(link).toHaveAttribute("href", expected.href);
+  await expect(link).toHaveAttribute("pjax-page", "");
+  await expect(link).not.toHaveAttribute("class", /.+/);
+  await expect(link).not.toHaveAttribute("title", /.+/);
+  await expect(link).not.toHaveAttribute("aria-current", /.+/);
+  await expect(link).not.toHaveAttribute("data-status", /.+/);
+}
 
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {

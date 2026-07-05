@@ -70,6 +70,26 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator('#notification-projects a[href$="#2"]')).toHaveCount(1);
   await expect(page.locator('#notification-projects a[href$="#7"]')).toHaveCount(1);
   await expect(page.locator("#notification-projects button")).toHaveCount(0);
+  expect(await readNotificationProjectTabAnchors(page)).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      dataToggle: "tab",
+      href: `${basePath}/user/editform/notifications#2`,
+      text: "admin / projectYobi",
+      title: null,
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      dataToggle: "tab",
+      href: `${basePath}/user/editform/notifications#7`,
+      text: "weblabs / projectAlpha",
+      title: null,
+    },
+  ]);
   await expect(page.locator('#notification-projects a[data-toggle="tab"]').first()).toHaveText(
     "admin / projectYobi",
   );
@@ -147,6 +167,26 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator("#notification-projects li").first()).toHaveClass(/active/);
   await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveClass(/active/);
   await expect(page).toHaveURL(`${basePath}/user/editform/notifications#2`);
+  expect(await readNotificationProjectTabAnchors(page)).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      dataToggle: "tab",
+      href: `${basePath}/user/editform/notifications#2`,
+      text: "admin / projectYobi",
+      title: null,
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      dataToggle: "tab",
+      href: `${basePath}/user/editform/notifications#7`,
+      text: "weblabs / projectAlpha",
+      title: null,
+    },
+  ]);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("notifications-project-tab");
@@ -167,11 +207,17 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("<a");
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("to={href}");
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
-  expect(source).toContain("activeProps={legacyEditTabLinkActiveProps}");
-  expect(source).toContain("activeOptions={legacyEditTabLinkActiveOptions}");
+  expect(source.match(/activeProps={legacyEditTabLinkActiveProps}/g)).toHaveLength(6);
+  expect(source.match(/activeOptions={legacyEditTabLinkActiveOptions}/g)).toHaveLength(6);
+  expect(source.match(/search={legacyEditTabLinkInactiveSearch}/g)).toHaveLength(6);
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -240,7 +286,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}/" class="logo logo-letter">Y</a></li>
       <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -337,6 +383,20 @@ async function readNotificationSettingsMetrics(page: Page) {
       tableDisplay: getComputedStyle(table).display,
     };
   });
+}
+
+async function readNotificationProjectTabAnchors(page: Page) {
+  return page.locator("#notification-projects a").evaluateAll((links) =>
+    links.map((link) => ({
+      ariaCurrent: link.getAttribute("aria-current"),
+      className: link.getAttribute("class"),
+      dataStatus: link.getAttribute("data-status"),
+      dataToggle: link.getAttribute("data-toggle"),
+      href: link.getAttribute("href"),
+      text: link.textContent?.trim() ?? "",
+      title: link.getAttribute("title"),
+    })),
+  );
 }
 
 async function canonicalizeScreenRoots(page: Page) {

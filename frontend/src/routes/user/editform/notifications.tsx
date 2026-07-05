@@ -130,7 +130,9 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                     <Link
                       to="/user/editform/notifications"
                       hash={projectId}
-                      activeProps={{ className: undefined }}
+                      search={legacyEditTabLinkInactiveSearch}
+                      activeOptions={legacyEditTabLinkActiveOptions}
+                      activeProps={legacyEditTabLinkActiveProps}
                       data-toggle="tab"
                       onClick={() => {
                         setSelectedProjectId(projectId);

@@ -17,7 +17,7 @@ const EXPECTED_POST_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -214,7 +214,16 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=2`);
+  await expect(nextPageLink).toHaveText("Next page");
   await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  expect(await paginationAnchorAttrs(nextPageLink)).toEqual({
+    ariaCurrent: null,
+    className: null,
+    dataStatus: null,
+    pjaxPage: "",
+    text: "Next page",
+    title: null,
+  });
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -262,7 +271,16 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
+  await expect(previousPageLink).toHaveText("Previous page");
   await expect(previousPageLink).toHaveAttribute("pjax-page", "");
+  expect(await paginationAnchorAttrs(previousPageLink)).toEqual({
+    ariaCurrent: null,
+    className: null,
+    dataStatus: null,
+    pjaxPage: "",
+    text: "Previous page",
+    title: null,
+  });
   await previousPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   expect(
@@ -434,10 +452,20 @@ test("site admin post list custom gravatar author avatar keeps legacy custom att
 test("site admin post list route source keeps direct typed links", async () => {
   const source = await readFile("src/routes/sites/postList.tsx", "utf8");
 
+  expect(source).not.toContain("createLink");
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("to={item.href}");
   expect(source).not.toContain("prefixBasePath");
-  expect(source).not.toContain("<a href={");
+  expect(source).not.toMatch(/<a(?:\s|>)/u);
+  expect(source).not.toContain("setAttribute");
+  expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(source).toContain("const legacyPaginationLinkProps = {");
+  expect(source).toContain("explicitUndefined: true");
+  expect(source).toContain('"aria-current": undefined');
+  expect(source).toContain("className: undefined");
+  expect(source).toContain('"data-status": undefined');
+  expect(source).toContain("{...legacyPaginationLinkProps}");
   expect(source).toContain('pjax-page=""');
   expect(source).toContain('to="/sites/postList"');
   expect(source).toContain('to="/$ownerName/$projectName"');
@@ -475,6 +503,17 @@ async function siteSidebarAnchorActiveAttrs(page: Page) {
       text: link.textContent?.trim() ?? "",
     })),
   );
+}
+
+async function paginationAnchorAttrs(anchor: ReturnType<Page["locator"]>) {
+  return anchor.evaluate((link) => ({
+    ariaCurrent: link.getAttribute("aria-current"),
+    className: link.getAttribute("class"),
+    dataStatus: link.getAttribute("data-status"),
+    pjaxPage: link.getAttribute("pjax-page"),
+    text: link.textContent?.trim() ?? "",
+    title: link.getAttribute("title"),
+  }));
 }
 
 async function mockSiteAdminSession(page: Page) {

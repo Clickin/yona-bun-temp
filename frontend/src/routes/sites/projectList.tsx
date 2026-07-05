@@ -19,7 +19,7 @@ type ProjectListSearch = {
   pageNum?: number;
 };
 
-const legacySiteSidebarLinkProps = {
+const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
@@ -256,7 +256,7 @@ function ProjectListPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...legacyLinkSuppressionProps}
               pjax-page=""
               search={search(currentPage - 1)}
               to="/sites/projectList"
@@ -307,7 +307,7 @@ function ProjectListPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...legacyLinkSuppressionProps}
               pjax-page=""
               search={search(currentPage + 1)}
               to="/sites/projectList"
@@ -331,43 +331,43 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
     <ul className="site-setting-nav">
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/userList">
+        <Link {...legacyLinkSuppressionProps} to="/sites/userList">
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/postList">
+        <Link {...legacyLinkSuppressionProps} to="/sites/postList">
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/issueList">
+        <Link {...legacyLinkSuppressionProps} to="/sites/issueList">
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
       <li className="active">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/projectList">
+        <Link {...legacyLinkSuppressionProps} to="/sites/projectList">
           <LegacyMessage messageKey="site.sidebar.projectList" />
         </Link>
       </li>
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/mail">
+        <Link {...legacyLinkSuppressionProps} to="/sites/mail">
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/massmail">
+        <Link {...legacyLinkSuppressionProps} to="/sites/massmail">
           <LegacyMessage messageKey="site.sidebar.massMail" />
         </Link>
       </li>
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/update">
+        <Link {...legacyLinkSuppressionProps} to="/sites/update">
           <LegacyMessage messageKey="site.sidebar.update" />
           {showUpdateBadge ? <span className="notification-badge">1</span> : null}
         </Link>
       </li>
       <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/diagnostic">
+        <Link {...legacyLinkSuppressionProps} to="/sites/diagnostic">
           <LegacyMessage messageKey="site.sidebar.diagnostics" />
         </Link>
       </li>

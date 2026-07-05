@@ -15,6 +15,11 @@ const legacySiteSidebarLinkProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
+const legacyPaginationLinkProps = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
   validateSearch: (search: Record<string, unknown>): PostListSearch => ({
@@ -106,7 +111,7 @@ function PostListPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...legacyPaginationLinkProps}
               pjax-page=""
               search={{ pageNum: currentPage - 1 }}
               to="/sites/postList"
@@ -158,7 +163,7 @@ function PostListPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeProps={{ className: undefined }}
+              {...legacyPaginationLinkProps}
               pjax-page=""
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
