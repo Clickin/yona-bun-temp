@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { siteUpdateQueryOptions } from "../../api/site-admin";
+import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -27,6 +28,10 @@ function SiteDataRoute() {
 function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
+  const sessionBootstrapQuery = useQuery({
+    queryFn: () => readSessionBootstrap(runtimeConfig),
+    queryKey: ["site-data", "session-bootstrap"],
+  });
 
   return (
     <>
@@ -80,6 +85,13 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 method="post"
                 encType="multipart/form-data"
               >
+                {sessionBootstrapQuery.data?.csrfToken ? (
+                  <input
+                    type="hidden"
+                    name="csrfToken"
+                    value={sessionBootstrapQuery.data.csrfToken}
+                  />
+                ) : null}
                 <input type="file" name="data" />
                 <p>
                   <input type="submit" />

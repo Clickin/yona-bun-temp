@@ -14,7 +14,7 @@ const EXPECTED_DATA_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -47,7 +47,7 @@ const EXPECTED_DATA_SCREEN = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -100,6 +100,7 @@ const EXPECTED_DATA_SCREEN = `
         <h3>Import</h3>
         <p>Replace existing data with exported yobi data file.</p>
         <form action="__BASE_PATH__/sites/import" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrfToken" value="csrf-site-data">
           <input type="file" name="data">
           <p><input type="submit"></p>
         </form>
@@ -138,6 +139,9 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   await expect(page.locator('form[action$="/sites/import"]')).toHaveAttribute(
     "enctype",
     "multipart/form-data",
+  );
+  await expect(page.locator('input[type="hidden"][name="csrfToken"]')).toHaveValue(
+    "csrf-site-data",
   );
   await expect(page.locator('input[type="file"][name="data"]')).toBeVisible();
 
@@ -261,6 +265,14 @@ async function expectSiteAdminSidebar(page: Page, basePath: string) {
 }
 
 async function mockSiteAdminSession(page: Page) {
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-site-data" },
+      body: JSON.stringify({}),
+    });
+  });
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
