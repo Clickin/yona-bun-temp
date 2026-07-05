@@ -116,6 +116,27 @@ test("root shell does not own route tab, search scope, or notify bridge state", 
   expect(ROOT_ROUTE_SOURCE).toContain('<div id="yobiToasts" className="yobiToasts">');
 });
 
+test("root shell owns login dialog state without delegated document modal mutation", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain("handleDocumentSubmit");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('document.querySelector<HTMLElement>("#loginDialog")');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("dialog.querySelectorAll<HTMLInputElement>(");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('dialog.style.display = "block"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('dialog.style.display = "none"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('error.style.display = "block"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('error.style.display = "none"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("window.location.reload");
+  expect(ROOT_ROUTE_SOURCE).toContain("handleRootShellClick");
+  expect(ROOT_ROUTE_SOURCE).toContain("handleRootLoginDialogSubmit");
+  expect(ROOT_ROUTE_SOURCE).toContain("openRootLoginDialog");
+  expect(ROOT_ROUTE_SOURCE).toContain("submitRootLoginDialogForm");
+  expect(ROOT_ROUTE_SOURCE).toContain("onClickCapture={handleRootShellClick}");
+  expect(ROOT_ROUTE_SOURCE).toContain("onSubmit={handleRootLoginDialogSubmit}");
+  expect(ROOT_ROUTE_SOURCE).toContain('if (dismissModal.closest("#loginDialog, #yobiDialog"))');
+  expect(ROOT_ROUTE_SOURCE).toContain(
+    '{rootShellModal ? <div className="modal-backdrop in"></div> : null}',
+  );
+});
+
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -339,7 +360,7 @@ test("standalone UI kit root shell opens legacy login dialog from data-login req
   });
 
   await dialog.locator('[data-dismiss="modal"]').click();
-  await expect(dialog).toHaveClass("modal loginDialog hide");
+  await expect(dialog).toHaveClass("modal hide loginDialog");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 });
 
@@ -489,17 +510,30 @@ test("standalone UI kit root shell dismisses legacy modal buttons", async ({ pag
     "modal",
   );
 
-  const dialog = page.locator("#loginDialog");
-  await dialog.evaluate((element) => {
-    element.classList.remove("hide");
-    element.classList.add("in");
-    (element as HTMLElement).style.display = "block";
-  });
+  await page.locator(".page-wrap-outer").evaluate((container, href) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<button id="yobi-dialog-trigger" type="button" data-toggle="modal" data-target="#yobiDialog">Open dialog</button><a id="login-required-fixture" href="${href}" data-login="required">Log in</a>`,
+    );
+  }, `${basePath}/users/loginform`);
 
-  await expect(dialog).toHaveClass("modal loginDialog in");
-  await dialog.locator('[data-dismiss="modal"]').click();
-  await expect(dialog).toHaveClass("modal loginDialog hide");
-  await expect(dialog).toHaveAttribute("aria-hidden", "true");
+  const yobiDialog = page.locator("#yobiDialog");
+  await page.locator("#yobi-dialog-trigger").click();
+  await expect(yobiDialog).toHaveClass("modal yobiDialog in");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await yobiDialog.locator('.center-txt.buttons [data-dismiss="modal"]').click();
+  await expect(yobiDialog).toHaveClass("modal hide yobiDialog");
+  await expect(yobiDialog).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+
+  const loginDialog = page.locator("#loginDialog");
+  await page.locator("#login-required-fixture").click();
+  await expect(loginDialog).toHaveClass("modal loginDialog in");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await loginDialog.locator('.pull-right [data-dismiss="modal"]').click();
+  await expect(loginDialog).toHaveClass("modal hide loginDialog");
+  await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 });
 
 test("standalone UI kit root shell hides legacy data-via-email original message", async ({

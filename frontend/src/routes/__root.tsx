@@ -6,9 +6,9 @@ import {
   createRootRouteWithContext,
   useRouterState,
 } from "@tanstack/react-router";
-import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../api/auth";
+import { readAuthUiCapabilitiesRest } from "../api/auth";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
-import { readSessionBootstrap } from "../auth-workspace-client";
+import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
@@ -19,6 +19,33 @@ export interface AppRouterContext {
 type RootToast = {
   key: string;
   message: string;
+};
+
+type RootShellModalId = "loginDialog" | "yobiDialog";
+
+type RootLoginDialogState = {
+  errorMessage: string | null;
+  identifier: string;
+  password: string;
+  rememberMe: boolean;
+};
+
+type RootYobiDialogProps = {
+  isOpen: boolean;
+  onDismiss: () => void;
+};
+
+type RootLoginDialogProps = {
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onDismiss: () => void;
+  onIdentifierChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+  onRememberMeChange: (checked: boolean) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  resetNonce: number;
+  runtimeConfig: RuntimeConfig;
+  state: RootLoginDialogState;
+  visible: boolean;
 };
 
 const RootToastContext = React.createContext<React.Dispatch<
@@ -38,13 +65,110 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
   notFoundComponent: RootAliasNotFound,
 });
 
+function getModalToggleSelector(element: HTMLElement) {
+  return element.dataset.target ?? element.getAttribute("href")?.match(/#[^\s]+$/u)?.[0] ?? null;
+}
+
+function getRootShellModalId(selector: string | null | undefined): RootShellModalId | null {
+  if (selector === "#loginDialog") {
+    return "loginDialog";
+  }
+  if (selector === "#yobiDialog") {
+    return "yobiDialog";
+  }
+  return null;
+}
+
 function RootResetShell() {
   const { runtimeConfig } = Route.useRouteContext();
   const [rootToast, setRootToast] = React.useState<RootToast | null>(null);
+  const [rootShellModal, setRootShellModal] = React.useState<RootShellModalId | null>(null);
+  const [rootLoginDialogResetNonce, setRootLoginDialogResetNonce] = React.useState(0);
+  const [rootLoginDialogState, setRootLoginDialogState] = React.useState<RootLoginDialogState>({
+    errorMessage: null,
+    identifier: "",
+    password: "",
+    rememberMe: true,
+  });
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const rendersPlainResponseState = pathname.startsWith("/verify/");
   const rendersStandaloneLoginState = pathname === "/users/loginform";
+  const loginDialogInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const openRootLoginDialog = React.useCallback((resetFields: boolean) => {
+    setRootShellModal("loginDialog");
+    if (resetFields) {
+      setRootLoginDialogResetNonce((current) => current + 1);
+    }
+    setRootLoginDialogState((current) => ({
+      ...current,
+      errorMessage: null,
+      identifier: resetFields ? "" : current.identifier,
+      password: resetFields ? "" : current.password,
+    }));
+  }, []);
+
+  const closeRootShellModal = React.useCallback(() => {
+    setRootShellModal(null);
+  }, []);
+
+  const handleRootShellClick = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) {
+        return;
+      }
+
+      const requiredLogin = target.closest<HTMLElement>('[data-login="required"]');
+      if (requiredLogin && !rendersStandaloneLoginState) {
+        openRootLoginDialog(true);
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      const modalToggle = target.closest<HTMLElement>('[data-toggle="modal"]');
+      if (!modalToggle) {
+        return;
+      }
+
+      const modalId = getRootShellModalId(getModalToggleSelector(modalToggle));
+      if (!modalId) {
+        return;
+      }
+
+      if (modalId === "loginDialog") {
+        if (!rendersStandaloneLoginState) {
+          openRootLoginDialog(false);
+        }
+      } else {
+        setRootShellModal(modalId);
+      }
+      event.preventDefault();
+    },
+    [openRootLoginDialog, rendersStandaloneLoginState],
+  );
+
+  const handleRootLoginDialogSubmit = React.useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setRootLoginDialogState((current) => ({
+        ...current,
+        errorMessage: null,
+      }));
+
+      try {
+        await submitRootLoginDialogForm(runtimeConfig, rootLoginDialogState);
+      } catch (caught) {
+        setRootLoginDialogState((current) => ({
+          ...current,
+          errorMessage: caught instanceof Error ? caught.message : "Failed to authenticate.",
+        }));
+      }
+    },
+    [rootLoginDialogState, runtimeConfig],
+  );
 
   React.useEffect(() => {
     if (rendersPlainResponseState) {
@@ -68,6 +192,17 @@ function RootResetShell() {
   }, [rendersPlainResponseState]);
 
   React.useEffect(() => {
+    if (rootShellModal !== "loginDialog") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      loginDialogInputRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [rootShellModal]);
+
+  React.useEffect(() => {
     if (rendersPlainResponseState) {
       return;
     }
@@ -84,6 +219,9 @@ function RootResetShell() {
       const target = event.target instanceof Element ? event.target : null;
       const dismissModal = target?.closest<HTMLElement>('[data-dismiss="modal"]');
       if (dismissModal) {
+        if (dismissModal.closest("#loginDialog, #yobiDialog")) {
+          return;
+        }
         const modal = dismissModal.closest<HTMLElement>(".modal");
         if (modal) {
           modal.classList.add("hide");
@@ -96,43 +234,12 @@ function RootResetShell() {
         return;
       }
 
-      const requiredLogin = target?.closest<HTMLElement>('[data-login="required"]');
-      if (requiredLogin) {
-        const dialog = document.querySelector<HTMLElement>("#loginDialog");
-        if (dialog) {
-          dialog
-            .querySelectorAll<HTMLInputElement>(
-              'input[name="loginIdOrEmail"], input[name="password"]',
-            )
-            .forEach((input) => {
-              input.value = "";
-            });
-          const error = dialog.querySelector<HTMLElement>(".error");
-          if (error) {
-            error.style.display = "none";
-          }
-          dialog.classList.remove("hide");
-          dialog.classList.add("in");
-          dialog.style.display = "block";
-          dialog.setAttribute("aria-hidden", "false");
-          if (!document.querySelector(".modal-backdrop")) {
-            const backdrop = document.createElement("div");
-            backdrop.className = "modal-backdrop in";
-            document.body.append(backdrop);
-          }
-          window.setTimeout(() => {
-            dialog.querySelector<HTMLInputElement>('input[name="loginIdOrEmail"]')?.focus();
-          }, 0);
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
       const modalToggle = target?.closest<HTMLElement>('[data-toggle="modal"]');
       if (modalToggle) {
-        const selector =
-          modalToggle.dataset.target ?? modalToggle.getAttribute("href")?.match(/#[^\s]+$/u)?.[0];
+        const selector = getModalToggleSelector(modalToggle);
+        if (getRootShellModalId(selector)) {
+          return;
+        }
         const modal = selector?.startsWith("#") ? document.getElementById(selector.slice(1)) : null;
         if (modal) {
           modal.classList.remove("hide");
@@ -209,50 +316,11 @@ function RootResetShell() {
       }
     }
 
-    function handleDocumentSubmit(event: SubmitEvent) {
-      const form =
-        event.target instanceof HTMLFormElement &&
-        event.target.closest("#loginDialog .login-form-wrap") === event.target
-          ? event.target
-          : null;
-      if (!form) {
-        return;
-      }
-
-      event.preventDefault();
-      const dialog = form.closest<HTMLElement>("#loginDialog");
-      const error = dialog?.querySelector<HTMLElement>(".error");
-      const errorMessage = error?.querySelector<HTMLElement>(".error-message");
-      if (error) {
-        error.style.display = "none";
-      }
-      if (errorMessage) {
-        errorMessage.textContent = "";
-      }
-
-      const formData = new FormData(form);
-      void submitLoginDialogForm(formData, runtimeConfig)
-        .then(() => {
-          window.location.reload();
-        })
-        .catch((caught) => {
-          if (errorMessage) {
-            errorMessage.textContent =
-              caught instanceof Error ? caught.message : "Failed to authenticate.";
-          }
-          if (error) {
-            error.style.display = "block";
-          }
-        });
-    }
-
     document.addEventListener("click", handleDocumentClick);
-    document.addEventListener("submit", handleDocumentSubmit);
     return () => {
       document.removeEventListener("click", handleDocumentClick);
-      document.removeEventListener("submit", handleDocumentSubmit);
     };
-  }, [rendersPlainResponseState, runtimeConfig]);
+  }, [rendersPlainResponseState]);
 
   function scanOriginalMessageSources() {
     document.querySelectorAll<HTMLElement>("[data-via-email]").forEach((target) => {
@@ -312,13 +380,16 @@ function RootResetShell() {
     });
   }
 
-  return (
-    <RootToastContext.Provider value={setRootToast}>
+  const rootShellContent = (
+    <>
       <Outlet />
       {rendersPlainResponseState ? null : (
         <>
           <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-            <RootYobiDialog />
+            <RootYobiDialog
+              isOpen={rootShellModal === "yobiDialog"}
+              onDismiss={closeRootShellModal}
+            />
           </LegacyI18nProvider>
           <div id="yobiToasts" className="yobiToasts">
             {rootToast ? (
@@ -338,10 +409,49 @@ function RootResetShell() {
           <LegacySelect2Templates />
           {rendersStandaloneLoginState ? null : (
             <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-              <RootLoginDialog runtimeConfig={runtimeConfig} />
+              <RootLoginDialog
+                inputRef={loginDialogInputRef}
+                onDismiss={closeRootShellModal}
+                onIdentifierChange={(identifier) => {
+                  setRootLoginDialogState((current) => ({
+                    ...current,
+                    identifier,
+                  }));
+                }}
+                onPasswordChange={(password) => {
+                  setRootLoginDialogState((current) => ({
+                    ...current,
+                    password,
+                  }));
+                }}
+                onRememberMeChange={(rememberMe) => {
+                  setRootLoginDialogState((current) => ({
+                    ...current,
+                    rememberMe,
+                  }));
+                }}
+                onSubmit={handleRootLoginDialogSubmit}
+                resetNonce={rootLoginDialogResetNonce}
+                runtimeConfig={runtimeConfig}
+                state={rootLoginDialogState}
+                visible={rootShellModal === "loginDialog"}
+              />
             </LegacyI18nProvider>
           )}
+          {rootShellModal ? <div className="modal-backdrop in"></div> : null}
         </>
+      )}
+    </>
+  );
+
+  return (
+    <RootToastContext.Provider value={setRootToast}>
+      {rendersPlainResponseState ? (
+        rootShellContent
+      ) : (
+        <div style={{ display: "contents" }} onClickCapture={handleRootShellClick}>
+          {rootShellContent}
+        </div>
       )}
     </RootToastContext.Provider>
   );
@@ -363,12 +473,18 @@ function RootYobiToast({ message, onDismiss }: { message: string; onDismiss: () 
   );
 }
 
-function RootYobiDialog() {
+function RootYobiDialog({ isOpen, onDismiss }: RootYobiDialogProps) {
   const { t } = useLegacyMessages();
   return (
-    <div id="yobiDialog" className="modal hide yobiDialog" tabIndex={-1} role="dialog" aria-hidden>
+    <div
+      id="yobiDialog"
+      className={isOpen ? "modal yobiDialog in" : "modal hide yobiDialog"}
+      tabIndex={-1}
+      role="dialog"
+      aria-hidden={!isOpen}
+    >
       <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" data-dismiss="modal">
+        <button type="button" className="btn-transparent" data-dismiss="modal" onClick={onDismiss}>
           &times;
         </button>
       </div>
@@ -378,22 +494,13 @@ function RootYobiDialog() {
           <p className="desc" />
         </div>
         <div className="center-txt buttons">
-          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+          <button type="button" className="ybtn ybtn-info" data-dismiss="modal" onClick={onDismiss}>
             {t("button.confirm")}
           </button>
         </div>
       </div>
     </div>
   );
-}
-
-async function submitLoginDialogForm(formData: FormData, runtimeConfig: RuntimeConfig) {
-  const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-  await signInWithPasswordRest(runtimeConfig, csrfToken, {
-    identifier: String(formData.get("loginIdOrEmail") ?? ""),
-    password: String(formData.get("password") ?? ""),
-    rememberMe: formData.get("rememberMe") === "on",
-  });
 }
 
 function LegacySelect2Assets({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -467,7 +574,18 @@ function LegacySelect2Templates() {
   );
 }
 
-function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function RootLoginDialog({
+  inputRef,
+  onDismiss,
+  onIdentifierChange,
+  onPasswordChange,
+  onRememberMeChange,
+  onSubmit,
+  resetNonce,
+  runtimeConfig,
+  state,
+  visible,
+}: RootLoginDialogProps) {
   const { t } = useLegacyMessages();
   const [capabilities, setCapabilities] = React.useState<ReadAuthUiCapabilitiesResponse | null>(
     null,
@@ -499,14 +617,26 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     : [];
 
   return (
-    <div id="loginDialog" className="modal hide loginDialog" tabIndex={-1} role="dialog">
+    <div
+      id="loginDialog"
+      className={visible ? "modal loginDialog in" : "modal hide loginDialog"}
+      tabIndex={-1}
+      role="dialog"
+      aria-hidden={!visible}
+    >
       <div className="modal-body">
         <div className="pull-right">
-          <button type="button" className="close" data-dismiss="modal">
+          <button type="button" className="close" data-dismiss="modal" onClick={onDismiss}>
             &times;
           </button>
         </div>
-        <form action="/users/login" method="post" className="frm-wrap login-form-wrap">
+        <form
+          action="/users/login"
+          method="post"
+          className="frm-wrap login-form-wrap"
+          onSubmit={onSubmit}
+          key={resetNonce}
+        >
           {socialLoginOnly ? (
             <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
           ) : (
@@ -520,6 +650,9 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     className="text email"
                     autoComplete="off"
                     placeholder={t("user.login.key")}
+                    ref={inputRef}
+                    value={state.identifier}
+                    onChange={(event) => onIdentifierChange(event.target.value)}
                   />
                 </dd>
                 <dd>
@@ -530,12 +663,17 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     className="text password"
                     autoComplete="off"
                     placeholder={t("user.password")}
+                    value={state.password}
+                    onChange={(event) => onPasswordChange(event.target.value)}
                   />
                 </dd>
               </dl>
-              <div className="error">
+              <div
+                className="error"
+                style={state.errorMessage ? { display: "block" } : { display: "none" }}
+              >
                 <i className="yobicon-error" />
-                <span className="error-message" />
+                <span className="error-message">{state.errorMessage ?? ""}</span>
               </div>
               <div className="btns-row nm">
                 <button type="submit" className="ybtn ybtn-primary fullsize">
@@ -564,7 +702,8 @@ function RootLoginDialog({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   type="checkbox"
                   name="rememberMe"
                   className="checkbox"
-                  defaultChecked
+                  checked={state.rememberMe}
+                  onChange={(event) => onRememberMeChange(event.target.checked)}
                 />
                 <label htmlFor="remember-meD" className="bg-checkbox">
                   {t("title.rememberMe")}
