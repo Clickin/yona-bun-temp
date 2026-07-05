@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { uploadTemporaryAttachment } from "../../api/attachments";
@@ -62,8 +62,37 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   const email = profile?.primaryEmailAddress ?? "";
   const avatarUrl = profile?.avatarUrl ?? "";
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarCropModalOpen, setAvatarCropModalOpen] = useState(false);
+  const [avatarFileInputKey, setAvatarFileInputKey] = useState(0);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
   const avatarOnlyImageMessage = t("user.avatar.onlyImage");
+
+  function insulateAvatarCropModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const resetAvatarCropSelection = () => {
+    setAvatarCropModalOpen(false);
+    setAvatarFile(null);
+    setAvatarFileInputKey((currentKey) => currentKey + 1);
+  };
+
+  const handleAvatarFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.currentTarget.files?.[0] ?? null;
+    if (nextFile && !nextFile.type.startsWith("image/")) {
+      window.alert(avatarOnlyImageMessage);
+      resetAvatarCropSelection();
+      return;
+    }
+    setAvatarFile(nextFile);
+    setAvatarCropModalOpen(nextFile !== null);
+  };
+
+  const dismissAvatarCropModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateAvatarCropModalButtonClick(event);
+    resetAvatarCropSelection();
+  };
 
   useEffect(() => {
     if (!avatarFile) {
@@ -96,7 +125,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     },
     onSuccess: (workspace) => {
       queryClient.setQueryData(["workspace", "overview"], workspace);
-      setAvatarFile(null);
+      resetAvatarCropSelection();
     },
   });
   const resetVisitedMutation = useMutation({
@@ -108,6 +137,13 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       queryClient.setQueryData(["workspace", "overview"], workspace);
     },
   });
+
+  const submitAvatarCrop = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateAvatarCropModalButtonClick(event);
+    if (avatarFile) {
+      avatarMutation.mutate(avatarFile);
+    }
+  };
 
   return (
     <>
@@ -206,21 +242,13 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                 <div className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
                   {t("userinfo.changeAvatar")}
                   <input
+                    key={avatarFileInputKey}
                     id="avatarFile"
                     type="file"
                     className="file"
                     name="filePath"
                     accept="image/*"
-                    onChange={(event) => {
-                      const nextFile = event.currentTarget.files?.[0] ?? null;
-                      if (nextFile && !nextFile.type.startsWith("image/")) {
-                        window.alert(avatarOnlyImageMessage);
-                        event.currentTarget.value = "";
-                        setAvatarFile(null);
-                        return;
-                      }
-                      setAvatarFile(nextFile);
-                    }}
+                    onChange={handleAvatarFileChange}
                   />
                 </div>
               </div>
@@ -244,9 +272,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </div>
           <div
             id="avatarCropWrap"
-            className={`modal${avatarFile ? "" : " hide"}`}
+            className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
             role="dialog"
             data-backdrop="static"
+            style={avatarCropModalOpen ? { display: "block" } : undefined}
           >
             <div className="modal-header center-txt">
               <div className="avatar-wrap xlarge">
@@ -266,7 +295,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                 type="button"
                 className="ybtn ybtn-default"
                 data-dismiss="modal"
-                onClick={() => setAvatarFile(null)}
+                onClick={dismissAvatarCropModal}
               >
                 {t("button.cancel")}
               </button>
@@ -274,16 +303,13 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                 type="button"
                 className="ybtn ybtn-success btnSubmitCrop"
                 disabled={!avatarFile || avatarMutation.isPending}
-                onClick={() => {
-                  if (avatarFile) {
-                    avatarMutation.mutate(avatarFile);
-                  }
-                }}
+                onClick={submitAvatarCrop}
               >
                 {t("button.save")}
               </button>
             </div>
           </div>
+          {avatarCropModalOpen ? <div className="modal-backdrop in"></div> : null}
         </div>
       </div>
     </>

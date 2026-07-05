@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type MouseEvent } from "react";
 import {
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
@@ -20,6 +20,11 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
 });
+
+function insulateOrganizationMembersDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 function OrganizationMembersRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -105,6 +110,22 @@ function OrganizationMembersBody({
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
   const adminQueryKey = [...apiQueryKeys.organization.base(organizationName), "admin"] as const;
+  const closeDeleteMemberModal = () => setDeleteUserId(null);
+  const openDeleteMemberModal = (event: MouseEvent<HTMLButtonElement>, userId: number) => {
+    insulateOrganizationMembersDeleteModalButtonClick(event);
+    setDeleteUserId(userId);
+  };
+  const dismissDeleteMemberModal = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateOrganizationMembersDeleteModalButtonClick(event);
+    closeDeleteMemberModal();
+  };
+  const submitDeleteMember = (event: MouseEvent<HTMLButtonElement>) => {
+    insulateOrganizationMembersDeleteModalButtonClick(event);
+    if (deleteUserId === null || deleteMutation.isPending) {
+      return;
+    }
+    deleteMutation.mutate(deleteUserId);
+  };
   const addMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -139,7 +160,12 @@ function OrganizationMembersBody({
       });
     },
     onSuccess() {
+      closeDeleteMemberModal();
       queryClient.invalidateQueries({ queryKey: adminQueryKey });
+    },
+    onError(error) {
+      window.alert(organizationMemberDeleteErrorMessage(t, error));
+      closeDeleteMemberModal();
     },
   });
   function onAdd(event: FormEvent<HTMLFormElement>) {
@@ -207,7 +233,7 @@ function OrganizationMembersBody({
                 member={member}
                 organization={organization}
                 organizationName={organizationName}
-                onDelete={setDeleteUserId}
+                onDelete={openDeleteMemberModal}
                 onRole={(userId, role) => {
                   setOpenRoleDropdownLoginId(null);
                   updateRoleMutation.mutate({ role, userId });
@@ -222,7 +248,7 @@ function OrganizationMembersBody({
 
           <div
             id="alertDeletion"
-            className={deleteUserId === null ? "modal hide" : "modal"}
+            className={deleteUserId === null ? "modal hide" : "modal hide in"}
             style={deleteUserId === null ? undefined : { display: "block" }}
           >
             <div className="modal-header">
@@ -230,7 +256,7 @@ function OrganizationMembersBody({
                 type="button"
                 className="close"
                 data-dismiss="modal"
-                onClick={() => setDeleteUserId(null)}
+                onClick={dismissDeleteMemberModal}
               >
                 ×
               </button>
@@ -244,16 +270,7 @@ function OrganizationMembersBody({
                 type="button"
                 className="ybtn ybtn-info ybtn-mini"
                 id="deleteBtn"
-                onClick={async () => {
-                  if (deleteUserId !== null) {
-                    try {
-                      await deleteMutation.mutateAsync(deleteUserId);
-                    } catch (error) {
-                      window.alert(organizationMemberDeleteErrorMessage(t, error));
-                    }
-                  }
-                  setDeleteUserId(null);
-                }}
+                onClick={submitDeleteMember}
               >
                 {t("button.yes")}
               </button>
@@ -261,12 +278,13 @@ function OrganizationMembersBody({
                 type="button"
                 className="ybtn ybtn-mini"
                 data-dismiss="modal"
-                onClick={() => setDeleteUserId(null)}
+                onClick={dismissDeleteMemberModal}
               >
                 {t("button.no")}
               </button>
             </div>
           </div>
+          {deleteUserId === null ? null : <div className="modal-backdrop fade in"></div>}
 
           {organization.enrollmentRequests.length > 0 ? (
             <>
@@ -318,7 +336,7 @@ function OrganizationMember({
   member: YonaUserItem;
   organization: OrganizationAdminView;
   organizationName: string;
-  onDelete: (userId: number) => void;
+  onDelete: (event: MouseEvent<HTMLButtonElement>, userId: number) => void;
   onRole: (userId: number, role: string) => void;
   onToggleRoleDropdown: (loginId: string) => void;
   roleDropdownOpen: boolean;
@@ -409,7 +427,7 @@ function OrganizationMember({
             `/organizations/${organizationName}/member/${userId}/delete`,
           )}
           className="ybtn ybtn-danger ybtn-small"
-          onClick={() => onDelete(userId)}
+          onClick={(event) => onDelete(event, userId)}
         >
           {t("button.delete")}
         </button>

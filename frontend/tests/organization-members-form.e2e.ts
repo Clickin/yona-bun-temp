@@ -292,23 +292,82 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("organizationHref(");
 });
 
-test("organization members delete waits for legacy confirmation modal", async ({ page }) => {
+test("organization members delete modal stays route-owned across open dismiss and confirm", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const requests = await mockOrganizationMembers(page);
 
   await page.goto(`${basePath}/organizations/weblabs/members`);
-  await page.locator('.members.project [data-action="delete"]').first().click();
+  await installOrganizationMembersDeleteModalBridgeAudit(page, ["alertDeletion"]);
+  await rememberSpaMarker(page, "organization-members-delete-modal");
+  const membersUrl = page.url();
+  const deleteButton = '.members.project [data-action="delete"]';
+  const deleteModal = page.locator("#alertDeletion");
+  const closeButton = '#alertDeletion .modal-header [data-dismiss="modal"]';
+  const noButton = '#alertDeletion .modal-footer [data-dismiss="modal"]';
 
-  await expect(page.locator("#alertDeletion")).not.toHaveClass(/hide/);
+  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-modal");
+
+  expect(await dispatchCancelableClick(page, deleteButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal hide in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator(closeButton)).toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator(noButton)).toHaveAttribute("data-dismiss", "modal");
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-modal");
+  await expect
+    .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
   expect(requests.deletedUserIds).toEqual([]);
 
-  await page.locator('#alertDeletion .modal-footer [data-dismiss="modal"]').click();
-  await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  expect(await dispatchCancelableClick(page, noButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-modal");
+  await expect
+    .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
   expect(requests.deletedUserIds).toEqual([]);
 
-  await page.locator('.members.project [data-action="delete"]').first().click();
-  await page.locator("#deleteBtn").click();
-  await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  expect(await dispatchCancelableClick(page, deleteButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal hide in");
+  expect(await dispatchCancelableClick(page, closeButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-modal");
+  await expect
+    .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
+  expect(requests.deletedUserIds).toEqual([]);
+
+  await rememberSpaMarker(page, "kept");
+  expect(await dispatchCancelableClick(page, deleteButton)).toBe(false);
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/organizations/weblabs/members/1") &&
+      response.request().method() === "DELETE",
+  );
+  expect(await dispatchCancelableClick(page, "#deleteBtn")).toBe(false);
+  await deleteResponsePromise;
+
+  await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
+  await expect
+    .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
   await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
 });
 
@@ -320,19 +379,65 @@ test("organization members delete failure shows legacy alert mapping", async ({ 
   });
 
   await page.goto(`${basePath}/organizations/weblabs/members`);
-  await page.locator('.members.project [data-action="delete"]').first().click();
-  await expect(page.locator("#alertDeletion")).not.toHaveClass(/hide/);
+  await installOrganizationMembersDeleteModalBridgeAudit(page, ["alertDeletion"]);
+  await rememberSpaMarker(page, "organization-members-delete-failure");
+  const membersUrl = page.url();
+
+  expect(await dispatchCancelableClick(page, '.members.project [data-action="delete"]')).toBe(
+    false,
+  );
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide in");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-failure");
+  await expect
+    .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
 
   const alertMessage = page.waitForEvent("dialog").then(async (dialog) => {
     const message = dialog.message();
     await dialog.accept();
     return message;
   });
-  await page.locator("#deleteBtn").click();
+  expect(await dispatchCancelableClick(page, "#deleteBtn")).toBe(false);
 
   await expect(alertMessage).resolves.toBe("Project owner cannot leave his own project.");
-  await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
+  await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(membersUrl);
+  await expect.poll(() => spaMarker(page)).toBe("organization-members-delete-failure");
+  await expect
+    .poll(() => organizationMembersDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
   await expect.poll(() => requests.deletedUserIds).toEqual(["1"]);
+});
+
+test("organization members delete modal source insulates delegated modal bridge", () => {
+  const modalSource = ORGANIZATION_MEMBERS_ROUTE_SOURCE.slice(
+    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf(
+      "function insulateOrganizationMembersDeleteModalButtonClick",
+    ),
+    ORGANIZATION_MEMBERS_ROUTE_SOURCE.indexOf("function OrganizationHeader"),
+  );
+
+  expect(modalSource).toContain("function insulateOrganizationMembersDeleteModalButtonClick");
+  expect(modalSource).toContain("event.preventDefault();");
+  expect(modalSource).toContain("event.stopPropagation();");
+  expect(modalSource).toContain("const openDeleteMemberModal");
+  expect(modalSource).toContain("const dismissDeleteMemberModal");
+  expect(modalSource).toContain("const submitDeleteMember");
+  expect(modalSource).toContain("closeDeleteMemberModal();");
+  expect(modalSource).toContain(
+    'className={deleteUserId === null ? "modal hide" : "modal hide in"}',
+  );
+  expect(modalSource).toContain('className="modal-backdrop fade in"');
+  expect(modalSource).toContain("onDelete={openDeleteMemberModal}");
+  expect(modalSource).toContain("onClick={dismissDeleteMemberModal}");
+  expect(modalSource).toContain("onClick={submitDeleteMember}");
+  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toContain("classList");
+  expect(modalSource).not.toContain("addEventListener(");
 });
 
 test("organization members menu settings link preserves legacy href with SPA transition", async ({
@@ -805,6 +910,113 @@ async function installOrganizationMembersRoleDropdownDocumentAudit(page: Page) {
       }
     });
   });
+}
+
+async function installOrganizationMembersDeleteModalBridgeAudit(page: Page, modalIds: string[]) {
+  await page.evaluate((ids) => {
+    type GuardedWindow = typeof window & {
+      __organizationMembersDeleteModalBridgeAudit?: {
+        documentClicks: string[];
+        getElementById: string[];
+      };
+      __organizationMembersDeleteModalBridgeAuditArmed?: boolean;
+      __organizationMembersDeleteModalBridgeNativeGetElementById?: typeof Document.prototype.getElementById;
+    };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__organizationMembersDeleteModalBridgeAudit = {
+      documentClicks: [],
+      getElementById: [],
+    };
+    guardedWindow.__organizationMembersDeleteModalBridgeNativeGetElementById ??=
+      Document.prototype.getElementById;
+    const nativeGetElementById =
+      guardedWindow.__organizationMembersDeleteModalBridgeNativeGetElementById;
+
+    Document.prototype.getElementById = function guardedGetElementById(id: string) {
+      if (ids.includes(id)) {
+        guardedWindow.__organizationMembersDeleteModalBridgeAudit?.getElementById.push(id);
+      }
+      return nativeGetElementById.call(this, id);
+    };
+
+    if (guardedWindow.__organizationMembersDeleteModalBridgeAuditArmed) {
+      return;
+    }
+
+    guardedWindow.__organizationMembersDeleteModalBridgeAuditArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) {
+        return;
+      }
+      if (target.closest('.members.project [data-action="delete"]')) {
+        guardedWindow.__organizationMembersDeleteModalBridgeAudit?.documentClicks.push(
+          "member-delete",
+        );
+        return;
+      }
+      if (target.closest("#deleteBtn")) {
+        guardedWindow.__organizationMembersDeleteModalBridgeAudit?.documentClicks.push(
+          "modal-confirm",
+        );
+        return;
+      }
+      if (target.closest('#alertDeletion .modal-header [data-dismiss="modal"]')) {
+        guardedWindow.__organizationMembersDeleteModalBridgeAudit?.documentClicks.push(
+          "header-dismiss",
+        );
+        return;
+      }
+      if (target.closest('#alertDeletion .modal-footer [data-dismiss="modal"]')) {
+        guardedWindow.__organizationMembersDeleteModalBridgeAudit?.documentClicks.push(
+          "footer-dismiss",
+        );
+      }
+    });
+  }, modalIds);
+}
+
+async function organizationMembersDeleteModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __organizationMembersDeleteModalBridgeAudit?: {
+              documentClicks: string[];
+              getElementById: string[];
+            };
+          }
+      ).__organizationMembersDeleteModalBridgeAudit ?? { documentClicks: [], getElementById: [] },
+  );
+}
+
+async function rememberSpaMarker(page: Page, marker: string) {
+  await page.evaluate((nextMarker) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextMarker;
+  }, marker);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+  );
+}
+
+async function dispatchCancelableClick(page: Page, selector: string) {
+  return page.evaluate((targetSelector) => {
+    const element = document.querySelector(targetSelector);
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`Missing selector: ${targetSelector}`);
+    }
+    return element.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }, selector);
 }
 
 async function canonicalizeScreenRoots(page: Page) {

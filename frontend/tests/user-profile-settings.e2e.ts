@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+const USER_PROFILE_SETTINGS_ROUTE_SOURCE = readFileSync("src/routes/user/editform.tsx", "utf8");
+
 const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
@@ -222,10 +224,195 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
 });
 
 test("current-user profile settings tabs use typed TanStack links without route-local adapter", () => {
-  const source = readFileSync("src/routes/user/editform.tsx", "utf8");
-  expect(source).not.toContain("LegacyInternalLink");
-  expect(source).not.toContain("AnchorHTMLAttributes");
-  expect(source).not.toContain("ComponentType");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("ComponentType");
+});
+
+test("user profile avatar crop modal stays route-owned across dismiss and save", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedSession(page);
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify({ csrfToken: "csrf-token" }),
+    });
+  });
+  await page.route("**/api/v1/workspace", async (route) => {
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) });
+  });
+  const profileUpdates: Array<Record<string, unknown>> = [];
+  const fileUploads: string[] = [];
+  await page.route("**/api/v1/workspace/profile", async (route) => {
+    const body = JSON.parse(route.request().postData() ?? "{}") as Record<string, unknown>;
+    profileUpdates.push(body);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        workspaceBody({
+          avatarUrl: body.avatarAttachmentId === "77" ? "/files/77" : undefined,
+          email: typeof body.email === "string" ? body.email : undefined,
+          name: typeof body.name === "string" ? body.name : undefined,
+        }),
+      ),
+    });
+  });
+  await page.route("**/files", async (route) => {
+    fileUploads.push(route.request().postDataBuffer()?.toString() ?? "");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 77,
+        mimeType: "image/png",
+        name: "avatar.png",
+        size: 128,
+        url: "/files/77",
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/user/editform`);
+  await installAvatarCropModalBridgeAudit(page, ["avatarCropWrap"]);
+  await rememberSpaMarker(page, "user-profile-avatar-crop");
+  const editFormUrl = page.url();
+  const avatarCropModal = page.locator("#avatarCropWrap");
+  const cancelButton = '#avatarCropWrap [data-dismiss="modal"]';
+  const saveButton = "#avatarCropWrap .btnSubmitCrop";
+  const avatarPng = {
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+      "base64",
+    ),
+    mimeType: "image/png",
+    name: "avatar.png",
+  };
+
+  await expect(avatarCropModal).toHaveClass("modal hide");
+  await expect(avatarCropModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(editFormUrl);
+  await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
+  await expect
+    .poll(() => avatarCropModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
+
+  await page.locator("#avatarFile").setInputFiles(avatarPng);
+  await expect(avatarCropModal).toHaveClass("modal hide in");
+  await expect(avatarCropModal).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(cancelButton)).toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator("#avatarCropWrap .modal-header .avatar-wrap > img")).toHaveAttribute(
+    "src",
+    /^blob:/,
+  );
+  await expect(page.locator("#avatarCropWrap .modal-body > img")).toHaveAttribute("src", /^blob:/);
+  await expect(page).toHaveURL(editFormUrl);
+  await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
+  await expect
+    .poll(() => avatarCropModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
+  expect(fileUploads).toHaveLength(0);
+  expect(profileUpdates).toHaveLength(0);
+
+  expect(await dispatchCancelableClick(page, cancelButton)).toBe(false);
+  await expect(avatarCropModal).toHaveClass("modal hide");
+  await expect(avatarCropModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(editFormUrl);
+  await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
+  await expect
+    .poll(() => avatarCropModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
+  expect(fileUploads).toHaveLength(0);
+  expect(profileUpdates).toHaveLength(0);
+
+  await page.locator("#avatarFile").setInputFiles(avatarPng);
+  await expect(avatarCropModal).toHaveClass("modal hide in");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page).toHaveURL(editFormUrl);
+  await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
+  await expect
+    .poll(() => avatarCropModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
+
+  await rememberSpaMarker(page, "kept");
+  const uploadResponsePromise = page.waitForResponse(
+    (response) => response.url().includes("/files") && response.request().method() === "POST",
+  );
+  const profileUpdateResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/workspace/profile") &&
+      response.request().method() === "PATCH",
+  );
+  expect(await dispatchCancelableClick(page, saveButton)).toBe(false);
+  await uploadResponsePromise;
+  await profileUpdateResponsePromise;
+
+  await expect(avatarCropModal).toHaveClass("modal hide");
+  await expect(avatarCropModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).toHaveAttribute(
+    "src",
+    "/files/77",
+  );
+  await expect(page).toHaveURL(editFormUrl);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
+  await expect
+    .poll(() => avatarCropModalBridgeAuditHits(page))
+    .toEqual({
+      documentClicks: [],
+      getElementById: [],
+    });
+  expect(fileUploads).toHaveLength(1);
+  expect(profileUpdates).toEqual([
+    {
+      avatarAttachmentId: "77",
+      email: "admin@example.com",
+      name: "Admin User",
+    },
+  ]);
+});
+
+test("user profile avatar crop modal source stays route-owned", () => {
+  const modalSource = USER_PROFILE_SETTINGS_ROUTE_SOURCE.slice(
+    USER_PROFILE_SETTINGS_ROUTE_SOURCE.indexOf("function insulateAvatarCropModalButtonClick"),
+    USER_PROFILE_SETTINGS_ROUTE_SOURCE.indexOf("function EditTabMenu"),
+  );
+
+  expect(modalSource).toContain("function insulateAvatarCropModalButtonClick");
+  expect(modalSource).toContain("event.preventDefault();");
+  expect(modalSource).toContain("event.stopPropagation();");
+  expect(modalSource).toContain("const resetAvatarCropSelection");
+  expect(modalSource).toContain("const handleAvatarFileChange");
+  expect(modalSource).toContain("const dismissAvatarCropModal");
+  expect(modalSource).toContain("const submitAvatarCrop");
+  expect(modalSource).toContain("setAvatarCropModalOpen(false);");
+  expect(modalSource).toContain("setAvatarCropModalOpen(nextFile !== null);");
+  expect(modalSource).toContain('id="avatarCropWrap"');
+  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).toContain('className={avatarCropModalOpen ? "modal hide in" : "modal hide"}');
+  expect(modalSource).toContain("key={avatarFileInputKey}");
+  expect(modalSource).toContain("onClick={dismissAvatarCropModal}");
+  expect(modalSource).toContain("onClick={submitAvatarCrop}");
+  expect(modalSource).toContain('className="modal-backdrop in"');
+  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toContain("classList");
+  expect(modalSource).not.toContain("addEventListener(");
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -329,6 +516,87 @@ async function expectProfileEditTabs(page: Page, basePath: string) {
     { ariaCurrent: null, className: null, dataStatus: null, text: "Email settings" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "User Token" },
   ]);
+}
+
+async function installAvatarCropModalBridgeAudit(page: Page, modalIds: string[]) {
+  await page.evaluate((ids) => {
+    type GuardedWindow = typeof window & {
+      __avatarCropModalBridgeAudit?: {
+        documentClicks: string[];
+        getElementById: string[];
+      };
+      __avatarCropModalBridgeAuditArmed?: boolean;
+      __avatarCropModalBridgeNativeGetElementById?: typeof Document.prototype.getElementById;
+    };
+    const guardedWindow = window as GuardedWindow;
+    guardedWindow.__avatarCropModalBridgeAudit = {
+      documentClicks: [],
+      getElementById: [],
+    };
+    guardedWindow.__avatarCropModalBridgeNativeGetElementById ??= Document.prototype.getElementById;
+    const nativeGetElementById = guardedWindow.__avatarCropModalBridgeNativeGetElementById;
+
+    Document.prototype.getElementById = function guardedGetElementById(id: string) {
+      if (ids.includes(id)) {
+        guardedWindow.__avatarCropModalBridgeAudit?.getElementById.push(id);
+      }
+      return nativeGetElementById.call(this, id);
+    };
+
+    if (guardedWindow.__avatarCropModalBridgeAuditArmed) {
+      return;
+    }
+
+    guardedWindow.__avatarCropModalBridgeAuditArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) {
+        return;
+      }
+      if (target.closest("#avatarCropWrap .btnSubmitCrop")) {
+        guardedWindow.__avatarCropModalBridgeAudit?.documentClicks.push("modal-confirm");
+        return;
+      }
+      if (target.closest('#avatarCropWrap [data-dismiss="modal"]')) {
+        guardedWindow.__avatarCropModalBridgeAudit?.documentClicks.push("modal-dismiss");
+      }
+    });
+  }, modalIds);
+}
+
+async function avatarCropModalBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __avatarCropModalBridgeAudit?: {
+              documentClicks: string[];
+              getElementById: string[];
+            };
+          }
+      ).__avatarCropModalBridgeAudit ?? { documentClicks: [], getElementById: [] },
+  );
+}
+
+async function dispatchCancelableClick(page: Page, selector: string) {
+  return page.locator(selector).evaluate((element) => {
+    const clickEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
+    return element.dispatchEvent(clickEvent);
+  });
+}
+
+async function rememberSpaMarker(page: Page, value: string) {
+  await page.evaluate((nextValue) => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      nextValue;
+  }, value);
+}
+
+async function spaMarker(page: Page) {
+  return page.evaluate(
+    () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+  );
 }
 
 async function canonicalizeScreenRoots(page: Page) {
