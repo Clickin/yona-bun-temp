@@ -11,9 +11,16 @@ The primary failure mode to prevent is layout drift: inputs escaping the top nav
 
 For harness details and command selection, read [references/harnesses.md](references/harnesses.md) when you are about to add tests, run verification, or touch route TSX.
 
+## Roles And Write Scope
+
+- If you are the main agent on a `/goal` turn, do not write route TSX (`frontend/src/routes/**/*.tsx`) or focused E2E (`frontend/tests/*.e2e.ts`) yourself. Spawn one worker subagent per screen state, each with an explicit write scope limited to its own route file and its own focused E2E file. Hand each worker the legacy Scala HTML root, partials, LESS/JS/messages evidence and this skill.
+- If you are a worker subagent, stay strictly within the assigned write scope. Do not edit sibling routes, shared components outside your screen, or unrelated E2E files.
+- Serialize workers only when they share a route, file, or ordering dependency; otherwise spawn them concurrently.
+- When resuming a multi-day unattended `/goal` turn, run `pnpm agent:scala-html-goal-automation` before picking a target. If `YONA_SCALA_HTML_GOAL_HISTORY_RANGE` / `.agent/scala-html-goal-history-range` is missing or the range audit fails, stop and report instead of choosing a screen.
+
 ## Workflow
 
-1. Read `AGENTS.md`, the relevant `SPEC.md` section, `docs/agents/01-frontend-architecture.md`, `docs/agents/02-testing-migration.md`, `docs/agents/05-agent-execution-guidelines.md`, and `DESIGN.md` for styling work.
+1. Read context for your role. Main agent on a `/goal` turn: read `AGENTS.md`, the relevant `SPEC.md` section, `docs/agents/01-frontend-architecture.md`, `docs/agents/02-testing-migration.md`, `docs/agents/05-agent-execution-guidelines.md`, and `DESIGN.md` for styling work. Worker subagent: read only the legacy Scala HTML root, partials, LESS, JS-as-behavior-evidence, and message/copy keys for the one assigned screen state — do not re-read the full doc set every worker turn.
 2. Define the target as one route and one visible state. If there are multiple independent screens, split the work and follow the repo's subagent/write-scope rules.
 3. Identify the legacy source before editing:
    - root `yona-original/app/views/**/*.scala.html`
@@ -22,10 +29,11 @@ For harness details and command selection, read [references/harnesses.md](refere
    - relevant legacy JS only as behavior evidence
    - message keys/copy used by the rendered screen
 4. Write or update a focused Playwright E2E test RED from legacy Scala HTML or live legacy-rendered HTML. Assert stable DOM order, visible copy, layout metrics, interaction behavior, and REST/TanStack Query boundaries that matter for this screen.
-5. Rebuild the route TSX from the legacy template skeleton. Do not preserve an existing React screen when it disagrees with Scala HTML; replace the screen-level skeleton instead.
+5. Rebuild the target `frontend/src/routes/**/*.tsx` from the legacy template skeleton. Do not preserve an existing React screen when it disagrees with Scala HTML; replace the screen-level skeleton instead.
 6. Translate behavior into React state/events/components plus TanStack Router navigation and TanStack Query `useQuery`/`useMutation`/cache invalidation.
-7. Update `docs/provenance/frontend-scala-html-goal-violation-audit.md` when route TSX changes: name the route file, the legacy Scala HTML root/partials, and the focused E2E file changed in the same commit.
-8. Run focused verification first, then the repo turn commit hook if files changed.
+7. Update `docs/provenance/frontend-scala-html-goal-violation-audit.md` in the same staged change as the route TSX. Add exactly one new audit row naming the route file, the legacy `.scala.html` root and included partials, and the focused E2E file. The guard rejects a memo-only touch that adds no `.scala.html` source line, and rejects more than one new audit row per commit.
+8. Land route TSX, focused E2E, and the new audit row in one staged change. `tools/scala-html-goal-guard.mjs` blocks TSX without E2E, E2E/CSS/UI-parity evidence without TSX, TSX without an audit row, weak audit memos, and multi-screen rows. Do not split them across commits.
+9. Run focused verification first, then the repo turn commit hook (`pnpm agent:turn-commit -- -m "<summary>"`) if files changed.
 
 ## Layout Parity Gate
 
@@ -65,6 +73,12 @@ Do not accept a port until the rendered layout is pinned by browser measurements
 - Use React form state and TanStack Query mutations for submit behavior. Avoid native legacy POST as the primary React boundary.
 - Use the typed REST JSON client under `/api/v1` for new application data flow. Do not introduce ConnectRPC, tRPC, `createServerFn`, route-owned HTML fragments, or new `/-_-api/v1/**` surfaces.
 - Keep validation/API errors visible in-page, matching the legacy placement and copy where possible.
+
+## Pitfalls
+
+- Never set `YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY`, `YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE`, or `YONA_ALLOW_SCALA_HTML_MULTI_SCREEN` in automated or unattended runs. These are human-supervised manual commit escape hatches only and require a durable audit note (route, reason, follow-up). The mandatory `pnpm agent:turn-commit` path refuses them by default.
+- Route TSX, focused E2E, and the new audit row are not separable. `tools/scala-html-goal-guard.mjs` enforces same-staged-change coupling and exactly one new audit row per commit — splitting them or adding multiple rows just produces blocked commits.
+- Run cargo/rustc/rustfmt only via `pnpm agent:cargo -- --outside-sandbox ...` or `pnpm agent:cargo-test -- --outside-sandbox ...` from an escalated tool call. Never inside the Codex sandbox; the macOS seatbelt makes file access expensive and skews the feedback loop.
 
 ## Acceptance Checklist
 

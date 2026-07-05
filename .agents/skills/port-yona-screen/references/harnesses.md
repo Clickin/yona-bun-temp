@@ -8,6 +8,7 @@ Use these references when porting one Yona screen from Scala HTML to React/TanSt
 - `tools/yona-design-harness.mjs`: checks frontend design changes against `DESIGN.md`, legacy Yona tokens, `frontend/src/app.css`, and forbidden temporary design drift.
 - `tools/yona-parity-gate.mjs`: checks staged implementation changes for corresponding tests/provenance evidence.
 - `tools/precommit-verify.mjs`: runs lint/format/design/Scala HTML/parity checks on staged files; it is invoked by the turn commit hook.
+- The `YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY`, `YONA_ALLOW_SCALA_HTML_UNDOCUMENTED_ROUTE`, and `YONA_ALLOW_SCALA_HTML_MULTI_SCREEN` env markers are human-supervised manual commit escape hatches only. Never set them in automated or unattended runs; the mandatory `pnpm agent:turn-commit` path refuses them by default.
 
 ## Useful Commands
 
@@ -19,6 +20,9 @@ Use these references when porting one Yona screen from Scala HTML to React/TanSt
 - Legacy route coverage: `pnpm smoke:legacy-route-coverage`
 - Visual sweep: `node scripts/visual-parity-sweep.mjs` with `YORAM_SWEEP_PATHS=/path`
 - Turn commit hook: `pnpm agent:turn-commit -- -m "<summary>"`
+- Goal turn resume: `pnpm agent:scala-html-goal-automation` (run before picking a target on a multi-day unattended `/goal` turn; stop if the history range marker is missing or the audit fails)
+- Cargo (escalated, outside sandbox): `pnpm agent:cargo -- --outside-sandbox <cargo args>`
+- Cargo test (escalated, outside sandbox): `pnpm agent:cargo-test -- --outside-sandbox <cargo args>`
 
 Run cargo only through the repo wrappers and outside the sandbox, per `AGENTS.md`, when Rust verification is needed.
 
