@@ -152,6 +152,24 @@ test("project transfer project navigation anchors keep legacy hrefs without rout
     "href",
     `${basePath}/admin/sample/changeVCS`,
   );
+  expect(
+    await settingsTabLinks.evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        ariaCurrent: anchor.getAttribute("aria-current"),
+        className: anchor.getAttribute("class"),
+        dataStatus: anchor.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+  ]);
+  await expect(page.locator("#subMenuProjectTransfer")).toHaveClass("active");
   expect(await readProjectNavigationNativeLinkAudit(page)).toEqual([]);
 
   const projectSettingLink = page.locator(".project-setting a");
@@ -820,7 +838,7 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter((attr) => !shouldIgnoreRouterActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -840,6 +858,13 @@ async function canonicalizeScreenRoots(page: Page) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function shouldIgnoreRouterActiveAttr(element: Element, attr: Attr) {
+      if (attr.name !== "aria-current" && attr.name !== "data-status") {
+        return false;
+      }
+      return !element.matches(".project-page-wrap > .nav.nav-tabs a");
     }
   });
 }
@@ -861,7 +886,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .filter((attr) => attr.name !== "aria-current" && attr.name !== "data-status")
+        .filter((attr) => !shouldIgnoreRouterActiveAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -881,6 +906,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
+    }
+
+    function shouldIgnoreRouterActiveAttr(element: Element, attr: Attr) {
+      if (attr.name !== "aria-current" && attr.name !== "data-status") {
+        return false;
+      }
+      return !element.matches(".project-page-wrap > .nav.nav-tabs a");
     }
   }, html);
 }
