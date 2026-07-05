@@ -33,6 +33,12 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
   const [fieldErrors, setFieldErrors] = React.useState<
     Partial<Record<"oldPassword" | "password" | "retypedPassword", string>>
   >({});
+  const validateWholePasswordForm = React.useCallback(
+    (form: HTMLFormElement | null) => {
+      setFieldErrors(validatePasswordForm(form, t));
+    },
+    [t],
+  );
   const workspaceQuery = useQuery({
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
     queryKey: ["workspace", "overview"],
@@ -94,9 +100,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
                   name="oldPassword"
                   defaultValue=""
                   autoComplete="off"
-                  onBlur={(event) =>
-                    setFieldErrors(validatePasswordForm(event.currentTarget.form, t))
-                  }
+                  onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
                 />
                 <FieldPopover message={fieldErrors.oldPassword} />
               </dd>
@@ -108,9 +112,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
                   name="password"
                   defaultValue=""
                   autoComplete="off"
-                  onBlur={(event) =>
-                    setFieldErrors(validatePasswordForm(event.currentTarget.form, t))
-                  }
+                  onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
                 />
                 <FieldPopover message={fieldErrors.password} />
               </dd>
@@ -122,9 +124,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
                   name="retypedPassword"
                   defaultValue=""
                   autoComplete="off"
-                  onBlur={(event) =>
-                    setFieldErrors(validatePasswordForm(event.currentTarget.form, t))
-                  }
+                  onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
                 />
                 <FieldPopover message={fieldErrors.retypedPassword} />
               </dd>
