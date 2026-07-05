@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+test.setTimeout(45_000);
+
 const EDITFORM_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
   "utf8",
@@ -35,7 +37,8 @@ function withLegacyFileUploader(html: string) {
 test("project board edit form matches legacy board/edit.scala.html core form DOM", async ({
   page,
 }) => {
-  expect(EDITFORM_ROUTE_SOURCE).toContain('t("validation.required")');
+  expect(EDITFORM_ROUTE_SOURCE).toContain('window.alert(t("post.error.emptyTitle"))');
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain('t("validation.required")');
   expect(EDITFORM_ROUTE_SOURCE).toContain(
     'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
   );
@@ -53,6 +56,9 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
 
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
   await expect(page.locator("form.nm")).toBeVisible();
+  await expect(page.locator("#title")).toBeFocused();
+  await page.locator("#title").press("Enter");
+  await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
@@ -166,14 +172,20 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
     .toBe("kept");
 
   await page.fill("#title", "");
+  const alertMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
   await page.click("form.nm .actions .ybtn-info");
-  await expect(page.locator("#title")).toHaveClass("zen-mode text title error");
-  await expect(page.locator("#title + .message > div")).toHaveText("Required field!");
+  await expect(alertMessage).resolves.toBe("Title is a required field.");
+  await expect(page.locator("#title")).toBeFocused();
+  await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
+  await expect(page.locator("#title + .message")).toHaveCount(0);
   expect(patchRequests).toEqual([]);
 
   await page.fill("#title", "Release note patched");
-  await expect(page.locator("#title")).not.toHaveClass(/error/);
-  await expect(page.locator("#title + .message")).toHaveCount(0);
   await page.fill("#editor-body-body", "Patched **body**");
   await page.check("#notice");
   const patchResponsePromise = page.waitForResponse(
