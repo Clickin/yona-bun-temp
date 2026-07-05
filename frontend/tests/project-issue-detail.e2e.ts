@@ -269,6 +269,12 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).toContain("to={`/user/issues/new?commentId=${commentId}`}");
   expect(routeSource).not.toContain('data-request-method="post"');
   expect(routeSource).toContain("data-request-uri={voteHref}");
+  expect(routeSource).not.toMatch(
+    /document\.|querySelector|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
+  );
+  expect(routeSource).toContain('data-toggle="comment-edit"');
+  expect(routeSource).toContain("setCommentEditOpen((current) => !current)");
+  expect(routeSource).toContain("event.stopPropagation();");
 });
 
 async function expectIssueDetailAssets(page: Page, basePath: string) {
@@ -768,6 +774,14 @@ test("project issue detail toggles legacy comment update form through comment-ed
     textareaValue: "Comment **markdown**",
     writeCommentBoxPadding: "10px",
   });
+
+  await editButton.click();
+  await expect(comment.locator("#comment-editform-77")).toBeHidden();
+  await expect(comment.locator("#comment-body-77")).toBeVisible();
+
+  await editButton.click();
+  await expect(comment.locator("#comment-editform-77")).toBeVisible();
+  await expect(comment.locator("#comment-body-77")).toBeHidden();
 
   await cancelButton.click();
   await expect(comment.locator("#comment-editform-77")).toBeHidden();

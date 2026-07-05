@@ -2499,7 +2499,7 @@ function IssueCommentRow({
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  setCommentEditOpen(true);
+                  setCommentEditOpen((current) => !current);
                   setChildFormOpen(false);
                   setReplyVisible(false);
                 }}

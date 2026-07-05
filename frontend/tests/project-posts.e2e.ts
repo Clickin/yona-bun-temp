@@ -1454,6 +1454,18 @@ test("project board detail renders legacy comment update form", async ({ page })
   await page.locator('#comment-21 [data-toggle="comment-edit"]').click();
   await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
   await expect(page.locator("#comment-body-21")).toHaveCSS("display", "none");
+  await expect(page.locator("#comment-21 .add-a-comment")).toHaveAttribute("hidden", "");
+  await page.locator('#comment-21 [data-toggle="comment-edit"]').click();
+  await expect(page.locator("#comment-editform-21")).toBeHidden();
+  await expect(page.locator("#comment-body-21")).toBeVisible();
+  await expect(page.locator("#comment-21 .add-a-comment")).not.toHaveAttribute("hidden", "");
+  await page.locator('#comment-21 [data-toggle="comment-edit"]').click();
+  await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
+  await page.locator("#comment-editform-21 .ybtn-cancel").click();
+  await expect(page.locator("#comment-editform-21")).toBeHidden();
+  await expect(page.locator("#comment-body-21")).toBeVisible();
+  await page.locator('#comment-21 [data-toggle="comment-edit"]').click();
+  await expect(page.locator("#comment-editform-21")).toHaveCSS("display", "block");
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-update-editor";
   });
@@ -1498,6 +1510,23 @@ test("project board detail renders legacy comment update form", async ({ page })
     routeSource.indexOf("function PostCommentUpdateForm"),
     routeSource.indexOf("function MarkdownEditor"),
   );
+  const commentToggleSource = routeSource.slice(
+    routeSource.indexOf("function PostComments"),
+    routeSource.indexOf("function MarkdownEditor"),
+  );
+  expect(commentToggleSource).toContain("setEditingCommentId((currentCommentId)");
+  expect(commentToggleSource).toContain("event.stopPropagation();");
+  expect(commentToggleSource).toContain(
+    'className="add-a-comment pull-right" hidden={hideReplyPrompt}',
+  );
+  expect(commentToggleSource).not.toContain("document.");
+  expect(commentToggleSource).not.toContain("querySelector");
+  expect(commentToggleSource).not.toContain("classList");
+  expect(commentToggleSource).not.toContain("setAttribute");
+  expect(commentToggleSource).not.toContain("removeAttribute");
+  expect(commentToggleSource).not.toContain("innerHTML");
+  expect(commentToggleSource).not.toContain("dangerouslySetInnerHTML");
+  expect(commentToggleSource).not.toContain("style.display");
   expect(updateFormSource).not.toContain("document.getElementById");
   expect(updateFormSource).not.toContain("setAttribute");
   expect(updateFormSource).not.toContain("removeAttribute");

@@ -702,7 +702,11 @@ function PostComments({
                 comment={comment}
                 editingCommentId={editingCommentId}
                 key={comment.id}
-                onCommentEditRequest={setEditingCommentId}
+                onCommentEditRequest={(commentId) =>
+                  setEditingCommentId((currentCommentId) =>
+                    currentCommentId === commentId ? null : commentId,
+                  )
+                }
                 onCommentDeleteRequest={onCommentDeleteRequest}
                 onUpdateComment={async (commentId, contentsMarkdown) => {
                   await onUpdateComment(commentId, contentsMarkdown);
@@ -985,6 +989,7 @@ function PostCommentRow({
         canComment={canComment}
         canDelete={canDelete}
         childComments={childComments}
+        hideReplyPrompt={editingCommentId !== null}
         onCommentDeleteRequest={onCommentDeleteRequest}
         ownerName={ownerName}
         parentCommentId={commentId}
@@ -1111,6 +1116,7 @@ function PostChildComments({
   canComment,
   canDelete,
   childComments,
+  hideReplyPrompt,
   onCommentDeleteRequest,
   ownerName,
   parentCommentId,
@@ -1121,6 +1127,7 @@ function PostChildComments({
   canComment: boolean;
   canDelete: boolean;
   childComments: BoardPostComment[];
+  hideReplyPrompt: boolean;
   onCommentDeleteRequest: (requestUri: string) => void;
   ownerName: string;
   parentCommentId: string;
@@ -1135,7 +1142,9 @@ function PostChildComments({
 
   return (
     <>
-      <div className="add-a-comment pull-right">{t("comment.oneline.comment.placeholder")}</div>
+      <div className="add-a-comment pull-right" hidden={hideReplyPrompt}>
+        {t("comment.oneline.comment.placeholder")}
+      </div>
       <div className="subcomment-media-body">
         <div className="child-comments">
           {childComments.map((comment) => (

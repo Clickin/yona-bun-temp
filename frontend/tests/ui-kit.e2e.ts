@@ -20,6 +20,10 @@ const UIKIT_ROUTE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/[_]UIKit.tsx", import.meta.url)),
   "utf8",
 );
+const ROOT_ROUTE_SOURCE = readFileSync(
+  fileURLToPath(new URL("../src/routes/__root.tsx", import.meta.url)),
+  "utf8",
+);
 const EXPECTED_UIKIT_BODY = extractBetween(LEGACY_UIKIT_TEMPLATE, "<body>", "</body>");
 const LEGACY_MARKDOWN_HELP_BODY = LEGACY_MARKDOWN_HELP_TEMPLATE.split(
   '<script type="text/javascript">',
@@ -91,6 +95,12 @@ test("standalone UI kit route renders JSX without raw legacy body injection", as
   );
   expect(routeSourceOutsideCodeSamples).not.toMatch(/href=["']#/);
   expect(routeSourceOutsideCodeSamples).not.toContain('href="javascript:void(0)"');
+});
+
+test("root shell does not own route comment edit toggles", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain('data-toggle="comment-edit"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("comment-editform-");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("comment-body-");
 });
 
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
