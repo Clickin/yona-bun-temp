@@ -881,8 +881,14 @@ function ProjectSettingMenu({
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className={active === "setting" ? "active" : ""}>
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/setting"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("project.setting")}
@@ -890,8 +896,14 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectMember" className="">
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/members"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("project.member")}
@@ -900,8 +912,14 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuIssueLabel" className="">
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/issue/labelsform"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("issue.label")}
@@ -909,8 +927,14 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuWebhook" className="">
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/webhooks"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("project.webhook")}
@@ -918,8 +942,14 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectTransfer" className="">
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/transfer"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("project.transfer")}
@@ -927,8 +957,14 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectDelete" className="">
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/deleteform"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("project.delete")}
@@ -940,8 +976,14 @@ function ProjectSettingMenu({
         style={showCode ? undefined : { display: "none" }}
       >
         <Link
-          activeProps={{ className: undefined }}
+          activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
           to="/$ownerName/$projectName/changeVCS"
+          search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
           {t("project.changeVCS")}

@@ -154,6 +154,24 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
     `${basePath}/admin/sample/changeVCS`,
   ]);
   expect(
+    await settingsTabs.evaluateAll((links) =>
+      links.map((link) => ({
+        ariaCurrent: link.getAttribute("aria-current"),
+        className: link.getAttribute("class"),
+        dataStatus: link.getAttribute("data-status"),
+      })),
+    ),
+  ).toEqual([
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+    { ariaCurrent: null, className: null, dataStatus: null },
+  ]);
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  expect(
     await page.evaluate(
       () =>
         (window as Window & typeof globalThis & { __projectSettingsTabAnchorListeners?: string[] })
@@ -823,8 +841,8 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            (isProjectSettingsMenuAnchor(node) ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -839,6 +857,10 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function normalizeText(text: string) {
       return text.replace(/\s+/g, " ").trim();
+    }
+
+    function isProjectSettingsMenuAnchor(node: Element) {
+      return node.matches(".project-page-wrap > .nav.nav-tabs a");
     }
 
     function normalizeAttr(attr: Attr) {
@@ -942,8 +964,8 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
-            attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            (isProjectSettingsMenuAnchor(node) ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -958,6 +980,10 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeText(text: string) {
       return text.replace(/\s+/g, " ").trim();
+    }
+
+    function isProjectSettingsMenuAnchor(node: Element) {
+      return node.matches(".project-page-wrap > .nav.nav-tabs a");
     }
 
     function normalizeAttr(attr: Attr) {
