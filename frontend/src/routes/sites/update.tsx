@@ -110,17 +110,17 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
   if (!response) {
     return null;
   }
+  const releaseUrl = response.versionToUpdate
+    ? (response.releaseUrl ??
+      `https://github.com/yona-projects/yona/releases/tag/v${response.versionToUpdate}`)
+    : "";
 
   return (
     <>
       {response.versionToUpdate ? (
         <p>
           <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>{" "}
-          <Link
-            href={response.releaseUrl ?? ""}
-            to={response.releaseUrl ?? ""}
-            className="ybtn ybtn-success"
-          >
+          <Link href={releaseUrl} to={releaseUrl} className="ybtn ybtn-success">
             {t("site.update.download")}
           </Link>
         </p>

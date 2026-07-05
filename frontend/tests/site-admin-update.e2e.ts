@@ -203,9 +203,10 @@ test("site admin update renders the legacy available-version branch", async ({ p
   await expect(page.locator("a.ybtn.ybtn-success")).not.toHaveAttribute("target", /.*/);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
-  expect(routeSource).toContain('href={response.releaseUrl ?? ""}');
+  expect(routeSource).toContain("const releaseUrl = response.versionToUpdate");
+  expect(routeSource).toContain("href={releaseUrl}");
   expect(routeSource).not.toContain("as never");
-  expect(routeSource).toContain('to={response.releaseUrl ?? ""}');
+  expect(routeSource).toContain("to={releaseUrl}");
   expect(routeSource).not.toContain("reloadDocument");
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
@@ -224,6 +225,33 @@ test("site admin update renders the legacy available-version branch", async ({ p
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
   });
+});
+
+test("site admin update derives the legacy release URL when the payload omits it", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isAvailable",
+    releaseUrl: null,
+    versionToUpdate: "1.1.0",
+  });
+
+  await page.goto(`${basePath}/sites/update`);
+  await expect(page.locator("strong")).toHaveText("Yona 1.1.0 is available");
+  await expect(page.locator("a.ybtn.ybtn-success")).toHaveAttribute(
+    "href",
+    "https://github.com/yona-projects/yona/releases/tag/v1.1.0",
+  );
+  const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
+  expect(routeSource).toContain(
+    "https://github.com/yona-projects/yona/releases/tag/v${response.versionToUpdate}",
+  );
+  await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
+  await expect(page.getByText("You are using the latest version")).toHaveCount(0);
 });
 
 test("site admin update renders the legacy error branch", async ({ page }) => {
