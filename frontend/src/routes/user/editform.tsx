@@ -50,6 +50,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   const avatarUrl = profile?.avatarUrl ?? "";
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const avatarOnlyImageMessage = t("user.avatar.onlyImage");
 
   useEffect(() => {
     if (!avatarFile) {
@@ -198,7 +199,14 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                     name="filePath"
                     accept="image/*"
                     onChange={(event) => {
-                      setAvatarFile(event.currentTarget.files?.[0] ?? null);
+                      const nextFile = event.currentTarget.files?.[0] ?? null;
+                      if (nextFile && !nextFile.type.startsWith("image/")) {
+                        window.alert(avatarOnlyImageMessage);
+                        event.currentTarget.value = "";
+                        setAvatarFile(null);
+                        return;
+                      }
+                      setAvatarFile(nextFile);
                     }}
                   />
                 </div>

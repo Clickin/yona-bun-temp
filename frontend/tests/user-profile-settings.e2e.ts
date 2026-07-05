@@ -9,7 +9,7 @@ const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -22,7 +22,7 @@ const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
@@ -93,6 +93,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     await route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) });
   });
   const profileUpdates: Array<Record<string, unknown>> = [];
+  const fileUploads: string[] = [];
   await page.route("**/api/v1/workspace/profile", async (route) => {
     expect(route.request().method()).toBe("PATCH");
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-token");
@@ -113,6 +114,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-token");
     expect(route.request().postDataBuffer()?.toString()).toContain('name="filePath"');
+    fileUploads.push(route.request().postDataBuffer()?.toString() ?? "");
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -176,6 +178,23 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     name: "Changed User",
   });
 
+  const invalidAvatarAlert = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await page.locator("#avatarFile").setInputFiles({
+    buffer: Buffer.from("not an image"),
+    mimeType: "text/plain",
+    name: "avatar.txt",
+  });
+  await expect(invalidAvatarAlert).resolves.toBe("Only image files are allowed to be uploaded.");
+  await expect(page.locator("#avatarCropWrap")).toHaveClass(/hide/);
+  await expect(page.locator("#frmAvatar .upload-progress.avatar")).toHaveCSS("display", "none");
+  expect(fileUploads).toHaveLength(0);
+  expect(profileUpdates).toHaveLength(1);
+
   await page.locator("#avatarFile").setInputFiles({
     buffer: Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
@@ -188,6 +207,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   await expect(page.locator("#avatarCropWrap .modal-body > img")).toHaveAttribute("src", /^blob:/);
   await page.locator("#avatarCropWrap .btnSubmitCrop").click();
   await expect.poll(() => profileUpdates.length).toBe(2);
+  expect(fileUploads).toHaveLength(1);
   await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).toHaveAttribute(
     "src",
     "/files/77",
