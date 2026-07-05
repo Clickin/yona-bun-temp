@@ -257,9 +257,54 @@ test("project webhooks JSON type forces git push checkbox like legacy script", a
   await expect(gitPush).toBeChecked();
 });
 
+test("project webhooks successful create resets form like legacy POST redirect", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const createRequests: {
+    gitPush: boolean;
+    payloadUrl: string;
+    secret: string;
+    webhookType: string;
+  }[] = [];
+  await mockProjectAdmin(page, [], { createRequests });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  await page.locator('input[name="payloadUrl"]').fill("https://hooks.example.test/ci");
+  await page.locator('input[name="secret"]').fill("ci-token");
+  await page.locator('input[name="webhookType"][value="JSON"]').check();
+  await expect(page.locator("#gitPush")).toBeChecked();
+
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/webhooks") &&
+      response.request().method() === "POST",
+  );
+  await page.locator("#formNewWebhook .btn-submit").click();
+  await createResponsePromise;
+
+  expect(createRequests).toEqual([
+    {
+      gitPush: true,
+      payloadUrl: "https://hooks.example.test/ci",
+      secret: "ci-token",
+      webhookType: "JSON",
+    },
+  ]);
+  await expect(page.locator('input[name="payloadUrl"]')).toHaveValue("");
+  await expect(page.locator('input[name="secret"]')).toHaveValue("");
+  await expect(page.locator('input[name="webhookType"][value="SIMPLE"]')).toBeChecked();
+  await expect(page.locator("#gitPush")).not.toBeChecked();
+});
+
 test("project webhooks blocks empty payload URL like legacy webhook script", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const createRequests: { payloadUrl: string }[] = [];
+  const createRequests: {
+    gitPush: boolean;
+    payloadUrl: string;
+    secret: string;
+    webhookType: string;
+  }[] = [];
   await mockProjectAdmin(page, [], { createRequests });
 
   await page.goto(`${basePath}/admin/sample/webhooks`);
@@ -356,7 +401,12 @@ async function mockProjectAdmin(
   page: Page,
   webhooks: unknown[] = [],
   options: {
-    createRequests?: { payloadUrl: string }[];
+    createRequests?: {
+      gitPush: boolean;
+      payloadUrl: string;
+      secret: string;
+      webhookType: string;
+    }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     project?: Partial<ReturnType<typeof projectContainer>>;
@@ -422,16 +472,26 @@ async function mockProjectAdmin(
   });
   await page.route("**/api/v1/owners/admin/projects/sample/webhooks", async (route) => {
     if (route.request().method() === "POST") {
-      const data = route.request().postDataJSON() as { payloadUrl?: string };
-      options.createRequests?.push({ payloadUrl: String(data.payloadUrl ?? "") });
+      const data = route.request().postDataJSON() as {
+        gitPush?: boolean;
+        payloadUrl?: string;
+        secret?: string;
+        webhookType?: string;
+      };
+      options.createRequests?.push({
+        gitPush: data.gitPush === true,
+        payloadUrl: String(data.payloadUrl ?? ""),
+        secret: String(data.secret ?? ""),
+        webhookType: String(data.webhookType ?? ""),
+      });
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          gitPush: false,
+          gitPush: data.gitPush === true,
           id: 99,
           payloadUrl: data.payloadUrl ?? "",
-          secret: "",
-          webhookType: "SIMPLE",
+          secret: data.secret ?? "",
+          webhookType: data.webhookType ?? "SIMPLE",
         }),
       });
       return;

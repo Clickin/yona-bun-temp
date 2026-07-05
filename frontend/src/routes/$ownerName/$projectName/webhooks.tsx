@@ -103,18 +103,28 @@ function ProjectWebhooksBody({
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payloadUrl = String(formData.get("payloadUrl") ?? "");
     if (payloadUrl.length === 0) {
       window.alert(t("project.webhook.payloadUrl.empty"));
       return;
     }
-    mutation.mutate({
-      gitPush: formData.get("gitPush") === "on",
-      payloadUrl,
-      secret: String(formData.get("secret") ?? ""),
-      webhookType: String(formData.get("webhookType") ?? "SIMPLE") as ProjectWebhookType,
-    });
+    mutation.mutate(
+      {
+        gitPush: formData.get("gitPush") === "on",
+        payloadUrl,
+        secret: String(formData.get("secret") ?? ""),
+        webhookType: String(formData.get("webhookType") ?? "SIMPLE") as ProjectWebhookType,
+      },
+      {
+        onSuccess: () => {
+          form.reset();
+          setSelectedWebhookType("SIMPLE");
+          setGitPushChecked(false);
+        },
+      },
+    );
   }
 
   function onWebhookTypeChange(webhookType: ProjectWebhookType) {
