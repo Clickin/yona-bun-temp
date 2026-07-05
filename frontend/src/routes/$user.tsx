@@ -1,6 +1,14 @@
-import { type HTMLAttributes, useState } from "react";
+import { type ComponentPropsWithRef, type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Navigate,
+  redirect,
+  useLinkProps,
+  useRouter,
+} from "@tanstack/react-router";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
@@ -30,6 +38,14 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
 
 export const Route = createFileRoute("/$user")({
   component: PublicProfileRoute,
@@ -105,16 +121,41 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
 function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const siteName = runtimeConfig.siteName ?? "Yona";
   const [activeUsermenuTab, setActiveUsermenuTab] = useState<UsermenuTab>("myOrganizationList");
+  const legacyMissingUserHomeHref = prefixBasePath(runtimeConfig.basePath, "/");
+  const legacyMissingUserLogoLinkProps = useLinkProps({
+    activeOptions: LEGACY_LINK_PROPS.activeOptions,
+    activeProps: LEGACY_LINK_PROPS.activeProps,
+    className: "logo",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(legacyMissingUserHomeHref);
+    },
+    to: "/",
+  });
+  const legacyMissingUserHomeButtonLinkProps = useLinkProps({
+    activeOptions: LEGACY_LINK_PROPS.activeOptions,
+    activeProps: LEGACY_LINK_PROPS.activeProps,
+    className: "ybtn ybtn-info",
+    onClick: (event) => {
+      event.preventDefault();
+      router.history.push(legacyMissingUserHomeHref);
+    },
+    to: "/",
+  });
 
   return (
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <Link {...LEGACY_LINK_PROPS} to="/" className="logo">
+          <LegacyHrefAnchor
+            {...legacyMissingUserLogoLinkProps}
+            legacyHref={legacyMissingUserHomeHref}
+          >
             <h1 className="blind">{siteName}</h1>
-          </Link>
+          </LegacyHrefAnchor>
           <ul className="gnb-nav">
             <li>
               <Link {...LEGACY_LINK_PROPS} to="/projects">
@@ -190,9 +231,12 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           <div className="error-wrap">
             <i className="ico ico-err2"></i>
             <p>{t("user.notExists.name")}</p>
-            <Link {...LEGACY_LINK_PROPS} to="/" className="ybtn ybtn-info">
+            <LegacyHrefAnchor
+              {...legacyMissingUserHomeButtonLinkProps}
+              legacyHref={legacyMissingUserHomeHref}
+            >
               {t("menu.home")}
-            </Link>
+            </LegacyHrefAnchor>
           </div>
         </div>
       </div>
