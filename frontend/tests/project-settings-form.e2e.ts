@@ -224,6 +224,29 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
   await expect(page.locator(".members.project .member")).toHaveCount(2);
 });
 
+test("project settings member badges use enrolled-user count from legacy menus", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    project: {
+      enrolledUsers: [{ id: 1 }, { id: 2 }],
+      enrollmentRequestCount: 5,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/setting`);
+
+  const submenuBadge = page.locator("#subMenuProjectMember .num-badge");
+  await expect(submenuBadge).toHaveText("2");
+  await expect(page.locator("#subMenuProjectMember a")).toHaveText("Member2");
+  await expect(page.locator("#subMenuProjectMember a")).not.toHaveText("Member5");
+
+  const adminBadge = page.locator(".project-setting .project-menu-count");
+  await expect(adminBadge).toHaveText("2");
+  await expect(page.locator(".project-setting a")).not.toHaveText("5");
+});
+
 test("project settings project links render legacy hrefs and navigate through SPA", async ({
   page,
 }) => {
@@ -950,6 +973,7 @@ function projectSettings() {
     backgroundUrl: "/assets/images/bg-default-project.png",
     codeMemberOnly: false,
     defaultReviewerCount: 2,
+    enrolledUsers: [],
     enrollmentRequestCount: 0,
     id: 7,
     isFavorite: false,
