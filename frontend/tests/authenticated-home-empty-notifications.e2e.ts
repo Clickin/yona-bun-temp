@@ -378,6 +378,26 @@ test("authenticated index redirects to the configured non-root default landing",
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/me`);
 });
 
+test("shared shell logo keeps legacy navbar link without route-local href adapter", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/`);
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
+  await expect(logoLink).toHaveText("Y");
+  await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
+  await expect(logoLink).toHaveAttribute("class", "logo logo-letter");
+  await expect(logoLink).not.toHaveAttribute("aria-current");
+  await expect(logoLink).not.toHaveAttribute("data-status");
+  expect(routeSource).not.toContain("LegacyHrefLink");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("CreateLinkProps");
+});
+
 test("authenticated home route has no generic LegacyInternalLink adapter", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const legacySources = {

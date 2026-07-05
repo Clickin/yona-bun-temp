@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createLink, Link, Navigate, type CreateLinkProps } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -61,6 +61,7 @@ const LEGACY_LOGIN_FORM_LINK_SEARCH = {
   password: undefined!,
   redirectUrl: undefined!,
 } satisfies LegacyLoginFormLinkSearch;
+const LEGACY_LOGO_LINK_SEARCH = { __legacyLogoActiveMarker: undefined };
 const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new";
 const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
@@ -70,18 +71,6 @@ const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/mas
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
 const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona";
-const legacyHrefAnchorTag = "a";
-
-type LegacyHrefAnchorProps = CreateLinkProps & {
-  legacyHref?: string;
-};
-
-function LegacyHrefAnchor({ legacyHref, href, ...props }: LegacyHrefAnchorProps) {
-  const Anchor = legacyHrefAnchorTag;
-  return <Anchor {...props} href={legacyHref ?? href} />;
-}
-
-const LegacyHrefLink = createLink(LegacyHrefAnchor);
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -601,10 +590,16 @@ export function SiteLayoutShell({
           </div>
           <ul className="gnb-nav">
             <li>
-              <LegacyHrefLink
+              <Link
                 to="/"
-                legacyHref={prefixBasePath(runtimeConfig.basePath, "")}
+                search={LEGACY_LOGO_LINK_SEARCH}
                 className="logo logo-letter"
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
                 activeProps={{
                   "aria-current": undefined,
                   className: undefined,
@@ -612,7 +607,7 @@ export function SiteLayoutShell({
                 }}
               >
                 Y
-              </LegacyHrefLink>
+              </Link>
             </li>
             {activeMenu === "projects" ? (
               <>
