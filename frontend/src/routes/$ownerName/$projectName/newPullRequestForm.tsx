@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type RefObject } from "react";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -104,9 +104,11 @@ function ProjectNewPullRequestBody({
   const selected = formOptions.selected;
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const pendingConflictSubmitRef = useRef<HTMLFormElement | null>(null);
   const [formValues, setFormValues] = useState<PullRequestFormSelected>(selected);
-  const [isUserHasTyped, setIsUserHasTyped] = useState(false);
   const [forceSubmit, setForceSubmit] = useState(false);
+  const [isUserHasTyped, setIsUserHasTyped] = useState(false);
+  const [isConflictConfirmOpen, setIsConflictConfirmOpen] = useState(false);
   const mergeResultQuery = useQuery(
     pullRequestMergeResultQueryOptions(runtimeConfig, {
       ownerName,
@@ -127,7 +129,9 @@ function ProjectNewPullRequestBody({
       toBranch: selected.toBranch,
       toProjectId: selected.toProjectId,
     });
+    pendingConflictSubmitRef.current = null;
     setForceSubmit(false);
+    setIsConflictConfirmOpen(false);
   }, [selected.fromBranch, selected.fromProjectId, selected.toBranch, selected.toProjectId]);
 
   useEffect(() => {
@@ -141,6 +145,15 @@ function ProjectNewPullRequestBody({
       bodyRef.current.value = mergeResultBody;
     }
   }, [isUserHasTyped, mergeResultBody, mergeResultTitle]);
+
+  useEffect(() => {
+    if (mergeResult?.conflict || (!isConflictConfirmOpen && !forceSubmit)) {
+      return;
+    }
+    pendingConflictSubmitRef.current = null;
+    setForceSubmit(false);
+    setIsConflictConfirmOpen(false);
+  }, [forceSubmit, isConflictConfirmOpen, mergeResult?.conflict]);
 
   const mutation = useMutation({
     mutationFn: async (form: HTMLFormElement) => {
@@ -167,119 +180,154 @@ function ProjectNewPullRequestBody({
     },
   });
 
+  const closeConflictConfirm = () => {
+    pendingConflictSubmitRef.current = null;
+    setIsConflictConfirmOpen(false);
+  };
+
+  const submitPullRequestForm = (
+    form: HTMLFormElement,
+    options: { skipConflictConfirm?: boolean } = {},
+  ) => {
+    if (mutation.isPending) {
+      return;
+    }
+    if (!validatePullRequestMergeResult(mergeResult, t)) {
+      return;
+    }
+    if (mergeResult?.conflict && !forceSubmit && !options.skipConflictConfirm) {
+      pendingConflictSubmitRef.current = form;
+      setIsConflictConfirmOpen(true);
+      return;
+    }
+    if (!validatePullRequestRequiredFields(new FormData(form), t)) {
+      return;
+    }
+    mutation.mutate(form);
+  };
+
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
-          <form
-            action={prefixBasePath(
-              runtimeConfig.basePath,
-              `/${ownerName}/${projectName}/pullRequests`,
-            )}
-            encType="multipart/form-data"
-            className="nm"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!validatePullRequestMergeResult(mergeResult, t)) {
-                return;
-              }
-              if (mergeResult?.conflict && !forceSubmit) {
-                if (!window.confirm(t("pullRequest.ignore.conflict"))) {
-                  return;
-                }
-                setForceSubmit(true);
-              }
-              if (!validatePullRequestRequiredFields(new FormData(event.currentTarget), t)) {
-                return;
-              }
-              mutation.mutate(event.currentTarget);
-            }}
-          >
-            <PullRequestBranchSelectors
-              formOptions={formOptions}
-              onChange={(nextValues, projectChanged) => {
-                setFormValues(nextValues);
-                setForceSubmit(false);
-                void router.navigate({
-                  to: "/$ownerName/$projectName/newPullRequestForm",
-                  params: { ownerName, projectName },
-                  search: projectChanged
-                    ? {
-                        fromBranch: "",
-                        fromProjectId: nextValues.fromProjectId,
-                        toBranch: "",
-                        toProjectId: nextValues.toProjectId,
-                      }
-                    : nextValues,
-                });
+    <>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="content-wrap frm-wrap">
+            <form
+              action={prefixBasePath(
+                runtimeConfig.basePath,
+                `/${ownerName}/${projectName}/pullRequests`,
+              )}
+              encType="multipart/form-data"
+              className="nm"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitPullRequestForm(event.currentTarget);
               }}
-              selected={formValues}
-            />
-            <span id="pullRequestState" data-value="OPEN"></span>
-            <div id="status" className={`alert mt20 mb20 ${status.cssClass}`}>
-              {status.message}
-            </div>
-            <div>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                maxLength={255}
-                className="text"
-                placeholder={t("title")}
-                ref={titleRef}
-                onKeyUp={(event) => {
-                  if (event.key !== "Enter") {
-                    setIsUserHasTyped(true);
-                  }
+            >
+              <PullRequestBranchSelectors
+                formOptions={formOptions}
+                onChange={(nextValues, projectChanged) => {
+                  setFormValues(nextValues);
+                  pendingConflictSubmitRef.current = null;
+                  setIsConflictConfirmOpen(false);
+                  void router.navigate({
+                    to: "/$ownerName/$projectName/newPullRequestForm",
+                    params: { ownerName, projectName },
+                    search: projectChanged
+                      ? {
+                          fromBranch: "",
+                          fromProjectId: nextValues.fromProjectId,
+                          toBranch: "",
+                          toProjectId: nextValues.toProjectId,
+                        }
+                      : nextValues,
+                  });
                 }}
+                selected={formValues}
               />
-              <div style={{ position: "relative" }}>
-                <PullRequestMarkdownEditor
-                  bodyRef={bodyRef}
-                  isUserHasTyped={isUserHasTyped}
-                  onUserTyped={() => setIsUserHasTyped(true)}
+              <span id="pullRequestState" data-value="OPEN"></span>
+              <div id="status" className={`alert mt20 mb20 ${status.cssClass}`}>
+                {status.message}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  maxLength={255}
+                  className="text"
+                  placeholder={t("title")}
+                  ref={titleRef}
+                  onKeyUp={(event) => {
+                    if (event.key !== "Enter") {
+                      setIsUserHasTyped(true);
+                    }
+                  }}
                 />
-              </div>
-              <PullRequestFileUploader />
-              <div className="actions">
-                <button type="submit" className="ybtn ybtn-success">
-                  {t("pullRequest.send")}
-                </button>
-                <button type="button" className="ybtn" onClick={() => router.history.back()}>
-                  {t("button.cancel")}
-                </button>
-              </div>
-            </div>
-            <ul className="nav nav-tabs mt20">
-              <li className="active">
-                <button type="button" data-toggle="tab">
-                  <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
-                  <span id="numOfCommits" className="num-badge vmiddle-inline">
-                    {mergeResult?.commits.length ? String(mergeResult.commits.length) : ""}
-                  </span>
-                </button>
-              </li>
-            </ul>
-            <div className="tab-content">
-              <div id="__commits" className="code-browse-wrap tab-pane active">
-                {mergeResult ? (
-                  <MergeResult
-                    commits={mergeResult.commits}
-                    conflict={mergeResult.conflict}
-                    noChangesLabel={t("pullRequest.diff.noChanges")}
-                    ownerName={ownerName}
-                    projectName={projectName}
-                    suggestedBody={mergeResultBody}
-                    suggestedTitle={mergeResultTitle}
+                <div style={{ position: "relative" }}>
+                  <PullRequestMarkdownEditor
+                    bodyRef={bodyRef}
+                    isUserHasTyped={isUserHasTyped}
+                    onUserTyped={() => setIsUserHasTyped(true)}
                   />
-                ) : null}
+                </div>
+                <PullRequestFileUploader />
+                <div className="actions">
+                  <button type="submit" className="ybtn ybtn-success">
+                    {t("pullRequest.send")}
+                  </button>
+                  <button type="button" className="ybtn" onClick={() => router.history.back()}>
+                    {t("button.cancel")}
+                  </button>
+                </div>
               </div>
-            </div>
-          </form>
+              <ul className="nav nav-tabs mt20">
+                <li className="active">
+                  <button type="button" data-toggle="tab">
+                    <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
+                    <span id="numOfCommits" className="num-badge vmiddle-inline">
+                      {mergeResult?.commits.length ? String(mergeResult.commits.length) : ""}
+                    </span>
+                  </button>
+                </li>
+              </ul>
+              <div className="tab-content">
+                <div id="__commits" className="code-browse-wrap tab-pane active">
+                  {mergeResult ? (
+                    <MergeResult
+                      commits={mergeResult.commits}
+                      conflict={mergeResult.conflict}
+                      noChangesLabel={t("pullRequest.diff.noChanges")}
+                      ownerName={ownerName}
+                      projectName={projectName}
+                      suggestedBody={mergeResultBody}
+                      suggestedTitle={mergeResultTitle}
+                    />
+                  ) : null}
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+      <PullRequestConflictConfirmModal
+        isOpen={isConflictConfirmOpen}
+        message={t("pullRequest.ignore.conflict")}
+        onClose={closeConflictConfirm}
+        onConfirm={() => {
+          if (mutation.isPending) {
+            return;
+          }
+          const form = pendingConflictSubmitRef.current;
+          pendingConflictSubmitRef.current = null;
+          setIsConflictConfirmOpen(false);
+          setForceSubmit(true);
+          if (!form) {
+            return;
+          }
+          submitPullRequestForm(form, { skipConflictConfirm: true });
+        }}
+      />
+    </>
   );
 }
 
@@ -514,6 +562,76 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>
+  );
+}
+
+function dismissPullRequestConflictConfirmButtonClick(
+  event: MouseEvent<HTMLButtonElement>,
+  onClick: () => void,
+) {
+  event.preventDefault();
+  event.stopPropagation();
+  onClick();
+}
+
+function PullRequestConflictConfirmModal({
+  isOpen,
+  message,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  message: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useLegacyMessages();
+  return (
+    <>
+      <div
+        id="pullRequestConflictConfirm"
+        className={isOpen ? "modal in yobiDialog" : "modal hide yobiDialog"}
+        tabIndex={-1}
+        role="dialog"
+        aria-hidden={isOpen ? "false" : "true"}
+        style={isOpen ? { display: "block" } : undefined}
+      >
+        <div className="btn-dismiss">
+          <button
+            type="button"
+            className="btn-transparent"
+            data-dismiss="modal"
+            onClick={(event) => dismissPullRequestConflictConfirmButtonClick(event, onClose)}
+          >
+            ×
+          </button>
+        </div>
+        <div className="message">
+          <div className="center-txt">
+            <p className="msg">{message}</p>
+          </div>
+          <div className="center-txt buttons mt20 mb20">
+            <button
+              type="button"
+              className="ybtn ybtn-default"
+              data-dismiss="modal"
+              onClick={(event) => dismissPullRequestConflictConfirmButtonClick(event, onClose)}
+            >
+              {t("button.cancel")}
+            </button>
+            <button
+              type="button"
+              className="ybtn ybtn-primary"
+              data-dismiss="modal"
+              onClick={(event) => dismissPullRequestConflictConfirmButtonClick(event, onConfirm)}
+            >
+              {t("button.confirm")}
+            </button>
+          </div>
+        </div>
+      </div>
+      {isOpen ? <div className="modal-backdrop in"></div> : null}
+    </>
   );
 }
 

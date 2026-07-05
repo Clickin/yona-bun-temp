@@ -246,28 +246,93 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await expect(titleDialog).resolves.toBe("Title is a required field.");
   expect(postRequests).toEqual([]);
 
+  expect(ROUTE_SOURCE).not.toContain("window.confirm(");
+  expect(ROUTE_SOURCE).toContain("function PullRequestConflictConfirmModal(");
+  expect(ROUTE_SOURCE).toContain(
+    'className={isOpen ? "modal in yobiDialog" : "modal hide yobiDialog"}',
+  );
+  expect(ROUTE_SOURCE).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(ROUTE_SOURCE).toContain('data-dismiss="modal"');
+  expect(ROUTE_SOURCE).toContain('{isOpen ? <div className="modal-backdrop in"></div> : null}');
+  expect(ROUTE_SOURCE).toContain("setForceSubmit(true)");
+
   await page.unrouteAll({ behavior: "ignoreErrors" });
   await mockProjectPullRequestCreateForm(page, postRequests, { mergeMode: "conflict" });
   await page.goto(
     `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
   );
-  page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toBe(
-      "This code seems to have conflicts when merging. Do you really want to continue?",
-    );
+  const createFormUrl = page.url();
+  const conflictDialogMessages: string[] = [];
+  page.on("dialog", async (dialog) => {
+    conflictDialogMessages.push(dialog.message());
     await dialog.dismiss();
   });
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "pull-request-conflict-confirm";
+  });
+  await armRootModalBridgeTrap(page);
   await page.click('form.nm button[type="submit"]');
+  await expect(page).toHaveURL(createFormUrl);
+  await expect(page.locator("#pullRequestConflictConfirm")).toBeVisible();
+  await expect(page.locator("#pullRequestConflictConfirm")).not.toHaveClass(/hide/u);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal in yobiDialog");
+  await expect(page.locator("#pullRequestConflictConfirm .message .msg")).toHaveText(
+    "This code seems to have conflicts when merging. Do you really want to continue?",
+  );
+  await expect(
+    page.locator('#pullRequestConflictConfirm .center-txt.buttons button[type="button"]'),
+  ).toHaveText(["Cancel", "Confirm"]);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(
+    page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).resolves.toBe("pull-request-conflict-confirm");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+  expect(postRequests).toEqual([]);
+  expect(conflictDialogMessages).toEqual([]);
+
+  await armRootModalBridgeTrap(page);
+  await page
+    .locator('#pullRequestConflictConfirm .center-txt.buttons button[type="button"]')
+    .filter({ hasText: /^Cancel$/u })
+    .click();
+  await expect(page).toHaveURL(createFormUrl);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(
+    page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).resolves.toBe("pull-request-conflict-confirm");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+  expect(postRequests).toEqual([]);
+  expect(conflictDialogMessages).toEqual([]);
+
+  await page.fill("#title", "");
+  await page.click('form.nm button[type="submit"]');
+  await expect(page.locator("#pullRequestConflictConfirm")).toBeVisible();
+  await expect(page.locator("#pullRequestConflictConfirm")).not.toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   expect(postRequests).toEqual([]);
 
-  page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toBe(
-      "This code seems to have conflicts when merging. Do you really want to continue?",
-    );
-    await dialog.accept();
-  });
+  await armRootModalBridgeTrap(page);
+  await page.locator("#pullRequestConflictConfirm .ybtn.ybtn-primary").click();
+  await expect.poll(() => conflictDialogMessages).toEqual(["Title is a required field."]);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(postRequests).toEqual([]);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.fill("#title", "Conflict accepted title");
   await page.click('form.nm button[type="submit"]');
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
   await expect.poll(() => postRequests.length).toBe(1);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+  expect(conflictDialogMessages).toEqual(["Title is a required field."]);
 });
 
 test("pull request create editor and uploader omit legacy local raw injection", () => {
@@ -532,6 +597,42 @@ function nextDialogMessage(page: Page) {
     await dialog.dismiss();
     return message;
   });
+}
+
+async function armRootModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as Window &
+      typeof globalThis & {
+        __yonaRootModalBridgeHits?: string[];
+        __yonaRootModalBridgeTrapArmed?: boolean;
+      };
+    win.__yonaRootModalBridgeHits = [];
+    if (win.__yonaRootModalBridgeTrapArmed) {
+      return;
+    }
+    win.__yonaRootModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      if (bridged) {
+        win.__yonaRootModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function rootModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & {
+            __yonaRootModalBridgeHits?: string[];
+          }
+      ).__yonaRootModalBridgeHits ?? [],
+  );
 }
 
 async function selectLegacyOption(page: Page, selector: string, value: string) {
