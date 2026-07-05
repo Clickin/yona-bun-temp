@@ -157,6 +157,26 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
       `${basePath}/sites/update`,
       `${basePath}/sites/diagnostic`,
     ]);
+  await expect
+    .poll(() =>
+      page.locator(".site-setting-nav a").evaluateAll((links) =>
+        links.map((link) => ({
+          ariaCurrent: link.getAttribute("aria-current"),
+          className: link.getAttribute("class"),
+          dataStatus: link.getAttribute("data-status"),
+        })),
+      ),
+    )
+    .toEqual([
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+      { ariaCurrent: null, className: null, dataStatus: null },
+    ]);
   await expect(page.locator(".site-setting-nav li")).toHaveClass([
     "",
     "",

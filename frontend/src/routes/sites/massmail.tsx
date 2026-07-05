@@ -14,6 +14,12 @@ type SelectedProject = {
   name: string;
 };
 
+const legacySiteSidebarLinkProps = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+const legacyMassMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
+
 export const Route = createFileRoute("/sites/massmail")({
   component: SiteMassMailRoute,
 });
@@ -69,43 +75,47 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
     <ul className="site-setting-nav">
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/userList">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/userList">
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/postList">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/postList">
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/issueList">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/issueList">
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/projectList">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/projectList">
           <LegacyMessage messageKey="site.sidebar.projectList" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/mail">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/mail">
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
       <li className="active">
-        <Link activeProps={{ className: undefined }} to="/sites/massmail">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          search={legacyMassMailSidebarSearch}
+          to="/sites/massmail"
+        >
           <LegacyMessage messageKey="site.sidebar.massMail" />
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/update">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/update">
           <LegacyMessage messageKey="site.sidebar.update" />
           {showUpdateBadge ? <span className="notification-badge">1</span> : null}
         </Link>
       </li>
       <li className="">
-        <Link activeProps={{ className: undefined }} to="/sites/diagnostic">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/diagnostic">
           <LegacyMessage messageKey="site.sidebar.diagnostics" />
         </Link>
       </li>
