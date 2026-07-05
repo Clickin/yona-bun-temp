@@ -152,6 +152,12 @@ test("root shell owns login dialog state without delegated document modal mutati
   );
 });
 
+test("UI kit route owns original-message demo state", async () => {
+  expect(UIKIT_ROUTE_SOURCE).toContain('data-original-message-owner="route"');
+  expect(UIKIT_ROUTE_SOURCE).toContain("setShowsViaEmailDemo");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("yobi:original-message-scan");
+});
+
 test("standalone UI kit keeps legacy mobile shell proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -582,28 +588,16 @@ test("standalone UI kit root shell dismisses legacy modal buttons", async ({ pag
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 });
 
-test("standalone UI kit root shell hides legacy data-via-email original message", async ({
-  page,
-}) => {
+test("standalone UI kit route owns legacy data-via-email original message", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.goto(`${basePath}/_UIKit`);
-  await page.locator(".page-wrap-outer").evaluate((container) => {
-    container.insertAdjacentHTML(
-      "beforeend",
-      `<div id="via-email-fixture" class="markdown-wrap" data-via-email="true">
-        <p>Reply body</p>
-        <blockquote>
-          <p id="via-email-delimiter">--- Original Message ---</p>
-          <p id="via-email-hidden-line">Hidden original line</p>
-        </blockquote>
-        <p id="via-email-hidden-sibling">Hidden sibling after blockquote</p>
-      </div>`,
-    );
-    document.dispatchEvent(new Event("yobi:original-message-scan"));
-  });
 
-  const fixture = page.locator("#via-email-fixture");
+  const fixture = page.locator("#ui-kit-via-email-fixture");
+  await expect(fixture).toHaveCount(0);
+  await page.locator('.switch.deactivate input[type="checkbox"]').check();
+  await expect(fixture).toHaveAttribute("data-original-message-owner", "route");
+  await expect(fixture.locator("blockquote > :first-child")).toHaveText("...");
   await expect(fixture.locator('button[type="button"]')).toHaveText("...");
   await expect(page.locator("#via-email-delimiter")).toBeHidden();
   await expect(page.locator("#via-email-hidden-line")).toBeHidden();
@@ -613,6 +607,14 @@ test("standalone UI kit root shell hides legacy data-via-email original message"
   await expect(page.locator("#via-email-delimiter")).toBeVisible();
   await expect(page.locator("#via-email-hidden-line")).toBeVisible();
   await expect(page.locator("#via-email-hidden-sibling")).toBeVisible();
+
+  await fixture.locator('button[type="button"]').click();
+  await expect(page.locator("#via-email-delimiter")).toBeHidden();
+  await expect(page.locator("#via-email-hidden-line")).toBeHidden();
+  await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
+
+  await page.locator('.switch.deactivate input[type="checkbox"]').uncheck();
+  await expect(fixture).toHaveCount(0);
 });
 
 async function readDesktopUIKitMetrics(page: Page) {

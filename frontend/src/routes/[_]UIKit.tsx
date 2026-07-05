@@ -6,6 +6,8 @@ export const Route = createFileRoute("/_UIKit")({
 });
 
 function UIKitRoute() {
+  const [showsViaEmailDemo, setShowsViaEmailDemo] = React.useState(false);
+
   return (
     <>
       <style>{`body { color:#ccc; }
@@ -195,7 +197,14 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
                 <input type="checkbox" data-toggle="switch" defaultChecked />
               </div>
               <div className="switch deactivate" data-on-label="미해결" data-off-label="해결">
-                <input type="checkbox" data-toggle="switch" />
+                <input
+                  type="checkbox"
+                  data-toggle="switch"
+                  checked={showsViaEmailDemo}
+                  onChange={(event) => {
+                    setShowsViaEmailDemo(event.currentTarget.checked);
+                  }}
+                />
               </div>
               <div
                 className="switch switch-square"
@@ -205,6 +214,7 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
                 <input type="checkbox" data-toggle="switch" />
               </div>
             </div>
+            {showsViaEmailDemo ? <OriginalMessageDemo /> : null}
           </div>
         </div>
       </div>
@@ -215,6 +225,44 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
           </span>
         </div>
       </footer>
+    </>
+  );
+}
+
+function OriginalMessageDemo() {
+  const [showsOriginalMessage, setShowsOriginalMessage] = React.useState(false);
+
+  return (
+    <>
+      <hr />
+      <div
+        id="ui-kit-via-email-fixture"
+        className="markdown-wrap"
+        data-via-email="true"
+        data-original-message-owner="route"
+      >
+        <p>Reply body</p>
+        <blockquote>
+          <button
+            type="button"
+            style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+            onClick={() => {
+              setShowsOriginalMessage((current) => !current);
+            }}
+          >
+            ...
+          </button>
+          <p id="via-email-delimiter" hidden={!showsOriginalMessage}>
+            --- Original Message ---
+          </p>
+          <p id="via-email-hidden-line" hidden={!showsOriginalMessage}>
+            Hidden original line
+          </p>
+        </blockquote>
+        <p id="via-email-hidden-sibling" hidden={!showsOriginalMessage}>
+          Hidden sibling after blockquote
+        </p>
+      </div>
     </>
   );
 }
