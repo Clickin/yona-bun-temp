@@ -24,6 +24,16 @@ type ProjectImportFormOptionsState = {
   formValues?: Record<string, string | undefined>;
 };
 
+const legacyImportActionLinkActiveOptions = {
+  exact: true,
+  explicitUndefined: true,
+} as const;
+const legacyImportActionLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRoute,
   validateSearch(search): ProjectImportSearch {
@@ -196,8 +206,8 @@ function ProjectImportScreen({
                     to="/projectform"
                     search={{ owner: ownerName || selectedOwner }}
                     className="ybtn ybtn-small nm"
-                    activeOptions={{ exact: true }}
-                    activeProps={{ className: undefined }}
+                    activeOptions={legacyImportActionLinkActiveOptions}
+                    activeProps={legacyImportActionLinkActiveProps}
                   >
                     <strong>{t("title.newProject")}</strong>
                   </Link>
@@ -503,8 +513,8 @@ function ProjectImportScreen({
                 <Link
                   to="/"
                   className="ybtn"
-                  activeOptions={{ exact: true }}
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyImportActionLinkActiveOptions}
+                  activeProps={legacyImportActionLinkActiveProps}
                 >
                   {t("button.cancel")}
                 </Link>
@@ -527,7 +537,7 @@ function normalizeProjectScope(scope: string | undefined) {
 }
 
 function validateProjectName(projectName: string, t: (key: string) => string) {
-  if (projectName.length === 0 || !/^[0-9A-Za-z-_\.가-힣]+$/.test(projectName)) {
+  if (projectName.length === 0 || !/^[0-9A-Za-z-_.가-힣]+$/.test(projectName)) {
     return t("project.name.alert");
   }
   if (projectName === "." || projectName === ".." || projectName === ".git") {

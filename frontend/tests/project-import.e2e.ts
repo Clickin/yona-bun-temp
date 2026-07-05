@@ -369,8 +369,9 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
   await expect(createProjectLink).toHaveText("Create new project");
   await expect(createProjectLink).toHaveAttribute("href", `${basePath}/projectform?owner=admin`);
   await expect(createProjectLink).toHaveClass("ybtn ybtn-small nm");
-  await expect(createProjectLink).not.toHaveAttribute("aria-current", "page");
-  await expect(createProjectLink).not.toHaveAttribute("data-status", "active");
+  await expect(createProjectLink).not.toHaveAttribute("title", /.*/u);
+  await expect(createProjectLink).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(createProjectLink).not.toHaveAttribute("data-status", /.*/u);
 
   await page.evaluate(() => {
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
@@ -391,8 +392,9 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
   await expect(cancelLink).toHaveText("Cancel");
   await expect(cancelLink).toHaveAttribute("href", rootHref(basePath));
   await expect(cancelLink).toHaveClass("ybtn");
-  await expect(cancelLink).not.toHaveAttribute("aria-current", "page");
-  await expect(cancelLink).not.toHaveAttribute("data-status", "active");
+  await expect(cancelLink).not.toHaveAttribute("title", /.*/u);
+  await expect(cancelLink).not.toHaveAttribute("aria-current", /.*/u);
+  await expect(cancelLink).not.toHaveAttribute("data-status", /.*/u);
 
   await page.evaluate(() => {
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
@@ -412,12 +414,21 @@ test("project import form navigation links use TanStack Router Link in route sou
   const routeSource = readFileSync(PROJECT_IMPORT_ROUTE_SOURCE, "utf8");
 
   expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
+  expect(routeSource).toContain("const legacyImportActionLinkActiveOptions =");
+  expect(routeSource).toContain("const legacyImportActionLinkActiveProps =");
+  expect(routeSource).toContain("explicitUndefined: true");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('<Link\n                    to="/projectform"');
   expect(routeSource).toContain('<Link\n                  to="/"');
-  expect(routeSource).toContain("activeOptions={{ exact: true }}");
+  expect(routeSource).toContain("activeOptions={legacyImportActionLinkActiveOptions}");
+  expect(routeSource).toContain("activeProps={legacyImportActionLinkActiveProps}");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("LegacyHrefLink");
   expect(routeSource).not.toMatch(/<a\b/);
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toContain("<a\n                    href={prefixBasePath(");
   expect(routeSource).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/")}');
 });

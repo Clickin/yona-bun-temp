@@ -49,7 +49,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-toggle="tooltip" data-placement="bottom">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -421,10 +421,19 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("as unknown as");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("setAttribute");
+  expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toMatch(/<a[\s>]/u);
-  expect(routeSource).not.toContain("data-login=");
   expect(routeSource).not.toContain("document.dispatchEvent");
   expect(routeSource).not.toContain('data-toggle="yobi-notify"');
+  expect(routeSource).toContain("const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {");
+  expect(routeSource).toContain(
+    "activeOptions: { exact: true, explicitUndefined: true, includeSearch: true }",
+  );
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new"');
   expect(routeSource).toContain(
     'const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new"',
@@ -483,7 +492,7 @@ test("anonymous home shell renders legacy login and signup link affordances", as
   await expect(loginLink).toHaveText("Log in");
   await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
   await expect(loginLink).toHaveAttribute("class", "user-item-btn");
-  await expect(loginLink).not.toHaveAttribute("data-login");
+  await expect(loginLink).toHaveAttribute("data-login", "required");
   await expect(signupMenuLink).toHaveText("Sign up");
   await expect(signupMenuLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(signupMenuLink).toHaveAttribute("class", "ybtn ybtn-success");
@@ -554,6 +563,33 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
 
   await page.setViewportSize({ width: 1100, height: 720 });
+  const homeStreamTabs = page.locator(".main-stream > .nav-tabs");
+  await expect(homeStreamTabs.locator("> li").nth(0)).toHaveClass("active");
+  await expect(homeStreamTabs.locator("> li > a")).toHaveText([
+    "Notification",
+    "My Issues",
+    "My Files",
+  ]);
+  await expect(homeStreamTabs.locator("> li > a").nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/notifications`,
+  );
+  await expect(homeStreamTabs.locator("> li > a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/user/issues`,
+  );
+  await expect(homeStreamTabs.locator("> li > a").nth(2)).toHaveAttribute(
+    "href",
+    `${basePath}/user/files`,
+  );
+  await expect(homeStreamTabs.locator("> li > a.active")).toHaveCount(0);
+  for (const tabLink of await homeStreamTabs.locator("> li > a").all()) {
+    await expect(tabLink).not.toHaveAttribute("class");
+    await expect(tabLink).not.toHaveAttribute("title");
+    await expect(tabLink).not.toHaveAttribute("aria-current");
+    await expect(tabLink).not.toHaveAttribute("data-status");
+  }
+
   const gnbMyIssues = page.locator(".gnb-usermenu a.user-item-btn.loggged-in", {
     hasText: "My Issues",
   });
@@ -1004,6 +1040,12 @@ test("direct notifications route matches legacy Application.notifications empty 
     `${basePath}/user/files`,
   );
   await expect(mainStreamTabs.locator("> li > a.active")).toHaveCount(0);
+  for (const tabLink of await mainStreamTabs.locator("> li > a").all()) {
+    await expect(tabLink).not.toHaveAttribute("class");
+    await expect(tabLink).not.toHaveAttribute("title");
+    await expect(tabLink).not.toHaveAttribute("aria-current");
+    await expect(tabLink).not.toHaveAttribute("data-status");
+  }
 
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const mainStreamTabSource = routeSource.slice(
@@ -1011,9 +1053,11 @@ test("direct notifications route matches legacy Application.notifications empty 
     routeSource.indexOf('<ul className="activity-streams notification-wrap unstyled">'),
   );
   expect(mainStreamTabSource).not.toContain("LegacyInternalLink");
+  expect(mainStreamTabSource).not.toContain("activeProps={{ className: undefined }}");
   expect(mainStreamTabSource).toContain('to="/notifications"');
   expect(mainStreamTabSource).toContain('to="/user/issues"');
   expect(mainStreamTabSource).toContain('to="/user/files"');
+  expect(mainStreamTabSource).toContain("LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS");
 
   const myIssuesTab = mainStreamTabs.locator('a:has-text("My Issues")');
   await expect(myIssuesTab).toHaveAttribute("href", `${basePath}/user/issues`);
@@ -1120,6 +1164,10 @@ test("direct notifications route matches legacy populated notification row DOM",
   const notificationAuthor = page.locator(".notification-stream .author");
   await expect(notificationTitle).toHaveText("Issue #1 updated");
   await expect(notificationTitle).toHaveAttribute("href", `${basePath}/admin/sample/issue/1`);
+  await expect(notificationTitle).not.toHaveAttribute("class");
+  await expect(notificationTitle).not.toHaveAttribute("title");
+  await expect(notificationTitle).not.toHaveAttribute("aria-current");
+  await expect(notificationTitle).not.toHaveAttribute("data-status");
   await expect(notificationAvatar).toHaveAttribute("href", `${basePath}/admin`);
   await expect(notificationAvatar).toHaveAttribute("class", "avatar-wrap smaller");
   await expect(notificationAuthor).toHaveText("Site Admin");

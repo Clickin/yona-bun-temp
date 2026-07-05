@@ -71,6 +71,17 @@ const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/mas
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
 const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona";
+const LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH = {
+  __legacyHomeStreamActiveMarker: undefined,
+};
+const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+  activeProps: {
+    "aria-current": undefined,
+    className: undefined,
+    "data-status": undefined,
+  },
+};
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -246,13 +257,17 @@ function HomeScreen({
                 <div className="span8 main-stream">
                   <ul className="nav nav-tabs">
                     <li className="active">
-                      <Link activeProps={{ className: undefined }} to="/notifications">
+                      <Link
+                        {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
+                        to="/notifications"
+                        search={LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH}
+                      >
                         {t("notification")}
                       </Link>
                     </li>
                     <li>
                       <Link
-                        activeProps={{ className: undefined }}
+                        {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
                         to="/user/issues"
                         search={LEGACY_USER_ISSUES_LINK_SEARCH}
                       >
@@ -260,7 +275,11 @@ function HomeScreen({
                       </Link>
                     </li>
                     <li>
-                      <Link activeProps={{ className: undefined }} to="/user/files">
+                      <Link
+                        {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
+                        to="/user/files"
+                        search={LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH}
+                      >
                         {t("user.files")}
                       </Link>
                     </li>
@@ -465,7 +484,8 @@ function NotificationStreamItem({
               <Link
                 to={notification.targetHref}
                 href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}
-                activeProps={{ className: undefined }}
+                {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
+                search={LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH}
               >
                 {notification.targetTitle}
               </Link>

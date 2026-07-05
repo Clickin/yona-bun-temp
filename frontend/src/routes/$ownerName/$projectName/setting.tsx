@@ -25,12 +25,12 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
-const legacyProjectSettingsMenuActiveOptions = {
+const legacyProjectSettingsLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
   includeSearch: true,
 };
-const legacyProjectSettingsMenuActiveProps = {
+const legacyProjectSettingsLinkSuppressActiveProps = {
   "aria-current": undefined,
   className: undefined,
   "data-status": undefined,
@@ -355,7 +355,8 @@ function ProjectSettingBody({
                 <div className="cu-label">{t("issue.template")}</div>
                 <div className="cu-desc">
                   <Link
-                    activeProps={{ className: undefined }}
+                    activeOptions={legacyProjectSettingsLinkActiveOptions}
+                    activeProps={legacyProjectSettingsLinkSuppressActiveProps}
                     to="/$ownerName/$projectName/postform"
                     params={{ ownerName, projectName }}
                     search={{ issueTemplate: true }}
@@ -692,7 +693,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectSettingsLinkActiveOptions}
+                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
                   to="/$user"
                   params={{ user: ownerName }}
                 >
@@ -702,7 +704,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
               <span className="project-separator hide-in-mobile">/</span>
               <span className="project-name">
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectSettingsLinkActiveOptions}
+                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
                   to="/$ownerName/$projectName"
                   params={{ ownerName, projectName }}
                 >
@@ -741,7 +744,8 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
               <div className="project-origin">
                 <span className="project-origin-title">{t("fork.original")}</span>
                 <Link
-                  activeProps={{ className: undefined }}
+                  activeOptions={legacyProjectSettingsLinkActiveOptions}
+                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
                   to="/$ownerName/$projectName"
                   params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
                   className="project-origin-name"
@@ -831,8 +835,8 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
             <ul className="project-menu-nav">
               <li className="active">
                 <Link
-                  activeOptions={legacyProjectSettingsMenuActiveOptions}
-                  activeProps={legacyProjectSettingsMenuActiveProps}
+                  activeOptions={legacyProjectSettingsLinkActiveOptions}
+                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
                   to="/$ownerName/$projectName/setting"
                   search={legacyProjectSettingsCogSearch}
                   params={{ ownerName, projectName }}
@@ -867,7 +871,12 @@ function ProjectMenuItem({
 }) {
   return (
     <li className={className}>
-      <Link activeProps={{ className: undefined }} to={to} params={params}>
+      <Link
+        activeOptions={legacyProjectSettingsLinkActiveOptions}
+        activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+        to={to}
+        params={params}
+      >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
       </Link>
@@ -894,8 +903,8 @@ function ProjectSettingMenu({
     <ul className="nav nav-tabs">
       <li id="subMenuProjectSetting" className={active === "setting" ? "active" : ""}>
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/setting"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -905,8 +914,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectMember" className="">
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/members"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -917,8 +926,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuIssueLabel" className="">
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -928,8 +937,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuWebhook" className="">
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/webhooks"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -939,8 +948,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectTransfer" className="">
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/transfer"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -950,8 +959,8 @@ function ProjectSettingMenu({
       </li>
       <li id="subMenuProjectDelete" className="">
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/deleteform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
@@ -965,8 +974,8 @@ function ProjectSettingMenu({
         style={showCode ? undefined : { display: "none" }}
       >
         <Link
-          activeOptions={legacyProjectSettingsMenuActiveOptions}
-          activeProps={legacyProjectSettingsMenuActiveProps}
+          activeOptions={legacyProjectSettingsLinkActiveOptions}
+          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
           to="/$ownerName/$projectName/changeVCS"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
