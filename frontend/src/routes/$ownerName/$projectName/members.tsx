@@ -132,6 +132,16 @@ function ProjectMembersBody({
     addMutation.mutate(String(formData.get("loginId") ?? ""));
   }
 
+  function acceptEnrollment(loginId: string) {
+    const input = addMemberInputRef.current;
+    if (!input?.form) {
+      addMutation.mutate(loginId);
+      return;
+    }
+    input.value = loginId;
+    input.form.requestSubmit();
+  }
+
   useEffect(() => {
     if (booleanField(members.viewerCanUpdate)) {
       addMemberInputRef.current?.focus();
@@ -204,7 +214,7 @@ function ProjectMembersBody({
               {members.enrollmentRequests.map((user) => (
                 <EnrollmentRequest
                   key={stringField(user.userId, user.loginId)}
-                  onAccept={(loginId) => addMutation.mutate(loginId)}
+                  onAccept={acceptEnrollment}
                   user={user}
                 />
               ))}
@@ -268,6 +278,17 @@ function ProjectMemberListItem({
       });
     },
   });
+
+  async function onDeleteMember() {
+    if (!window.confirm(t("project.member.deleteConfirm"))) {
+      return;
+    }
+    try {
+      await deleteMutation.mutateAsync();
+    } catch (error) {
+      window.alert(projectMemberDeleteErrorMessage(t, error));
+    }
+  }
 
   return (
     <li className="member span6 span-hard-wrap">
@@ -350,7 +371,7 @@ function ProjectMemberListItem({
                 `/${ownerName}/${projectName}/member/${userId}/delete`,
               )}
               className="ybtn ybtn-danger ybtn-small"
-              onClick={() => deleteMutation.mutate()}
+              onClick={onDeleteMember}
             >
               {t("button.delete")}
             </button>
@@ -418,6 +439,19 @@ function legacyProjectRoleId(role: ProjectMembersResponse["roleOptions"][number]
     return explicitId;
   }
   return stringField(role.role, "") === "manager" ? "1" : "2";
+}
+
+function projectMemberDeleteErrorMessage(t: (key: string) => string, error: unknown) {
+  if (error instanceof RestApiError) {
+    if (error.status === 403) {
+      const ownerCannotLeave = t("project.member.ownerCannotLeave");
+      return error.message.includes(ownerCannotLeave) ? ownerCannotLeave : t("error.forbidden");
+    }
+    if (error.status === 404) {
+      return t("project.is.empty");
+    }
+  }
+  return t("error.badrequest");
 }
 
 function ProjectHeader({ project }: { project: ProjectContainer }) {
