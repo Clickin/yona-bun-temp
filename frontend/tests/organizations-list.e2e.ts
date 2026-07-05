@@ -154,7 +154,12 @@ test("organization directory card links keep legacy hrefs and use SPA navigation
 
   await expect(logoLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
   await expect(logoLink.locator("img")).toHaveCount(0);
+  await expect(logoLink).not.toHaveAttribute("aria-current");
+  await expect(logoLink).not.toHaveAttribute("data-status");
   await expect(nameLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(nameLink).toHaveClass("black");
+  await expect(nameLink).not.toHaveAttribute("aria-current");
+  await expect(nameLink).not.toHaveAttribute("data-status");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -260,6 +265,9 @@ test("organization directory renders legacy multi-page pagination with query-pre
   await expect(pagination.locator(".delimiter")).toHaveText("/");
   await expect(pagination.locator("li.page-num").nth(3)).toHaveText("3");
   await expect(nextLink).toHaveAttribute("href", `${basePath}/orgs?filter=weblabs&pageNum=2`);
+  await expect(nextLink).not.toHaveAttribute("aria-current");
+  await expect(nextLink).not.toHaveAttribute("data-status");
+  await expect(nextLink).not.toHaveAttribute("class");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -279,6 +287,11 @@ test("organization directory renders legacy multi-page pagination with query-pre
     "href",
     `${basePath}/orgs?filter=weblabs&pageNum=1`,
   );
+  await expect(pagination.locator("li.page-num.ikon a").first()).not.toHaveAttribute(
+    "aria-current",
+  );
+  await expect(pagination.locator("li.page-num.ikon a").first()).not.toHaveAttribute("data-status");
+  await expect(pagination.locator("li.page-num.ikon a").first()).not.toHaveAttribute("class");
 });
 
 test("organization directory pagination input clamps valid pages and resets invalid input", async ({

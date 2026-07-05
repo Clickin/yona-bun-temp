@@ -195,7 +195,11 @@ function OrganizationsPagination({
         <li className="page-num ikon">
           {hasPrev ? (
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               search={pageSearch(currentPage - 1)}
               to="/orgs"
             >
@@ -230,7 +234,11 @@ function OrganizationsPagination({
         <li className="page-num ikon">
           {hasNext ? (
             <Link
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: undefined,
+                "data-status": undefined,
+              }}
               search={pageSearch(currentPage + 1)}
               to="/orgs"
             >
@@ -277,7 +285,11 @@ function OrganizationListItem({ organization }: { organization: OrganizationDire
           <Link
             to="/organizations/$organizationName"
             params={{ organizationName }}
-            activeProps={{ className: undefined }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
           >
             {logoUrl ? <img src={logoUrl} alt={organizationName} /> : null}
           </Link>
@@ -287,7 +299,11 @@ function OrganizationListItem({ organization }: { organization: OrganizationDire
             <Link
               to="/organizations/$organizationName"
               params={{ organizationName }}
-              activeProps={{ className: undefined }}
+              activeProps={{
+                "aria-current": undefined,
+                className: "black",
+                "data-status": undefined,
+              }}
               className="black"
             >
               {organizationName}
