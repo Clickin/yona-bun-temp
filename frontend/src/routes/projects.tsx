@@ -10,6 +10,7 @@ import { SiteLayoutShell } from "./-home-route-screen";
 
 type ProjectsSearch = {
   filter: string;
+  labelIds: number | string;
   pageNum?: number;
 };
 
@@ -26,12 +27,19 @@ type ProjectDirectoryItem = YonaRecord & {
   watchCount?: number;
 };
 
+type ProjectDirectoryLabel = {
+  category: string;
+  id: string;
+  name: string;
+};
+
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
   validateSearch: (search: Record<string, unknown>): ProjectsSearch => {
     const pageNum = positiveInteger(search.pageNum);
     return {
       filter: typeof search.filter === "string" ? search.filter : "",
+      labelIds: stringSearch(search.labelIds),
       ...(pageNum ? { pageNum } : {}),
     };
   },
@@ -133,6 +141,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 {projects.map((project) => (
                   <ProjectListItem
                     key={`${project.ownerName ?? ""}/${project.projectName ?? ""}`}
+                    basePath={runtimeConfig.basePath}
                     project={project}
                   />
                 ))}
@@ -140,6 +149,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <ProjectsPagination
                 currentPage={currentPage}
                 filter={filter}
+                labelIds={String(search.labelIds)}
                 totalPages={totalPages}
               />
             </>
@@ -153,10 +163,12 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 function ProjectsPagination({
   currentPage,
   filter,
+  labelIds,
   totalPages,
 }: {
   currentPage: number;
   filter: string;
+  labelIds: string;
   totalPages: number;
 }) {
   const { t } = useLegacyMessages();
@@ -169,6 +181,7 @@ function ProjectsPagination({
   const hasNext = currentPage < totalPages;
   const pageSearch = (pageNum: number) => ({
     ...(filter ? { filter } : {}),
+    ...(labelIds ? { labelIds: labelIdSearchValue(labelIds) } : {}),
     pageNum,
   });
   const navigateToPage = (pageNum: number) => {
@@ -251,8 +264,15 @@ function ProjectsPagination({
   );
 }
 
-function ProjectListItem({ project }: { project: ProjectDirectoryItem }) {
+function ProjectListItem({
+  basePath,
+  project,
+}: {
+  basePath: string;
+  project: ProjectDirectoryItem;
+}) {
   const { t } = useLegacyMessages();
+  const router = useRouter();
   const ownerName = stringField(project, "ownerName", "");
   const projectName = stringField(project, "projectName", "");
   if (!projectIsReadable(project)) {
@@ -274,6 +294,7 @@ function ProjectListItem({ project }: { project: ProjectDirectoryItem }) {
   const createdLabel = stringField(project, "createdLabel", "");
   const createdTitle = stringField(project, "createdTitle", createdLabel);
   const lastPushedLabel = stringField(project, "lastPushedLabel", "");
+  const labels = projectLabels(project);
   const memberCount = numberField(project, "memberCount", 0);
   const watchCount = numberField(project, "watchCount", 0);
 
@@ -299,6 +320,36 @@ function ProjectListItem({ project }: { project: ProjectDirectoryItem }) {
             >
               {projectName}
             </Link>
+            {labels.map((label) => {
+              const className = label.category
+                ? `project-label ${label.category.toLowerCase()}`
+                : "project-label";
+              return (
+                <Link
+                  activeOptions={{ exact: true, includeSearch: true }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className,
+                    "data-status": undefined,
+                  }}
+                  className={className}
+                  key={label.id}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    router.history.push(
+                      prefixBasePath(
+                        basePath,
+                        `/projects?labelIds=${encodeURIComponent(label.id)}`,
+                      ),
+                    );
+                  }}
+                  search={{ labelIds: labelIdSearchValue(label.id) }}
+                  to="/projects"
+                >
+                  {label.name}
+                </Link>
+              );
+            })}
             {stringField(project, "projectScope", "public") === "private" ? (
               <i className="yobicon-lock yobicon-small"></i>
             ) : null}
@@ -354,9 +405,42 @@ function projectItems(payload: unknown): ProjectDirectoryItem[] {
   );
 }
 
+function projectLabels(project: YonaRecord): ProjectDirectoryLabel[] {
+  const labels = project.labels;
+  if (!Array.isArray(labels)) {
+    return [];
+  }
+  return labels.flatMap((label) => {
+    if (!label || typeof label !== "object") {
+      return [];
+    }
+    const record = label as YonaRecord;
+    const id = stringOrNumberField(record, "id");
+    const name = stringField(record, "name", "");
+    if (!id || !name) {
+      return [];
+    }
+    return [
+      {
+        category: stringField(record, "category", stringField(record, "categoryName", "")),
+        id,
+        name,
+      },
+    ];
+  });
+}
+
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function stringOrNumberField(record: YonaRecord, key: string): string {
+  const value = record[key];
+  if ((typeof value === "string" || typeof value === "number") && String(value) !== "") {
+    return String(value);
+  }
+  return "";
 }
 
 function numberField(record: YonaRecord, key: string, fallback: number): number {
@@ -373,6 +457,20 @@ function positiveInteger(value: unknown): number | undefined {
     return parsed > 0 ? parsed : undefined;
   }
   return undefined;
+}
+
+function stringSearch(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.length > 0 ? String(value[0]) : "";
+  }
+  if ((typeof value === "string" || typeof value === "number") && String(value) !== "") {
+    return String(value);
+  }
+  return "";
+}
+
+function labelIdSearchValue(value: string): number | string {
+  return /^[0-9]+$/u.test(value) ? Number.parseInt(value, 10) : value;
 }
 
 function positiveIntegerField(payload: unknown, key: string, fallback: number): number {

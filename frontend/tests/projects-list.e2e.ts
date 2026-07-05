@@ -14,7 +14,7 @@ const EXPECTED_PROJECTS_LIST = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar active" data-status="active" aria-current="page">List All</a></li>
       <li class="divider"></li>
       <li>
@@ -50,7 +50,7 @@ const EXPECTED_PROJECTS_LIST = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
@@ -106,6 +106,7 @@ const EXPECTED_PROJECTS_LIST = `
           <div style="float:left">
             <div class="header">
               <a href="__BASE_PATH__/admin/sample" class="black">sample</a>
+              <a href="__BASE_PATH__/projects?labelIds=8" class="project-label bug">bug</a>
             </div>
             <div class="desc">Sample project</div>
             <p class="name-tag">by<a href="__BASE_PATH__/admin" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">,Latest code update<strong>just now</strong></span></p>
@@ -281,13 +282,42 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     .toBe("owner");
 });
 
+test("project directory labels keep legacy header links and query", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedProjects(page);
+
+  await page.goto(`${basePath}/projects?filter=sample`);
+  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+
+  const projectLabel = page.locator(".all-projects .header a.project-label");
+  await expect(projectLabel).toHaveCount(1);
+  await expect(projectLabel).toHaveClass("project-label bug");
+  await expect(projectLabel).toHaveText("bug");
+  await expect(projectLabel).toHaveAttribute("href", `${basePath}/projects?labelIds=8`);
+
+  await page.evaluate(() => {
+    (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "label";
+  });
+  await projectLabel.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/projects`);
+  await expect.poll(() => new URL(page.url()).searchParams.get("labelIds")).toBe("8");
+  await expect.poll(() => new URL(page.url()).searchParams.has("filter")).toBe(false);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker,
+      ),
+    )
+    .toBe("label");
+});
+
 test("projects list renders legacy pagination controls for multi-page project lists", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedProjects(page, { pageNum: 1, totalPages: 3 });
 
-  await page.goto(`${basePath}/projects?filter=sample&pageNum=1`);
+  await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=1`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
   const pagination = page.locator("#pagination");
@@ -307,6 +337,7 @@ test("projects list renders legacy pagination controls for multi-page project li
   const nextUrl = new URL(nextHref ?? "", page.url());
   expect(nextUrl.pathname).toBe(`${basePath}/projects`);
   expect(nextUrl.searchParams.get("filter")).toBe("sample");
+  expect(nextUrl.searchParams.get("labelIds")).toBe("8");
   expect(nextUrl.searchParams.get("pageNum")).toBe("2");
 
   await page.evaluate(() => {
@@ -329,6 +360,7 @@ test("projects list renders legacy pagination controls for multi-page project li
   const prevUrl = new URL(prevHref ?? "", page.url());
   expect(prevUrl.pathname).toBe(`${basePath}/projects`);
   expect(prevUrl.searchParams.get("filter")).toBe("sample");
+  expect(prevUrl.searchParams.get("labelIds")).toBe("8");
   expect(prevUrl.searchParams.get("pageNum")).toBe("1");
 
   const pageInput = pagination.locator('input[name="pageNum"]');
@@ -347,6 +379,12 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$user"');
+  expect(source).toContain("labelIds: number | string");
+  expect(source).toContain("labelIdSearchValue(label.id)");
+  expect(source).toContain("router.history.push(");
+  expect(source).toContain("prefixBasePath(");
+  expect(source).toContain("`/projects?labelIds=${encodeURIComponent(label.id)}`");
+  expect(source).toContain("pageSearch(pageNum)");
   expect(source).toContain("pageNum?: number");
   expect(source).toContain('name="pageNum"');
   expect(source).toContain("router.navigate");
@@ -390,6 +428,13 @@ async function mockAuthenticatedProjects(page: Page, payload: Record<string, unk
             ownerName: "admin",
             projectName: "sample",
             projectScope: "public",
+            labels: [
+              {
+                category: "BUG",
+                id: 8,
+                name: "bug",
+              },
+            ],
             watchCount: 3,
           },
           {
