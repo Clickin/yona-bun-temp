@@ -1744,6 +1744,43 @@ test("project issue list mass update options come from project-wide legacy sourc
   await expect(page.locator('#assigneeId option[data-login-id="wide"]')).toHaveCount(0);
 });
 
+test("project issue list user-option avatars fall back to the legacy default when API data is empty", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleMessages: string[] = [];
+  page.on("console", (message) => {
+    consoleMessages.push(message.text());
+  });
+  await mockProjectIssues(page, "empty-avatar-options");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty-avatar-options`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+
+  await expect(page.locator('#authorId option[data-login-id="ghost"]')).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/default-avatar-32.png",
+  );
+  await expect(page.locator('#assigneeId option[data-login-id="ghost"]')).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/default-avatar-32.png",
+  );
+
+  await page.locator("#issue-42").check();
+  await page.locator("#assignee > button").click();
+  await expect(page.locator("#assignee")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(page.locator('#assignee .mass-update-list li[data-value="4"] img')).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
+  );
+
+  expect(
+    consoleMessages.some((message) =>
+      message.includes('An empty string ("") was passed to the src attribute'),
+    ),
+  ).toBe(false);
+});
+
 test("project issue list mass update checkboxes enable legacy toolbar controls", async ({
   page,
 }) => {
@@ -2576,6 +2613,7 @@ async function mockProjectIssues(
     | "child-draft"
     | "children"
     | "draft"
+    | "empty-avatar-options"
     | "empty"
     | "foreign-draft"
     | "labels-unsorted"
@@ -2698,26 +2736,25 @@ async function mockProjectIssues(
       contentType: "application/json",
       body: JSON.stringify({
         items:
-          role === "author" && isPopulated
+          state === "empty-avatar-options"
             ? [
                 {
-                  avatarUrl: "/assets/images/default-avatar-32.png",
-                  displayName: "Dev Member",
-                  loginId: "dev",
-                  pureNameOnly: "Dev Member",
-                  userId: 2,
-                },
-                {
-                  avatarUrl: "/assets/images/default-avatar-32.png",
-                  displayName: "Site Admin",
-                  loginId: "admin",
-                  pureNameOnly: "Site Admin",
-                  userId: 1,
+                  avatarUrl: "",
+                  displayName: "Ghost Author",
+                  loginId: "ghost",
+                  pureNameOnly: "Ghost Author",
+                  userId: 4,
                 },
               ]
-            : state === "anonymous"
-              ? []
-              : [
+            : role === "author" && isPopulated
+              ? [
+                  {
+                    avatarUrl: "/assets/images/default-avatar-32.png",
+                    displayName: "Dev Member",
+                    loginId: "dev",
+                    pureNameOnly: "Dev Member",
+                    userId: 2,
+                  },
                   {
                     avatarUrl: "/assets/images/default-avatar-32.png",
                     displayName: "Site Admin",
@@ -2725,7 +2762,18 @@ async function mockProjectIssues(
                     pureNameOnly: "Site Admin",
                     userId: 1,
                   },
-                ],
+                ]
+              : state === "anonymous"
+                ? []
+                : [
+                    {
+                      avatarUrl: "/assets/images/default-avatar-32.png",
+                      displayName: "Site Admin",
+                      loginId: "admin",
+                      pureNameOnly: "Site Admin",
+                      userId: 1,
+                    },
+                  ],
       }),
     });
   });
@@ -2734,51 +2782,70 @@ async function mockProjectIssues(
       contentType: "application/json",
       body: JSON.stringify({
         items:
-          state === "project-wide-options"
+          state === "empty-avatar-options"
             ? [
                 {
+                  avatarUrl: "",
+                  displayName: "Ghost Author",
+                  loginId: "ghost",
+                  pureNameOnly: "Ghost Author",
+                  type: "user",
+                  userId: 4,
+                },
+                {
                   avatarUrl: "/assets/images/default-avatar-32.png",
                   displayName: "Site Admin",
                   loginId: "admin",
                   pureNameOnly: "Site Admin",
                   type: "user",
                   userId: 1,
-                },
-                {
-                  avatarUrl: "/assets/images/default-avatar-32.png",
-                  displayName: "Dev Member",
-                  loginId: "dev",
-                  pureNameOnly: "Dev Member",
-                  type: "user",
-                  userId: 2,
-                },
-                {
-                  avatarUrl: "/assets/images/default-avatar-32.png",
-                  displayName: "Project Wide Member",
-                  loginId: "wide",
-                  pureNameOnly: "Project Wide Member",
-                  type: "user",
-                  userId: 3,
                 },
               ]
-            : [
-                {
-                  avatarUrl: "/assets/images/default-avatar-32.png",
-                  displayName: "Site Admin",
-                  loginId: "admin",
-                  pureNameOnly: "Site Admin",
-                  type: "user",
-                  userId: 1,
-                },
-                {
-                  avatarUrl: "/assets/images/default-avatar-32.png",
-                  displayName: "Dev Member",
-                  loginId: "dev",
-                  pureNameOnly: "Dev Member",
-                  type: "user",
-                  userId: 2,
-                },
-              ],
+            : state === "project-wide-options"
+              ? [
+                  {
+                    avatarUrl: "/assets/images/default-avatar-32.png",
+                    displayName: "Site Admin",
+                    loginId: "admin",
+                    pureNameOnly: "Site Admin",
+                    type: "user",
+                    userId: 1,
+                  },
+                  {
+                    avatarUrl: "/assets/images/default-avatar-32.png",
+                    displayName: "Dev Member",
+                    loginId: "dev",
+                    pureNameOnly: "Dev Member",
+                    type: "user",
+                    userId: 2,
+                  },
+                  {
+                    avatarUrl: "/assets/images/default-avatar-32.png",
+                    displayName: "Project Wide Member",
+                    loginId: "wide",
+                    pureNameOnly: "Project Wide Member",
+                    type: "user",
+                    userId: 3,
+                  },
+                ]
+              : [
+                  {
+                    avatarUrl: "/assets/images/default-avatar-32.png",
+                    displayName: "Site Admin",
+                    loginId: "admin",
+                    pureNameOnly: "Site Admin",
+                    type: "user",
+                    userId: 1,
+                  },
+                  {
+                    avatarUrl: "/assets/images/default-avatar-32.png",
+                    displayName: "Dev Member",
+                    loginId: "dev",
+                    pureNameOnly: "Dev Member",
+                    type: "user",
+                    userId: 2,
+                  },
+                ],
         total: state === "project-wide-options" ? 3 : 2,
         truncated: false,
       }),
@@ -2829,6 +2896,7 @@ async function mockProjectIssues(
       body: JSON.stringify(
         state === "populated" ||
           state === "blank-assignee-label" ||
+          state === "empty-avatar-options" ||
           state === "no-milestone-menu" ||
           state === "non-member" ||
           state === "project-wide-options"

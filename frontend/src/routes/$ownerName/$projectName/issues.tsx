@@ -3271,10 +3271,7 @@ function projectAssignableUserOptions(
     const fallback = fallbackByLoginId.get(loginId);
     const id = stringField(item.userId, fallback?.id ?? loginId);
     addUser(users, {
-      avatarUrl: stringField(
-        item.avatarUrl,
-        fallback?.avatarUrl ?? "/assets/images/default-avatar-32.png",
-      ),
+      avatarUrl: avatarUrlField(item.avatarUrl, fallback?.avatarUrl),
       id,
       label: stringField(item.displayName, stringField(item.pureNameOnly, fallback?.label ?? "")),
       loginId,
@@ -3299,7 +3296,7 @@ function projectIssueSearchUserOptions(
     const id = stringField(item.userId, "");
     if (id && loginId) {
       users.push({
-        avatarUrl: stringField(item.avatarUrl, "/assets/images/default-avatar-32.png"),
+        avatarUrl: avatarUrlField(item.avatarUrl),
         id,
         label: stringField(item.displayName, stringField(item.pureNameOnly, "")),
         loginId,
@@ -3316,13 +3313,13 @@ function uniqueUsers(issues: RestIssueListItem[], currentUserId: string) {
   >();
   for (const issue of issues) {
     addUser(users, {
-      avatarUrl: stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+      avatarUrl: avatarUrlField(issue.assigneeAvatarUrl),
       id: stringField((issue as Record<string, unknown>).assigneeUserId, ""),
       label: stringField(issue.assigneeLabel, ""),
       loginId: stringField(issue.assigneeLoginId, ""),
     });
     addUser(users, {
-      avatarUrl: stringField(issue.authorAvatarUrl, "/assets/images/default-avatar-32.png"),
+      avatarUrl: avatarUrlField(issue.authorAvatarUrl),
       id: stringField((issue as Record<string, unknown>).authorUserId, ""),
       label: stringField(issue.authorLabel, ""),
       loginId: stringField(issue.authorLoginId, ""),
@@ -3345,13 +3342,13 @@ function uniqueIssueUsers(issues: RestIssueListItem[], role: "assignee" | "autho
       users,
       role === "assignee"
         ? {
-            avatarUrl: stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+            avatarUrl: avatarUrlField(issue.assigneeAvatarUrl),
             id: stringField((issue as Record<string, unknown>).assigneeUserId, ""),
             label: stringField(issue.assigneeLabel, ""),
             loginId: stringField(issue.assigneeLoginId, ""),
           }
         : {
-            avatarUrl: stringField(issue.authorAvatarUrl, "/assets/images/default-avatar-32.png"),
+            avatarUrl: avatarUrlField(issue.authorAvatarUrl),
             id: stringField((issue as Record<string, unknown>).authorUserId, ""),
             label: stringField(issue.authorLabel, ""),
             loginId: stringField(issue.authorLoginId, ""),
@@ -3423,6 +3420,11 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function avatarUrlField(value: unknown, fallback = "/assets/images/default-avatar-32.png") {
+  const normalized = stringField(value, "").trim();
+  return normalized || fallback;
 }
 
 function projectMilestoneMenuEnabled(project: ProjectContainer) {
