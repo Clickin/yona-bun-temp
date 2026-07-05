@@ -385,6 +385,16 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"',
   );
+  expect(routeSource).toContain(
+    "const [isHelpMessageOpen, setIsHelpMessageOpen] = useState(false);",
+  );
+  expect(routeSource).toContain(
+    "<PullRequestHelpModal\n        isOpen={isHelpMessageOpen}\n        onClose={() => setIsHelpMessageOpen(false)}",
+  );
+  expect(routeSource).toContain(
+    'className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}',
+  );
+  expect(routeSource).toContain('{isOpen ? <div className="modal-backdrop fade in"');
   expect(routeSource).toContain("commitId: commit.commitId");
   expect(routeSource).not.toContain("commitPath as never");
   expect(routeSource).not.toContain("to={to as never}");
@@ -393,6 +403,8 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain("Legacy data-request-method controls below are POST actions");
   expect(routeSource).toContain("Restore branch is a legacy POST action");
   expect(routeSource).not.toMatch(/<a\b[^>]*data-request-method=/u);
+  expect(routeSource).not.toMatch(/document\.|querySelector|classList|style\.display/u);
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("project pull request overview renders legacy commit-changed event DOM", async ({ page }) => {
@@ -560,9 +572,57 @@ test("project pull request overview owns event hash links through router", async
 
   const beforeHelpUrl = page.url();
   await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await page.evaluate(() => {
+    const doc = document as Document & {
+      __yonaHelpModalOriginalQuerySelector?: Document["querySelector"];
+      __yonaHelpModalOriginalQuerySelectorAll?: Document["querySelectorAll"];
+    };
+    const win = window as Window & typeof globalThis & { __yonaRootModalLookups?: number };
+    win.__yonaRootModalLookups = 0;
+    if (!doc.__yonaHelpModalOriginalQuerySelector) {
+      doc.__yonaHelpModalOriginalQuerySelector = document.querySelector.bind(document);
+      doc.__yonaHelpModalOriginalQuerySelectorAll = document.querySelectorAll.bind(document);
+      document.querySelector = ((selector: string) => {
+        if (selector.includes("#helpMessage") || selector.includes(".modal-backdrop")) {
+          win.__yonaRootModalLookups = (win.__yonaRootModalLookups ?? 0) + 1;
+        }
+        return doc.__yonaHelpModalOriginalQuerySelector?.(selector) ?? null;
+      }) as Document["querySelector"];
+      document.querySelectorAll = ((selector: string) => {
+        if (selector.includes("#helpMessage") || selector.includes(".modal-backdrop")) {
+          win.__yonaRootModalLookups = (win.__yonaRootModalLookups ?? 0) + 1;
+        }
+        return doc.__yonaHelpModalOriginalQuerySelectorAll?.(selector) ?? [];
+      }) as Document["querySelectorAll"];
+    }
+  });
   await helpButton.click();
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __yonaRootModalLookups?: number })
+          .__yonaRootModalLookups,
+    ),
+  ).toBe(0);
   await expect(page.locator("#helpMessage")).not.toHaveClass(/hide/u);
   await expect(page.locator("#helpMessage")).toHaveClass(/in/u);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await page.evaluate(() => {
+    (
+      window as Window & typeof globalThis & { __yonaRootModalLookups?: number }
+    ).__yonaRootModalLookups = 0;
+  });
+  await page.locator('#helpMessage [data-dismiss="modal"]').click();
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __yonaRootModalLookups?: number })
+          .__yonaRootModalLookups,
+    ),
+  ).toBe(0);
+  await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(page.url()).toBe(beforeHelpUrl);
   expect(
     await page.evaluate(

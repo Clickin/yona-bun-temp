@@ -2830,6 +2830,7 @@ function ShowSubtasksCheckbox({
 
 function IssueListKeymap({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
+  const [keymapOpen, setKeymapOpen] = useState(false);
   const isMac =
     typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
   const ctrlKey = isMac ? "⌘" : "CTRL";
@@ -2837,60 +2838,82 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
   const showProjectSetting = projectMemberControlsEnabled(project);
 
   return (
-    <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
-      <button
-        type="button"
-        data-toggle="modal"
-        data-target="#helpKeys"
-        className="ybtn ybtn-inverse ybtn-mini"
-      >
-        {t("title.keymap")}
-      </button>
-      <div id="helpKeys" className="modal hide fade keymap-help" tabIndex={-1} role="dialog">
-        <div className="row-fluid">
-          <div className="span3">
-            <h5>{t("project.projects")}</h5>
-            <KeymapEntry keys={["H"]} label={t("menu.home")} />
-            <KeymapEntry keys={["B"]} label={t("menu.board")} />
-            <KeymapEntry keys={["I"]} label={t("menu.issue")} />
-            <KeymapEntry keys={["C"]} label={t("menu.code")} />
-            <KeymapEntry keys={["M"]} label={t("milestone")} />
-            {showPullRequest ? <KeymapEntry keys={["P"]} label={t("menu.pullRequest")} /> : null}
-            {showProjectSetting ? <KeymapEntry keys={["Q"]} label={t("project.setting")} /> : null}
-          </div>
-          <div className="span9">
-            <div className="row-fluid">
-              <div className="span5">
-                <h5>{t("title.issueList")}</h5>
-                <KeymapEntry keys={["N"]} label={t("issue.menu.new")} />
-                <KeymapEntry keys={["←"]} label={t("button.prevPage")} />
-                <KeymapEntry keys={["→"]} label={t("button.nextPage")} />
-                <KeymapEntry keys={[ctrlKey, "A"]} label={t("button.selectAll")} />
+    <>
+      <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
+        <button
+          type="button"
+          data-toggle="modal"
+          data-target="#helpKeys"
+          className="ybtn ybtn-inverse ybtn-mini"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setKeymapOpen(true);
+          }}
+        >
+          {t("title.keymap")}
+        </button>
+        <div
+          id="helpKeys"
+          className={`modal ${keymapOpen ? "" : "hide "}fade keymap-help${keymapOpen ? " in" : ""}`}
+          tabIndex={-1}
+          role="dialog"
+        >
+          <div className="row-fluid">
+            <div className="span3">
+              <h5>{t("project.projects")}</h5>
+              <KeymapEntry keys={["H"]} label={t("menu.home")} />
+              <KeymapEntry keys={["B"]} label={t("menu.board")} />
+              <KeymapEntry keys={["I"]} label={t("menu.issue")} />
+              <KeymapEntry keys={["C"]} label={t("menu.code")} />
+              <KeymapEntry keys={["M"]} label={t("milestone")} />
+              {showPullRequest ? <KeymapEntry keys={["P"]} label={t("menu.pullRequest")} /> : null}
+              {showProjectSetting ? (
+                <KeymapEntry keys={["Q"]} label={t("project.setting")} />
+              ) : null}
+            </div>
+            <div className="span9">
+              <div className="row-fluid">
+                <div className="span5">
+                  <h5>{t("title.issueList")}</h5>
+                  <KeymapEntry keys={["N"]} label={t("issue.menu.new")} />
+                  <KeymapEntry keys={["←"]} label={t("button.prevPage")} />
+                  <KeymapEntry keys={["→"]} label={t("button.nextPage")} />
+                  <KeymapEntry keys={[ctrlKey, "A"]} label={t("button.selectAll")} />
+                </div>
+                <div className="span7">
+                  <h5>{t("site")}</h5>
+                  <KeymapEntry keys={["A"]} label={t("issue.myIssue")} />
+                  <KeymapEntry keys={["U"]} label={t("userinfo.profile")} />
+                  <KeymapEntry keys={["F"]} label={t("user.menu")} />
+                  <KeymapEntry
+                    keys={isMac ? ["CTRL", "ALT", "S"] : ["ALT", "S"]}
+                    label={t("site.search")}
+                  />
+                  <KeymapEntry keys={[ctrlKey, "ENTER"]} label={t("button.submitForm")} />
+                </div>
               </div>
-              <div className="span7">
-                <h5>{t("site")}</h5>
-                <KeymapEntry keys={["A"]} label={t("issue.myIssue")} />
-                <KeymapEntry keys={["U"]} label={t("userinfo.profile")} />
-                <KeymapEntry keys={["F"]} label={t("user.menu")} />
-                <KeymapEntry
-                  keys={isMac ? ["CTRL", "ALT", "S"] : ["ALT", "S"]}
-                  label={t("site.search")}
-                />
-                <KeymapEntry keys={[ctrlKey, "ENTER"]} label={t("button.submitForm")} />
+              <div className="row-fluid mt20">
+                <div className="span12"></div>
               </div>
             </div>
-            <div className="row-fluid mt20">
-              <div className="span12"></div>
-            </div>
           </div>
+          <p className="actrow">
+            <button
+              type="button"
+              className="ybtn ybtn-info"
+              data-dismiss="modal"
+              onClick={() => {
+                setKeymapOpen(false);
+              }}
+            >
+              {t("button.confirm")}
+            </button>
+          </p>
         </div>
-        <p className="actrow">
-          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
-            {t("button.confirm")}
-          </button>
-        </p>
       </div>
-    </div>
+      {keymapOpen ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 

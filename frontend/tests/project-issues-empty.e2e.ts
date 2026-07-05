@@ -394,6 +394,25 @@ test("project issue list route source does not inject route-local bootstrap scri
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
 });
 
+test("project issue list keymap modal is route-owned React state", async () => {
+  const keymapSource =
+    PROJECT_ISSUES_ROUTE_SOURCE.match(
+      /function IssueListKeymap\([\s\S]*?\nfunction KeymapEntry/u,
+    )?.[0] ?? "";
+
+  expect(keymapSource).toContain("const [keymapOpen, setKeymapOpen] = useState(false)");
+  expect(keymapSource).toContain("setKeymapOpen(true)");
+  expect(keymapSource).toContain("setKeymapOpen(false)");
+  expect(keymapSource).toContain('data-toggle="modal"');
+  expect(keymapSource).toContain('data-target="#helpKeys"');
+  expect(keymapSource).toContain('data-dismiss="modal"');
+  expect(keymapSource).toContain('className="modal-backdrop fade in"');
+  expect(keymapSource).not.toContain("document.");
+  expect(keymapSource).not.toContain("classList");
+  expect(keymapSource).not.toContain("style.display");
+  expect(keymapSource).not.toContain("addEventListener");
+});
+
 test("project issue list anchors do not leak TanStack active markers", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page);
@@ -510,16 +529,38 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "issue-list-keymap";
+    document.addEventListener("click", (event) => {
+      if (
+        (event.target as Element | null)?.closest('[data-toggle="modal"][data-target="#helpKeys"]')
+      ) {
+        (
+          window as Window & { __issueListDelegatedModalClick?: string }
+        ).__issueListDelegatedModalClick = "delegated";
+      }
+    });
   });
   const beforeUrl = page.url();
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/u);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/u);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   expect(page.url()).toBe(beforeUrl);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-list-keymap");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __issueListDelegatedModalClick?: string })
+          .__issueListDelegatedModalClick,
+    ),
+  ).toBeUndefined();
+  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/u);
+  await expect(page.locator("#helpKeys")).not.toHaveClass(/in/u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 async function expectIssueListSelect2Partial(page: Page, basePath: string) {

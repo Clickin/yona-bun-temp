@@ -29,10 +29,6 @@ const EXPECTED_PROJECT_POSTS = `
 function modernizeBoardListExpected(html: string) {
   return html
     .replace(
-      '<a href="__BASE_PATH__/" class="logo logo-letter">',
-      '<a href="__BASE_PATH__" class="logo logo-letter">',
-    )
-    .replace(
       '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
       '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
     )
@@ -60,6 +56,56 @@ async function expectNoTanStackActiveAttrs(locator: Locator) {
   await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
   await expect(locator).not.toHaveAttribute("data-status", /.+/u);
 }
+
+test("project board list keymap modal is route state owned", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-list-keymap";
+  });
+  await expect(page.locator("#option_form")).toBeVisible();
+  await expect(
+    page.locator('.post-list.project-page-wrap > .pull-left a[href="#helpKeys"]'),
+  ).toHaveCount(0);
+  const keymapButton = page.locator(
+    '.post-list.project-page-wrap > .pull-left button[type="button"][data-toggle="modal"][data-target="#helpKeys"]',
+  );
+  await expect(keymapButton).toHaveClass("ybtn ybtn-inverse ybtn-mini");
+  await expect(keymapButton).toHaveText("Keyboard shortcuts");
+
+  const beforeUrl = page.url();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await keymapButton.click();
+  await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
+  await expect(page.locator("#helpKeys")).toHaveClass(/in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(page.url()).toBe(beforeUrl);
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-list-keymap");
+
+  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const keymapSource = routeSource.slice(
+    routeSource.indexOf("function BoardListKeymap"),
+    routeSource.indexOf("function KeymapEntry"),
+  );
+  expect(keymapSource).toContain("useState(false)");
+  expect(keymapSource).toContain("event.stopPropagation();");
+  expect(keymapSource).toContain("setIsOpen(true);");
+  expect(keymapSource).toContain("setIsOpen(false);");
+  expect(keymapSource).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(keymapSource).not.toContain("document.");
+  expect(keymapSource).not.toContain("classList");
+  expect(keymapSource).not.toContain("style.display");
+  expect(keymapSource).not.toContain("dangerouslySetInnerHTML");
+});
 
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
@@ -187,13 +233,33 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   });
   const beforeUrl = page.url();
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   expect(page.url()).toBe(beforeUrl);
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).toBe("board-list-keymap");
+  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const keymapSource = routeSource.slice(
+    routeSource.indexOf("function BoardListKeymap"),
+    routeSource.indexOf("function KeymapEntry"),
+  );
+  expect(keymapSource).toContain("useState(false)");
+  expect(keymapSource).toContain("event.stopPropagation();");
+  expect(keymapSource).toContain("setIsOpen(true);");
+  expect(keymapSource).toContain("setIsOpen(false);");
+  expect(keymapSource).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(keymapSource).not.toContain("document.");
+  expect(keymapSource).not.toContain("classList");
+  expect(keymapSource).not.toContain("style.display");
+  expect(keymapSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("project board shared shell anchors keep active markers on li only", async ({ page }) => {

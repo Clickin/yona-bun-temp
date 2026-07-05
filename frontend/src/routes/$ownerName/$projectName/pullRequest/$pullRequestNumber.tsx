@@ -116,6 +116,7 @@ function PullRequestOverviewBody({
     pullRequestNumber: pullRequest.pullRequestNumber,
   };
   const [isWatching, setIsWatching] = useState(pullRequest.isWatching);
+  const [isHelpMessageOpen, setIsHelpMessageOpen] = useState(false);
   const watchMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -246,13 +247,20 @@ function PullRequestOverviewBody({
               className="ybtn ybtn-inverse ybtn-mini"
               data-toggle="modal"
               data-target="#helpMessage"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsHelpMessageOpen(true);
+              }}
             >
               {t("title.help")}
             </button>
           </div>
         </div>
       </div>
-      <PullRequestHelpModal />
+      <PullRequestHelpModal
+        isOpen={isHelpMessageOpen}
+        onClose={() => setIsHelpMessageOpen(false)}
+      />
     </>
   );
 }
@@ -934,32 +942,46 @@ function PullRequestConflictGuide({
   );
 }
 
-function PullRequestHelpModal() {
+function PullRequestHelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t } = useLegacyMessages();
   return (
-    <div id="helpMessage" className="modal hide fade pullreq-info">
-      <div className="modal-header">
-        <h5>{t("pullRequest.merge.help.1")}</h5>
-      </div>
-      <div className="modal-body">
-        <div className="row-fluid">
-          <div className="pull-left">
-            <img className="img-polaroid" src="/assets/images/fork-pull/merge.jpg" alt="" />
-            <br />
-          </div>
-          <div className="pull-left help-messages mt10">
-            <p>{t("pullRequest.merge.help.2")}</p>
-            <p>{t("pullRequest.merge.help.3")}</p>
-            <p>{t("pullRequest.merge.help.4")}</p>
+    <>
+      <div
+        id="helpMessage"
+        className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}
+      >
+        <div className="modal-header">
+          <h5>{t("pullRequest.merge.help.1")}</h5>
+        </div>
+        <div className="modal-body">
+          <div className="row-fluid">
+            <div className="pull-left">
+              <img className="img-polaroid" src="/assets/images/fork-pull/merge.jpg" alt="" />
+              <br />
+            </div>
+            <div className="pull-left help-messages mt10">
+              <p>{t("pullRequest.merge.help.2")}</p>
+              <p>{t("pullRequest.merge.help.3")}</p>
+              <p>{t("pullRequest.merge.help.4")}</p>
+            </div>
           </div>
         </div>
+        <div className="modal-footer">
+          <button
+            type="button"
+            className="ybtn ybtn-info ybtn-small"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
+          >
+            {t("button.confirm")}
+          </button>
+        </div>
       </div>
-      <div className="modal-footer">
-        <button type="button" className="ybtn ybtn-info ybtn-small" data-dismiss="modal">
-          {t("button.confirm")}
-        </button>
-      </div>
-    </div>
+      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
+    </>
   );
 }
 

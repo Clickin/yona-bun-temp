@@ -640,11 +640,13 @@ function TwoColumnModeCheckbox() {
 
 function BoardListKeymap({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
+  const [isOpen, setIsOpen] = useState(false);
   const isMac =
     typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
   const ctrlKey = isMac ? "⌘" : "CTRL";
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
+  const modalClassName = isOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help";
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
@@ -653,10 +655,15 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
         data-toggle="modal"
         data-target="#helpKeys"
         className="ybtn ybtn-inverse ybtn-mini"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(true);
+        }}
       >
         {t("title.keymap")}
       </button>
-      <div id="helpKeys" className="modal hide fade keymap-help" tabIndex={-1} role="dialog">
+      <div id="helpKeys" className={modalClassName} tabIndex={-1} role="dialog">
         <div className="row-fluid">
           <div className="span3">
             <h5>{t("project.projects")}</h5>
@@ -694,11 +701,20 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
           </div>
         </div>
         <p className="actrow">
-          <button type="button" className="ybtn ybtn-info" data-dismiss="modal">
+          <button
+            type="button"
+            className="ybtn ybtn-info"
+            data-dismiss="modal"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsOpen(false);
+            }}
+          >
             {t("button.confirm")}
           </button>
         </p>
       </div>
+      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
     </div>
   );
 }
