@@ -421,6 +421,10 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const menuSetting = recordField(project.menuSetting);
+  const memberEnrollmentCount = countField(
+    project.enrolledUsers,
+    numberField(project.enrollmentRequestCount),
+  );
 
   return (
     <ul className="nav nav-tabs">
@@ -432,7 +436,7 @@ function ProjectSettingMenu({
       <li id="subMenuProjectMember" className="">
         <Link to="/$ownerName/$projectName/members" params={{ ownerName, projectName }}>
           {t("project.member")}
-          <CountBadge count={numberField(project.enrollmentRequestCount)} className="num-badge" />
+          <CountBadge count={memberEnrollmentCount} className="num-badge" />
         </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
@@ -502,6 +506,10 @@ function stringField(value: unknown, fallback: string) {
 
 function numberField(value: unknown) {
   return typeof value === "number" ? value : 0;
+}
+
+function countField(value: unknown, fallback: number) {
+  return Array.isArray(value) ? value.length : fallback;
 }
 
 function booleanField(value: unknown) {

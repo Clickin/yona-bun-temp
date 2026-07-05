@@ -330,6 +330,32 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
+test("project delete settings tab follows legacy enrolled user badge and hidden VCS branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      enrolledUsers: [{ loginId: "alice" }, { loginId: "bob" }],
+      enrollmentRequestCount: 99,
+      menuSetting: { ...projectSettings().menuSetting, code: false },
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  const memberTab = page.locator("#subMenuProjectMember a");
+  await expect(memberTab).toHaveAttribute("href", `${basePath}/admin/sample/members`);
+  await expect(memberTab.locator(".num-badge")).toHaveText("2");
+
+  const changeVcsTab = page.locator("#subMenuProjectChangeVCS");
+  await expect(changeVcsTab).toHaveAttribute("style", "display: none;");
+  await expect(changeVcsTab).toBeHidden();
+  await expect(changeVcsTab.locator("a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/changeVCS`,
+  );
+});
+
 test("project delete header and project menu links preserve legacy hrefs and SPA navigation", async ({
   page,
 }) => {
@@ -617,6 +643,7 @@ function projectSettings() {
     backgroundUrl: "/assets/images/bg-default-project.png",
     codeMemberOnly: false,
     defaultReviewerCount: 2,
+    enrolledUsers: [],
     enrollmentRequestCount: 0,
     id: 7,
     isCodeAccessibleMemberOnly: false,
