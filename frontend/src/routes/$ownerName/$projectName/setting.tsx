@@ -36,6 +36,14 @@ const legacyProjectSettingsLinkSuppressActiveProps = {
   "data-status": undefined,
 };
 const legacyProjectSettingsCogSearch = { __legacyProjectSettingsCogActiveMarker: undefined };
+const LEGACY_PROJECT_SETTINGS_ROUTE = "/$ownerName/$projectName/settingform";
+
+type ProjectSettingRouteScreenProps = {
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  selfRoutePath: string;
+};
 
 export const Route = createFileRoute("/$ownerName/$projectName/setting")({
   component: ProjectSettingRoute,
@@ -46,21 +54,46 @@ function ProjectSettingRoute() {
   const { ownerName, projectName } = Route.useParams();
 
   return (
+    <ProjectSettingRouteScreen
+      ownerName={ownerName}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+      selfRoutePath={LEGACY_PROJECT_SETTINGS_ROUTE}
+    />
+  );
+}
+
+export function ProjectSettingRouteScreen({
+  ownerName,
+  projectName,
+  runtimeConfig,
+  selfRoutePath,
+}: ProjectSettingRouteScreenProps) {
+  return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell
           projectSearchScope={{ ownerName, projectName }}
           runtimeConfig={runtimeConfig}
         >
-          <ProjectSettingScreen runtimeConfig={runtimeConfig} />
+          <ProjectSettingScreen
+            ownerName={ownerName}
+            projectName={projectName}
+            runtimeConfig={runtimeConfig}
+            selfRoutePath={selfRoutePath}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectSettingScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
+function ProjectSettingScreen({
+  ownerName,
+  projectName,
+  runtimeConfig,
+  selfRoutePath,
+}: ProjectSettingRouteScreenProps) {
   const projectQuery = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -74,13 +107,16 @@ function ProjectSettingScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
 
   return (
     <>
-      <ProjectHeader project={projectQuery.data} />
-      <ProjectMenu project={projectQuery.data} />
+      <ProjectHeader project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      <ProjectMenu project={projectQuery.data} selfRoutePath={selfRoutePath} />
       <ProjectSettingBody
         branches={branchesQuery.data.branches.map((branch) => branch.name)}
         defaultBranch={branchesQuery.data.defaultBranch}
+        ownerName={ownerName}
+        projectName={projectName}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
+        selfRoutePath={selfRoutePath}
       />
     </>
   );
@@ -89,15 +125,20 @@ function ProjectSettingScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
 function ProjectSettingBody({
   branches,
   defaultBranch,
+  ownerName,
+  projectName,
   project,
   runtimeConfig,
+  selfRoutePath,
 }: {
   branches: string[];
   defaultBranch: string;
+  ownerName: string;
+  projectName: string;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
+  selfRoutePath: string;
 }) {
-  const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -215,6 +256,7 @@ function ProjectSettingBody({
           ownerName={ownerName}
           project={project}
           projectName={projectName}
+          selfRoutePath={selfRoutePath}
         />
 
         <form
@@ -642,8 +684,13 @@ function LegacyDropdownButton({
   );
 }
 
-function ProjectHeader({ project }: { project: ProjectContainer }) {
-  const { runtimeConfig } = Route.useRouteContext();
+function ProjectHeader({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
@@ -764,7 +811,13 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   );
 }
 
-function ProjectMenu({ project }: { project: ProjectContainer }) {
+function ProjectMenu({
+  project,
+  selfRoutePath,
+}: {
+  project: ProjectContainer;
+  selfRoutePath: string;
+}) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
@@ -838,7 +891,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                 <Link
                   activeOptions={legacyProjectSettingsLinkActiveOptions}
                   activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-                  to="/$ownerName/$projectName/setting"
+                  to={selfRoutePath}
                   search={legacyProjectSettingsCogSearch}
                   params={{ ownerName, projectName }}
                 >
@@ -891,12 +944,14 @@ function ProjectSettingMenu({
   project,
   projectName,
   showCode,
+  selfRoutePath,
 }: {
   active: "setting";
   ownerName: string;
   project: ProjectContainer;
   projectName: string;
   showCode: boolean;
+  selfRoutePath: string;
 }) {
   const { t } = useLegacyMessages();
   const enrolledMemberCount = enrolledUserCount(project);
@@ -907,7 +962,7 @@ function ProjectSettingMenu({
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-          to="/$ownerName/$projectName/setting"
+          to={selfRoutePath}
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
