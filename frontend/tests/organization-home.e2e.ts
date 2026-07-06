@@ -325,6 +325,54 @@ test("organization home project card links preserve legacy hrefs with SPA transi
     .toBe("kept");
 });
 
+test("organization home omits project logo img when the legacy logo url is blank", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const emptyLogoImageRequests: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.resourceType() === "image" &&
+      request.url().startsWith(`${basePath}/organizations/weblabs`)
+    ) {
+      emptyLogoImageRequests.push(request.url());
+    }
+  });
+  await mockOrganizationHome(page, {
+    visibleProjects: [
+      {
+        createdLabel: "Jun 30, 2026",
+        createdTitle: "2026-06-30",
+        isWatching: true,
+        lastPushedLabel: "Jul 1, 2026",
+        lastPushedTitle: "2026-07-01",
+        logoUrl: "",
+        memberCount: 1,
+        overview: "Sample project",
+        ownerName: "weblabs",
+        projectName: "sample",
+        watchCount: 5,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+
+  const projectAvatarShell = page
+    .locator(".all-projects .project")
+    .first()
+    .locator(".owner-avatar-wrap");
+  await expect(projectAvatarShell.locator("a")).toHaveCount(1);
+  await expect(projectAvatarShell.locator("img")).toHaveCount(0);
+  expect(await canonicalizeLocator(page, ".all-projects .project .owner-avatar-wrap")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="owner-avatar-wrap hide-in-mobile"><a href="${basePath}/weblabs/sample"></a></div>`,
+    ),
+  );
+  expect(emptyLogoImageRequests).toEqual([]);
+});
+
 test("organization home project cards restore legacy fork and scope header metadata", async ({
   page,
 }) => {

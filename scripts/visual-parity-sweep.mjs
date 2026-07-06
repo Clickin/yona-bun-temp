@@ -440,10 +440,13 @@ async function login(page, baseUrl) {
   const loginForm = page.locator('form:has(input[name="loginIdOrEmail"])').first();
   const submitButton = loginForm.locator('button[type="submit"], input[type="submit"]').first();
   await Promise.all([page.waitForLoadState("networkidle").catch(() => {}), submitButton.click()]);
-  return true;
+  const loginPath = new URL(urlFor(baseUrl, "/users/loginform")).pathname;
+  const currentPath = new URL(page.url()).pathname;
+  const loginFieldVisible = await loginField.isVisible().catch(() => false);
+  return currentPath !== loginPath && !loginFieldVisible;
 }
 
-async function apiLogin(page, baseUrl) {
+async function bootstrapLocalAccount(page, baseUrl) {
   const sessionResponse = await page.request.get(`${baseUrl}/api/auth/session`);
   const csrfToken = sessionResponse.headers()["x-csrf-token"];
   if (!sessionResponse.ok() || !csrfToken) {
@@ -487,10 +490,45 @@ async function apiLogin(page, baseUrl) {
         },
       });
     }
+    await page.request.post(`${baseUrl}/api/v1/organizations`, {
+      data: {
+        description: "Parity seed organization for frontend conversion checks",
+        organizationName: "weblabs",
+      },
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+    });
+    await page.request.post(`${baseUrl}/api/v1/owners/weblabs/projects`, {
+      data: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        overview: "Group portal for parity seed",
+        projectName: "portal",
+        projectScope: "protected",
+        pullRequest: true,
+        review: true,
+        vcs: "git",
+      },
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+    });
     await page.request.post(`${baseUrl}/api/v1/workspace/recent-projects`, {
       data: {
         ownerName: "admin",
         projectName: "sample",
+      },
+      headers: {
+        "x-csrf-token": csrfToken,
+      },
+    });
+    await page.request.post(`${baseUrl}/api/v1/workspace/recent-projects`, {
+      data: {
+        ownerName: "weblabs",
+        projectName: "portal",
       },
       headers: {
         "x-csrf-token": csrfToken,
@@ -541,6 +579,14 @@ async function apiLogin(page, baseUrl) {
     },
   });
   return registerResponse.ok();
+}
+
+async function loginLocal(page, baseUrl) {
+  const bootstrapped = await bootstrapLocalAccount(page, baseUrl);
+  if (!bootstrapped) {
+    return false;
+  }
+  return login(page, baseUrl);
 }
 
 async function discoverProjectPaths(page, baseUrl) {
@@ -795,6 +841,8 @@ async function inspectPage(page, baseUrl, path, label) {
           ".comment-body",
           ".textarea-box",
           "textarea",
+          "script",
+          "template",
         ].join(","),
       )) {
         element.remove();
@@ -1095,7 +1143,7 @@ async function runTarget(label, baseUrl) {
       viewport: { width: viewportProfile.width, height: viewportProfile.height },
     });
     const page = await context.newPage();
-    const loggedIn = label === "local" ? await apiLogin(page, baseUrl) : await login(page, baseUrl);
+    const loggedIn = label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
     const useRequestedPaths = requestedSweepPaths.length > 0;
     const directApiSurfaces =
       label === "local" && loggedIn && !useRequestedPaths

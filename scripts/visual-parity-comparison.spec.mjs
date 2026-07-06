@@ -88,6 +88,8 @@ test("visual sweep scans chrome text and attributes for visible raw legacy keys"
   assert.match(source, /cloneChromeWithoutUserMarkdown/u);
   assert.match(source, /\.markdown-wrap/u);
   assert.match(source, /textarea/u);
+  assert.match(source, /script/u);
+  assert.match(source, /template/u);
   assert.match(
     source,
     /const names = \["aria-label", "data-content", "data-original-title", "placeholder", "title"\]/u,
@@ -97,6 +99,26 @@ test("visual sweep scans chrome text and attributes for visible raw legacy keys"
     /const i18nScanText = `\$\{metrics\.title\}\\n\$\{metrics\.chromeText\}\\n\$\{metrics\.chromeAttributes\}`/u,
   );
   assert.match(source, /raw i18n key visible/u);
+});
+
+test("visual sweep bootstraps local parity data before browser-form login", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /async function bootstrapLocalAccount\(page, baseUrl\)/u);
+  assert.match(source, /async function loginLocal\(page, baseUrl\)/u);
+  assert.match(source, /const bootstrapped = await bootstrapLocalAccount\(page, baseUrl\);/u);
+  assert.match(source, /page\.request\.post\(`\$\{baseUrl\}\/api\/v1\/organizations`/u);
+  assert.match(source, /organizationName: "weblabs"/u);
+  assert.match(source, /page\.request\.post\(`\$\{baseUrl\}\/api\/v1\/owners\/weblabs\/projects`/u);
+  assert.match(source, /projectName: "portal"/u);
+  assert.match(source, /return login\(page, baseUrl\);/u);
+  assert.match(source, /const loginPath = new URL\(urlFor\(baseUrl, "\/users\/loginform"\)\)\.pathname;/u);
+  assert.match(source, /const currentPath = new URL\(page\.url\(\)\)\.pathname;/u);
+  assert.match(source, /return currentPath !== loginPath && !loginFieldVisible;/u);
+  assert.match(
+    source,
+    /const loggedIn = label === "local" \? await loginLocal\(page, baseUrl\) : await login\(page, baseUrl\);/u,
+  );
 });
 
 test("visual sweep records P0 global shell computed-style metrics", () => {

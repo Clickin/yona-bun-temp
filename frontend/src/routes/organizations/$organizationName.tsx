@@ -254,6 +254,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
   const isProtected = booleanField(project.isProtected);
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
+  const projectLogoUrl = stringField(project.logoUrl, "").trim();
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
   const normalizedFilter = filter.trim().toLowerCase();
   const hidden = normalizedFilter ? !dataValue.toLowerCase().includes(normalizedFilter) : false;
@@ -283,10 +284,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
             search={{}}
             to="/$ownerName/$projectName"
           >
-            <img
-              src={stringField(project.logoUrl, "/assets/images/project_default_logo.png")}
-              alt={`${projectName}.name`}
-            />
+            {projectLogoUrl ? <img src={projectLogoUrl} alt={`${projectName}.name`} /> : null}
           </Link>
         </div>
         <div style={{ float: "left" }}>
