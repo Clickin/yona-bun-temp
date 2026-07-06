@@ -124,6 +124,7 @@ test("protected org-owned project watchers expose legacy project-header search s
 
   await page.goto(`${basePath}/weblabs/portal/watchers`);
   await expect(page.getByText("This projects watcher list.")).toBeVisible();
+  await expect(page).toHaveTitle("Watcher list - weblabs/portal");
 
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(

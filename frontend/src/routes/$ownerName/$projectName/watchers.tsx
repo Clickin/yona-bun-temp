@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
@@ -34,6 +34,7 @@ function ProjectWatchersRoute() {
 
 function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectWatchersDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -58,6 +59,28 @@ function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       <ProjectWatchersBody watchers={watchersQuery.data} />
     </SiteLayoutShell>
   );
+}
+
+function useProjectWatchersDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const watchersTitle = t("title.projectWatchers");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${watchersTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, watchersTitle]);
 }
 
 function ProjectWatchersBody({ watchers }: { watchers: ProjectWatchersResponse }) {
