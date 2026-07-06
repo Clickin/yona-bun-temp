@@ -21,7 +21,23 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await mockProjectCodeFolder(page);
 
   await page.goto(`${basePath}/admin/sample/code/main`);
+  await expect(page).toHaveTitle("Code - admin/sample");
+  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator('form.gnb-search-form input[name="searchType"]')).toHaveValue("auto");
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .dropdown-menu li")).toHaveCount(2);
+  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
   await expect(page.locator(".code-browse-wrap a[data-status]")).toHaveCount(0);
   const activeFilesLink = page.locator(".code-browse-wrap > .nav.nav-tabs a").first();
@@ -51,6 +67,19 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)),
   );
+  const shell = await shellMetrics(page);
+  expect(shell).not.toBeNull();
+  expect(shell!.searchForm.top).toBeGreaterThanOrEqual(shell!.navbar.top);
+  expect(shell!.searchForm.bottom).toBeLessThanOrEqual(shell!.navbar.bottom);
+  expect(shell!.searchForm.right).toBeLessThanOrEqual(shell!.navbar.right);
+  expect(shell!.scopeButton.left).toBeGreaterThanOrEqual(shell!.searchForm.left);
+  expect(shell!.scopeButton.right).toBeLessThanOrEqual(shell!.searchForm.right);
+  expect(shell!.projectHeader.top).toBeLessThanOrEqual(shell!.navbar.bottom);
+  expect(shell!.projectHeader.bottom).toBeGreaterThan(shell!.navbar.bottom);
+  expect(shell!.projectMenu.top).toBeGreaterThanOrEqual(shell!.projectHeader.bottom - 1);
+  expect(shell!.codeTabs.top).toBeGreaterThanOrEqual(shell!.projectMenu.bottom - 1);
+  expect(shell!.branchSelect.top).toBeGreaterThanOrEqual(shell!.codeTabs.bottom - 1);
+  expect(Math.abs(shell!.branchSelect.top - shell!.breadcrumbs.top)).toBeLessThanOrEqual(3);
   expect(await folderViewMetrics(page)).toEqual({
     commitDateColor: "rgb(126, 126, 126)",
     commitDateFontSize: "10.6667px",
@@ -200,6 +229,12 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).toContain(
     "import { Link, createFileRoute, Outlet, useRouter, useRouterState }",
   );
+  expect(ROUTE_SOURCE).toContain("useProjectCodeBranchDocumentTitle");
+  expect(ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}");
+  expect(ROUTE_SOURCE).toContain(
+    "document.title = `${codeMenuTitle} - ${ownerName}/${projectName}`",
+  );
   expect(ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
   expect(ROUTE_SOURCE).toContain("activeOptions={{");
   expect(ROUTE_SOURCE).toContain("activeProps={{");
@@ -272,6 +307,46 @@ async function folderViewMetrics(page: Page) {
       listWidth: Math.round(list.getBoundingClientRect().width),
       rowBorderBottomWidth: rowStyle.borderBottomWidth,
       rowLineHeight: rowStyle.lineHeight,
+    };
+  });
+}
+
+async function shellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const searchForm = document.querySelector<HTMLElement>("form.gnb-search-form");
+    const scopeButton = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
+    const projectMenu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const codeTabs = document.querySelector<HTMLElement>(".code-browse-wrap > .nav.nav-tabs");
+    const branchSelect = document.querySelector<HTMLElement>("#branches");
+    const breadcrumbs = document.querySelector<HTMLElement>("#breadcrumbs");
+    const missing = Object.entries({
+      branchSelect,
+      breadcrumbs,
+      codeTabs,
+      navbar,
+      projectHeader,
+      projectMenu,
+      scopeButton,
+      searchForm,
+    })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+
+    if (missing.length > 0) {
+      throw new Error(`Expected shell metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    return {
+      branchSelect: branchSelect.getBoundingClientRect(),
+      breadcrumbs: breadcrumbs.getBoundingClientRect(),
+      codeTabs: codeTabs.getBoundingClientRect(),
+      navbar: navbar.getBoundingClientRect(),
+      projectHeader: projectHeader.getBoundingClientRect(),
+      projectMenu: projectMenu.getBoundingClientRect(),
+      scopeButton: scopeButton.getBoundingClientRect(),
+      searchForm: searchForm.getBoundingClientRect(),
     };
   });
 }

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -27,34 +28,83 @@ function ProjectCodeBranchRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeBranchScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectCodeBranchRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeBranchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { branch, ownerName, projectName } = Route.useParams();
+function ProjectCodeBranchRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  useProjectCodeBranchDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+    >
+      <ProjectCodeBranchScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function useProjectCodeBranchDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const codeMenuTitle = t("menu.code");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${codeMenuTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [codeMenuTitle, ownerName, projectName, runtimeConfig.siteName]);
+}
+
+function ProjectCodeBranchScreen({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { branch, ownerName, projectName } = Route.useParams();
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { branch, ownerName, path: "", projectName }),
   );
 
-  if (!projectQuery.data || !codeQuery.data) {
+  if (!project || !codeQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeFolderBody
         code={codeQuery.data}
-        project={projectQuery.data}
+        project={project}
         runtimeConfig={runtimeConfig}
       />
     </>
@@ -363,4 +413,13 @@ function encodeBranch(branch: string) {
 
 function booleanField(value: unknown) {
   return value === true || value === "true";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }
