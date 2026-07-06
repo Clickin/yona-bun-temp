@@ -1674,11 +1674,55 @@ test("project issue detail votes comments through legacy agree action", async ({
     .toEqual([{ hasCsrfToken: true, method: "POST" }]);
 });
 
-test("project issue detail renders legacy disabled comment vote icon for non-commentable viewer", async ({
+test("project issue detail keeps legacy active comment vote for authenticated read-only viewer", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const { commentVoteRequests } = await mockProjectIssueDetail(page, { viewerCanComment: false });
+  const { commentVoteRequests } = await mockProjectIssueDetail(page, {
+    __sessionOverrides: {
+      isAnonymous: false,
+      isSiteAdmin: false,
+      loginId: "readonly",
+      userLabel: "Read Only",
+    },
+    viewerCanComment: false,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  await expect(page.locator(".span-left-pane #comment-body-77 > .comment-body")).toContainText(
+    "Comment markdown",
+  );
+  await expect(page.locator('#comment-77 [data-request-type="comment-vote"]')).toHaveCount(1);
+  await expect(
+    page.locator("#comment-77 .act-row > i.yobicon-hearts.vote-heart-off.vote-heart-disable-hover"),
+  ).toHaveCount(0);
+
+  await page.locator('#comment-77 [data-request-type="comment-vote"]').click();
+
+  await expect
+    .poll(() =>
+      commentVoteRequests.map((request) => ({
+        hasCsrfToken: Boolean(request.csrfToken),
+        method: request.method,
+      })),
+    )
+    .toEqual([{ hasCsrfToken: true, method: "POST" }]);
+});
+
+test("project issue detail renders legacy disabled comment vote icon for anonymous viewer", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { commentVoteRequests } = await mockProjectIssueDetail(page, {
+    __sessionOverrides: {
+      isAnonymous: true,
+      isSiteAdmin: false,
+      loginId: "anonymous",
+      userLabel: "Anonymous",
+    },
+    viewerCanComment: false,
+  });
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
 

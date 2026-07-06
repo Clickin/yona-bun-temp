@@ -788,6 +788,7 @@ function IssueDetailBody({
             {!isDraft ? (
               <IssueMainTimeline
                 basePath={basePath}
+                currentUserIsAnonymous={currentUserIsAnonymous}
                 currentUserLoginId={currentUserLoginId}
                 issue={issue}
                 onCommentDeleteRequest={setCommentDeleteRequestUri}
@@ -1931,6 +1932,7 @@ function isTopLevelIssueComment(comment: IssueComment | IssueChildComment) {
 
 function IssueMainTimeline({
   basePath,
+  currentUserIsAnonymous,
   currentUserLoginId,
   issue,
   onCommentDeleteRequest,
@@ -1938,6 +1940,7 @@ function IssueMainTimeline({
   runtimeConfig,
 }: {
   basePath: string;
+  currentUserIsAnonymous: boolean;
   currentUserLoginId: string;
   issue: RestIssueDetailResponse;
   onCommentDeleteRequest: (requestUri: string) => void;
@@ -1967,6 +1970,7 @@ function IssueMainTimeline({
                   <IssueCommentRow
                     basePath={basePath}
                     comment={item.comment}
+                    currentUserIsAnonymous={currentUserIsAnonymous}
                     currentUserLoginId={currentUserLoginId}
                     issue={issue}
                     key={`comment-${stringField(item.comment.id)}`}
@@ -2364,6 +2368,7 @@ function EventUserLink({
 function IssueCommentRow({
   basePath,
   comment,
+  currentUserIsAnonymous,
   currentUserLoginId,
   issue,
   onCommentDeleteRequest,
@@ -2372,6 +2377,7 @@ function IssueCommentRow({
 }: {
   basePath: string;
   comment: IssueComment;
+  currentUserIsAnonymous: boolean;
   currentUserLoginId: string;
   issue: RestIssueDetailResponse;
   onCommentDeleteRequest: (requestUri: string) => void;
@@ -2393,7 +2399,6 @@ function IssueCommentRow({
   const canRead = comment.viewerCanRead !== false;
   const canDelete = booleanField(comment.viewerCanDelete);
   const hasVoted = booleanField(comment.viewerHasVoted);
-  const canVote = booleanField(issue.viewerCanComment);
   const isAuthorComment = authorLoginId !== "" && authorLoginId === currentUserLoginId;
   const [translatedContentsMarkdown, setTranslatedContentsMarkdown] = useState<string | null>(null);
   const [translatePending, setTranslatePending] = useState(false);
@@ -2510,27 +2515,42 @@ function IssueCommentRow({
               </Link>
             </span>
             <CommentVoters commentId={commentId} voters={voters} />
-            {hasVoted || canVote ? (
+            {hasVoted ? (
               <button
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight"
-                title={hasVoted ? "Withdraw" : "Agree"}
+                title="Withdraw"
                 data-request-type="comment-vote"
                 data-request-uri={prefixBasePath(
                   basePath,
-                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/${hasVoted ? "unvote" : "vote"}`,
+                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/unvote`,
                 )}
                 onClick={(event) => {
                   event.preventDefault();
                   onCommentVote(commentId, hasVoted);
                 }}
               >
-                <i
-                  className={`yobicon-hearts ${hasVoted ? "vote-heart-on" : "vote-heart-off"}`}
-                ></i>
+                <i className="yobicon-hearts vote-heart-on"></i>
               </button>
-            ) : (
+            ) : currentUserIsAnonymous ? (
               <i className="yobicon-hearts vote-heart-off vote-heart-disable-hover"></i>
+            ) : (
+              <button
+                type="button"
+                className="btn-transparent-with-fontsize-lineheight"
+                title="Agree"
+                data-request-type="comment-vote"
+                data-request-uri={prefixBasePath(
+                  basePath,
+                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/vote`,
+                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onCommentVote(commentId, hasVoted);
+                }}
+              >
+                <i className="yobicon-hearts vote-heart-off"></i>
+              </button>
             )}
             {translationApiEnabled ? (
               <button
