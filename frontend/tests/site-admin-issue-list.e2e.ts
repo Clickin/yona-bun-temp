@@ -14,7 +14,10 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -119,7 +122,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?state=open&amp;pageNum=2" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?pageNum=2&amp;state=open" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -150,8 +153,27 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     versionToUpdate: null,
   });
 
-  await page.goto(`${basePath}/sites/issueList?state=open`);
+  await page.goto(`${basePath}/sites/issueList`);
+  await expect(page).toHaveTitle("Site settings");
+  await expect
+    .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
+    .toBe(`${basePath}/sites/issueList`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(
+    page
+      .locator(".gnb-nav > li > a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).resolves.toEqual([
+    `${basePath}`,
+    `${basePath}/projects`,
+    "https://github.com/yona-projects/yona/issues",
+  ]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Issues");
   await expect(page.locator(".site-setting-nav a")).toHaveText([
     "Users",
@@ -247,7 +269,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute(
     "href",
-    `${basePath}/sites/issueList?state=open&pageNum=2`,
+    `${basePath}/sites/issueList?pageNum=2&state=open`,
   );
   await expect(nextPageLink).toHaveAttribute("pjax-page", "");
   expect(await legacyLinkSnapshot(page, "#pagination a")).toEqual([
@@ -255,7 +277,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      href: `${basePath}/sites/issueList?state=open&pageNum=2`,
+      href: `${basePath}/sites/issueList?pageNum=2&state=open`,
       pjaxPage: "",
       text: "Next page",
       title: null,
@@ -269,6 +291,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   );
 
   expect(actual).toEqual(expected);
+  expect(await legacyGnbMetrics(page)).toEqual({
+    feedbackLeftGap: 11,
+    gnbHeight: 40,
+    hasScopedSearchTitle: false,
+    searchBottomWithinNavbar: true,
+    searchLeftOfUsermenu: true,
+    searchTopWithinNavbar: true,
+  });
   expect(await issueListMetrics(page)).toEqual({
     avatarImageHeight: 86,
     avatarImageWidth: 45,
@@ -310,14 +340,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute(
     "href",
-    `${basePath}/sites/issueList?state=open&pageNum=1`,
+    `${basePath}/sites/issueList?pageNum=1&state=open`,
   );
   expect(await legacyLinkSnapshot(page, "#pagination a")).toEqual([
     {
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      href: `${basePath}/sites/issueList?state=open&pageNum=1`,
+      href: `${basePath}/sites/issueList?pageNum=1&state=open`,
       pjaxPage: "",
       text: "Previous page",
       title: null,
@@ -355,6 +385,11 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-posts-nav");
 
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
+  expect(routeSource).toContain("function useLegacySiteIssueListDocumentTitle");
+  expect(routeSource).toContain('document.title = t("title.siteSetting")');
+  expect(routeSource).toContain(
+    "<SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>",
+  );
   expect(routeSource).toContain("const legacyIssueListLinkProps = {");
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).not.toContain("LegacyInternalLink");
@@ -719,6 +754,42 @@ async function issueListMetrics(page: Page) {
       sidebarWidthRatio: Number((sidebar.getBoundingClientRect().width / rowRect.width).toFixed(2)),
       tabHeight: Math.round(tabs.getBoundingClientRect().height),
       titleAreaHeight: Math.round(titleArea.getBoundingClientRect().height),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function legacyGnbMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = requireElement(".gnb-outer");
+    const gnbInner = requireElement(".gnb-inner");
+    const search = requireElement('form[name="gnb-search-form"]');
+    const feedbackLink = requireElement(
+      '.gnb-nav > li > a[href="https://github.com/yona-projects/yona/issues"]',
+    );
+    const listAllLink = requireElement('.gnb-nav > li > a[href$="/projects"]');
+    const userMenu = requireElement(".gnb-usermenu");
+    const navbarRect = navbar.getBoundingClientRect();
+    const gnbInnerRect = gnbInner.getBoundingClientRect();
+    const searchRect = search.getBoundingClientRect();
+    const feedbackRect = feedbackLink.getBoundingClientRect();
+    const listAllRect = listAllLink.getBoundingClientRect();
+    const userMenuRect = userMenu.getBoundingClientRect();
+
+    return {
+      feedbackLeftGap: Math.round(feedbackRect.left - listAllRect.right),
+      gnbHeight: Math.round(navbarRect.height),
+      hasScopedSearchTitle: Boolean(document.querySelector("#gnb-search-scope-title")),
+      searchBottomWithinNavbar: searchRect.bottom <= gnbInnerRect.bottom,
+      searchLeftOfUsermenu: searchRect.right <= userMenuRect.left,
+      searchTopWithinNavbar: searchRect.top >= gnbInnerRect.top,
     };
 
     function requireElement(selector: string) {

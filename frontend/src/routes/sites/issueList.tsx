@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { type KeyboardEvent } from "react";
+import { useEffect, type KeyboardEvent } from "react";
 import {
   siteIssuesQueryOptions,
   siteUpdateQueryOptions,
@@ -17,6 +17,11 @@ type IssueListSearch = {
   state: SiteIssueState;
 } & Record<string, unknown>;
 
+type IssueListRouteSearch = {
+  pageNum?: number;
+  state?: SiteIssueState;
+} & Record<string, unknown>;
+
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
@@ -26,15 +31,31 @@ const legacyIssueListLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+const legacySiteIssueListSidebarSearch = {
+  __legacySiteIssueListSidebarActiveMarker: "inactive",
+};
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
-  validateSearch: (search: Record<string, unknown>): IssueListSearch => ({
+  validateSearch: (search: Record<string, unknown>): IssueListRouteSearch => ({
     ...search,
-    pageNum: search.pageNum ? Number(search.pageNum) || 1 : 1,
-    state: search.state === "closed" ? "closed" : "open",
+    pageNum: search.pageNum ? Number(search.pageNum) || 1 : undefined,
+    state: search.state === "open" || search.state === "closed" ? search.state : undefined,
   }),
 });
+
+function useLegacySiteIssueListDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.siteSetting");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
 
 function SiteIssueListRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -42,7 +63,7 @@ function SiteIssueListRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteIssueListScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -51,8 +72,10 @@ function SiteIssueListRoute() {
 }
 
 function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const search = Route.useSearch();
+  const routeSearch = Route.useSearch();
+  const search = normalizeIssueListSearch(routeSearch);
   const { pageNum, state } = search;
+  useLegacySiteIssueListDocumentTitle(runtimeConfig);
   const query = useQuery(siteIssuesQueryOptions(runtimeConfig, { page: pageNum, state }));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
@@ -102,6 +125,14 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       </div>
     </>
   );
+}
+
+function normalizeIssueListSearch(search: IssueListRouteSearch): IssueListSearch {
+  return {
+    ...search,
+    pageNum: search.pageNum ?? 1,
+    state: search.state ?? "open",
+  };
 }
 
 function IssueListPagination({
@@ -221,7 +252,14 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
         </Link>
       </li>
       <li className="active">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/issueList">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          activeProps={{}}
+          data-status={undefined}
+          mask={{ to: "/sites/issueList" }}
+          search={legacySiteIssueListSidebarSearch}
+          to="/sites/issueList"
+        >
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
