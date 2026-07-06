@@ -106,6 +106,128 @@ const parityFoundationRootPaths = [
   "/organizations/weblabs",
   "/weblabs/portal",
 ];
+const parityContentUsers = [
+  {
+    email: "bob@example.com",
+    loginId: "bob",
+    name: "Bob Park",
+    password: "bob",
+  },
+];
+const parityContentLabels = [
+  {
+    category: "type",
+    categoryIsExclusive: false,
+    color: "#f44336",
+    name: "bug",
+    owner: defaultAdminLoginId,
+    projectName: "sample",
+  },
+  {
+    category: "area",
+    categoryIsExclusive: false,
+    color: "#2196f3",
+    name: "parity",
+    owner: defaultAdminLoginId,
+    projectName: "sample",
+  },
+];
+const parityContentMilestone = {
+  contents: "Milestone for local legacy parity verification screens.",
+  dueDate: "2026-07-31",
+  owner: defaultAdminLoginId,
+  path: "/admin/sample/milestone/1",
+  projectName: "sample",
+  state: "OPEN",
+  title: "Parity launch",
+};
+const parityContentIssue = {
+  assigneeLoginId: "alice",
+  body: "Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
+  dueDate: "2026-07-24",
+  labelKeys: ["type::bug", "area::parity"],
+  milestoneTitle: "Parity launch",
+  owner: defaultAdminLoginId,
+  path: "/admin/sample/issue/1",
+  projectName: "sample",
+  title: "Review rail parity check",
+};
+const parityContentIssueComment = {
+  body: "I can reproduce the legacy issue view from this seed.",
+  issueNumber: 1,
+  issueOwner: defaultAdminLoginId,
+  issueProjectName: "sample",
+  loginId: "bob",
+  password: "bob",
+};
+const parityContentPost = {
+  body: "This board post exists to seed the legacy board list and detail flows.",
+  notice: true,
+  owner: defaultAdminLoginId,
+  path: "/admin/sample/post/1",
+  projectName: "sample",
+  title: "Seed notes",
+};
+const parityContentPostComment = {
+  body: "Board seed confirmed from the fork contributor side.",
+  loginId: "alice",
+  owner: defaultAdminLoginId,
+  password: "alice",
+  postNumber: 1,
+  projectName: "sample",
+};
+const parityContentProjectWatchers = [
+  {
+    displayName: defaultAdminName,
+    loginId: defaultAdminLoginId,
+    owner: "weblabs",
+    password: null,
+    projectName: "portal",
+  },
+  {
+    displayName: "Carol Lee",
+    loginId: "carol",
+    owner: "weblabs",
+    password: "carol",
+    projectName: "portal",
+  },
+];
+const parityContentVerificationPages = [
+  {
+    path: "/admin/sample/milestones",
+    texts: ["Parity launch", "Review rail parity check", "2026-07-31"],
+  },
+  {
+    path: "/admin/sample/issue/1",
+    texts: [
+      "Review rail parity check",
+      "Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
+      "I can reproduce the legacy issue view from this seed.",
+      "Bob Park",
+      "Alice Kim",
+      "Parity launch",
+      "bug",
+      "parity",
+    ],
+  },
+  {
+    path: "/admin/sample/posts",
+    texts: ["Seed notes"],
+  },
+  {
+    path: "/admin/sample/post/1",
+    texts: [
+      "Seed notes",
+      "This board post exists to seed the legacy board list and detail flows.",
+      "Board seed confirmed from the fork contributor side.",
+      "Alice Kim",
+    ],
+  },
+  {
+    path: "/weblabs/portal/watchers",
+    texts: [defaultAdminName, "Carol Lee"],
+  },
+];
 
 const [, , command = "help", ...rawArgs] = process.argv;
 const options = parseArgs(rawArgs);
@@ -140,6 +262,9 @@ switch (command) {
   case "seed-parity-foundation":
     await seedParityFoundation(layout, options);
     break;
+  case "seed-parity-content":
+    await seedParityContent(layout, options);
+    break;
   default:
     console.error(`Unknown command: ${command}`);
     printHelp();
@@ -163,6 +288,7 @@ function buildLayout(input) {
   const logFile = resolve(runDir, "legacy-yona.log");
   const metadataFile = resolve(instanceDir, "metadata.json");
   const parityFoundationSeedFile = resolve(instanceDir, "parity-foundation.json");
+  const parityContentSeedFile = resolve(instanceDir, "parity-content.json");
   return {
     ...input,
     cacheDir,
@@ -177,6 +303,7 @@ function buildLayout(input) {
     logDir,
     logFile,
     metadataFile,
+    parityContentSeedFile,
     parityFoundationSeedFile,
     pidFile,
     runDir,
@@ -258,11 +385,12 @@ async function prepare(layout, options) {
           applicationConfPath,
           dataDir: layout.dataDir,
           installDir: layout.installDir,
-        logFile: layout.logFile,
-        parityFoundationSeedFile: layout.parityFoundationSeedFile,
-        socialLoginConfPath,
-        zipPath: layout.zipPath,
-      },
+          logFile: layout.logFile,
+          parityContentSeedFile: layout.parityContentSeedFile,
+          parityFoundationSeedFile: layout.parityFoundationSeedFile,
+          socialLoginConfPath,
+          zipPath: layout.zipPath,
+        },
       },
       null,
       2,
@@ -350,6 +478,8 @@ async function status(layout) {
         javaHome,
         loginProbe,
         logFile: layout.logFile,
+        parityContentSeedFile: layout.parityContentSeedFile,
+        parityContentSeeded: existsSync(layout.parityContentSeedFile),
         parityFoundationSeedFile: layout.parityFoundationSeedFile,
         parityFoundationSeeded: existsSync(layout.parityFoundationSeedFile),
         pid,
@@ -509,6 +639,115 @@ async function seedParityFoundation(layout, options) {
   }
 }
 
+async function seedParityContent(layout, options) {
+  const { chromium } = frontendRequire("@playwright/test");
+  const adminPassword = stringValue(options.adminPassword, defaultAdminPassword);
+  const baseUrl = `http://${layout.host}:${layout.port}`;
+  await waitForHttp(`${baseUrl}/users/loginform`, 30_000);
+  if (!hasRotatedSecret(layout)) {
+    throw new Error(
+      "The legacy secret has not rotated yet. Run seed-admin and restart the instance before seeding parity content data.",
+    );
+  }
+
+  const report = {
+    baseUrl,
+    issue: null,
+    issueComment: null,
+    labels: [],
+    milestone: null,
+    post: null,
+    postComment: null,
+    seededAt: new Date().toISOString(),
+    users: [],
+    verificationPages: [],
+    watchers: [],
+  };
+  const browser = await chromium.launch({ headless: true });
+  try {
+    for (const user of parityContentUsers) {
+      report.users.push(await ensureParityFoundationUser(browser, baseUrl, user));
+    }
+
+    const adminSession = await createAuthenticatedSession(browser, baseUrl, {
+      loginId: defaultAdminLoginId,
+      password: adminPassword,
+    });
+    try {
+      await assertParityContentPrerequisiteRoots(adminSession.page, baseUrl);
+      for (const label of parityContentLabels) {
+        report.labels.push(await ensureParityContentLabel(adminSession.page, baseUrl, label));
+      }
+      report.milestone = await ensureParityContentMilestone(
+        adminSession.page,
+        baseUrl,
+        parityContentMilestone,
+      );
+      report.issue = await ensureParityContentIssue(adminSession.page, baseUrl, parityContentIssue);
+      report.post = await ensureParityContentPost(adminSession.page, baseUrl, parityContentPost);
+    } finally {
+      await adminSession.close();
+    }
+
+    const bobSession = await createAuthenticatedSession(browser, baseUrl, {
+      loginId: parityContentIssueComment.loginId,
+      password: parityContentIssueComment.password,
+    });
+    try {
+      report.issueComment = await ensureParityContentIssueComment(bobSession.page, baseUrl, {
+        ...parityContentIssueComment,
+        issuePath: report.issue?.path ?? parityContentIssue.path,
+      });
+    } finally {
+      await bobSession.close();
+    }
+
+    const aliceSession = await createAuthenticatedSession(browser, baseUrl, {
+      loginId: parityContentPostComment.loginId,
+      password: parityContentPostComment.password,
+    });
+    try {
+      report.postComment = await ensureParityContentPostComment(aliceSession.page, baseUrl, {
+        ...parityContentPostComment,
+        postPath: report.post?.path ?? parityContentPost.path,
+      });
+    } finally {
+      await aliceSession.close();
+    }
+
+    for (const watcher of parityContentProjectWatchers) {
+      const session = await createAuthenticatedSession(browser, baseUrl, {
+        loginId: watcher.loginId,
+        password: watcher.password ?? adminPassword,
+      });
+      try {
+        report.watchers.push(await ensureParityContentProjectWatcher(session.page, baseUrl, watcher));
+      } finally {
+        await session.close();
+      }
+    }
+
+    const verifySession = await createAuthenticatedSession(browser, baseUrl, {
+      loginId: defaultAdminLoginId,
+      password: adminPassword,
+    });
+    try {
+      report.verificationPages = await verifyParityContentPages(
+        verifySession.page,
+        baseUrl,
+        buildParityContentVerificationPages(report),
+      );
+    } finally {
+      await verifySession.close();
+    }
+
+    writeFileSync(layout.parityContentSeedFile, JSON.stringify(report, null, 2), "utf8");
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    await browser.close();
+  }
+}
+
 function parseArgs(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 1) {
@@ -538,6 +777,7 @@ Commands:
   node scripts/legacy-localhost.mjs status
   node scripts/legacy-localhost.mjs seed-admin [--name NAME --email EMAIL --password PASSWORD] [--restart]
   node scripts/legacy-localhost.mjs seed-parity-foundation [--admin-password PASSWORD]
+  node scripts/legacy-localhost.mjs seed-parity-content [--admin-password PASSWORD]
 
 Options:
   --version <value>        Legacy Yona version. Default: ${defaultVersion}
@@ -794,6 +1034,528 @@ async function verifyParityFoundationRoots(page, baseUrl, roots) {
   return checks;
 }
 
+async function assertParityContentPrerequisiteRoots(page, baseUrl) {
+  const requiredPaths = [
+    `/${parityContentMilestone.owner}/${parityContentMilestone.projectName}`,
+    `/${parityContentProjectWatchers[0].owner}/${parityContentProjectWatchers[0].projectName}`,
+  ];
+  for (const path of requiredPaths) {
+    if (!(await legacyRouteExists(page, `${baseUrl}${path}`))) {
+      throw new Error(
+        `Expected prerequisite root ${path} to be reachable before parity content seeding. Run seed-parity-foundation first.`,
+      );
+    }
+  }
+}
+
+async function ensureParityContentLabel(page, baseUrl, label) {
+  const path = `/${label.owner}/${label.projectName}/issue/labelsform`;
+  const actionPath = `/${label.owner}/${label.projectName}/issue/labels`;
+  await page.goto(`${baseUrl}${path}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  const existing = await readLabelDescriptor(page, label.category, label.name);
+  if (existing) {
+    if (normalizeText(existing.color) !== normalizeText(label.color)) {
+      throw new Error(
+        `Expected label ${label.category}/${label.name} to use color ${label.color}, found ${existing.color}.`,
+      );
+    }
+    return {
+      category: label.category,
+      color: label.color,
+      created: false,
+      name: label.name,
+      owner: label.owner,
+      path,
+      projectName: label.projectName,
+      type: "label",
+    };
+  }
+
+  const response = await page.evaluate(async (requestData) => {
+    const body = new URLSearchParams();
+    body.set("categoryIsExclusive", String(requestData.categoryIsExclusive));
+    body.set("categoryName", requestData.categoryName);
+    body.set("labelColor", requestData.labelColor);
+    body.set("labelName", requestData.labelName);
+    const result = await fetch(requestData.path, {
+      body,
+      credentials: "same-origin",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      method: "POST",
+    });
+    return {
+      ok: result.ok,
+      status: result.status,
+      text: await result.text(),
+    };
+  }, {
+    categoryIsExclusive: Boolean(label.categoryIsExclusive),
+    categoryName: label.category,
+    labelColor: label.color,
+    labelName: label.name,
+    path: actionPath,
+  });
+  if (!(response.ok || response.status === 204 || response.status === 201)) {
+    throw new Error(
+      `Failed to create label ${label.category}/${label.name}: HTTP ${response.status} ${response.text}`,
+    );
+  }
+  await page.goto(`${baseUrl}${path}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  const created = await readLabelDescriptor(page, label.category, label.name);
+  if (!created) {
+    throw new Error(`Expected label ${label.category}/${label.name} to exist after creation.`);
+  }
+  if (normalizeText(created.color) !== normalizeText(label.color)) {
+    throw new Error(
+      `Expected label ${label.category}/${label.name} to keep color ${label.color} after creation, found ${created.color}.`,
+    );
+  }
+  return {
+    category: label.category,
+    color: label.color,
+    created: true,
+    name: label.name,
+    owner: label.owner,
+    path,
+    projectName: label.projectName,
+    type: "label",
+  };
+}
+
+async function ensureParityContentMilestone(page, baseUrl, milestone) {
+  const listPath = `/${milestone.owner}/${milestone.projectName}/milestones`;
+  let detailPath = await findResourcePathByTitle(
+    page,
+    baseUrl,
+    listPath,
+    milestone.title,
+    `/${milestone.owner}/${milestone.projectName}/milestone/`,
+  );
+  const created = !detailPath;
+  if (!detailPath) {
+    const createPath = `/${milestone.owner}/${milestone.projectName}/newMilestoneForm`;
+    await page.goto(`${baseUrl}${createPath}`, {
+      timeout: 30_000,
+      waitUntil: "networkidle",
+    });
+    await requireLocator(page, "#milestone-form", createPath);
+    await page.fill("#title", milestone.title);
+    await page.fill('#milestone-form textarea[name="contents"]', milestone.contents);
+    await page.locator("#milestone-open").check({ force: true });
+    await page.fill("#dueDate", milestone.dueDate);
+    await submitFormAndWaitForNavigation(
+      page,
+      "#milestone-form",
+      (url) => url.pathname.startsWith(`/${milestone.owner}/${milestone.projectName}/milestone/`),
+    );
+    detailPath =
+      relativePath(page.url()) ??
+      (await findResourcePathByTitle(
+        page,
+        baseUrl,
+        listPath,
+        milestone.title,
+        `/${milestone.owner}/${milestone.projectName}/milestone/`,
+      ));
+  }
+  if (!detailPath) {
+    throw new Error(`Expected milestone ${milestone.title} to exist after creation.`);
+  }
+  await page.goto(`${baseUrl}${detailPath}`, {
+    timeout: 30_000,
+    waitUntil: "domcontentloaded",
+  });
+  await assertPageContainsTexts(page, detailPath, [milestone.title, milestone.contents]);
+  return {
+    created,
+    dueDate: milestone.dueDate,
+    owner: milestone.owner,
+    path: detailPath,
+    projectName: milestone.projectName,
+    state: milestone.state,
+    title: milestone.title,
+    type: "milestone",
+  };
+}
+
+async function ensureParityContentIssue(page, baseUrl, issue) {
+  const listPath = `/${issue.owner}/${issue.projectName}/issues`;
+  let detailPath = await findResourcePathByTitle(
+    page,
+    baseUrl,
+    listPath,
+    issue.title,
+    `/${issue.owner}/${issue.projectName}/issue/`,
+  );
+  const created = !detailPath;
+  if (!detailPath) {
+    const createPath = `/${issue.owner}/${issue.projectName}/issueform`;
+    await page.goto(`${baseUrl}${createPath}`, {
+      timeout: 30_000,
+      waitUntil: "networkidle",
+    });
+    await requireLocator(page, "#issue-form", createPath);
+    await page.fill("#title", issue.title);
+    await page.fill('#issue-form textarea[name="body"]', issue.body);
+    await page.locator("#assignee").evaluate((input, value) => {
+      input.value = value;
+    }, issue.assigneeLoginId);
+    await page.selectOption("#milestoneId", { label: issue.milestoneTitle });
+    await page.fill("#issueDueDate", issue.dueDate);
+    await page.locator("#labelIds").evaluate((select, labelNames) => {
+      if (!(select instanceof HTMLSelectElement)) {
+        throw new Error("Expected #labelIds to be a select");
+      }
+      for (const option of Array.from(select.options)) {
+        option.selected = labelNames.includes(option.text.trim());
+      }
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }, issue.labelKeys.map(resolveParityContentLabelName));
+    await submitFormAndWaitForNavigation(
+      page,
+      "#issue-form",
+      (url) => url.pathname.startsWith(`/${issue.owner}/${issue.projectName}/issue/`),
+    );
+    detailPath =
+      relativePath(page.url()) ??
+      (await findResourcePathByTitle(
+        page,
+        baseUrl,
+        listPath,
+        issue.title,
+        `/${issue.owner}/${issue.projectName}/issue/`,
+      ));
+  }
+  if (!detailPath) {
+    throw new Error(`Expected issue ${issue.title} to exist after creation.`);
+  }
+  await page.goto(`${baseUrl}${detailPath}`, {
+    timeout: 30_000,
+    waitUntil: "domcontentloaded",
+  });
+  await assertPageContainsTexts(page, detailPath, [
+    issue.title,
+    issue.body,
+    issue.milestoneTitle,
+    "Alice Kim",
+    ...issue.labelKeys.map(resolveParityContentLabelName),
+  ]);
+  return {
+    assigneeLoginId: issue.assigneeLoginId,
+    created,
+    dueDate: issue.dueDate,
+    labelKeys: issue.labelKeys,
+    milestoneTitle: issue.milestoneTitle,
+    owner: issue.owner,
+    path: detailPath,
+    projectName: issue.projectName,
+    title: issue.title,
+    type: "issue",
+  };
+}
+
+async function ensureParityContentIssueComment(page, baseUrl, comment) {
+  await page.goto(`${baseUrl}${comment.issuePath}`, {
+    timeout: 30_000,
+    waitUntil: "domcontentloaded",
+  });
+  if (await pageIncludesAllTexts(page, [comment.body, "Bob Park"])) {
+    return {
+      body: comment.body,
+      created: false,
+      issuePath: comment.issuePath,
+      loginId: comment.loginId,
+      type: "issue-comment",
+    };
+  }
+  await requireLocator(page, "form#comment-form", comment.issuePath);
+  await page.fill('form#comment-form textarea[name="contents"]', comment.body);
+  await submitFormAndWaitForNavigation(
+    page,
+    "form#comment-form",
+    (url) => url.pathname === comment.issuePath,
+  );
+  await page.goto(`${baseUrl}${comment.issuePath}`, {
+    timeout: 30_000,
+    waitUntil: "domcontentloaded",
+  });
+  await assertPageContainsTexts(page, comment.issuePath, [comment.body, "Bob Park"]);
+  return {
+    body: comment.body,
+    created: true,
+    issuePath: comment.issuePath,
+    loginId: comment.loginId,
+    type: "issue-comment",
+  };
+}
+
+async function ensureParityContentPost(page, baseUrl, post) {
+  const listPath = `/${post.owner}/${post.projectName}/posts`;
+  let detailPath = await findResourcePathByTitle(
+    page,
+    baseUrl,
+    listPath,
+    post.title,
+    `/${post.owner}/${post.projectName}/post/`,
+  );
+  const created = !detailPath;
+  if (!detailPath) {
+    const createPath = `/${post.owner}/${post.projectName}/postform`;
+    await page.goto(`${baseUrl}${createPath}`, {
+      timeout: 30_000,
+      waitUntil: "networkidle",
+    });
+    await requireLocator(page, "form[action$='/posts']", createPath);
+    await page.fill("#title", post.title);
+    await page.fill('form[action$="/posts"] textarea[name="body"]', post.body);
+    if (post.notice) {
+      await page.locator("#notice").check({ force: true });
+    }
+    await submitFormAndWaitForNavigation(
+      page,
+      "form[action$='/posts']",
+      (url) => url.pathname.startsWith(`/${post.owner}/${post.projectName}/post/`),
+    );
+    detailPath =
+      relativePath(page.url()) ??
+      (await findResourcePathByTitle(
+        page,
+        baseUrl,
+        listPath,
+        post.title,
+        `/${post.owner}/${post.projectName}/post/`,
+      ));
+  }
+  if (!detailPath) {
+    throw new Error(`Expected post ${post.title} to exist after creation.`);
+  }
+  await page.goto(`${baseUrl}${detailPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  await assertPageContainsTexts(page, detailPath, [post.title, post.body]);
+  return {
+    created,
+    notice: post.notice,
+    owner: post.owner,
+    path: detailPath,
+    projectName: post.projectName,
+    title: post.title,
+    type: "post",
+  };
+}
+
+async function ensureParityContentPostComment(page, baseUrl, comment) {
+  await page.goto(`${baseUrl}${comment.postPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  if (await pageIncludesAllTexts(page, [comment.body, "Alice Kim"])) {
+    return {
+      body: comment.body,
+      created: false,
+      loginId: comment.loginId,
+      postPath: comment.postPath,
+      type: "post-comment",
+    };
+  }
+  await requireLocator(page, "form#comment-form", comment.postPath);
+  await page.fill('form#comment-form textarea[name="contents"]', comment.body);
+  await submitFormAndWaitForNavigation(
+    page,
+    "form#comment-form",
+    (url) => url.pathname === comment.postPath,
+  );
+  await page.goto(`${baseUrl}${comment.postPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  await assertPageContainsTexts(page, comment.postPath, [comment.body, "Alice Kim"]);
+  return {
+    body: comment.body,
+    created: true,
+    loginId: comment.loginId,
+    postPath: comment.postPath,
+    type: "post-comment",
+  };
+}
+
+async function ensureParityContentProjectWatcher(page, baseUrl, watcher) {
+  const projectPath = `/${watcher.owner}/${watcher.projectName}`;
+  const watchersPath = `${projectPath}/watchers`;
+  await page.goto(`${baseUrl}${watchersPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  if (await pageIncludesAllTexts(page, [watcher.displayName])) {
+    return {
+      created: false,
+      displayName: watcher.displayName,
+      loginId: watcher.loginId,
+      owner: watcher.owner,
+      path: watchersPath,
+      projectName: watcher.projectName,
+      type: "watcher",
+    };
+  }
+
+  await page.goto(`${baseUrl}${projectPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  const watchPath = await page.locator(".watchBtn").evaluateAll((links) => {
+    const first = links.find((link) => link.getAttribute("href"));
+    return first?.getAttribute("href") ?? null;
+  });
+  if (!watchPath) {
+    throw new Error(`Expected watchBtn on ${projectPath} for ${watcher.loginId}.`);
+  }
+  await page.evaluate(async (path) => {
+    const response = await fetch(path, {
+      credentials: "same-origin",
+      method: "POST",
+    });
+    if (!response.ok) {
+      throw new Error(`watch request failed: ${response.status}`);
+    }
+  }, watchPath);
+  await page.goto(`${baseUrl}${watchersPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  await assertPageContainsTexts(page, watchersPath, [watcher.displayName]);
+  return {
+    created: true,
+    displayName: watcher.displayName,
+    loginId: watcher.loginId,
+    owner: watcher.owner,
+    path: watchersPath,
+    projectName: watcher.projectName,
+    type: "watcher",
+  };
+}
+
+function buildParityContentVerificationPages(report) {
+  const issuePath = report.issue?.path ?? parityContentIssue.path;
+  const postPath = report.post?.path ?? parityContentPost.path;
+  return parityContentVerificationPages.map((page) => {
+    if (page.path === parityContentIssue.path) {
+      return { ...page, path: issuePath };
+    }
+    if (page.path === parityContentPost.path) {
+      return { ...page, path: postPath };
+    }
+    return page;
+  });
+}
+
+async function verifyParityContentPages(page, baseUrl, pages) {
+  const checks = [];
+  for (const entry of pages) {
+    await page.goto(`${baseUrl}${entry.path}`, {
+      timeout: 30_000,
+      waitUntil: "domcontentloaded",
+    });
+    await assertPageContainsTexts(page, entry.path, entry.texts);
+    checks.push({ ok: true, path: entry.path, texts: entry.texts });
+  }
+  return checks;
+}
+
+async function readLabelDescriptor(page, categoryName, labelName) {
+  return page.locator(".category-wrap").evaluateAll((categories, expected) => {
+    for (const category of categories) {
+      const currentName = category.getAttribute("data-category-name")?.trim() ?? "";
+      if (currentName !== expected.categoryName) {
+        continue;
+      }
+      const label = category.querySelector(`[data-label-name="${expected.labelName}"]`);
+      if (!label) {
+        continue;
+      }
+      const row = label.closest("tr");
+      const editButton = row?.querySelector("button[data-label-color]");
+      return {
+        color: editButton?.getAttribute("data-label-color") ?? "",
+        labelId: label.getAttribute("data-label-id") ?? "",
+        name: label.getAttribute("data-label-name") ?? label.textContent ?? "",
+      };
+    }
+    return null;
+  }, { categoryName, labelName });
+}
+
+async function findResourcePathByTitle(page, baseUrl, listPath, title, pathPrefix) {
+  await page.goto(`${baseUrl}${listPath}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  const path = await page.locator("a[href]").evaluateAll((anchors, expected) => {
+    const normalize = (value) => value.replace(/\s+/g, " ").trim();
+    for (const anchor of anchors) {
+      const href = anchor.getAttribute("href");
+      if (!href || !href.includes(expected.pathPrefix)) {
+        continue;
+      }
+      const text = normalize(anchor.textContent ?? "");
+      if (text.includes(expected.title)) {
+        return href;
+      }
+    }
+    return null;
+  }, { pathPrefix, title });
+  return path ? relativePath(new URL(path, `${baseUrl}${listPath}`).toString()) : null;
+}
+
+function resolveParityContentLabelName(key) {
+  const label = parityContentLabels.find((entry) => parityContentLabelKey(entry) === key);
+  if (!label) {
+    throw new Error(`Unknown parity content label key: ${key}`);
+  }
+  return label.name;
+}
+
+function parityContentLabelKey(label) {
+  return `${label.category}::${label.name}`;
+}
+
+async function pageIncludesAllTexts(page, texts) {
+  const body = normalizeText(await page.locator("body").innerText());
+  return texts.every((text) => body.includes(normalizeText(text)));
+}
+
+async function assertPageContainsTexts(page, pathLabel, texts) {
+  const body = normalizeText(await page.locator("body").innerText());
+  for (const text of texts) {
+    if (!body.includes(normalizeText(text))) {
+      throw new Error(`Expected ${pathLabel} to contain "${text}".`);
+    }
+  }
+}
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function relativePath(value) {
+  try {
+    return new URL(value).pathname;
+  } catch {
+    return null;
+  }
+}
+
 async function loginWithPassword(page, baseUrl, loginId, password) {
   await page.goto(`${baseUrl}/users/loginform`, {
     timeout: 30_000,
@@ -816,19 +1578,13 @@ async function submitFormAndWaitForNavigation(page, formSelector, predicate) {
   const waitForNavigation = page
     .waitForNavigation({ timeout: 15_000, url: predicate })
     .catch(() => null);
-  await Promise.allSettled([
-    waitForNavigation,
-    page.locator(formSelector).evaluate((form) => {
-      if (!(form instanceof HTMLFormElement)) {
-        throw new Error("Expected a form element");
-      }
-      if (typeof form.requestSubmit === "function") {
-        form.requestSubmit();
-      } else {
-        form.submit();
-      }
-    }),
-  ]);
+  await page.locator(formSelector).evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("Expected a form element");
+    }
+    form.submit();
+  });
+  await waitForNavigation;
   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => null);
 }
 

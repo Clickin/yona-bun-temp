@@ -38,6 +38,7 @@ pnpm legacy:localhost:prepare
 pnpm legacy:localhost:start
 pnpm legacy:localhost:seed-admin
 pnpm legacy:localhost:seed-foundation
+pnpm legacy:localhost:seed-content
 pnpm legacy:localhost:status
 pnpm legacy:localhost:stop
 ```
@@ -52,6 +53,7 @@ pnpm legacy:localhost:prepare:parity
 pnpm legacy:localhost:start:parity
 pnpm legacy:localhost:seed-admin:parity
 pnpm legacy:localhost:seed-foundation:parity
+pnpm legacy:localhost:seed-content:parity
 pnpm legacy:localhost:stop:parity
 ```
 
@@ -63,6 +65,11 @@ current localhost baseline is reachable.
 site-admin bootstrap. It drives the legacy product flow through Playwright
 instead of dropping in an opaque DB copy and records the result in
 `.agent/legacy-localhost/instances/<name>/parity-foundation.json`.
+
+`seed-content` is the next reproducible pass on top of that foundation. It
+drives the milestone, issue, issue comment, board post, board comment, label,
+and watcher product flows and records the result in
+`.agent/legacy-localhost/instances/<name>/parity-content.json`.
 
 ## What `prepare` does
 
@@ -179,13 +186,27 @@ Current foundation seed contents:
 9. verify that `/admin/sample`, `/admin/svnplayground`, `/alice/sample`,
    `/organizations/weblabs`, and `/weblabs/portal` are reachable
 
+The repo now implements the next content pass through:
+
+- `pnpm legacy:localhost:seed-content`
+- `pnpm legacy:localhost:seed-content:parity`
+
+Current content seed contents:
+
+1. sign up user `bob` / `bob`
+2. create project labels `type/bug` and `area/parity`
+3. create milestone `Parity launch`
+4. create issue `Review rail parity check` with assignee, milestone, due date,
+   and both labels
+5. add Bob's issue comment
+6. create notice post `Seed notes`
+7. add Alice's board comment
+8. ensure `Site Admin` and `Carol Lee` appear on `/weblabs/portal/watchers`
+9. verify the seeded milestone, issue, post, and watcher pages by live text
+
 The remaining parity content seed is still intentionally open:
 
-- milestones
-- issues
-- board posts
 - review threads / pull requests
-- watcher states
 
 Those follow-up states should continue to be built through the product flow
 next, not by dropping in a foreign DB dump.

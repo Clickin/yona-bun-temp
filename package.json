@@ -18,6 +18,8 @@
     "legacy:localhost:prepare:parity": "node scripts/legacy-localhost.mjs prepare --instance parity --port 9000",
     "legacy:localhost:seed-admin": "node scripts/legacy-localhost.mjs seed-admin",
     "legacy:localhost:seed-admin:parity": "node scripts/legacy-localhost.mjs seed-admin --instance parity --port 9000",
+    "legacy:localhost:seed-content": "node scripts/legacy-localhost.mjs seed-parity-content",
+    "legacy:localhost:seed-content:parity": "node scripts/legacy-localhost.mjs seed-parity-content --instance parity --port 9000",
     "legacy:localhost:seed-foundation": "node scripts/legacy-localhost.mjs seed-parity-foundation",
     "legacy:localhost:seed-foundation:parity": "node scripts/legacy-localhost.mjs seed-parity-foundation --instance parity --port 9000",
     "legacy:localhost:start": "node scripts/legacy-localhost.mjs start",
