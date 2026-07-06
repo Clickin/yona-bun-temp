@@ -612,7 +612,8 @@ export function SiteLayoutShell({
     : null;
   const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
   const shouldRenderProjectListingLink =
-    sessionQuery.data?.isAnonymous === false && runtimeConfig.hideProjectListing !== true;
+    runtimeConfig.hideProjectListing !== true &&
+    (sessionQuery.data?.isAnonymous === false || showLegacyProjectHeaderLinks);
   const legacyProjectHeaderFeedbackUrl =
     showLegacyProjectHeaderLinks && (runtimeConfig.feedbackUrl || LEGACY_FEEDBACK_URL);
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(

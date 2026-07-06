@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useLinkProps } from "@tanstack/react-router";
 import {
   useEffect,
   useRef,
   useState,
+  type ComponentPropsWithRef,
   type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -49,11 +51,35 @@ function ProjectMembersRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectMembersScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectMembersRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function ProjectMembersRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : undefined;
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={Boolean(
+        projectSearchScope && !projectSearchScope.organizationName,
+      )}
+    >
+      <ProjectMembersScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
   );
 }
 
@@ -66,33 +92,67 @@ function focusProjectMemberDeleteConfirmButton(button: HTMLButtonElement | null)
   button?.focus();
 }
 
-function ProjectMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function LegacyHrefAnchor({
+  legacyHref,
+  href: _href,
+  ...props
+}: ComponentPropsWithRef<"a"> & { legacyHref: string }) {
+  return reactJsx("a", { ...props, href: legacyHref });
+}
+
+function ProjectMembersScreen({
+  project,
+  runtimeConfig,
+}: {
+  project?: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectMembersDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectData = project ?? projectQuery.data;
   const membersQuery = useQuery(
     readProjectMembersQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const membersErrorStatus =
+    membersQuery.error instanceof RestApiError ? membersQuery.error.status : undefined;
+  const documentTitleKey =
+    membersErrorStatus === 400
+      ? "error.badrequest"
+      : membersErrorStatus === 401 || membersErrorStatus === 403
+        ? "error.forbidden"
+        : "title.projectMembers";
+  useProjectMembersDocumentTitle(runtimeConfig, ownerName, projectName, documentTitleKey);
 
-  if (!projectQuery.data) {
+  if (!projectData) {
     return null;
   }
 
-  if (membersQuery.error instanceof RestApiError) {
-    const status = membersQuery.error.status;
-    if (status === 400 || status === 403) {
-      return (
-        <>
-          <ProjectHeader project={projectQuery.data} />
-          <ProjectMenu active={status === 403 ? "home" : "setting"} project={projectQuery.data} />
-          <ProjectMembersErrorBody
-            messageKey={status === 403 ? "error.forbidden" : "error.badrequest"}
-          />
-        </>
-      );
-    }
+  if (membersErrorStatus === 400) {
+    return (
+      <>
+        <ProjectHeader project={projectData} />
+        <ProjectMenu active="setting" project={projectData} />
+        <ProjectMembersErrorBody messageKey="error.badrequest" runtimeConfig={runtimeConfig} />
+      </>
+    );
+  }
+
+  if (membersErrorStatus === 401 || membersErrorStatus === 403) {
+    return (
+      <>
+        <ProjectHeader project={projectData} />
+        <ProjectMenu active="home" project={projectData} />
+        <ProjectMembersErrorBody
+          loginRedirectPath={
+            membersErrorStatus === 401 ? `/${ownerName}/${projectName}/members` : undefined
+          }
+          messageKey="error.forbidden"
+          runtimeConfig={runtimeConfig}
+        />
+      </>
+    );
   }
 
   if (!membersQuery.data) {
@@ -101,11 +161,11 @@ function ProjectMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
 
   return (
     <>
-      <ProjectHeader project={projectQuery.data} />
-      <ProjectMenu active="setting" project={projectQuery.data} />
+      <ProjectHeader project={projectData} />
+      <ProjectMenu active="setting" project={projectData} />
       <ProjectMembersBody
         members={membersQuery.data}
-        project={projectQuery.data}
+        project={projectData}
         runtimeConfig={runtimeConfig}
       />
     </>
@@ -116,9 +176,10 @@ function useProjectMembersDocumentTitle(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
+  titleKey: string,
 ) {
   const { t } = useLegacyMessages();
-  const projectMembersTitle = t("title.projectMembers");
+  const screenTitle = t(titleKey);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -126,16 +187,34 @@ function useProjectMembersDocumentTitle(
     }
 
     const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${projectMembersTitle} - ${ownerName}/${projectName}`;
+    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
 
     return () => {
       document.title = siteName;
     };
-  }, [ownerName, projectMembersTitle, projectName, runtimeConfig.siteName]);
+  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
-function ProjectMembersErrorBody({ messageKey }: { messageKey: string }) {
+function ProjectMembersErrorBody({
+  loginRedirectPath,
+  messageKey,
+  runtimeConfig,
+}: {
+  loginRedirectPath?: string;
+  messageKey: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
+  const legacyLoginHref = loginRedirectPath
+    ? prefixBasePath(runtimeConfig.basePath, `/users/loginform?redirectUrl=${loginRedirectPath}`)
+    : undefined;
+  const legacyLoginLinkProps = useLinkProps({
+    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
+    activeProps: legacyLinkActiveProps,
+    className: "ybtn ybtn-primary",
+    search: loginRedirectPath ? { redirectUrl: loginRedirectPath } : undefined,
+    to: "/users/loginform",
+  });
 
   return (
     <div className="page-wrap-outer">
@@ -143,6 +222,15 @@ function ProjectMembersErrorBody({ messageKey }: { messageKey: string }) {
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
           <p>{t(messageKey)}</p>
+          {loginRedirectPath ? (
+            <LegacyHrefAnchor
+              {...legacyLoginLinkProps}
+              data-login="required"
+              legacyHref={legacyLoginHref ?? ""}
+            >
+              {t("title.login")}
+            </LegacyHrefAnchor>
+          ) : null}
         </div>
       </div>
     </div>
@@ -989,7 +1077,13 @@ function ProjectMenu({
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const menuSetting = recordField(project.menuSetting);
+  const menuSetting = projectMenuSetting(project);
+  const projectMenuCounts = {
+    board: projectMenuCount(project, "postCount", "boardCount"),
+    issue: projectMenuCount(project, "openIssueCount"),
+    pullRequest: projectMenuCount(project, "openPullRequestCount"),
+    review: projectMenuCount(project, "reviewCount"),
+  };
 
   return (
     <div className="project-menu-outer">
@@ -1013,6 +1107,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
+              count={projectMenuCounts.issue}
               label={t("menu.issue")}
               params={{ ownerName, projectName }}
               short="I"
@@ -1021,6 +1116,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
+              count={projectMenuCounts.pullRequest}
               label={t("menu.pullRequest")}
               params={{ ownerName, projectName }}
               short="P"
@@ -1029,6 +1125,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
+              count={projectMenuCounts.review}
               label={t("menu.review")}
               params={{ ownerName, projectName }}
               short="R"
@@ -1045,6 +1142,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
+              count={projectMenuCounts.board}
               label={t("menu.board")}
               params={{ ownerName, projectName }}
               short="B"
@@ -1080,6 +1178,7 @@ function ProjectMenu({
 function ProjectMenuItem({
   active = false,
   className = "",
+  count = 0,
   label,
   params,
   short,
@@ -1087,6 +1186,7 @@ function ProjectMenuItem({
 }: {
   active?: boolean;
   className?: string;
+  count?: number;
   label: string;
   params: { ownerName: string; projectName: string };
   short: string;
@@ -1109,6 +1209,7 @@ function ProjectMenuItem({
       >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
+        <CountBadge count={count} />
       </Link>
     </li>
   );
@@ -1126,7 +1227,7 @@ function ProjectSettingMenu({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const menuSetting = recordField(project.menuSetting);
+  const menuSetting = projectMenuSetting(project);
 
   return (
     <ul className="nav nav-tabs">
@@ -1235,6 +1336,36 @@ function enrolledUserCount(project: ProjectContainer) {
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
+function projectMenuSetting(project: ProjectContainer) {
+  const record = recordField(project);
+  const nested = recordField(record.menuSetting);
+  return {
+    board: nested.board ?? record.showBoard,
+    code: nested.code ?? record.showCode,
+    issue: nested.issue ?? record.showIssue,
+    milestone: nested.milestone ?? record.showMilestone,
+    pullRequest: nested.pullRequest ?? record.showPullRequest,
+    review: nested.review ?? record.showReview,
+  };
+}
+
+function projectMenuCount(project: ProjectContainer, field: string, fallbackField?: string) {
+  const record = recordField(project);
+  const direct = finiteNumberField(record[field]);
+  if (direct !== undefined) {
+    return direct;
+  }
+  return fallbackField ? (finiteNumberField(record[fallbackField]) ?? 0) : 0;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
 function projectCanWatch(project: ProjectContainer) {
   const record = recordField(project);
   return booleanField(record.viewerCanWatch) || booleanField(record.canWatch);
@@ -1273,6 +1404,19 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function finiteNumberField(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
 }
 
 function numberField(value: unknown) {

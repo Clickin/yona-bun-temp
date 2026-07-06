@@ -44,10 +44,7 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath).replaceAll(
-        "__MENTION_STYLESHEET_HREF__",
-        mentionStylesheetHref,
-      ),
+      expectedProjectMembersReadableScreen({ basePath, mentionStylesheetHref }),
     ),
   );
   expect(await memberPageMetrics(page)).toEqual({
@@ -954,6 +951,107 @@ test("project members renders legacy error/forbidden.scala.html shell", async ({
   });
 });
 
+test("project members pins the live localhost 401 forbidden shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, {
+    membersStatus: 401,
+    project: {
+      boardCount: 1,
+      menuSetting: undefined,
+      openIssueCount: 1,
+      openPullRequestCount: 1,
+      reviewCount: 2,
+      showBoard: true,
+      showCode: true,
+      showIssue: true,
+      showMilestone: true,
+      showPullRequest: true,
+      showReview: true,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page).toHaveTitle("You are not authorized - admin/sample");
+  await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
+  await expect(page.locator(".project-menu-gruop > li").first()).toHaveClass("active");
+  await expect(page.locator(".project-setting .project-menu-nav > li")).toHaveClass("");
+  await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveText("Log in");
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveAttribute(
+    "href",
+    `${basePath}/users/loginform?redirectUrl=/admin/sample/members`,
+  );
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveAttribute(
+    "data-login",
+    "required",
+  );
+  await expect(page.locator(".gnb-nav")).toContainText("List All");
+  await expect(page.locator(".gnb-nav")).toContainText("Feedback");
+  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(0)).toHaveText(
+    "This Project",
+  );
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(1)).toHaveText(
+    "All Projects",
+  );
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText([
+    "1",
+    "1",
+    "2",
+    "1",
+  ]);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expectedProjectMembersErrorScreen({
+        activeMenu: "home",
+        basePath,
+        loginHref: `${basePath}/users/loginform?redirectUrl=/admin/sample/members`,
+        message: "You are not authorized",
+      }),
+    ),
+  );
+});
+
+test("project members uses live container menu toggles in the readable members screen", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, {
+    project: {
+      boardCount: 1,
+      menuSetting: undefined,
+      postCount: undefined,
+      showBoard: true,
+      showCode: true,
+      showIssue: true,
+      showMilestone: true,
+      showPullRequest: true,
+      showReview: true,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+
+  await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText([
+    "1",
+    "1",
+    "2",
+    "1",
+  ]);
+  await expect(page.locator("#subMenuProjectChangeVCS")).toBeVisible();
+  await expect(page.locator("#subMenuProjectChangeVCS a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/changeVCS`,
+  );
+});
+
 test("project members header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -1277,16 +1375,16 @@ async function mockProjectMembers(
   });
   await page.route(`**${projectApiBase}/members`, async (route) => {
     if (route.request().method() === "GET" && options.membersStatus) {
+      const forbiddenStatus = options.membersStatus === 401 || options.membersStatus === 403;
       await route.fulfill({
         status: options.membersStatus,
         contentType: "application/json",
         body: JSON.stringify({
           error: {
-            code: options.membersStatus === 403 ? "forbidden" : "bad_request",
-            message:
-              options.membersStatus === 403
-                ? "You are not authorized"
-                : "The request cannot be fulfilled due to bad syntax",
+            code: forbiddenStatus ? "forbidden" : "bad_request",
+            message: forbiddenStatus
+              ? "You are not authorized"
+              : "The request cannot be fulfilled due to bad syntax",
             status: options.membersStatus,
           },
         }),
@@ -1393,16 +1491,52 @@ function legacyMentionStylesheetHref(basePath: string) {
     : `${basePath}/assets/javascripts/lib/mentionjs/mention.css`;
 }
 
+function expectedProjectMembersReadableScreen({
+  basePath,
+  mentionStylesheetHref,
+}: {
+  basePath: string;
+  mentionStylesheetHref: string;
+}) {
+  return expectedProjectMembersShell(basePath).replaceAll(
+    "__MENTION_STYLESHEET_HREF__",
+    mentionStylesheetHref,
+  );
+}
+
+function expectedProjectMembersShell(basePath: string) {
+  return EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath)
+    .replace('<header class="gnb-outer">', '<header class="gnb-outer project-header">')
+    .replace(
+      `<ul class="gnb-nav">
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>`,
+      `<ul class="gnb-nav">
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
+      <li><form action="${basePath}/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="${basePath}/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="${basePath}/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>`,
+    )
+    .replace(
+      `<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="${basePath}/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="${basePath}/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="${basePath}/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="${basePath}/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="${basePath}/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="${basePath}/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>`,
+      `<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="${basePath}/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="${basePath}/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="${basePath}/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span><span class="project-menu-count">1</span></a></li><li class=""><a href="${basePath}/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span><span class="project-menu-count">1</span></a></li><li class=""><a href="${basePath}/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span><span class="project-menu-count">2</span></a></li><li class=""><a href="${basePath}/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="${basePath}/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="${basePath}/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>`,
+    );
+}
+
 function expectedProjectMembersErrorScreen({
   activeMenu,
   basePath,
+  loginHref,
   message,
 }: {
   activeMenu: "home" | "setting";
   basePath: string;
+  loginHref?: string;
   message: string;
 }) {
-  let html = EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath);
+  let html = expectedProjectMembersShell(basePath);
   if (activeMenu === "home") {
     html = html
       .replace(
@@ -1416,7 +1550,10 @@ function expectedProjectMembersErrorScreen({
   }
   const start = html.indexOf('<div class="page-wrap-outer">');
   const end = html.indexOf("<footer", start);
-  return `${html.slice(0, start)}<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico ico-err2"></i><p>${message}</p></div></div></div>${html.slice(end)}`;
+  const loginCta = loginHref
+    ? `<a href="${loginHref}" class="ybtn ybtn-primary" data-login="required">Log in</a>`
+    : "";
+  return `${html.slice(0, start)}<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico ico-err2"></i><p>${message}</p>${loginCta}</div></div></div>${html.slice(end)}`;
 }
 
 function projectContainer({
@@ -1443,6 +1580,8 @@ function projectContainer({
     isPrivate: false,
     isProtected: false,
     logoUrl: "/assets/images/project_default_logo.png",
+    openIssueCount: 1,
+    openPullRequestCount: 1,
     menuSetting: {
       board: true,
       code: true,
@@ -1452,7 +1591,9 @@ function projectContainer({
       review: true,
     },
     ownerName,
+    postCount: 1,
     projectName,
+    reviewCount: 2,
     vcs: "GIT",
     viewerCanUpdate: true,
   };
