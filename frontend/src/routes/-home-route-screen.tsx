@@ -68,6 +68,7 @@ const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
 const LEGACY_AUTHENTICATED_LOGOUT_PATH: string = "/users/logout";
 const LEGACY_ANONYMOUS_LOGOUT_PATH: string = "/logout";
+const LEGACY_FEEDBACK_URL: string = "https://github.com/yona-projects/yona/issues";
 const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS";
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
@@ -582,11 +583,13 @@ export function SiteLayoutShell({
   children,
   projectSearchScope,
   runtimeConfig,
+  showLegacyProjectHeaderLinks = false,
 }: {
   activeMenu?: "projects";
   children: React.ReactNode;
   projectSearchScope?: { organizationName?: string; ownerName: string; projectName: string };
   runtimeConfig: RuntimeConfig;
+  showLegacyProjectHeaderLinks?: boolean;
 }) {
   const { t } = useLegacyMessages();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
@@ -608,6 +611,10 @@ export function SiteLayoutShell({
       )
     : null;
   const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
+  const shouldRenderProjectListingLink =
+    sessionQuery.data?.isAnonymous === false && runtimeConfig.hideProjectListing !== true;
+  const legacyProjectHeaderFeedbackUrl =
+    showLegacyProjectHeaderLinks && (runtimeConfig.feedbackUrl || LEGACY_FEEDBACK_URL);
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
     "all",
   );
@@ -694,9 +701,10 @@ export function SiteLayoutShell({
                 Y
               </LegacyHrefAnchor>
             </li>
-            {activeMenu === "projects" ? (
+            {shouldRenderProjectListingLink &&
+            (showLegacyProjectHeaderLinks || activeMenu === "projects") ? (
               <>
-                <li className="active">
+                <li className={activeMenu === "projects" ? "active" : undefined}>
                   <Link
                     to="/projects"
                     search={LEGACY_PROJECTS_LINK_SEARCH}
@@ -707,6 +715,17 @@ export function SiteLayoutShell({
                 </li>
                 <li className="divider"></li>
               </>
+            ) : null}
+            {legacyProjectHeaderFeedbackUrl ? (
+              <li>
+                <Link
+                  to={legacyProjectHeaderFeedbackUrl}
+                  href={legacyProjectHeaderFeedbackUrl}
+                  target="_blank"
+                >
+                  {t("title.yobi.feedback")}
+                </Link>
+              </li>
             ) : null}
             <li>
               <form

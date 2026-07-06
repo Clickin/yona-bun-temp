@@ -1602,16 +1602,29 @@ export function ProjectHeader({
 export function ProjectMenu({
   active,
   basePath,
+  counts,
   project,
 }: {
   active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
   basePath: string;
+  counts?: {
+    board?: number;
+    issue?: number;
+    pullRequest?: number;
+    review?: number;
+  };
   project: ProjectContainer;
 }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const menuSetting = projectMenuSetting(project);
+  const projectMenuCounts = {
+    board: counts?.board ?? numberField(project.postCount),
+    issue: counts?.issue ?? numberField(project.openIssueCount),
+    pullRequest: counts?.pullRequest ?? numberField(project.openPullRequestCount),
+    review: counts?.review ?? numberField(project.reviewCount),
+  };
 
   return (
     <div className="project-menu-outer">
@@ -1638,6 +1651,7 @@ export function ProjectMenu({
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
               active={active === "issue"}
+              count={projectMenuCounts.issue}
               label={t("menu.issue")}
               short="I"
               to={toRoutePath(
@@ -1649,6 +1663,7 @@ export function ProjectMenu({
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
               active={active === "pullRequest"}
+              count={projectMenuCounts.pullRequest}
               label={t("menu.pullRequest")}
               short="P"
               to={toRoutePath(
@@ -1660,6 +1675,7 @@ export function ProjectMenu({
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
               active={active === "review"}
+              count={projectMenuCounts.review}
               label={t("menu.review")}
               short="R"
               to={toRoutePath(
@@ -1682,6 +1698,7 @@ export function ProjectMenu({
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
               active={active === "board"}
+              count={projectMenuCounts.board}
               label={t("menu.board")}
               short="B"
               to={toRoutePath(
@@ -1721,12 +1738,14 @@ export function ProjectMenu({
 function ProjectMenuItem({
   active = false,
   className = "",
+  count = 0,
   label,
   short,
   to,
 }: {
   active?: boolean;
   className?: string;
+  count?: number;
   label: string;
   short: string;
   to: string;
@@ -1745,6 +1764,7 @@ function ProjectMenuItem({
       >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
+        <CountBadge count={count} />
       </Link>
     </li>
   );

@@ -33,6 +33,26 @@ const EXPECTED_PROJECT_ISSUES_EMPTY = `
   .replace(
     '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select>',
     '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
+  )
+  .replace(
+    '<li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search"',
+    '<li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/admin/sample/search"',
+  )
+  .replace(
+    '<li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li>',
+    '<li class="active"><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span><span class="project-menu-count">1</span></a></li>',
+  )
+  .replace(
+    '<li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li>',
+    '<li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span><span class="project-menu-count">1</span></a></li>',
+  )
+  .replace(
+    '<li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li>',
+    '<li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span><span class="project-menu-count">2</span></a></li>',
+  )
+  .replace(
+    '<li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li>',
+    '<li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li>',
   );
 const BUG_CHILD_LABEL_STYLE = "background:rgb(81, 170, 204)";
 const EMPTY_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
@@ -1000,6 +1020,70 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
       EXPECTED_PROJECT_ISSUES_POPULATED.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("standard project-owned issue list restores legacy common/navbar.scala.html shell links and projectMenu.scala.html count badges", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+
+  const listAllLink = page.locator(".gnb-nav .show-progress-bar");
+  await expect(listAllLink).toHaveText("List All");
+  await expect(listAllLink).toHaveAttribute("href", `${basePath}/projects`);
+
+  const feedbackLink = page.locator('.gnb-nav a[target="_blank"]', { hasText: "Feedback" });
+  await expect(feedbackLink).toHaveAttribute(
+    "href",
+    "https://github.com/yona-projects/yona/issues",
+  );
+
+  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(searchScopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(searchScopeButtons).toHaveCount(2);
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page
+    .locator('.gnb-search-form .dropdown-menu button[type="button"]', {
+      hasText: "All Projects",
+    })
+    .click();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page
+    .locator('.gnb-search-form .dropdown-menu button[type="button"]', {
+      hasText: "This Project",
+    })
+    .click();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+
+  const projectMenuCounts = await page.locator(".project-menu-gruop > li").evaluateAll((items) =>
+    items
+      .map((item) => ({
+        count: item.querySelector(".project-menu-count")?.textContent?.trim() ?? "",
+        name: item.querySelector(".menu-name")?.textContent?.trim() ?? "",
+      }))
+      .filter((item) => item.count !== ""),
+  );
+  expect(projectMenuCounts).toEqual([
+    { count: "1", name: "Issue" },
+    { count: "1", name: "Pull request" },
+    { count: "2", name: "Review" },
+    { count: "1", name: "Board" },
+  ]);
 });
 
 test("project issue normal list draft marker matches legacy partial_list.scala.html", async ({
@@ -2858,8 +2942,12 @@ async function mockProjectIssues(
           pullRequest: true,
           review: true,
         },
+        openIssueCount: 1,
+        openPullRequestCount: 1,
         ownerName: "admin",
+        postCount: 1,
         projectName: "sample",
+        reviewCount: 2,
         vcs: "GIT",
         viewerCanUpdate:
           state !== "member-no-update" &&
