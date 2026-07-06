@@ -14,6 +14,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/branches")({
@@ -39,11 +40,28 @@ function ProjectBranchesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const branchesQuery = useQuery(
-    codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const isGitProject = projectQuery.data?.vcs === "GIT";
+  const branchesQuery = useQuery({
+    ...codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: isGitProject,
+  });
 
-  if (!projectQuery.data || !branchesQuery.data) {
+  if (!projectQuery.data) {
+    return null;
+  }
+
+  if (!isGitProject) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest.only.available.for.git"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
+    );
+  }
+
+  if (!branchesQuery.data) {
     return null;
   }
 

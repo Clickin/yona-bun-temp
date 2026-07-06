@@ -5,6 +5,10 @@ const EXPECTED_BRANCHES_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><table class="table branch-list-wrap"><thead class="thead"><tr><th>Branches</th><th>Latest commit</th><th>Latest pull request</th><th></th></tr></thead><tbody><tr class="head"><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/main">main</a><span class="headBranch ml10">Default branch</span></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/main" class="commitId" title="abcdef1234567890">abcdef1</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 1, 2026">Jul 1, 2026</span></td><td class="pullRequest"><span class="disabled">No pull request has been sent</span></td><td class="actions"></td></tr><tr><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/feature%2Frelease">release</a></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/feature%2Frelease" class="commitId" title="1234567890abcdef">1234567</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 2, 2026">Jul 2, 2026</span></td><td class="pullRequest"><a href="__BASE_PATH__/admin/sample/pullRequest/3" class="blue-txt pullrequest-state open" data-toggle="tooltip" data-placement="top" title="Open">pullRequest-3</a></td><td class="actions"><button type="button" class="ybtn ybtn-default ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/setAsDefault">Set as default branch</button><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/">Delete</button></td></tr></tbody></table></div></div></div></div>
 `;
 
+const EXPECTED_NON_GIT_BRANCHES_BODY = `
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
+`;
+
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/branches.tsx", import.meta.url),
   "utf8",
@@ -141,6 +145,34 @@ test("project code branch links navigate through the SPA router", async ({ page 
     .toBe("kept");
 });
 
+test("project non-git branches renders the legacy git-only bad-request shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const unexpectedBranchRequests: string[] = [];
+  await mockProjectBranches(page, [], [], {
+    branchRequestMethods: unexpectedBranchRequests,
+    branchRouteStatus: 500,
+    projectVcs: "SVN",
+  });
+
+  await page.goto(`${basePath}/admin/sample/branches`);
+
+  await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "This request is only supported in a git project.",
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
+  await expect(page.locator(".code-browse-wrap")).toHaveCount(0);
+  await expect(page.locator(".branch-list-wrap")).toHaveCount(0);
+  expect(unexpectedBranchRequests).toEqual([]);
+  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_NON_GIT_BRANCHES_BODY.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project code branches route uses Link for internal anchors", () => {
   const branchesTabLink = ROUTE_SOURCE.match(
     /<Link\s+to="\/\$ownerName\/\$projectName\/branches"[\s\S]*?<\/Link>/u,
@@ -180,6 +212,11 @@ async function mockProjectBranches(
   page: Page,
   setDefaultRequests: unknown[],
   deleteRequests: unknown[],
+  options?: {
+    branchRequestMethods?: string[];
+    branchRouteStatus?: number;
+    projectVcs?: "GIT" | "SVN";
+  },
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -219,12 +256,21 @@ async function mockProjectBranches(
         },
         ownerName: "admin",
         projectName: "sample",
-        vcs: "GIT",
+        vcs: options?.projectVcs ?? "GIT",
         viewerCanUpdate: true,
       }),
     });
   });
   await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+    options?.branchRequestMethods?.push(route.request().method());
+    if (options?.branchRouteStatus) {
+      await route.fulfill({
+        body: JSON.stringify({ error: "unexpected branches request" }),
+        contentType: "application/json",
+        status: options.branchRouteStatus,
+      });
+      return;
+    }
     if (route.request().method() === "DELETE") {
       deleteRequests.push(route.request().postDataJSON());
     }
