@@ -116,8 +116,12 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
   assert.match(source, /organizationName: "weblabs"/u);
   assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/weblabs\/projects"/u);
   assert.match(source, /projectName: "portal"/u);
+  assert.match(source, /name: "Site Admin"/u);
   assert.match(source, /loginId: "carol"/u);
   assert.match(source, /name: "Carol Lee"/u);
+  assert.match(source, /async function patchLocalWorkspaceProfile\(page, baseUrl, \{ emailAddress, name \}\)/u);
+  assert.match(source, /page\.request\.patch\(`\$\{baseUrl\}\/api\/v1\/workspace\/profile`/u);
+  assert.match(source, /await patchLocalWorkspaceProfile\(page, baseUrl, adminAccount\);/u);
   assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/organizations\/weblabs\/members"/u);
   assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/weblabs\/projects\/portal\/members"/u);
   assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/weblabs\/projects\/portal\/watch"/u);

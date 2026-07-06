@@ -472,6 +472,23 @@ async function postLocalJson(page, baseUrl, path, data) {
   });
 }
 
+async function patchLocalWorkspaceProfile(page, baseUrl, { emailAddress, name }) {
+  const csrfToken = await readLocalCsrfToken(page, baseUrl);
+  if (!csrfToken) {
+    return null;
+  }
+  return page.request.patch(`${baseUrl}/api/v1/workspace/profile`, {
+    data: {
+      avatarAttachmentId: "",
+      email: emailAddress,
+      name,
+    },
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+}
+
 async function signInLocalAccount(page, baseUrl, identifier, accountPassword) {
   const response = await postLocalJson(page, baseUrl, "/api/v1/auth/sign-in", {
     identifier,
@@ -521,7 +538,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
   const adminAccount = {
     emailAddress: "admin@example.com",
     loginId: "admin",
-    name: "Yobi Admin",
+    name: "Site Admin",
     password: "admin",
   };
   const aliceAccount = {
@@ -652,6 +669,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
   };
   const adminReady = await ensureLocalAccountSession(page, baseUrl, adminAccount);
   if (adminReady) {
+    await patchLocalWorkspaceProfile(page, baseUrl, adminAccount);
     await ensureAdminFixtures();
     await ensureAliceSampleFork();
     return true;

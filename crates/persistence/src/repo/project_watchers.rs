@@ -45,7 +45,11 @@ impl AppRepositoryImpl<'_> {
                 user_label: user.name.unwrap_or_default(),
             });
         }
-        watchers.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+        watchers.sort_by(|left, right| {
+            left.user_label
+                .cmp(&right.user_label)
+                .then_with(|| left.login_id.cmp(&right.login_id))
+        });
 
         Ok(ProjectWatcherListRecord { watchers })
     }

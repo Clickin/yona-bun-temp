@@ -362,10 +362,8 @@ impl AppRepositoryImpl<'_> {
             });
         }
         members.sort_by(|left, right| {
-            let left_rank = if left.role == "manager" { 0 } else { 1 };
-            let right_rank = if right.role == "manager" { 0 } else { 1 };
-            left_rank
-                .cmp(&right_rank)
+            left.user_label
+                .cmp(&right.user_label)
                 .then_with(|| left.login_id.cmp(&right.login_id))
         });
 

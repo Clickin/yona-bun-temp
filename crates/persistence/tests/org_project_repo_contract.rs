@@ -163,6 +163,88 @@ async fn reads_project_members_enrollment_requests_and_workspace_project_lists()
 }
 
 #[tokio::test]
+async fn project_member_and_watcher_lists_follow_legacy_user_label_order() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+
+    let repo = AppRepository::new(db);
+    let admin = repo
+        .create_user(CreateUserInput {
+            display_name: "Site Admin".to_string(),
+            email_address: "admin@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: true,
+            login_id: "admin".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create admin");
+    let carol = repo
+        .create_user(CreateUserInput {
+            display_name: "Carol Lee".to_string(),
+            email_address: "carol@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "carol".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create carol");
+
+    let project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("portal parity".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create project");
+    repo.add_project_membership(project.id, admin.id, "manager")
+        .await
+        .expect("add admin membership");
+    repo.add_project_membership(project.id, carol.id, "member")
+        .await
+        .expect("add carol membership");
+    repo.set_project_watch(admin.id, project.id, true)
+        .await
+        .expect("watch as admin");
+    repo.set_project_watch(carol.id, project.id, true)
+        .await
+        .expect("watch as carol");
+
+    let members = repo
+        .read_project_members("admin", "projectYobi")
+        .await
+        .expect("read project members");
+    assert_eq!(
+        members
+            .members
+            .iter()
+            .map(|member| member.login_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["carol", "admin"]
+    );
+
+    let watchers = repo
+        .list_project_watchers(project.id)
+        .await
+        .expect("read project watchers");
+    assert_eq!(
+        watchers
+            .watchers
+            .iter()
+            .map(|watcher| watcher.login_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["carol", "admin"]
+    );
+}
+
+#[tokio::test]
 async fn reads_organization_members_together_with_pending_enrollment_requests() {
     let db = Database::connect("sqlite::memory:")
         .await
