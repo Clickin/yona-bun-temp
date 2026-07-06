@@ -585,7 +585,7 @@ export function SiteLayoutShell({
 }: {
   activeMenu?: "projects";
   children: React.ReactNode;
-  projectSearchScope?: { ownerName: string; projectName: string };
+  projectSearchScope?: { organizationName?: string; ownerName: string; projectName: string };
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
@@ -601,19 +601,27 @@ export function SiteLayoutShell({
         `/${projectSearchScope.ownerName}/${projectSearchScope.projectName}/search`,
       )
     : null;
+  const groupSearchAction = projectSearchScope?.organizationName
+    ? prefixBasePath(
+        runtimeConfig.basePath,
+        `/organizations/${projectSearchScope.organizationName}/search`,
+      )
+    : null;
   const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
-  const [selectedSearchScope, setSelectedSearchScope] = React.useState<"project" | "all">(
-    "project",
+  const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
+    "all",
   );
   const [isSearchScopeMenuOpen, setIsSearchScopeMenuOpen] = React.useState(false);
   React.useEffect(() => {
-    setSelectedSearchScope("project");
+    setSelectedSearchScope(projectSearchAction ? "project" : "all");
     setIsSearchScopeMenuOpen(false);
   }, [projectSearchAction]);
   const gnbSearchAction =
-    projectSearchAction && selectedSearchScope === "project"
+    selectedSearchScope === "project" && projectSearchAction
       ? projectSearchAction
-      : allProjectsSearchAction;
+      : selectedSearchScope === "group" && groupSearchAction
+        ? groupSearchAction
+        : allProjectsSearchAction;
   const logoLinkProps = useLinkProps({
     activeOptions: {
       exact: true,
@@ -632,9 +640,11 @@ export function SiteLayoutShell({
   });
   const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");
   const gnbSearchScopeTitle =
-    projectSearchAction && selectedSearchScope === "project"
+    selectedSearchScope === "project" && projectSearchAction
       ? t("search.scope.project")
-      : t("search.scope.all");
+      : selectedSearchScope === "group" && groupSearchAction
+        ? t("search.scope.group")
+        : t("search.scope.all");
   const handleSearchScopeToggleClick = React.useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
@@ -650,7 +660,7 @@ export function SiteLayoutShell({
     setIsSearchScopeMenuOpen(false);
   }, []);
   const handleSearchScopeItemClick = React.useCallback(
-    (scope: "project" | "all") => (event: React.MouseEvent<HTMLButtonElement>) => {
+    (scope: "all" | "group" | "project") => (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
       setSelectedSearchScope(scope);
@@ -730,6 +740,18 @@ export function SiteLayoutShell({
                           {t("search.scope.project")}
                         </button>
                       </li>
+                      {groupSearchAction ? (
+                        <li>
+                          <button
+                            type="button"
+                            data-toggle="search-scope"
+                            data-action={groupSearchAction}
+                            onClick={handleSearchScopeItemClick("group")}
+                          >
+                            {t("search.scope.group")}
+                          </button>
+                        </li>
+                      ) : null}
                       <li>
                         <button
                           type="button"
