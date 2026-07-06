@@ -4,6 +4,7 @@ import {
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
+  useEffect,
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
@@ -63,9 +64,7 @@ function OrganizationIssuesRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <OrganizationIssuesScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <OrganizationIssuesScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -113,14 +112,20 @@ function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   }
 
   return (
-    <OrganizationIssuesBody
-      currentUserId={stringField(sessionQuery.data.actorId, "")}
-      isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
-      issues={issuesQuery.data}
-      organization={organizationQuery.data}
+    <SiteLayoutShell
+      projectSearchScope={{ organizationName }}
       runtimeConfig={runtimeConfig}
-      search={search}
-    />
+      showLegacyProjectHeaderLinks
+    >
+      <OrganizationIssuesBody
+        currentUserId={stringField(sessionQuery.data.actorId, "")}
+        isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
+        issues={issuesQuery.data}
+        organization={organizationQuery.data}
+        runtimeConfig={runtimeConfig}
+        search={search}
+      />
+    </SiteLayoutShell>
   );
 }
 
@@ -143,10 +148,21 @@ function OrganizationIssuesBody({
   const navigate = useNavigate();
   const organizationName = stringField(organization.organizationName, issues.organizationName);
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const siteName = runtimeConfig.siteName ?? "Yona";
   const legacyPjaxRootAttrs = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement> & {
     "pjax-container": string;
   };
   const hasIssues = issues.items.length > 0;
+
+  useEffect(() => {
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = organizationName;
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [organizationName, siteName]);
+
   const navigateToSearch = (
     event: MouseEvent<HTMLButtonElement>,
     nextSearch: OrganizationIssuesSearch,
