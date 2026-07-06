@@ -482,6 +482,7 @@ test("protected org-owned project issue list exposes legacy group search scope a
   await mockProjectIssues(page, "portal-protected");
 
   await page.goto(`${basePath}/weblabs/portal/issues`);
+  await expect(page).toHaveTitle("portal - Issue - weblabs/portal");
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
