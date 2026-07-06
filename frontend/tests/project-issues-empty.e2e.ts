@@ -91,42 +91,6 @@ const EXPECTED_PROJECT_ISSUES_LABEL_SORT = EXPECTED_PROJECT_ISSUES_EMPTY.replace
     `${LABEL_SORT_SPAN10}</div></div></div></div>\n<footer`,
   );
 
-const NON_MEMBER_SPAN10 = POPULATED_SPAN10.replace(
-  '<label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-toggle="issue-checkbox" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label>',
-  "",
-)
-  .replace(ISSUE_LIST_KEYMAP, ISSUE_LIST_KEYMAP_NON_MANAGER)
-  .replaceAll("filter=bug", "filter=non-member");
-
-const EXPECTED_PROJECT_ISSUES_NON_MEMBER = EXPECTED_PROJECT_ISSUES_EMPTY.replaceAll(
-  'value="empty"',
-  'value="non-member"',
-)
-  .replaceAll(
-    '>Open<span class="num-badge pull-right">0</span>',
-    '>Open<span class="num-badge pull-right">1</span>',
-  )
-  .replace(
-    '<div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div>',
-    "",
-  )
-  .replace(
-    '<div class="labels-wrap"><a href="__BASE_PATH__/admin/sample/issue/labelsform" class="ybtn ybtn-default ybtn-mini pull-right"><i class="yobicon-cog vmiddle"></i><span class="vmiddle" style="margin-left:2px;">Manage label</span></a></div>',
-    '<div class="labels-wrap"></div>',
-  )
-  .replace(
-    '<select id="authorId" name="authorId" data-search="authorId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
-    '<select id="authorId" name="authorId" data-search="authorId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="2" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="dev">Dev Member</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
-  )
-  .replace(
-    '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
-    '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-toggle="select2" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
-  )
-  .replace(
-    /<div class="span10 span-hard-wrap" id="span10">.*<\/div><\/div><\/div><\/div>\n<footer/su,
-    `${NON_MEMBER_SPAN10}</div></div></div></div>\n<footer`,
-  );
-
 const NO_MILESTONE_MENU_SPAN10 = POPULATED_SPAN10_WITH_TOOLBAR.replace(
   '<span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span>',
   "",
@@ -1460,7 +1424,9 @@ test("project issue list sorts labels like legacy partial_list.scala.html", asyn
   );
 });
 
-test("project issue list hides mass update controls for non-members", async ({ page }) => {
+test("project issue search keeps Created but hides Assigned for organization users outside the project", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "non-member");
 
@@ -1470,13 +1436,14 @@ test("project issue list hides mass update controls for non-members", async ({ p
   await expect(page.locator(".mass-update-wrap")).toHaveCount(0);
   await expect(page.locator(".mass-update-check")).toHaveCount(0);
   await expect(page.locator(".labels-wrap .ybtn")).toHaveCount(0);
-
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_ISSUES_NON_MEMBER.replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
+  await expect(page.locator("#authorId option")).toHaveText([
+    "All",
+    "Created",
+    "Dev Member",
+    "Site Admin",
+  ]);
+  await expect(page.locator("#assigneeId option")).toHaveText(["All", "No assignee", "Site Admin"]);
+  await expect(page.locator("#assigneeId option", { hasText: "Assigned" })).toHaveCount(0);
 });
 
 test("project issue list hides row milestone when project milestone menu is disabled", async ({

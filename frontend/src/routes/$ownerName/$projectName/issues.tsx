@@ -519,7 +519,12 @@ function ProjectIssuesBody({
   };
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
-  const showMemberCurrentUserSearchOptions = projectMemberSearchOptionsEnabled(project);
+  const showAssigneeCurrentUserSearchOption = projectMemberSearchOptionsEnabled(project);
+  const showAuthorCurrentUserSearchOption = projectAuthorSearchOptionsEnabled(
+    project,
+    assignableUsers,
+    currentUserId,
+  );
   const showLabelManagement = projectIssueLabelCreatable(project);
   const showLabelEdit = projectManagerControlsEnabled(project);
 
@@ -552,7 +557,8 @@ function ProjectIssuesBody({
               ownerName={ownerName}
               projectName={projectName}
               search={search}
-              showCurrentUserOptions={showMemberCurrentUserSearchOptions}
+              showAssigneeCurrentUserOption={showAssigneeCurrentUserSearchOption}
+              showAuthorCurrentUserOption={showAuthorCurrentUserSearchOption}
               onSearchSubmit={(nextSearch) => {
                 void navigate({
                   to: projectIssuesRoutePath(ownerName, projectName, nextSearch),
@@ -2408,7 +2414,8 @@ function IssueSearchForm({
   onSearchSubmit,
   projectName,
   search,
-  showCurrentUserOptions,
+  showAssigneeCurrentUserOption,
+  showAuthorCurrentUserOption,
 }: {
   basePath: string;
   currentUserId: string;
@@ -2429,7 +2436,8 @@ function IssueSearchForm({
   onSearchSubmit: (search: ProjectIssuesSearch) => void;
   projectName: string;
   search: ProjectIssuesSearch;
-  showCurrentUserOptions: boolean;
+  showAssigneeCurrentUserOption: boolean;
+  showAuthorCurrentUserOption: boolean;
 }) {
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
@@ -2521,7 +2529,7 @@ function IssueSearchForm({
               onChange={(event) => submitSearchControlForm(event.currentTarget)}
             >
               <option value="">{t("common.order.all")}</option>
-              {!isAnonymous && showCurrentUserOptions ? (
+              {!isAnonymous && showAuthorCurrentUserOption ? (
                 <option value={currentUserId}>{t("issue.list.authoredByMe")}</option>
               ) : null}
               {authors.map((author) => (
@@ -2552,7 +2560,7 @@ function IssueSearchForm({
             >
               <option value="">{t("common.order.all")}</option>
               <option value="0">{t("issue.noAssignee")}</option>
-              {!isAnonymous && showCurrentUserOptions ? (
+              {!isAnonymous && showAssigneeCurrentUserOption ? (
                 <option value={currentUserId}>{t("issue.list.assignedToMe")}</option>
               ) : null}
               {assignees.map((assignee) => (
@@ -3503,6 +3511,26 @@ function projectMemberSearchOptionsEnabled(project: ProjectContainer) {
     return booleanField(record.viewerIsProjectMember);
   }
   return projectMemberControlsEnabled(project);
+}
+
+function projectAuthorSearchOptionsEnabled(
+  project: ProjectContainer,
+  assignableUsers: ProjectAssignableUserOptionSource[],
+  currentUserId: string,
+) {
+  const record = project as Record<string, unknown>;
+  if ("viewerIsProjectOrOrganizationUser" in record) {
+    return booleanField(record.viewerIsProjectOrOrganizationUser);
+  }
+  if ("viewerIsOrganizationMember" in record) {
+    return (
+      booleanField(record.viewerIsOrganizationMember) || projectMemberSearchOptionsEnabled(project)
+    );
+  }
+  if (projectMemberSearchOptionsEnabled(project)) {
+    return true;
+  }
+  return assignableUsers.some((user) => stringField(user.userId, "") === currentUserId);
 }
 
 function projectManagerControlsEnabled(project: ProjectContainer) {
