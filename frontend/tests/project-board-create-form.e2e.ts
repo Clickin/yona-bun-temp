@@ -1,6 +1,23 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+type BoardFormProjectFixture = {
+  isProtected?: boolean;
+  organizationName?: string;
+  ownerName: string;
+  projectName: string;
+};
+
+const ADMIN_SAMPLE_PROJECT: BoardFormProjectFixture = {
+  ownerName: "admin",
+  projectName: "sample",
+};
+const WEBLABS_PORTAL_PROJECT: BoardFormProjectFixture = {
+  isProtected: true,
+  organizationName: "weblabs",
+  ownerName: "weblabs",
+  projectName: "portal",
+};
 const POSTFORM_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/postform.tsx", import.meta.url),
   "utf8",
@@ -23,6 +40,95 @@ function withLegacyFileUploader(html: string) {
   );
 }
 
+test("project board create form restores legacy admin project shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectBoardCreateForm(page, [], ADMIN_SAMPLE_PROJECT);
+
+  await page.goto(`${basePath}/admin/sample/postform`);
+
+  await expect(page).toHaveTitle("New - admin/sample");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+
+  const searchForm = page.locator("form.gnb-search-form");
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeItems = page.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
+  await expect(scopeToggle).toHaveText("This Project");
+  await expect(scopeItems).toHaveCount(2);
+  await expect(scopeItems).toHaveText(["This Project", "All Projects"]);
+
+  await scopeToggle.click();
+  await scopeItems.nth(1).click();
+  await expect(scopeToggle).toHaveText("All Projects");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/search`);
+
+  await scopeToggle.click();
+  await scopeItems.nth(0).click();
+  await expect(scopeToggle).toHaveText("This Project");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
+
+  const shellBoxes = await readProjectBoardCreateShellBoxes(page);
+  expect(shellBoxes).not.toBeNull();
+  expect(shellBoxes!.scopeToggle.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.scopeToggle.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.searchInput.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.searchInput.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.searchBox.left).toBeGreaterThanOrEqual(shellBoxes!.scopeToggle.right - 2);
+  expect(shellBoxes!.searchInput.left).toBeGreaterThanOrEqual(shellBoxes!.searchBox.left);
+  expect(shellBoxes!.searchSubmit.right).toBeLessThanOrEqual(shellBoxes!.searchBox.right + 1);
+  expect(shellBoxes!.searchBox.right).toBeLessThanOrEqual(shellBoxes!.form.right + 1);
+});
+
+test("project board create form restores legacy group-owned project shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectBoardCreateForm(page, [], WEBLABS_PORTAL_PROJECT);
+
+  await page.goto(`${basePath}/weblabs/portal/postform`);
+
+  await expect(page).toHaveTitle("New - weblabs/portal");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+
+  const searchForm = page.locator("form.gnb-search-form");
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeItems = page.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
+  await expect(scopeToggle).toHaveText("This Project");
+  await expect(scopeItems).toHaveCount(3);
+  await expect(scopeItems).toHaveText(["This Project", "This Group", "All Projects"]);
+
+  await scopeToggle.click();
+  await scopeItems.nth(1).click();
+  await expect(scopeToggle).toHaveText("This Group");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/organizations/weblabs/search`);
+
+  await scopeToggle.click();
+  await scopeItems.nth(2).click();
+  await expect(scopeToggle).toHaveText("All Projects");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/search`);
+
+  await scopeToggle.click();
+  await scopeItems.nth(0).click();
+  await expect(scopeToggle).toHaveText("This Project");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
+
+  const shellBoxes = await readProjectBoardCreateShellBoxes(page);
+  expect(shellBoxes).not.toBeNull();
+  expect(shellBoxes!.scopeToggle.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.scopeToggle.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.searchInput.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.searchInput.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.searchBox.left).toBeGreaterThanOrEqual(shellBoxes!.scopeToggle.right - 2);
+  expect(shellBoxes!.searchInput.left).toBeGreaterThanOrEqual(shellBoxes!.searchBox.left);
+  expect(shellBoxes!.searchSubmit.right).toBeLessThanOrEqual(shellBoxes!.searchBox.right + 1);
+  expect(shellBoxes!.searchBox.right).toBeLessThanOrEqual(shellBoxes!.form.right + 1);
+});
+
 test("project board create form matches legacy board/create.scala.html core form DOM", async ({
   page,
 }) => {
@@ -39,6 +145,8 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(POSTFORM_ROUTE_SOURCE).toContain("router.history.back()");
+  expect(POSTFORM_ROUTE_SOURCE).toContain('const screenTitle = t("post.new")');
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("doc.title = `New -");
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];
@@ -200,7 +308,12 @@ test("project board create form matches legacy board/create.scala.html core form
   await expect(page).toHaveURL(`${basePath}/admin/sample/post/10`);
 });
 
-async function mockProjectBoardCreateForm(page: Page, postRequests: unknown[]) {
+async function mockProjectBoardCreateForm(
+  page: Page,
+  postRequests: unknown[],
+  project: BoardFormProjectFixture = ADMIN_SAMPLE_PROJECT,
+) {
+  const { isProtected = false, organizationName = "", ownerName, projectName } = project;
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -224,60 +337,67 @@ async function mockProjectBoardCreateForm(page: Page, postRequests: unknown[]) {
       body: JSON.stringify({ user: { loginId: "admin" } }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/posts/form-options**", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        canAttachFiles: true,
-        canMarkNotice: true,
-        canMarkReadme: true,
-        defaultPermissions: {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected,
+          logoUrl: "/assets/images/project_default_logo.png",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
+          },
+          organizationName,
+          ownerName,
+          projectName,
+          vcs: "GIT",
+          viewerCanUpdate: true,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/posts/form-options**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
           canAttachFiles: true,
-          canCreate: true,
           canMarkNotice: true,
           canMarkReadme: true,
-        },
-        labels: [],
-        onlineCommit: {
-          branch: "",
-          edit: false,
-          issueTemplate: false,
-          path: "",
-          preparedBodyMarkdown: "",
-          title: "",
-        },
-        readme: false,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/posts", async (route) => {
+          defaultPermissions: {
+            canAttachFiles: true,
+            canCreate: true,
+            canMarkNotice: true,
+            canMarkReadme: true,
+          },
+          labels: [],
+          onlineCommit: {
+            branch: "",
+            edit: false,
+            issueTemplate: false,
+            path: "",
+            preparedBodyMarkdown: "",
+            title: "",
+          },
+          readme: false,
+        }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/posts`, async (route) => {
     if (route.request().method() === "POST") {
       postRequests.push(route.request().postDataJSON());
       await route.fulfill({
@@ -298,7 +418,7 @@ async function mockProjectBoardCreateForm(page: Page, postRequests: unknown[]) {
           isWatching: false,
           labels: [],
           notice: true,
-          ownerName: "admin",
+          ownerName,
           permissions: {
             canComment: true,
             canCreate: true,
@@ -309,7 +429,7 @@ async function mockProjectBoardCreateForm(page: Page, postRequests: unknown[]) {
             canWatch: true,
           },
           postNumber: "10",
-          projectName: "sample",
+          projectName,
           readme: false,
           title: "Board draft",
           updatedLabel: "Jul 1, 2026",
@@ -319,6 +439,32 @@ async function mockProjectBoardCreateForm(page: Page, postRequests: unknown[]) {
       return;
     }
     await route.fallback();
+  });
+}
+
+async function readProjectBoardCreateShellBoxes(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const form = document.querySelector<HTMLElement>("form.gnb-search-form");
+    const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const searchInput = document.querySelector<HTMLElement>(
+      '.gnb-search-form input[name="keyword"]',
+    );
+    const searchSubmit = document.querySelector<HTMLElement>(
+      '.gnb-search-form button[type="submit"]',
+    );
+    if (!navbar || !form || !scopeToggle || !searchBox || !searchInput || !searchSubmit) {
+      return null;
+    }
+    return {
+      form: form.getBoundingClientRect(),
+      navbar: navbar.getBoundingClientRect(),
+      scopeToggle: scopeToggle.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+      searchInput: searchInput.getBoundingClientRect(),
+      searchSubmit: searchSubmit.getBoundingClientRect(),
+    };
   });
 }
 
