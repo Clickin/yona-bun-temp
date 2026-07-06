@@ -861,6 +861,52 @@ test("project issue detail toggles legacy comment update form through comment-ed
   });
 });
 
+test("project issue detail matches authored comment edit branch from legacy partial_comment/commentUpdateForm", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Site Admin",
+        authorLoginId: "admin",
+        childComments: [],
+        contentsHtml: "<p>Server HTML should not render</p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  expect(await comment.getAttribute("class")).toContain("author");
+
+  await comment.locator('[data-toggle="comment-edit"][data-comment-id="77"]').click();
+
+  const updateForm = comment.locator("#comment-editform-77");
+  const notification = updateForm.locator(".send-notification-check");
+  await expect(updateForm).toBeVisible();
+  await expect(comment.locator("#comment-body-77")).toBeHidden();
+  await expect(notification).toBeVisible();
+  await expect(notification).toHaveAttribute(
+    "data-content",
+    "If you are not the original author, this option will be ignored. Notification mail will be sent.",
+  );
+  await expect(notification.locator("input[name='notificationMail']")).toBeChecked();
+  await expect(notification.locator("strong")).toHaveText("Send notification mail");
+  await expect(updateForm.locator("button[type='submit']")).toHaveText("Save");
+  await expect(updateForm.locator(".ybtn-cancel[data-comment-id='77']")).toHaveText("Cancel");
+});
+
 test("project issue detail keeps legacy comment edit trigger for readable comments", async ({
   page,
 }) => {
@@ -1788,7 +1834,9 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 });
 
-test("project issue detail renders legacy readonly attachment downloader lists", async ({ page }) => {
+test("project issue detail renders legacy readonly attachment downloader lists", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
@@ -1844,9 +1892,9 @@ test("project issue detail renders legacy readonly attachment downloader lists",
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   await expect(page.locator(".span-left-pane > #attachments > ul.attaches.wm")).toHaveCount(1);
-  await expect(page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attach")).toHaveCount(
-    1,
-  );
+  await expect(
+    page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attach"),
+  ).toHaveCount(1);
   await expect(page.locator(".span-left-pane > #attachments > .attached-file")).toHaveCount(0);
 
   const expectedIssueAttachments =

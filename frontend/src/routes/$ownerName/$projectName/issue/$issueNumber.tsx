@@ -2389,6 +2389,7 @@ function IssueCommentRow({
   const canDelete = booleanField(comment.viewerCanDelete);
   const hasVoted = booleanField(comment.viewerHasVoted);
   const canVote = booleanField(issue.viewerCanComment);
+  const isAuthorComment = authorLoginId !== "" && authorLoginId === currentUserLoginId;
   const [translatedContentsMarkdown, setTranslatedContentsMarkdown] = useState<string | null>(null);
   const [translatePending, setTranslatePending] = useState(false);
   const [replyVisible, setReplyVisible] = useState(false);
@@ -2423,7 +2424,7 @@ function IssueCommentRow({
 
   return (
     <li
-      className={`comment ${hasCurrentUserMention ? "mentioned" : ""}`}
+      className={`comment ${isAuthorComment ? "author" : ""} ${hasCurrentUserMention ? "mentioned" : ""}`}
       id={`comment-${commentId}`}
       onMouseEnter={() => setReplyVisible(true)}
       onMouseLeave={() => {
@@ -2581,6 +2582,7 @@ function IssueCommentRow({
           contentsMarkdown={contentsMarkdown}
           formOpen={commentEditOpen}
           issue={issue}
+          showNotification={isAuthorComment}
           onCancel={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -2819,6 +2821,7 @@ function CommentUpdateForm({
   contentsMarkdown,
   formOpen,
   issue,
+  showNotification,
   onCancel,
 }: {
   basePath: string;
@@ -2827,13 +2830,13 @@ function CommentUpdateForm({
   contentsMarkdown: string;
   formOpen: boolean;
   issue: RestIssueDetailResponse;
+  showNotification: boolean;
   onCancel: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   const commentId = stringField(comment.id);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
-  const showNotification = booleanField(comment.viewerIsAuthor);
   const attachments = attachmentItems(comment.attachments);
 
   return (
@@ -3409,13 +3412,7 @@ function AttachedFiles({
             >
               <i className="yobicon-download"></i>
             </Link>
-            <Link
-              to={filePath}
-              href={href}
-              reloadDocument
-              target="_blank"
-              className="vmiddle"
-            >
+            <Link to={filePath} href={href} reloadDocument target="_blank" className="vmiddle">
               <i className="yobicon-paperclip"></i>
               <span className="filename">{name}</span>
               <span className="filesize">({sizeReadable})</span>
