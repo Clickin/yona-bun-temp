@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useLinkProps } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
@@ -151,13 +151,41 @@ function HomeScreen({
     routePath !== "/" &&
     routePathWithoutSlash !== "" &&
     routePathWithoutSlash !== defaultLandingWithoutSlash;
+  const setRootToast = useRootToast();
   const [isIntroVisible, setIsIntroVisible] = React.useState(
     () => typeof window === "undefined" || localStorage.getItem("yobi-intro") !== "false",
   );
+  const [isDefaultLandingButtonHidden, setIsDefaultLandingButtonHidden] = React.useState(false);
   const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);
   const [notificationHasMore, setNotificationHasMore] = React.useState(false);
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = React.useState(false);
   const flashMessage = flashMessageKey ? t(flashMessageKey) : "";
+  const setDefaultLoginPage = useMutation({
+    mutationFn: async (path: string) => {
+      const response = await fetch(
+        `${prefixBasePath(runtimeConfig.basePath, "/user/defultLoginPage")}?path=${encodeURIComponent(`/${path}`)}`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json() as Promise<{ defaultLoginPage: string }>;
+    },
+    onError(error) {
+      window.alert(`set Default page failed: ${error instanceof Error ? error.message : error}`);
+    },
+    onSuccess(_data, path) {
+      void queryClient.invalidateQueries({
+        queryKey: currentSessionQueryOptions(runtimeConfig).queryKey,
+      });
+      const toastKey = `default-login-page:${path}:${Date.now()}`;
+      setRootToast({ key: toastKey, message: `Set to default: ${path}` });
+      window.setTimeout(() => {
+        setRootToast((current) => (current?.key === toastKey ? null : current));
+      }, 3000);
+      setIsDefaultLandingButtonHidden(true);
+    },
+  });
 
   React.useEffect(() => {
     if (!notificationsQuery.data) {
@@ -304,6 +332,8 @@ function HomeScreen({
                           data-placement="bottom"
                           data-toggle="popover"
                           data-content={t("button.setDefaultLoginPage.desc")}
+                          style={isDefaultLandingButtonHidden ? { display: "none" } : undefined}
+                          onClick={() => setDefaultLoginPage.mutate(routePathWithoutSlash)}
                         >
                           {t("button.setDefaultLoginPage")}
                         </button>

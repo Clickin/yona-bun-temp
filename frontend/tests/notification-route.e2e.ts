@@ -50,7 +50,17 @@ test("legacy singular notification browser route renders the shared notification
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let defaultLoginPageRequestPath: string | null = null;
   await mockAuthenticatedNotifications(page, []);
+  await page.route("**/user/defultLoginPage?*", async (route) => {
+    defaultLoginPageRequestPath = new URL(route.request().url()).searchParams.get("path");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        defaultLoginPage: "/notification",
+      }),
+    });
+  });
 
   await page.goto(`${basePath}/notification?from=0&limit=20`);
 
@@ -80,6 +90,15 @@ test("legacy singular notification browser route renders the shared notification
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
+  const defaultLoginPageResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" && response.url().includes("/user/defultLoginPage"),
+  );
+  await page.locator("#setDefaultLoginPage").click();
+  await defaultLoginPageResponsePromise;
+  await expect.poll(() => defaultLoginPageRequestPath).toBe("/notification");
+  await expect(page.locator("#yobiToasts .msg")).toHaveText("Set to default: notification");
+  await expect(page.locator("#setDefaultLoginPage")).toBeHidden();
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileAuthenticatedHomeMetrics(page)).toEqual({
