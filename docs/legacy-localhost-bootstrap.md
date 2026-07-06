@@ -67,6 +67,19 @@ pnpm legacy:localhost:stop:parity
 harness because it also probes `/users/loginform` and reports whether the
 current localhost baseline is reachable.
 
+When `9000` is already served by a manually started localhost legacy Yona, the
+harness now treats that as a valid parity target instead of insisting on the
+repo-local `application.conf` secret file. In that mode:
+
+- `status:parity` reports the live login and `/secret` probe, plus whether the
+  listening process is actually managed by this harness
+- `seed-foundation:parity` and `seed-content:parity` can still adopt the live
+  localhost dataset, verify the expected parity objects through the product
+  flow, and write local `parity-foundation.json` / `parity-content.json`
+  evidence files
+- `stop:parity` refuses to kill that external listener and instead reports that
+  the current port owner is outside this harness
+
 `seed-foundation` is the first reproducible parity seed pass above the
 site-admin bootstrap. It drives the legacy product flow through Playwright
 instead of dropping in an opaque DB copy and records the result in

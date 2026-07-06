@@ -229,46 +229,48 @@ const parityContentVerificationPages = [
   },
 ];
 
-const [, , command = "help", ...rawArgs] = process.argv;
-const options = parseArgs(rawArgs);
-const layout = buildLayout({
-  host: stringValue(options.host, defaultHost),
-  instance: stringValue(options.instance, defaultInstance),
-  port: numberValue(options.port, defaultPort),
-  releaseUrl: stringValue(options.releaseUrl, defaultReleaseUrl),
-  version: stringValue(options.version, defaultVersion),
-  workspaceDir: stringValue(options.workspaceDir, defaultWorkspaceDir),
-});
+export async function main(argv = process.argv.slice(2)) {
+  const [command = "help", ...rawArgs] = argv;
+  const options = parseArgs(rawArgs);
+  const layout = buildLayout({
+    host: stringValue(options.host, defaultHost),
+    instance: stringValue(options.instance, defaultInstance),
+    port: numberValue(options.port, defaultPort),
+    releaseUrl: stringValue(options.releaseUrl, defaultReleaseUrl),
+    version: stringValue(options.version, defaultVersion),
+    workspaceDir: stringValue(options.workspaceDir, defaultWorkspaceDir),
+  });
 
-switch (command) {
-  case "help":
-    printHelp();
-    break;
-  case "prepare":
-    await prepare(layout, options);
-    break;
-  case "start":
-    await start(layout, options);
-    break;
-  case "stop":
-    await stop(layout);
-    break;
-  case "status":
-    await status(layout);
-    break;
-  case "seed-admin":
-    await seedAdmin(layout, options);
-    break;
-  case "seed-parity-foundation":
-    await seedParityFoundation(layout, options);
-    break;
-  case "seed-parity-content":
-    await seedParityContent(layout, options);
-    break;
-  default:
-    console.error(`Unknown command: ${command}`);
-    printHelp();
-    process.exitCode = 1;
+  switch (command) {
+    case "help":
+      printHelp();
+      break;
+    case "prepare":
+      await prepare(layout, options);
+      break;
+    case "start":
+      await start(layout, options);
+      break;
+    case "stop":
+      await stop(layout);
+      break;
+    case "status":
+      await status(layout);
+      break;
+    case "seed-admin":
+      await seedAdmin(layout, options);
+      break;
+    case "seed-parity-foundation":
+      await seedParityFoundation(layout, options);
+      break;
+    case "seed-parity-content":
+      await seedParityContent(layout, options);
+      break;
+    default:
+      console.error(`Unknown command: ${command}`);
+      printHelp();
+      process.exitCode = 1;
+  }
 }
 
 function buildLayout(input) {
@@ -289,6 +291,7 @@ function buildLayout(input) {
   const metadataFile = resolve(instanceDir, "metadata.json");
   const parityFoundationSeedFile = resolve(instanceDir, "parity-foundation.json");
   const parityContentSeedFile = resolve(instanceDir, "parity-content.json");
+  const runningPidFile = resolve(installDir, "RUNNING_PID");
   return {
     ...input,
     cacheDir,
@@ -307,6 +310,7 @@ function buildLayout(input) {
     parityFoundationSeedFile,
     pidFile,
     runDir,
+    runningPidFile,
     zipPath,
   };
 }
@@ -388,6 +392,7 @@ async function prepare(layout, options) {
           logFile: layout.logFile,
           parityContentSeedFile: layout.parityContentSeedFile,
           parityFoundationSeedFile: layout.parityFoundationSeedFile,
+          runningPidFile: layout.runningPidFile,
           socialLoginConfPath,
           zipPath: layout.zipPath,
         },
@@ -412,9 +417,10 @@ async function prepare(layout, options) {
 
 async function start(layout, options) {
   await prepare(layout, options);
-  const pid = readPid(layout.pidFile);
-  if (pid && isProcessAlive(pid)) {
-    console.log(`legacy localhost already running with pid ${pid}`);
+  cleanupStalePidFiles(layout);
+  const managedProcess = resolveManagedPid(layout);
+  if (managedProcess) {
+    console.log(`legacy localhost already running with pid ${managedProcess.pid}`);
     return;
   }
 
@@ -443,32 +449,57 @@ async function start(layout, options) {
   child.unref();
   writeFileSync(layout.pidFile, `${child.pid}\n`, "utf8");
   await waitForHttp(`http://${layout.host}:${layout.port}/users/loginform`, 30_000);
+  const startedProcess =
+    (await waitForManagedPid(layout, 10_000)) ??
+    (isProcessAlive(child.pid) && commandMatchesLayout(readProcessCommand(child.pid), layout)
+      ? { command: readProcessCommand(child.pid), pid: child.pid, source: "spawn" }
+      : null);
+  if (!startedProcess) {
+    rmSync(layout.pidFile, { force: true });
+    const listenerPid = findListenerPid(layout.port);
+    if (listenerPid && !commandMatchesLayout(readProcessCommand(listenerPid), layout)) {
+      throw new Error(
+        `Port ${layout.port} is now served by pid ${listenerPid}, but it is not this harness-managed legacy instance.`,
+      );
+    }
+    throw new Error(
+      `Legacy localhost responded on http://${layout.host}:${layout.port}, but the harness could not resolve a managed pid.`,
+    );
+  }
+  writeFileSync(layout.pidFile, `${startedProcess.pid}\n`, "utf8");
   console.log(
-    `legacy localhost started at http://${layout.host}:${layout.port} (pid ${child.pid}); log: ${layout.logFile}`,
+    `legacy localhost started at http://${layout.host}:${layout.port} (pid ${startedProcess.pid}); log: ${layout.logFile}`,
   );
 }
 
 async function stop(layout) {
-  const pid = readPid(layout.pidFile);
-  if (!pid) {
+  const managedProcess = resolveManagedPid(layout);
+  if (!managedProcess) {
+    const listenerPid = findListenerPid(layout.port);
+    if (listenerPid) {
+      console.log(
+        `legacy localhost is reachable on ${layout.host}:${layout.port}, but pid ${listenerPid} is not managed by this harness`,
+      );
+      return;
+    }
     console.log("legacy localhost is not running");
     return;
   }
-  if (!isProcessAlive(pid)) {
-    rmSync(layout.pidFile, { force: true });
-    console.log(`removed stale pid file for pid ${pid}`);
-    return;
-  }
-  process.kill(pid, "SIGTERM");
-  await waitForProcessExit(pid, 15_000);
+  process.kill(managedProcess.pid, "SIGTERM");
+  await waitForProcessExit(managedProcess.pid, 15_000);
   rmSync(layout.pidFile, { force: true });
-  console.log(`stopped legacy localhost pid ${pid}`);
+  console.log(`stopped legacy localhost pid ${managedProcess.pid}`);
 }
 
 async function status(layout) {
-  const pid = readPid(layout.pidFile);
+  const managedProcess = resolveManagedPid(layout);
+  const pidFilePid = readPid(layout.pidFile);
+  const listenerPid = findListenerPid(layout.port);
   const javaHome = safeResolveJava8Home(layout);
-  const loginProbe = await probeHttp(`http://${layout.host}:${layout.port}/users/loginform`);
+  const baseUrl = `http://${layout.host}:${layout.port}`;
+  const loginProbe = await probeHttp(`${baseUrl}/users/loginform`);
+  const secretProbe = await probeSecretBootstrap(`${baseUrl}/secret`);
+  const secretRotated = hasRotatedSecret(layout) || secretProbe.complete;
   console.log(
     JSON.stringify(
       {
@@ -477,18 +508,27 @@ async function status(layout) {
         instance: layout.instance,
         javaHome,
         loginProbe,
+        listenerManaged: listenerPid
+          ? commandMatchesLayout(readProcessCommand(listenerPid), layout)
+          : false,
+        listenerPid,
         logFile: layout.logFile,
+        managedPid: managedProcess?.pid ?? null,
+        managedPidSource: managedProcess?.source ?? null,
+        managedRunning: Boolean(managedProcess),
         parityContentSeedFile: layout.parityContentSeedFile,
         parityContentSeeded: existsSync(layout.parityContentSeedFile),
         parityFoundationSeedFile: layout.parityFoundationSeedFile,
         parityFoundationSeeded: existsSync(layout.parityFoundationSeedFile),
-        pid,
-        pidAlive: pid ? isProcessAlive(pid) : false,
+        pid: managedProcess?.pid ?? null,
+        pidAlive: Boolean(managedProcess),
+        pidFilePid,
         port: layout.port,
         prepared: existsSync(layout.metadataFile),
-        running: pid ? isProcessAlive(pid) : false,
-        secretRotated: hasRotatedSecret(layout),
-        url: `http://${layout.host}:${layout.port}`,
+        running: Boolean(managedProcess) || loginProbe.ok,
+        secretProbe,
+        secretRotated,
+        url: baseUrl,
       },
       null,
       2,
@@ -548,11 +588,7 @@ async function seedParityFoundation(layout, options) {
   const adminPassword = stringValue(options.adminPassword, defaultAdminPassword);
   const baseUrl = `http://${layout.host}:${layout.port}`;
   await waitForHttp(`${baseUrl}/users/loginform`, 30_000);
-  if (!hasRotatedSecret(layout)) {
-    throw new Error(
-      "The legacy secret has not rotated yet. Run seed-admin and restart the instance before seeding parity foundation data.",
-    );
-  }
+  await assertBootstrapReady(layout, baseUrl);
 
   const report = {
     baseUrl,
@@ -566,10 +602,6 @@ async function seedParityFoundation(layout, options) {
   };
   const browser = await chromium.launch({ headless: true });
   try {
-    for (const user of parityFoundationUsers) {
-      report.users.push(await ensureParityFoundationUser(browser, baseUrl, user));
-    }
-
     const adminSession = await createAuthenticatedSession(browser, baseUrl, {
       loginId: defaultAdminLoginId,
       password: adminPassword,
@@ -581,55 +613,110 @@ async function seedParityFoundation(layout, options) {
         );
       }
       for (const member of parityFoundationOrganizationMembers) {
+        if (!report.users.some((entry) => entry.loginId === member.loginId)) {
+          const organizationMemberPath = `/organizations/${member.organizationName}/members`;
+          await adminSession.page.goto(`${baseUrl}${organizationMemberPath}`, {
+            timeout: 30_000,
+            waitUntil: "networkidle",
+          });
+          if (!(await listContainsUserId(adminSession.page, ".member-id", member.loginId))) {
+            const memberUser =
+              parityFoundationUsers.find((entry) => entry.loginId === member.loginId) ?? {
+                email: `${member.loginId}@example.com`,
+                loginId: member.loginId,
+                name: member.loginId,
+                password: member.loginId,
+              };
+            report.users.push(await ensureParityFoundationUser(browser, baseUrl, memberUser));
+          }
+        }
         report.organizationMembers.push(
           await ensureParityFoundationOrganizationMember(adminSession.page, baseUrl, member),
         );
       }
-    } finally {
-      await adminSession.close();
-    }
 
-    const actorSessions = new Map();
-    try {
       for (const project of parityFoundationProjects) {
+        const projectPath = `/${project.owner}/${project.name}`;
+        if (await legacyRouteExists(adminSession.page, `${baseUrl}${projectPath}`)) {
+          report.projects.push({
+            created: false,
+            name: project.name,
+            owner: project.owner,
+            path: projectPath,
+            projectScope: project.projectScope,
+            type: "project",
+            vcs: project.vcs,
+          });
+          if (project.actorLoginId !== defaultAdminLoginId) {
+            report.users.push({
+              authenticationVerified: false,
+              created: false,
+              loginId: project.actorLoginId,
+              path: `/${project.actorLoginId}`,
+              type: "user",
+            });
+          }
+          continue;
+        }
+
         const actorPassword =
           project.actorLoginId === defaultAdminLoginId ? adminPassword : project.actorPassword;
-        const sessionKey = `${project.actorLoginId}:${actorPassword}`;
-        let session = actorSessions.get(sessionKey);
-        if (!session) {
-          session = await createAuthenticatedSession(browser, baseUrl, {
-            loginId: project.actorLoginId,
-            password: actorPassword,
-          });
-          actorSessions.set(sessionKey, session);
+        if (project.actorLoginId !== defaultAdminLoginId) {
+          const actorUser =
+            parityFoundationUsers.find((entry) => entry.loginId === project.actorLoginId) ?? {
+              email: `${project.actorLoginId}@example.com`,
+              loginId: project.actorLoginId,
+              name: project.actorLoginId,
+              password: actorPassword,
+            };
+          report.users.push(await ensureParityFoundationUser(browser, baseUrl, actorUser));
         }
-        report.projects.push(
-          await ensureParityFoundationProject(session.page, baseUrl, project),
-        );
+        const actorSession = await createAuthenticatedSession(browser, baseUrl, {
+          loginId: project.actorLoginId,
+          password: actorPassword,
+        });
+        try {
+          report.projects.push(
+            await ensureParityFoundationProject(actorSession.page, baseUrl, project),
+          );
+        } finally {
+          await actorSession.close();
+        }
       }
-    } finally {
-      for (const session of actorSessions.values()) {
-        await session.close();
-      }
-    }
 
-    const memberSession = await createAuthenticatedSession(browser, baseUrl, {
-      loginId: defaultAdminLoginId,
-      password: adminPassword,
-    });
-    try {
+      for (const user of parityFoundationUsers) {
+        if (report.users.some((entry) => entry.loginId === user.loginId)) {
+          continue;
+        }
+        const adoptedExisting =
+          report.organizationMembers.some((entry) => entry.loginId === user.loginId) ||
+          report.projectMembers.some((entry) => entry.loginId === user.loginId) ||
+          report.projects.some((entry) => entry.owner === user.loginId);
+        if (adoptedExisting) {
+          report.users.push({
+            authenticationVerified: false,
+            created: false,
+            loginId: user.loginId,
+            path: `/${user.loginId}`,
+            type: "user",
+          });
+          continue;
+        }
+        report.users.push(await ensureParityFoundationUser(browser, baseUrl, user));
+      }
+
       for (const member of parityFoundationProjectMembers) {
         report.projectMembers.push(
-          await ensureParityFoundationProjectMember(memberSession.page, baseUrl, member),
+          await ensureParityFoundationProjectMember(adminSession.page, baseUrl, member),
         );
       }
       report.rootChecks = await verifyParityFoundationRoots(
-        memberSession.page,
+        adminSession.page,
         baseUrl,
         parityFoundationRootPaths,
       );
     } finally {
-      await memberSession.close();
+      await adminSession.close();
     }
 
     writeFileSync(layout.parityFoundationSeedFile, JSON.stringify(report, null, 2), "utf8");
@@ -644,11 +731,7 @@ async function seedParityContent(layout, options) {
   const adminPassword = stringValue(options.adminPassword, defaultAdminPassword);
   const baseUrl = `http://${layout.host}:${layout.port}`;
   await waitForHttp(`${baseUrl}/users/loginform`, 30_000);
-  if (!hasRotatedSecret(layout)) {
-    throw new Error(
-      "The legacy secret has not rotated yet. Run seed-admin and restart the instance before seeding parity content data.",
-    );
-  }
+  await assertBootstrapReady(layout, baseUrl);
 
   const report = {
     baseUrl,
@@ -665,10 +748,6 @@ async function seedParityContent(layout, options) {
   };
   const browser = await chromium.launch({ headless: true });
   try {
-    for (const user of parityContentUsers) {
-      report.users.push(await ensureParityFoundationUser(browser, baseUrl, user));
-    }
-
     const adminSession = await createAuthenticatedSession(browser, baseUrl, {
       loginId: defaultAdminLoginId,
       password: adminPassword,
@@ -685,46 +764,103 @@ async function seedParityContent(layout, options) {
       );
       report.issue = await ensureParityContentIssue(adminSession.page, baseUrl, parityContentIssue);
       report.post = await ensureParityContentPost(adminSession.page, baseUrl, parityContentPost);
+
+      const issuePath = report.issue?.path ?? parityContentIssue.path;
+      if (await legacyPathContainsTexts(adminSession.page, baseUrl, issuePath, [
+        parityContentIssueComment.body,
+        "Bob Park",
+      ])) {
+        report.issueComment = {
+          body: parityContentIssueComment.body,
+          created: false,
+          issuePath,
+          loginId: parityContentIssueComment.loginId,
+          type: "issue-comment",
+        };
+        report.users.push({
+          authenticationVerified: false,
+          created: false,
+          loginId: parityContentIssueComment.loginId,
+          path: `/${parityContentIssueComment.loginId}`,
+          type: "user",
+        });
+      } else {
+        report.users.push(await ensureParityFoundationUser(browser, baseUrl, {
+          ...parityContentUsers[0],
+          loginId: parityContentIssueComment.loginId,
+          password: parityContentIssueComment.password,
+        }));
+        const bobSession = await createAuthenticatedSession(browser, baseUrl, {
+          loginId: parityContentIssueComment.loginId,
+          password: parityContentIssueComment.password,
+        });
+        try {
+          report.issueComment = await ensureParityContentIssueComment(bobSession.page, baseUrl, {
+            ...parityContentIssueComment,
+            issuePath,
+          });
+        } finally {
+          await bobSession.close();
+        }
+      }
+
+      const postPath = report.post?.path ?? parityContentPost.path;
+      if (await legacyPathContainsTexts(adminSession.page, baseUrl, postPath, [
+        parityContentPostComment.body,
+        "Alice Kim",
+      ])) {
+        report.postComment = {
+          body: parityContentPostComment.body,
+          created: false,
+          loginId: parityContentPostComment.loginId,
+          postPath,
+          type: "post-comment",
+        };
+      } else {
+        const aliceSession = await createAuthenticatedSession(browser, baseUrl, {
+          loginId: parityContentPostComment.loginId,
+          password: parityContentPostComment.password,
+        });
+        try {
+          report.postComment = await ensureParityContentPostComment(aliceSession.page, baseUrl, {
+            ...parityContentPostComment,
+            postPath,
+          });
+        } finally {
+          await aliceSession.close();
+        }
+      }
+
+      for (const watcher of parityContentProjectWatchers) {
+        const watchersPath = `/${watcher.owner}/${watcher.projectName}/watchers`;
+        if (await legacyPathContainsTexts(adminSession.page, baseUrl, watchersPath, [
+          watcher.displayName,
+        ])) {
+          report.watchers.push({
+            created: false,
+            displayName: watcher.displayName,
+            loginId: watcher.loginId,
+            owner: watcher.owner,
+            path: watchersPath,
+            projectName: watcher.projectName,
+            type: "watcher",
+          });
+          continue;
+        }
+        const session = await createAuthenticatedSession(browser, baseUrl, {
+          loginId: watcher.loginId,
+          password: watcher.password ?? adminPassword,
+        });
+        try {
+          report.watchers.push(
+            await ensureParityContentProjectWatcher(session.page, baseUrl, watcher),
+          );
+        } finally {
+          await session.close();
+        }
+      }
     } finally {
       await adminSession.close();
-    }
-
-    const bobSession = await createAuthenticatedSession(browser, baseUrl, {
-      loginId: parityContentIssueComment.loginId,
-      password: parityContentIssueComment.password,
-    });
-    try {
-      report.issueComment = await ensureParityContentIssueComment(bobSession.page, baseUrl, {
-        ...parityContentIssueComment,
-        issuePath: report.issue?.path ?? parityContentIssue.path,
-      });
-    } finally {
-      await bobSession.close();
-    }
-
-    const aliceSession = await createAuthenticatedSession(browser, baseUrl, {
-      loginId: parityContentPostComment.loginId,
-      password: parityContentPostComment.password,
-    });
-    try {
-      report.postComment = await ensureParityContentPostComment(aliceSession.page, baseUrl, {
-        ...parityContentPostComment,
-        postPath: report.post?.path ?? parityContentPost.path,
-      });
-    } finally {
-      await aliceSession.close();
-    }
-
-    for (const watcher of parityContentProjectWatchers) {
-      const session = await createAuthenticatedSession(browser, baseUrl, {
-        loginId: watcher.loginId,
-        password: watcher.password ?? adminPassword,
-      });
-      try {
-        report.watchers.push(await ensureParityContentProjectWatcher(session.page, baseUrl, watcher));
-      } finally {
-        await session.close();
-      }
     }
 
     const verifySession = await createAuthenticatedSession(browser, baseUrl, {
@@ -1607,6 +1743,14 @@ async function legacyRouteExists(page, url) {
   return Boolean(response?.ok());
 }
 
+async function legacyPathContainsTexts(page, baseUrl, path, texts) {
+  await page.goto(`${baseUrl}${path}`, {
+    timeout: 30_000,
+    waitUntil: "domcontentloaded",
+  });
+  return await pageIncludesAllTexts(page, texts);
+}
+
 function readBundledFile(layout, name) {
   const jarPath = resolve(layout.installDir, "lib", `yona.yona-${layout.version}.jar`);
   const result = spawnSync("unzip", ["-p", jarPath, name], {
@@ -1885,6 +2029,53 @@ async function probeHttp(url) {
   }
 }
 
+async function probeSecretBootstrap(url) {
+  try {
+    const response = await fetch(url, { redirect: "manual" });
+    const body = await response.text();
+    return {
+      ...classifySecretBootstrapResponse({ body, status: response.status }),
+      ok: response.ok,
+      url,
+    };
+  } catch (error) {
+    return {
+      active: false,
+      complete: false,
+      error: error instanceof Error ? error.message : String(error),
+      ok: false,
+      restartPending: false,
+      status: null,
+      url,
+    };
+  }
+}
+
+async function assertBootstrapReady(layout, baseUrl) {
+  if (hasRotatedSecret(layout)) {
+    return { source: "local-config" };
+  }
+
+  const secretProbe = await probeSecretBootstrap(`${baseUrl}/secret`);
+  if (secretProbe.active) {
+    throw new Error(
+      "The legacy first-run bootstrap is still active on /secret. Run seed-admin and restart the instance before seeding parity data.",
+    );
+  }
+  if (secretProbe.restartPending) {
+    throw new Error(
+      "The legacy first-run bootstrap has been submitted, but the server still needs a restart before seeding parity data.",
+    );
+  }
+  if (secretProbe.complete) {
+    return { secretProbe, source: "live-secret-probe" };
+  }
+
+  throw new Error(
+    "Could not confirm that the legacy bootstrap completed. Run seed-admin, restart the instance, or point the seed command at a fully initialized localhost legacy server.",
+  );
+}
+
 function sleep(ms) {
   return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
@@ -1911,6 +2102,77 @@ function readPid(pidFile) {
   return Number.parseInt(value, 10);
 }
 
+function resolveManagedPid(layout) {
+  const candidates = [
+    { path: layout.pidFile, source: "pid-file" },
+    { path: layout.runningPidFile, source: "RUNNING_PID" },
+  ];
+
+  for (const candidate of candidates) {
+    const pid = readPid(candidate.path);
+    if (!pid || !isProcessAlive(pid)) {
+      continue;
+    }
+    const command = readProcessCommand(pid);
+    if (!commandMatchesLayout(command, layout) || !commandMatchesPort(command, layout.port)) {
+      continue;
+    }
+    return { command, pid, source: candidate.source };
+  }
+
+  return null;
+}
+
+function cleanupStalePidFiles(layout) {
+  for (const path of [layout.pidFile, layout.runningPidFile]) {
+    const pid = readPid(path);
+    if (!pid) {
+      continue;
+    }
+    const command = readProcessCommand(pid);
+    if (!isProcessAlive(pid) || !commandMatchesLayout(command, layout) || !commandMatchesPort(command, layout.port)) {
+      rmSync(path, { force: true });
+    }
+  }
+}
+
+async function waitForManagedPid(layout, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const managedProcess = resolveManagedPid(layout);
+    if (managedProcess) {
+      return managedProcess;
+    }
+    await sleep(250);
+  }
+  return null;
+}
+
+function readProcessCommand(pid) {
+  const result = spawnSync("ps", ["-p", String(pid), "-o", "command="], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    return null;
+  }
+  const command = result.stdout.trim();
+  return command.length > 0 ? command : null;
+}
+
+function findListenerPid(port) {
+  const result = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    return null;
+  }
+  const pid = result.stdout
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .find(Boolean);
+  return pid ? Number.parseInt(pid, 10) : null;
+}
+
 function isProcessAlive(pid) {
   try {
     process.kill(pid, 0);
@@ -1926,6 +2188,52 @@ function hasRotatedSecret(layout) {
     return false;
   }
   return !readFileSync(applicationConfPath, "utf8").includes(defaultSecret);
+}
+
+export function classifySecretBootstrapResponse({ status, body }) {
+  const html = String(body ?? "");
+  const normalized = normalizeText(html);
+  const active =
+    /id=["']loginId["']/u.test(html) &&
+    /id=["']password["']/u.test(html) &&
+    /id=["']retypedPassword["']/u.test(html);
+  const restartPending = normalized.includes("Server needs to be restarted");
+  const complete =
+    restartPending ||
+    status === 404 ||
+    normalized.includes("User exists not") ||
+    normalized.includes("user exists not");
+
+  return {
+    active,
+    complete,
+    restartPending,
+    status,
+  };
+}
+
+export function commandMatchesLayout(command, layout) {
+  const normalizedCommand = String(command ?? "").trim().toLowerCase();
+  const installDir = String(layout.installDir ?? "").trim().toLowerCase();
+  const dataDir = String(layout.dataDir ?? "").trim().toLowerCase();
+
+  if (!normalizedCommand) {
+    return false;
+  }
+
+  return (
+    (installDir.length > 0 && normalizedCommand.includes(installDir)) ||
+    (dataDir.length > 0 && normalizedCommand.includes(dataDir))
+  );
+}
+
+export function commandMatchesPort(command, port) {
+  const normalizedCommand = String(command ?? "").trim().toLowerCase();
+  return normalizedCommand.includes(`-dhttp.port=${String(port).toLowerCase()}`);
+}
+
+if (import.meta.url === new URL(process.argv[1], "file://").href) {
+  await main();
 }
 
 function camelCase(value) {
