@@ -216,6 +216,24 @@ test("project issue detail uses route-owned timeline and comment hash links", as
   ).resolves.toBe("issue-hash-links");
 });
 
+test("project issue detail preserves legacy clickable right-pane index comments", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const issueHref = `${basePath}/admin/sample/issue/11`;
+  await mockProjectIssueDetail(page);
+
+  await page.goto(issueHref);
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "issue-index-comment-row";
+  });
+  await page.locator(".span-right-pane #comment-77.index-comment").click();
+  await expect(page).toHaveURL(`${issueHref}#comment-77`);
+  await expect(
+    page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).resolves.toBe("issue-index-comment-row");
+});
+
 test("project issue detail route uses shared markdown help and direct TanStack links", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",

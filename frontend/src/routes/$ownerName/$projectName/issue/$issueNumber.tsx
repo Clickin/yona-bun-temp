@@ -3232,6 +3232,7 @@ function IssueIndexComment({
   comment: IssueComment;
   currentUserLoginId: string;
 }) {
+  const router = useRouter();
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
@@ -3249,6 +3250,16 @@ function IssueIndexComment({
       className={`comment index-comment ${hasCurrentUserMention ? "mentioned" : ""} ${hasCurrentUserMentionInChild ? "mentionedInChild" : ""}`}
       id={`comment-${commentId}`}
       data-location={`#comment-${commentId}`}
+      onClick={(event) => {
+        const target = event.target;
+        if (
+          target instanceof Element &&
+          target.closest("a, button, input, textarea, select, label")
+        ) {
+          return;
+        }
+        void router.navigate({ to: ".", hash: commentHash });
+      }}
     >
       <div>
         <div id={`comment-body-${commentId}`}>
