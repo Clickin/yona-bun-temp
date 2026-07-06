@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -16,13 +17,26 @@ export const Route = createFileRoute("/sites/data")({
   component: SiteDataRoute,
 });
 
+function useLegacySiteDataDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.siteSetting");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
+
 function SiteDataRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteDataScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -32,6 +46,7 @@ function SiteDataRoute() {
 
 function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  useLegacySiteDataDocumentTitle(runtimeConfig);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
   const sessionBootstrapQuery = useQuery({
     queryFn: () => readSessionBootstrap(runtimeConfig),

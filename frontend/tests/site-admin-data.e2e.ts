@@ -14,7 +14,10 @@ const EXPECTED_DATA_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -124,6 +127,20 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/data`);
+  await expect(page).toHaveTitle("Site settings");
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/data`);
+  await expect.poll(() => new URL(page.url()).search).toBe("");
+  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  expect(
+    await page
+      .locator(".gnb-nav a[href]")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([basePath, `${basePath}/projects`, "https://github.com/yona-projects/yona/issues"]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".span10 h2")).toHaveText("Data");
   await expectSiteAdminSidebar(page, basePath);
