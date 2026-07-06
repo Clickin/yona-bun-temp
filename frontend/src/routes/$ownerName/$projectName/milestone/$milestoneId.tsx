@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
+import { RestApiError } from "../../../../api/rest-client";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectMilestone, ProjectMilestoneIssue, YonaLabel } from "../../../../api/types";
 import {
@@ -42,11 +43,16 @@ export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milest
 
 function ProjectMilestoneDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+          showLegacyProjectHeaderLinks
+        >
           <ProjectMilestoneDetailScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -77,7 +83,29 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     return <Outlet />;
   }
 
-  if (!projectQuery.data || !sessionQuery.data || !milestoneQuery.data?.milestone) {
+  if (!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending) {
+    return null;
+  }
+
+  const milestoneNotFound =
+    (milestoneQuery.error instanceof RestApiError && milestoneQuery.error.status === 404) ||
+    (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
+
+  if (milestoneNotFound) {
+    return (
+      <>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu
+          active="milestone"
+          basePath={runtimeConfig.basePath}
+          project={projectQuery.data}
+        />
+        <ProjectMilestoneNotFoundBody runtimeConfig={runtimeConfig} />
+      </>
+    );
+  }
+
+  if (!milestoneQuery.data?.milestone) {
     return null;
   }
 
@@ -114,6 +142,42 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         viewerIsProjectMember={viewerIsProjectMember}
       />
     </>
+  );
+}
+
+function ProjectMilestoneNotFoundBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${t("error.notfound")} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, t]);
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t("error.notfound.milestone")}</p>
+          <Link
+            to="/$ownerName/$projectName/milestones"
+            params={{ ownerName, projectName }}
+            className="ybtn ybtn-primary"
+          >
+            {t("button.list")}
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 

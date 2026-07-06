@@ -175,6 +175,13 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
   </div>
 </div>`;
 
+const EXPECTED_PROJECT_MILESTONE_DETAIL_NOT_FOUND_ERROR_WRAP = `
+<div class="error-wrap">
+  <i class="ico ico-err2"></i>
+  <p>Milestone does not exist</p>
+  <a class="ybtn ybtn-primary" href="__BASE_PATH__/admin/sample/milestones">List</a>
+</div>`;
+
 test("project milestone detail open state matches legacy milestone/view.scala.html whole route DOM", async ({
   page,
 }) => {
@@ -638,6 +645,60 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   expect(deleteRequests).toEqual(["DELETE"]);
 });
 
+test("project milestone detail 404 milestone API preserves the legacy project-scoped not-found shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestoneDetail(page, [], [], {
+    milestoneNotFound: true,
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestone/5?state=open#issues`);
+
+  await expect(page).toHaveTitle("Page not found - admin/sample");
+  await expect(page.locator(".page-wrap-outer > .project-page-wrap > .error-wrap")).toBeVisible();
+  await expect(page.locator(".milesion-wrap")).toHaveCount(0);
+  await expect(page.locator(".gnb-nav a[href$='/projects']")).toHaveText("List All");
+  await expect(
+    page.locator('.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]'),
+  ).toHaveText("Feedback");
+  await expect(
+    page.locator('.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]'),
+  ).toHaveAttribute("target", "_blank");
+  await expect(page.locator('.gnb-nav form[action$="/admin/sample/search"]')).toHaveCount(1);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('[data-toggle="search-scope"]')).toHaveCount(2);
+  expect(
+    await page
+      .locator('[data-toggle="search-scope"]')
+      .evaluateAll((nodes) => nodes.map((node) => node.textContent?.replace(/\s+/g, " ").trim())),
+  ).toEqual(["This Project", "All Projects"]);
+  expect(
+    await page.locator(".project-menu-gruop > li").evaluateAll((items) =>
+      items.map((item) => ({
+        active: item.classList.contains("active"),
+        count: item.querySelector(".project-menu-count")?.textContent?.trim() ?? "",
+        name: item.querySelector(".menu-name")?.textContent?.trim() ?? "",
+      })),
+    ),
+  ).toEqual(
+    expect.arrayContaining([
+      { active: false, count: "1", name: "Issue" },
+      { active: false, count: "1", name: "Pull request" },
+      { active: false, count: "2", name: "Review" },
+      { active: true, count: "", name: "Milestone" },
+      { active: false, count: "1", name: "Board" },
+    ]),
+  );
+  const errorWrapHtml = await page.locator(".error-wrap").evaluate((element) => element.outerHTML);
+  expect(await canonicalizeHtml(page, errorWrapHtml)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_MILESTONE_DETAIL_NOT_FOUND_ERROR_WRAP.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
 test("project milestone detail mass-update assignee avatar falls back for empty avatar URLs", async ({
   page,
 }) => {
@@ -1042,6 +1103,7 @@ async function mockProjectMilestoneDetail(
   deleteRequests: string[],
   overrides?: {
     massUpdateRequests?: unknown[];
+    milestoneNotFound?: boolean;
     milestone?: Record<string, unknown>;
     project?: Record<string, unknown>;
     session?: Record<string, unknown>;
@@ -1104,8 +1166,12 @@ async function mockProjectMilestoneDetail(
             userLabel: "Dev Member",
           },
         ],
+        openIssueCount: 1,
+        openPullRequestCount: 1,
         ownerName: "admin",
+        postCount: 1,
         projectName: "sample",
+        reviewCount: 2,
         vcs: "GIT",
         viewerCanUpdate: true,
         ...overrides?.project,
@@ -1118,6 +1184,20 @@ async function mockProjectMilestoneDetail(
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ redirectPath: "/admin/sample/milestones" }),
+      });
+      return;
+    }
+    if (overrides?.milestoneNotFound) {
+      await route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "milestone_not_found",
+            message: "Milestone does not exist",
+            status: 404,
+          },
+        }),
       });
       return;
     }
