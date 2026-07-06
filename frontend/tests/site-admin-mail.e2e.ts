@@ -1,5 +1,15 @@
 import { readFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
+
+interface SiteMailSubmitRequest {
+  body: {
+    body: string;
+    from: string;
+    subject: string;
+    to: string;
+  };
+  csrfToken: string | null;
+}
 
 const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
 <div class="unsupported hidden">
@@ -243,6 +253,61 @@ test("site admin mail renders legacy sended=true success state", async ({ page }
   await expect(page.locator(".span10 > .alert-error")).toHaveCount(0);
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
   await expect(page.locator('input[name="from"]')).toHaveValue("site-admin@yona.local");
+  expect(await mailSuccessStateOrder(page)).toEqual([
+    "title_area",
+    "alert alert-success",
+    "form-horizontal",
+  ]);
+});
+
+test("site admin mail submits the legacy payload and rerenders a blank compose form on success", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let submitRequest: SiteMailSubmitRequest | null = null;
+
+  await mockSiteAdminSession(page);
+  await mockMailOptions(page, {
+    notConfiguredItems: [],
+    sender: "site-admin@yona.local",
+    sent: false,
+  });
+  await page.route("**/api/v1/site/mail/test", async (route) => {
+    submitRequest = {
+      body: JSON.parse(route.request().postData() ?? "{}") as SiteMailSubmitRequest["body"],
+      csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+    };
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        notConfiguredItems: [],
+        sender: "site-admin@yona.local",
+        sent: true,
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/sites/mail`);
+  await page.fill('input[name="from"]', "custom-sender@example.com");
+  await page.fill('input[name="to"]', "recipient@example.com");
+  await page.fill('input[name="subject"]', "Legacy parity subject");
+  await page.fill('textarea[name="body"]', "Legacy parity body");
+  await page.click('#mailForm button[type="submit"]');
+
+  await expect(page.locator(".span10 > .alert-success")).toHaveText("Mail has been sent.");
+  expect(submitRequest).toEqual({
+    body: {
+      body: "Legacy parity body",
+      from: "custom-sender@example.com",
+      subject: "Legacy parity subject",
+      to: "recipient@example.com",
+    },
+    csrfToken: "csrf-site-mail",
+  });
+  await expect(page.locator('input[name="from"]')).toHaveValue("site-admin@yona.local");
+  await expect(page.locator('input[name="to"]')).toHaveValue("");
+  await expect(page.locator('input[name="subject"]')).toHaveValue("");
+  await expect(page.locator('textarea[name="body"]')).toHaveValue("");
   expect(await mailSuccessStateOrder(page)).toEqual([
     "title_area",
     "alert alert-success",
@@ -508,9 +573,10 @@ async function mailFormMetrics(page: Page) {
 }
 
 async function mockSiteAdminSession(page: Page) {
-  await page.route("**/api/v1/session", async (route) => {
+  const fulfillSession = async (route: Route) => {
     await route.fulfill({
       contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-site-mail" },
       body: JSON.stringify({
         actorId: "1",
         avatarUrl: "/assets/images/default-avatar-32.png",
@@ -524,7 +590,10 @@ async function mockSiteAdminSession(page: Page) {
         userLabel: "Site Boss",
       }),
     });
-  });
+  };
+
+  await page.route("**/api/v1/session", fulfillSession);
+  await page.route("**/api/auth/session", fulfillSession);
 }
 
 async function mockAvailableUpdate(page: Page) {

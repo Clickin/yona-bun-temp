@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   sendSiteMailRest,
@@ -155,12 +155,17 @@ function MailBody({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const mailOptions = siteMailOptionsQueryOptions(runtimeConfig);
+  const [formResetKey, setFormResetKey] = useState(0);
+
   const mutation = useMutation({
     mutationFn: async (input: { body: string; from: string; subject: string; to: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return sendSiteMailRest(runtimeConfig, csrfToken, input);
     },
-    onSuccess: (data) => queryClient.setQueryData(mailOptions.queryKey, data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(mailOptions.queryKey, data);
+      setFormResetKey((current) => current + 1);
+    },
   });
 
   const sent = sentBySearch || response?.sent === true || mutation.data?.sent === true;
@@ -195,6 +200,7 @@ function MailBody({
       ) : null}
       {response ? (
         <form
+          key={`${response.sender}:${formResetKey}`}
           id="mailForm"
           method="post"
           action={prefixBasePath(runtimeConfig.basePath, "/sites/mail")}
