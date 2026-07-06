@@ -945,7 +945,28 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page).toHaveTitle("Release note");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("admin");
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveText("sample");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+  expect(await projectShellLinkActiveMarkers(page)).toEqual([]);
   await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
   await expect(page.locator("#post-body-3 .markdown-wrap")).toContainText("Post markdown");
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
@@ -960,6 +981,13 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     "multiple",
     "",
   );
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  expect(routeSource).toContain("projectSearchScope={{ ownerName, projectName }}");
+  expect(routeSource).toContain("function useLegacyPostDetailDocumentTitle");
+  expect(routeSource).toContain("document.title = postTitle;");
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -971,6 +999,7 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     actionRowTextAlign: "right",
     attachmentTemplateCount: 0,
     bodyDisplay: "block",
+    boardTopAtOrBelowMenu: true,
     bodyWidth: 1260,
     commentUploadAttachedFilesClass: "attached-files unstyled",
     commentUploadClass: "upload-wrap content-footer",
@@ -979,13 +1008,29 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     contentAllowedUpdate: "true",
     contentLineHeight: "22.165px",
     deleteUri: `${basePath}/admin/sample/post/3`,
+    documentTitle: "Release note",
     footerKeyboardTarget: "#helpKeys",
+    gnbClassName: "gnb-outer project-header",
+    gnbSearchAction: `${basePath}/admin/sample/search`,
+    gnbSearchScopeActions: [`${basePath}/admin/sample/search`, `${basePath}/search`],
+    gnbSearchScopeTitle: "This Project",
     headerMarginBottom: "15px",
     leftPaneWidth: 938,
     newPostHref: `${basePath}/admin/sample/postform`,
     postBodyId: "post-body-3",
     postEditorId: "post-3",
+    projectHeaderProjectName: "sample",
+    projectHeaderBottomBelowNavbar: true,
+    projectMenuActiveCount: 1,
+    projectMenuActiveText: "Board",
+    projectMenuTopAtOrBelowHeader: true,
     rightPaneWidth: 295,
+    scopeBottomWithinNavbar: true,
+    scopeTopWithinNavbar: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
     titleFontSize: "18px",
     watchButtonHeight: 30,
   });
@@ -2280,6 +2325,12 @@ async function boardTwoColumnMetrics(page: Page) {
 
 async function boardDetailMetrics(page: Page) {
   return page.locator(".project-page-wrap.board-view").evaluate((element) => {
+    const navbar = document.querySelector(".gnb-outer") as HTMLElement;
+    const searchForm = document.querySelector(".gnb-search-form") as HTMLFormElement;
+    const scope = document.querySelector("#gnb-search-scope-title") as HTMLElement;
+    const searchBox = document.querySelector(".gnb-search-form .search-box.select") as HTMLElement;
+    const projectHeader = document.querySelector(".project-header-outer") as HTMLElement;
+    const projectMenu = document.querySelector(".project-menu-outer") as HTMLElement;
     const header = element.querySelector(".board-header.issue") as HTMLElement;
     const title = header.querySelector(".title") as HTMLElement;
     const body = element.querySelector(".board-body") as HTMLElement;
@@ -2302,10 +2353,17 @@ async function boardDetailMetrics(page: Page) {
     const bodyStyle = window.getComputedStyle(body);
     const actionStyle = window.getComputedStyle(actionRow);
     const contentStyle = window.getComputedStyle(content);
+    const navbarRect = navbar.getBoundingClientRect();
+    const scopeRect = scope.getBoundingClientRect();
+    const searchRect = searchBox.getBoundingClientRect();
+    const projectHeaderRect = projectHeader.getBoundingClientRect();
+    const projectMenuRect = projectMenu.getBoundingClientRect();
+    const boardRect = element.getBoundingClientRect();
 
     return {
       actionRowTextAlign: actionStyle.textAlign,
       attachmentTemplateCount: templates.length,
+      boardTopAtOrBelowMenu: Math.round(boardRect.top) >= Math.round(projectMenuRect.bottom),
       bodyDisplay: bodyStyle.display,
       bodyWidth: Math.round(body.getBoundingClientRect().width),
       commentUploadAttachedFilesClass: commentUploadAttachedFiles.className,
@@ -2315,13 +2373,38 @@ async function boardDetailMetrics(page: Page) {
       contentAllowedUpdate: content.getAttribute("data-allowed-update"),
       contentLineHeight: contentStyle.lineHeight,
       deleteUri: deleteButton?.getAttribute("data-request-uri") ?? null,
+      documentTitle: document.title,
       footerKeyboardTarget: keymap?.getAttribute("data-target") ?? null,
+      gnbClassName: navbar.className,
+      gnbSearchAction: searchForm.getAttribute("action"),
+      gnbSearchScopeActions: Array.from(
+        document.querySelectorAll(".gnb-search-form [data-toggle='search-scope']"),
+      ).map((searchScope) => searchScope.getAttribute("data-action") ?? ""),
+      gnbSearchScopeTitle: scope.textContent?.trim() ?? null,
       headerMarginBottom: headerStyle.marginBottom,
       leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),
       newPostHref: newPost?.getAttribute("href") ?? null,
       postBodyId: element.querySelector("#post-body-3")?.id ?? null,
       postEditorId: element.querySelector("#post-3")?.id ?? null,
+      projectHeaderProjectName:
+        projectHeader.querySelector(".project-breadcrumb .project-name a")?.textContent?.trim() ??
+        null,
+      projectHeaderBottomBelowNavbar:
+        Math.round(projectHeaderRect.bottom) > Math.round(navbarRect.bottom),
+      projectMenuActiveCount: projectMenu.querySelectorAll(".project-menu-gruop li.active").length,
+      projectMenuActiveText:
+        projectMenu
+          .querySelector(".project-menu-gruop li.active .menu-name")
+          ?.textContent?.trim() ?? null,
+      projectMenuTopAtOrBelowHeader:
+        Math.round(projectMenuRect.top) >= Math.round(projectHeaderRect.bottom),
       rightPaneWidth: Math.round(rightPane.getBoundingClientRect().width),
+      scopeBottomWithinNavbar: Math.round(scopeRect.bottom) <= Math.round(navbarRect.bottom),
+      scopeTopWithinNavbar: Math.round(scopeRect.top) >= Math.round(navbarRect.top),
+      searchBottomWithinNavbar: Math.round(searchRect.bottom) <= Math.round(navbarRect.bottom),
+      searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
+      searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),
+      searchTopWithinNavbar: Math.round(searchRect.top) >= Math.round(navbarRect.top),
       titleFontSize: titleStyle.fontSize,
       watchButtonHeight: Math.round(watchButton.getBoundingClientRect().height),
     };

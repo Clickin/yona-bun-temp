@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, type FormEvent, useState } from "react";
+import { Fragment, type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -52,16 +52,35 @@ export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber"
 
 function ProjectPostDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+        >
           <ProjectPostDetailScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
+}
+
+function useLegacyPostDetailDocumentTitle(runtimeConfig: RuntimeConfig, postTitle: string | null) {
+  useEffect(() => {
+    if (typeof document === "undefined" || !postTitle) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = postTitle;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [postTitle, runtimeConfig.siteName]);
 }
 
 function ProjectPostDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -73,6 +92,10 @@ function ProjectPostDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   );
   const postQuery = useQuery(
     readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
+  );
+  useLegacyPostDetailDocumentTitle(
+    runtimeConfig,
+    !isEditChildRoute && postQuery.data ? stringField(postQuery.data.title) : null,
   );
 
   if (!projectQuery.data || !postQuery.data) {
