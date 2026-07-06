@@ -146,6 +146,10 @@ function ProjectMembersBody({
     userId: number;
   }>(null);
   const normalizedLoginQuery = loginIdValue.trim();
+  const mentionStylesheetHref = prefixBasePath(
+    runtimeConfig.basePath,
+    "/assets/javascripts/lib/mentionjs/mention.css",
+  );
   const memberSearchQuery = useQuery({
     enabled: booleanField(members.viewerCanUpdate) && normalizedLoginQuery.length > 0,
     queryFn: () => searchLegacyMemberUsers(runtimeConfig, normalizedLoginQuery),
@@ -445,12 +449,7 @@ function ProjectMembersBody({
           ) : null}
         </div>
       </div>
-      <link
-        rel="stylesheet"
-        type="text/css"
-        media="screen"
-        href="/assets/javascripts/lib/mentionjs/mention.css"
-      />
+      <link rel="stylesheet" type="text/css" media="screen" href={mentionStylesheetHref} />
     </>
   );
 }

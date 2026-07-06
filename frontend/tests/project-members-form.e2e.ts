@@ -27,11 +27,13 @@ const EXPECTED_PROJECT_MEMBERS = `
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/admin/sample/member/2/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
+<link rel="stylesheet" type="text/css" media="screen" href="__MENTION_STYLESHEET_HREF__">
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
 test("project members matches legacy project/members.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mentionStylesheetHref = legacyMentionStylesheetHref(basePath);
   await mockProjectMembers(page);
 
   await page.goto(`${basePath}/admin/sample/members`);
@@ -40,7 +42,13 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   await expect(page.locator("legend")).toContainText("Sign-up request (1)");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_MEMBERS.replaceAll("__BASE_PATH__", basePath).replaceAll(
+        "__MENTION_STYLESHEET_HREF__",
+        mentionStylesheetHref,
+      ),
+    ),
   );
   expect(await memberPageMetrics(page)).toEqual({
     addInputWidth: 384,
@@ -56,6 +64,31 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
     memberSettingOffsetTop: 15,
     ownerPadding: 5,
   });
+});
+
+test("project members mention stylesheet keeps the configured base path", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mentionStylesheetHref = legacyMentionStylesheetHref(basePath);
+  await mockProjectMembers(page);
+
+  const mentionRequestPromise = page.waitForRequest(
+    (request) =>
+      request.resourceType() === "stylesheet" && request.url().endsWith(mentionStylesheetHref),
+  );
+
+  await page.goto(`${basePath}/admin/sample/members`);
+
+  const mentionRequest = await mentionRequestPromise;
+  await expect(page.locator(`link[href="${mentionStylesheetHref}"]`)).toHaveAttribute(
+    "media",
+    "screen",
+  );
+  expect(new URL(mentionRequest.url()).pathname).toBe(mentionStylesheetHref);
+  const source = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
+  expect(source).toMatch(
+    /const mentionStylesheetHref = prefixBasePath\(\s*runtimeConfig\.basePath,\s*"\/assets\/javascripts\/lib\/mentionjs\/mention\.css",?\s*\);/,
+  );
+  expect(source).not.toContain('href="/assets/javascripts/lib/mentionjs/mention.css"');
 });
 
 test("project members focuses add member input on load like legacy member module", async ({
@@ -1202,6 +1235,12 @@ function legacyMemberSearchInfo(userLabel: string, loginId: string) {
   return `<img class='mention_image' src='/assets/images/default-avatar-128.png'><b class='mention_name'>${userLabel}</b><span class='mention_username'> @${loginId}</span>`;
 }
 
+function legacyMentionStylesheetHref(basePath: string) {
+  return basePath === "/"
+    ? "/assets/javascripts/lib/mentionjs/mention.css"
+    : `${basePath}/assets/javascripts/lib/mentionjs/mention.css`;
+}
+
 function expectedProjectMembersErrorScreen({
   activeMenu,
   basePath,
@@ -1288,7 +1327,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
