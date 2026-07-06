@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { siteUpdateQueryOptions, type SiteUpdateResponse } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -22,7 +23,7 @@ function SiteUpdateRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteUpdateScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -32,6 +33,7 @@ function SiteUpdateRoute() {
 
 function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const query = useQuery(siteUpdateQueryOptions(runtimeConfig));
+  useLegacySiteUpdateDocumentTitle(runtimeConfig);
 
   return (
     <>
@@ -150,4 +152,17 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
 function LegacyMessage({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
   return <>{t(messageKey)}</>;
+}
+
+function useLegacySiteUpdateDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.siteSetting");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
 }
