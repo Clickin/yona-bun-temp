@@ -17,7 +17,10 @@ const EXPECTED_POST_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -150,6 +153,20 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   });
 
   await page.goto(`${basePath}/sites/postList`);
+  await expect(page).toHaveTitle("Site settings");
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
+  await expect.poll(() => new URL(page.url()).search).toBe("");
+  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  expect(
+    await page
+      .locator(".gnb-nav a[href]")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([basePath, `${basePath}/projects`, "https://github.com/yona-projects/yona/issues"]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
   await expect(page.locator(".site-setting-nav a")).toHaveText([
@@ -188,6 +205,65 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     { ariaCurrent: null, className: null, dataStatus: null, text: "Software Update" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
   ]);
+  const shellBoxes = await page.evaluate(() => {
+    const navbar = document.querySelector(".gnb-outer");
+    const searchForm = document.querySelector('form[name="gnb-search-form"]');
+    const listAllLink = document.querySelector('.gnb-nav a[href$="/projects"]');
+    const feedbackLink = document.querySelector(
+      '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
+    );
+    if (
+      !(navbar instanceof HTMLElement) ||
+      !(searchForm instanceof HTMLElement) ||
+      !(listAllLink instanceof HTMLElement) ||
+      !(feedbackLink instanceof HTMLElement)
+    ) {
+      return null;
+    }
+
+    const navbarRect = navbar.getBoundingClientRect();
+    const searchFormRect = searchForm.getBoundingClientRect();
+    const listAllRect = listAllLink.getBoundingClientRect();
+    const feedbackRect = feedbackLink.getBoundingClientRect();
+
+    return {
+      feedback: {
+        bottom: feedbackRect.bottom,
+        left: feedbackRect.left,
+        right: feedbackRect.right,
+        top: feedbackRect.top,
+      },
+      listAll: {
+        bottom: listAllRect.bottom,
+        left: listAllRect.left,
+        right: listAllRect.right,
+        top: listAllRect.top,
+      },
+      navbar: {
+        bottom: navbarRect.bottom,
+        left: navbarRect.left,
+        right: navbarRect.right,
+        top: navbarRect.top,
+      },
+      searchForm: {
+        bottom: searchFormRect.bottom,
+        left: searchFormRect.left,
+        right: searchFormRect.right,
+        top: searchFormRect.top,
+      },
+    };
+  });
+  expect(shellBoxes).not.toBeNull();
+  expect(shellBoxes!.listAll.left).toBeGreaterThan(shellBoxes!.navbar.left);
+  expect(shellBoxes!.listAll.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.listAll.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.feedback.left).toBeGreaterThan(shellBoxes!.listAll.right);
+  expect(shellBoxes!.feedback.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.feedback.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.searchForm.left).toBeGreaterThanOrEqual(shellBoxes!.feedback.right);
+  expect(shellBoxes!.searchForm.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
+  expect(shellBoxes!.searchForm.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
+  expect(shellBoxes!.searchForm.right).toBeLessThanOrEqual(shellBoxes!.navbar.right);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("alt", /.*/);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("width", /.*/);
   await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute(
@@ -460,6 +536,8 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain('document.title = t("title.siteSetting");');
   expect(source).toContain("const legacyPaginationLinkProps = {");
   expect(source).toContain("explicitUndefined: true");
   expect(source).toContain('"aria-current": undefined');

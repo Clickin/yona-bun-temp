@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
-type PostListSearch = {
-  pageNum: number;
+type PostListRouteSearch = {
+  pageNum?: number;
 };
 
 const legacySiteSidebarLinkProps = {
@@ -19,13 +20,29 @@ const legacyPaginationLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+const legacySitePostListSidebarSearch = {
+  __legacySitePostListSidebarActiveMarker: "inactive",
+};
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
-  validateSearch: (search: Record<string, unknown>): PostListSearch => ({
-    pageNum: search.pageNum ? Number(search.pageNum) || 1 : 1,
+  validateSearch: (search: Record<string, unknown>): PostListRouteSearch => ({
+    pageNum: search.pageNum ? Number(search.pageNum) || 1 : undefined,
   }),
 });
+
+function useLegacySitePostListDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.siteSetting");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
 
 function SitePostListRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -33,7 +50,7 @@ function SitePostListRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SitePostListScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -43,7 +60,9 @@ function SitePostListRoute() {
 
 function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { pageNum } = Route.useSearch();
-  const query = useQuery(sitePostsQueryOptions(runtimeConfig, { page: pageNum }));
+  const currentPage = pageNum ?? 1;
+  useLegacySitePostListDocumentTitle(runtimeConfig);
+  const query = useQuery(sitePostsQueryOptions(runtimeConfig, { page: currentPage }));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
@@ -77,7 +96,7 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               </ul>
 
               <PostListPagination
-                currentPage={query.data?.page ?? pageNum}
+                currentPage={query.data?.page ?? currentPage}
                 totalPages={query.data?.totalPages ?? 0}
               />
             </div>
@@ -192,7 +211,14 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
         </Link>
       </li>
       <li className="active">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/postList">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          activeProps={{}}
+          data-status={undefined}
+          mask={{ to: "/sites/postList" }}
+          search={legacySitePostListSidebarSearch}
+          to="/sites/postList"
+        >
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
