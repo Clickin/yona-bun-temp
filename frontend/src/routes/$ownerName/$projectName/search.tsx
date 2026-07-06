@@ -412,6 +412,7 @@ function ProjectSearchResultList({
                 {snippet.truncated ? " ....." : null}
               </p>
             ));
+            const legacyReplyTitle = titleClassName ? item.title : `Re) ${item.title}`;
 
             return (
               <li className="search-list-item" key={item.id}>
@@ -426,7 +427,7 @@ function ProjectSearchResultList({
                       {titleClassName ? (
                         <HighlightedProjectSearchText text={item.title} keyword={result.keyword} />
                       ) : (
-                        item.title
+                        legacyReplyTitle
                       )}
                     </Link>
                   </div>

@@ -170,6 +170,53 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   );
 });
 
+test("project issue comment search renders legacy partial_issue_comments.scala.html scoped result row", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page);
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue_comment`);
+
+  await expectProjectSearchShell(page);
+  await expectProjectSearchForm(page, basePath, "issue_comment", "sample");
+  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
+  await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments1");
+  await expect(page.locator(".search-result-title")).toHaveText(
+    "Found 1 result(s) in Issue Comments",
+  );
+  await expect(page.locator(".search-result-title strong")).toHaveText("1");
+  await expect(page.locator(".search-result-wrap > .search-list-wrap")).toHaveCount(1);
+
+  const row = page.locator(".search-result-wrap .search-list-item");
+  await expect(row).toHaveCount(1);
+  expect(
+    await row.evaluate((element) => Array.from(element.children).map((child) => child.className)),
+  ).toEqual(["title-wrap", "search-content", "search-meta-info"]);
+  await expect(row.locator(".title-wrap .post-id")).toHaveText("#11");
+
+  const titleLink = row.locator(".title-wrap a");
+  await expect(titleLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/11#comment-77`);
+  await expect(titleLink).toHaveText("Re) Fix sample issue");
+
+  await expect(row.locator(".search-content-body")).toHaveText("Sample comment");
+  await expect(row.locator(".search-meta-info .project-link.meta-item")).toHaveCount(0);
+
+  const author = row.locator(".search-meta-info a.meta-item");
+  await expect(author).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(author).toHaveAttribute("data-toggle", "tooltip");
+  await expect(author).toHaveAttribute("data-placement", "top");
+  await expect(author).toHaveAttribute("title", "dev");
+  await expect(author).toHaveText("Dev Member");
+  await expect(row.locator(".search-meta-info span.meta-item")).toHaveAttribute(
+    "title",
+    "Jul 1, 2026",
+  );
+  await expect(row.locator(".search-meta-info span.meta-item")).toHaveText("Jul 1, 2026");
+  await expect(page.locator(".search-result-wrap #pagination")).toBeEmpty();
+});
+
 test("project issue search pagination keeps legacy pageNum through SPA navigation", async ({
   page,
 }) => {
@@ -449,6 +496,7 @@ async function mockProjectSearch(
       return;
     }
     const hasIssueResult = keyword === "sample" && searchType === "issue";
+    const hasIssueCommentResult = keyword === "sample" && searchType === "issue_comment";
     const hasPagedIssueResult = keyword === "paged" && searchType === "issue";
     await route.fulfill({
       contentType: "application/json",
@@ -459,7 +507,7 @@ async function mockProjectSearch(
           projectName: "sample",
         },
         counts: {
-          issueComments: 0,
+          issueComments: hasIssueCommentResult ? 1 : 0,
           issues: hasIssueResult || hasPagedIssueResult ? 1 : 0,
           milestones: 0,
           postComments: 0,
@@ -469,23 +517,39 @@ async function mockProjectSearch(
           users: 0,
         },
         items:
-          hasIssueResult || hasPagedIssueResult
+          hasIssueResult || hasIssueCommentResult || hasPagedIssueResult
             ? [
                 {
                   authorLabel: "Dev Member",
                   authorLoginId: "dev",
                   createdLabel: "Jul 1, 2026",
-                  href: `${basePathFromRequest(route.request().url())}/admin/sample/issue/${
-                    hasPagedIssueResult ? 40 + pageNum : 11
-                  }`,
-                  id: hasPagedIssueResult ? `paged-${pageNum}` : "issue-11",
-                  number: hasPagedIssueResult ? String(40 + pageNum) : "11",
+                  href: hasIssueCommentResult
+                    ? `${basePathFromRequest(route.request().url())}/admin/sample/issue/11#comment-77`
+                    : `${basePathFromRequest(route.request().url())}/admin/sample/issue/${
+                        hasPagedIssueResult ? 40 + pageNum : 11
+                      }`,
+                  id: hasIssueCommentResult
+                    ? "issue-comment-77"
+                    : hasPagedIssueResult
+                      ? `paged-${pageNum}`
+                      : "issue-11",
+                  number: hasIssueCommentResult
+                    ? "11"
+                    : hasPagedIssueResult
+                      ? String(40 + pageNum)
+                      : "11",
                   ownerName: "admin",
                   projectName: "sample",
-                  snippets: [{ highlights: [], text: "Sample body", truncated: true }],
+                  snippets: [
+                    {
+                      highlights: [],
+                      text: hasIssueCommentResult ? "Sample comment" : "Sample body",
+                      truncated: !hasIssueCommentResult,
+                    },
+                  ],
                   state: "open",
                   title: hasPagedIssueResult ? `Paged issue ${pageNum}` : "Fix sample issue",
-                  type: "issue",
+                  type: hasIssueCommentResult ? "issue_comment" : "issue",
                   updatedLabel: "Jul 1, 2026",
                 },
               ]
@@ -496,7 +560,7 @@ async function mockProjectSearch(
         requestedSearchType: searchType,
         scope: "project",
         searchType,
-        totalCount: hasIssueResult || hasPagedIssueResult ? 1 : 0,
+        totalCount: hasIssueResult || hasIssueCommentResult || hasPagedIssueResult ? 1 : 0,
         totalPages: hasPagedIssueResult ? 3 : 1,
       }),
     });
