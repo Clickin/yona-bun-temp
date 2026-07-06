@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ORGANIZATION_SETTINGS_ROUTE_SOURCE =
   "src/routes/organizations/$organizationName/settingform.tsx";
+const LEGACY_ORGANIZATION_DEFAULT_LOGO = "/assets/images/group_default.png";
 
 const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
 <div class="unsupported hidden">
@@ -15,6 +16,9 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -63,10 +67,10 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')">
+<div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')">
   <div class="project-header-inner">
     <div class="project-header-wrap">
-      <div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div>
+      <div class="project-header-avatar"><img src="/assets/images/group_default.png"></div>
       <div class="project-breadcrumb-wrap">
         <div class="project-breadcrumb">
           <span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span>
@@ -102,7 +106,7 @@ const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
       <div class="bubble-wrap gray">
         <div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;">
           <div class="setting-box left">
-            <div class="logo-wrap" style="background-image:url('/assets/images/organization_default_logo.png')"></div>
+            <div class="logo-wrap" style="background-image:url('/assets/images/group_default.png')"></div>
             <div class="logo-desc">
               <ul class="unstyled descs">
                 <li><strong>Logo</strong></li>
@@ -141,6 +145,7 @@ test("organization settings form matches legacy organization/setting.scala.html 
   await mockOrganizationSettings(page);
 
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page).toHaveTitle("weblabs");
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#saveSetting")).toHaveAttribute(
     "action",
@@ -169,6 +174,66 @@ test("organization settings form matches legacy organization/setting.scala.html 
       EXPECTED_ORGANIZATION_SETTINGS_FORM.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization settings form pins the live localhost authenticated generic shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSettings(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+
+  await expect(page).toHaveTitle("weblabs");
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(0);
+  await expect(page.locator('form.gnb-search-form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    LEGACY_ORGANIZATION_DEFAULT_LOGO,
+  );
+
+  const shellMetrics = await page.evaluate(() => {
+    const navbar = document.querySelector("header.gnb-outer");
+    const searchForm = document.querySelector("form.gnb-search-form");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const projectHeader = document.querySelector(".project-header-outer");
+    const logoWrap = document.querySelector(".setting-box.left .logo-wrap");
+    if (!(navbar instanceof HTMLElement)) {
+      throw new Error("Missing header.gnb-outer");
+    }
+    if (!(searchForm instanceof HTMLElement)) {
+      throw new Error("Missing form.gnb-search-form");
+    }
+    if (!(searchBox instanceof HTMLElement)) {
+      throw new Error("Missing .gnb-search-form .search-box");
+    }
+    if (!(projectHeader instanceof HTMLElement)) {
+      throw new Error("Missing .project-header-outer");
+    }
+    if (!(logoWrap instanceof HTMLElement)) {
+      throw new Error("Missing .setting-box.left .logo-wrap");
+    }
+    return {
+      navbar: navbar.getBoundingClientRect(),
+      searchForm: searchForm.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+      logoWrapBackgroundImage: getComputedStyle(logoWrap).backgroundImage,
+      projectHeaderBackgroundImage: getComputedStyle(projectHeader).backgroundImage,
+    };
+  });
+
+  expect(shellMetrics.searchForm.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
+  expect(shellMetrics.searchForm.bottom).toBeLessThanOrEqual(shellMetrics.navbar.bottom);
+  expect(shellMetrics.searchBox.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
+  expect(shellMetrics.searchBox.bottom).toBeLessThanOrEqual(shellMetrics.navbar.bottom);
+  expect(shellMetrics.searchForm.right).toBeLessThanOrEqual(shellMetrics.navbar.right);
+  expect(shellMetrics.projectHeaderBackgroundImage).toContain("group_default.png");
+  expect(shellMetrics.logoWrapBackgroundImage).toContain("group_default.png");
 });
 
 test("organization settings form keeps legacy setting.scala.html layout metrics", async ({
@@ -376,6 +441,7 @@ test("organization settings breadcrumb source uses direct Link without Link prop
 
   expect(headerBreadcrumb).toContain("<Link");
   expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
+  expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).not.toContain("Parameters<typeof Link>");
   expect(source).not.toContain("as unknown as");
   expect(headerBreadcrumb).not.toContain(
@@ -644,7 +710,7 @@ async function mockOrganizationSettings(
       body: JSON.stringify({
         description: "Web labs group",
         id: 42,
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         organizationName: "weblabs",
         viewerCanUpdate: true,
       }),
@@ -679,7 +745,7 @@ async function mockOrganizationSettings(
       body: JSON.stringify({
         description: "Web labs group",
         id: 42,
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         organizationName: "weblabs",
         viewerCanUpdate: true,
       }),
@@ -727,7 +793,7 @@ function organizationContainerPayload() {
       },
     ],
     description: "Web labs group",
-    logoUrl: "/assets/images/organization_default_logo.png",
+    logoUrl: "",
     memberMembers: [],
     organizationName: "weblabs",
     viewerCanCreateProject: true,
@@ -742,7 +808,7 @@ function organizationAdminPayload() {
     deleteAllowed: true,
     enrollmentRequests: [],
     id: 42,
-    logoUrl: "/assets/images/organization_default_logo.png",
+    logoUrl: "",
     members: [
       {
         avatarUrl: "/assets/images/default-avatar-64.png",
