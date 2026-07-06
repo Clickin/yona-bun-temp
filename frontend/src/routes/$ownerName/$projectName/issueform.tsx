@@ -1,7 +1,7 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/tabindex-no-positive */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../api/types";
@@ -39,14 +39,44 @@ function ProjectIssueFormRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ ownerName, projectName }}
+        <ProjectIssueFormShell
+          ownerName={ownerName}
+          projectName={projectName}
           runtimeConfig={runtimeConfig}
         >
           <ProjectIssueFormScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        </ProjectIssueFormShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function ProjectIssueFormShell({
+  children,
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  children: ReactNode;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      {children}
+    </SiteLayoutShell>
   );
 }
 
@@ -57,6 +87,7 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   const legacySearch = legacyUrlSearch(locationHref);
   const parentIssueId = search.parentIssueId || stringSearch(legacySearch.get("parentIssueId"));
   const commentId = search.commentId || stringSearch(legacySearch.get("commentId"));
+  useProjectIssueFormDocumentTitle(runtimeConfig, ownerName, projectName);
 
   return (
     <ProjectIssueFormProjectScreen
@@ -67,6 +98,29 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
       runtimeConfig={runtimeConfig}
     />
   );
+}
+
+function useProjectIssueFormDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const newIssueTitle = t("issue.menu.new");
+
+  useEffect(() => {
+    const doc = globalThis["document"];
+    if (!doc) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    doc.title = `${newIssueTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      doc.title = siteName;
+    };
+  }, [newIssueTitle, ownerName, projectName, runtimeConfig.siteName]);
 }
 
 export function ProjectIssueFormProjectScreen({
@@ -1001,6 +1055,20 @@ function legacyUrlSearch(locationHref: string) {
   return new URLSearchParams(
     locationHref.slice(queryStart + 1, hashStart === -1 ? undefined : hashStart),
   );
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const record = project as YonaRecord;
+  const organizationName = stringField(record.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  const record = project as YonaRecord;
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
 }
 
 function stringField(value: unknown, fallback: string) {

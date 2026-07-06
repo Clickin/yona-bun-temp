@@ -257,6 +257,64 @@ test("project issue create form parent state matches legacy partial_select_subta
   );
 });
 
+test("project issue create form keeps the legacy protected project title and group search scope", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const ownerName = "weblabs";
+  const projectName = "portal";
+  await mockProjectIssueForm(page, {
+    ownerName,
+    project: {
+      isProtected: true,
+      organizationName: ownerName,
+      projectScope: "protected",
+    },
+    projectName,
+  });
+
+  await page.goto(`${basePath}/${ownerName}/${projectName}/issueform`);
+  await expect(page).toHaveTitle("New issue - weblabs/portal");
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/${ownerName}/${projectName}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/${ownerName}/${projectName}/search`,
+      `${basePath}/organizations/${ownerName}/search`,
+      `${basePath}/search`,
+    ]);
+
+  const headerMetrics = await protectedIssueFormHeaderSearchScopeMetrics(page);
+  expect(headerMetrics.gnbClassName).toBe("gnb-outer project-header");
+  expect(headerMetrics.pageWrapTopAtOrBelowMenu).toBe(true);
+  expect(headerMetrics.scopeTopWithinNavbar).toBe(true);
+  expect(headerMetrics.scopeBottomWithinNavbar).toBe(true);
+  expect(headerMetrics.searchTopWithinNavbar).toBe(true);
+  expect(headerMetrics.searchBottomWithinNavbar).toBe(true);
+  expect(headerMetrics.searchLeftWithinNavbar).toBe(true);
+  expect(headerMetrics.searchRightWithinNavbar).toBe(true);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/${ownerName}/search`,
+  );
+});
+
 test("project issue create form empty title submit uses legacy alert and refocus behavior", async ({
   page,
 }) => {
@@ -448,10 +506,14 @@ test("project issue create form source uses TanStack Link and no uploader templa
 async function mockProjectIssueForm(
   page: Page,
   options: {
+    ownerName?: string;
     milestones?: Array<Record<string, unknown>>;
     project?: Record<string, unknown>;
+    projectName?: string;
   } = {},
 ) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -468,83 +530,124 @@ async function mockProjectIssueForm(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
-        ...options.project,
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        labels: [
-          {
-            categoryId: "3",
-            categoryIsExclusive: false,
-            categoryName: "type",
-            color: "#51aacc",
-            id: "8",
-            name: "bug",
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
           },
-        ],
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        milestones: options.milestones ?? [
-          {
-            attachments: [],
-            closedIssueCount: 0,
-            closedIssues: [],
-            completionPercent: 0,
-            contentsHtml: "",
-            contentsMarkdown: "",
-            dueDateLabel: "",
-            id: "5",
-            openIssueCount: 0,
-            openIssues: [],
-            state: "open",
-            title: "Sprint 1",
-            viewerCanDelete: true,
-            viewerCanUpdate: true,
-          },
-        ],
-      }),
-    });
+          ownerName,
+          projectName,
+          vcs: "GIT",
+          viewerCanUpdate: true,
+          ...options.project,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/labels`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          labels: [
+            {
+              categoryId: "3",
+              categoryIsExclusive: false,
+              categoryName: "type",
+              color: "#51aacc",
+              id: "8",
+              name: "bug",
+            },
+          ],
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/issues/parent-options**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/milestones**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          milestones: options.milestones ?? [
+            {
+              attachments: [],
+              closedIssueCount: 0,
+              closedIssues: [],
+              completionPercent: 0,
+              contentsHtml: "",
+              contentsMarkdown: "",
+              dueDateLabel: "",
+              id: "5",
+              openIssueCount: 0,
+              openIssues: [],
+              state: "open",
+              title: "Sprint 1",
+              viewerCanDelete: true,
+              viewerCanUpdate: true,
+            },
+          ],
+        }),
+      });
+    },
+  );
+}
+
+async function protectedIssueFormHeaderSearchScopeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    if (!navbar || !menu || !pageWrap || !scope || !search) {
+      throw new Error("Missing protected issue form shell elements");
+    }
+
+    const navbarRect = navbar.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const pageWrapRect = pageWrap.getBoundingClientRect();
+    const scopeRect = scope.getBoundingClientRect();
+    const searchRect = search.getBoundingClientRect();
+    return {
+      gnbClassName: navbar.className,
+      pageWrapTopAtOrBelowMenu: Math.round(pageWrapRect.top) >= Math.round(menuRect.bottom),
+      scopeBottomWithinNavbar: Math.round(scopeRect.bottom) <= Math.round(navbarRect.bottom),
+      scopeTopWithinNavbar: Math.round(scopeRect.top) >= Math.round(navbarRect.top),
+      searchBottomWithinNavbar: Math.round(searchRect.bottom) <= Math.round(navbarRect.bottom),
+      searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
+      searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),
+      searchTopWithinNavbar: Math.round(searchRect.top) >= Math.round(navbarRect.top),
+    };
   });
 }
 
