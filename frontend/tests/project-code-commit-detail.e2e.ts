@@ -435,6 +435,60 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   );
 });
 
+test("project commit detail toggles legacy review-card rail collapse without navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests);
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  const codediffWrap = page.locator(".codediff-wrap");
+  const reviewWrap = page.locator(".review-wrap");
+  const showButton = page.locator(".btn-show-reviewcards");
+  const hideButton = page.locator(".btn-hide-reviewcards");
+  const initialUrl = page.url();
+
+  await expect(codediffWrap).not.toHaveClass(/diffs-only/);
+  await expect(reviewWrap).toBeVisible();
+  await expect(showButton).toBeHidden();
+  await expect(hideButton).toBeVisible();
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "commit-review-rail";
+  });
+
+  await hideButton.click();
+
+  await expect(codediffWrap).toHaveClass(/diffs-only/);
+  await expect(reviewWrap).toBeHidden();
+  await expect(showButton).toBeVisible();
+  await expect(hideButton).toBeHidden();
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-review-rail");
+  expect(detailRequests).toEqual(["branch=main"]);
+
+  await showButton.click();
+
+  await expect(codediffWrap).not.toHaveClass(/diffs-only/);
+  await expect(reviewWrap).toBeVisible();
+  await expect(showButton).toBeHidden();
+  await expect(hideButton).toBeVisible();
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-review-rail");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 test("project commit detail submits watch and comment mutations through legacy controls", async ({
   page,
 }) => {

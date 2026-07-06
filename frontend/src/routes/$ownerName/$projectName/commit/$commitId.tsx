@@ -180,6 +180,7 @@ function ProjectCommitDetailBody({
   const openThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "open");
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const [reviewCardTab, setReviewCardTab] = useState<"closed" | "open">("open");
+  const [reviewCardsCollapsed, setReviewCardsCollapsed] = useState(false);
   const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
   const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
@@ -290,8 +291,12 @@ function ProjectCommitDetailBody({
             ) : null}
           </ul>
 
-          <div className="codediff-wrap">
-            <button type="button" className="ybtn ybtn-default btn-show-reviewcards">
+          <div className={`codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}>
+            <button
+              type="button"
+              className="ybtn ybtn-default btn-show-reviewcards"
+              onClick={() => setReviewCardsCollapsed(false)}
+            >
               <i className="yobicon-restore"></i>
             </button>
             <div className="diffs-wrap">
@@ -400,7 +405,11 @@ function ProjectCommitDetailBody({
 
             <div className="review-wrap span-hard-wrap">
               <div className="review-container">
-                <button type="button" className="ybtn ybtn-default btn-hide-reviewcards">
+                <button
+                  type="button"
+                  className="ybtn ybtn-default btn-hide-reviewcards"
+                  onClick={() => setReviewCardsCollapsed(true)}
+                >
                   <i className="yobicon-maximize"></i>
                 </button>
                 <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
