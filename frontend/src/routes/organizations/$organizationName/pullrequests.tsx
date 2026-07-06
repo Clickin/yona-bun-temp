@@ -5,6 +5,7 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from "react";
+import { useEffect } from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
@@ -46,14 +47,12 @@ function OrganizationPullRequestsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <OrganizationPullRequestsPage
-            category="open"
-            organizationName={organizationName}
-            runtimeConfig={runtimeConfig}
-            search={search}
-          />
-        </SiteLayoutShell>
+        <OrganizationPullRequestsPage
+          category="open"
+          organizationName={organizationName}
+          runtimeConfig={runtimeConfig}
+          search={search}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -87,13 +86,19 @@ export function OrganizationPullRequestsPage({
   }
 
   return (
-    <OrganizationPullRequestsBody
-      organization={organizationQuery.data}
-      pullRequests={pullRequestsQuery.data}
+    <SiteLayoutShell
+      projectSearchScope={{ organizationName }}
       runtimeConfig={runtimeConfig}
-      search={search}
-      selectedCategory={category}
-    />
+      showLegacyProjectHeaderLinks
+    >
+      <OrganizationPullRequestsBody
+        organization={organizationQuery.data}
+        pullRequests={pullRequestsQuery.data}
+        runtimeConfig={runtimeConfig}
+        search={search}
+        selectedCategory={category}
+      />
+    </SiteLayoutShell>
   );
 }
 
@@ -113,8 +118,8 @@ function OrganizationPullRequestsBody({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const organizationName = stringField(organization.organizationName, "");
-  const logoUrl =
-    stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const siteName = runtimeConfig.siteName ?? "Yona";
   const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const openAction = prefixBasePath(
     runtimeConfig.basePath,
@@ -140,6 +145,15 @@ function OrganizationPullRequestsBody({
     event.preventDefault();
     router.history.push(to);
   };
+
+  useEffect(() => {
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = organizationName;
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [organizationName, siteName]);
 
   return (
     <>

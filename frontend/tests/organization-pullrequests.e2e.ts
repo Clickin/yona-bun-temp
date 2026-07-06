@@ -3,8 +3,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_ORGANIZATION_PULLREQUESTS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
-<div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
+<header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div pjax-container="" class="row-fluid cb"><div class="left-menu span2 search-wrap hide-in-mobile" style="padding-top:0px"><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/pullrequests" method="get"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="fix"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm pullrequeset-tab-menu"><li class="active"><button type="button" data-url="__BASE_PATH__/organizations/weblabs/pullrequests" data-type="state">Open<span class="num-badge">1</span></button></li><li class=""><button type="button" data-url="__BASE_PATH__/organizations/weblabs/closedPullrequests" data-type="state">Closed<span class="num-badge">2</span></button></li></ul><div class="tab-content" style="clear:both;padding-top:15px"><div id="list" class="row-fluid tab-pane active"><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/weblabs/sample/pullRequest/3"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><span class="post-id">3</span><a href="__BASE_PATH__/weblabs/sample/pullRequest/3" class="title ">Fix login redirect</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><div class="infos-item" style="margin-right:20px"><i class="infos-icon yobicon-post2 vmiddle"></i><div class="upload-progress"><div class="bar orange" style="width:50%"></div></div><a href="__BASE_PATH__/weblabs/sample/pullRequest/3/changes" data-toggle="tooltip" title="Closed review / Total review"><span>1</span><span class="gray-txt">/</span><span class="size total">2</span></a></div></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right hide-in-mobile"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li><div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input class="input-mini nospinner" max="2" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">2</li><li class="page-num ikon"><a href="__BASE_PATH__/organizations/weblabs/pullrequests?filter=fix&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></ul></div></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
@@ -52,6 +52,7 @@ test("organization pull request aggregate matches legacy group_pullrequest_list.
   await mockOrganizationPullRequests(page);
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+  await expect(page).toHaveTitle("weblabs");
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Pull request");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
@@ -71,6 +72,7 @@ test("organization pull request aggregate empty state matches legacy group_pullr
   await mockOrganizationPullRequests(page);
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=empty`);
+  await expect(page).toHaveTitle("weblabs");
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(0);
@@ -91,6 +93,7 @@ test("organization closed pull request aggregate matches legacy group_pullreques
   await mockOrganizationPullRequests(page);
 
   await page.goto(`${basePath}/organizations/weblabs/closedPullrequests?filter=done`);
+  await expect(page).toHaveTitle("weblabs");
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Pull request");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
@@ -101,6 +104,62 @@ test("organization closed pull request aggregate matches legacy group_pullreques
       EXPECTED_ORGANIZATION_CLOSED_PULLREQUESTS.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization pull request aggregate pins the live localhost guest shell title and scope branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationPullRequests(page, { isAnonymous: true, viewerCanUpdate: false });
+
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
+
+  await expect(page).toHaveTitle("weblabs");
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
+  await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
+  await expect(page.locator(".project-setting a")).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop > li")).toHaveText([
+    "Group Home",
+    "Issue",
+    "Board",
+    "Pull request",
+  ]);
+
+  const metrics = await page.evaluate(() => {
+    const navbar = document.querySelector("header.gnb-outer");
+    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    if (!(navbar instanceof HTMLElement)) {
+      throw new Error("Missing header.gnb-outer");
+    }
+    if (!(scopeButton instanceof HTMLElement)) {
+      throw new Error("Missing #gnb-search-scope-title");
+    }
+    if (!(searchBox instanceof HTMLElement)) {
+      throw new Error("Missing .gnb-search-form .search-box");
+    }
+    return {
+      navbar: navbar.getBoundingClientRect(),
+      scopeButton: scopeButton.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+    };
+  });
+
+  expect(metrics.scopeButton.top).toBeGreaterThanOrEqual(metrics.navbar.top);
+  expect(metrics.scopeButton.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.searchBox.top).toBeGreaterThanOrEqual(metrics.navbar.top);
+  expect(metrics.searchBox.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText(["All Projects"]);
 });
 
 test("organization pull request breadcrumb organization link keeps legacy href with SPA transition", async ({
@@ -511,18 +570,21 @@ async function expectOrganizationPullRequestSpaClick(
   ).toBe(marker);
 }
 
-async function mockOrganizationPullRequests(page: Page) {
+async function mockOrganizationPullRequests(
+  page: Page,
+  options: { isAnonymous?: boolean; viewerCanUpdate?: boolean } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        actorId: 1,
+        actorId: options.isAnonymous ? null : 1,
         avatarUrl: "/assets/images/default-avatar-32.png",
         defaultLandingPath: "/",
         emailAddress: "admin@example.com",
-        isAnonymous: false,
+        isAnonymous: options.isAnonymous === true,
         isConfirmed: true,
-        isSiteAdmin: true,
+        isSiteAdmin: options.isAnonymous === true ? false : true,
         loginId: "admin",
         userLabel: "Site Admin",
       }),
@@ -534,10 +596,10 @@ async function mockOrganizationPullRequests(page: Page) {
       body: JSON.stringify({
         adminMembers: [],
         description: "Web labs group",
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         memberMembers: [],
         organizationName: "weblabs",
-        viewerCanUpdate: true,
+        viewerCanUpdate: options.viewerCanUpdate ?? true,
         visibleProjects: [],
       }),
     });
