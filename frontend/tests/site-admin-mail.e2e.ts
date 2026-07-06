@@ -25,6 +25,9 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -154,7 +157,21 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/mail`);
+  await expect(page).toHaveTitle("Send email");
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
+  expect(new URL(page.url()).search).toBe("");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  expect(await gnbNavAnchorHrefs(page)).toEqual([
+    basePath,
+    `${basePath}/projects`,
+    "https://github.com/yona-projects/yona/issues",
+  ]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
   await expect(page.locator(".site-setting-nav a")).toHaveText([
     "Users",
@@ -200,6 +217,15 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   );
 
   expect(actual).toEqual(expected);
+  expect(await legacyMailShellMetrics(page)).toEqual({
+    feedbackRightOfProjects: true,
+    navbarClassName: "gnb-outer",
+    searchBottomWithinNavbar: true,
+    searchBoxDoesNotOverlapFeedback: true,
+    searchBoxHasSelectClass: false,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
   expect(await mailFormMetrics(page)).toEqual({
     alertBackground: "rgb(242, 222, 222)",
     alertBorderTopWidth: 1,
@@ -440,6 +466,18 @@ test("site admin mail renders legacy update notification badge", async ({ page }
 test("site admin mail route source keeps direct typed sidebar links", async () => {
   const source = await readFile("src/routes/sites/mail.tsx", "utf8");
 
+  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain('document.title = t("title.sendMail")');
+  expect(source).toContain(
+    "const legacyMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };",
+  );
+  expect(source).toContain(
+    '<Link {...legacySiteSidebarLinkProps} search={legacyMailSidebarSearch} to="/sites/mail">',
+  );
+  expect(source).not.toContain(
+    'errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : ""',
+  );
+  expect(source).not.toContain('sended: search.sended === true || search.sended === "true",');
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("createLink");
   expect(source).not.toContain("legacyHtmlAnchorTag");
@@ -450,8 +488,22 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
   expect(source).not.toContain("parseFromString");
   expect(source).not.toContain("const document =");
   expect(source).not.toContain("document.body");
+  expect(source).not.toContain("const mailHref =");
+  expect(source).not.toContain("<a href={mailHref}>");
   expect(source).toContain("<Link");
 });
+
+async function gnbNavAnchorHrefs(page: Page) {
+  return page.locator(".gnb-nav a[href]").evaluateAll((links) =>
+    links.map((link) => {
+      const href = link.getAttribute("href");
+      if (!href) {
+        throw new Error("Missing gnb nav href");
+      }
+      return href.startsWith("http") ? href : new URL(href, window.location.origin).pathname;
+    }),
+  );
+}
 
 async function siteSettingSidebarHrefs(page: Page) {
   return page.locator(".site-setting-nav a").evaluateAll((links) =>
@@ -568,6 +620,41 @@ async function mailFormMetrics(page: Page) {
       titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
       titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
       titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
+    };
+  });
+}
+
+async function legacyMailShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element;
+    };
+
+    const navbar = requireElement(".gnb-outer");
+    const searchForm = requireElement('form[name="gnb-search-form"]');
+    const searchBox = requireElement(".gnb-search-form .search-box");
+    const feedbackLink = requireElement(
+      '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
+    );
+    const projectsLink = requireElement('.gnb-nav a[href$="/projects"]');
+    const navbarRect = navbar.getBoundingClientRect();
+    const searchFormRect = searchForm.getBoundingClientRect();
+    const searchBoxRect = searchBox.getBoundingClientRect();
+    const feedbackRect = feedbackLink.getBoundingClientRect();
+    const projectsRect = projectsLink.getBoundingClientRect();
+
+    return {
+      feedbackRightOfProjects: feedbackRect.left >= projectsRect.right,
+      navbarClassName: navbar.className,
+      searchBottomWithinNavbar: searchFormRect.bottom <= navbarRect.bottom,
+      searchBoxDoesNotOverlapFeedback: searchBoxRect.left >= feedbackRect.right,
+      searchBoxHasSelectClass: searchBox.classList.contains("select"),
+      searchRightWithinNavbar: searchFormRect.right <= navbarRect.right,
+      searchTopWithinNavbar: searchFormRect.top >= navbarRect.top,
     };
   });
 }

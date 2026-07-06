@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   sendSiteMailRest,
@@ -13,6 +13,11 @@ import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
+interface SiteMailRouteSearch {
+  errorMessage?: string;
+  sended?: boolean;
+}
+
 interface SiteMailSearch {
   errorMessage: string;
   sended: boolean;
@@ -22,27 +27,33 @@ const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+const legacyMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 
 export const Route = createFileRoute("/sites/mail")({
   component: SiteMailRoute,
-  validateSearch: (search: Record<string, unknown>): SiteMailSearch => ({
-    errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : "",
-    sended: search.sended === true || search.sended === "true",
+  validateSearch: (search: Record<string, unknown>): SiteMailRouteSearch => ({
+    errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : undefined,
+    sended:
+      search.sended === true || search.sended === "true"
+        ? true
+        : search.sended === false || search.sended === "false"
+          ? false
+          : undefined,
   }),
 });
 
 function SiteMailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { errorMessage, sended } = Route.useSearch();
+  const search = normalizeSiteMailSearch(Route.useSearch());
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteMailScreen
-            errorMessageBySearch={errorMessage}
+            errorMessageBySearch={search.errorMessage}
             runtimeConfig={runtimeConfig}
-            sentBySearch={sended}
+            sentBySearch={search.sended}
           />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -59,6 +70,7 @@ function SiteMailScreen({
   runtimeConfig: RuntimeConfig;
   sentBySearch: boolean;
 }) {
+  useLegacySiteMailDocumentTitle(runtimeConfig);
   const mailOptions = siteMailOptionsQueryOptions(runtimeConfig);
   const query = useQuery(mailOptions);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
@@ -93,6 +105,26 @@ function SiteMailScreen({
   );
 }
 
+function normalizeSiteMailSearch(search: SiteMailRouteSearch): SiteMailSearch {
+  return {
+    errorMessage: search.errorMessage ?? "",
+    sended: search.sended === true,
+  };
+}
+
+function useLegacySiteMailDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.sendMail");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
+
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
     <ul className="site-setting-nav">
@@ -117,7 +149,7 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
         </Link>
       </li>
       <li className="active">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/mail">
+        <Link {...legacySiteSidebarLinkProps} search={legacyMailSidebarSearch} to="/sites/mail">
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
