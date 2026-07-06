@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -22,6 +22,12 @@ import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
+type UserListRouteSearch = {
+  pageNum?: number;
+  query?: string;
+  state?: SiteUserState;
+};
+
 type UserListSearch = {
   pageNum: number;
   query: string;
@@ -39,15 +45,31 @@ const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
   activeOptions: { explicitUndefined: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
+  __legacySiteUserListSidebarActiveMarker: undefined,
+};
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
-  validateSearch: (search: Record<string, unknown>): UserListSearch => ({
-    pageNum: search.pageNum ? Number(search.pageNum) || 1 : 1,
-    query: typeof search.query === "string" ? search.query : "",
-    state: isSiteUserState(search.state) ? search.state : "ACTIVE",
+  validateSearch: (search: Record<string, unknown>): UserListRouteSearch => ({
+    pageNum: search.pageNum ? Number(search.pageNum) || 1 : undefined,
+    query: typeof search.query === "string" ? search.query : undefined,
+    state: isSiteUserState(search.state) ? search.state : undefined,
   }),
 });
+
+function useLegacySiteUserListDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.siteSetting");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
 
 function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
@@ -60,7 +82,7 @@ function SiteUserListRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteUserListScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -69,10 +91,12 @@ function SiteUserListRoute() {
 }
 
 function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const search = Route.useSearch();
+  const routeSearch = Route.useSearch();
+  const search = normalizeUserListSearch(routeSearch);
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
+  useLegacySiteUserListDocumentTitle(runtimeConfig);
   const [deleteUser, setDeleteUser] = useState<SiteUser | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const [passwordResetByLoginId, setPasswordResetByLoginId] = useState<
@@ -462,7 +486,11 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
     <ul className="site-setting-nav">
       <li className="active">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/userList">
+        <Link
+          {...LEGACY_SITE_SETTING_NAV_LINK_PROPS}
+          search={LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH}
+          to="/sites/userList"
+        >
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
@@ -689,6 +717,14 @@ function legacyLastStateModifiedDate(user: SiteUser) {
     (user as SiteUser & { lastStateModifiedDate?: string }).lastStateModifiedDate ??
     user.lastStateModifiedAt
   );
+}
+
+function normalizeUserListSearch(search: UserListRouteSearch): UserListSearch {
+  return {
+    pageNum: search.pageNum ?? 1,
+    query: search.query ?? "",
+    state: search.state ?? "ACTIVE",
+  };
 }
 
 function isDefaultUserAvatar(avatarUrl: string) {
