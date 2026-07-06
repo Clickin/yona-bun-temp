@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -35,16 +35,39 @@ function ProjectDeleteFormRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectDeleteFormScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectDeleteFormRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
+function ProjectDeleteFormRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
+      <ProjectDeleteFormScreen runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
 function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectDeleteDocumentTitle(runtimeConfig, ownerName, projectName);
   const query = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -54,6 +77,28 @@ function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   }
 
   return <ProjectDeleteFormBody project={query.data} runtimeConfig={runtimeConfig} />;
+}
+
+function useProjectDeleteDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const screenTitle = t("project.delete");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function ProjectDeleteFormBody({
@@ -405,6 +450,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                   <CountBadge count={enrolledMemberCount} />
                 </Link>
               </li>
+              <li></li>
             </ul>
           </div>
         ) : null}
@@ -587,4 +633,12 @@ function countField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }

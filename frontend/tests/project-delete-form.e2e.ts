@@ -5,17 +5,27 @@ const EXPECTED_PROJECT_DELETE_FORM = `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
 </div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+        <form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
+          <div class="btn-group">
+            <button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button>
+            <ul class="dropdown-menu flat right">
+              <li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li>
+              <li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li>
+            </ul>
+          </div>
+          <div class="search-box select">
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
@@ -90,6 +100,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
     <div class="project-setting">
       <ul class="project-menu-nav">
         <li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li>
+        <li></li>
       </ul>
     </div>
   </div>
@@ -146,8 +157,28 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
+  await expect(page).toHaveTitle("Delete project - admin/sample");
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
+  await expect(page.locator("#alertDeletion .modal-header h3")).toHaveText(
+    "Do you want to delete this project?",
+  );
+  expect(await readLegacyGnbTexts(page)).toEqual([
+    "Y",
+    "List All",
+    "Feedback",
+    "This Project",
+    "This Project",
+    "All Projects",
+  ]);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -185,6 +216,42 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   });
 });
 
+test("project delete form localhost legacy portal shell is restored", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/deleteform`);
+  await expect(page).toHaveTitle("Delete project - weblabs/portal");
+  await expect(page.locator("#btnDelete")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
+  await expect(page.locator("#alertDeletion .modal-header h3")).toHaveText(
+    "Do you want to delete this project?",
+  );
+  expect(await readLegacyGnbTexts(page)).toEqual([
+    "Y",
+    "List All",
+    "Feedback",
+    "This Project",
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
+});
+
 test("project delete form route has no TanStack route-cast escapes", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
   expect(source).not.toContain("as never");
@@ -194,6 +261,9 @@ test("project delete form route has no TanStack route-cast escapes", async () =>
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
   expect(source).toContain("onClick=");
 });
 
@@ -742,6 +812,14 @@ async function readLegacyAnchorSnapshots(page: Page, selector: string) {
   );
 }
 
+async function readLegacyGnbTexts(page: Page) {
+  return page
+    .locator(".gnb-nav a, .gnb-search-form .dropdown-menu button, #gnb-search-scope-title")
+    .evaluateAll((elements) =>
+      elements.map((element) => (element.textContent ?? "").replace(/\s+/g, " ").trim()),
+    );
+}
+
 async function mockProjectAdmin(
   page: Page,
   options: {
@@ -749,9 +827,13 @@ async function mockProjectAdmin(
     deleteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
+    ownerName?: string;
     project?: Partial<ReturnType<typeof projectSettings>>;
+    projectName?: string;
   } = {},
 ) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -782,13 +864,19 @@ async function mockProjectAdmin(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ ...projectSettings(), ...options.project }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/settings`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...projectSettings({ ownerName, projectName }),
+          ...options.project,
+        }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -798,13 +886,13 @@ async function mockProjectAdmin(
         ],
         defaultBranch: "main",
         noHead: false,
-        ownerName: "admin",
+        ownerName,
         permissions: { canDelete: true, canUpdate: true },
-        projectName: "sample",
+        projectName,
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample", async (route) => {
+  await page.route(`**/api/v1/owners/${ownerName}/projects/${projectName}`, async (route) => {
     if (route.request().method() === "DELETE") {
       const request = route.request();
       options.deleteRequests?.push({
@@ -827,20 +915,29 @@ async function mockProjectAdmin(
     }
     await route.fallback();
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
-    const request = route.request();
-    options.favoriteRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-delete",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
-    });
-  });
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/favorite`,
+    async (route) => {
+      const request = route.request();
+      options.favoriteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-delete",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
+      });
+    },
+  );
 }
 
-function projectSettings() {
+function projectSettings({
+  ownerName = "admin",
+  projectName = "sample",
+}: {
+  ownerName?: string;
+  projectName?: string;
+} = {}) {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     backgroundUrl: "/assets/images/bg-default-project.png",
@@ -870,10 +967,10 @@ function projectSettings() {
     openPullRequestCount: 2,
     organizationName: "",
     overview: "Sample overview",
-    ownerName: "admin",
+    ownerName,
     postCount: 5,
     projectId: 7,
-    projectName: "sample",
+    projectName,
     projectScope: "PUBLIC",
     reviewCount: 4,
     showBoard: true,
