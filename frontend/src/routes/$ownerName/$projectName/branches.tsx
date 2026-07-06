@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../../../api/code-branches";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
+import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -27,26 +29,70 @@ function ProjectBranchesRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectBranchesScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectBranchesRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectBranchesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectBranchesRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectBranchesDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const isGitProject = projectQuery.data?.vcs === "GIT";
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectBranchesScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function useProjectBranchesDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const branchesTitle = t("title.branches");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${branchesTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [branchesTitle, ownerName, projectName, runtimeConfig.siteName]);
+}
+
+function ProjectBranchesScreen({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
+  const isGitProject = project?.vcs === "GIT";
   const branchesQuery = useQuery({
     ...codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: isGitProject,
   });
 
-  if (!projectQuery.data) {
+  if (!project) {
     return null;
   }
 
@@ -67,8 +113,8 @@ function ProjectBranchesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectBranchesBody branches={branchesQuery.data} runtimeConfig={runtimeConfig} />
     </>
   );
@@ -371,4 +417,13 @@ function isDefaultBranch(branch: CodeBranchListItem, defaultBranch: string) {
     branch.name === defaultBranchName ||
     branch.shortName === defaultBranchName
   );
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }

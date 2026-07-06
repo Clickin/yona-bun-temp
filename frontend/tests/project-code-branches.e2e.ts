@@ -21,7 +21,27 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   await mockProjectBranches(page, setDefaultRequests, deleteRequests);
 
   await page.goto(`${basePath}/admin/sample/branches`);
+  await expect(page).toHaveTitle("Branches - admin/sample");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
   await expect(page.locator(".branch-list-wrap tbody tr")).toHaveCount(2);
   await expect(page.locator(".nav-tabs a").nth(0)).toHaveAttribute(
     "href",
@@ -82,6 +102,15 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
     tableHeaderLineHeight: "34px",
     tableWidthPercent: 100,
   });
+  expect(await readProjectBranchesShellMetrics(page)).toEqual({
+    gnbClassName: "gnb-outer project-header",
+    pageWrapBelowMenu: true,
+    projectMenuBelowHeader: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
 
   const setDefaultResponse = page.waitForResponse(
     (response) =>
@@ -107,6 +136,73 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   await deleteButton.click();
   await deleteResponse;
   expect(deleteRequests).toEqual([{ branchName: "feature/release" }]);
+});
+
+test("project code branches restores protected project shell parity for weblabs/portal", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectBranches(page, [], [], {
+    backgroundImageUrl: "/assets/images/project_default.jpg",
+    isProtected: true,
+    organizationName: "weblabs",
+    ownerName: "weblabs",
+    projectName: "portal",
+    projectScope: "protected",
+    projectId: 17,
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/branches`);
+
+  await expect(page).toHaveTitle("Branches - weblabs/portal");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ]);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  expect(await readProjectBranchesShellMetrics(page)).toEqual({
+    gnbClassName: "gnb-outer project-header",
+    pageWrapBelowMenu: true,
+    projectMenuBelowHeader: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
 });
 
 test("project code branch links navigate through the SPA router", async ({ page }) => {
@@ -215,9 +311,18 @@ async function mockProjectBranches(
   options?: {
     branchRequestMethods?: string[];
     branchRouteStatus?: number;
+    backgroundImageUrl?: string;
+    isProtected?: boolean;
+    organizationName?: string;
+    ownerName?: string;
+    projectId?: number;
+    projectName?: string;
+    projectScope?: string;
     projectVcs?: "GIT" | "SVN";
   },
 ) {
+  const ownerName = options?.ownerName ?? "admin";
+  const projectName = options?.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -234,34 +339,16 @@ async function mockProjectBranches(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: options?.projectVcs ?? "GIT",
-        viewerCanUpdate: true,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(projectContainer(options)),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
     options?.branchRequestMethods?.push(route.request().method());
     if (options?.branchRouteStatus) {
       await route.fulfill({
@@ -276,19 +363,73 @@ async function mockProjectBranches(
     }
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(branchesPayload()),
+      body: JSON.stringify(branchesPayload(options)),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/branches/default", async (route) => {
-    setDefaultRequests.push(route.request().postDataJSON());
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify(branchesPayload()),
-    });
-  });
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/branches/default`,
+    async (route) => {
+      setDefaultRequests.push(route.request().postDataJSON());
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(branchesPayload(options)),
+      });
+    },
+  );
 }
 
-function branchesPayload() {
+function projectContainer(
+  options: {
+    backgroundImageUrl?: string;
+    isProtected?: boolean;
+    organizationName?: string;
+    ownerName?: string;
+    projectId?: number;
+    projectName?: string;
+    projectScope?: string;
+    projectVcs?: "GIT" | "SVN";
+  } = {},
+) {
+  return {
+    backgroundImageUrl: options.backgroundImageUrl ?? "/assets/images/bg-default-project.png",
+    enrollmentRequestCount: 0,
+    id: options.projectId ?? 7,
+    isFavorite: false,
+    isForkedFromOrigin: false,
+    isPrivate: false,
+    isProtected: options.isProtected ?? false,
+    logoUrl: "/assets/images/project_default_logo.png",
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+    },
+    openIssueCount: 1,
+    openPullRequestCount: 1,
+    organizationName: options.organizationName ?? "",
+    ownerName: options.ownerName ?? "admin",
+    postCount: 1,
+    projectName: options.projectName ?? "sample",
+    projectScope: options.projectScope ?? (options.isProtected ? "protected" : "public"),
+    reviewCount: 1,
+    vcs: options.projectVcs ?? "GIT",
+    viewerCanUpdate: true,
+    watchingCount: 2,
+  };
+}
+
+function branchesPayload(
+  options: {
+    ownerName?: string;
+    projectName?: string;
+  } = {},
+) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
+
   return {
     branches: [
       {
@@ -309,8 +450,8 @@ function branchesPayload() {
         isDefault: false,
         name: "feature/release",
         pullRequest: {
-          ownerName: "admin",
-          projectName: "sample",
+          ownerName,
+          projectName,
           pullRequestNumber: 3,
           state: "open",
         },
@@ -319,9 +460,9 @@ function branchesPayload() {
     ],
     defaultBranch: "refs/heads/main",
     noHead: false,
-    ownerName: "admin",
+    ownerName,
     permissions: { canDelete: true, canUpdate: true },
-    projectName: "sample",
+    projectName,
   };
 }
 
@@ -412,6 +553,40 @@ async function readBranchListMetrics(page: Page) {
       tableHeaderLineHeight: headerStyle.lineHeight,
       tableWidthPercent,
     };
+  });
+}
+
+async function readProjectBranchesShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnb = requireElement(".gnb-outer");
+    const navbar = requireElement(".gnb-inner");
+    const search = requireElement(".gnb-search-form .search-box");
+    const projectHeader = requireElement(".project-header-outer");
+    const projectMenu = requireElement(".project-menu-outer");
+    const pageWrap = requireElement(".page-wrap-outer");
+    const navbarBox = navbar.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    const projectHeaderBox = projectHeader.getBoundingClientRect();
+    const projectMenuBox = projectMenu.getBoundingClientRect();
+    const pageWrapBox = pageWrap.getBoundingClientRect();
+
+    return {
+      gnbClassName: gnb.className,
+      pageWrapBelowMenu: pageWrapBox.top >= projectMenuBox.bottom,
+      projectMenuBelowHeader: projectMenuBox.top >= projectHeaderBox.bottom,
+      searchBottomWithinNavbar: searchBox.bottom <= navbarBox.bottom,
+      searchLeftWithinNavbar: searchBox.left >= navbarBox.left,
+      searchRightWithinNavbar: searchBox.right <= navbarBox.right,
+      searchTopWithinNavbar: searchBox.top >= navbarBox.top,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
   });
 }
 
