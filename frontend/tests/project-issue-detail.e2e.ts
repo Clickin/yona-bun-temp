@@ -516,6 +516,136 @@ test("project issue detail new subtask link preserves legacy href with SPA trans
   await expect(page.locator('#parentId option[selected][value="42"]')).toHaveCount(1);
 });
 
+test("project issue detail renders protected org-owned localhost shell state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    __closedMilestones: [{ id: 8, state: "closed", title: "Portal archive" }],
+    __issueNumber: 1,
+    __labelsResponse: [],
+    __openMilestones: [{ id: 5, state: "open", title: "Portal launch" }],
+    __ownerName: "weblabs",
+    __projectName: "portal",
+    __projectOverrides: {
+      backgroundImageUrl: "/assets/images/project_default.jpg",
+      id: 2,
+      isProtected: true,
+      isWatching: true,
+      organizationName: "weblabs",
+      viewerCanWatch: true,
+      watchCount: 2,
+    },
+    assigneeLoginId: "",
+    authorLabel: "Carol Lee",
+    authorLoginId: "carol",
+    bodyChecksum: "portal-body-sha1",
+    bodyHtml: "<p>Server HTML should not render</p>",
+    bodyMarkdown: "Seed issue for organization-owned protected project flows.",
+    commentCount: 0,
+    comments: [],
+    createdLabel: "Jul 6, 2026",
+    dueDateLabel: "Jul 28, 2026",
+    dueDateOverdue: false,
+    dueDateUntilLabel: "22 days",
+    issueId: 2,
+    issueNumber: 1,
+    issueUpdateMillis: 1783382400000,
+    issueVoters: [],
+    labels: [],
+    milestoneId: null,
+    milestoneTitle: "",
+    parentIssueId: null,
+    sharers: [],
+    timeline: [],
+    title: "Portal protected project smoke check",
+    voterCount: 0,
+    watcherCount: 0,
+    weight: 0,
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/issue/1`);
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal/watchers`,
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("2");
+  await expect(page.locator(".board-id")).toHaveText("1");
+  await expect(page.locator(".board-header.issue .title")).toContainText(
+    "Portal protected project smoke check",
+  );
+  await expect(page.locator(".board-header.issue .badge.badge-issue-open").first()).toHaveText(
+    "Open",
+  );
+  await expect(page.locator(".author-info > a.usf-group")).toHaveAttribute(
+    "href",
+    `${basePath}/carol`,
+  );
+  await expect(page.locator(".author-info .name")).toHaveText("Carol Lee");
+  await expect(page.locator("#issue-body-1 .content.markdown-wrap")).toContainText(
+    "Seed issue for organization-owned protected project flows.",
+  );
+  await expect(page.locator("#attachments .attach")).toHaveCount(0);
+  await expect(page.locator("#numOfComments")).toHaveValue("0");
+  await expect(page.locator(".timeline-list > .comment-header .num")).toHaveText(["0", "0"]);
+  await expect(page.locator(".span-left-pane #timeline .comments > li")).toHaveCount(0);
+  await expect(page.locator(".span-right-pane #timeline .comments > li")).toHaveCount(0);
+  await expect(page.locator(".span-right-pane .project-btn-item a")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal/issueform?parentIssueId=2`,
+  );
+  await expect(page.locator(".span-right-pane .issue-info > form > dl")).toHaveCount(3);
+  await expect(page.locator(".span-right-pane dt").nth(0)).toHaveText("Assignee");
+  await expect(page.locator(".span-right-pane dt").nth(1)).toHaveText("Milestone");
+  await expect(page.locator(".span-right-pane dt").nth(2)).toHaveText("Due date(22 days)");
+  await expect(page.locator('#milestone option[value="-1"][selected]')).toHaveCount(1);
+  await expect(page.locator("#labelIds")).toHaveCount(0);
+  await expect(page.locator("#comment-form")).toHaveCount(1);
+  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+
+  expect(await protectedIssueShellMetrics(page)).toEqual({
+    boardTopAtOrBelowMenu: true,
+    gnbClassName: "gnb-outer project-header",
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
+});
+
 test("project issue detail gates only right-pane new subtask by legacy issue menu setting", async ({
   page,
 }) => {
@@ -3274,9 +3404,75 @@ async function keymapModalMetrics(page: Page) {
   });
 }
 
+async function protectedIssueShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const board = document.querySelector<HTMLElement>(".project-page-wrap.board-view");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!navbar || !search || !board || !menu) {
+      throw new Error("Missing protected issue detail shell elements");
+    }
+    const navbarRect = navbar.getBoundingClientRect();
+    const searchRect = search.getBoundingClientRect();
+    const boardRect = board.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    return {
+      boardTopAtOrBelowMenu: Math.round(boardRect.top) >= Math.round(menuRect.bottom),
+      gnbClassName: navbar.className,
+      searchBottomWithinNavbar: Math.round(searchRect.bottom) <= Math.round(navbarRect.bottom),
+      searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
+      searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),
+      searchTopWithinNavbar: Math.round(searchRect.top) >= Math.round(navbarRect.top),
+    };
+  });
+}
+
 async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string, unknown> = {}) {
   const issueStatus = Number(issueOverrides.__issueStatus ?? 200);
   const issueNumber = String(issueOverrides.__issueNumber ?? 11);
+  const ownerName = String(issueOverrides.__ownerName ?? "admin");
+  const projectName = String(issueOverrides.__projectName ?? "sample");
+  const containerPath = String(
+    issueOverrides.__containerPath ??
+      `/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+  );
+  const detailPath = String(
+    issueOverrides.__detailPath ??
+      `/api/v1/projects/${ownerName}/${projectName}/issues/${issueNumber}`,
+  );
+  const openMilestones =
+    issueOverrides.__openMilestones && Array.isArray(issueOverrides.__openMilestones)
+      ? issueOverrides.__openMilestones
+      : [
+          { id: 5, state: "open", title: "v1.0" },
+          { id: 9, state: "open", title: "v2.0" },
+        ];
+  const closedMilestones =
+    issueOverrides.__closedMilestones && Array.isArray(issueOverrides.__closedMilestones)
+      ? issueOverrides.__closedMilestones
+      : [{ id: 7, state: "closed", title: "v0.9" }];
+  const labelsResponse =
+    issueOverrides.__labelsResponse && Array.isArray(issueOverrides.__labelsResponse)
+      ? issueOverrides.__labelsResponse
+      : [
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "type",
+            color: "#51aacc",
+            id: "8",
+            name: "bug",
+          },
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "type",
+            color: "#70b858",
+            id: "9",
+            name: "enhancement",
+          },
+        ];
   const projectOverrides =
     issueOverrides.__projectOverrides &&
     typeof issueOverrides.__projectOverrides === "object" &&
@@ -3299,6 +3495,13 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
   delete effectiveIssueOverrides.__issueVoteResponseOverrides;
   delete effectiveIssueOverrides.__issueStatus;
   delete effectiveIssueOverrides.__issueNumber;
+  delete effectiveIssueOverrides.__ownerName;
+  delete effectiveIssueOverrides.__projectName;
+  delete effectiveIssueOverrides.__containerPath;
+  delete effectiveIssueOverrides.__detailPath;
+  delete effectiveIssueOverrides.__openMilestones;
+  delete effectiveIssueOverrides.__closedMilestones;
+  delete effectiveIssueOverrides.__labelsResponse;
   delete effectiveIssueOverrides.__projectOverrides;
   delete effectiveIssueOverrides.__sessionOverrides;
   const deleteRequests: string[] = [];
@@ -3333,7 +3536,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       body: JSON.stringify(sessionResponse),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route(`**${containerPath}`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -3353,65 +3556,51 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
           pullRequest: true,
           review: true,
         },
-        ownerName: "admin",
-        projectName: "sample",
+        ownerName,
+        projectName,
         vcs: "GIT",
         viewerCanUpdate: true,
         ...projectOverrides,
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", async (route) => {
-    const url = new URL(route.request().url());
-    const state = url.searchParams.get("state");
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        milestones:
-          state === "closed"
-            ? [{ id: 7, state: "closed", title: "v0.9" }]
-            : [
-                { id: 5, state: "open", title: "v1.0" },
-                { id: 9, state: "open", title: "v2.0" },
-              ],
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        labels: [
-          {
-            categoryId: "3",
-            categoryIsExclusive: false,
-            categoryName: "type",
-            color: "#51aacc",
-            id: "8",
-            name: "bug",
-          },
-          {
-            categoryId: "3",
-            categoryIsExclusive: false,
-            categoryName: "type",
-            color: "#70b858",
-            id: "9",
-            name: "enhancement",
-          },
-        ],
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
-      }),
-    });
-  });
   await page.route(
-    `**/api/v1/owners/admin/projects/sample/issues/${issueNumber}/favorite`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/milestones**`,
+    async (route) => {
+      const url = new URL(route.request().url());
+      const state = url.searchParams.get("state");
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          milestones: state === "closed" ? closedMilestones : openMilestones,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/labels`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          labels: labelsResponse,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/issues/parent-options**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/issues/${issueNumber}/favorite`,
     async (route) => {
       favoriteRequests.push({
         hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
@@ -3422,15 +3611,15 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
         body: JSON.stringify({
           issueNumber: Number(issueNumber),
           isFavorited: true,
-          ownerName: "admin",
-          projectName: "sample",
+          ownerName,
+          projectName,
           ...effectiveIssueOverrides,
         }),
       });
     },
   );
   await page.route(
-    `**/api/v1/owners/admin/projects/sample/issues/${issueNumber}/watch`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/issues/${issueNumber}/watch`,
     async (route) => {
       const method = route.request().method();
       watchRequests.push({
@@ -3442,15 +3631,15 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
         body: JSON.stringify({
           issueNumber: Number(issueNumber),
           isWatching: method !== "DELETE",
-          ownerName: "admin",
-          projectName: "sample",
+          ownerName,
+          projectName,
           ...effectiveIssueOverrides,
         }),
       });
     },
   );
   await page.route(
-    `**/api/v1/owners/admin/projects/sample/issues/${issueNumber}/vote`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/issues/${issueNumber}/vote`,
     async (route) => {
       const method = route.request().method();
       issueVoteRequests.push({
@@ -3464,13 +3653,13 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
           ...issueVoteResponseOverrides,
           hasVoted: method !== "DELETE",
           issueNumber: Number(issueNumber),
-          ownerName: "admin",
-          projectName: "sample",
+          ownerName,
+          projectName,
         }),
       });
     },
   );
-  await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, async (route) => {
+  await page.route(`**${detailPath}`, async (route) => {
     if (route.request().method() === "DELETE") {
       deleteRequests.push(route.request().method());
       await route.fulfill({ status: 204 });
@@ -3537,7 +3726,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       dueDateLabel: "Jul 5, 2026",
       hasVoted: false,
       issueId: 42,
-      issueNumber: 11,
+      issueNumber: Number(issueNumber),
       issueUpdateMillis: 1782892800000,
       issueVoters: [
         {
@@ -3570,9 +3759,9 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       ],
       milestoneId: 5,
       milestoneTitle: "v1.0",
-      ownerName: "admin",
+      ownerName,
       parentIssueId: null,
-      projectName: "sample",
+      projectName,
       sharers: [],
       state: "open",
       timeline: [],
@@ -3591,16 +3780,19 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       body: JSON.stringify(issue),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/issues/11/comments/77", async (route) => {
-    if (route.request().method() === "DELETE") {
-      commentDeleteRequests.push(route.request().method());
-      await route.fulfill({ status: 204 });
-      return;
-    }
-    await route.fallback();
-  });
   await page.route(
-    "**/api/v1/owners/admin/projects/sample/issues/11/comments/77/vote",
+    `**/api/v1/projects/${ownerName}/${projectName}/issues/${issueNumber}/comments/77`,
+    async (route) => {
+      if (route.request().method() === "DELETE") {
+        commentDeleteRequests.push(route.request().method());
+        await route.fulfill({ status: 204 });
+        return;
+      }
+      await route.fallback();
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/issues/${issueNumber}/comments/77/vote`,
     async (route) => {
       commentVoteRequests.push({
         csrfToken: route.request().headers()["x-csrf-token"] ?? null,
@@ -3612,19 +3804,22 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
       });
     },
   );
-  await page.route("**/api/v1/projects/admin/sample/issues/11/*voteWeight", async (route) => {
-    issueWeightRequests.push({
-      csrfToken: route.request().headers()["x-csrf-token"] ?? null,
-      method: route.request().method(),
-      url: route.request().url(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        weight: route.request().url().includes("upvoteWeight") ? 3 : 2,
-      }),
-    });
-  });
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/issues/${issueNumber}/*voteWeight`,
+    async (route) => {
+      issueWeightRequests.push({
+        csrfToken: route.request().headers()["x-csrf-token"] ?? null,
+        method: route.request().method(),
+        url: route.request().url(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          weight: route.request().url().includes("upvoteWeight") ? 3 : 2,
+        }),
+      });
+    },
+  );
   return {
     commentDeleteRequests,
     commentVoteRequests,

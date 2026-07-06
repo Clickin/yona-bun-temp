@@ -58,9 +58,7 @@ function ProjectIssueDetailRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectIssueDetailScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectIssueDetailScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -103,13 +101,19 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   if (issueQuery.error instanceof RestApiError && issueQuery.error.status === 404) {
     return (
-      <>
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
-      </>
+      </SiteLayoutShell>
     );
   }
 
@@ -123,7 +127,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   }
 
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <IssueDetailAssets
@@ -146,8 +150,16 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         runtimeConfig={runtimeConfig}
       />
       <CommentDeleteModalScripts basePath={runtimeConfig.basePath} />
-    </>
+    </SiteLayoutShell>
   );
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function IssueDetailAssets({
@@ -2434,7 +2446,7 @@ function IssueCommentRow({
 
   return (
     <li
-      className={`comment ${isAuthorComment ? "author" : ""} ${hasCurrentUserMention ? "mentioned" : ""}`}
+      className={`comment ${isAuthorComment ? "author " : ""}${hasCurrentUserMention ? "mentioned" : ""}`}
       id={`comment-${commentId}`}
       onMouseEnter={() => setReplyVisible(true)}
       onMouseLeave={() => {
