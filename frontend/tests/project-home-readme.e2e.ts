@@ -32,6 +32,21 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   );
 });
 
+test("protected org-owned project home restores the legacy browser title", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal`);
+  await expect(page).toHaveTitle("portal - Home");
+});
+
 test("project home README tab keeps legacy desktop and mobile proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectHome(page, {
@@ -737,13 +752,18 @@ async function mockProjectHome(
     favoriteResponseFavorited: boolean;
     favoriteRequests: { hasCsrfToken: boolean; method: string }[];
     leaveRequests: { hasCsrfToken: boolean; method: string }[];
+    ownerName: string;
     overviewRequests: { hasCsrfToken: boolean; method: string; overview: string }[];
     project: Record<string, unknown>;
+    projectName: string;
     readmeFile: unknown;
     watchResponseCount: number;
     watchRequests: { hasCsrfToken: boolean; method: string }[];
   }> = {},
 ) {
+  const ownerName = overrides.ownerName ?? "admin";
+  const projectName = overrides.projectName ?? "sample";
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -781,44 +801,53 @@ async function mockProjectHome(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
-    const request = route.request();
-    overrides.favoriteRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        favorited: overrides.favoriteResponseFavorited ?? true,
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/enroll", async (route) => {
-    const request = route.request();
-    overrides.enrollRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        enrollmentRequested: request.method() === "POST",
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/members/1", async (route) => {
-    const request = route.request();
-    overrides.leaveRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ redirectPath: "/admin" }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/watch", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/favorite`,
+    async (route) => {
+      const request = route.request();
+      overrides.favoriteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          favorited: overrides.favoriteResponseFavorited ?? true,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/enroll`,
+    async (route) => {
+      const request = route.request();
+      overrides.enrollRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          enrollmentRequested: request.method() === "POST",
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/members/1`,
+    async (route) => {
+      const request = route.request();
+      overrides.leaveRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ redirectPath: `/${ownerName}` }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/owners/${ownerName}/projects/${projectName}/watch`, async (route) => {
     const request = route.request();
     overrides.watchRequests?.push({
       hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
@@ -832,82 +861,88 @@ async function mockProjectHome(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/overview", async (route) => {
-    const request = route.request();
-    const body = request.postDataJSON() as { overview?: string };
-    overrides.overviewRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
-      method: request.method(),
-      overview: body.overview ?? "",
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/overview`,
+    async (route) => {
+      const request = route.request();
+      const body = request.postDataJSON() as { overview?: string };
+      overrides.overviewRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-project-home",
+        method: request.method(),
         overview: body.overview ?? "",
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        cloneUrl: "https://example.com/admin/sample.git",
-        currentMilestone: {
-          closedIssueCount: 1,
-          completionPercent: 50,
-          dueDateLabel: "Jul 5, 2026",
-          dueDateOverdue: false,
-          id: 5,
-          openIssueCount: 1,
-          state: "open",
-          title: "v1.0",
-          untilLabel: "4 days left",
-        },
-        dashboard: {
-          assignees: [],
-          labels: [],
-          milestones: [],
-          noMilestoneOpenIssueCount: 0,
-          pullRequests: [],
-          unassignedOpenIssueCount: 0,
-        },
-        enrollmentRequestCount: overrides.enrollmentRequestCount ?? 0,
-        history: { items: [] },
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        members: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            loginId: "admin",
-            userId: 1,
-            userLabel: "Site Admin",
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          overview: body.overview ?? "",
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          cloneUrl: `https://example.com/${ownerName}/${projectName}.git`,
+          currentMilestone: {
+            closedIssueCount: 1,
+            completionPercent: 50,
+            dueDateLabel: "Jul 5, 2026",
+            dueDateOverdue: false,
+            id: 5,
+            openIssueCount: 1,
+            state: "open",
+            title: "v1.0",
+            untilLabel: "4 days left",
           },
-        ],
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        overview: "Sample overview",
-        ownerName: "admin",
-        projectName: "sample",
-        readmeFile: overrides.readmeFile ?? null,
-        vcs: "GIT",
-        viewerCanCreateCommitResource: true,
-        viewerCanLeave: true,
-        viewerCanUpdate: true,
-        ...overrides.project,
-      }),
-    });
-  });
+          dashboard: {
+            assignees: [],
+            labels: [],
+            milestones: [],
+            noMilestoneOpenIssueCount: 0,
+            pullRequests: [],
+            unassignedOpenIssueCount: 0,
+          },
+          enrollmentRequestCount: overrides.enrollmentRequestCount ?? 0,
+          history: { items: [] },
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          members: [
+            {
+              avatarUrl: "/assets/images/default-avatar-32.png",
+              loginId: "admin",
+              userId: 1,
+              userLabel: "Site Admin",
+            },
+          ],
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
+          },
+          overview: "Sample overview",
+          ownerName,
+          projectName,
+          readmeFile: overrides.readmeFile ?? null,
+          vcs: "GIT",
+          viewerCanCreateCommitResource: true,
+          viewerCanLeave: true,
+          viewerCanUpdate: true,
+          ...overrides.project,
+        }),
+      });
+    },
+  );
 }
 
 async function selectedInputValue(page: Page, selector: string) {

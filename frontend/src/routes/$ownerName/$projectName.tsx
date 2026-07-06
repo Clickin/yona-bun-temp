@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -57,6 +57,24 @@ function legacyQueryString(value: unknown) {
       : "";
 }
 
+function useProjectHomeDocumentTitle(runtimeConfig: RuntimeConfig, projectName: string) {
+  const { t } = useLegacyMessages();
+  const homeTitle = t("menu.home");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${projectName} - ${homeTitle}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [homeTitle, projectName, runtimeConfig.siteName]);
+}
+
 function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
   event.stopPropagation();
@@ -85,6 +103,7 @@ function ProjectHomeRoute() {
 
 function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectHomeDocumentTitle(runtimeConfig, projectName);
   const { tabId } = Route.useSearch();
   const query = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
