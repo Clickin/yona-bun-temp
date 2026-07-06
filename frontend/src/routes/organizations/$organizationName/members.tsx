@@ -431,7 +431,10 @@ function OrganizationMembersBody({
         rel="stylesheet"
         type="text/css"
         media="screen"
-        href="/assets/javascripts/lib/mentionjs/mention.css"
+        href={prefixBasePath(
+          runtimeConfig.basePath,
+          "/assets/javascripts/lib/mentionjs/mention.css",
+        )}
       />
     </>
   );

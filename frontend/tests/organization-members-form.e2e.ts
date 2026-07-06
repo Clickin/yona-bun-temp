@@ -12,7 +12,7 @@ const EXPECTED_ORGANIZATION_MEMBERS = `
 <div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform">Setting</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/members">Group member</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/organizations/weblabs/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required="required" data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID"><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i> Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group" data-name="roleof-admin"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Group Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/organizations/weblabs/member/1/edit" data-loginId="admin">Group Manager</button></li><li data-value="org_member"><button type="button" data-action="apply" data-href="__BASE_PATH__/organizations/weblabs/member/1/edit" data-loginId="admin">Group Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/organizations/weblabs/member/1/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-64.png" width="64" height="64"></a><div class="member-name">Dev Member</div><div class="member-id">@dev</div><div class="member-setting"><div class="btn-group" data-name="roleof-dev"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Group Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="org_admin"><button type="button" data-action="apply" data-href="__BASE_PATH__/organizations/weblabs/member/2/edit" data-loginId="dev">Group Manager</button></li><li data-value="org_member" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/organizations/weblabs/member/2/edit" data-loginId="dev">Group Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/organizations/weblabs/member/2/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><div id="alertDeletion" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete a group member</h3></div><div class="modal-body"><p>Are you sure this user should leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="deleteBtn">Yes</button><button type="button" class="ybtn ybtn-mini" data-dismiss="modal">No</button></div></div><legend><h3>Sign-up request(1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/pending"><img src="/assets/images/default-avatar-64.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/pending"><strong>Pending User</strong></a></span><span>(pending)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginId="pending"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
-<link rel="stylesheet" type="text/css" media="screen" href="/assets/javascripts/lib/mentionjs/mention.css">
+<link rel="stylesheet" type="text/css" media="screen" href="__MENTION_STYLESHEET_HREF__">
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -20,6 +20,7 @@ test("organization members matches legacy organization/members.scala.html DOM", 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mentionStylesheetHref = legacyMentionStylesheetHref(basePath);
   await mockOrganizationMembers(page);
 
   await page.goto(`${basePath}/organizations/weblabs/members`);
@@ -30,7 +31,10 @@ test("organization members matches legacy organization/members.scala.html DOM", 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_ORGANIZATION_MEMBERS.replaceAll("__BASE_PATH__", basePath),
+      EXPECTED_ORGANIZATION_MEMBERS.replaceAll("__BASE_PATH__", basePath).replaceAll(
+        "__MENTION_STYLESHEET_HREF__",
+        mentionStylesheetHref,
+      ),
     ),
   );
   expect(await organizationMemberMetrics(page)).toEqual({
@@ -51,6 +55,32 @@ test("organization members matches legacy organization/members.scala.html DOM", 
     memberSettingOffsetTop: 15,
     roleApplyLoginId: "admin",
   });
+});
+
+test("organization members mention stylesheet keeps the configured base path", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mentionStylesheetHref = legacyMentionStylesheetHref(basePath);
+  await mockOrganizationMembers(page);
+
+  const mentionRequestPromise = page.waitForRequest(
+    (request) =>
+      request.resourceType() === "stylesheet" && request.url().endsWith(mentionStylesheetHref),
+  );
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+
+  const mentionRequest = await mentionRequestPromise;
+  await expect(page.locator(`link[href="${mentionStylesheetHref}"]`)).toHaveAttribute(
+    "media",
+    "screen",
+  );
+  expect(new URL(mentionRequest.url()).pathname).toBe(mentionStylesheetHref);
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
+    'prefixBasePath(runtimeConfig.basePath, "/assets/javascripts/lib/mentionjs/mention.css")',
+  );
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(
+    'href="/assets/javascripts/lib/mentionjs/mention.css"',
+  );
 });
 
 test("organization members forbidden response renders legacy organization error shell", async ({
@@ -1112,7 +1142,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href='/assets/javascripts/lib/mentionjs/mention.css'], .page-footer-outer",
+        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1150,6 +1180,12 @@ async function canonicalizeScreenRoots(page: Page) {
         : attr.value;
     }
   });
+}
+
+function legacyMentionStylesheetHref(basePath: string) {
+  return basePath === "/"
+    ? "/assets/javascripts/lib/mentionjs/mention.css"
+    : `${basePath}/assets/javascripts/lib/mentionjs/mention.css`;
 }
 
 async function canonicalizeHtml(page: Page, html: string) {
