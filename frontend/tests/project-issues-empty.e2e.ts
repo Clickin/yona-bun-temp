@@ -987,6 +987,22 @@ test("project issue quick search updates route like legacy partial_list_quicksea
   await expect.poll(() => new URL(page.url()).searchParams.get("authorId") ?? "").toBe("");
   await expect.poll(() => new URL(page.url()).searchParams.get("commenterId") ?? "").toBe("");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  await expect
+    .poll(async () =>
+      page.locator("#assigneeId").evaluate((select) => {
+        const selectedOption = select.selectedOptions.item(0);
+        return {
+          loginId: selectedOption?.getAttribute("data-login-id") ?? "",
+          text: selectedOption?.textContent?.trim() ?? "",
+          value: select.value,
+        };
+      }),
+    )
+    .toEqual({
+      loginId: "admin",
+      text: "Site Admin",
+      value: "1",
+    });
   await expect(
     page.locator('.lst-stacked li:has(button[pjax-filter][data-assignee-id="1"])'),
   ).toHaveClass("active");

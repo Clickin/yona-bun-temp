@@ -2441,11 +2441,19 @@ function IssueSearchForm({
 }) {
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
+  const authorSelectRef = useRef<HTMLSelectElement>(null);
+  const assigneeSelectRef = useRef<HTMLSelectElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
   const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
+  useEffect(() => {
+    syncIssueSearchUserSelect(authorSelectRef.current, search.authorId, currentUserId);
+  }, [currentUserId, search.authorId]);
+  useEffect(() => {
+    syncIssueSearchUserSelect(assigneeSelectRef.current, search.assigneeId, currentUserId);
+  }, [currentUserId, search.assigneeId]);
   const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const dueDateInput = dueDateInputRef.current;
@@ -2519,6 +2527,7 @@ function IssueSearchForm({
           <dt>{t("issue.author")}</dt>
           <dd>
             <select
+              ref={authorSelectRef}
               id="authorId"
               name="authorId"
               data-search="authorId"
@@ -2549,6 +2558,7 @@ function IssueSearchForm({
           <dt>{t("issue.assignee")}</dt>
           <dd>
             <select
+              ref={assigneeSelectRef}
               id="assigneeId"
               name="assigneeId"
               data-search="assigneeId"
@@ -2748,6 +2758,53 @@ function selectedSearchMilestone(
       (milestone) => stringField(milestone.id, "") === milestoneId,
     ) ?? null
   );
+}
+
+function syncIssueSearchUserSelect(
+  select: HTMLSelectElement | null,
+  selectedUserId: string,
+  currentUserId: string,
+) {
+  if (!select) {
+    return;
+  }
+
+  const nextOption = preferredIssueSearchUserOption(select, selectedUserId, currentUserId);
+  const nextSelectedIndex = nextOption?.index ?? 0;
+  if (select.selectedIndex === nextSelectedIndex) {
+    return;
+  }
+
+  select.selectedIndex = nextSelectedIndex;
+  (
+    window as Window & {
+      jQuery?: (target: HTMLSelectElement) => { triggerHandler: (eventName: string) => void };
+    }
+  )
+    .jQuery?.(select)
+    .triggerHandler("change.select2");
+}
+
+function preferredIssueSearchUserOption(
+  select: HTMLSelectElement,
+  selectedUserId: string,
+  currentUserId: string,
+) {
+  if (!selectedUserId) {
+    return null;
+  }
+
+  const options = Array.from(select.options);
+  if (selectedUserId === currentUserId) {
+    for (let index = options.length - 1; index >= 0; index -= 1) {
+      const option = options[index];
+      if (option.value === selectedUserId && option.dataset.loginId) {
+        return option;
+      }
+    }
+  }
+
+  return options.find((option) => option.value === selectedUserId) ?? null;
 }
 
 function IssueSearchLabelSelect({
