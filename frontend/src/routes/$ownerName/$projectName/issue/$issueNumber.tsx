@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, useRef, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
@@ -75,6 +75,8 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project-issue-detail", ownerName, projectName, numericIssueNumber],
   });
+  const issueTitle = stringField(issueQuery.data?.title);
+  useProjectIssueDetailDocumentTitle(runtimeConfig, issueTitle);
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -152,6 +154,22 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       <CommentDeleteModalScripts basePath={runtimeConfig.basePath} />
     </SiteLayoutShell>
   );
+}
+
+function useProjectIssueDetailDocumentTitle(runtimeConfig: RuntimeConfig, issueTitle: string) {
+  useEffect(() => {
+    const doc = globalThis["document"];
+    if (!doc || issueTitle === "") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    doc.title = issueTitle;
+
+    return () => {
+      doc.title = siteName;
+    };
+  }, [issueTitle, runtimeConfig.siteName]);
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {

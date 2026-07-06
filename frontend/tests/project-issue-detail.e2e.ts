@@ -563,6 +563,7 @@ test("project issue detail renders protected org-owned localhost shell state", a
   });
 
   await page.goto(`${basePath}/weblabs/portal/issue/1`);
+  await expect(page).toHaveTitle("Portal protected project smoke check");
 
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
