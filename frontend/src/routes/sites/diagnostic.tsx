@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { siteDiagnosticsQueryOptions, siteUpdateQueryOptions } from "../../api/site-admin";
 import type { SiteDiagnosticsResponse } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -17,13 +18,26 @@ export const Route = createFileRoute("/sites/diagnostic")({
   component: SiteDiagnosticRoute,
 });
 
+function useLegacySiteDiagnosticDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.siteSetting");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
+
 function SiteDiagnosticRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteDiagnosticScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -34,6 +48,7 @@ function SiteDiagnosticRoute() {
 function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const query = useQuery(siteDiagnosticsQueryOptions(runtimeConfig));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
+  useLegacySiteDiagnosticDocumentTitle(runtimeConfig);
 
   return (
     <>

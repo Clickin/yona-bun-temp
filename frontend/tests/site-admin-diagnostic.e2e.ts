@@ -15,6 +15,9 @@ const EXPECTED_DIAGNOSTIC_NO_ERROR_SCREEN = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -118,6 +121,23 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page).toHaveTitle("Site settings");
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  expect(
+    await page
+      .locator(".gnb-nav > li > a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}`,
+    `${basePath}/projects`,
+    "https://github.com/yona-projects/yona/issues",
+  ]);
+  await expect(page.locator(".gnb-nav > li > a").nth(2)).toHaveAttribute("target", "_blank");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-nav li")).toHaveText([
     "Users",
     "Posts",
@@ -178,6 +198,14 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   await expect(siteAdminShellLink).toHaveAttribute("title", "Site administration");
   await expect(siteAdminShellLink).toHaveAttribute("data-toggle", "tooltip");
   await expect(siteAdminShellLink).toHaveAttribute("data-placement", "bottom");
+  const navbarMetrics = await diagnosticNavbarMetrics(page);
+  expect(navbarMetrics.navLinkTexts).toEqual(["Y", "List All", "Feedback"]);
+  expect(navbarMetrics.navSearchGap).toBeGreaterThanOrEqual(80);
+  expect(navbarMetrics.navSearchGap).toBeLessThanOrEqual(110);
+  expect(navbarMetrics.searchBottomWithinNavbar).toBe(true);
+  expect(navbarMetrics.searchRightWithinNavbar).toBe(true);
+  expect(navbarMetrics.searchTopWithinNavbar).toBe(true);
+  expect(navbarMetrics.scopeTitlePresent).toBe(false);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -266,6 +294,11 @@ test("site admin diagnostics sidebar uses typed route Links without a route-loca
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("to={item.href}");
+  expect(source).toContain("function useLegacySiteDiagnosticDocumentTitle");
+  expect(source).toContain('document.title = t("title.siteSetting")');
+  expect(source).toContain(
+    "<SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>",
+  );
   expect(source).toContain("const legacySiteSidebarLinkProps = {");
   expect(source).toContain(
     'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
@@ -273,6 +306,36 @@ test("site admin diagnostics sidebar uses typed route Links without a route-loca
   expect(source).toContain("const legacyDiagnosticSidebarSearch = {");
   expect(source).toContain("search={legacyDiagnosticSidebarSearch}");
 });
+
+async function diagnosticNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const requireElement = <T extends Element>(selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof Element)) {
+        throw new Error(`Missing element: ${selector}`);
+      }
+      return element as T;
+    };
+
+    const navbar = requireElement<HTMLElement>(".gnb-outer");
+    const searchForm = requireElement<HTMLFormElement>('form[name="gnb-search-form"]');
+    const navLinks = Array.from(document.querySelectorAll(".gnb-nav > li > a"));
+    const navLinkTexts = navLinks.map((link) => link.textContent?.trim() ?? "");
+    const navbarRect = navbar.getBoundingClientRect();
+    const searchRect = searchForm.getBoundingClientRect();
+    const listAllLink = navLinks[1];
+    const listAllRect = listAllLink?.getBoundingClientRect();
+
+    return {
+      navLinkTexts,
+      navSearchGap: listAllRect ? Math.round(searchRect.left - listAllRect.right) : null,
+      searchBottomWithinNavbar: searchRect.bottom <= navbarRect.bottom,
+      searchRightWithinNavbar: searchRect.right <= navbarRect.right,
+      searchTopWithinNavbar: searchRect.top >= navbarRect.top,
+      scopeTitlePresent: Boolean(document.querySelector("#gnb-search-scope-title")),
+    };
+  });
+}
 
 async function diagnosticErrorMetrics(page: Page) {
   return page.evaluate(() => {
