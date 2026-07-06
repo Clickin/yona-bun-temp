@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
+  useEffect,
   useState,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -57,9 +58,7 @@ function ProjectPostsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPostsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectPostsScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -67,6 +66,7 @@ function ProjectPostsRoute() {
 
 function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectPostsDocumentTitle(runtimeConfig, ownerName, projectName);
   const search = Route.useSearch();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -82,8 +82,14 @@ function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectPostsBody
@@ -93,8 +99,39 @@ function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         runtimeConfig={runtimeConfig}
         search={search}
       />
-    </>
+    </SiteLayoutShell>
   );
+}
+
+function useProjectPostsDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const boardMenuTitle = t("menu.board");
+
+  useEffect(() => {
+    const doc = globalThis["document"];
+    if (!doc) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    doc.title = `${projectName} - ${boardMenuTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      doc.title = siteName;
+    };
+  }, [boardMenuTitle, ownerName, projectName, runtimeConfig.siteName]);
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function ProjectPostsBody({

@@ -19,7 +19,7 @@ const BOARD_DETAIL_KEYMAP = `<div class="pull-left" style="padding:10px 0px;marg
 
 const EXPECTED_PROJECT_POSTS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="post-list project-page-wrap"><div class="search-wrap underline"><form id="option_form" action="__BASE_PATH__/admin/sample/posts" method="get" class="pull-left"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><div class="search-bar"><input name="filter" class="textbox" type="text" placeholder="Search" value="release"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div><div class="board-labels"><dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-exclusive="false"><option value="8" data-category-id="3" data-category-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></form><div class="pull-right"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></div></div><div class="filter-wrap board"><div class="filters"><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=updatedDate&amp;orderDir=asc" class="filter active"><i class="ico btn-gray-arrow  down "></i>Updated</a><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=createdDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Created</a><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=numOfComments&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Comments</a></div></div><ul class="post-list-wrap notice-wrap"><li class="post-item title" href="__BASE_PATH__/admin/sample/post/2"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="label label-notice">Notice</span>&nbsp;<span class="post-id">2</span><a href="__BASE_PATH__/admin/sample/post/2" class="title">Pinned notice</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="admin">Site Admin</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/post/2#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">1</span></a></span></div></li></ul><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/admin/sample/post/3"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">3</span><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/post/3#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">2</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</button></div></li></ul><div class="write-btn-wrap"></div><div id="pagination"></div>${BOARD_LIST_KEYMAP}</div></div>
@@ -46,7 +46,27 @@ function modernizeBoardListExpected(html: string) {
     );
 }
 
-const EXPECTED_PROJECT_POSTS_CURRENT = modernizeBoardListExpected(EXPECTED_PROJECT_POSTS);
+function withProjectBoardSearchScope(
+  html: string,
+  options: { ownerName: string; organizationName?: string; projectName: string },
+) {
+  const { ownerName, organizationName, projectName } = options;
+  const scopedSearchMenu = `<form action="__BASE_PATH__/${ownerName}/${projectName}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/${ownerName}/${projectName}/search">This Project</button></li>${organizationName ? `<li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/organizations/${organizationName}/search">This Group</button></li>` : ""}<li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form>`;
+
+  return html
+    .replace('<header class="gnb-outer">', '<header class="gnb-outer project-header">')
+    .replace(
+      '<form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form>',
+      scopedSearchMenu,
+    );
+}
+
+const EXPECTED_PROJECT_POSTS_CURRENT = modernizeBoardListExpected(
+  withProjectBoardSearchScope(EXPECTED_PROJECT_POSTS, {
+    ownerName: "admin",
+    projectName: "sample",
+  }),
+);
 const EXPECTED_PROJECT_POSTS_PREFIX = EXPECTED_PROJECT_POSTS_CURRENT.replace(
   '<span class="post-id">3</span><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
   '<span class="post-id">3</span><button type="button" class="title-prefix">[P1]</button><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a>',
@@ -225,18 +245,16 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
     );
 
 function expectedProjectPostsEmpty() {
-  const listStart = EXPECTED_PROJECT_POSTS.indexOf('<div class="filter-wrap board">');
-  const listEnd = EXPECTED_PROJECT_POSTS.indexOf(
+  const listStart = EXPECTED_PROJECT_POSTS_CURRENT.indexOf('<div class="filter-wrap board">');
+  const listEnd = EXPECTED_PROJECT_POSTS_CURRENT.indexOf(
     '<div class="write-btn-wrap"></div><div id="pagination"></div>',
   );
-  return modernizeBoardListExpected(
-    `${EXPECTED_PROJECT_POSTS.slice(0, listStart).replace(
-      'value="release"',
-      'value="empty"',
-    )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${EXPECTED_PROJECT_POSTS.slice(
-      listEnd,
-    )}`,
-  );
+  return `${EXPECTED_PROJECT_POSTS_CURRENT.slice(0, listStart).replace(
+    'value="release"',
+    'value="empty"',
+  )}<div class="error-wrap"><i class="ico ico-err1"></i><p>No post has been added.</p></div>${EXPECTED_PROJECT_POSTS_CURRENT.slice(
+    listEnd,
+  )}`;
 }
 
 test("project board list matches legacy board/list.scala.html DOM", async ({ page }) => {
@@ -341,6 +359,70 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(keymapSource).not.toContain("classList");
   expect(keymapSource).not.toContain("style.display");
   expect(keymapSource).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project board list renders protected org-owned localhost shell state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "default", {
+    __ownerName: "weblabs",
+    __projectName: "portal",
+    __projectOverrides: {
+      backgroundImageUrl: "/assets/images/project_default.jpg",
+      id: 2,
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/posts`);
+  await expect(page).toHaveTitle("portal - Board - weblabs/portal");
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+
+  expect(await protectedProjectPostsShellMetrics(page)).toEqual({
+    boardTopAtOrBelowMenu: true,
+    gnbClassName: "gnb-outer project-header",
+    scopeBottomWithinNavbar: true,
+    scopeTopWithinNavbar: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
 });
 
 test("project board shared shell anchors keep active markers on li only", async ({ page }) => {
@@ -2296,7 +2378,44 @@ async function mockProjectPosts(
     | "commentUpdate"
     | "attachments"
     | "childComment" = "default",
+  overrides: Record<string, unknown> = {},
 ) {
+  const ownerName = String(overrides.__ownerName ?? "admin");
+  const projectName = String(overrides.__projectName ?? "sample");
+  const projectOverrides =
+    overrides.__projectOverrides && typeof overrides.__projectOverrides === "object"
+      ? (overrides.__projectOverrides as Record<string, unknown>)
+      : {};
+  const menuSettingOverrides =
+    projectOverrides.menuSetting && typeof projectOverrides.menuSetting === "object"
+      ? (projectOverrides.menuSetting as Record<string, unknown>)
+      : {};
+  const projectResponse = {
+    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    enrollmentRequestCount: 0,
+    id: 7,
+    isFavorite: false,
+    isForkedFromOrigin: false,
+    isPrivate: false,
+    isProtected: false,
+    logoUrl: "/assets/images/project_default_logo.png",
+    menuSetting: {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      pullRequest: true,
+      review: true,
+      ...menuSettingOverrides,
+    },
+    ownerName,
+    projectName,
+    vcs: "GIT",
+    viewerCanUpdate: true,
+    ...projectOverrides,
+    ownerName,
+    projectName,
+  };
   const commentCreateRequests: Array<{
     attachmentIds: string[];
     contentsMarkdown: string;
@@ -2343,69 +2462,54 @@ async function mockProjectPosts(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/posts/form-options**", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        canAttachFiles: true,
-        canMarkNotice: true,
-        canMarkReadme: true,
-        defaultPermissions: {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(projectResponse),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/posts/form-options**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
           canAttachFiles: true,
-          canCreate: true,
           canMarkNotice: true,
           canMarkReadme: true,
-        },
-        labels: [
-          {
-            categoryId: "3",
-            categoryIsExclusive: false,
-            categoryName: "type",
-            color: "#51aacc",
-            id: "8",
-            name: "bug",
+          defaultPermissions: {
+            canAttachFiles: true,
+            canCreate: true,
+            canMarkNotice: true,
+            canMarkReadme: true,
           },
-        ],
-        onlineCommit: {
-          branch: "",
-          edit: false,
-          issueTemplate: false,
-          path: "",
-          preparedBodyMarkdown: "",
-          title: "",
-        },
-        readme: false,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/posts?**", async (route) => {
+          labels: [
+            {
+              categoryId: "3",
+              categoryIsExclusive: false,
+              categoryName: "type",
+              color: "#51aacc",
+              id: "8",
+              name: "bug",
+            },
+          ],
+          onlineCommit: {
+            branch: "",
+            edit: false,
+            issueTemplate: false,
+            path: "",
+            preparedBodyMarkdown: "",
+            title: "",
+          },
+          readme: false,
+        }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/posts?**`, async (route) => {
     const isEmpty = state === "empty";
     const requestUrl = new URL(route.request().url());
     const requestPageNum = Number(requestUrl.searchParams.get("pageNum")) || 1;
@@ -2432,9 +2536,9 @@ async function mockProjectPosts(
                   },
                 ],
                 notice: false,
-                ownerName: "admin",
+                ownerName,
                 postNumber: "3",
-                projectName: "sample",
+                projectName,
                 readme: false,
                 title: state === "prefix" ? "[P1] Release note" : "Release note",
                 updatedLabel: "Jul 2, 2026",
@@ -2451,24 +2555,24 @@ async function mockProjectPosts(
                 createdLabel: "Jul 1, 2026",
                 labels: [],
                 notice: true,
-                ownerName: "admin",
+                ownerName,
                 postNumber: "2",
-                projectName: "sample",
+                projectName,
                 readme: false,
                 title: "Pinned notice",
                 updatedLabel: "Jul 1, 2026",
               },
             ],
-        ownerName: "admin",
+        ownerName,
         pageNum: state === "paged" ? requestPageNum : 1,
         pageSize: 15,
-        projectName: "sample",
+        projectName,
         readme: null,
         totalCount: isEmpty ? 0 : state === "paged" ? 45 : 2,
       }),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/posts/3", async (route) => {
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/posts/3`, async (route) => {
     if (route.request().method() === "DELETE") {
       deleteRequests.push(route.request().method());
       await route.fulfill({ status: 204 });
@@ -2565,7 +2669,7 @@ async function mockProjectPosts(
               ]
             : [],
         notice: false,
-        ownerName: "admin",
+        ownerName,
         permissions: {
           canComment: true,
           canCreate: true,
@@ -2576,7 +2680,7 @@ async function mockProjectPosts(
           canUpdate: state !== "readonlyLabel",
         },
         postNumber: "3",
-        projectName: "sample",
+        projectName,
         readme: false,
         title: "Release note",
         updatedLabel: "Jul 2, 2026",
@@ -2584,176 +2688,11 @@ async function mockProjectPosts(
       }),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/posts/3/watch", async (route) => {
-    const isWatching = route.request().method() === "POST";
-    watchRequests.push(route.request().method());
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        authorAvatarUrl: "/assets/images/default-avatar-32.png",
-        authorId: "2",
-        authorLabel: "Dev Member",
-        authorLoginId: "dev",
-        bodyHtml: "<p>Post <strong>markdown</strong></p>",
-        bodyMarkdown: "Post **markdown**",
-        commentCount: 0,
-        comments: [],
-        createdLabel: "Jul 2, 2026",
-        historyHtml: "",
-        historyMarkdown: "",
-        id: "33",
-        isWatching,
-        labels: [],
-        notice: false,
-        ownerName: "admin",
-        permissions: {
-          canComment: false,
-          canCreate: true,
-          canDelete: true,
-          canRead: true,
-          canSetNotice: true,
-          canWatch: true,
-          canUpdate: true,
-        },
-        postNumber: "3",
-        projectName: "sample",
-        readme: false,
-        title: "Release note",
-        updatedLabel: "Jul 2, 2026",
-        watcherCount: isWatching ? 1 : 0,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/posts/3/comments", async (route) => {
-    if (route.request().method() === "POST") {
-      const body = JSON.parse(route.request().postData() ?? "{}") as {
-        attachmentIds?: string[];
-        contentsMarkdown?: string;
-        parentCommentId?: string | number | null;
-      };
-      commentCreateRequests.push({
-        attachmentIds: body.attachmentIds ?? [],
-        contentsMarkdown: body.contentsMarkdown ?? "",
-        parentCommentId: body.parentCommentId ?? null,
-      });
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          authorAvatarUrl: "/assets/images/default-avatar-32.png",
-          authorId: "2",
-          authorLabel: "Dev Member",
-          authorLoginId: "dev",
-          bodyHtml: "<p>Post <strong>markdown</strong></p>",
-          bodyMarkdown: "Post **markdown**",
-          commentCount: 1,
-          comments: [
-            {
-              attachments: [],
-              authorId: "1",
-              authorLabel: "Site Admin",
-              authorLoginId: "admin",
-              contentsHtml: "<p>New <strong>board</strong> comment</p>",
-              contentsMarkdown: "New **board** comment",
-              createdLabel: "Jul 5, 2026",
-              id: "23",
-              parentCommentId: "",
-              viaEmail: false,
-            },
-          ],
-          createdLabel: "Jul 2, 2026",
-          historyHtml: "",
-          historyMarkdown: "",
-          id: "33",
-          isWatching: false,
-          labels: [],
-          notice: false,
-          ownerName: "admin",
-          permissions: {
-            canComment: true,
-            canCreate: true,
-            canDelete: true,
-            canRead: true,
-            canSetNotice: true,
-            canWatch: true,
-            canUpdate: true,
-          },
-          postNumber: "3",
-          projectName: "sample",
-          readme: false,
-          title: "Release note",
-          updatedLabel: "Jul 2, 2026",
-          watcherCount: 0,
-        }),
-      });
-      return;
-    }
-    await route.fallback();
-  });
-  await page.route("**/api/v1/projects/admin/sample/posts/3/comments/21", async (route) => {
-    if (route.request().method() === "PATCH") {
-      const body = JSON.parse(route.request().postData() ?? "{}") as {
-        attachmentIds?: string[];
-        contentsMarkdown?: string;
-        parentCommentId?: string | number | null;
-      };
-      commentUpdateRequests.push({
-        attachmentIds: body.attachmentIds ?? [],
-        contentsMarkdown: body.contentsMarkdown ?? "",
-        parentCommentId: body.parentCommentId ?? null,
-      });
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          authorAvatarUrl: "/assets/images/default-avatar-32.png",
-          authorId: "2",
-          authorLabel: "Dev Member",
-          authorLoginId: "dev",
-          bodyHtml: "<p>Post <strong>markdown</strong></p>",
-          bodyMarkdown: "Post **markdown**",
-          commentCount: 1,
-          comments: [
-            {
-              attachments: [],
-              authorId: "2",
-              authorLabel: "Dev Member",
-              authorLoginId: "dev",
-              contentsHtml: "<p>Updated <strong>board</strong> comment</p>",
-              contentsMarkdown: "Updated **board** comment",
-              createdLabel: "Jul 3, 2026",
-              id: "21",
-              parentCommentId: "",
-              viaEmail: false,
-            },
-          ],
-          createdLabel: "Jul 2, 2026",
-          historyHtml: "",
-          historyMarkdown: "",
-          id: "33",
-          isWatching: false,
-          labels: [],
-          notice: false,
-          ownerName: "admin",
-          permissions: {
-            canComment: true,
-            canCreate: true,
-            canDelete: true,
-            canRead: true,
-            canSetNotice: true,
-            canWatch: true,
-            canUpdate: true,
-          },
-          postNumber: "3",
-          projectName: "sample",
-          readme: false,
-          title: "Release note",
-          updatedLabel: "Jul 2, 2026",
-          watcherCount: 0,
-        }),
-      });
-      return;
-    }
-    if (route.request().method() === "DELETE") {
-      commentDeleteRequests.push(route.request().method());
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/posts/3/watch`,
+    async (route) => {
+      const isWatching = route.request().method() === "POST";
+      watchRequests.push(route.request().method());
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
@@ -2769,10 +2708,10 @@ async function mockProjectPosts(
           historyHtml: "",
           historyMarkdown: "",
           id: "33",
-          isWatching: false,
+          isWatching,
           labels: [],
           notice: false,
-          ownerName: "admin",
+          ownerName,
           permissions: {
             canComment: false,
             canCreate: true,
@@ -2783,17 +2722,191 @@ async function mockProjectPosts(
             canUpdate: true,
           },
           postNumber: "3",
-          projectName: "sample",
+          projectName,
           readme: false,
           title: "Release note",
           updatedLabel: "Jul 2, 2026",
-          watcherCount: 0,
+          watcherCount: isWatching ? 1 : 0,
         }),
       });
-      return;
-    }
-    await route.fallback();
-  });
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/posts/3/comments`,
+    async (route) => {
+      if (route.request().method() === "POST") {
+        const body = JSON.parse(route.request().postData() ?? "{}") as {
+          attachmentIds?: string[];
+          contentsMarkdown?: string;
+          parentCommentId?: string | number | null;
+        };
+        commentCreateRequests.push({
+          attachmentIds: body.attachmentIds ?? [],
+          contentsMarkdown: body.contentsMarkdown ?? "",
+          parentCommentId: body.parentCommentId ?? null,
+        });
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+            authorId: "2",
+            authorLabel: "Dev Member",
+            authorLoginId: "dev",
+            bodyHtml: "<p>Post <strong>markdown</strong></p>",
+            bodyMarkdown: "Post **markdown**",
+            commentCount: 1,
+            comments: [
+              {
+                attachments: [],
+                authorId: "1",
+                authorLabel: "Site Admin",
+                authorLoginId: "admin",
+                contentsHtml: "<p>New <strong>board</strong> comment</p>",
+                contentsMarkdown: "New **board** comment",
+                createdLabel: "Jul 5, 2026",
+                id: "23",
+                parentCommentId: "",
+                viaEmail: false,
+              },
+            ],
+            createdLabel: "Jul 2, 2026",
+            historyHtml: "",
+            historyMarkdown: "",
+            id: "33",
+            isWatching: false,
+            labels: [],
+            notice: false,
+            ownerName,
+            permissions: {
+              canComment: true,
+              canCreate: true,
+              canDelete: true,
+              canRead: true,
+              canSetNotice: true,
+              canWatch: true,
+              canUpdate: true,
+            },
+            postNumber: "3",
+            projectName,
+            readme: false,
+            title: "Release note",
+            updatedLabel: "Jul 2, 2026",
+            watcherCount: 0,
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    },
+  );
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/posts/3/comments/21`,
+    async (route) => {
+      if (route.request().method() === "PATCH") {
+        const body = JSON.parse(route.request().postData() ?? "{}") as {
+          attachmentIds?: string[];
+          contentsMarkdown?: string;
+          parentCommentId?: string | number | null;
+        };
+        commentUpdateRequests.push({
+          attachmentIds: body.attachmentIds ?? [],
+          contentsMarkdown: body.contentsMarkdown ?? "",
+          parentCommentId: body.parentCommentId ?? null,
+        });
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+            authorId: "2",
+            authorLabel: "Dev Member",
+            authorLoginId: "dev",
+            bodyHtml: "<p>Post <strong>markdown</strong></p>",
+            bodyMarkdown: "Post **markdown**",
+            commentCount: 1,
+            comments: [
+              {
+                attachments: [],
+                authorId: "2",
+                authorLabel: "Dev Member",
+                authorLoginId: "dev",
+                contentsHtml: "<p>Updated <strong>board</strong> comment</p>",
+                contentsMarkdown: "Updated **board** comment",
+                createdLabel: "Jul 3, 2026",
+                id: "21",
+                parentCommentId: "",
+                viaEmail: false,
+              },
+            ],
+            createdLabel: "Jul 2, 2026",
+            historyHtml: "",
+            historyMarkdown: "",
+            id: "33",
+            isWatching: false,
+            labels: [],
+            notice: false,
+            ownerName,
+            permissions: {
+              canComment: true,
+              canCreate: true,
+              canDelete: true,
+              canRead: true,
+              canSetNotice: true,
+              canWatch: true,
+              canUpdate: true,
+            },
+            postNumber: "3",
+            projectName,
+            readme: false,
+            title: "Release note",
+            updatedLabel: "Jul 2, 2026",
+            watcherCount: 0,
+          }),
+        });
+        return;
+      }
+      if (route.request().method() === "DELETE") {
+        commentDeleteRequests.push(route.request().method());
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+            authorId: "2",
+            authorLabel: "Dev Member",
+            authorLoginId: "dev",
+            bodyHtml: "<p>Post <strong>markdown</strong></p>",
+            bodyMarkdown: "Post **markdown**",
+            commentCount: 0,
+            comments: [],
+            createdLabel: "Jul 2, 2026",
+            historyHtml: "",
+            historyMarkdown: "",
+            id: "33",
+            isWatching: false,
+            labels: [],
+            notice: false,
+            ownerName,
+            permissions: {
+              canComment: false,
+              canCreate: true,
+              canDelete: true,
+              canRead: true,
+              canSetNotice: true,
+              canWatch: true,
+              canUpdate: true,
+            },
+            postNumber: "3",
+            projectName,
+            readme: false,
+            title: "Release note",
+            updatedLabel: "Jul 2, 2026",
+            watcherCount: 0,
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    },
+  );
   return {
     commentCreateRequests,
     commentDeleteRequests,
@@ -2801,6 +2914,34 @@ async function mockProjectPosts(
     deleteRequests,
     watchRequests,
   };
+}
+
+async function protectedProjectPostsShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const board = document.querySelector<HTMLElement>(".post-list.project-page-wrap");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!navbar || !scope || !search || !board || !menu) {
+      throw new Error("Missing protected board shell elements");
+    }
+    const navbarRect = navbar.getBoundingClientRect();
+    const scopeRect = scope.getBoundingClientRect();
+    const searchRect = search.getBoundingClientRect();
+    const boardRect = board.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    return {
+      boardTopAtOrBelowMenu: Math.round(boardRect.top) >= Math.round(menuRect.bottom),
+      gnbClassName: navbar.className,
+      scopeBottomWithinNavbar: Math.round(scopeRect.bottom) <= Math.round(navbarRect.bottom),
+      scopeTopWithinNavbar: Math.round(scopeRect.top) >= Math.round(navbarRect.top),
+      searchBottomWithinNavbar: Math.round(searchRect.bottom) <= Math.round(navbarRect.bottom),
+      searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
+      searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),
+      searchTopWithinNavbar: Math.round(searchRect.top) >= Math.round(navbarRect.top),
+    };
+  });
 }
 
 async function canonicalize(page: Page, selector: string) {
