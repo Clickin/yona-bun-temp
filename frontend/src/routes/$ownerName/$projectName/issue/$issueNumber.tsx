@@ -1925,6 +1925,10 @@ type VoterLike = {
   userLabel?: unknown;
 };
 
+function isTopLevelIssueComment(comment: IssueComment | IssueChildComment) {
+  return stringField((comment as Record<string, unknown>).parentCommentId) === "";
+}
+
 function IssueMainTimeline({
   basePath,
   currentUserLoginId,
@@ -1941,10 +1945,11 @@ function IssueMainTimeline({
   runtimeConfig: RuntimeConfig;
 }) {
   const comments = issue.comments ?? [];
+  const topLevelComments = comments.filter(isTopLevelIssueComment);
   const timeline: IssueTimelineItem[] = issue.timeline?.length
-    ? issue.timeline
-    : comments.map((comment) => ({ comment, id: stringField(comment.id) }));
-  const hasTimelineItems = comments.length + (issue.timeline ?? []).length > 0;
+    ? issue.timeline.filter((item) => !item.comment || isTopLevelIssueComment(item.comment))
+    : topLevelComments.map((comment) => ({ comment, id: stringField(comment.id) }));
+  const hasTimelineItems = timeline.length > 0;
 
   return (
     <div id="comments" className="board-comment-wrap">
@@ -1952,7 +1957,7 @@ function IssueMainTimeline({
         <div className="timeline-list">
           <div className="comment-header">
             <i></i>
-            <strong>Comment</strong> <strong className="num">{comments.length}</strong>
+            <strong>Comment</strong> <strong className="num">{topLevelComments.length}</strong>
           </div>
           <hr className="nm" />
           {hasTimelineItems ? (
@@ -3143,18 +3148,19 @@ function IssueIndexTimeline({
   issue: RestIssueDetailResponse;
 }) {
   const comments = issue.comments ?? [];
-  const hasTimelineItems = comments.length + (issue.timeline ?? []).length > 0;
+  const topLevelComments = comments.filter(isTopLevelIssueComment);
+  const hasTimelineItems = topLevelComments.length > 0 || (issue.timeline?.length ?? 0) > 0;
 
   return (
     <div id="comments" className="board-comment-wrap">
       <div id="timeline">
         <div className="timeline-list">
           <div className="comment-header">
-            <strong>Comment</strong> <strong className="num">{comments.length}</strong>
+            <strong>Comment</strong> <strong className="num">{topLevelComments.length}</strong>
           </div>
           {hasTimelineItems ? (
             <ul className="comments">
-              {comments.map((comment) => (
+              {topLevelComments.map((comment) => (
                 <IssueIndexComment
                   comment={comment}
                   currentUserLoginId={currentUserLoginId}

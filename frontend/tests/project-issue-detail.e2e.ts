@@ -969,6 +969,75 @@ test("project issue detail preserves legacy child comment anchor divs", async ({
   });
 });
 
+test("project issue detail does not duplicate child replies from the flat comment payload", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const childReply = {
+    authorLabel: "QA One",
+    authorLoginId: "qa1",
+    contentsHtml: "<p>Child reply</p>",
+    contentsMarkdown: "Child **reply**",
+    createdLabel: "Jul 2, 2026",
+    id: 78,
+    parentCommentId: 77,
+    viewerCanDelete: true,
+  };
+  const parentComment = {
+    attachments: [],
+    authorAvatarUrl: "/assets/images/default-avatar-32.png",
+    authorLabel: "Dev Member",
+    authorLoginId: "dev",
+    childComments: [childReply],
+    contentsHtml: "<p>Comment markdown</p>",
+    contentsMarkdown: "Comment **markdown**",
+    createdLabel: "Jul 2, 2026",
+    id: 77,
+    viewerCanDelete: true,
+    viewerCanUpdate: true,
+    viaEmail: false,
+    voterCount: 0,
+    voters: [],
+  };
+
+  await mockProjectIssueDetail(page, {
+    commentCount: 1,
+    comments: [parentComment, childReply],
+    timeline: [
+      { comment: parentComment, id: 77, kind: "comment" },
+      { comment: childReply, id: 78, kind: "comment" },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const leftComments = page.locator(
+    ".span-left-pane #comments .timeline-list > ul.comments > li.comment",
+  );
+  const rightComments = page.locator(
+    ".span-right-pane #comments .timeline-list > ul.comments > li.comment.index-comment",
+  );
+  await expect(leftComments).toHaveCount(1);
+  await expect(rightComments).toHaveCount(1);
+  await expect(page.locator(".span-left-pane #comments .comment-header .num")).toHaveText("1");
+  await expect(page.locator(".span-right-pane #comments .comment-header .num")).toHaveText("1");
+  await expect(
+    page.locator(".span-left-pane #comments .timeline-list > ul.comments > li#comment-78"),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(".span-right-pane #comments .timeline-list > ul.comments > li#comment-78"),
+  ).toHaveCount(0);
+  await expect(page.locator(".span-left-pane #comment-77 > #comment-78")).toHaveCount(1);
+  await expect(
+    page.locator(".span-left-pane #comment-77 .child-comments .one-line-comment"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      `.span-left-pane #comment-77 .subcomment-author a[href="${basePath}/admin/sample/issue/11#comment-78"].ago`,
+    ),
+  ).toHaveCount(1);
+});
+
 test("project issue detail renders legacy index comment mention and child count state", async ({
   page,
 }) => {
