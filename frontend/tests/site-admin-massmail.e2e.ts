@@ -15,6 +15,9 @@ const EXPECTED_MASSMAIL_SCREEN = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -129,7 +132,21 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/massmail`);
+  await expect(page).toHaveTitle("Send mass mails");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-nav > li > a")
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+    )
+    .toEqual([
+      `${basePath}`,
+      `${basePath}/projects`,
+      "https://github.com/yona-projects/yona/issues",
+    ]);
+  await expect(page.locator(".gnb-search-form")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
   await expect(page.locator(".site-setting-nav a")).toHaveText([
     "Users",
@@ -317,7 +334,11 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
 test("site admin mass mail route keeps legacy JS behavior out of route-local DOM APIs", () => {
   const routeSource = readFileSync("src/routes/sites/massmail.tsx", "utf8");
 
-  expect(routeSource).not.toContain("document.");
+  expect(routeSource).toContain("showLegacyProjectHeaderLinks");
+  expect(routeSource).toContain('document.title = t("title.massMail");');
+  expect(routeSource).not.toContain("document.querySelector");
+  expect(routeSource).not.toContain("document.createElement");
+  expect(routeSource).not.toContain("document.getElementById");
   expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
