@@ -62,24 +62,61 @@ function ProjectPullRequestsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPullRequestsScreen
-            category="open"
-            ownerName={ownerName}
-            projectName={projectName}
-            requestType="open"
-            runtimeConfig={runtimeConfig}
-            search={search}
-          />
-        </SiteLayoutShell>
+        <ProjectOpenPullRequestsRouteShell
+          ownerName={ownerName}
+          projectName={projectName}
+          runtimeConfig={runtimeConfig}
+          search={search}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function ProjectOpenPullRequestsRouteShell({
+  ownerName,
+  projectName,
+  runtimeConfig,
+  search,
+}: {
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  search: ProjectPullRequestsSearch;
+}) {
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+
+  if (!projectQuery.data) {
+    return null;
+  }
+
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectPullRequestsScreen
+        category="open"
+        ownerName={ownerName}
+        project={projectQuery.data}
+        projectName={projectName}
+        requestType="open"
+        runtimeConfig={runtimeConfig}
+        search={search}
+      />
+    </SiteLayoutShell>
   );
 }
 
 export function ProjectPullRequestsScreen({
   category,
   ownerName,
+  project: initialProject,
   projectName,
   requestType,
   runtimeConfig,
@@ -87,11 +124,13 @@ export function ProjectPullRequestsScreen({
 }: {
   category: PullRequestListCategory;
   ownerName: string;
+  project?: ProjectContainer;
   projectName: string;
   requestType: "closed" | "open" | "sent";
   runtimeConfig: RuntimeConfig;
   search: ProjectPullRequestsSearch;
 }) {
+  useProjectPullRequestsDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -105,21 +144,18 @@ export function ProjectPullRequestsScreen({
       projectName,
     }),
   );
+  const project = initialProject ?? projectQuery.data;
 
-  if (!projectQuery.data || !pullRequestsQuery.data) {
+  if (!project || !pullRequestsQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="pullRequest"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
       <ProjectPullRequestsBody
-        project={projectQuery.data}
+        project={project}
         pullRequests={pullRequestsQuery.data}
         requestType={requestType}
         runtimeConfig={runtimeConfig}
@@ -835,4 +871,34 @@ function splitHeaderWordsInBrackets(title: string) {
     prefixes: onlyPrefixes ? [] : prefixes,
     title: onlyPrefixes ? title : rest.trimStart(),
   };
+}
+
+function useProjectPullRequestsDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const pullRequestMenuTitle = t("menu.pullRequest");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${projectName} - ${pullRequestMenuTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, pullRequestMenuTitle, runtimeConfig.siteName]);
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }

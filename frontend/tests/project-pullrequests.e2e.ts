@@ -16,27 +16,30 @@ const EXPECTED_PROJECT_PULLREQUESTS_EMPTY = `
 `;
 
 function expectedProjectPullRequestsEmpty(basePath: string) {
-  return EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
-    .replace(
-      '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
-      '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
-    )
-    .replace(
-      '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
-      '<button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
-    )
-    .replace(
-      '</a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
-      '</button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
-    )
-    .replace(
-      '</a><ul class="dropdown-menu flat right">',
-      '</button><ul class="dropdown-menu flat right">',
-    )
-    .replace(
-      '<span class="user-project-list" data-project-id="7">',
-      '<span class="user-project-list" data-project-id="7" role="button" tabindex="0">',
-    );
+  return withProjectSearchScopeHeader(
+    EXPECTED_PROJECT_PULLREQUESTS_EMPTY.replaceAll("__BASE_PATH__", basePath)
+      .replace(
+        '<li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>',
+        '<li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>',
+      )
+      .replace(
+        '<a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
+        '<button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">',
+      )
+      .replace(
+        '</a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
+        '</button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown">',
+      )
+      .replace(
+        '</a><ul class="dropdown-menu flat right">',
+        '</button><ul class="dropdown-menu flat right">',
+      )
+      .replace(
+        '<span class="user-project-list" data-project-id="7">',
+        '<span class="user-project-list" data-project-id="7" role="button" tabindex="0">',
+      ),
+    basePath,
+  );
 }
 
 test("project pull request empty list matches legacy git/list.scala.html DOM", async ({ page }) => {
@@ -425,6 +428,77 @@ test("project pull request search interactions follow legacy form submit behavio
   });
 });
 
+test("protected org-owned project pull request restores legacy title and search-scope header", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProtectedOrgProjectPullRequests(page);
+
+  await page.goto(`${basePath}/weblabs/portal/pullRequests?filter=empty`);
+  await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+
+  const headerMetrics = await pullRequestHeaderSearchScopeMetrics(page);
+  expect(headerMetrics.formAction).toBe(`${basePath}/weblabs/portal/search`);
+  expect(headerMetrics.scope.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.scope.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.searchBox.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.searchBox.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.input.top).toBeGreaterThanOrEqual(headerMetrics.searchBox.top);
+  expect(headerMetrics.input.bottom).toBeLessThanOrEqual(headerMetrics.searchBox.bottom);
+  expect(headerMetrics.input.left).toBeGreaterThanOrEqual(headerMetrics.searchBox.left);
+  expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
+  expect(Math.abs(headerMetrics.searchBox.left - headerMetrics.scope.right)).toBeLessThanOrEqual(
+    16,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await expect(page.locator(".gnb-search-form .dropdown-menu.flat.right")).toBeVisible();
+  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
+
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form")
+        .getAttribute("action")
+        .then((action) => action ?? ""),
+    )
+    .toBe(`${basePath}/organizations/weblabs/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form")
+        .getAttribute("action")
+        .then((action) => action ?? ""),
+    )
+    .toBe(`${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(0).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form")
+        .getAttribute("action")
+        .then((action) => action ?? ""),
+    )
+    .toBe(`${basePath}/weblabs/portal/search`);
+});
+
 test("project closed pull request title-prefix keeps the closed list route", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPullRequests(page);
@@ -510,7 +584,7 @@ test("project pull request pagination input follows legacy editable behavior", a
 });
 
 function expectedClosedPullRequestsEmpty(basePath: string) {
-  return expectedProjectPullRequestsEmpty(basePath)
+  return withoutProjectSearchScopeHeader(expectedProjectPullRequestsEmpty(basePath), basePath)
     .replace(
       `action="${basePath}/admin/sample/pullRequests"`,
       `action="${basePath}/admin/sample/closedPullRequests"`,
@@ -534,7 +608,10 @@ function expectedClosedPullRequestsEmpty(basePath: string) {
 }
 
 function expectedSentPullRequestsEmpty(basePath: string) {
-  const withSentTab = expectedProjectPullRequestsEmpty(basePath)
+  const withSentTab = withoutProjectSearchScopeHeader(
+    expectedProjectPullRequestsEmpty(basePath),
+    basePath,
+  )
     .replace(
       '<div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="' +
         basePath +
@@ -572,6 +649,40 @@ function expectedSentPullRequestsEmpty(basePath: string) {
         '/admin/sample/sentPullRequests" data-type="state">Sent code<span class="num-badge">0/0</span></a></li><li><div class="two-column-icon mr10 hide-in-mobile"',
     );
   return withSentTab;
+}
+
+function withProjectSearchScopeHeader(html: string, basePath: string) {
+  return html
+    .replace('<header class="gnb-outer">', '<header class="gnb-outer project-header">')
+    .replace(
+      '<form action="' +
+        basePath +
+        '/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box">',
+      '<form action="' +
+        basePath +
+        '/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" id="gnb-search-scope-title" type="button">This Project</button><ul class="dropdown-menu flat right"><li><button data-action="' +
+        basePath +
+        '/admin/sample/search" data-toggle="search-scope" type="button">This Project</button></li><li><button data-action="' +
+        basePath +
+        '/search" data-toggle="search-scope" type="button">All Projects</button></li></ul></div><div class="search-box select">',
+    );
+}
+
+function withoutProjectSearchScopeHeader(html: string, basePath: string) {
+  return html
+    .replace('<header class="gnb-outer project-header">', '<header class="gnb-outer">')
+    .replace(
+      '<form action="' +
+        basePath +
+        '/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" id="gnb-search-scope-title" type="button">This Project</button><ul class="dropdown-menu flat right"><li><button data-action="' +
+        basePath +
+        '/admin/sample/search" data-toggle="search-scope" type="button">This Project</button></li><li><button data-action="' +
+        basePath +
+        '/search" data-toggle="search-scope" type="button">All Projects</button></li></ul></div><div class="search-box select">',
+      '<form action="' +
+        basePath +
+        '/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box">',
+    );
 }
 
 function expectedRecentlyPushedPullRequests(basePath: string) {
@@ -957,6 +1068,70 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
   return { pushedBranchDeleteRequests };
 }
 
+async function mockProtectedOrgProjectPullRequests(page: Page) {
+  await mockProjectPullRequests(page);
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        enrollmentRequestCount: 0,
+        id: 17,
+        isUsingReviewerCount: true,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: true,
+        logoUrl: "/assets/images/project_default_logo.png",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        organizationName: "weblabs",
+        ownerName: "weblabs",
+        projectName: "portal",
+        vcs: "GIT",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/pull-requests**", async (route) => {
+    const url = new URL(route.request().url());
+    const queryCategory = url.searchParams.get("category");
+    const category =
+      queryCategory === "closed" || queryCategory === "sent" ? queryCategory : "open";
+    const filter = url.searchParams.get("filter") ?? "";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        acceptedCount: 0,
+        category,
+        closedCount: 0,
+        contributors: [
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            loginId: "admin",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+        ],
+        currentUserId: 1,
+        items: [],
+        openCount: 0,
+        pageNum: 1,
+        pageSize: 15,
+        recentlyPushedBranches: [],
+        sentCount: 0,
+        totalCount: filter === "empty" ? 0 : 0,
+      }),
+    });
+  });
+}
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
@@ -1283,6 +1458,35 @@ async function pullRequestSearchMetrics(page: Page) {
       searchBarDisplay: window.getComputedStyle(searchBar).display,
       searchMargin: window.getComputedStyle(search).margin,
       selectedContributor: select.value,
+    };
+  });
+}
+
+async function pullRequestHeaderSearchScopeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = form?.querySelector<HTMLElement>(".search-box.select");
+    const input = form?.querySelector<HTMLInputElement>('input[name="keyword"]');
+    const missing = Object.entries({ form, header, input, scope, searchBox })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected PR header search scope targets are missing: ${missing.join(", ")}`);
+    }
+
+    const rect = (element: HTMLElement) => {
+      const { bottom, left, right, top } = element.getBoundingClientRect();
+      return { bottom, left, right, top };
+    };
+
+    return {
+      formAction: form.getAttribute("action"),
+      header: rect(header),
+      input: rect(input),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
     };
   });
 }
