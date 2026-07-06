@@ -260,6 +260,9 @@ function localSettledSelectorForPath(path) {
   if (path.endsWith("/issueform") || path.endsWith("/editform")) {
     return "[data-toggle=markdown-editor]";
   }
+  if (/\/code(?:\/|$)/u.test(path)) {
+    return ".project-header-outer";
+  }
   const issueDetailMatch = path.match(/\/issue\/(\d+)$/u);
   if (issueDetailMatch) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;

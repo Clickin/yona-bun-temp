@@ -144,6 +144,8 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /viewportProfile: viewportProfile\.name/u);
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
+  assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(path\)\)/u);
+  assert.match(source, /return "\.project-header-outer";/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);
   assert.match(
