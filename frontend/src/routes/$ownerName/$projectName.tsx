@@ -129,6 +129,7 @@ function ProjectHomeBody({
   const [overviewText, setOverviewText] = useState(initialOverview);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const projectRecord = recordField(project);
+  const isGitProject = stringField(project.vcs, "GIT") === "GIT";
   const menuSetting = projectMenuSetting(project);
   const currentMilestone = projectCurrentMilestone(project);
   const members = arrayField(projectRecord.members) as YonaUserItem[];
@@ -220,7 +221,15 @@ function ProjectHomeBody({
             >
               <h3>
                 <span id="project-description" className="markdown-wrap">
-                  {overviewText || t("project.description.placeholder")}
+                  {overviewText ? (
+                    isGitProject ? (
+                      overviewText
+                    ) : (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{overviewText}</ReactMarkdown>
+                    )
+                  ) : (
+                    t("project.description.placeholder")
+                  )}
                 </span>
                 {booleanField(project.viewerCanUpdate) ? (
                   <button

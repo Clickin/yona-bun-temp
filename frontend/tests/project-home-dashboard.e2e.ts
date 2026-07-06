@@ -173,12 +173,91 @@ test("project home Dashboard tab treats zero-open milestones as non-empty legacy
   await expect(milestoneOverview.locator(".row-fluid .num strong")).toHaveText("2");
 });
 
+test("project home Dashboard tab matches the localhost SVN dashboard branch", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    ownerName: "admin",
+    projectName: "svnplayground",
+    dashboard: {
+      assignees: [],
+      labels: [],
+      milestones: [],
+      noMilestoneOpenIssueCount: 0,
+      pullRequests: [],
+      unassignedOpenIssueCount: 0,
+    },
+    project: {
+      cloneUrl: "http://127.0.0.1:9000/svn/admin/svnplayground",
+      id: 3,
+      members: [
+        {
+          avatarUrl: "/assets/images/default-avatar-128.png",
+          loginId: "admin",
+          userId: 1,
+          userLabel: "Site Admin",
+        },
+      ],
+      menuSetting: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        pullRequest: true,
+        review: true,
+      },
+      overview: "Parity seed Subversion project for non-Git error-state verification",
+      vcs: "SVN",
+      viewerCanCreateCommitResource: false,
+      viewerCanLeave: false,
+      viewerCanUpdate: false,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/svnplayground?tabId=dashboard`);
+  await expect(page.locator(".project-overview-home")).toBeVisible();
+
+  expect(await canonicalizeLocator(page, "#project-description")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<span id="project-description" class="markdown-wrap"><p>Parity seed Subversion project for non-Git error-state verification</p></span>`,
+    ),
+  );
+  expect(await canonicalizeLocator(page, ".project-overview-home")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="project-overview-home row-fluid"><div class="span6"><h5>Open issues: by assignee</h5><div class="overview-assignee"><div class="empty"><p>No issue found</p><a href="${basePath}/admin/svnplayground/issueform" target="_blank" class="ybtn ybtn-small">New issue</a></div></div><hr><h5>Open issues: by milestone</h5><div class="overview-milestone"><div class="empty"><p>No milestone entered.</p><a href="${basePath}/admin/svnplayground/newMilestoneForm" target="_blank" class="ybtn ybtn-small">New milestone</a></div></div></div><div class="span6"><h5>Open issues: by label</h5><link rel="stylesheet" href="${basePath}/admin/svnplayground/issue/labels.css" type="text/css"></div></div>`,
+    ),
+  );
+
+  await expect(page.locator(".project-menu-nav.project-menu-gruop")).toContainText("Review");
+  await expect(page.locator(".project-menu-nav.project-menu-gruop")).not.toContainText(
+    "Pull request",
+  );
+  await expect(page.locator(".project-setting")).toHaveCount(0);
+  await expect(page.locator(".project-btn-wrap .ybtn")).toHaveCount(1);
+  await expect(page.locator(".project-btn-wrap")).not.toContainText("Fork");
+  await expect(page.locator("#cloneURL")).toHaveValue(
+    "http://127.0.0.1:9000/svn/admin/svnplayground",
+  );
+  await expect(page.locator("[data-toggle='description-edit']")).toHaveCount(0);
+  await expect(page.locator("#member-add-link")).toHaveCount(0);
+  await expect(page.locator("#projectLeaveBtn")).toHaveCount(0);
+  await expect(page.locator(".milestone-info")).toHaveCount(0);
+});
+
 async function mockProjectHome(
   page: Page,
   overrides: Partial<{
     dashboard: Record<string, unknown>;
+    ownerName: string;
+    project: Record<string, unknown>;
+    projectName: string;
+    session: Record<string, unknown>;
   }> = {},
 ) {
+  const ownerName = overrides.ownerName ?? "admin";
+  const projectName = overrides.projectName ?? "sample";
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -192,82 +271,87 @@ async function mockProjectHome(
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
+        ...overrides.session,
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        cloneUrl: "https://example.com/admin/sample.git",
-        dashboard: {
-          assignees: [
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          cloneUrl: "https://example.com/admin/sample.git",
+          dashboard: {
+            assignees: [
+              {
+                avatarUrl: "/assets/images/default-avatar-32.png",
+                loginId: "dev",
+                openIssueCount: 3,
+                userId: 2,
+                userLabel: "Dev Member",
+              },
+            ],
+            labels: [
+              {
+                categoryName: "Priority",
+                color: "#e11d48",
+                id: 9,
+                name: "bug",
+                openIssueCount: 4,
+              },
+            ],
+            milestones: [
+              {
+                completionPercent: 40,
+                id: 5,
+                openIssueCount: 2,
+                title: "M1",
+              },
+            ],
+            noMilestoneOpenIssueCount: 2,
+            pullRequests: [],
+            unassignedOpenIssueCount: 1,
+            ...overrides.dashboard,
+          },
+          enrollmentRequestCount: 0,
+          history: { items: [] },
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          members: [
             {
               avatarUrl: "/assets/images/default-avatar-32.png",
-              loginId: "dev",
-              openIssueCount: 3,
-              userId: 2,
-              userLabel: "Dev Member",
+              loginId: "admin",
+              userId: 1,
+              userLabel: "Site Admin",
             },
           ],
-          labels: [
-            {
-              categoryName: "Priority",
-              color: "#e11d48",
-              id: 9,
-              name: "bug",
-              openIssueCount: 4,
-            },
-          ],
-          milestones: [
-            {
-              completionPercent: 40,
-              id: 5,
-              openIssueCount: 2,
-              title: "M1",
-            },
-          ],
-          noMilestoneOpenIssueCount: 2,
-          pullRequests: [],
-          unassignedOpenIssueCount: 1,
-          ...overrides.dashboard,
-        },
-        enrollmentRequestCount: 0,
-        history: { items: [] },
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        members: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            loginId: "admin",
-            userId: 1,
-            userLabel: "Site Admin",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
           },
-        ],
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        overview: "Sample overview",
-        ownerName: "admin",
-        projectName: "sample",
-        readmeFile: null,
-        vcs: "GIT",
-        viewerCanCreateCommitResource: true,
-        viewerCanLeave: true,
-        viewerCanUpdate: true,
-      }),
-    });
-  });
+          overview: "Sample overview",
+          readmeFile: null,
+          vcs: "GIT",
+          viewerCanCreateCommitResource: true,
+          viewerCanLeave: true,
+          viewerCanUpdate: true,
+          ...overrides.project,
+          ownerName,
+          projectName,
+        }),
+      });
+    },
+  );
 }
 
 async function dashboardLayoutMetrics(page: Page) {

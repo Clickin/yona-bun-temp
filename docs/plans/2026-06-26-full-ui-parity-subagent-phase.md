@@ -132,10 +132,11 @@ Gate A2 must run before any RC claim that "all UI parity is done":
    `.agent/legacy-html-page-audit/*`, `frontend/src/routeTree.gen.ts`, and
    packet-specific interaction paths.
 2. For each packet, use Playwright against the current app with the same base
-   path mode intended for release. When direct access to the homelab legacy
-   baseline is available, compare against `http://192.168.45.10:9000`; when it
-   is not, use the existing localhost curl proxy and still render the legacy
-   HTML in a browser.
+   path mode intended for release. Compare against the current localhost legacy
+   baseline at `http://127.0.0.1:9000` by default. If a different legacy host
+   is intentionally under test, override `YONA_LEGACY_BASE_URL` or
+   `YONA_LEGACY_PROXY_UPSTREAM`; otherwise keep browser-visible parity evidence
+   anchored to the localhost legacy instance.
 3. Capture user-visible pass/fail using selector/copy/layout assertions, not
    screenshots alone. A screenshot can support a finding, but it cannot be the
    only proof for a covered row.

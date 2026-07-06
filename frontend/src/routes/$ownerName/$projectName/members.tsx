@@ -15,6 +15,7 @@ import {
   readProjectContainerQueryOptions,
   readProjectMembersQueryOptions,
   toggleFavoriteProjectRest,
+  toggleProjectWatchRest,
   updateProjectMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -719,18 +720,32 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const projectRecord = recordField(project);
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectId = stringField(project.id, "");
   const [isFavoritedProject, setIsFavoritedProject] = useState(
     () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
   );
+  const [projectUtilDropdown, setProjectUtilDropdown] = useState<"watch" | null>(null);
+  const canWatchProject = projectCanWatch(project);
+  const [watchState, setWatchState] = useState({
+    count: projectWatchingCount(project),
+    isWatching: projectIsWatching(project),
+  });
   const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
   const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
-  const isForked = booleanField(project.isForkedFromOrigin);
-  const originalOwnerName = stringField(project.originalOwnerName, "");
-  const originalProjectName = stringField(project.originalProjectName, "");
+    stringField(projectRecord.backgroundImageUrl, "") ||
+    stringField(projectRecord.backgroundUrl, "") ||
+    "/assets/images/bg-default-project.png";
+  const isForked =
+    booleanField(projectRecord.isForkedFromOrigin) || booleanField(projectRecord.isForked);
+  const originalOwnerName =
+    stringField(projectRecord.originalOwnerName, "") ||
+    stringField(projectRecord.originOwnerName, "");
+  const originalProjectName =
+    stringField(projectRecord.originalProjectName, "") ||
+    stringField(projectRecord.originProjectName, "");
   const favoriteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -740,6 +755,23 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
       setIsFavoritedProject((current) =>
         typeof response.favorited === "boolean" ? response.favorited : !current,
       );
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.container(ownerName, projectName),
+      });
+    },
+  });
+  const watchMutation = useMutation({
+    mutationFn: async (nextWatching: boolean) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return toggleProjectWatchRest(runtimeConfig, csrfToken, ownerName, projectName, nextWatching);
+    },
+    onSuccess(response, nextWatching) {
+      setWatchState((current) => ({
+        count:
+          projectWatchingCountValue(response) ??
+          Math.max(0, current.count + (nextWatching ? 1 : -1)),
+        isWatching: nextWatching,
+      }));
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.container(ownerName, projectName),
       });
@@ -823,7 +855,100 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
             ) : null}
           </div>
           <div className="project-util-wrap">
-            <ul className="project-util"></ul>
+            <ul className="project-util">
+              {canWatchProject ? (
+                <li className={projectUtilDropdown === "watch" ? "open" : undefined}>
+                  <div
+                    className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
+                  >
+                    <Link
+                      activeOptions={legacyLinkActiveOptions}
+                      activeProps={legacyLinkActiveProps}
+                      className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
+                      title={t("project.watcher.number")}
+                      to="/$ownerName/$projectName/watchers"
+                      params={{ ownerName, projectName }}
+                    >
+                      {watchState.count}
+                    </Link>
+                    <div className="dropdown-menu flat right title">
+                      <div className="pop-title">
+                        {t(
+                          watchState.isWatching
+                            ? "project.you.are.watching"
+                            : "project.you.are.not.watching",
+                          { args: [projectName] },
+                        )}
+                      </div>
+                      <div className="pop-content">
+                        <p>{t("notification.help")}</p>
+                        <ul className="icons-ul">
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.new")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.new.comment")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.update.issue")}
+                          </li>
+                          <li>
+                            <i className="yobicon-li yobicon-ok"></i>
+                            {t("notification.help.update.pullrequest")}
+                          </li>
+                        </ul>
+                      </div>
+                      <div className="pop-content btn-wrap">
+                        <Link
+                          activeOptions={{
+                            exact: true,
+                            explicitUndefined: true,
+                            includeHash: true,
+                            includeSearch: true,
+                          }}
+                          activeProps={legacyLinkActiveProps}
+                          className="ybtn"
+                          to="/user/editform/notifications"
+                          hash={projectId}
+                        >
+                          <i className="yobicon-alert2"></i> {t("userinfo.changeNotifications")}
+                        </Link>
+                        <button
+                          type="button"
+                          className="ybtn ybtn-watching watchBtn"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setProjectUtilDropdown(null);
+                            watchMutation.mutate(!watchState.isWatching);
+                          }}
+                        >
+                          <i
+                            className={watchState.isWatching ? "yobicon-eye-off" : "yobicon-eye"}
+                          ></i>{" "}
+                          {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      className="btn nofocus no-border down-arrow"
+                      type="button"
+                      data-toggle="dropdown"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setProjectUtilDropdown((current) => (current === "watch" ? null : "watch"));
+                      }}
+                    >
+                      {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
+                    </button>
+                  </div>
+                </li>
+              ) : null}
+            </ul>
           </div>
         </div>
       </div>
@@ -1085,6 +1210,36 @@ function recordField(value: unknown) {
 function enrolledUserCount(project: ProjectContainer) {
   const enrolledUsers = recordField(project).enrolledUsers;
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
+}
+
+function projectCanWatch(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.viewerCanWatch) || booleanField(record.canWatch);
+}
+
+function projectIsWatching(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isWatching) || booleanField(record.viewerIsWatching);
+}
+
+function projectWatchingCount(project: ProjectContainer) {
+  return projectWatchingCountValue(project) ?? 0;
+}
+
+function projectWatchingCountValue(project: ProjectContainer) {
+  const record = recordField(project);
+  for (const value of [record.watchingCount, record.watchCount, record.watcherCount]) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
 }
 
 function stringField(value: unknown, fallback: string) {

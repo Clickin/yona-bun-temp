@@ -363,6 +363,110 @@ test("project members converted internal links render legacy hrefs and navigate 
     .toBe("kept");
 });
 
+test("project members pins the localhost protected org-owned weblabs/portal branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  await mockProjectMembers(page, {
+    enrollmentRequests: [],
+    members: [
+      {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        isOwner: false,
+        loginId: "carol",
+        role: "member",
+        userId: 35,
+        userLabel: "Carol Lee",
+      },
+      {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        isOwner: false,
+        loginId: "admin",
+        role: "manager",
+        userId: 1,
+        userLabel: "Site Admin",
+      },
+    ],
+    ownerName: "weblabs",
+    project: {
+      backgroundImageUrl: "/assets/images/project_default.jpg",
+      enrolledUsers: [],
+      enrollmentRequestCount: 0,
+      id: 2,
+      isProtected: true,
+      isWatching: true,
+      ownerName: "weblabs",
+      projectName: "portal",
+      viewerCanWatch: true,
+      watchCount: 2,
+    },
+    projectName: "portal",
+    watchRequests,
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/members`);
+
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs .num-badge")).toHaveCount(0);
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveCount(0);
+  await expect(page.locator(".members.project .owner")).toHaveCount(0);
+  await expect(page.locator("legend")).toHaveCount(0);
+  await expect(page.locator("a.watchBtn")).toHaveCount(0);
+  await expect(page.locator("button.watchBtn")).toHaveAttribute("type", "button");
+
+  expect(await canonicalizeLocator(page, ".project-breadcrumb")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="${basePath}/weblabs">weblabs</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="${basePath}/weblabs/portal">portal</a></span><span class="user-project-list" data-project-id="2"><i class=" star material-icons va-text-top">star</i></span><span class="project-protected" title="Group Project">G</span></div>`,
+    ),
+  );
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" href="${basePath}/weblabs/portal/watchers" title="number of watcher">2</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the portal project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#2"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" data-toggle="dropdown" type="button">Unwatch</button></div></li></ul>`,
+    ),
+  );
+  expect(await canonicalizeLocator(page, ".members.project")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="${basePath}/carol" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-128.png" width="64" height="64"></a><div class="member-name">Carol Lee</div><div class="member-id">@carol</div><div class="member-setting"><div class="btn-group" data-name="roleof-carol"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/35/edit" data-loginid="carol">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/35/edit" data-loginid="carol">Member</button></li></ul></div><button type="button" data-action="delete" data-href="${basePath}/weblabs/portal/member/35/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="${basePath}/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-128.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group" data-name="roleof-admin"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1" data-selected="true" class="active"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/1/edit" data-loginid="admin">Manager</button></li><li data-value="2"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/1/edit" data-loginid="admin">Member</button></li></ul></div><button type="button" data-action="delete" data-href="${basePath}/weblabs/portal/member/1/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul>`,
+    ),
+  );
+
+  await expect(page.locator(".project-util .watch-btn")).toHaveAttribute(
+    "class",
+    "btn-group dropdown watch-btn",
+  );
+  await page.locator(".project-util .down-arrow").click();
+  await expect(page.locator(".project-util .watch-btn")).toHaveAttribute(
+    "class",
+    "btn-group dropdown watch-btn open",
+  );
+
+  const watchResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/weblabs/projects/portal/watch") &&
+      response.request().method() === "DELETE",
+  );
+  await page.locator(".project-util .watchBtn").click();
+  await watchResponse;
+
+  expect(watchRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
+  await expect(page.locator(".project-util .watch-btn")).toHaveAttribute(
+    "class",
+    "btn-group dropdown watch-btn",
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("1");
+  await expect(page.locator(".project-util .watcher-count")).not.toHaveClass(/watch-on/);
+  expect(await canonicalizeLocator(page, ".project-util")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border" href="${basePath}/weblabs/portal/watchers" title="number of watcher">1</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the portal project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#2"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" data-toggle="dropdown" type="button">Watch</button></div></li></ul>`,
+    ),
+  );
+});
+
 test("project members route source keeps navigation in Link, mutation URLs in data-href, and a route-owned delete confirm", () => {
   const source = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
 
@@ -399,6 +503,13 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).toContain("async function confirmDeleteMember");
   expect(source).toContain("event.preventDefault();");
   expect(source).toContain("event.stopPropagation();");
+  expect(source).toContain("toggleProjectWatchRest");
+  expect(source).toContain('to="/$ownerName/$projectName/watchers"');
+  expect(source).toContain('to="/user/editform/notifications"');
+  expect(source).toContain("function projectCanWatch(project: ProjectContainer)");
+  expect(source).toContain("function projectWatchingCount(project: ProjectContainer)");
+  expect(source).toContain("function projectWatchingCountValue(project: ProjectContainer)");
+  expect(source).toContain("watchMutation.mutate(!watchState.isWatching);");
   expect(source).toContain('id="projectMemberDeleteConfirm"');
   expect(source).toContain('className="modal yobiDialog in"');
   expect(source).toContain('className="ybtn ybtn-default"');
@@ -1002,14 +1113,28 @@ async function mockProjectMembers(
       userId: number;
       userLabel: string;
     }[];
+    members?: {
+      avatarUrl: string;
+      isOwner: boolean;
+      loginId: string;
+      role: string;
+      userId: number;
+      userLabel: string;
+    }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     deleteMessage?: string;
     deleteStatus?: number;
     membersStatus?: number;
+    ownerName?: string;
     project?: Partial<ReturnType<typeof projectContainer>>;
+    projectName?: string;
+    watchRequests?: { hasCsrfToken: boolean; method: string }[];
   } = {},
 ) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
+  const projectApiBase = `/api/v1/owners/${ownerName}/projects/${projectName}`;
   const requests = {
     addedLoginIds: [] as string[],
     deletedUserIds: [] as string[],
@@ -1021,7 +1146,7 @@ async function mockProjectMembers(
     }[],
     userSearchQueries: [] as string[],
   };
-  let currentMembers = [
+  let currentMembers = options.members ?? [
     {
       avatarUrl: "/assets/images/default-avatar-32.png",
       isOwner: true,
@@ -1039,6 +1164,7 @@ async function mockProjectMembers(
       userLabel: "Alice Doe",
     },
   ];
+  let currentProject = { ...projectContainer({ ownerName, projectName }), ...options.project };
   const enrollmentRequests = options.enrollmentRequests ?? [
     {
       avatarUrl: "/assets/images/default-avatar-32.png",
@@ -1050,8 +1176,8 @@ async function mockProjectMembers(
   const memberDirectoryResponse = () => ({
     enrollmentRequests,
     members: currentMembers,
-    ownerName: "admin",
-    projectName: "sample",
+    ownerName,
+    projectName,
     roleOptions: [
       { label: "Manager", role: "manager" },
       { label: "Member", role: "member" },
@@ -1089,10 +1215,10 @@ async function mockProjectMembers(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route(`**${projectApiBase}/container`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ ...projectContainer(), ...options.project }),
+      body: JSON.stringify(currentProject),
     });
   });
   await page.route("**/-_-api/v1/users?*", async (route) => {
@@ -1110,7 +1236,7 @@ async function mockProjectMembers(
       ),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/members/*", async (route) => {
+  await page.route(`**${projectApiBase}/members/*`, async (route) => {
     const request = route.request();
     const userId = new URL(request.url()).pathname.split("/").pop() ?? "";
     if (request.method() === "PATCH") {
@@ -1148,7 +1274,7 @@ async function mockProjectMembers(
       body: JSON.stringify(memberDirectoryResponse()),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
+  await page.route(`**${projectApiBase}/members`, async (route) => {
     if (route.request().method() === "GET" && options.membersStatus) {
       await route.fulfill({
         status: options.membersStatus,
@@ -1175,13 +1301,13 @@ async function mockProjectMembers(
       body: JSON.stringify(memberDirectoryResponse()),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
+  await page.route(`**${projectApiBase}/settings`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectSettings()),
+      body: JSON.stringify(projectSettings({ ownerName, projectName })),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1191,13 +1317,13 @@ async function mockProjectMembers(
         ],
         defaultBranch: "main",
         noHead: false,
-        ownerName: "admin",
+        ownerName,
         permissions: { canDelete: true, canUpdate: true },
-        projectName: "sample",
+        projectName,
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+  await page.route(`**${projectApiBase}/favorite`, async (route) => {
     const request = route.request();
     options.favoriteRequests?.push({
       hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-members",
@@ -1206,6 +1332,31 @@ async function mockProjectMembers(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
+    });
+  });
+  await page.route(`**${projectApiBase}/watch`, async (route) => {
+    const request = route.request();
+    options.watchRequests?.push({
+      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-members",
+      method: request.method(),
+    });
+    const watchCount =
+      typeof currentProject.watchCount === "number"
+        ? currentProject.watchCount
+        : typeof currentProject.watchingCount === "number"
+          ? currentProject.watchingCount
+          : typeof currentProject.watcherCount === "number"
+            ? currentProject.watcherCount
+            : 0;
+    currentProject = {
+      ...currentProject,
+      isWatching: request.method() === "POST",
+      viewerIsWatching: request.method() === "POST",
+      watchCount: Math.max(0, watchCount + (request.method() === "POST" ? 1 : -1)),
+    };
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(currentProject),
     });
   });
 
@@ -1267,7 +1418,13 @@ function expectedProjectMembersErrorScreen({
   return `${html.slice(0, start)}<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico ico-err2"></i><p>${message}</p></div></div></div>${html.slice(end)}`;
 }
 
-function projectContainer() {
+function projectContainer({
+  ownerName = "admin",
+  projectName = "sample",
+}: {
+  ownerName?: string;
+  projectName?: string;
+} = {}) {
   return {
     enrolledUsers: [
       {
@@ -1293,16 +1450,22 @@ function projectContainer() {
       pullRequest: true,
       review: true,
     },
-    ownerName: "admin",
-    projectName: "sample",
+    ownerName,
+    projectName,
     vcs: "GIT",
     viewerCanUpdate: true,
   };
 }
 
-function projectSettings() {
+function projectSettings({
+  ownerName = "admin",
+  projectName = "sample",
+}: {
+  ownerName?: string;
+  projectName?: string;
+} = {}) {
   return {
-    ...projectContainer(),
+    ...projectContainer({ ownerName, projectName }),
     backgroundUrl: "/assets/images/bg-default-project.png",
     codeMemberOnly: false,
     defaultReviewerCount: 2,
@@ -1373,6 +1536,54 @@ async function canonicalizeScreenRoots(page: Page) {
       return node.matches(".project-page-wrap > .nav.nav-tabs a");
     }
   });
+}
+
+async function canonicalizeLocator(page: Page, selector: string) {
+  return page.evaluate((valueSelector) => {
+    const roots = Array.from(document.querySelectorAll(valueSelector));
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            (isProjectSettingMenuAnchor(node) ||
+              (attr.name !== "aria-current" && attr.name !== "data-status")),
+        )
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      if (attr.name === "style") {
+        return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
+      }
+      return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function isProjectSettingMenuAnchor(node: Element) {
+      return node.matches(".project-page-wrap > .nav.nav-tabs a");
+    }
+  }, selector);
 }
 
 async function memberPageMetrics(page: Page) {
