@@ -505,11 +505,64 @@ async function registerLocalAccount(page, baseUrl, { emailAddress, loginId, name
   return response?.ok() ?? false;
 }
 
+async function ensureLocalAccountSession(page, baseUrl, account) {
+  const registered = await registerLocalAccount(page, baseUrl, account);
+  return (
+    registered ||
+    (await signInLocalAccount(page, baseUrl, account.loginId, account.password))
+  );
+}
+
 async function bootstrapLocalAccount(page, baseUrl) {
   const csrfToken = await readLocalCsrfToken(page, baseUrl);
   if (!csrfToken) {
     return false;
   }
+  const adminAccount = {
+    emailAddress: "admin@example.com",
+    loginId: "admin",
+    name: "Yobi Admin",
+    password: "admin",
+  };
+  const aliceAccount = {
+    emailAddress: "alice@example.com",
+    loginId: "alice",
+    name: "Alice",
+    password: "admin",
+  };
+  const carolAccount = {
+    emailAddress: "carol@example.com",
+    loginId: "carol",
+    name: "Carol Lee",
+    password: "admin",
+  };
+  const ensureProtectedPortalWatchers = async () => {
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+    const signedInCarol = await ensureLocalAccountSession(page, baseUrl, carolAccount);
+    if (!signedInCarol) {
+      return;
+    }
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+    const signedInAdmin = await ensureLocalAccountSession(page, baseUrl, adminAccount);
+    if (!signedInAdmin) {
+      return;
+    }
+    await postLocalJson(page, baseUrl, "/api/v1/organizations/weblabs/members", {
+      loginId: "carol",
+    });
+    await postLocalJson(page, baseUrl, "/api/v1/owners/weblabs/projects/portal/members", {
+      loginId: "carol",
+    });
+    await postLocalJson(page, baseUrl, "/api/v1/owners/weblabs/projects/portal/watch", {});
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+    const signedInCarolAgain = await ensureLocalAccountSession(page, baseUrl, carolAccount);
+    if (!signedInCarolAgain) {
+      return;
+    }
+    await postLocalJson(page, baseUrl, "/api/v1/owners/weblabs/projects/portal/watch", {});
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+    await ensureLocalAccountSession(page, baseUrl, adminAccount);
+  };
   const ensureAdminFixtures = async () => {
     await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects", {
       board: true,
@@ -566,6 +619,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
       review: true,
       vcs: "svn",
     });
+    await ensureProtectedPortalWatchers();
     await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
       ownerName: "admin",
       projectName: "sample",
@@ -581,13 +635,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
   };
   const ensureAliceSampleFork = async () => {
     await signOutLocalAccount(page, baseUrl).catch(() => {});
-    const registeredAlice = await registerLocalAccount(page, baseUrl, {
-      emailAddress: "alice@example.com",
-      loginId: "alice",
-      name: "Alice",
-      password: "admin",
-    });
-    const signedInAlice = registeredAlice || (await signInLocalAccount(page, baseUrl, "alice", "admin"));
+    const signedInAlice = await ensureLocalAccountSession(page, baseUrl, aliceAccount);
     if (!signedInAlice) {
       return;
     }
@@ -602,19 +650,8 @@ async function bootstrapLocalAccount(page, baseUrl) {
     });
     await signOutLocalAccount(page, baseUrl).catch(() => {});
   };
-  const registeredAdmin = await registerLocalAccount(page, baseUrl, {
-    emailAddress: "admin@example.com",
-    loginId: "admin",
-    name: "Yobi Admin",
-    password: "admin",
-  });
-  if (registeredAdmin) {
-    await ensureAdminFixtures();
-    await ensureAliceSampleFork();
-    return true;
-  }
-  const adminSignInResponse = await signInLocalAccount(page, baseUrl, "admin", "admin");
-  if (adminSignInResponse) {
+  const adminReady = await ensureLocalAccountSession(page, baseUrl, adminAccount);
+  if (adminReady) {
     await ensureAdminFixtures();
     await ensureAliceSampleFork();
     return true;
