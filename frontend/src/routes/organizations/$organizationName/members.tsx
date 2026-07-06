@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  useEffect,
   useRef,
   useState,
   type FocusEvent,
@@ -35,11 +36,16 @@ function insulateOrganizationMembersDeleteModalButtonClick(event: MouseEvent<HTM
 
 function OrganizationMembersRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { organizationName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ organizationName }}
+          runtimeConfig={runtimeConfig}
+          showLegacyProjectHeaderLinks
+        >
           <OrganizationMembersScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -49,6 +55,7 @@ function OrganizationMembersRoute() {
 
 function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
+  const siteName = runtimeConfig.siteName ?? "Yona";
   const query = useQuery({
     queryFn: () => readOrganizationAdminRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "admin"],
@@ -58,12 +65,20 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     queryKey: apiQueryKeys.organization.base(organizationName),
   });
 
+  useEffect(() => {
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = organizationName;
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [organizationName, siteName]);
+
   if (query.error instanceof RestApiError && query.error.status === 403) {
     if (!detailQuery.data) {
       return null;
     }
-    const logoUrl =
-      stringField(detailQuery.data.logoUrl, "") || "/assets/images/organization_default_logo.png";
+    const logoUrl = stringField(detailQuery.data.logoUrl, "") || "/assets/images/group_default.png";
     const detailOrganizationName = stringField(detailQuery.data.organizationName, organizationName);
 
     return (
@@ -117,8 +132,7 @@ function OrganizationMembersBody({
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const [openRoleDropdownLoginId, setOpenRoleDropdownLoginId] = useState<string | null>(null);
   const organizationName = stringField(organization.organizationName, "organization");
-  const logoUrl =
-    stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const adminQueryKey = [...apiQueryKeys.organization.base(organizationName), "admin"] as const;
   const normalizedLoginQuery = loginIdQuery.trim();
   const mentionStylesheetHref = prefixBasePath(
