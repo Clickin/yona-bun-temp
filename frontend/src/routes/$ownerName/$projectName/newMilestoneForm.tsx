@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import type { ProjectContainer } from "../../../api/types";
 import { createProjectMilestone, readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -21,9 +22,7 @@ function ProjectMilestoneCreateFormRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectMilestoneCreateFormScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectMilestoneCreateFormScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -31,6 +30,7 @@ function ProjectMilestoneCreateFormRoute() {
 
 function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectMilestoneCreateFormDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -39,8 +39,14 @@ function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: Ru
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="milestone"
@@ -48,8 +54,31 @@ function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: Ru
         project={projectQuery.data}
       />
       <ProjectMilestoneCreateFormBody runtimeConfig={runtimeConfig} />
-    </>
+    </SiteLayoutShell>
   );
+}
+
+function useProjectMilestoneCreateFormDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const newMilestoneTitle = t("title.newMilestone");
+
+  useEffect(() => {
+    const doc = globalThis["document"];
+    if (!doc) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    doc.title = `${newMilestoneTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      doc.title = siteName;
+    };
+  }, [newMilestoneTitle, ownerName, projectName, runtimeConfig.siteName]);
 }
 
 function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -343,6 +372,27 @@ function MilestoneFileUploader() {
 function stringFormValue(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
+}
+
+function booleanField(value: unknown) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function recordField(value: unknown) {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
 function stringField(value: unknown, fallback: string) {

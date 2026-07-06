@@ -1,6 +1,15 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+const LEGACY_PROJECT_OWNER = "weblabs";
+const LEGACY_PROJECT_NAME = "portal";
+const LEGACY_NEW_MILESTONE_TITLE = "New milestone";
+const PROJECT_ROUTE_PATH = `/${LEGACY_PROJECT_OWNER}/${LEGACY_PROJECT_NAME}`;
+const PROJECT_FORM_PATH = `${PROJECT_ROUTE_PATH}/newMilestoneForm`;
+const PROJECT_MILESTONES_PATH = `${PROJECT_ROUTE_PATH}/milestones`;
+const PROJECT_SEARCH_PATH = `${PROJECT_ROUTE_PATH}/search`;
+const GROUP_SEARCH_PATH = `/organizations/${LEGACY_PROJECT_OWNER}/search`;
+
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
   "utf8",
@@ -12,8 +21,62 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<\/div>\s*$/u, "");
 
 const EXPECTED_CREATE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/milestones" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help">${LEGACY_MARKDOWN_HELP}</div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2"></textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__/admin/sample/milestones" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" autocomplete="off" value=""></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__${PROJECT_MILESTONES_PATH}" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help">${LEGACY_MARKDOWN_HELP}</div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2"></textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__${PROJECT_MILESTONES_PATH}" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" autocomplete="off" value=""></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
 `;
+
+test("project milestone create form restores the legacy protected project header search scope and title", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const postRequests: unknown[] = [];
+  await mockProjectMilestoneCreateForm(page, postRequests);
+
+  await page.goto(`${basePath}${PROJECT_FORM_PATH}`);
+  await expect(page).toHaveTitle(
+    `${LEGACY_NEW_MILESTONE_TITLE} - ${LEGACY_PROJECT_OWNER}/${LEGACY_PROJECT_NAME}`,
+  );
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  const searchForm = page.locator("form.gnb-search-form");
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  await expect(scopeToggle).toHaveText("This Project");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}${PROJECT_SEARCH_PATH}`);
+
+  await scopeToggle.click();
+  const scopeItems = page.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  await expect(scopeItems).toHaveCount(3);
+  await expect(scopeItems.nth(0)).toHaveText("This Project");
+  await expect(scopeItems.nth(1)).toHaveText("This Group");
+  await expect(scopeItems.nth(2)).toHaveText("All Projects");
+  await scopeItems.nth(1).click();
+  await expect(scopeToggle).toHaveText("This Group");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}${GROUP_SEARCH_PATH}`);
+
+  await scopeToggle.click();
+  await scopeItems.nth(2).click();
+  await expect(scopeToggle).toHaveText("All Projects");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/search`);
+
+  await scopeToggle.click();
+  await scopeItems.nth(0).click();
+  await expect(scopeToggle).toHaveText("This Project");
+  await expect(searchForm).toHaveAttribute("action", `${basePath}${PROJECT_SEARCH_PATH}`);
+
+  const headerMetrics = await readProtectedProjectHeaderMetrics(page);
+  expect(headerMetrics).toEqual({
+    navbarPosition: "absolute",
+    searchBoxDisplay: "inline-block",
+  });
+  const headerBoxes = await readProtectedProjectHeaderBoxes(page);
+  expect(headerBoxes).not.toBeNull();
+  expect(headerBoxes!.scopeToggle.top).toBeGreaterThanOrEqual(headerBoxes!.navbar.top);
+  expect(headerBoxes!.scopeToggle.bottom).toBeLessThanOrEqual(headerBoxes!.navbar.bottom);
+  expect(headerBoxes!.searchInput.top).toBeGreaterThanOrEqual(headerBoxes!.navbar.top);
+  expect(headerBoxes!.searchInput.bottom).toBeLessThanOrEqual(headerBoxes!.navbar.bottom);
+  expect(headerBoxes!.searchBox.left).toBeGreaterThanOrEqual(headerBoxes!.scopeToggle.right - 2);
+  expect(headerBoxes!.searchInput.left).toBeGreaterThanOrEqual(headerBoxes!.searchBox.left);
+  expect(headerBoxes!.searchSubmit.right).toBeLessThanOrEqual(headerBoxes!.searchBox.right + 1);
+  expect(headerBoxes!.searchBox.right).toBeLessThanOrEqual(headerBoxes!.form.right + 1);
+});
 
 test("project milestone create form matches legacy milestone/create.scala.html core form DOM", async ({
   page,
@@ -22,7 +85,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   const postRequests: unknown[] = [];
   await mockProjectMilestoneCreateForm(page, postRequests);
 
-  await page.goto(`${basePath}/admin/sample/newMilestoneForm`);
+  await page.goto(`${basePath}${PROJECT_FORM_PATH}`);
   await expect(page.locator("#milestone-form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("#milestone-open")).toBeChecked();
@@ -67,7 +130,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   ).toHaveCount(0);
   await expect(page.locator('.actrow a.ybtn:has-text("Cancel")')).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/milestones`,
+    `${basePath}${PROJECT_MILESTONES_PATH}`,
   );
   expect(await readMilestoneCreateFormMetrics(page)).toEqual({
     actionDisplay: "block",
@@ -123,19 +186,22 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "create-cancel";
   });
   await page.click('.actrow a.ybtn:has-text("Cancel")');
-  await expect(page).toHaveURL(`${basePath}/admin/sample/milestones`);
+  await expect(page).toHaveURL(`${basePath}${PROJECT_MILESTONES_PATH}`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("create-cancel");
 
-  await page.goto(`${basePath}/admin/sample/newMilestoneForm`);
+  await page.goto(`${basePath}${PROJECT_FORM_PATH}`);
   await page.fill("#title", "v3.0");
   await page.fill("#editor-contents-content-body", "Create scope");
   await page.fill("#dueDate", "2026-09-30");
   const postResponsePromise = page.waitForResponse(
     (response) =>
-      response.url().includes("/api/v1/owners/admin/projects/sample/milestones") &&
-      response.request().method() === "POST",
+      response
+        .url()
+        .includes(
+          `/api/v1/owners/${LEGACY_PROJECT_OWNER}/projects/${LEGACY_PROJECT_NAME}/milestones`,
+        ) && response.request().method() === "POST",
   );
   await page.click('#milestone-form button[type="submit"]');
   await postResponsePromise;
@@ -148,7 +214,7 @@ test("project milestone create form matches legacy milestone/create.scala.html c
       title: "v3.0",
     },
   ]);
-  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/9?state=open`);
+  await expect(page).toHaveURL(`${basePath}${PROJECT_ROUTE_PATH}/milestone/9?state=open`);
 });
 
 test("project milestone create form preserves legacy write validation and focus behavior", async ({
@@ -158,7 +224,7 @@ test("project milestone create form preserves legacy write validation and focus 
   const postRequests: unknown[] = [];
   await mockProjectMilestoneCreateForm(page, postRequests);
 
-  await page.goto(`${basePath}/admin/sample/newMilestoneForm`);
+  await page.goto(`${basePath}${PROJECT_FORM_PATH}`);
   await expect(page.locator("#title")).toBeFocused();
   await page.locator("#title").press("Enter");
   await expect(page.locator("#editor-contents-content-body")).toBeFocused();
@@ -166,7 +232,7 @@ test("project milestone create form preserves legacy write validation and focus 
   const titleDialogPromise = acceptNextAlert(page);
   await page.click('#milestone-form button[type="submit"]');
   await expect(titleDialogPromise).resolves.toBe("Milestone title is a required field.");
-  await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
+  await expect(page).toHaveURL(`${basePath}${PROJECT_FORM_PATH}`);
   expect(postRequests).toEqual([]);
   await expect(page.locator("#title")).toHaveClass("zen-mode text title ");
   await expect(page.locator("#title + .message")).toHaveCount(0);
@@ -175,7 +241,7 @@ test("project milestone create form preserves legacy write validation and focus 
   const contentDialogPromise = acceptNextAlert(page);
   await page.click('#milestone-form button[type="submit"]');
   await expect(contentDialogPromise).resolves.toBe("Milestone description is a required field");
-  await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
+  await expect(page).toHaveURL(`${basePath}${PROJECT_FORM_PATH}`);
   expect(postRequests).toEqual([]);
 
   await page.fill("#editor-contents-content-body", "Create scope");
@@ -185,7 +251,7 @@ test("project milestone create form preserves legacy write validation and focus 
   await expect(dueDateDialogPromise).resolves.toBe(
     "Invalid format. Enter the due date in YYYY-MM-DD format.",
   );
-  await expect(page).toHaveURL(`${basePath}/admin/sample/newMilestoneForm`);
+  await expect(page).toHaveURL(`${basePath}${PROJECT_FORM_PATH}`);
   expect(postRequests).toEqual([]);
   await expect(page.locator("#title + .message")).toHaveCount(0);
 });
@@ -281,67 +347,77 @@ async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[
       body: JSON.stringify({ user: { loginId: "admin" } }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones", async (route) => {
-    if (route.request().method() === "POST") {
-      postRequests.push(route.request().postDataJSON());
+  await page.route(
+    `**/api/v1/owners/${LEGACY_PROJECT_OWNER}/projects/${LEGACY_PROJECT_NAME}/container`,
+    async (route) => {
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          milestone: {
-            attachments: [],
-            closedIssueCount: 0,
-            closedIssues: [],
-            completionPercent: 0,
-            contentsHtml: "<p>Create scope</p>",
-            contentsMarkdown: "Create scope",
-            dueDateLabel: "2026-09-30",
-            id: 9,
-            openIssueCount: 0,
-            openIssues: [],
-            state: "open",
-            title: "v3.0",
-            viewerCanDelete: true,
-            viewerCanUpdate: true,
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: true,
+          logoUrl: "/assets/images/project_default_logo.png",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
           },
+          organizationName: LEGACY_PROJECT_OWNER,
+          ownerName: LEGACY_PROJECT_OWNER,
+          projectName: LEGACY_PROJECT_NAME,
+          vcs: "GIT",
+          viewerCanUpdate: true,
         }),
       });
-      return;
-    }
-    await route.fallback();
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones?**", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ milestones: [] }),
-    });
-  });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${LEGACY_PROJECT_OWNER}/projects/${LEGACY_PROJECT_NAME}/milestones`,
+    async (route) => {
+      if (route.request().method() === "POST") {
+        postRequests.push(route.request().postDataJSON());
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            milestone: {
+              attachments: [],
+              closedIssueCount: 0,
+              closedIssues: [],
+              completionPercent: 0,
+              contentsHtml: "<p>Create scope</p>",
+              contentsMarkdown: "Create scope",
+              dueDateLabel: "2026-09-30",
+              id: 9,
+              openIssueCount: 0,
+              openIssues: [],
+              state: "open",
+              title: "v3.0",
+              viewerCanDelete: true,
+              viewerCanUpdate: true,
+            },
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${LEGACY_PROJECT_OWNER}/projects/${LEGACY_PROJECT_NAME}/milestones?**`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ milestones: [] }),
+      });
+    },
+  );
 }
 
 function acceptNextAlert(page: Page) {
@@ -441,6 +517,57 @@ async function readMilestoneCreateFormMetrics(page: Page) {
       uploadBorderRadius: uploadStyle.borderRadius,
       uploadPadding: uploadStyle.padding,
     };
+  });
+}
+
+async function readProtectedProjectHeaderMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    if (!navbar || !searchBox) {
+      throw new Error("Expected protected project header search elements are missing.");
+    }
+    return {
+      navbarPosition: getComputedStyle(navbar).position,
+      searchBoxDisplay: getComputedStyle(searchBox).display,
+    };
+  });
+}
+
+async function readProtectedProjectHeaderBoxes(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>("form.gnb-search-form");
+    const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const searchInput = document.querySelector<HTMLElement>(
+      '.gnb-search-form input[name="keyword"]',
+    );
+    const searchSubmit = document.querySelector<HTMLElement>(
+      '.gnb-search-form button[type="submit"]',
+    );
+    if (!navbar || !form || !scopeToggle || !searchBox || !searchInput || !searchSubmit) {
+      return null;
+    }
+
+    return {
+      form: readBox(form),
+      navbar: readBox(navbar),
+      scopeToggle: readBox(scopeToggle),
+      searchBox: readBox(searchBox),
+      searchInput: readBox(searchInput),
+      searchSubmit: readBox(searchSubmit),
+    };
+
+    function readBox(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
   });
 }
 
