@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { type CSSProperties, type FormEvent } from "react";
+import { type CSSProperties, type FormEvent, useEffect } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectReviewsQueryOptions,
@@ -87,9 +87,7 @@ function ProjectReviewsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectReviewsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectReviewsScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -98,6 +96,7 @@ function ProjectReviewsRoute() {
 function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
+  useProjectReviewsDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -119,8 +118,14 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="review" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectReviewsBody
@@ -129,8 +134,30 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
         runtimeConfig={runtimeConfig}
         search={search}
       />
-    </>
+    </SiteLayoutShell>
   );
+}
+
+function useProjectReviewsDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const reviewMenuTitle = t("menu.review");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${projectName} - ${reviewMenuTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, reviewMenuTitle, runtimeConfig.siteName]);
 }
 
 function ProjectReviewsBody({
@@ -531,4 +558,16 @@ function effectiveOrderBy(search: ProjectReviewsSearch) {
 
 function effectiveOrderDir(search: ProjectReviewsSearch) {
   return search.orderDir || "desc";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function booleanField(value: unknown) {
+  return typeof value === "boolean" ? value : Boolean(value);
 }
