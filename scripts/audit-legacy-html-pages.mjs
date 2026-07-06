@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
-const baseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://192.168.45.10:9000").replace(
+const baseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://127.0.0.1:9000").replace(
   /\/$/,
   "",
 );

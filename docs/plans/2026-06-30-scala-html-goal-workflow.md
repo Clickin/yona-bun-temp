@@ -110,8 +110,12 @@ Primary UI source of truth:
 Allowed rendered evidence:
 
 - rendered output from a local legacy Yona instance
-- rendered output from `http://192.168.45.10:9000` when that live legacy server
-  is available
+- rendered output from the local legacy parity baseline at
+  `http://127.0.0.1:9000`
+
+If a different legacy host is temporarily needed, override the parity scripts
+with `YONA_LEGACY_BASE_URL` or `YONA_LEGACY_PROXY_UPSTREAM`, but the default
+frontend parity verification target is the local legacy instance.
 
 Rendered legacy HTML may be used to confirm final DOM, but the owning Scala
 HTML templates remain the source for why a node, class, label, link, or form

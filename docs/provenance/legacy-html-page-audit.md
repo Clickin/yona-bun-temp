@@ -3,24 +3,19 @@
 > Status: current verification baseline for curl-based legacy SSR page checks.
 > This is not a claim that every Yona page has passed 1:1 UI parity.
 
-Last updated: 2026-06-25
+Last updated: 2026-07-06
 
 ## Scope
 
-The homelab legacy instance at `http://192.168.45.10:9000` is reachable with
-host `curl`, but Playwright-launched Chrome and Edge still return
-`net::ERR_ADDRESS_UNREACHABLE` even when the tool invocation runs outside the
-Codex sandbox. The host is addressed by IP, so this is not a browser DNS
-resolution failure. Because legacy Yona is server-rendered Play templates, curl
-HTML is a valid first-pass source for legacy page anchors while browser routing
-is blocked.
+The current parity verification baseline is the local legacy Yona instance at
+`http://127.0.0.1:9000` with `admin` / `admin`. This localhost instance is the
+default target for curl-based legacy HTML audit and visual parity sweeps.
 
-The rendered-screen path now uses a separate workaround: a temporary localhost
-proxy fetches upstream legacy responses with host `curl`, and Playwright renders
-that localhost origin. This does not make direct browser access to
-`192.168.45.10:9000` work, but it gives current browser evidence for the
-representative legacy page corpus recorded in
-`docs/provenance/visual-parity-sweep-2026-06-25.md`.
+The localhost curl proxy remains available as a transport helper when a caller
+needs a distinct browser origin or wants to forward requests through curl, but
+the proxy is no longer the primary baseline. When a different legacy host is
+needed temporarily, override the scripts with `YONA_LEGACY_BASE_URL` or
+`YONA_LEGACY_PROXY_UPSTREAM`.
 
 `pnpm smoke:legacy-html-pages` logs in with `admin` / `admin` by default and
 checks representative public, authenticated workspace, user, search, and
@@ -63,7 +58,17 @@ it separates pages covered by rendered e2e flows that assert the legacy signals
 from pages that still need one; it exits non-zero while any audited URL lacks
 rendered e2e or rendered legacy signal evidence.
 
-Latest local run against the homelab instance on 2026-06-25:
+Latest baseline summary:
+- Primary legacy verification target: `http://127.0.0.1:9000`
+- Default credentials: `admin` / `admin`
+- Latest localhost smoke result: `129` URL checks, `124` passed,
+  `1` expected non-200, and `5` current baseline failures at
+  `/admin/svnplayground/issue/1`, `/admin/svnplayground/pullRequests`,
+  `/admin/svnplayground/branches`, `/admin/svnplayground/newFork`, and
+  `/alice/sample/issue/1`
+
+Latest recorded full audit run against the previous homelab instance on
+2026-06-25:
 `57` URL checks passed, with `3` expected legacy non-200 observations retained
 as source behavior:
 
@@ -141,7 +146,7 @@ The initial curl baseline covers:
   `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`,
   `/sites/diagnostic`, `/sites/data`
 - Discovered project pages from every project root exposed by `/projects`;
-  the current homelab snapshot exposes `/admin/sample/**` for home, issue
+  the current localhost seed exposes `/admin/sample/**` for home, issue
   list/detail/label settings/create, board list/create, milestone list/create,
   pull-request list/create/review, code, member, watcher, settings, webhook,
   delete, transfer, fork, statistics, and change-VCS surfaces.

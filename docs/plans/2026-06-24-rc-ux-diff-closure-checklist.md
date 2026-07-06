@@ -12,7 +12,7 @@ in-place migration path.
 ## Inputs
 
 - Legacy UX source of truth: `yona-original/`
-- Legacy live baseline: `http://192.168.45.10:9000`, `admin` / `admin`
+- Legacy live baseline: `http://127.0.0.1:9000`, `admin` / `admin`
 - Current curl HTML audit: `.agent/legacy-html-page-audit/latest.json`
 - Current audit notes: `docs/provenance/legacy-html-page-audit.md`
 - RC cut line: `docs/plans/2026-06-23-rc-release-scope.md`

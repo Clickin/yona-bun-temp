@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { Buffer } from "node:buffer";
 
-const upstreamBaseUrl = (process.env.YONA_LEGACY_PROXY_UPSTREAM ?? "http://192.168.45.10:9000")
+const upstreamBaseUrl = (process.env.YONA_LEGACY_PROXY_UPSTREAM ?? "http://127.0.0.1:9000")
   .replace(/\/$/, "");
 const bindHost = process.env.YONA_LEGACY_PROXY_HOST ?? "127.0.0.1";
 const bindPort = Number(process.env.YONA_LEGACY_PROXY_PORT ?? "19100");

@@ -12,7 +12,7 @@ const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(new URL("../frontend/package.json", import.meta.url));
 const { chromium } = require("@playwright/test");
 const outputDir = resolve(repoRoot, "output/playwright/visual-sweep");
-const legacyBaseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://192.168.45.10:9000").replace(
+const legacyBaseUrl = (process.env.YONA_LEGACY_BASE_URL ?? "http://127.0.0.1:9000").replace(
   /\/$/,
   "",
 );

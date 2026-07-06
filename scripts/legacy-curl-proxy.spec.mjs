@@ -4,8 +4,8 @@ import { parseCurlHeaderBlock, upstreamUrlForRequest } from "./legacy-curl-proxy
 
 test("upstreamUrlForRequest preserves path and query against the legacy origin", () => {
   assert.equal(
-    upstreamUrlForRequest("http://192.168.45.10:9000", "/admin/sample?tab=issues"),
-    "http://192.168.45.10:9000/admin/sample?tab=issues",
+    upstreamUrlForRequest("http://127.0.0.1:9000", "/admin/sample?tab=issues"),
+    "http://127.0.0.1:9000/admin/sample?tab=issues",
   );
 });
 
