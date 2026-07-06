@@ -425,6 +425,23 @@ test("project pull request search interactions follow legacy form submit behavio
   });
 });
 
+test("project closed pull request title-prefix keeps the closed list route", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/closedPullRequests?filter=row`);
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Closed");
+  await expect(page.locator(".post-list-wrap .title-wrap .title-prefix")).toHaveText("[API]");
+
+  await markPullRequestSpaSession(page);
+  await page.locator(".post-list-wrap .title-wrap .title-prefix").click();
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/closedPullRequests\\?`));
+  expect(new URL(page.url()).searchParams.get("filter")).toBe("[API]");
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Closed");
+  await expectPullRequestSpaSession(page);
+  await expect(page.locator('#search input[name="filter"]')).toHaveValue("[API]");
+});
+
 async function markPullRequestSpaSession(page: Page) {
   await page.evaluate(() => {
     Object.defineProperty(window, "__pullRequestSpaMarker", {
@@ -751,84 +768,110 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
               updatedLabel: "Jul 1, 2026",
             },
           ]
-        : filter === "reviewer" && category === "open"
+        : filter === "row" && category === "closed"
           ? [
               {
-                closedCommentThreadCount: 0,
-                commentThreadCount: 0,
+                closedCommentThreadCount: 1,
+                commentThreadCount: 2,
                 conflict: false,
                 contributorLabel: "Dev Member",
                 contributorLoginId: "dev",
                 createdLabel: "Jul 1, 2026",
-                fromBranch: "feature/reviewer",
+                fromBranch: "feature/api",
                 fromOwnerName: "dev",
                 fromProjectName: "sample",
-                id: 78,
+                id: 177,
                 ownerName: "admin",
                 projectName: "sample",
-                pullRequestNumber: 8,
+                pullRequestNumber: 17,
                 receiverLabel: "Site Admin",
                 receiverLoginId: "admin",
-                reviewerCount: 2,
-                reviewerNames: ["Site Admin", "Dev Member"],
-                state: "open",
-                title: "Require reviewer count",
+                reviewerCount: 0,
+                reviewerNames: [],
+                state: "closed",
+                title: "[API] Restore closed PR rows",
                 toBranch: "main",
                 updatedLabel: "Jul 1, 2026",
               },
             ]
-          : filter === "conflict" && category === "open"
+          : filter === "reviewer" && category === "open"
             ? [
                 {
                   closedCommentThreadCount: 0,
                   commentThreadCount: 0,
-                  conflict: true,
+                  conflict: false,
                   contributorLabel: "Dev Member",
                   contributorLoginId: "dev",
                   createdLabel: "Jul 1, 2026",
-                  fromBranch: "feature/release",
+                  fromBranch: "feature/reviewer",
                   fromOwnerName: "dev",
                   fromProjectName: "sample",
-                  id: 79,
+                  id: 78,
                   ownerName: "admin",
                   projectName: "sample",
-                  pullRequestNumber: 9,
+                  pullRequestNumber: 8,
                   receiverLabel: "Site Admin",
                   receiverLoginId: "admin",
-                  reviewerCount: 0,
-                  reviewerNames: [],
+                  reviewerCount: 2,
+                  reviewerNames: ["Site Admin", "Dev Member"],
                   state: "open",
-                  title: "Resolve release branch",
-                  toBranch: "release/1.0",
+                  title: "Require reviewer count",
+                  toBranch: "main",
                   updatedLabel: "Jul 1, 2026",
                 },
               ]
-            : filter === "pages" && category === "open"
+            : filter === "conflict" && category === "open"
               ? [
                   {
-                    closedCommentThreadCount: 1,
-                    commentThreadCount: 2,
-                    conflict: false,
+                    closedCommentThreadCount: 0,
+                    commentThreadCount: 0,
+                    conflict: true,
                     contributorLabel: "Dev Member",
                     contributorLoginId: "dev",
                     createdLabel: "Jul 1, 2026",
-                    fromBranch: "feature/api",
+                    fromBranch: "feature/release",
                     fromOwnerName: "dev",
                     fromProjectName: "sample",
-                    id: 77,
+                    id: 79,
                     ownerName: "admin",
                     projectName: "sample",
-                    pullRequestNumber: 7,
+                    pullRequestNumber: 9,
                     receiverLabel: "Site Admin",
                     receiverLoginId: "admin",
                     reviewerCount: 0,
+                    reviewerNames: [],
                     state: "open",
-                    title: "[API] Restore PR rows",
-                    toBranch: "main",
+                    title: "Resolve release branch",
+                    toBranch: "release/1.0",
                     updatedLabel: "Jul 1, 2026",
                   },
                 ]
-              : [];
+              : filter === "pages" && category === "open"
+                ? [
+                    {
+                      closedCommentThreadCount: 1,
+                      commentThreadCount: 2,
+                      conflict: false,
+                      contributorLabel: "Dev Member",
+                      contributorLoginId: "dev",
+                      createdLabel: "Jul 1, 2026",
+                      fromBranch: "feature/api",
+                      fromOwnerName: "dev",
+                      fromProjectName: "sample",
+                      id: 77,
+                      ownerName: "admin",
+                      projectName: "sample",
+                      pullRequestNumber: 7,
+                      receiverLabel: "Site Admin",
+                      receiverLoginId: "admin",
+                      reviewerCount: 0,
+                      state: "open",
+                      title: "[API] Restore PR rows",
+                      toBranch: "main",
+                      updatedLabel: "Jul 1, 2026",
+                    },
+                  ]
+                : [];
     const recentlyPushedBranches =
       filter === "pushed" && category === "open"
         ? [
@@ -848,7 +891,7 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
       body: JSON.stringify({
         acceptedCount: 0,
         category,
-        closedCount: 0,
+        closedCount: category === "closed" ? items.length : 0,
         contributors: [
           {
             avatarUrl: "/assets/images/default-avatar-32.png",
@@ -865,11 +908,11 @@ async function mockProjectPullRequests(page: Page, options: { isForkedFromOrigin
         ],
         currentUserId: 1,
         items,
-        openCount: filter === "pages" ? 2 : items.length,
+        openCount: category === "open" ? (filter === "pages" ? 2 : items.length) : 0,
         pageNum,
         pageSize: filter === "pages" ? 1 : 15,
         recentlyPushedBranches,
-        sentCount: 0,
+        sentCount: category === "sent" ? items.length : 0,
         totalCount: filter === "pages" ? 2 : items.length,
       }),
     });

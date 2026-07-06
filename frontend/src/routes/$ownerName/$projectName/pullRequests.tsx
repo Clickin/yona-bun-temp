@@ -34,6 +34,11 @@ export type ProjectPullRequestsSearch = {
   pageNum: number;
 };
 
+type PullRequestListRouteTarget =
+  | "/$ownerName/$projectName/pullRequests"
+  | "/$ownerName/$projectName/closedPullRequests"
+  | "/$ownerName/$projectName/sentPullRequests";
+
 export function validateProjectPullRequestsSearch(
   search: Record<string, unknown>,
 ): ProjectPullRequestsSearch {
@@ -153,6 +158,7 @@ function ProjectPullRequestsBody({
   const isForked = booleanField(project.isForkedFromOrigin);
   const searchAction =
     requestType === "closed" ? closedAction : requestType === "sent" ? sentAction : openAction;
+  const titlePrefixRoute = pullRequestListRouteTarget(requestType);
   const router = useRouter();
   const queryClient = useQueryClient();
   const [filterValue, setFilterValue] = useState(search.filter);
@@ -367,6 +373,7 @@ function ProjectPullRequestsBody({
                   pullRequests={pullRequests}
                   projectName={projectName}
                   search={search}
+                  titlePrefixRoute={titlePrefixRoute}
                   titlePrefixSearch={(prefix) => searchFor(prefix)}
                 />
               </div>
@@ -478,6 +485,7 @@ function ProjectPullRequestRows({
   pullRequests,
   projectName,
   search,
+  titlePrefixRoute,
   titlePrefixSearch,
 }: {
   basePath: string;
@@ -489,6 +497,7 @@ function ProjectPullRequestRows({
   pullRequests: PullRequestListResponse;
   projectName: string;
   search: ProjectPullRequestsSearch;
+  titlePrefixRoute: PullRequestListRouteTarget;
   titlePrefixSearch: (prefix: string) => ProjectPullRequestsSearch;
 }) {
   const { t } = useLegacyMessages();
@@ -516,6 +525,7 @@ function ProjectPullRequestRows({
           ownerName={ownerName}
           pullRequest={pullRequest}
           projectName={projectName}
+          titlePrefixRoute={titlePrefixRoute}
           titlePrefixSearch={titlePrefixSearch}
         />
       ))}
@@ -562,6 +572,7 @@ function ProjectPullRequestRow({
   ownerName,
   pullRequest,
   projectName,
+  titlePrefixRoute,
   titlePrefixSearch,
 }: {
   basePath: string;
@@ -571,6 +582,7 @@ function ProjectPullRequestRow({
   ownerName: string;
   pullRequest: PullRequestListItem;
   projectName: string;
+  titlePrefixRoute: PullRequestListRouteTarget;
   titlePrefixSearch: (prefix: string) => ProjectPullRequestsSearch;
 }) {
   const { t } = useLegacyMessages();
@@ -611,7 +623,7 @@ function ProjectPullRequestRow({
           {titleParts.prefixes.map((prefix) => (
             <Link
               key={prefix}
-              to="/$ownerName/$projectName/pullRequests"
+              to={titlePrefixRoute}
               params={{ ownerName, projectName }}
               search={titlePrefixSearch(prefix)}
               {...LEGACY_LIST_LINK_PROPS}
@@ -747,6 +759,18 @@ function TwoColumnModeCheckbox() {
 
 function projectPullRequestsHref(basePath: string, ownerName: string, projectName: string) {
   return prefixBasePath(basePath, `/${ownerName}/${projectName}/pullRequests`);
+}
+
+function pullRequestListRouteTarget(
+  requestType: "closed" | "open" | "sent",
+): PullRequestListRouteTarget {
+  if (requestType === "closed") {
+    return "/$ownerName/$projectName/closedPullRequests";
+  }
+  if (requestType === "sent") {
+    return "/$ownerName/$projectName/sentPullRequests";
+  }
+  return "/$ownerName/$projectName/pullRequests";
 }
 
 function pullRequestPageHref(
