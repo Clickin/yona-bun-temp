@@ -367,6 +367,36 @@ test("project issue create form renders legacy new milestone button when no open
   await expect(newMilestone).toHaveAttribute("target", "_blank");
 });
 
+test("project issue create form falls back to the legacy default logo when project logo is blank", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+    }
+  });
+  await mockProjectIssueForm(page, { project: { logoUrl: "" } });
+
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    "/assets/images/project_default_logo.png",
+  );
+  await expect(page.locator('.project-header-avatar img[src=""]')).toHaveCount(0);
+  await expect(page.locator("#targetProjectId option")).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/project_default_logo.png",
+  );
+  expect(
+    consoleErrors.find((message) =>
+      message.includes('An empty string ("") was passed to the src attribute'),
+    ),
+  ).toBeUndefined();
+});
+
 test("project issue create form source uses TanStack Link and no uploader template remnants", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
@@ -419,6 +449,7 @@ async function mockProjectIssueForm(
   page: Page,
   options: {
     milestones?: Array<Record<string, unknown>>;
+    project?: Record<string, unknown>;
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -461,6 +492,7 @@ async function mockProjectIssueForm(
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...options.project,
       }),
     });
   });

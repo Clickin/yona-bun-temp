@@ -947,7 +947,9 @@ function groupLabels(labels: YonaRecord[]) {
 }
 
 function projectLogoUrl(project: ProjectContainer) {
-  return stringField((project as YonaRecord).logoUrl, "/assets/images/project_default_logo.png");
+  return (
+    stringField((project as YonaRecord).logoUrl, "") || "/assets/images/project_default_logo.png"
+  );
 }
 
 function stringFormValue(formData: FormData, name: string) {
