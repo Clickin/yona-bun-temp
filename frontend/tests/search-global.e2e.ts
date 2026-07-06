@@ -410,16 +410,24 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
     `${basePath}/alice`,
   );
 
-  const routeSource = readFileSync(
-    new URL("../src/routes/-search-screen.tsx", import.meta.url),
-    "utf8",
+  const routeSource = readFileSync(new URL("../src/routes/search.tsx", import.meta.url), "utf8");
+  const routeBodySource = routeSource.slice(
+    routeSource.indexOf("function GlobalSearchSuccessBody"),
+    routeSource.indexOf("function GlobalSearchResultList"),
   );
   const resultListSource = routeSource.slice(
-    routeSource.indexOf("function SearchResultList"),
-    routeSource.indexOf("function internalLinkTarget"),
+    routeSource.indexOf("function GlobalSearchResultList"),
+    routeSource.indexOf("function globalSearchInternalLinkTarget"),
   );
-  const routeBodySource = routeSource.slice(0, routeSource.indexOf("function HighlightedText"));
   expect(routeBodySource).not.toMatch(/<a[\s>]/u);
+  expect(routeSource).not.toContain("LegacySearchBody");
+  expect(routeSource).not.toContain("includeProjectCategory");
+  expect(routeSource).toContain("function GlobalSearchSuccessBody");
+  expect(routeSource).toContain("function GlobalSearchResultList");
+  expect(routeSource).toContain("function GlobalSearchPagination");
+  expect(routeSource).toContain("function globalSearchInternalLinkTarget");
+  expect(routeSource).toContain("function GlobalSearchHighlightedText");
+  expect(routeSource).toContain("return <GlobalSearchSuccessBody");
   expect(routeBodySource).not.toContain('href="#"');
   expect(routeBodySource).not.toContain("<Link href");
   expect(routeBodySource).not.toContain('data-toggle="search-category"');
@@ -427,9 +435,10 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeBodySource).not.toContain("dangerouslySetInnerHTML");
   expect(resultListSource).not.toMatch(/<a[\s>]/u);
   expect(resultListSource).not.toContain("</a>");
-  expect(resultListSource).not.toContain("InternalResultLink");
+  expect(resultListSource).not.toContain("LegacySearchBody");
   expect(resultListSource).toContain("isDefaultUserSearchAvatar(item.avatarUrl)");
   expect(resultListSource).toContain("<Link");
+  expect(resultListSource).toContain("<RouterLink");
   expect(resultListSource).toContain("to={itemLink.to}");
   expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
   expect(routeBodySource).toContain('<button\n                          type="button"');
@@ -440,11 +449,11 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveOptions =");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveProps =");
-  expect(routeSource).toContain("const homeButtonLinkProps = useLinkProps({");
-  expect(routeSource).toContain("router.history.push(homeHref);");
+  expect(routeSource).toContain("const navigationMutation = useMutation({");
   expect(routeSource).toContain(
-    "<LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>",
+    "void queryClient.invalidateQueries({ queryKey: globalSearchQueryKey(result) });",
   );
+  expect(routeSource).toContain("router.navigate(target);");
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
