@@ -12,7 +12,7 @@ const EXPECTED_PROJECT_MEMBERS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -26,7 +26,7 @@ const EXPECTED_PROJECT_MEMBERS = `
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID"><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/admin/sample/member/2/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/admin/sample/member/2/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -67,6 +67,67 @@ test("project members focuses add member input on load like legacy member module
   await page.goto(`${basePath}/admin/sample/members`);
 
   await expect(page.locator("#loginId")).toBeFocused();
+});
+
+test("project members add-member input performs legacy typeahead lookup, render, and select on #loginId", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockProjectMembers(page);
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  const addInput = page.locator("#loginId");
+  await addInput.fill("car");
+
+  await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("car");
+  const typeaheadMenu = page.locator(".inner-bubble .typeahead.dropdown-menu");
+  await expect(typeaheadMenu).toBeVisible();
+  await expect(typeaheadMenu.locator("li")).toHaveCount(2);
+  await expect(typeaheadMenu.locator("li").nth(0)).toHaveClass("active");
+  await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_image")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-128.png",
+  );
+  await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_name")).toHaveText(
+    "Carol Jones",
+  );
+  await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_username")).toHaveText(
+    "@carol",
+  );
+  await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_name")).toHaveText(
+    "Carmine Poe",
+  );
+
+  const typeaheadMetrics = await page.evaluate(() => {
+    const input = document.querySelector<HTMLElement>("#loginId");
+    const menu = document.querySelector<HTMLElement>(".typeahead.dropdown-menu");
+    if (!input || !menu) {
+      return null;
+    }
+    const inputRect = input.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    return {
+      inputBottom: Math.round(inputRect.bottom),
+      inputLeft: Math.round(inputRect.left),
+      menuLeft: Math.round(menuRect.left),
+      menuTop: Math.round(menuRect.top),
+    };
+  });
+  expect(typeaheadMetrics).not.toBeNull();
+  expect(typeaheadMetrics!.menuLeft).toBeGreaterThanOrEqual(typeaheadMetrics!.inputLeft - 2);
+  expect(typeaheadMetrics!.menuLeft).toBeLessThanOrEqual(typeaheadMetrics!.inputLeft + 2);
+  expect(typeaheadMetrics!.menuTop).toBeGreaterThanOrEqual(typeaheadMetrics!.inputBottom - 1);
+
+  await addInput.press("ArrowDown");
+  await expect(typeaheadMenu.locator("li").nth(1)).toHaveClass("active");
+  await addInput.press("Enter");
+
+  await expect(addInput).toHaveValue("carmine");
+  await expect(typeaheadMenu).toHaveCount(0);
+  await expect.poll(() => requests.addedLoginIds).toEqual([]);
+
+  await page.locator("#addNewMember .ybtn.ybtn-success").click();
+  await expect.poll(() => requests.addedLoginIds).toEqual(["carmine"]);
 });
 
 test("project members admin and settings badges follow legacy enrolled-user count instead of enrollmentRequestCount", async ({
@@ -278,6 +339,7 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("as never");
+  expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain("search={undefined");
   expect(source).not.toContain("${projectName}/labels");
   expect(source).not.toMatch(/\/labels[`"]/);
@@ -924,6 +986,7 @@ async function mockProjectMembers(
       role: string;
       userId: string;
     }[],
+    userSearchQueries: [] as string[],
   };
   let currentMembers = [
     {
@@ -997,6 +1060,21 @@ async function mockProjectMembers(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ ...projectContainer(), ...options.project }),
+    });
+  });
+  await page.route("**/-_-api/v1/users?*", async (route) => {
+    const query = new URL(route.request().url()).searchParams.get("query")?.toLowerCase() ?? "";
+    requests.userSearchQueries.push(query);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        legacyMemberSearchDirectory()
+          .filter((item) => item.matchesQuery(query))
+          .map((item) => ({
+            info: item.info,
+            loginId: item.loginId,
+          })),
+      ),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/members/*", async (route) => {
@@ -1099,6 +1177,29 @@ async function mockProjectMembers(
   });
 
   return requests;
+}
+
+function legacyMemberSearchDirectory() {
+  return [
+    {
+      info: legacyMemberSearchInfo("Carol Jones", "carol"),
+      loginId: "carol",
+      matchesQuery(query: string) {
+        return query !== "" && "carol carol jones".includes(query);
+      },
+    },
+    {
+      info: legacyMemberSearchInfo("Carmine Poe", "carmine"),
+      loginId: "carmine",
+      matchesQuery(query: string) {
+        return query !== "" && "carmine carmine poe".includes(query);
+      },
+    },
+  ];
+}
+
+function legacyMemberSearchInfo(userLabel: string, loginId: string) {
+  return `<img class='mention_image' src='/assets/images/default-avatar-128.png'><b class='mention_name'>${userLabel}</b><span class='mention_username'> @${loginId}</span>`;
 }
 
 function expectedProjectMembersErrorScreen({

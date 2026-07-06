@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -17,7 +25,7 @@ import type {
 } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
-import { readSessionBootstrap } from "../../../auth-workspace-client";
+import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -130,10 +138,23 @@ function ProjectMembersBody({
   const { t } = useLegacyMessages();
   const addMemberInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const [loginIdValue, setLoginIdValue] = useState("");
+  const [isTypeaheadOpen, setIsTypeaheadOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<null | {
     loginId: string;
     userId: number;
   }>(null);
+  const normalizedLoginQuery = loginIdValue.trim();
+  const memberSearchQuery = useQuery({
+    enabled: booleanField(members.viewerCanUpdate) && normalizedLoginQuery.length > 0,
+    queryFn: () => searchLegacyMemberUsers(runtimeConfig, normalizedLoginQuery),
+    queryKey: ["legacy-member-users", ownerName, projectName, normalizedLoginQuery],
+    staleTime: 30_000,
+  });
+  const memberSuggestions = (memberSearchQuery.data?.items ?? []).map(parseLegacyMemberSearchItem);
+  const showTypeaheadSuggestions =
+    isTypeaheadOpen && normalizedLoginQuery.length > 0 && memberSuggestions.length > 0;
   const addMutation = useMutation({
     mutationFn: async (loginId: string) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -163,18 +184,62 @@ function ProjectMembersBody({
 
   function onAddMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    addMutation.mutate(String(formData.get("loginId") ?? ""));
+    const submittedLoginId = loginIdValue.trim();
+    if (!submittedLoginId) {
+      return;
+    }
+    setIsTypeaheadOpen(false);
+    addMutation.mutate(submittedLoginId);
   }
 
   function acceptEnrollment(loginId: string) {
-    const input = addMemberInputRef.current;
-    if (!input?.form) {
-      addMutation.mutate(loginId);
+    setLoginIdValue(loginId);
+    setIsTypeaheadOpen(false);
+    setActiveSuggestionIndex(0);
+    addMutation.mutate(loginId);
+  }
+
+  function selectSuggestion(suggestion: LegacyMemberSuggestionView) {
+    setLoginIdValue(suggestion.loginId);
+    setIsTypeaheadOpen(false);
+    setActiveSuggestionIndex(0);
+  }
+
+  function onLoginIdBlur(event: FocusEvent<HTMLInputElement>) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof HTMLElement && nextTarget.closest(".typeahead.dropdown-menu")) {
       return;
     }
-    input.value = loginId;
-    input.form.requestSubmit();
+    setIsTypeaheadOpen(false);
+  }
+
+  function onLoginIdKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setIsTypeaheadOpen(false);
+      return;
+    }
+    if (!showTypeaheadSuggestions) {
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current + 1) % memberSuggestions.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestionIndex(
+        (current) => (current - 1 + memberSuggestions.length) % memberSuggestions.length,
+      );
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const activeSuggestion = memberSuggestions[activeSuggestionIndex] ?? memberSuggestions[0];
+      if (activeSuggestion) {
+        selectSuggestion(activeSuggestion);
+      }
+    }
   }
 
   function openDeleteConfirm(event: MouseEvent<HTMLButtonElement>, member: ProjectMemberEntry) {
@@ -211,128 +276,182 @@ function ProjectMembersBody({
   }, [members.viewerCanUpdate]);
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <ProjectSettingMenu
-          active="members"
-          ownerName={ownerName}
-          project={project}
-          projectName={projectName}
-        />
+    <>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <ProjectSettingMenu
+            active="members"
+            ownerName={ownerName}
+            project={project}
+            projectName={projectName}
+          />
 
-        {booleanField(members.viewerCanUpdate) ? (
-          <div className="inner-bubble">
-            <form
-              className="nm"
-              action={prefixBasePath(
-                runtimeConfig.basePath,
-                `/${ownerName}/${projectName}/members`,
-              )}
-              method="post"
-              id="addNewMember"
-              onSubmit={onAddMember}
-            >
-              <input
-                type="text"
-                className="text uname"
-                id="loginId"
-                name="loginId"
-                required
-                data-provider="typeahead"
-                autoComplete="off"
-                placeholder={t("project.members.addMember")}
-                pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
-                ref={addMemberInputRef}
-                title={t("user.wrongloginId.alert")}
-              />
-              <button type="submit" className="ybtn ybtn-success">
-                <i className="yobicon-addfriend"></i>
-                {t("button.add")}
-              </button>
-            </form>
-          </div>
-        ) : null}
-
-        <ul className="members project row-fluid">
-          {members.members.map((member) => (
-            <ProjectMemberListItem
-              basePath={runtimeConfig.basePath}
-              key={stringField(member.userId, member.loginId)}
-              member={member}
-              members={members}
-              onDeleteRequest={openDeleteConfirm}
-              ownerName={ownerName}
-              projectName={projectName}
-              runtimeConfig={runtimeConfig}
-            />
-          ))}
-        </ul>
-
-        {members.enrollmentRequests.length > 0 ? (
-          <>
-            <legend>
-              <h3>{`${t("project.member.enrollment.request")} (${members.enrollmentRequests.length})`}</h3>
-            </legend>
-            <div className="row-fluid">
-              {members.enrollmentRequests.map((user) => (
-                <EnrollmentRequest
-                  key={stringField(user.userId, user.loginId)}
-                  onAccept={acceptEnrollment}
-                  user={user}
+          {booleanField(members.viewerCanUpdate) ? (
+            <div className="inner-bubble">
+              <form
+                className="nm"
+                action={prefixBasePath(
+                  runtimeConfig.basePath,
+                  `/${ownerName}/${projectName}/members`,
+                )}
+                method="post"
+                id="addNewMember"
+                onSubmit={onAddMember}
+              >
+                <input
+                  type="text"
+                  className="text uname"
+                  id="loginId"
+                  name="loginId"
+                  required
+                  data-provider="typeahead"
+                  autoComplete="off"
+                  placeholder={t("project.members.addMember")}
+                  pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
+                  ref={addMemberInputRef}
+                  title={t("user.wrongloginId.alert")}
+                  value={loginIdValue}
+                  onBlur={onLoginIdBlur}
+                  onChange={(event) => {
+                    const nextValue = event.currentTarget.value;
+                    setLoginIdValue(nextValue);
+                    setActiveSuggestionIndex(0);
+                    setIsTypeaheadOpen(nextValue.trim() !== "");
+                  }}
+                  onFocus={() => {
+                    if (normalizedLoginQuery.length > 0 && memberSuggestions.length > 0) {
+                      setIsTypeaheadOpen(true);
+                    }
+                  }}
+                  onKeyDown={onLoginIdKeyDown}
                 />
-              ))}
-            </div>
-          </>
-        ) : null}
-        {deleteTarget ? (
-          <>
-            <div
-              id="projectMemberDeleteConfirm"
-              className="modal yobiDialog in"
-              tabIndex={-1}
-              role="dialog"
-              aria-hidden={false}
-              style={{ display: "block" }}
-            >
-              <div className="btn-dismiss">
-                <button
-                  type="button"
-                  className="btn-transparent"
-                  onClick={dismissDeleteConfirm}
-                  aria-label={t("button.no")}
-                >
-                  &times;
+                <button type="submit" className="ybtn ybtn-success">
+                  <i className="yobicon-addfriend"></i>
+                  {t("button.add")}
                 </button>
-              </div>
-              <div className="message">
-                <div className="center-text">
-                  <p className="msg">{t("project.member.deleteConfirm")}</p>
-                  <p className="desc"></p>
-                </div>
-                <div className="center-txt buttons">
-                  <button
-                    type="button"
-                    className="ybtn ybtn-default"
-                    onClick={dismissDeleteConfirm}
-                  >
-                    {t("button.no")}
-                  </button>
-                  <button
-                    type="button"
-                    className="ybtn ybtn-danger"
-                    onClick={confirmDeleteMember}
-                    ref={focusProjectMemberDeleteConfirmButton}
-                  >
-                    {t("button.yes")}
-                  </button>
-                </div>
-              </div>
+              </form>
+              {showTypeaheadSuggestions ? (
+                <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+                  {memberSuggestions.map((suggestion, index) => (
+                    <li
+                      className={index === activeSuggestionIndex ? "active" : undefined}
+                      data-value={suggestion.info}
+                      key={suggestion.loginId}
+                    >
+                      <button
+                        type="button"
+                        style={{
+                          background: "transparent",
+                          border: 0,
+                          display: "block",
+                          padding: "3px 20px",
+                          textAlign: "left",
+                          width: "100%",
+                        }}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          selectSuggestion(suggestion);
+                          addMemberInputRef.current?.focus();
+                        }}
+                      >
+                        <img className="mention_image" src={suggestion.imageSrc} alt="" />
+                        <b className="mention_name">{suggestion.userLabel}</b>
+                        <span className="mention_username">{suggestion.mentionUsername}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
-            <div className="modal-backdrop in"></div>
-          </>
-        ) : null}
+          ) : null}
+
+          <ul className="members project row-fluid">
+            {members.members.map((member) => (
+              <ProjectMemberListItem
+                basePath={runtimeConfig.basePath}
+                key={stringField(member.userId, member.loginId)}
+                member={member}
+                members={members}
+                onDeleteRequest={openDeleteConfirm}
+                ownerName={ownerName}
+                projectName={projectName}
+                runtimeConfig={runtimeConfig}
+              />
+            ))}
+          </ul>
+
+          {members.enrollmentRequests.length > 0 ? (
+            <>
+              <legend>
+                <h3>{`${t("project.member.enrollment.request")} (${members.enrollmentRequests.length})`}</h3>
+              </legend>
+              <div className="row-fluid">
+                {members.enrollmentRequests.map((user) => (
+                  <EnrollmentRequest
+                    key={stringField(user.userId, user.loginId)}
+                    onAccept={acceptEnrollment}
+                    user={user}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+          {deleteTarget ? (
+            <>
+              <div
+                id="projectMemberDeleteConfirm"
+                className="modal yobiDialog in"
+                tabIndex={-1}
+                role="dialog"
+                aria-hidden={false}
+                style={{ display: "block" }}
+              >
+                <div className="btn-dismiss">
+                  <button
+                    type="button"
+                    className="btn-transparent"
+                    onClick={dismissDeleteConfirm}
+                    aria-label={t("button.no")}
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="message">
+                  <div className="center-text">
+                    <p className="msg">{t("project.member.deleteConfirm")}</p>
+                    <p className="desc"></p>
+                  </div>
+                  <div className="center-txt buttons">
+                    <button
+                      type="button"
+                      className="ybtn ybtn-default"
+                      onClick={dismissDeleteConfirm}
+                    >
+                      {t("button.no")}
+                    </button>
+                    <button
+                      type="button"
+                      className="ybtn ybtn-danger"
+                      onClick={confirmDeleteMember}
+                      ref={focusProjectMemberDeleteConfirmButton}
+                    >
+                      {t("button.yes")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-backdrop in"></div>
+            </>
+          ) : null}
+        </div>
       </div>
-    </div>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="screen"
+        href="/assets/javascripts/lib/mentionjs/mention.css"
+      />
+    </>
   );
 }
 
@@ -533,6 +652,46 @@ function EnrollmentRequest({
 
 function roleLabel(members: ProjectMembersResponse, role: string) {
   return members.roleOptions.find((option) => stringField(option.role, "") === role)?.label ?? role;
+}
+
+type LegacyMemberSuggestionView = {
+  imageSrc: string;
+  info: string;
+  loginId: string;
+  mentionUsername: string;
+  userLabel: string;
+};
+
+function parseLegacyMemberSearchItem(item: {
+  info: string;
+  loginId: string;
+}): LegacyMemberSuggestionView {
+  const info = stringField(item.info, "");
+  const loginId = stringField(item.loginId, "");
+  if (typeof DOMParser === "undefined" || info === "") {
+    return {
+      imageSrc: "/assets/images/default-avatar-32.png",
+      info,
+      loginId,
+      mentionUsername: `@${loginId}`,
+      userLabel: loginId,
+    };
+  }
+  const documentFragment = new DOMParser().parseFromString(info, "text/html");
+  const imageSrc =
+    documentFragment.querySelector(".mention_image")?.getAttribute("src") ??
+    "/assets/images/default-avatar-32.png";
+  const userLabel = documentFragment.querySelector(".mention_name")?.textContent?.trim() || loginId;
+  const mentionUsername =
+    documentFragment.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
+
+  return {
+    imageSrc,
+    info,
+    loginId,
+    mentionUsername,
+    userLabel,
+  };
 }
 
 function legacyProjectRoleId(role: ProjectMembersResponse["roleOptions"][number]) {
