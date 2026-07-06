@@ -22,11 +22,90 @@ const defaultReleaseUrl =
   process.env.YONA_LEGACY_RELEASE_URL ??
   `https://github.com/yona-projects/yona/releases/download/v${defaultVersion}/yona-h2-v${defaultVersion}-bin.zip`;
 const defaultWorkspaceDir = resolve(repoRoot, ".agent/legacy-localhost");
+const defaultAdminLoginId = process.env.YONA_LEGACY_ADMIN_LOGIN_ID ?? "admin";
 const defaultAdminEmail = process.env.YONA_LEGACY_ADMIN_EMAIL ?? "admin@example.com";
 const defaultAdminName = process.env.YONA_LEGACY_ADMIN_NAME ?? "Site Admin";
 const defaultAdminPassword = process.env.YONA_LEGACY_ADMIN_PASSWORD ?? "admin";
 const defaultSecret =
   "VA2v:_I=h9>?FYOH:@ZhW]01P<mWZAKlQ>kk>Bo`mdCiA>pDw64FcBuZdDh<47Ew";
+const parityFoundationUsers = [
+  {
+    email: "alice@example.com",
+    loginId: "alice",
+    name: "Alice Kim",
+    password: "alice",
+  },
+  {
+    email: "carol@example.com",
+    loginId: "carol",
+    name: "Carol Lee",
+    password: "carol",
+  },
+];
+const parityFoundationOrganizations = [
+  {
+    descr: "Parity seed organization for localhost legacy verification",
+    name: "weblabs",
+  },
+];
+const parityFoundationOrganizationMembers = [
+  {
+    loginId: "carol",
+    organizationName: "weblabs",
+  },
+];
+const parityFoundationProjects = [
+  {
+    actorLoginId: defaultAdminLoginId,
+    actorPassword: null,
+    name: "sample",
+    owner: defaultAdminLoginId,
+    overview: "Parity seed project for the admin workspace",
+    projectScope: "PUBLIC",
+    vcs: "GIT",
+  },
+  {
+    actorLoginId: defaultAdminLoginId,
+    actorPassword: null,
+    name: "svnplayground",
+    owner: defaultAdminLoginId,
+    overview: "Parity seed Subversion project for localhost checks",
+    projectScope: "PUBLIC",
+    vcs: "Subversion",
+  },
+  {
+    actorLoginId: "alice",
+    actorPassword: "alice",
+    name: "sample",
+    owner: "alice",
+    overview: "Parity seed project for the alice workspace",
+    projectScope: "PUBLIC",
+    vcs: "GIT",
+  },
+  {
+    actorLoginId: defaultAdminLoginId,
+    actorPassword: null,
+    name: "portal",
+    owner: "weblabs",
+    overview: "Protected organization project for localhost parity",
+    projectScope: "PROTECTED",
+    vcs: "GIT",
+  },
+];
+const parityFoundationProjectMembers = [
+  {
+    loginId: "carol",
+    owner: "weblabs",
+    projectName: "portal",
+  },
+];
+const parityFoundationRootPaths = [
+  "/admin/sample",
+  "/admin/svnplayground",
+  "/alice/sample",
+  "/organizations/weblabs",
+  "/weblabs/portal",
+];
 
 const [, , command = "help", ...rawArgs] = process.argv;
 const options = parseArgs(rawArgs);
@@ -58,6 +137,9 @@ switch (command) {
   case "seed-admin":
     await seedAdmin(layout, options);
     break;
+  case "seed-parity-foundation":
+    await seedParityFoundation(layout, options);
+    break;
   default:
     console.error(`Unknown command: ${command}`);
     printHelp();
@@ -80,6 +162,7 @@ function buildLayout(input) {
   const pidFile = resolve(runDir, "legacy-yona.pid");
   const logFile = resolve(runDir, "legacy-yona.log");
   const metadataFile = resolve(instanceDir, "metadata.json");
+  const parityFoundationSeedFile = resolve(instanceDir, "parity-foundation.json");
   return {
     ...input,
     cacheDir,
@@ -94,6 +177,7 @@ function buildLayout(input) {
     logDir,
     logFile,
     metadataFile,
+    parityFoundationSeedFile,
     pidFile,
     runDir,
     zipPath,
@@ -174,10 +258,11 @@ async function prepare(layout, options) {
           applicationConfPath,
           dataDir: layout.dataDir,
           installDir: layout.installDir,
-          logFile: layout.logFile,
-          socialLoginConfPath,
-          zipPath: layout.zipPath,
-        },
+        logFile: layout.logFile,
+        parityFoundationSeedFile: layout.parityFoundationSeedFile,
+        socialLoginConfPath,
+        zipPath: layout.zipPath,
+      },
       },
       null,
       2,
@@ -265,6 +350,8 @@ async function status(layout) {
         javaHome,
         loginProbe,
         logFile: layout.logFile,
+        parityFoundationSeedFile: layout.parityFoundationSeedFile,
+        parityFoundationSeeded: existsSync(layout.parityFoundationSeedFile),
         pid,
         pidAlive: pid ? isProcessAlive(pid) : false,
         port: layout.port,
@@ -326,6 +413,102 @@ async function seedAdmin(layout, options) {
   }
 }
 
+async function seedParityFoundation(layout, options) {
+  const { chromium } = frontendRequire("@playwright/test");
+  const adminPassword = stringValue(options.adminPassword, defaultAdminPassword);
+  const baseUrl = `http://${layout.host}:${layout.port}`;
+  await waitForHttp(`${baseUrl}/users/loginform`, 30_000);
+  if (!hasRotatedSecret(layout)) {
+    throw new Error(
+      "The legacy secret has not rotated yet. Run seed-admin and restart the instance before seeding parity foundation data.",
+    );
+  }
+
+  const report = {
+    baseUrl,
+    organizationMembers: [],
+    organizations: [],
+    projectMembers: [],
+    projects: [],
+    rootChecks: [],
+    seededAt: new Date().toISOString(),
+    users: [],
+  };
+  const browser = await chromium.launch({ headless: true });
+  try {
+    for (const user of parityFoundationUsers) {
+      report.users.push(await ensureParityFoundationUser(browser, baseUrl, user));
+    }
+
+    const adminSession = await createAuthenticatedSession(browser, baseUrl, {
+      loginId: defaultAdminLoginId,
+      password: adminPassword,
+    });
+    try {
+      for (const organization of parityFoundationOrganizations) {
+        report.organizations.push(
+          await ensureParityFoundationOrganization(adminSession.page, baseUrl, organization),
+        );
+      }
+      for (const member of parityFoundationOrganizationMembers) {
+        report.organizationMembers.push(
+          await ensureParityFoundationOrganizationMember(adminSession.page, baseUrl, member),
+        );
+      }
+    } finally {
+      await adminSession.close();
+    }
+
+    const actorSessions = new Map();
+    try {
+      for (const project of parityFoundationProjects) {
+        const actorPassword =
+          project.actorLoginId === defaultAdminLoginId ? adminPassword : project.actorPassword;
+        const sessionKey = `${project.actorLoginId}:${actorPassword}`;
+        let session = actorSessions.get(sessionKey);
+        if (!session) {
+          session = await createAuthenticatedSession(browser, baseUrl, {
+            loginId: project.actorLoginId,
+            password: actorPassword,
+          });
+          actorSessions.set(sessionKey, session);
+        }
+        report.projects.push(
+          await ensureParityFoundationProject(session.page, baseUrl, project),
+        );
+      }
+    } finally {
+      for (const session of actorSessions.values()) {
+        await session.close();
+      }
+    }
+
+    const memberSession = await createAuthenticatedSession(browser, baseUrl, {
+      loginId: defaultAdminLoginId,
+      password: adminPassword,
+    });
+    try {
+      for (const member of parityFoundationProjectMembers) {
+        report.projectMembers.push(
+          await ensureParityFoundationProjectMember(memberSession.page, baseUrl, member),
+        );
+      }
+      report.rootChecks = await verifyParityFoundationRoots(
+        memberSession.page,
+        baseUrl,
+        parityFoundationRootPaths,
+      );
+    } finally {
+      await memberSession.close();
+    }
+
+    writeFileSync(layout.parityFoundationSeedFile, JSON.stringify(report, null, 2), "utf8");
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    await browser.close();
+  }
+}
+
 function parseArgs(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 1) {
@@ -354,6 +537,7 @@ Commands:
   node scripts/legacy-localhost.mjs stop
   node scripts/legacy-localhost.mjs status
   node scripts/legacy-localhost.mjs seed-admin [--name NAME --email EMAIL --password PASSWORD] [--restart]
+  node scripts/legacy-localhost.mjs seed-parity-foundation [--admin-password PASSWORD]
 
 Options:
   --version <value>        Legacy Yona version. Default: ${defaultVersion}
@@ -379,9 +563,292 @@ Environment:
   YONA_LEGACY_JAVA_HOME
   YONA_LEGACY_JAVA_URL
   YONA_LEGACY_ADMIN_NAME
+  YONA_LEGACY_ADMIN_LOGIN_ID
   YONA_LEGACY_ADMIN_EMAIL
   YONA_LEGACY_ADMIN_PASSWORD
 `);
+}
+
+async function createAuthenticatedSession(browser, baseUrl, credentials) {
+  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const page = await context.newPage();
+  const loggedIn = await loginWithPassword(page, baseUrl, credentials.loginId, credentials.password);
+  if (!loggedIn) {
+    await context.close();
+    throw new Error(
+      `Failed to authenticate ${credentials.loginId} on ${baseUrl}. Check the seed credentials or reset the instance.`,
+    );
+  }
+  return {
+    context,
+    async close() {
+      await context.close();
+    },
+    page,
+  };
+}
+
+async function ensureParityFoundationUser(browser, baseUrl, user) {
+  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const page = await context.newPage();
+  try {
+    if (await loginWithPassword(page, baseUrl, user.loginId, user.password)) {
+      return { created: false, loginId: user.loginId, path: `/${user.loginId}`, type: "user" };
+    }
+
+    await page.goto(`${baseUrl}/users/signupform`, {
+      timeout: 30_000,
+      waitUntil: "networkidle",
+    });
+    await requireLocator(page, "#loginId", "/users/signupform");
+    await page.fill("#loginId", user.loginId);
+    await page.fill("#uname", user.name);
+    await page.fill("#email", user.email);
+    await page.fill("#password", user.password);
+    await page.fill("#retypedPassword", user.password);
+    await submitFormAndWaitForNavigation(
+      page,
+      'form[name="signup"]',
+      (url) => !url.pathname.endsWith("/users/signupform"),
+    );
+
+    const verifyContext = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+    const verifyPage = await verifyContext.newPage();
+    try {
+      const verified = await loginWithPassword(
+        verifyPage,
+        baseUrl,
+        user.loginId,
+        user.password,
+      );
+      if (!verified) {
+        throw new Error(
+          `Created ${user.loginId} but could not log in with the seeded password. The instance may require manual cleanup.`,
+        );
+      }
+    } finally {
+      await verifyContext.close();
+    }
+
+    return { created: true, loginId: user.loginId, path: `/${user.loginId}`, type: "user" };
+  } finally {
+    await context.close();
+  }
+}
+
+async function ensureParityFoundationOrganization(page, baseUrl, organization) {
+  const path = `/organizations/${organization.name}`;
+  if (await legacyRouteExists(page, `${baseUrl}${path}`)) {
+    return { created: false, name: organization.name, path, type: "organization" };
+  }
+
+  await page.goto(`${baseUrl}/organizations/new`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  await requireLocator(page, 'form[name="new-org"]', "/organizations/new");
+  await page.fill("#name", organization.name);
+  await page.fill("#descr", organization.descr);
+  await submitFormAndWaitForNavigation(
+    page,
+    'form[name="new-org"]',
+    (url) => url.pathname === path,
+  );
+  if (!(await legacyRouteExists(page, `${baseUrl}${path}`))) {
+    throw new Error(`Expected organization ${organization.name} to exist after creation.`);
+  }
+
+  return { created: true, name: organization.name, path, type: "organization" };
+}
+
+async function ensureParityFoundationOrganizationMember(page, baseUrl, member) {
+  const path = `/organizations/${member.organizationName}/members`;
+  await page.goto(`${baseUrl}${path}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  if (await listContainsUserId(page, ".member-id", member.loginId)) {
+    return {
+      created: false,
+      loginId: member.loginId,
+      organizationName: member.organizationName,
+      path,
+      type: "organization-member",
+    };
+  }
+
+  await page.fill("form#addNewMember #loginId", member.loginId);
+  await submitFormAndWaitForNavigation(
+    page,
+    "form#addNewMember",
+    (url) => url.pathname === path,
+  );
+  if (!(await listContainsUserId(page, ".member-id", member.loginId))) {
+    throw new Error(
+      `Expected ${member.loginId} to appear in ${member.organizationName} members after creation.`,
+    );
+  }
+
+  return {
+    created: true,
+    loginId: member.loginId,
+    organizationName: member.organizationName,
+    path,
+    type: "organization-member",
+  };
+}
+
+async function ensureParityFoundationProject(page, baseUrl, project) {
+  const path = `/${project.owner}/${project.name}`;
+  if (await legacyRouteExists(page, `${baseUrl}${path}`)) {
+    return {
+      created: false,
+      name: project.name,
+      owner: project.owner,
+      path,
+      projectScope: project.projectScope,
+      type: "project",
+      vcs: project.vcs,
+    };
+  }
+
+  await page.goto(`${baseUrl}/projectform?owner=${project.owner}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  await requireLocator(page, "#newProjectForm", "/projectform");
+  await page.selectOption("#project-owner", project.owner);
+  await page.fill("#project-name", project.name);
+  await page.fill("#description", project.overview);
+  await page.selectOption("#vcs", project.vcs);
+  const scopeId = `#${project.projectScope.toLowerCase()}`;
+  await page.locator(scopeId).check({ force: true });
+  await submitFormAndWaitForNavigation(
+    page,
+    "#newProjectForm",
+    (url) => url.pathname === path,
+  );
+  if (!(await legacyRouteExists(page, `${baseUrl}${path}`))) {
+    throw new Error(`Expected project ${project.owner}/${project.name} to exist after creation.`);
+  }
+
+  return {
+    created: true,
+    name: project.name,
+    owner: project.owner,
+    path,
+    projectScope: project.projectScope,
+    type: "project",
+    vcs: project.vcs,
+  };
+}
+
+async function ensureParityFoundationProjectMember(page, baseUrl, member) {
+  const path = `/${member.owner}/${member.projectName}/members`;
+  await page.goto(`${baseUrl}${path}`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  if (await listContainsUserId(page, ".member-id", member.loginId)) {
+    return {
+      created: false,
+      loginId: member.loginId,
+      owner: member.owner,
+      path,
+      projectName: member.projectName,
+      type: "project-member",
+    };
+  }
+
+  await page.fill("form#addNewMember #loginId", member.loginId);
+  await submitFormAndWaitForNavigation(
+    page,
+    "form#addNewMember",
+    (url) => url.pathname === path,
+  );
+  if (!(await listContainsUserId(page, ".member-id", member.loginId))) {
+    throw new Error(
+      `Expected ${member.loginId} to appear in ${member.owner}/${member.projectName} members after creation.`,
+    );
+  }
+
+  return {
+    created: true,
+    loginId: member.loginId,
+    owner: member.owner,
+    path,
+    projectName: member.projectName,
+    type: "project-member",
+  };
+}
+
+async function verifyParityFoundationRoots(page, baseUrl, roots) {
+  const checks = [];
+  for (const path of roots) {
+    const ok = await legacyRouteExists(page, `${baseUrl}${path}`);
+    if (!ok) {
+      throw new Error(`Expected parity foundation root ${path} to be reachable.`);
+    }
+    checks.push({ ok, path });
+  }
+  return checks;
+}
+
+async function loginWithPassword(page, baseUrl, loginId, password) {
+  await page.goto(`${baseUrl}/users/loginform`, {
+    timeout: 30_000,
+    waitUntil: "networkidle",
+  });
+  if ((await page.locator("#loginIdOrEmailD").count()) === 0) {
+    return true;
+  }
+  await page.fill("#loginIdOrEmailD", loginId);
+  await page.fill("#password", password);
+  await submitFormAndWaitForNavigation(
+    page,
+    ".login-form-wrap form",
+    (url) => !url.pathname.endsWith("/users/loginform"),
+  );
+  return (await page.locator("#loginIdOrEmailD").count()) === 0;
+}
+
+async function submitFormAndWaitForNavigation(page, formSelector, predicate) {
+  const waitForNavigation = page
+    .waitForNavigation({ timeout: 15_000, url: predicate })
+    .catch(() => null);
+  await Promise.allSettled([
+    waitForNavigation,
+    page.locator(formSelector).evaluate((form) => {
+      if (!(form instanceof HTMLFormElement)) {
+        throw new Error("Expected a form element");
+      }
+      if (typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+      } else {
+        form.submit();
+      }
+    }),
+  ]);
+  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => null);
+}
+
+async function requireLocator(page, selector, pathLabel) {
+  const locator = page.locator(selector);
+  if ((await locator.count()) === 0) {
+    throw new Error(`Expected ${selector} on ${pathLabel}, but it was not present.`);
+  }
+  return locator;
+}
+
+async function listContainsUserId(page, selector, loginId) {
+  const expected = `@${loginId}`;
+  const texts = await page.locator(selector).allInnerTexts();
+  return texts.some((text) => text.includes(expected));
+}
+
+async function legacyRouteExists(page, url) {
+  const response = await page.goto(url, { timeout: 30_000, waitUntil: "networkidle" });
+  return Boolean(response?.ok());
 }
 
 function readBundledFile(layout, name) {

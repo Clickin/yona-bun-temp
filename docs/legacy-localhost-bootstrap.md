@@ -10,10 +10,10 @@ The harness intentionally uses the official GitHub release asset instead of the
 legacy build. That keeps us out of the old build-specific `flatdoc`/packaging
 path and matches the user instruction to work from the published binary.
 
-Current parity verification should continue to target the localhost legacy
-baseline at `http://127.0.0.1:9000`. The harness keeps a sidecar default on
-`19100` so a prepared repo-local instance can be exercised without taking over
-the active baseline until we explicitly want it to.
+Current parity verification should target the localhost legacy instance at
+`http://127.0.0.1:9000`. The harness still keeps a sidecar default on `19100`
+for smoke iteration, but the canonical verification target is the `parity`
+slot on `9000`.
 
 ## Defaults
 
@@ -25,12 +25,11 @@ the active baseline until we explicitly want it to.
 - Default admin bootstrap credentials:
   `admin` / `admin@example.com` / `admin`
 
-`19100` is deliberate. The repo parity baseline currently points at
-`127.0.0.1:9000`, and this harness should not clobber an already-running
-baseline instance while we are still iterating on the local bootstrap.
+`19100` remains deliberate for non-canonical smoke runs. The parity target
+itself now belongs on `127.0.0.1:9000` through the `parity` slot.
 
-When this repo-local instance is ready to replace the ad hoc baseline, use the
-parity-targeted wrappers below or pass `--port 9000 --instance parity`.
+Use the parity-targeted wrappers below, or pass `--port 9000 --instance parity`,
+when you want to prepare the canonical verification target.
 
 ## Commands
 
@@ -38,6 +37,7 @@ parity-targeted wrappers below or pass `--port 9000 --instance parity`.
 pnpm legacy:localhost:prepare
 pnpm legacy:localhost:start
 pnpm legacy:localhost:seed-admin
+pnpm legacy:localhost:seed-foundation
 pnpm legacy:localhost:status
 pnpm legacy:localhost:stop
 ```
@@ -51,12 +51,18 @@ pnpm legacy:localhost:status:parity
 pnpm legacy:localhost:prepare:parity
 pnpm legacy:localhost:start:parity
 pnpm legacy:localhost:seed-admin:parity
+pnpm legacy:localhost:seed-foundation:parity
 pnpm legacy:localhost:stop:parity
 ```
 
 `status:parity` is useful even when the `9000` instance was not started by this
 harness because it also probes `/users/loginform` and reports whether the
 current localhost baseline is reachable.
+
+`seed-foundation` is the first reproducible parity seed pass above the
+site-admin bootstrap. It drives the legacy product flow through Playwright
+instead of dropping in an opaque DB copy and records the result in
+`.agent/legacy-localhost/instances/<name>/parity-foundation.json`.
 
 ## What `prepare` does
 
@@ -155,6 +161,31 @@ the next seed pass should drive the legacy UI in roughly this order:
 9. create the milestone / issue / board / review / watcher states the parity
    harness currently depends on
 
-This file is intentionally only the bootstrap baseline plus the concrete seed
-inventory. The parity content seed itself should be built through the product
-flow next, not by dropping in a foreign DB dump.
+The repo now implements the foundation portion of that inventory through:
+
+- `pnpm legacy:localhost:seed-foundation`
+- `pnpm legacy:localhost:seed-foundation:parity`
+
+Current foundation seed contents:
+
+1. sign up users `alice` / `alice` and `carol` / `carol`
+2. create organization `weblabs`
+3. add `carol` to `weblabs`
+4. create `admin/sample`
+5. create `admin/svnplayground` with `SUBVERSION`
+6. log in as `alice` and create `alice/sample`
+7. create protected organization project `weblabs/portal`
+8. add `carol` to `weblabs/portal`
+9. verify that `/admin/sample`, `/admin/svnplayground`, `/alice/sample`,
+   `/organizations/weblabs`, and `/weblabs/portal` are reachable
+
+The remaining parity content seed is still intentionally open:
+
+- milestones
+- issues
+- board posts
+- review threads / pull requests
+- watcher states
+
+Those follow-up states should continue to be built through the product flow
+next, not by dropping in a foreign DB dump.
