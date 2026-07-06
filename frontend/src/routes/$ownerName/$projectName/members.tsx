@@ -68,6 +68,7 @@ function focusProjectMemberDeleteConfirmButton(button: HTMLButtonElement | null)
 
 function ProjectMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectMembersDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -109,6 +110,28 @@ function ProjectMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
       />
     </>
   );
+}
+
+function useProjectMembersDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const projectMembersTitle = t("title.projectMembers");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${projectMembersTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectMembersTitle, projectName, runtimeConfig.siteName]);
 }
 
 function ProjectMembersErrorBody({ messageKey }: { messageKey: string }) {
