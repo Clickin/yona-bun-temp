@@ -681,6 +681,62 @@ test("project milestone detail mass-update assignee avatar falls back for empty 
   ).toEqual([]);
 });
 
+test("project milestone detail mass update closes the checked issue through REST", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const massUpdateRequests: unknown[] = [];
+  await mockProjectMilestoneDetail(page, [], [], {
+    massUpdateRequests,
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestone/5?state=open#issues`);
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await page.check("#issue-41");
+  await page.evaluate(() => {
+    window.sessionStorage.setItem("milestone-detail-mass-update-marker", "kept");
+  });
+
+  const massUpdateRequest = page.waitForRequest((request) => {
+    return request.method() === "POST" && request.url().includes("/issues/mass-update");
+  });
+
+  await page.click("#state > button");
+  await expect(page.locator("#state")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await page.click('#state .mass-update-list li[data-value="CLOSED"] button');
+
+  const request = await massUpdateRequest;
+  expect(request.postDataJSON()).toMatchObject({
+    issueNumbers: [11],
+    state: "CLOSED",
+  });
+  await expect.poll(() => massUpdateRequests.length).toBe(1);
+  expect(massUpdateRequests).toEqual([
+    expect.objectContaining({
+      issueNumbers: [11],
+      state: "CLOSED",
+    }),
+  ]);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=open#issues`);
+  await expect(
+    page.evaluate(() => window.sessionStorage.getItem("milestone-detail-mass-update-marker")),
+  ).resolves.toBe("kept");
+  await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
+  await expect(page.locator("#state > button")).toBeDisabled();
+  await expect(page.locator("#issue-item-41")).toHaveCount(0);
+  await expect(
+    page.locator('#issues .nav-tabs a[href$="?state=open#issues"] .num-badge'),
+  ).toHaveText("0");
+  await expect(
+    page.locator('#issues .nav-tabs a[href$="?state=closed#issues"] .num-badge'),
+  ).toHaveText("2");
+
+  await page.click('#issues .nav-tabs a:has-text("Closed")');
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=closed#issues`);
+  await expect(page.locator("#issue-item-41")).toContainText("#11[UI]Open milestone issue");
+  await expect(page.locator("#issue-item-42")).toContainText("#12Closed milestone issue");
+});
+
 test("project milestone detail issue labels translate legacy href hash navigation to React buttons", async ({
   page,
 }) => {
@@ -903,10 +959,11 @@ async function mockProjectMilestoneDetail(
   stateRequests: unknown[],
   deleteRequests: string[],
   overrides?: {
+    massUpdateRequests?: unknown[];
     milestone?: Record<string, unknown>;
   },
 ) {
-  const milestone = {
+  let milestone = {
     ...milestoneFixture(),
     ...(overrides?.milestone ?? {}),
   };
@@ -977,6 +1034,53 @@ async function mockProjectMilestoneDetail(
           state: "closed",
         },
       }),
+    });
+  });
+  await page.route("**/issues/mass-update", async (route) => {
+    const requestBody = route.request().postDataJSON() as {
+      issueNumbers?: unknown;
+      state?: unknown;
+    };
+    overrides?.massUpdateRequests?.push(requestBody);
+
+    if (
+      requestBody.state === "CLOSED" &&
+      Array.isArray(requestBody.issueNumbers) &&
+      requestBody.issueNumbers.some((issueNumber) => Number(issueNumber) === 11)
+    ) {
+      const openIssues = Array.isArray(milestone.openIssues)
+        ? [...(milestone.openIssues as Array<Record<string, unknown>>)]
+        : [];
+      const closedIssues = Array.isArray(milestone.closedIssues)
+        ? [...(milestone.closedIssues as Array<Record<string, unknown>>)]
+        : [];
+      const movedIssues: Array<Record<string, unknown>> = [];
+      const remainingOpenIssues: Array<Record<string, unknown>> = [];
+
+      for (const issue of openIssues) {
+        if (Number(issue.issueNumber) === 11) {
+          movedIssues.push({
+            ...issue,
+            state: "closed",
+          });
+        } else {
+          remainingOpenIssues.push(issue);
+        }
+      }
+
+      milestone = {
+        ...milestone,
+        closedIssueCount: closedIssues.length + movedIssues.length,
+        closedIssues: [...closedIssues, ...movedIssues],
+        completionPercent: 100,
+        openIssueCount: remainingOpenIssues.length,
+        openIssues: remainingOpenIssues,
+      };
+    }
+
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({}),
     });
   });
 }

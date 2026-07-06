@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { HTMLAttributes } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -10,6 +10,7 @@ import type { ProjectMilestone, ProjectMilestoneIssue, YonaLabel } from "../../.
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
+  massUpdateIssues,
   openProjectMilestone,
   readProjectMilestone,
   readSessionBootstrap,
@@ -472,7 +473,12 @@ function MassUpdateShell({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
+  const { ownerName, projectName, milestoneId } = Route.useParams();
   const issueIds = allIssues.map((issue) => stringField(issue.id, stringField(issue.issueNumber)));
+  const selectedIssues = allIssues.filter((issue) =>
+    checkedIssueIds.includes(stringField(issue.id, stringField(issue.issueNumber))),
+  );
   const allChecked = issueIds.length > 0 && checkedIssueIds.length === issueIds.length;
   const hasCheckedIssues = checkedIssueIds.length > 0;
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -497,6 +503,66 @@ function MassUpdateShell({
   };
   const closeDropdown = () => {
     setOpenDropdownId(null);
+  };
+  const stateMassUpdateMutation = useMutation({
+    mutationFn: async ({
+      issueNumbers,
+      state,
+    }: {
+      issueNumbers: number[];
+      state: "CLOSED" | "OPEN";
+    }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return massUpdateIssues(runtimeConfig, csrfToken, {
+        issueNumbers,
+        ownerName,
+        projectName,
+        state,
+      });
+    },
+    onSuccess() {
+      onCheckedIssueIdsChange([]);
+      void queryClient.invalidateQueries({
+        queryKey: ["project", ownerName, projectName, "milestones", Number(milestoneId)],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["project", ownerName, projectName, "milestones"],
+      });
+    },
+  });
+  useEffect(() => {
+    if (!hasCheckedIssues) {
+      closeDropdown();
+    }
+  }, [hasCheckedIssues]);
+  const submitMassUpdateState = (value: string) => {
+    closeDropdown();
+    if (!hasCheckedIssues) {
+      return;
+    }
+    const normalizedState = value.toLowerCase();
+    if (
+      selectedIssues.length > 0 &&
+      selectedIssues.every((issue) => stringField(issue.state).toLowerCase() === normalizedState)
+    ) {
+      return;
+    }
+
+    const issueNumbers: number[] = [];
+    for (const issue of selectedIssues) {
+      const issueNumber = Number(stringField(issue.issueNumber, "0"));
+      if (issueNumber > 0) {
+        issueNumbers.push(issueNumber);
+      }
+    }
+    if (issueNumbers.length === 0) {
+      return;
+    }
+
+    stateMassUpdateMutation.mutate({
+      issueNumbers,
+      state: value === "CLOSED" ? "CLOSED" : "OPEN",
+    });
   };
   return (
     <div className="mass-update-wrap hide-in-mobile">
@@ -525,6 +591,7 @@ function MassUpdateShell({
           label={t("issue.update.state")}
           name="state"
           onClose={closeDropdown}
+          onSelect={submitMassUpdateState}
           onToggle={toggleDropdown}
           open={openDropdownId === "state"}
           options={[
@@ -662,6 +729,7 @@ function MassUpdateDropdown({
   label,
   name,
   onClose,
+  onSelect,
   onToggle,
   open,
   options,
@@ -671,6 +739,7 @@ function MassUpdateDropdown({
   label: string;
   name: string;
   onClose: () => void;
+  onSelect?: (value: string) => void;
   onToggle: (id: string, disabled: boolean) => void;
   open: boolean;
   options: Array<{ divider?: boolean; label?: string; value: string }>;
@@ -704,6 +773,10 @@ function MassUpdateDropdown({
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
+                  if (onSelect) {
+                    onSelect(option.value);
+                    return;
+                  }
                   onClose();
                 }}
               >
