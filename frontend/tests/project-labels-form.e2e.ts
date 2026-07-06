@@ -59,7 +59,7 @@ const EXPECTED_PROJECT_LABELS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -414,6 +414,78 @@ test("project labels new-category confirm modal preserves legacy option semantic
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 });
 
+test("project labels category typeahead suggests rendered categories and suppresses Enter submit", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  const labelRequests: { body: unknown; method: string; url: string }[] = [];
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+      {
+        category: "priority",
+        categoryId: "4",
+        categoryIsExclusive: true,
+        color: "#ff9800",
+        id: "10",
+        name: "high",
+      },
+    ],
+    { labelRequests },
+  );
+
+  await page.goto(labelsPageUrl);
+  await rememberSpaMarker(page, "project-labels-category-typeahead");
+
+  const categoryInput = page.locator('#frmNewLabel input[name="category"]');
+  const typeahead = page.locator("#frmNewLabel .typeahead.dropdown-menu");
+
+  await categoryInput.fill("t");
+  await expect(typeahead).toBeVisible();
+  await expect(typeahead.locator("li")).toHaveCount(2);
+  await expect(typeahead.locator("a")).toHaveCount(0);
+  await expect(typeahead.locator("button")).toHaveText(["type", "priority"]);
+  await expect(typeahead.locator("button").first()).toHaveAttribute("type", "button");
+  await expect(typeahead.locator('li[data-value="type"]')).toHaveClass(/active/u);
+  await expect(typeahead.locator('li[data-value="type"] strong')).toHaveText("t");
+  await expect(typeahead.locator('li[data-value="priority"] strong')).toHaveText("t");
+
+  const typeaheadMetrics = await categoryTypeaheadMetrics(page);
+  expect(typeaheadMetrics).not.toBeNull();
+  expect(typeaheadMetrics!.menu.left).toBeCloseTo(typeaheadMetrics!.input.left, 0);
+  expect(typeaheadMetrics!.menu.top).toBeGreaterThanOrEqual(typeaheadMetrics!.input.bottom - 1);
+  expect(typeaheadMetrics!.menu.top).toBeLessThanOrEqual(typeaheadMetrics!.input.bottom + 6);
+  expect(typeaheadMetrics!.menu.width).toBeGreaterThanOrEqual(typeaheadMetrics!.input.width);
+
+  await categoryInput.press("ArrowDown");
+  await expect(typeahead.locator('li[data-value="priority"]')).toHaveClass(/active/u);
+  await categoryInput.press("Enter");
+
+  await expect(categoryInput).toHaveValue("priority");
+  await expect(typeahead).toHaveCount(0);
+  expect(labelRequests).toHaveLength(0);
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-category-typeahead");
+
+  await categoryInput.fill("needs-triage");
+  await expect(typeahead).toHaveCount(0);
+  await categoryInput.press("Enter");
+
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-category-typeahead");
+  await expect(page.locator("#newCategoryConfirm")).toHaveCount(0);
+  expect(labelRequests).toHaveLength(0);
+});
+
 test("project labels edit modals submit through route mutations", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const labelRequests: { body: unknown; method: string; url: string }[] = [];
@@ -643,6 +715,22 @@ test("project labels modal source insulates delegated modal bridge and removes n
   expect(routeSource).not.toContain("document.");
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
+});
+
+test("project labels typeahead source stays React-owned and legacy-enter guarded", () => {
+  const routeSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(routeSource).toContain('data-provider="typeahead"');
+  expect(routeSource).toContain('className="typeahead dropdown-menu"');
+  expect(routeSource).toContain('event.key === "Enter"');
+  expect(routeSource).toContain('event.key === "ArrowDown"');
+  expect(routeSource).toContain('event.key === "ArrowUp"');
+  expect(routeSource).toContain("event.preventDefault();");
+  expect(routeSource).not.toContain(".typeahead(");
+  expect(routeSource).not.toContain('data("typeahead")');
+  expect(routeSource).not.toContain("document.location.reload");
 });
 
 test("project labels header favorite star posts and toggles starred class", async ({ page }) => {
@@ -978,6 +1066,20 @@ async function labelListMetrics(page: Page) {
       labelListBorderTopWidth: listStyle?.borderTopWidth,
       labelName: firstLabel?.getAttribute("data-label-name"),
       updateUri: editButton?.getAttribute("data-update-uri"),
+    };
+  });
+}
+
+async function categoryTypeaheadMetrics(page: Page) {
+  return page.evaluate(() => {
+    const input = document.querySelector<HTMLInputElement>('#frmNewLabel input[name="category"]');
+    const menu = document.querySelector<HTMLElement>("#frmNewLabel .typeahead.dropdown-menu");
+    if (!input || !menu) {
+      return null;
+    }
+    return {
+      input: input.getBoundingClientRect(),
+      menu: menu.getBoundingClientRect(),
     };
   });
 }

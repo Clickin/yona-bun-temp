@@ -6,6 +6,7 @@ import {
   useState,
   type FocusEvent,
   type FormEvent,
+  type KeyboardEvent,
   type MouseEvent,
 } from "react";
 import {
@@ -122,15 +123,29 @@ function ProjectLabelsBody({
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
+  const labelCategories = groupedLabels(labels);
+  const categoryTypeaheadSource = buildCategoryTypeaheadSource(labelCategories);
   const [newLabelColor, setNewLabelColor] = useState("");
   const [isNewLabelColorsVisible, setIsNewLabelColorsVisible] = useState(false);
   const [newLabelNameColor, setNewLabelNameColor] = useState("");
+  const [categoryTypeaheadQuery, setCategoryTypeaheadQuery] = useState("");
+  const [isCategoryTypeaheadOpen, setIsCategoryTypeaheadOpen] = useState(false);
+  const [activeCategorySuggestionIndex, setActiveCategorySuggestionIndex] = useState(0);
   const [editingCategory, setEditingCategory] = useState<EditableCategory | null>(null);
   const [editingLabel, setEditingLabel] = useState<EditableLabel | null>(null);
   const [pendingCategoryCreation, setPendingCategoryCreation] =
     useState<PendingCategoryCreation | null>(null);
   const [pendingLabelDeletion, setPendingLabelDeletion] = useState<string | null>(null);
+  const newLabelCategoryInputRef = useRef<HTMLInputElement>(null);
   const newLabelColorInputRef = useRef<HTMLInputElement>(null);
+  const categoryTypeaheadSuggestions = legacyTypeaheadSuggestions(
+    categoryTypeaheadSource,
+    categoryTypeaheadQuery,
+  );
+  const showCategoryTypeahead =
+    isCategoryTypeaheadOpen &&
+    categoryTypeaheadQuery.trim().length > 0 &&
+    categoryTypeaheadSuggestions.length > 0;
   const copyMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -235,6 +250,8 @@ function ProjectLabelsBody({
 
   function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsCategoryTypeaheadOpen(false);
+    setActiveCategorySuggestionIndex(0);
     const formData = new FormData(event.currentTarget);
     const categoryName = String(formData.get("category") ?? "").trim();
     const labelName = String(formData.get("name") ?? "").trim();
@@ -250,9 +267,7 @@ function ProjectLabelsBody({
       window.alert(t("label.error.duplicated"));
       return;
     }
-    const existingCategory = groupedLabels(labels).some(
-      (category) => category.name === categoryName,
-    );
+    const existingCategory = labelCategories.some((category) => category.name === categoryName);
     const draft = {
       categoryName,
       labelColor: refinedColor,
@@ -265,6 +280,57 @@ function ProjectLabelsBody({
     createMutation.mutate(draft);
   }
 
+  function selectCategoryTypeaheadSuggestion(categoryName: string) {
+    setCategoryTypeaheadQuery(categoryName);
+    setIsCategoryTypeaheadOpen(false);
+    setActiveCategorySuggestionIndex(0);
+    if (newLabelCategoryInputRef.current) {
+      newLabelCategoryInputRef.current.value = categoryName;
+    }
+  }
+
+  function onCategoryInputBlur(event: FocusEvent<HTMLInputElement>) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof HTMLElement && nextTarget.closest(".typeahead.dropdown-menu")) {
+      return;
+    }
+    setIsCategoryTypeaheadOpen(false);
+  }
+
+  function onCategoryInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setIsCategoryTypeaheadOpen(false);
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const activeSuggestion =
+        categoryTypeaheadSuggestions[activeCategorySuggestionIndex] ??
+        categoryTypeaheadSuggestions[0];
+      if (showCategoryTypeahead && activeSuggestion) {
+        selectCategoryTypeaheadSuggestion(activeSuggestion.value);
+      }
+      return;
+    }
+    if (!showCategoryTypeahead) {
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveCategorySuggestionIndex(
+        (current) => (current + 1) % categoryTypeaheadSuggestions.length,
+      );
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveCategorySuggestionIndex(
+        (current) =>
+          (current - 1 + categoryTypeaheadSuggestions.length) % categoryTypeaheadSuggestions.length,
+      );
+    }
+  }
+
   function onNameFocus(event: FocusEvent<HTMLInputElement>) {
     const form = event.currentTarget.form;
     setIsNewLabelColorsVisible(true);
@@ -272,9 +338,7 @@ function ProjectLabelsBody({
       return;
     }
     const categoryName = String(new FormData(form).get("category") ?? "").trim();
-    const existingCategory = groupedLabels(labels).find(
-      (category) => category.name === categoryName,
-    );
+    const existingCategory = labelCategories.find((category) => category.name === categoryName);
     const fallbackColor =
       stringField(
         existingCategory?.labels[0] ? recordField(existingCategory.labels[0]).color : "",
@@ -372,7 +436,7 @@ function ProjectLabelsBody({
               >
                 <strong className="form-legend">{t("label.new")}</strong>
                 <div className="form-wrap">
-                  <div>
+                  <div style={showCategoryTypeahead ? { position: "relative" } : undefined}>
                     <input
                       type="text"
                       name="category"
@@ -381,6 +445,23 @@ function ProjectLabelsBody({
                       data-provider="typeahead"
                       autoComplete="off"
                       placeholder={t("label.category")}
+                      ref={newLabelCategoryInputRef}
+                      onBlur={onCategoryInputBlur}
+                      onChange={(event) => {
+                        const nextQuery = event.currentTarget.value;
+                        setCategoryTypeaheadQuery(nextQuery);
+                        setActiveCategorySuggestionIndex(0);
+                        setIsCategoryTypeaheadOpen(nextQuery.trim() !== "");
+                      }}
+                      onFocus={() => {
+                        if (
+                          categoryTypeaheadQuery.trim().length > 0 &&
+                          categoryTypeaheadSuggestions.length > 0
+                        ) {
+                          setIsCategoryTypeaheadOpen(true);
+                        }
+                      }}
+                      onKeyDown={onCategoryInputKeyDown}
                     />
                     <input
                       type="text"
@@ -392,6 +473,41 @@ function ProjectLabelsBody({
                       style={newLabelNameColor ? { backgroundColor: newLabelNameColor } : undefined}
                       className={`input-label${contrastClass(newLabelNameColor)}`}
                     />
+                    {showCategoryTypeahead ? (
+                      <ul
+                        className="typeahead dropdown-menu"
+                        style={typeaheadMenuStyle(newLabelCategoryInputRef.current)}
+                      >
+                        {categoryTypeaheadSuggestions.map((suggestion, index) => (
+                          <li
+                            className={
+                              index === activeCategorySuggestionIndex ? "active" : undefined
+                            }
+                            data-value={suggestion.value}
+                            key={suggestion.value}
+                            onMouseEnter={() => setActiveCategorySuggestionIndex(index)}
+                          >
+                            <button
+                              type="button"
+                              style={typeaheadButtonStyle()}
+                              onClick={() => selectCategoryTypeaheadSuggestion(suggestion.value)}
+                            >
+                              {suggestion.parts.map((part, partIndex) =>
+                                part.isMatch ? (
+                                  <strong key={`${suggestion.value}-${partIndex}`}>
+                                    {part.text}
+                                  </strong>
+                                ) : (
+                                  <Fragment key={`${suggestion.value}-${partIndex}`}>
+                                    {part.text}
+                                  </Fragment>
+                                ),
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                   <div
                     className="label-preset-colors"
@@ -710,6 +826,112 @@ function groupedLabels(labels: YonaRecord[]) {
   }
 
   return Array.from(categories.values());
+}
+
+function legacyTypeaheadSuggestions(source: string[], query: string) {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) {
+    return [];
+  }
+
+  return legacyTypeaheadSorter(
+    source.filter((item) => item.toLowerCase().includes(trimmedQuery.toLowerCase())),
+    trimmedQuery,
+  )
+    .slice(0, 8)
+    .map((value) => ({
+      parts: legacyTypeaheadHighlight(value, trimmedQuery),
+      value,
+    }));
+}
+
+function legacyTypeaheadSorter(source: string[], query: string) {
+  const beginsWith: string[] = [];
+  const caseSensitive: string[] = [];
+  const caseInsensitive: string[] = [];
+  const lowerQuery = query.toLowerCase();
+  const caseSensitiveMatcher = new RegExp(escapeTypeaheadRegExp(query));
+
+  for (const item of source) {
+    const lowerItem = item.toLowerCase();
+    if (lowerItem.startsWith(lowerQuery)) {
+      beginsWith.push(item);
+      continue;
+    }
+    if (caseSensitiveMatcher.test(item)) {
+      caseSensitive.push(item);
+      continue;
+    }
+    caseInsensitive.push(item);
+  }
+
+  return beginsWith.concat(caseSensitive, caseInsensitive);
+}
+
+function legacyTypeaheadHighlight(value: string, query: string) {
+  const matcher = new RegExp(`(${escapeTypeaheadRegExp(query)})`, "ig");
+  const parts: Array<{ isMatch: boolean; text: string }> = [];
+  let lastIndex = 0;
+
+  for (const match of value.matchAll(matcher)) {
+    const start = match.index ?? 0;
+    const matchedText = match[0];
+
+    if (start > lastIndex) {
+      parts.push({ isMatch: false, text: value.slice(lastIndex, start) });
+    }
+
+    parts.push({ isMatch: true, text: matchedText });
+    lastIndex = start + matchedText.length;
+  }
+
+  if (lastIndex < value.length) {
+    parts.push({ isMatch: false, text: value.slice(lastIndex) });
+  }
+
+  return parts.length > 0 ? parts : [{ isMatch: false, text: value }];
+}
+
+function escapeTypeaheadRegExp(value: string) {
+  return value.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+}
+
+function typeaheadMenuStyle(input: HTMLInputElement | null) {
+  return {
+    display: "block",
+    left: 0,
+    minWidth: input ? `${input.offsetWidth}px` : undefined,
+    position: "absolute" as const,
+    top: input ? `${input.offsetHeight}px` : undefined,
+  };
+}
+
+function typeaheadButtonStyle() {
+  return {
+    background: "transparent",
+    border: 0,
+    display: "block",
+    padding: "3px 20px",
+    textAlign: "left" as const,
+    width: "100%",
+  };
+}
+
+function buildCategoryTypeaheadSource(
+  categories: Array<{ id: string; isExclusive: boolean; labels: YonaRecord[]; name: string }>,
+) {
+  const seen = new Set<string>();
+  const source: string[] = [];
+
+  for (const category of categories) {
+    if (!category.name || seen.has(category.name)) {
+      continue;
+    }
+    seen.add(category.name);
+    source.push(category.name);
+  }
+
+  return source;
 }
 
 type EditableCategory = {
@@ -1104,6 +1326,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   {projectName}
                 </Link>
               </span>
+              {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- legacy project header favorite control is a span with button semantics. */}
               <span
                 className="user-project-list"
                 data-project-id={projectIdValue}
@@ -1426,17 +1649,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  if (typeof value === "number") {
-    return value;
-  }
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
 }
 
 function booleanField(value: unknown) {
