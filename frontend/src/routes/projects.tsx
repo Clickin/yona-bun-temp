@@ -1,9 +1,10 @@
 /* oxlint-disable jsx-a11y/no-autofocus -- legacy project/list.scala.html sets autofocus on the directory filter input. */
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { listProjectsQueryOptions } from "../api/org-project";
-import type { YonaRecord } from "../api/types";
+import { apiQueryKeys } from "../api/query-keys";
+import { restFetch } from "../api/rest-client";
+import type { ListProjectsResponse, YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -62,7 +63,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const search = Route.useSearch();
   const { filter } = search;
   const { t } = useLegacyMessages();
-  const projectsQuery = useQuery(listProjectsQueryOptions(runtimeConfig));
+  const projectsQuery = useQuery(projectsDirectoryQueryOptions(runtimeConfig, search));
   const projects = projectItems(projectsQuery.data);
   const totalPages = positiveIntegerField(projectsQuery.data, "totalPages", 1);
   const responsePage = positiveIntegerField(
@@ -510,4 +511,53 @@ function projectIsReadable(record: YonaRecord): boolean {
     }
   }
   return true;
+}
+
+type ProjectsDirectoryQueryInput = {
+  filter: string;
+  labelIds: string;
+  pageNum?: number;
+};
+
+function projectsDirectoryQueryOptions(runtimeConfig: RuntimeConfig, search: ProjectsSearch) {
+  const input = projectsDirectoryQueryInput(search);
+  return queryOptions({
+    queryFn: () => listProjectsDirectoryRest(runtimeConfig, input),
+    queryKey: [...apiQueryKeys.project.list(), input] as const,
+  });
+}
+
+function projectsDirectoryQueryInput(search: ProjectsSearch): ProjectsDirectoryQueryInput {
+  const pageNum = positiveInteger(search.pageNum);
+  return {
+    filter: search.filter,
+    labelIds: stringSearch(search.labelIds),
+    ...(pageNum ? { pageNum } : {}),
+  };
+}
+
+function listProjectsDirectoryRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectsDirectoryQueryInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListProjectsResponse> {
+  return restFetch<ListProjectsResponse>(runtimeConfig, projectsDirectoryPath(input), {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+function projectsDirectoryPath(input: ProjectsDirectoryQueryInput): string {
+  const params = new URLSearchParams();
+  if (input.filter) {
+    params.set("filter", input.filter);
+  }
+  if (input.labelIds) {
+    params.set("labelIds", input.labelIds);
+  }
+  if (input.pageNum) {
+    params.set("pageNum", String(input.pageNum));
+  }
+  const query = params.toString();
+  return query ? `/projects?${query}` : "/projects";
 }

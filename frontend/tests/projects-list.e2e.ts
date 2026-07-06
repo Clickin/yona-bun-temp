@@ -300,10 +300,37 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
 
 test("project directory labels keep legacy header links and query", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockAuthenticatedProjects(page);
+  const projectRequests: Array<{ filter: string | null; labelIds: string | null }> = [];
+  await mockAuthenticatedProjects(page, (requestUrl) => {
+    const queryState = {
+      filter: requestUrl.searchParams.get("filter"),
+      labelIds: requestUrl.searchParams.get("labelIds"),
+    };
+    projectRequests.push(queryState);
+
+    if (queryState.labelIds === "8") {
+      return {
+        items: [
+          makeReadableProjectDirectoryItem({
+            overview: "Bug-only project list",
+            projectName: "sample-bug",
+          }),
+        ],
+        pageNum: 1,
+        totalPages: 1,
+      };
+    }
+
+    return {
+      items: [makeReadableProjectDirectoryItem(), makeUnreadableProjectDirectoryItem()],
+      pageNum: 1,
+      totalPages: 1,
+    };
+  });
 
   await page.goto(`${basePath}/projects?filter=sample`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  expect(projectRequests).toContainEqual({ filter: "sample", labelIds: null });
 
   const projectLabel = page.locator(".all-projects .header a.project-label");
   await expect(projectLabel).toHaveCount(1);
@@ -319,6 +346,9 @@ test("project directory labels keep legacy header links and query", async ({ pag
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/projects`);
   await expect.poll(() => new URL(page.url()).searchParams.get("labelIds")).toBe("8");
   await expect.poll(() => new URL(page.url()).searchParams.has("filter")).toBe(false);
+  await expect(page.locator(".all-projects .project")).toHaveCount(1);
+  await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-bug");
+  expect(projectRequests).toContainEqual({ filter: null, labelIds: "8" });
   await expect
     .poll(() =>
       page.evaluate(
@@ -326,6 +356,85 @@ test("project directory labels keep legacy header links and query", async ({ pag
       ),
     )
     .toBe("label");
+});
+
+test("projects list applies filter, labelIds, and pageNum query state to API requests and results", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const projectRequests: Array<{
+    filter: string | null;
+    labelIds: string | null;
+    pageNum: string | null;
+  }> = [];
+  await mockAuthenticatedProjects(page, (requestUrl) => {
+    const queryState = {
+      filter: requestUrl.searchParams.get("filter"),
+      labelIds: requestUrl.searchParams.get("labelIds"),
+      pageNum: requestUrl.searchParams.get("pageNum"),
+    };
+    projectRequests.push(queryState);
+
+    if (
+      queryState.filter === "sample" &&
+      queryState.labelIds === "8" &&
+      queryState.pageNum === "2"
+    ) {
+      return {
+        items: [
+          makeReadableProjectDirectoryItem({
+            overview: "Legacy query page two",
+            projectName: "sample-page-two",
+          }),
+        ],
+        pageNum: 2,
+        totalPages: 3,
+      };
+    }
+
+    if (
+      queryState.filter === "sample" &&
+      queryState.labelIds === "8" &&
+      queryState.pageNum === "1"
+    ) {
+      return {
+        items: [
+          makeReadableProjectDirectoryItem({
+            overview: "Legacy query page one",
+            projectName: "sample-page-one",
+          }),
+        ],
+        pageNum: 1,
+        totalPages: 3,
+      };
+    }
+
+    return {
+      items: [
+        makeReadableProjectDirectoryItem({
+          overview: "Plain query fallback",
+          projectName: "unexpected-plain",
+        }),
+      ],
+      pageNum: 1,
+      totalPages: 1,
+    };
+  });
+
+  await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=2`);
+  await expect(page.locator(".all-projects .project")).toHaveCount(1);
+  await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-page-two");
+  await expect(page.locator(".all-projects .desc")).toHaveText("Legacy query page two");
+  await expect(page.locator(".all-projects .header a.project-label")).toHaveText("bug");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
+  expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "2" });
+
+  const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
+  await previousPageLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
+  await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-page-one");
+  await expect(page.locator(".all-projects .desc")).toHaveText("Legacy query page one");
+  expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "1" });
 });
 
 test("projects list renders legacy pagination controls for multi-page project lists", async ({
@@ -397,7 +506,17 @@ test("projects list renders legacy pagination controls for multi-page project li
 test("projects route source uses Link for project directory card navigation", () => {
   const source = readFileSync(new URL("../src/routes/projects.tsx", import.meta.url), "utf8");
 
+  expect(source).toContain("import { queryOptions, useQuery } from");
   expect(source).toContain("import { createFileRoute, Link, useRouter } from");
+  expect(source).toContain("apiQueryKeys");
+  expect(source).toContain("restFetch");
+  expect(source).toContain("projectsDirectoryQueryOptions(runtimeConfig, search)");
+  expect(source).toContain("queryFn: () => listProjectsDirectoryRest(runtimeConfig, input)");
+  expect(source).toContain("queryKey: [...apiQueryKeys.project.list(), input] as const");
+  expect(source).toContain('params.set("filter", input.filter)');
+  expect(source).toContain('params.set("labelIds", input.labelIds)');
+  expect(source).toContain('params.set("pageNum", String(input.pageNum))');
+  expect(source).toContain('return query ? `/projects?${query}` : "/projects";');
   expect(source).toContain('to="/projects"');
   expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/$ownerName/$projectName"');
@@ -429,7 +548,15 @@ async function expectNoActiveMarker(locator: ReturnType<Page["locator"]>) {
   await expect(locator).not.toHaveAttribute("data-status", /./);
 }
 
-async function mockAuthenticatedProjects(page: Page, payload: Record<string, unknown> = {}) {
+type ProjectsDirectoryMockPayload = Record<string, unknown>;
+type ProjectsDirectoryMockResolver = (requestUrl: URL) => ProjectsDirectoryMockPayload;
+
+async function mockAuthenticatedProjects(
+  page: Page,
+  payload: ProjectsDirectoryMockPayload | ProjectsDirectoryMockResolver = {},
+) {
+  const resolvePayload: ProjectsDirectoryMockResolver =
+    typeof payload === "function" ? payload : () => payload;
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -445,41 +572,51 @@ async function mockAuthenticatedProjects(page: Page, payload: Record<string, unk
       }),
     });
   });
-  await page.route("**/api/v1/projects", async (route) => {
+  await page.route("**/api/v1/projects**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const resolvedPayload = resolvePayload(requestUrl);
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        items: [
-          {
-            createdLabel: "just now",
-            createdTitle: "2026-06-30",
-            lastPushedLabel: "just now",
-            logoUrl: "/assets/images/project_default_logo.png",
-            memberCount: 2,
-            overview: "Sample project",
-            ownerName: "admin",
-            projectName: "sample",
-            projectScope: "public",
-            labels: [
-              {
-                category: "BUG",
-                id: 8,
-                name: "bug",
-              },
-            ],
-            watchCount: 3,
-          },
-          {
-            ownerName: "admin",
-            projectName: "hidden",
-            projectScope: "private",
-            viewerCanRead: false,
-          },
-        ],
-        ...payload,
+        items: [makeReadableProjectDirectoryItem(), makeUnreadableProjectDirectoryItem()],
+        ...resolvedPayload,
       }),
     });
   });
+}
+
+function makeReadableProjectDirectoryItem(
+  overrides: ProjectsDirectoryMockPayload = {},
+): ProjectsDirectoryMockPayload {
+  return {
+    createdLabel: "just now",
+    createdTitle: "2026-06-30",
+    labels: [
+      {
+        category: "BUG",
+        id: 8,
+        name: "bug",
+      },
+    ],
+    lastPushedLabel: "just now",
+    logoUrl: "/assets/images/project_default_logo.png",
+    memberCount: 2,
+    overview: "Sample project",
+    ownerName: "admin",
+    projectName: "sample",
+    projectScope: "public",
+    watchCount: 3,
+    ...overrides,
+  };
+}
+
+function makeUnreadableProjectDirectoryItem(): ProjectsDirectoryMockPayload {
+  return {
+    ownerName: "admin",
+    projectName: "hidden",
+    projectScope: "private",
+    viewerCanRead: false,
+  };
 }
 
 async function mockProjectCardDestinations(page: Page) {
