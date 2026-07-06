@@ -15,6 +15,12 @@ Current parity verification should target the localhost legacy instance at
 for smoke iteration, but the canonical verification target is the `parity`
 slot on `9000`.
 
+For the mounted Rust dev runtime, the repo-local startup harness now also
+reconciles `.yona-data/dev.db` so an existing `admin` user keeps a
+`site_admin` row. That prevents reused local dev databases from drifting away
+from the localhost legacy parity assumption that `admin` / `admin` can read the
+`/sites/*` admin surfaces.
+
 ## Defaults
 
 - Release asset: `yona-h2-v1.16.0-bin.zip`
