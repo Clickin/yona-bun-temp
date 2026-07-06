@@ -472,6 +472,19 @@ async function postLocalJson(page, baseUrl, path, data) {
   });
 }
 
+async function putLocalJson(page, baseUrl, path, data) {
+  const csrfToken = await readLocalCsrfToken(page, baseUrl);
+  if (!csrfToken) {
+    return null;
+  }
+  return page.request.put(`${baseUrl}${path}`, {
+    data,
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+}
+
 async function patchLocalWorkspaceProfile(page, baseUrl, { emailAddress, name }) {
   const csrfToken = await readLocalCsrfToken(page, baseUrl);
   if (!csrfToken) {
@@ -581,6 +594,14 @@ async function bootstrapLocalAccount(page, baseUrl) {
     await ensureLocalAccountSession(page, baseUrl, adminAccount);
   };
   const ensureAdminFixtures = async () => {
+    const sampleMilestonePayload = {
+      attachmentIds: [],
+      contentsMarkdown: "Milestone for local legacy parity verification screens.",
+      dueDate: "2026-07-31",
+      state: "open",
+      title: "Parity launch",
+    };
+
     await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects", {
       board: true,
       code: true,
@@ -607,6 +628,41 @@ async function bootstrapLocalAccount(page, baseUrl) {
         labelIds: [],
         title: "Sample issue",
       });
+    }
+    let sampleMilestoneId = 1;
+    const milestoneResponse = await page.request.get(
+      `${baseUrl}/api/v1/owners/admin/projects/sample/milestones/1`,
+    );
+    if (!milestoneResponse.ok()) {
+      const createdMilestoneResponse = await postLocalJson(
+        page,
+        baseUrl,
+        "/api/v1/owners/admin/projects/sample/milestones",
+        sampleMilestonePayload,
+      );
+      const createdMilestone = createdMilestoneResponse
+        ? await createdMilestoneResponse.json().catch(() => null)
+        : null;
+      sampleMilestoneId = Number(createdMilestone?.milestone?.id ?? 1);
+    }
+    const seededIssueResponse = await page.request.get(
+      `${baseUrl}/api/v1/projects/admin/sample/issues/1`,
+    );
+    if (seededIssueResponse.ok()) {
+      const seededIssue = await seededIssueResponse.json().catch(() => null);
+      if (Number(seededIssue?.milestoneId ?? 0) !== sampleMilestoneId) {
+        await putLocalJson(page, baseUrl, "/api/v1/projects/admin/sample/issues/1", {
+          assigneeLoginId: seededIssue?.assigneeLoginId ?? "",
+          attachmentIds: [],
+          bodyMarkdown: seededIssue?.bodyMarkdown ?? "Sample issue body",
+          dueDate: seededIssue?.dueDateLabel ?? "",
+          isDraft: seededIssue?.isDraft ?? false,
+          isPublish: false,
+          labelIds: [],
+          milestoneId: sampleMilestoneId,
+          title: seededIssue?.title ?? "Sample issue",
+        });
+      }
     }
     await postLocalJson(page, baseUrl, "/api/v1/organizations", {
       description: "Parity seed organization for frontend conversion checks",

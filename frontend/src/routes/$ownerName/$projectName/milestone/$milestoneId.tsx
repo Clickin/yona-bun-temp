@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
-import { RestApiError } from "../../../../api/rest-client";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectMilestone, ProjectMilestoneIssue, YonaLabel } from "../../../../api/types";
 import {
@@ -40,6 +39,35 @@ export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milest
     };
   },
 });
+
+function useProjectMilestoneDetailDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  milestoneTitle: string,
+) {
+  useEffect(() => {
+    if (typeof document === "undefined" || !milestoneTitle) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${milestoneTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [milestoneTitle, ownerName, projectName, runtimeConfig.siteName]);
+}
+
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) {
+    return undefined;
+  }
+
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+}
 
 function ProjectMilestoneDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -78,50 +106,18 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
     queryKey: ["project", ownerName, projectName, "milestones", numericMilestoneId],
   });
+  const milestoneTitle = stringField(milestoneQuery.data?.milestone?.title);
+  useProjectMilestoneDetailDocumentTitle(runtimeConfig, ownerName, projectName, milestoneTitle);
 
   if (isEditChildRoute) {
     return <Outlet />;
   }
 
-  if (!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending) {
+  if (!projectQuery.data) {
     return null;
   }
 
-  const milestoneNotFound =
-    (milestoneQuery.error instanceof RestApiError && milestoneQuery.error.status === 404) ||
-    (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
-
-  if (milestoneNotFound) {
-    return (
-      <>
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectMenu
-          active="milestone"
-          basePath={runtimeConfig.basePath}
-          project={projectQuery.data}
-        />
-        <ProjectMilestoneNotFoundBody runtimeConfig={runtimeConfig} />
-      </>
-    );
-  }
-
-  if (!milestoneQuery.data?.milestone) {
-    return null;
-  }
-
-  const currentUser = {
-    avatarUrl: stringField(sessionQuery.data.avatarUrl),
-    id: stringField(sessionQuery.data.actorId),
-    label: stringField(sessionQuery.data.userLabel, stringField(sessionQuery.data.loginId)),
-    loginId: stringField(sessionQuery.data.loginId),
-  };
-  const viewerIsProjectMember = isProjectMember(
-    recordArray(projectQuery.data.members),
-    recordArray(milestoneQuery.data.milestone.assignableUsers),
-    currentUser,
-  );
-
-  return (
+  const projectShell = (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
@@ -129,9 +125,46 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         basePath={runtimeConfig.basePath}
         project={projectQuery.data}
       />
+    </>
+  );
+
+  const milestoneNotFound =
+    restApiErrorStatus(milestoneQuery.error) === 404 ||
+    (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
+
+  if (milestoneNotFound) {
+    return (
+      <>
+        {projectShell}
+        <ProjectMilestoneNotFoundBody runtimeConfig={runtimeConfig} />
+      </>
+    );
+  }
+
+  if (milestoneQuery.isPending || !milestoneQuery.data?.milestone) {
+    return projectShell;
+  }
+
+  const currentUser = {
+    avatarUrl: stringField(sessionQuery.data?.avatarUrl),
+    id: stringField(sessionQuery.data?.actorId),
+    label: stringField(sessionQuery.data?.userLabel, stringField(sessionQuery.data?.loginId)),
+    loginId: stringField(sessionQuery.data?.loginId),
+  };
+  const viewerIsProjectMember =
+    currentUser.loginId !== "" &&
+    isProjectMember(
+      recordArray(projectQuery.data.members),
+      recordArray(milestoneQuery.data.milestone.assignableUsers),
+      currentUser,
+    );
+
+  return (
+    <>
+      {projectShell}
       <MilestoneDetailAssets
         basePath={runtimeConfig.basePath}
-        currentUserLoginId={stringField(sessionQuery.data.loginId)}
+        currentUserLoginId={currentUser.loginId}
         ownerName={ownerName}
         projectName={projectName}
       />

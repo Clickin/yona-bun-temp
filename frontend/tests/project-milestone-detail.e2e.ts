@@ -182,6 +182,41 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_NOT_FOUND_ERROR_WRAP = `
   <a class="ybtn ybtn-primary" href="__BASE_PATH__/admin/sample/milestones">List</a>
 </div>`;
 
+test("project milestone detail keeps the legacy project shell and title for /admin/sample/milestone/1 when session data is unavailable", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestoneDetail(page, [], [], {
+    milestoneId: 1,
+    milestone: parityLaunchMilestoneFixture(),
+    sessionUnavailable: true,
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestone/1?state=open`);
+
+  await expect(page).toHaveTitle("Parity launch - admin/sample");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("Parity launch");
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/milestone/1`,
+  );
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  const shellMetrics = await milestoneDetailShellMetrics(page);
+  expect(shellMetrics.headerHeight).toBeGreaterThanOrEqual(120);
+  expect(shellMetrics.menuHeight).toBeGreaterThanOrEqual(39);
+  expect(shellMetrics.menuBelowHeader).toBe(true);
+  expect(shellMetrics.pageWrapBelowMenu).toBe(true);
+  expect(shellMetrics.titleBelowMenu).toBe(true);
+  expect(shellMetrics.titleWithinPage).toBe(true);
+});
+
 test("project milestone detail open state matches legacy milestone/view.scala.html whole route DOM", async ({
   page,
 }) => {
@@ -248,6 +283,9 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await mockProjectMilestoneDetail(page, stateRequests, deleteRequests);
 
   await page.goto(`${basePath}/admin/sample/milestone/5?state=open`);
+  await expect(page).toHaveTitle("v1.0 - admin/sample");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expectMilestoneDetailAssets(page, basePath);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
@@ -538,6 +576,13 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right span.vmiddle")).toHaveText(
     "3 days left",
   );
+  const shellMetrics = await milestoneDetailShellMetrics(page);
+  expect(shellMetrics.headerHeight).toBeGreaterThanOrEqual(120);
+  expect(shellMetrics.menuHeight).toBeGreaterThanOrEqual(39);
+  expect(shellMetrics.menuBelowHeader).toBe(true);
+  expect(shellMetrics.pageWrapBelowMenu).toBe(true);
+  expect(shellMetrics.titleBelowMenu).toBe(true);
+  expect(shellMetrics.titleWithinPage).toBe(true);
   expect(await milestoneDetailMetrics(page)).toEqual({
     descBackgroundColor: "rgb(247, 247, 247)",
     descBorderBottomWidth: "1px",
@@ -942,9 +987,12 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("<div for={`issue-");
+  expect(routeSource).not.toContain("!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending");
   expect(routeSource).toContain(
     "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
+  expect(routeSource).toContain("function useProjectMilestoneDetailDocumentTitle(");
+  expect(routeSource).toContain("document.title = `${milestoneTitle} - ${ownerName}/${projectName}`;");
   expect(routeSource).toContain("type LegacyIssueItemRowAttrs = {");
   expect(routeSource).toContain("const issueListItemAttrs = {");
   expect(routeSource).toContain("href: issueHref");
@@ -1103,17 +1151,34 @@ async function mockProjectMilestoneDetail(
   deleteRequests: string[],
   overrides?: {
     massUpdateRequests?: unknown[];
+    milestoneId?: number;
     milestoneNotFound?: boolean;
     milestone?: Record<string, unknown>;
     project?: Record<string, unknown>;
     session?: Record<string, unknown>;
+    sessionUnavailable?: boolean;
   },
 ) {
+  const milestoneId = overrides?.milestoneId ?? 5;
   let milestone = {
-    ...milestoneFixture(),
+    ...(milestoneId === 1 ? parityLaunchMilestoneFixture() : milestoneFixture()),
     ...overrides?.milestone,
   };
   await page.route("**/api/v1/session", async (route) => {
+    if (overrides?.sessionUnavailable) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "session_unavailable",
+            message: "Session unavailable",
+            status: 503,
+          },
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1178,7 +1243,7 @@ async function mockProjectMilestoneDetail(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones/5", async (route) => {
+  await page.route(`**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}`, async (route) => {
     if (route.request().method() === "DELETE") {
       deleteRequests.push("DELETE");
       await route.fulfill({
@@ -1206,7 +1271,9 @@ async function mockProjectMilestoneDetail(
       body: JSON.stringify({ milestone }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones/5/state", async (route) => {
+  await page.route(
+    `**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}/state`,
+    async (route) => {
     stateRequests.push(route.request().postDataJSON());
     await route.fulfill({
       contentType: "application/json",
@@ -1217,7 +1284,8 @@ async function mockProjectMilestoneDetail(
         },
       }),
     });
-  });
+    },
+  );
   await page.route("**/issues/mass-update", async (route) => {
     const requestBody = route.request().postDataJSON() as {
       issueNumbers?: unknown;
@@ -1394,6 +1462,61 @@ function milestoneFixture() {
     viewerCanDelete: true,
     viewerCanUpdate: true,
   };
+}
+
+function parityLaunchMilestoneFixture() {
+  const base = milestoneFixture();
+  return {
+    ...base,
+    closedIssueCount: 0,
+    closedIssues: [],
+    completionPercent: 0,
+    dueDateLabel: "2026-07-31",
+    id: 1,
+    openIssueCount: 1,
+    openMilestones: [
+      {
+        id: 1,
+        title: "Parity launch",
+      },
+    ],
+    openIssues: [
+      {
+        ...(base.openIssues[0] as Record<string, unknown>),
+        id: 1,
+        issueNumber: 1,
+        milestoneId: 1,
+        milestoneTitle: "Parity launch",
+        title: "Sample issue",
+      },
+    ],
+    title: "Parity launch",
+    untilLabel: "24 days left",
+  };
+}
+
+async function milestoneDetailShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".project-header-outer");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const title = document.querySelector<HTMLElement>(".milesion-wrap h4 .title");
+    if (!header || !menu || !pageWrap || !title) {
+      throw new Error("Expected project shell metric targets are missing.");
+    }
+    const headerBox = header.getBoundingClientRect();
+    const menuBox = menu.getBoundingClientRect();
+    const pageWrapBox = pageWrap.getBoundingClientRect();
+    const titleBox = title.getBoundingClientRect();
+    return {
+      headerHeight: Math.round(headerBox.height),
+      menuHeight: Math.round(menuBox.height),
+      menuBelowHeader: menuBox.top >= headerBox.bottom - 1,
+      pageWrapBelowMenu: pageWrapBox.top >= menuBox.bottom - 1,
+      titleBelowMenu: titleBox.top >= menuBox.bottom - 1,
+      titleWithinPage: titleBox.left >= pageWrapBox.left && titleBox.right <= pageWrapBox.right,
+    };
+  });
 }
 
 async function issueLabelColorMetrics(page: Page, selector: string) {
