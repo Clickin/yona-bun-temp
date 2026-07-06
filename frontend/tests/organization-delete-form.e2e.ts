@@ -10,17 +10,26 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
 </div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+        <form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
+          <div class="btn-group">
+            <button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button>
+            <ul class="dropdown-menu flat right">
+              <li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li>
+            </ul>
+          </div>
+          <div class="search-box select">
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
@@ -49,7 +58,7 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" data-placement="bottom" title="Site administration"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
@@ -65,10 +74,10 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/organization_default_logo.png')">
+<div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')">
   <div class="project-header-inner">
     <div class="project-header-wrap">
-      <div class="project-header-avatar"><img src="/assets/images/organization_default_logo.png"></div>
+      <div class="project-header-avatar"><img src="/assets/images/group_default.png"></div>
       <div class="project-breadcrumb-wrap">
         <div class="project-breadcrumb">
           <span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span>
@@ -132,6 +141,7 @@ test("organization delete form matches legacy organization/deleteForm.scala.html
   await mockOrganizationAdmin(page);
 
   await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+  await expect(page).toHaveTitle("weblabs");
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
 
@@ -141,6 +151,52 @@ test("organization delete form matches legacy organization/deleteForm.scala.html
       EXPECTED_ORGANIZATION_DELETE_FORM.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization delete form restores localhost organization shell and scoped navbar layout", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationAdmin(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/deleteForm`);
+
+  await expect(page).toHaveTitle("weblabs");
+  await expect(page.locator("header.gnb-outer")).toHaveClass(/project-header/);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveAttribute(
+    "style",
+    /group_default\.png/u,
+  );
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    "/assets/images/group_default.png",
+  );
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+
+  const boxes = await page.evaluate(() => {
+    const navbar = document.querySelector(".gnb-outer");
+    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    if (!navbar || !scopeButton || !searchBox) {
+      return null;
+    }
+    return {
+      navbar: navbar.getBoundingClientRect(),
+      scopeButton: scopeButton.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+    };
+  });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.scopeButton.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+  expect(boxes!.scopeButton.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+  expect(boxes!.searchBox.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+  expect(boxes!.searchBox.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+  expect(boxes!.searchBox.right).toBeLessThanOrEqual(boxes!.navbar.right);
 });
 
 test("organization delete confirmation modal opens, closes, deletes, and redirects through SPA", async ({
@@ -494,7 +550,7 @@ async function mockOrganizationAdmin(
       contentType: "application/json",
       body: JSON.stringify({
         description: "Web labs group",
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         organizationName: "weblabs",
         viewerCanUpdate: true,
       }),
@@ -506,7 +562,7 @@ async function mockOrganizationAdmin(
       body: JSON.stringify({
         description: "Web labs group",
         id: 42,
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         organizationName: "weblabs",
         viewerCanUpdate: true,
       }),
@@ -518,7 +574,7 @@ async function mockOrganizationAdmin(
       body: JSON.stringify({
         adminMembers: [],
         description: "Web labs group",
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         memberMembers: [],
         organizationName: "weblabs",
         viewerCanCreateProject: true,

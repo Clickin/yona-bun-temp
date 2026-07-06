@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -21,11 +21,16 @@ function insulateOrganizationDeleteModalButtonClick(event: MouseEvent<HTMLButton
 
 function OrganizationDeleteFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { organizationName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ organizationName }}
+          runtimeConfig={runtimeConfig}
+          showLegacyProjectHeaderLinks
+        >
           <OrganizationDeleteFormScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -55,8 +60,8 @@ function OrganizationDeleteFormBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const organizationName = stringField(organization.organizationName, "organization");
-  const logoUrl =
-    stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const siteName = runtimeConfig.siteName ?? "Yona";
   const [deletionModalOpen, setDeletionModalOpen] = useState(false);
   const closeDeletionModal = () => setDeletionModalOpen(false);
   const openDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
@@ -84,6 +89,15 @@ function OrganizationDeleteFormBody({
       window.alert(t(organizationDeleteErrorKey(error)));
     },
   });
+
+  useEffect(() => {
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = organizationName;
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [organizationName, siteName]);
 
   return (
     <>
