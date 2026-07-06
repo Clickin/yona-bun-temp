@@ -16,6 +16,7 @@ import {
   type SearchResponse,
   type SearchType,
 } from "../../../api/search";
+import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -88,11 +89,18 @@ export const Route = createFileRoute("/$ownerName/$projectName/search")({
 
 function ProjectSearchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
+  const search = Route.useSearch();
+  const projectSearchScope = search.routeInvalid ? undefined : { ownerName, projectName };
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          runtimeConfig={runtimeConfig}
+          projectSearchScope={projectSearchScope}
+          showLegacyProjectHeaderLinks={Boolean(projectSearchScope)}
+        >
           <ProjectSearchScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -101,6 +109,7 @@ function ProjectSearchRoute() {
 }
 
 function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
   const projectQuery = useQuery({
@@ -123,6 +132,19 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       ...search,
       scope: "project",
     });
+
+  useEffect(() => {
+    if (typeof document === "undefined" || search.routeInvalid) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${t("title.search")} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, search.routeInvalid, t]);
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     return <RequestTextTooLargeErrorBody />;
@@ -147,7 +169,12 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     return (
       <>
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu
+          active="home"
+          basePath={runtimeConfig.basePath}
+          counts={projectSearchProjectMenuCounts(projectQuery.data)}
+          project={projectQuery.data}
+        />
         <ProjectSearchForbiddenErrorBody
           isAnonymous={isAnonymousViewer(currentSessionQuery.data)}
           redirectUrl={legacyProjectSearchRedirectUrl(
@@ -178,7 +205,11 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   return (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu
+        basePath={runtimeConfig.basePath}
+        counts={projectSearchProjectMenuCounts(projectQuery.data)}
+        project={projectQuery.data}
+      />
       <ProjectSearchSuccessBody
         ownerName={ownerName}
         projectName={projectName}
@@ -799,4 +830,26 @@ function legacyProjectSearchRedirectUrl(
   params.set("searchType", search.searchType);
   params.set("pageNum", String(search.pageNum));
   return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/search`)}?${params.toString()}`;
+}
+
+function projectSearchProjectMenuCounts(project: ProjectContainer) {
+  return {
+    board: projectSearchNumberField(project, "postCount", "boardCount"),
+    issue: projectSearchNumberField(project, "openIssueCount", "issueCount"),
+    pullRequest: projectSearchNumberField(project, "openPullRequestCount", "pullRequestCount"),
+    review: projectSearchNumberField(project, "reviewCount"),
+  };
+}
+
+function projectSearchNumberField(value: ProjectContainer, field: string, fallbackField?: string) {
+  const record = value as Record<string, unknown>;
+  const direct = record[field];
+  if (typeof direct === "number" && Number.isFinite(direct)) {
+    return direct;
+  }
+  if (!fallbackField) {
+    return 0;
+  }
+  const fallback = record[fallbackField];
+  return typeof fallback === "number" && Number.isFinite(fallback) ? fallback : 0;
 }

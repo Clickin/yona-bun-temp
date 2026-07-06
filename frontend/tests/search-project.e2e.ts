@@ -66,7 +66,7 @@ test("project search matches legacy search/result.scala.html project empty revie
       .evaluateAll((roots) => roots.map((root) => root.className)),
   ).toEqual([
     "unsupported hidden",
-    "gnb-outer",
+    "gnb-outer project-header",
     "project-header-outer",
     "project-menu-outer",
     "site-breadcrumb-outer",
@@ -81,7 +81,7 @@ test("project search matches legacy search/result.scala.html project empty revie
   await expect(page.locator(".search-result-wrap").locator("> .empty-result")).toHaveCount(1);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_SEARCH.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(page, expectedProjectSearchShellScreen(basePath)),
   );
 });
 
@@ -163,10 +163,7 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   expect(layout!.resultRow.top).toBeGreaterThan(layout!.title.bottom);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_ISSUE_SEARCH.replaceAll("__BASE_PATH__", basePath),
-    ),
+    await canonicalizeHtml(page, expectedProjectIssueSearchScreen(basePath)),
   );
 });
 
@@ -215,6 +212,108 @@ test("project issue comment search renders legacy partial_issue_comments.scala.h
   );
   await expect(row.locator(".search-meta-info span.meta-item")).toHaveText("Jul 1, 2026");
   await expect(page.locator(".search-result-wrap #pagination")).toBeEmpty();
+});
+
+test("project search pins the live localhost issue-comment zero-result project shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page, {
+    anonymousViewer: true,
+    localhostIssueCommentZeroResult: true,
+    project: {
+      boardCount: 1,
+      menuSetting: undefined,
+      openIssueCount: 1,
+      openPullRequestCount: 1,
+      reviewCount: 2,
+      showBoard: true,
+      showCode: true,
+      showIssue: true,
+      showMilestone: true,
+      showPullRequest: true,
+      showReview: true,
+      viewerCanUpdate: false,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue_comment`);
+
+  await expect(page).toHaveTitle("Search - admin/sample");
+  await expectProjectSearchShell(page);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-nav")).toContainText("List All");
+  await expect(page.locator(".gnb-nav")).toContainText("Feedback");
+  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(0)).toHaveText(
+    "This Project",
+  );
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(1)).toHaveText(
+    "All Projects",
+  );
+  await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
+  await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText([
+    "1",
+    "1",
+    "2",
+    "1",
+  ]);
+  await expect(page.locator(".project-setting")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments0");
+  await expect(page.locator(".search-result-title")).toHaveText(
+    "Found 0 result(s) in Issue Comments",
+  );
+  await expect(page.locator(".search-result-title strong")).toHaveText("0");
+  await expect(page.locator(".search-result-wrap > .empty-result")).toHaveCount(1);
+
+  const layout = await page.evaluate(() => {
+    const navbar = document.querySelector(".gnb-outer");
+    const form = document.querySelector(".gnb-search-form");
+    const scope = document.querySelector("#gnb-search-scope-title");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchInput = document.querySelector(".gnb-search-form input[name='keyword']");
+    const category = document.querySelector(".search-category-wrap");
+    const searchTitle = document.querySelector(".search-result-title");
+    const emptyResult = document.querySelector(".search-result-wrap > .empty-result");
+    if (
+      !navbar ||
+      !form ||
+      !scope ||
+      !searchBox ||
+      !searchInput ||
+      !category ||
+      !searchTitle ||
+      !emptyResult
+    ) {
+      return null;
+    }
+    return {
+      category: category.getBoundingClientRect(),
+      emptyResult: emptyResult.getBoundingClientRect(),
+      form: form.getBoundingClientRect(),
+      navbar: navbar.getBoundingClientRect(),
+      scope: scope.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+      searchInput: searchInput.getBoundingClientRect(),
+      searchTitle: searchTitle.getBoundingClientRect(),
+    };
+  });
+  expect(layout).not.toBeNull();
+  expect(layout!.form.top).toBeGreaterThanOrEqual(layout!.navbar.top);
+  expect(layout!.form.bottom).toBeLessThanOrEqual(layout!.navbar.bottom + 1);
+  expect(layout!.scope.top).toBeGreaterThanOrEqual(layout!.navbar.top);
+  expect(layout!.scope.bottom).toBeLessThanOrEqual(layout!.navbar.bottom + 1);
+  expect(layout!.searchInput.top).toBeGreaterThanOrEqual(layout!.navbar.top);
+  expect(layout!.searchInput.bottom).toBeLessThanOrEqual(layout!.navbar.bottom + 1);
+  expect(layout!.scope.right).toBeLessThanOrEqual(layout!.searchBox.left + 1);
+  expect(layout!.category.right).toBeLessThanOrEqual(layout!.searchTitle.left + 1);
+  expect(layout!.emptyResult.top).toBeGreaterThan(layout!.searchTitle.bottom);
 });
 
 test("project issue search pagination keeps legacy pageNum through SPA navigation", async ({
@@ -281,7 +380,7 @@ test("project search renders legacy error/forbidden.scala.html shell for anonymo
     expectSiteBreadcrumb: false,
     expectedRootOrder: [
       "unsupported hidden",
-      "gnb-outer",
+      "gnb-outer project-header",
       "project-header-outer",
       "project-menu-outer",
       "page-wrap-outer",
@@ -333,7 +432,12 @@ test("project search renders legacy error/internalServerError_default.scala.html
     expectProjectHeader: false,
     expectProjectMenu: false,
     expectSiteBreadcrumb: false,
-    expectedRootOrder: ["unsupported hidden", "gnb-outer", "page-wrap-outer", "page-footer-outer"],
+    expectedRootOrder: [
+      "unsupported hidden",
+      "gnb-outer project-header",
+      "page-wrap-outer",
+      "page-footer-outer",
+    ],
   });
   await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText(
@@ -394,18 +498,27 @@ test("project search category and form navigation stay inside the React SPA", as
 });
 
 async function expectProjectSearchShell(page: Page) {
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator(".gnb-nav")).toContainText("List All");
+  await expect(page.locator(".gnb-nav")).toContainText("Feedback");
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const rootOrder = await page
-    .locator(".project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer")
+    .locator(
+      ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+    )
     .evaluateAll((roots) => roots.map((root) => root.className));
   expect(rootOrder).toEqual([
+    "unsupported hidden",
+    "gnb-outer project-header",
     "project-header-outer",
     "project-menu-outer",
     "site-breadcrumb-outer",
     "page-wrap-outer",
+    "page-footer-outer",
   ]);
   await expect(page.locator(".site-breadcrumb-inner h3")).toHaveText("Search");
 }
@@ -428,6 +541,8 @@ async function mockProjectSearch(
   page: Page,
   options: {
     anonymousViewer?: boolean;
+    localhostIssueCommentZeroResult?: boolean;
+    project?: Record<string, unknown>;
   } = {},
 ) {
   const anonymousViewer = options.anonymousViewer ?? false;
@@ -456,7 +571,7 @@ async function mockProjectSearch(
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectContainer()),
+      body: JSON.stringify(projectContainer(options.project)),
     });
   });
   await page.route("**/api/v1/projects/admin/sample/search?**", async (route) => {
@@ -496,7 +611,10 @@ async function mockProjectSearch(
       return;
     }
     const hasIssueResult = keyword === "sample" && searchType === "issue";
-    const hasIssueCommentResult = keyword === "sample" && searchType === "issue_comment";
+    const hasIssueCommentResult =
+      keyword === "sample" &&
+      searchType === "issue_comment" &&
+      options.localhostIssueCommentZeroResult !== true;
     const hasPagedIssueResult = keyword === "paged" && searchType === "issue";
     await route.fulfill({
       contentType: "application/json",
@@ -575,7 +693,7 @@ function basePathFromRequest(requestUrl: string) {
   return apiPathStart > 0 ? url.pathname.slice(0, apiPathStart) : "";
 }
 
-function projectContainer() {
+function projectContainer(overrides: Record<string, unknown> = {}) {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     enrollmentRequestCount: 0,
@@ -597,7 +715,34 @@ function projectContainer() {
     projectName: "sample",
     vcs: "GIT",
     viewerCanUpdate: true,
+    ...overrides,
   };
+}
+
+function expectedProjectSearchShellScreen(basePath: string) {
+  return expectedProjectSearchShellHtml(basePath, EXPECTED_PROJECT_SEARCH);
+}
+
+function expectedProjectIssueSearchScreen(basePath: string) {
+  return expectedProjectSearchShellHtml(basePath, EXPECTED_PROJECT_ISSUE_SEARCH);
+}
+
+function expectedProjectSearchShellHtml(basePath: string, html: string) {
+  return html
+    .replaceAll("__BASE_PATH__", basePath)
+    .replace('<header class="gnb-outer">', '<header class="gnb-outer project-header">')
+    .replace(
+      `<ul class="gnb-nav">
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>`,
+      `<ul class="gnb-nav">
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
+      <li><form action="${basePath}/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="${basePath}/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="${basePath}/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>`,
+    );
 }
 
 async function canonicalizeScreenRoots(page: Page) {
