@@ -325,6 +325,122 @@ test("organization home project card links preserve legacy hrefs with SPA transi
     .toBe("kept");
 });
 
+test("organization home project cards restore legacy fork and scope header metadata", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationHome(page, {
+    visibleProjects: [
+      {
+        createdLabel: "Jun 30, 2026",
+        createdTitle: "2026-06-30",
+        isProtected: true,
+        isWatching: true,
+        lastPushedLabel: "Jul 1, 2026",
+        lastPushedTitle: "2026-07-01",
+        logoUrl: "/assets/images/project_default_logo.png",
+        memberCount: 1,
+        originOwnerName: "origin",
+        originProjectName: "base",
+        overview: "Sample project",
+        ownerName: "weblabs",
+        projectName: "sample",
+        watchCount: 5,
+      },
+      {
+        createdLabel: "Jul 2, 2026",
+        createdTitle: "2026-07-02",
+        isPrivate: true,
+        isWatching: false,
+        logoUrl: "/assets/images/project_default_logo.png",
+        memberCount: 2,
+        overview: "Secret playground",
+        ownerName: "weblabs",
+        projectName: "secret",
+        watchCount: 1,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs`);
+
+  const projectCards = page.locator(".all-projects .project");
+  await expect(projectCards).toHaveCount(2);
+
+  const protectedForkHeader = projectCards.nth(0).locator(".header");
+  expect(await canonicalizeLocator(page, ".all-projects .project:nth-child(1) .header")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="header"><a class="black" href="${basePath}/weblabs/sample">sample</a><span class="small-font blue-txt"><a class="origin-title" href="${basePath}/origin/base"><i class="yobicon-split"></i>origin / base</a></span><span class="project-protected" title="Group Project">G</span></div>`,
+    ),
+  );
+  await expect(protectedForkHeader.locator(".yobicon-lock")).toHaveCount(0);
+
+  const privateHeader = projectCards.nth(1).locator(".header");
+  expect(await canonicalizeLocator(page, ".all-projects .project:nth-child(2) .header")).toEqual(
+    await canonicalizeHtml(
+      page,
+      `<div class="header"><a class="black" href="${basePath}/weblabs/secret">secret</a><i class="yobicon-lock yobicon-small"></i></div>`,
+    ),
+  );
+  await expect(privateHeader.locator(".project-protected")).toHaveCount(0);
+
+  const headerMetrics = await page.evaluate(() => {
+    const protectedHeader = document.querySelector<HTMLElement>(
+      ".all-projects .project:nth-child(1) .header",
+    );
+    const protectedLink = protectedHeader?.querySelector<HTMLElement>("a.black");
+    const originLink = protectedHeader?.querySelector<HTMLElement>("a.origin-title");
+    const protectedBadge = protectedHeader?.querySelector<HTMLElement>(".project-protected");
+    const privateCardHeader = document.querySelector<HTMLElement>(
+      ".all-projects .project:nth-child(2) .header",
+    );
+    const privateLink = privateCardHeader?.querySelector<HTMLElement>("a.black");
+    const privateLock = privateCardHeader?.querySelector<HTMLElement>(".yobicon-lock");
+    if (
+      !protectedHeader ||
+      !protectedLink ||
+      !originLink ||
+      !protectedBadge ||
+      !privateCardHeader ||
+      !privateLink ||
+      !privateLock
+    ) {
+      return null;
+    }
+    const rect = (element: HTMLElement) => {
+      const { bottom, left, right, top } = element.getBoundingClientRect();
+      return { bottom, left, right, top };
+    };
+    return {
+      origin: rect(originLink),
+      privateHeader: rect(privateCardHeader),
+      privateLink: rect(privateLink),
+      privateLock: rect(privateLock),
+      protectedBadge: rect(protectedBadge),
+      protectedHeader: rect(protectedHeader),
+      protectedLink: rect(protectedLink),
+    };
+  });
+
+  expect(headerMetrics).not.toBeNull();
+  expect(headerMetrics!.origin.left).toBeGreaterThanOrEqual(headerMetrics!.protectedLink.right);
+  expect(headerMetrics!.protectedBadge.left).toBeGreaterThanOrEqual(headerMetrics!.origin.right);
+  expect(headerMetrics!.origin.top).toBeGreaterThanOrEqual(headerMetrics!.protectedHeader.top);
+  expect(headerMetrics!.origin.bottom).toBeLessThanOrEqual(headerMetrics!.protectedHeader.bottom);
+  expect(headerMetrics!.protectedBadge.top).toBeGreaterThanOrEqual(
+    headerMetrics!.protectedHeader.top,
+  );
+  expect(headerMetrics!.protectedBadge.bottom).toBeLessThanOrEqual(
+    headerMetrics!.protectedHeader.bottom + 2,
+  );
+  expect(headerMetrics!.privateLock.left).toBeGreaterThanOrEqual(headerMetrics!.privateLink.right);
+  expect(headerMetrics!.privateLock.top).toBeGreaterThanOrEqual(headerMetrics!.privateHeader.top);
+  expect(headerMetrics!.privateLock.bottom).toBeLessThanOrEqual(
+    headerMetrics!.privateHeader.bottom + 2,
+  );
+});
+
 test("organization home project card route source uses Link for internal card navigation", () => {
   const source = readFileSync(ORGANIZATION_HOME_ROUTE_SOURCE, "utf8");
 
@@ -344,6 +460,12 @@ test("organization home project card route source uses Link for internal card na
   expect(source).not.toContain("href={prefixBasePath(runtimeConfig.basePath");
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain("params={{ ownerName, projectName }}");
+  expect(source).toContain('const originOwnerName = stringField(project.originOwnerName, "");');
+  expect(source).toContain('const originProjectName = stringField(project.originProjectName, "");');
+  expect(source).toContain("const isPrivate = booleanField(project.isPrivate);");
+  expect(source).toContain("const isProtected = booleanField(project.isProtected);");
+  expect(source).toContain('className="origin-title"');
+  expect(source).toContain('className="small-font blue-txt"');
   expect(source).toContain('to="/$user"');
   expect(source).toContain("params={{ user: ownerName }}");
   expect(source).toContain('params={{ user: stringField(member.loginId, "") }}');
@@ -697,6 +819,7 @@ async function mockOrganizationHome(
     enrollmentRequested?: boolean;
     enrollRequests?: { hasCsrfToken: boolean; method: string }[];
     leaveRequests?: { hasCsrfToken: boolean; method: string }[];
+    visibleProjects?: Record<string, unknown>[];
     viewerCanEnroll?: boolean;
     viewerCanCreateProject?: boolean;
     viewerCanLeaveAfterValidation?: boolean;
@@ -772,7 +895,7 @@ async function mockOrganizationHome(
         viewerCanLeaveAfterValidation: options.viewerCanLeaveAfterValidation ?? true,
         viewerCanLeave: true,
         viewerCanUpdate: options.viewerCanUpdate ?? true,
-        visibleProjects: [
+        visibleProjects: options.visibleProjects ?? [
           {
             createdLabel: "Jun 30, 2026",
             createdTitle: "2026-06-30",

@@ -248,6 +248,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "");
   const projectName = stringField(project.projectName, "");
+  const originOwnerName = stringField(project.originOwnerName, "");
+  const originProjectName = stringField(project.originProjectName, "");
+  const isPrivate = booleanField(project.isPrivate);
+  const isProtected = booleanField(project.isProtected);
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
   const dataValue = `${projectName} ${stringField(project.overview, "")}`;
@@ -306,6 +310,36 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
             >
               {projectName}
             </Link>
+            {originOwnerName && originProjectName ? (
+              <span className="small-font blue-txt">
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  className="origin-title"
+                  params={{ ownerName: originOwnerName, projectName: originProjectName }}
+                  search={{}}
+                  to="/$ownerName/$projectName"
+                >
+                  <i className="yobicon-split"></i>
+                  {`${originOwnerName} / ${originProjectName}`}
+                </Link>
+              </span>
+            ) : null}
+            {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+            {isProtected ? (
+              <span className="project-protected" title="Group Project">
+                G
+              </span>
+            ) : null}
           </div>
           <div className="desc">{stringField(project.overview, "")}</div>
           <p className="name-tag">
