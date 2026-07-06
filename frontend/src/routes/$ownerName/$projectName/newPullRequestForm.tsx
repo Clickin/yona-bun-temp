@@ -10,6 +10,7 @@ import {
   type PullRequestFormSelected,
 } from "../../../api/pull-requests";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
@@ -43,15 +44,40 @@ function ProjectNewPullRequestRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectNewPullRequestScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectNewPullRequestRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectNewPullRequestScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  useProjectNewPullRequestDocumentTitle(runtimeConfig, ownerName, projectName);
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectNewPullRequestScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectNewPullRequestScreen({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
   const locationHref = useRouterState({ select: (state) => state.location.href });
@@ -62,32 +88,50 @@ function ProjectNewPullRequestScreen({ runtimeConfig }: { runtimeConfig: Runtime
     toBranch: search.toBranch || stringSearch(legacySearch.get("toBranch")),
     toProjectId: search.toProjectId || numberSearch(legacySearch.get("toProjectId")),
   };
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
   const formOptionsQuery = useQuery({
     ...pullRequestCreateFormOptionsQueryOptions(runtimeConfig, { ownerName, projectName, query }),
     placeholderData: (previousData) => previousData,
   });
 
-  if (!projectQuery.data || !formOptionsQuery.data) {
+  if (!project) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="pullRequest"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
-      <ProjectNewPullRequestBody
-        formOptions={formOptionsQuery.data}
-        runtimeConfig={runtimeConfig}
-      />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
+      {formOptionsQuery.data ? (
+        <ProjectNewPullRequestBody
+          formOptions={formOptionsQuery.data}
+          runtimeConfig={runtimeConfig}
+        />
+      ) : null}
     </>
   );
+}
+
+function useProjectNewPullRequestDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const screenTitle = t("title.newPullRequest");
+
+  useEffect(() => {
+    const doc = globalThis.document;
+    if (!doc) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    doc.title = `${screenTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      doc.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function ProjectNewPullRequestBody({
@@ -743,6 +787,37 @@ function stringSearch(value: unknown): string {
 function numberSearch(value: unknown): number {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
+}
+
+function booleanField(value: unknown) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function recordField(value: unknown) {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function stringField(value: unknown, fallback: string) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  return fallback;
 }
 
 function mergeResultSuggestedText(commits: PullRequestCommit[]): { body: string; title: string } {

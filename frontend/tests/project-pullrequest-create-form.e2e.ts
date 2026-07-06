@@ -11,6 +11,26 @@ const ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
+type MockProjectRoute = {
+  forkProjectName: string;
+  forkProjectOwnerName: string;
+  forkedProjectId: number;
+  isProtected?: boolean;
+  organizationName?: string;
+  ownerName: string;
+  projectId: number;
+  projectName: string;
+};
+
+const DEFAULT_PROJECT_ROUTE: MockProjectRoute = {
+  forkedProjectId: 8,
+  forkProjectName: "fork",
+  forkProjectOwnerName: "admin",
+  ownerName: "admin",
+  projectId: 7,
+  projectName: "sample",
+};
+
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
@@ -24,6 +44,75 @@ function withLegacyEditor(html: string) {
     `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
+
+test("project pull request create form restores legacy shell parity for project and group-owned routes", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const scenarios = [
+    {
+      route: DEFAULT_PROJECT_ROUTE,
+      scopeTexts: ["This Project", "This Project", "All Projects"],
+      title: "Send pull request - admin/sample",
+    },
+    {
+      route: {
+        ...DEFAULT_PROJECT_ROUTE,
+        forkProjectName: "portal-fork",
+        forkProjectOwnerName: "weblabs",
+        isProtected: true,
+        organizationName: "weblabs",
+        ownerName: "weblabs",
+        projectName: "portal",
+      },
+      scopeTexts: ["This Project", "This Project", "This Group", "All Projects"],
+      title: "Send pull request - weblabs/portal",
+    },
+  ] satisfies Array<{ route: MockProjectRoute; scopeTexts: string[]; title: string }>;
+
+  expect(ROUTE_SOURCE).toContain("<ProjectNewPullRequestRouteShell");
+  expect(ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(ROUTE_SOURCE).toContain('const screenTitle = t("title.newPullRequest")');
+
+  for (const scenario of scenarios) {
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await mockProjectPullRequestCreateForm(page, [], { project: scenario.route });
+    await page.goto(
+      `${basePath}/${scenario.route.ownerName}/${scenario.route.projectName}/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+    );
+
+    await expect(page).toHaveTitle(scenario.title);
+    await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+    await expect(page.locator(".project-header-outer")).toHaveCount(1);
+    await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+    await expect(page.locator(".project-breadcrumb .project-author")).toContainText(
+      scenario.route.ownerName,
+    );
+    await expect(page.locator(".project-breadcrumb .project-name")).toContainText(
+      scenario.route.projectName,
+    );
+    await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+      "action",
+      `${basePath}/${scenario.route.ownerName}/${scenario.route.projectName}/search`,
+    );
+
+    const searchScopeTexts = (
+      await page
+        .locator('#gnb-search-scope-title, .gnb-search-form [data-toggle="search-scope"]')
+        .allTextContents()
+    )
+      .map((value) => value.replace(/\s+/gu, " ").trim())
+      .filter(Boolean);
+    expect(searchScopeTexts).toEqual(scenario.scopeTexts);
+
+    const metrics = await projectShellMetrics(page);
+    expect(metrics.searchBox.top).toBeGreaterThanOrEqual(metrics.navbar.top);
+    expect(metrics.searchBox.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+    expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
+    expect(metrics.projectHeader.bottom).toBeGreaterThan(metrics.navbar.bottom);
+    expect(metrics.projectMenu.top).toBeGreaterThanOrEqual(metrics.projectHeader.bottom - 1);
+  }
+});
 
 test("project pull request create form matches legacy git/create.scala.html core DOM", async ({
   page,
@@ -447,14 +536,57 @@ async function markdownHelpMetrics(page: Page) {
   });
 }
 
+async function projectShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
+    const projectMenu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!navbar || !searchBox || !projectHeader || !projectMenu) {
+      throw new Error("Expected project shell metric targets are missing.");
+    }
+
+    const navbarBox = navbar.getBoundingClientRect();
+    const searchBoxBox = searchBox.getBoundingClientRect();
+    const projectHeaderBox = projectHeader.getBoundingClientRect();
+    const projectMenuBox = projectMenu.getBoundingClientRect();
+    return {
+      navbar: {
+        bottom: navbarBox.bottom,
+        right: navbarBox.right,
+        top: navbarBox.top,
+      },
+      projectHeader: {
+        bottom: projectHeaderBox.bottom,
+        top: projectHeaderBox.top,
+      },
+      projectMenu: {
+        top: projectMenuBox.top,
+      },
+      searchBox: {
+        bottom: searchBoxBox.bottom,
+        right: searchBoxBox.right,
+        top: searchBoxBox.top,
+      },
+    };
+  });
+}
+
 async function mockProjectPullRequestCreateForm(
   page: Page,
   postRequests: unknown[],
   options: {
     mergeMode?: "conflict" | "empty" | "normal";
     mergeResultRequests?: string[];
+    project?: Partial<MockProjectRoute>;
   } = {},
 ) {
+  const project = { ...DEFAULT_PROJECT_ROUTE, ...options.project };
+  const containerPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/container`;
+  const formOptionsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/form-options?*`;
+  const mergeResultPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/merge-result?*`;
+  const pullRequestsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests`;
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -478,17 +610,17 @@ async function mockProjectPullRequestCreateForm(
       body: JSON.stringify({ user: { loginId: "admin" } }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+  await page.route(containerPath, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         backgroundImageUrl: "/assets/images/bg-default-project.png",
         enrollmentRequestCount: 0,
-        id: 7,
+        id: project.projectId,
         isFavorite: false,
         isForkedFromOrigin: false,
         isPrivate: false,
-        isProtected: false,
+        isProtected: project.isProtected ?? false,
         logoUrl: "/assets/images/project_default_logo.png",
         menuSetting: {
           board: true,
@@ -498,77 +630,93 @@ async function mockProjectPullRequestCreateForm(
           pullRequest: true,
           review: true,
         },
-        ownerName: "admin",
-        projectName: "sample",
+        organizationName: project.organizationName,
+        ownerName: project.ownerName,
+        projectName: project.projectName,
+        projectScope: project.isProtected ? "protected" : "public",
         vcs: "GIT",
         viewerCanUpdate: true,
       }),
     });
   });
-  await page.route(
-    "**/api/v1/owners/admin/projects/sample/pull-requests/form-options?*",
-    async (route) => {
-      const url = new URL(route.request().url());
-      const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
-      const fromProjectId = Number(url.searchParams.get("fromProjectId")) || 7;
-      const toProjectId = Number(url.searchParams.get("toProjectId")) || 7;
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          fromBranches: [
-            { name: "feature/ui", selected: fromBranch === "feature/ui" },
-            { name: "main", selected: fromBranch === "main" },
-          ],
-          fromProjects: [
-            { id: 7, ownerName: "admin", projectName: "sample", selected: fromProjectId === 7 },
-            { id: 8, ownerName: "admin", projectName: "fork", selected: fromProjectId === 8 },
-          ],
-          mode: "create",
-          selected: {
-            fromBranch,
-            fromProjectId,
-            toBranch: "main",
-            toProjectId,
+  await page.route(formOptionsPath, async (route) => {
+    const url = new URL(route.request().url());
+    const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
+    const fromProjectId = Number(url.searchParams.get("fromProjectId")) || project.projectId;
+    const toProjectId = Number(url.searchParams.get("toProjectId")) || project.projectId;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        fromBranches: [
+          { name: "feature/ui", selected: fromBranch === "feature/ui" },
+          { name: "main", selected: fromBranch === "main" },
+        ],
+        fromProjects: [
+          {
+            id: project.projectId,
+            ownerName: project.ownerName,
+            projectName: project.projectName,
+            selected: fromProjectId === project.projectId,
           },
-          toBranches: [{ name: "main", selected: true }],
-          toProjects: [
-            { id: 7, ownerName: "admin", projectName: "sample", selected: toProjectId === 7 },
-            { id: 8, ownerName: "admin", projectName: "fork", selected: toProjectId === 8 },
-          ],
-        }),
-      });
-    },
-  );
-  await page.route(
-    "**/api/v1/owners/admin/projects/sample/pull-requests/merge-result?*",
-    async (route) => {
-      const url = new URL(route.request().url());
-      options.mergeResultRequests?.push(url.toString());
-      const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
-      const commitMessage = fromBranch === "main" ? "Main branch change" : "Add UI";
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          commits:
-            options.mergeMode === "empty"
-              ? []
-              : [
-                  {
-                    authorDateLabel: "Jul 2, 2026",
-                    authorEmail: "dev@example.com",
-                    commitId: "abcdef1234567890",
-                    commitMessage,
-                    commitShortId: "abcdef1",
-                    state: "CURRENT",
-                  },
-                ],
-          conflict: options.mergeMode === "conflict",
-          noHead: false,
-        }),
-      });
-    },
-  );
-  await page.route("**/api/v1/owners/admin/projects/sample/pull-requests", async (route) => {
+          {
+            id: project.forkedProjectId,
+            ownerName: project.forkProjectOwnerName,
+            projectName: project.forkProjectName,
+            selected: fromProjectId === project.forkedProjectId,
+          },
+        ],
+        mode: "create",
+        selected: {
+          fromBranch,
+          fromProjectId,
+          toBranch: "main",
+          toProjectId,
+        },
+        toBranches: [{ name: "main", selected: true }],
+        toProjects: [
+          {
+            id: project.projectId,
+            ownerName: project.ownerName,
+            projectName: project.projectName,
+            selected: toProjectId === project.projectId,
+          },
+          {
+            id: project.forkedProjectId,
+            ownerName: project.forkProjectOwnerName,
+            projectName: project.forkProjectName,
+            selected: toProjectId === project.forkedProjectId,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(mergeResultPath, async (route) => {
+    const url = new URL(route.request().url());
+    options.mergeResultRequests?.push(url.toString());
+    const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
+    const commitMessage = fromBranch === "main" ? "Main branch change" : "Add UI";
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        commits:
+          options.mergeMode === "empty"
+            ? []
+            : [
+                {
+                  authorDateLabel: "Jul 2, 2026",
+                  authorEmail: "dev@example.com",
+                  commitId: "abcdef1234567890",
+                  commitMessage,
+                  commitShortId: "abcdef1",
+                  state: "CURRENT",
+                },
+              ],
+        conflict: options.mergeMode === "conflict",
+        noHead: false,
+      }),
+    });
+  });
+  await page.route(pullRequestsPath, async (route) => {
     if (route.request().method() === "POST") {
       postRequests.push(route.request().postDataJSON());
       await route.fulfill({
