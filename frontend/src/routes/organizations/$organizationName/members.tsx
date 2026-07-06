@@ -121,6 +121,10 @@ function OrganizationMembersBody({
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
   const adminQueryKey = [...apiQueryKeys.organization.base(organizationName), "admin"] as const;
   const normalizedLoginQuery = loginIdQuery.trim();
+  const mentionStylesheetHref = prefixBasePath(
+    runtimeConfig.basePath,
+    "/assets/javascripts/lib/mentionjs/mention.css",
+  );
   const memberSearchQuery = useQuery({
     enabled: booleanField(organization.viewerCanUpdate) && normalizedLoginQuery.length > 0,
     queryFn: () => searchLegacyMemberUsers(runtimeConfig, normalizedLoginQuery),
@@ -427,15 +431,7 @@ function OrganizationMembersBody({
           ) : null}
         </div>
       </div>
-      <link
-        rel="stylesheet"
-        type="text/css"
-        media="screen"
-        href={prefixBasePath(
-          runtimeConfig.basePath,
-          "/assets/javascripts/lib/mentionjs/mention.css",
-        )}
-      />
+      <link rel="stylesheet" type="text/css" media="screen" href={mentionStylesheetHref} />
     </>
   );
 }

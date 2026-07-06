@@ -75,8 +75,8 @@ test("organization members mention stylesheet keeps the configured base path", a
     "screen",
   );
   expect(new URL(mentionRequest.url()).pathname).toBe(mentionStylesheetHref);
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
-    'prefixBasePath(runtimeConfig.basePath, "/assets/javascripts/lib/mentionjs/mention.css")',
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toMatch(
+    /const mentionStylesheetHref = prefixBasePath\(\s*runtimeConfig\.basePath,\s*"\/assets\/javascripts\/lib\/mentionjs\/mention\.css",?\s*\);/,
   );
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(
     'href="/assets/javascripts/lib/mentionjs/mention.css"',
