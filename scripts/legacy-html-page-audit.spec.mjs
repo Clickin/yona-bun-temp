@@ -93,7 +93,37 @@ describe("legacy HTML page audit", () => {
 
       assert.equal(corpus.status, "ok");
       assert.equal(corpus.error, null);
+      assert.equal(corpus.warning, null);
       assert.deepEqual(corpus.pages, ["/admin/sample", "/projects"]);
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps localhost discovered links usable for sweep coverage when the audit is partially failed", () => {
+    const tempRoot = mkdtempSync(resolve(tmpdir(), "yoram-visual-corpus-"));
+    try {
+      const auditDir = resolve(tempRoot, ".agent/legacy-html-page-audit");
+      mkdirSync(auditDir, { recursive: true });
+      writeFileSync(
+        resolve(auditDir, "latest.json"),
+        `${JSON.stringify({
+          checkedAt: "2026-07-06T00:00:00.000Z",
+          discoveredPageLinks: ["/admin/sample", "/admin/sample/postform?readme=true"],
+          failed: 5,
+          total: 129,
+        })}\n`,
+      );
+
+      const corpus = buildLegacyAuditCorpus({
+        normalizePath: normalizePathForTest,
+        repoRoot: tempRoot,
+      });
+
+      assert.equal(corpus.status, "degraded");
+      assert.equal(corpus.error, null);
+      assert.match(corpus.warning ?? "", /5 failed page\(s\)/u);
+      assert.deepEqual(corpus.pages, ["/admin/sample", "/admin/sample/postform?readme=true"]);
     } finally {
       rmSync(tempRoot, { recursive: true, force: true });
     }

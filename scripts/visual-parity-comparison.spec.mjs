@@ -105,12 +105,22 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /async function bootstrapLocalAccount\(page, baseUrl\)/u);
+  assert.match(source, /async function readLocalCsrfToken\(page, baseUrl\)/u);
+  assert.match(source, /async function postLocalJson\(page, baseUrl, path, data\)/u);
+  assert.match(source, /async function signInLocalAccount\(page, baseUrl, identifier, accountPassword\)/u);
+  assert.match(source, /async function signOutLocalAccount\(page, baseUrl\)/u);
+  assert.match(source, /async function registerLocalAccount\(page, baseUrl, \{ emailAddress, loginId, name, password \}\)/u);
   assert.match(source, /async function loginLocal\(page, baseUrl\)/u);
   assert.match(source, /const bootstrapped = await bootstrapLocalAccount\(page, baseUrl\);/u);
-  assert.match(source, /page\.request\.post\(`\$\{baseUrl\}\/api\/v1\/organizations`/u);
+  assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/organizations"/u);
   assert.match(source, /organizationName: "weblabs"/u);
-  assert.match(source, /page\.request\.post\(`\$\{baseUrl\}\/api\/v1\/owners\/weblabs\/projects`/u);
+  assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/weblabs\/projects"/u);
   assert.match(source, /projectName: "portal"/u);
+  assert.match(source, /projectName: "svnplayground"/u);
+  assert.match(source, /vcs: "svn"/u);
+  assert.match(source, /loginId: "alice"/u);
+  assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/admin\/projects\/sample\/fork"/u);
+  assert.match(source, /owner: "alice"/u);
   assert.match(source, /return login\(page, baseUrl\);/u);
   assert.match(source, /const loginPath = new URL\(urlFor\(baseUrl, "\/users\/loginform"\)\)\.pathname;/u);
   assert.match(source, /const currentPath = new URL\(page\.url\(\)\)\.pathname;/u);

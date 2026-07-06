@@ -30,15 +30,7 @@ export function buildLegacyAuditCorpus({ normalizePath, repoRoot }) {
       pages: [],
       path: auditPath,
       status: "unreachable",
-    };
-  }
-
-  if ((audit.failed ?? 0) > 0) {
-    return {
-      error: `legacy HTML audit has ${audit.failed} failed page(s)`,
-      pages: [],
-      path: auditPath,
-      status: "failed",
+      warning: null,
     };
   }
 
@@ -48,9 +40,11 @@ export function buildLegacyAuditCorpus({ normalizePath, repoRoot }) {
       pages: [],
       path: auditPath,
       status: "invalid",
+      warning: null,
     };
   }
 
+  const failed = Number(audit.failed ?? 0);
   const pages = [
     ...new Set(
       audit.discoveredPageLinks
@@ -63,8 +57,13 @@ export function buildLegacyAuditCorpus({ normalizePath, repoRoot }) {
   return {
     checkedAt: audit.checkedAt,
     error: null,
+    failed,
     pages,
     path: auditPath,
-    status: "ok",
+    status: failed > 0 ? "degraded" : "ok",
+    warning:
+      failed > 0
+        ? `legacy HTML audit has ${failed} failed page(s); using discoveredPageLinks for sweep coverage`
+        : null,
   };
 }

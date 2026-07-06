@@ -67,6 +67,13 @@ Latest baseline summary:
   `/admin/svnplayground/branches`, `/admin/svnplayground/newFork`, and
   `/alice/sample/issue/1`
 
+The current localhost audit remains usable as a visual-sweep discovered-link
+corpus even while those `5` baseline failures remain. As long as the audit is
+reachable and still emits `discoveredPageLinks`, `scripts/visual-parity-sweep`
+imports those URLs so rendered coverage continues to track the localhost legacy
+instance instead of silently shrinking back to hand-listed routes. Missing,
+invalid, or unreachable audit output is still a hard blocker.
+
 Latest recorded full audit run against the previous homelab instance on
 2026-06-25:
 `57` URL checks passed, with `3` expected legacy non-200 observations retained
@@ -146,10 +153,12 @@ The initial curl baseline covers:
   `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/update`,
   `/sites/diagnostic`, `/sites/data`
 - Discovered project pages from every project root exposed by `/projects`;
-  the current localhost seed exposes `/admin/sample/**` for home, issue
-  list/detail/label settings/create, board list/create, milestone list/create,
-  pull-request list/create/review, code, member, watcher, settings, webhook,
-  delete, transfer, fork, statistics, and change-VCS surfaces.
+  the current localhost seed exposes `/admin/sample/**`,
+  `/admin/svnplayground/**`, `/alice/sample/**`, and `/weblabs/portal/**` for
+  home, issue list/detail/label settings/create, board list/create, milestone
+  list/create, pull-request list/create/review, code, member, watcher,
+  settings, webhook, delete, transfer, fork, statistics, and change-VCS
+  surfaces.
 - Discovered user profile page: `/admin`.
 
 ## Remaining Work Before Claiming All-Page Parity

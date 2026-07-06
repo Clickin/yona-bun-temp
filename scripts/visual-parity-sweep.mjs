@@ -388,9 +388,11 @@ function legacyAuditCorpusSummary() {
   return {
     checkedAt: cachedLegacyAuditCorpus.checkedAt ?? null,
     error: cachedLegacyAuditCorpus.error,
+    failed: cachedLegacyAuditCorpus.failed ?? 0,
     pages: cachedLegacyAuditCorpus.pages,
     path: cachedLegacyAuditCorpus.path,
     status: cachedLegacyAuditCorpus.status,
+    warning: cachedLegacyAuditCorpus.warning ?? null,
   };
 }
 
@@ -446,139 +448,182 @@ async function login(page, baseUrl) {
   return currentPath !== loginPath && !loginFieldVisible;
 }
 
-async function bootstrapLocalAccount(page, baseUrl) {
+async function readLocalCsrfToken(page, baseUrl) {
   const sessionResponse = await page.request.get(`${baseUrl}/api/auth/session`);
-  const csrfToken = sessionResponse.headers()["x-csrf-token"];
-  if (!sessionResponse.ok() || !csrfToken) {
+  if (!sessionResponse.ok()) {
+    return null;
+  }
+  return sessionResponse.headers()["x-csrf-token"] ?? null;
+}
+
+async function postLocalJson(page, baseUrl, path, data) {
+  const csrfToken = await readLocalCsrfToken(page, baseUrl);
+  if (!csrfToken) {
+    return null;
+  }
+  return page.request.post(`${baseUrl}${path}`, {
+    data,
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+}
+
+async function signInLocalAccount(page, baseUrl, identifier, accountPassword) {
+  const response = await postLocalJson(page, baseUrl, "/api/v1/auth/sign-in", {
+    identifier,
+    password: accountPassword,
+    rememberMe: true,
+  });
+  return response?.ok() ?? false;
+}
+
+async function signOutLocalAccount(page, baseUrl) {
+  const csrfToken = await readLocalCsrfToken(page, baseUrl);
+  if (!csrfToken) {
     return false;
   }
-  const ensureSampleProject = async () => {
-    await page.request.post(`${baseUrl}/api/v1/owners/admin/projects`, {
-      data: {
-        board: true,
-        code: true,
-        issue: true,
-        milestone: true,
-        overview: "Sample project",
-        projectName: "sample",
-        projectScope: "public",
-        pullRequest: true,
-        review: true,
-        vcs: "git",
-      },
-      headers: {
-        "x-csrf-token": csrfToken,
-      },
+  const response = await page.request.post(`${baseUrl}/api/v1/auth/sign-out`, {
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+  return response.ok();
+}
+
+async function registerLocalAccount(page, baseUrl, { emailAddress, loginId, name, password }) {
+  const response = await postLocalJson(page, baseUrl, "/api/v1/auth/register", {
+    emailAddress,
+    loginId,
+    name,
+    password,
+    retypedPassword: password,
+  });
+  return response?.ok() ?? false;
+}
+
+async function bootstrapLocalAccount(page, baseUrl) {
+  const csrfToken = await readLocalCsrfToken(page, baseUrl);
+  if (!csrfToken) {
+    return false;
+  }
+  const ensureAdminFixtures = async () => {
+    await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects", {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      overview: "Sample project",
+      projectName: "sample",
+      projectScope: "public",
+      pullRequest: true,
+      review: true,
+      vcs: "git",
     });
     const issueResponse = await page.request.get(
       `${baseUrl}/api/v1/projects/admin/sample/issues/1`,
     );
     if (!issueResponse.ok()) {
-      await page.request.post(`${baseUrl}/api/v1/projects/admin/sample/issues`, {
-        data: {
-          assigneeLoginId: "",
-          attachmentIds: [],
-          bodyMarkdown: "Sample issue body",
-          dueDate: "",
-          isDraft: false,
-          isPublish: false,
-          labelIds: [],
-          title: "Sample issue",
-        },
-        headers: {
-          "x-csrf-token": csrfToken,
-        },
+      await postLocalJson(page, baseUrl, "/api/v1/projects/admin/sample/issues", {
+        assigneeLoginId: "",
+        attachmentIds: [],
+        bodyMarkdown: "Sample issue body",
+        dueDate: "",
+        isDraft: false,
+        isPublish: false,
+        labelIds: [],
+        title: "Sample issue",
       });
     }
-    await page.request.post(`${baseUrl}/api/v1/organizations`, {
-      data: {
-        description: "Parity seed organization for frontend conversion checks",
-        organizationName: "weblabs",
-      },
-      headers: {
-        "x-csrf-token": csrfToken,
-      },
+    await postLocalJson(page, baseUrl, "/api/v1/organizations", {
+      description: "Parity seed organization for frontend conversion checks",
+      organizationName: "weblabs",
     });
-    await page.request.post(`${baseUrl}/api/v1/owners/weblabs/projects`, {
-      data: {
-        board: true,
-        code: true,
-        issue: true,
-        milestone: true,
-        overview: "Group portal for parity seed",
-        projectName: "portal",
-        projectScope: "protected",
-        pullRequest: true,
-        review: true,
-        vcs: "git",
-      },
-      headers: {
-        "x-csrf-token": csrfToken,
-      },
+    await postLocalJson(page, baseUrl, "/api/v1/owners/weblabs/projects", {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      overview: "Group portal for parity seed",
+      projectName: "portal",
+      projectScope: "protected",
+      pullRequest: true,
+      review: true,
+      vcs: "git",
     });
-    await page.request.post(`${baseUrl}/api/v1/workspace/recent-projects`, {
-      data: {
-        ownerName: "admin",
-        projectName: "sample",
-      },
-      headers: {
-        "x-csrf-token": csrfToken,
-      },
+    await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects", {
+      board: true,
+      code: true,
+      issue: true,
+      milestone: true,
+      overview: "SVN parity fixture",
+      projectName: "svnplayground",
+      projectScope: "public",
+      pullRequest: true,
+      review: true,
+      vcs: "svn",
     });
-    await page.request.post(`${baseUrl}/api/v1/workspace/recent-projects`, {
-      data: {
-        ownerName: "weblabs",
-        projectName: "portal",
-      },
-      headers: {
-        "x-csrf-token": csrfToken,
-      },
+    await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
+      ownerName: "admin",
+      projectName: "sample",
+    });
+    await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
+      ownerName: "admin",
+      projectName: "svnplayground",
+    });
+    await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
+      ownerName: "weblabs",
+      projectName: "portal",
     });
   };
-  const adminRegisterResponse = await page.request.post(`${baseUrl}/api/v1/auth/register`, {
-    data: {
-      emailAddress: "admin@example.com",
-      loginId: "admin",
-      name: "Yobi Admin",
+  const ensureAliceSampleFork = async () => {
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+    const registeredAlice = await registerLocalAccount(page, baseUrl, {
+      emailAddress: "alice@example.com",
+      loginId: "alice",
+      name: "Alice",
       password: "admin",
-      retypedPassword: "admin",
-    },
-    headers: {
-      "x-csrf-token": csrfToken,
-    },
+    });
+    const signedInAlice = registeredAlice || (await signInLocalAccount(page, baseUrl, "alice", "admin"));
+    if (!signedInAlice) {
+      return;
+    }
+    await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/fork", {
+      name: "sample",
+      owner: "alice",
+      projectScope: "public",
+    });
+    await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
+      ownerName: "alice",
+      projectName: "sample",
+    });
+    await signOutLocalAccount(page, baseUrl).catch(() => {});
+  };
+  const registeredAdmin = await registerLocalAccount(page, baseUrl, {
+    emailAddress: "admin@example.com",
+    loginId: "admin",
+    name: "Yobi Admin",
+    password: "admin",
   });
-  if (adminRegisterResponse.ok()) {
-    await ensureSampleProject();
+  if (registeredAdmin) {
+    await ensureAdminFixtures();
+    await ensureAliceSampleFork();
     return true;
   }
-  const adminSignInResponse = await page.request.post(`${baseUrl}/api/v1/auth/sign-in`, {
-    data: {
-      identifier: "admin",
-      password: "admin",
-      rememberMe: true,
-    },
-    headers: {
-      "x-csrf-token": csrfToken,
-    },
-  });
-  if (adminSignInResponse.ok()) {
-    await ensureSampleProject();
+  const adminSignInResponse = await signInLocalAccount(page, baseUrl, "admin", "admin");
+  if (adminSignInResponse) {
+    await ensureAdminFixtures();
+    await ensureAliceSampleFork();
     return true;
   }
   const suffix = Date.now().toString(36);
-  const registerResponse = await page.request.post(`${baseUrl}/api/v1/auth/register`, {
-    data: {
-      emailAddress: `sweep-${suffix}@example.com`,
-      loginId: `sweep-${suffix}`,
-      name: "Visual Sweep",
-      password: "doorpass1",
-      retypedPassword: "doorpass1",
-    },
-    headers: {
-      "x-csrf-token": csrfToken,
-    },
+  const registeredSweepUser = await registerLocalAccount(page, baseUrl, {
+    emailAddress: `sweep-${suffix}@example.com`,
+    loginId: `sweep-${suffix}`,
+    name: "Visual Sweep",
+    password: "doorpass1",
   });
-  return registerResponse.ok();
+  return registeredSweepUser;
 }
 
 async function loginLocal(page, baseUrl) {
