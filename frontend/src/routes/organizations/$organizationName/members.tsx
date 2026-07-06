@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type FormEvent, type MouseEvent } from "react";
+import {
+  useRef,
+  useState,
+  type FocusEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import {
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
@@ -11,7 +18,7 @@ import {
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationAdminView, YonaRecord, YonaUserItem } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
-import { readSessionBootstrap } from "../../../auth-workspace-client";
+import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -105,11 +112,24 @@ function OrganizationMembersBody({
   const queryClient = useQueryClient();
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const loginIdInputRef = useRef<HTMLInputElement>(null);
+  const [loginIdQuery, setLoginIdQuery] = useState("");
+  const [isTypeaheadOpen, setIsTypeaheadOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const [openRoleDropdownLoginId, setOpenRoleDropdownLoginId] = useState<string | null>(null);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
   const adminQueryKey = [...apiQueryKeys.organization.base(organizationName), "admin"] as const;
+  const normalizedLoginQuery = loginIdQuery.trim();
+  const memberSearchQuery = useQuery({
+    enabled: booleanField(organization.viewerCanUpdate) && normalizedLoginQuery.length > 0,
+    queryFn: () => searchLegacyMemberUsers(runtimeConfig, normalizedLoginQuery),
+    queryKey: ["legacy-member-users", organizationName, normalizedLoginQuery],
+    staleTime: 30_000,
+  });
+  const memberSuggestions = (memberSearchQuery.data?.items ?? []).map(parseLegacyMemberSearchItem);
+  const showTypeaheadSuggestions =
+    isTypeaheadOpen && normalizedLoginQuery.length > 0 && memberSuggestions.length > 0;
   const closeDeleteMemberModal = () => setDeleteUserId(null);
   const openDeleteMemberModal = (event: MouseEvent<HTMLButtonElement>, userId: number) => {
     insulateOrganizationMembersDeleteModalButtonClick(event);
@@ -170,6 +190,7 @@ function OrganizationMembersBody({
   });
   function onAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsTypeaheadOpen(false);
     addLoginId(String(new FormData(event.currentTarget).get("loginId") ?? ""));
   }
 
@@ -177,6 +198,52 @@ function OrganizationMembersBody({
     const formData = new FormData();
     formData.set("loginId", loginId);
     addMutation.mutate(formData);
+  }
+
+  function selectSuggestion(suggestion: LegacyMemberSuggestionView) {
+    if (loginIdInputRef.current) {
+      loginIdInputRef.current.value = suggestion.loginId;
+    }
+    setLoginIdQuery(suggestion.loginId);
+    setIsTypeaheadOpen(false);
+    setActiveSuggestionIndex(0);
+  }
+
+  function onLoginIdBlur(event: FocusEvent<HTMLInputElement>) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof HTMLElement && nextTarget.closest(".typeahead.dropdown-menu")) {
+      return;
+    }
+    setIsTypeaheadOpen(false);
+  }
+
+  function onLoginIdKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setIsTypeaheadOpen(false);
+      return;
+    }
+    if (!showTypeaheadSuggestions) {
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current + 1) % memberSuggestions.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestionIndex(
+        (current) => (current - 1 + memberSuggestions.length) % memberSuggestions.length,
+      );
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const activeSuggestion = memberSuggestions[activeSuggestionIndex] ?? memberSuggestions[0];
+      if (activeSuggestion) {
+        selectSuggestion(activeSuggestion);
+      }
+    }
   }
 
   return (
@@ -218,11 +285,56 @@ function OrganizationMembersBody({
                 placeholder={t("project.members.addMember")}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
                 title={t("user.wrongloginId.alert")}
+                onBlur={onLoginIdBlur}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+                  setLoginIdQuery(nextValue);
+                  setActiveSuggestionIndex(0);
+                  setIsTypeaheadOpen(nextValue.trim() !== "");
+                }}
+                onFocus={() => {
+                  if (normalizedLoginQuery.length > 0 && memberSuggestions.length > 0) {
+                    setIsTypeaheadOpen(true);
+                  }
+                }}
+                onKeyDown={onLoginIdKeyDown}
               />
               <button type="submit" className="ybtn ybtn-success">
                 <i className="yobicon-addfriend"></i> {t("button.add")}
               </button>
             </form>
+            {showTypeaheadSuggestions ? (
+              <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+                {memberSuggestions.map((suggestion, index) => (
+                  <li
+                    className={index === activeSuggestionIndex ? "active" : undefined}
+                    data-value={suggestion.info}
+                    key={suggestion.loginId}
+                  >
+                    <button
+                      type="button"
+                      style={{
+                        background: "transparent",
+                        border: 0,
+                        display: "block",
+                        padding: "3px 20px",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        selectSuggestion(suggestion);
+                        loginIdInputRef.current?.focus();
+                      }}
+                    >
+                      <img className="mention_image" src={suggestion.imageSrc} alt="" />
+                      <b className="mention_name">{suggestion.userLabel}</b>
+                      <span className="mention_username">{suggestion.mentionUsername}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
 
           <ul className="members project row-fluid">
@@ -302,6 +414,9 @@ function OrganizationMembersBody({
                       if (loginIdInputRef.current) {
                         loginIdInputRef.current.value = loginId;
                       }
+                      setLoginIdQuery(loginId);
+                      setIsTypeaheadOpen(false);
+                      setActiveSuggestionIndex(0);
                       addLoginId(loginId);
                     }}
                     user={user}
@@ -719,6 +834,46 @@ function organizationMemberDeleteErrorMessage(t: (key: string) => string, error:
     }
   }
   return t("error.badrequest");
+}
+
+type LegacyMemberSuggestionView = {
+  imageSrc: string;
+  info: string;
+  loginId: string;
+  mentionUsername: string;
+  userLabel: string;
+};
+
+function parseLegacyMemberSearchItem(item: {
+  info: string;
+  loginId: string;
+}): LegacyMemberSuggestionView {
+  const info = stringField(item.info, "");
+  const loginId = stringField(item.loginId, "");
+  if (typeof DOMParser === "undefined" || info === "") {
+    return {
+      imageSrc: "/assets/images/default-avatar-32.png",
+      info,
+      loginId,
+      mentionUsername: `@${loginId}`,
+      userLabel: loginId,
+    };
+  }
+  const documentFragment = new DOMParser().parseFromString(info, "text/html");
+  const imageSrc =
+    documentFragment.querySelector(".mention_image")?.getAttribute("src") ??
+    "/assets/images/default-avatar-32.png";
+  const userLabel = documentFragment.querySelector(".mention_name")?.textContent?.trim() || loginId;
+  const mentionUsername =
+    documentFragment.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
+
+  return {
+    imageSrc,
+    info,
+    loginId,
+    mentionUsername,
+    userLabel,
+  };
 }
 
 function stringField(value: unknown, fallback: string) {

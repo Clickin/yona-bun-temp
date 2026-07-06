@@ -106,6 +106,67 @@ test("organization members mutation controls preserve legacy data hooks", async 
   expect(requests.acceptedUserIds).toEqual([]);
 });
 
+test("organization members add-member input performs legacy typeahead lookup, render, and select on #loginId", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const requests = await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+  const addInput = page.locator("#loginId");
+  await addInput.fill("car");
+
+  await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("car");
+  const typeaheadMenu = page.locator(".inner-bubble .typeahead.dropdown-menu");
+  await expect(typeaheadMenu).toBeVisible();
+  await expect(typeaheadMenu.locator("li")).toHaveCount(2);
+  await expect(typeaheadMenu.locator("li").nth(0)).toHaveClass("active");
+  await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_image")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-128.png",
+  );
+  await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_name")).toHaveText(
+    "Carol Jones",
+  );
+  await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_username")).toHaveText(
+    "@carol",
+  );
+  await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_name")).toHaveText(
+    "Carmine Poe",
+  );
+
+  const typeaheadMetrics = await page.evaluate(() => {
+    const input = document.querySelector<HTMLElement>("#loginId");
+    const menu = document.querySelector<HTMLElement>(".typeahead.dropdown-menu");
+    if (!input || !menu) {
+      return null;
+    }
+    const inputRect = input.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    return {
+      inputBottom: Math.round(inputRect.bottom),
+      inputLeft: Math.round(inputRect.left),
+      menuLeft: Math.round(menuRect.left),
+      menuTop: Math.round(menuRect.top),
+    };
+  });
+  expect(typeaheadMetrics).not.toBeNull();
+  expect(typeaheadMetrics!.menuLeft).toBeGreaterThanOrEqual(typeaheadMetrics!.inputLeft - 2);
+  expect(typeaheadMetrics!.menuLeft).toBeLessThanOrEqual(typeaheadMetrics!.inputLeft + 2);
+  expect(typeaheadMetrics!.menuTop).toBeGreaterThanOrEqual(typeaheadMetrics!.inputBottom - 1);
+
+  await addInput.press("ArrowDown");
+  await expect(typeaheadMenu.locator("li").nth(1)).toHaveClass("active");
+  await addInput.press("Enter");
+
+  await expect(addInput).toHaveValue("carmine");
+  await expect(typeaheadMenu).toHaveCount(0);
+  await expect.poll(() => requests.addedLoginIds).toEqual([]);
+
+  await page.locator("#addNewMember .ybtn.ybtn-success").click();
+  await expect.poll(() => requests.addedLoginIds).toEqual(["carmine"]);
+});
+
 test("organization members role dropdown uses route-owned open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const requests = await mockOrganizationMembers(page);
@@ -276,6 +337,9 @@ test("organization members profile and breadcrumb links use SPA navigation with 
 
 test("organization members route source keeps internal navigation out of raw anchors", () => {
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("Link");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("searchLegacyMemberUsers");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('className="typeahead dropdown-menu"');
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('data-provider="typeahead"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('to="/$user"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
     'to="/organizations/$organizationName/members"',
@@ -535,6 +599,7 @@ async function mockOrganizationMembers(
     addedLoginIds: [] as string[],
     deletedUserIds: [] as string[],
     roleUpdates: [] as Array<{ role: string; userId: string }>,
+    userSearchQueries: [] as string[],
   };
 
   await page.route("**/api/v1/session", async (route) => {
@@ -641,6 +706,26 @@ async function mockOrganizationMembers(
           { ownerName: "weblabs", projectName: "playground" },
         ],
       }),
+    });
+  });
+  await page.route("**/-_-api/v1/users?*", async (route) => {
+    const query = new URL(route.request().url()).searchParams.get("query") ?? "";
+    requests.userSearchQueries.push(query);
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "Content-Range": "items 2/2",
+      },
+      body: JSON.stringify([
+        {
+          info: legacyMemberSearchInfo("Carol Jones", "carol"),
+          loginId: "carol",
+        },
+        {
+          info: legacyMemberSearchInfo("Carmine Poe", "carmine"),
+          loginId: "carmine",
+        },
+      ]),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/members", async (route) => {
@@ -756,6 +841,10 @@ function organizationAdminPayload() {
     ],
     viewerCanUpdate: true,
   };
+}
+
+function legacyMemberSearchInfo(userLabel: string, loginId: string) {
+  return `<img class='mention_image' src='/assets/images/default-avatar-128.png'><b class='mention_name'>${userLabel}</b><span class='mention_username'> @${loginId}</span>`;
 }
 
 async function organizationMemberMetrics(page: Page) {
