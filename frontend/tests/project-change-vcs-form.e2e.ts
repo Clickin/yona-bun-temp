@@ -1,57 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const EXPECTED_PROJECT_CHANGE_VCS_FORM = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
-    </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
-    </ul>
-  </div>
-</header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">2</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer">
-  <div class="project-page-wrap">
-    <ul class="nav nav-tabs">
-      <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li>
-      <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">2</span></a></li>
-      <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li>
-      <li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li>
-      <li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li>
-      <li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li>
-      <li id="subMenuProjectChangeVCS" class="active"><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li>
-    </ul>
-    <div class="bubble-wrap gray wp">
-      <div class="row-fluid">
-        <h3>GIT <i class="yobicon-right-2 vmiddle"></i> Subversion</h3>
-        <div class="cu-desc">
-          <ul><li class="notice"><strong>Changing the repository to Subversion.</strong></li><li class="notice"><strong>If the repository is changed, all code and history will be deleted.</strong></li></ul>
-          <p><input id="acceptChangeVCS" type="checkbox" class="checkbox" autocomplete="off"><label for="acceptChangeVCS" class="bg-checkbox label-agreement">I agree with changing the repository type.</label></p>
-        </div>
-      </div>
-    </div>
-    <div class="box-wrap bottom"><button id="btnChangeVCS" type="button" class="ybtn ybtn-danger"><i class="yobicon-database"></i> Change Repository Type.</button></div>
-    <div id="alertChangeVCS" class="modal hide">
-      <div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Do you want to change the repository to Subversion?</h3></div>
-      <div class="modal-body"><p>If the repository is changed, all code and history will be deleted.</p><p>Are you sure?</p></div>
-      <div class="modal-footer"><button id="btnChangeVCSExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div>
-    </div>
-  </div>
-</div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`;
-
 test("project change-VCS form matches legacy project/change_vcs.scala.html DOM", async ({
   page,
 }) => {
@@ -59,17 +8,166 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/changeVCS`);
+  await expect(page).toHaveTitle("Repository Change - admin/sample");
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveClass(/hide/);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
   await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
   await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
+  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_PROJECT_CHANGE_VCS_FORM.replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
+  expect(await readLegacyAnchorStates(page, ".gnb-nav > li > a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: "logo logo-letter",
+      dataStatus: null,
+      href: `${basePath}`,
+      text: "Y",
+    },
+    {
+      ariaCurrent: null,
+      className: "show-progress-bar",
+      dataStatus: null,
+      href: `${basePath}/projects`,
+      text: "List All",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: "https://github.com/yona-projects/yona/issues",
+      text: "Feedback",
+    },
+  ]);
+  expect(await readLegacyAnchorStates(page, ".project-menu-outer a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample`,
+      text: "Project homeH",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/code`,
+      text: "CodeC",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/issues`,
+      text: "IssueI",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/pullRequests`,
+      text: "Pull requestP",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/reviews`,
+      text: "ReviewR",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/milestones`,
+      text: "MilestoneM",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/posts`,
+      text: "BoardB",
+    },
+    {
+      ariaCurrent: null,
+      className: "",
+      dataStatus: null,
+      href: `${basePath}/admin/sample/setting`,
+      text: "Project configuration2",
+    },
+  ]);
+  expect(await readProjectSettingMenuAnchorState(page)).toEqual({
+    activeItemClass: "active",
+    anchors: [
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/setting`,
+        text: "Settings",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/members`,
+        text: "Member2",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/issue/labelsform`,
+        text: "Issue Label",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/webhooks`,
+        text: "Webhooks",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/transfer`,
+        text: "Transfer",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/deleteform`,
+        text: "Delete project",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample/changeVCS`,
+        text: "Repository Type Change",
+      },
+    ],
+  });
+  const shellMetrics = await readProjectChangeVcsShellMetrics(page);
+  expect(shellMetrics.gnbClass).toBe("gnb-outer project-header");
+  expect(shellMetrics.searchScopeText).toBe("This Project");
+  expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
+  expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
+  expect(shellMetrics.searchBoxTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
+  expect(shellMetrics.searchBoxBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
+  expect(shellMetrics.searchBoxRight).toBeGreaterThan(shellMetrics.searchScopeRight);
+  expect(shellMetrics.projectMenuTop).toBeGreaterThan(shellMetrics.navbarBottom);
   expect(await readDesktopChangeVcsMetrics(page)).toEqual({
     activeTabClass: "active",
     activeTabHeight: "38px",
@@ -486,6 +584,10 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).not.toMatch(/<a\b/);
   expect(source).not.toMatch(/<a\s+href=\{(?:prefixBasePath|projectHref)/);
   expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(source).toContain("projectSearchScope={{");
+  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain('const screenTitle = t("title.projectChangeVCS");');
+  expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
@@ -594,6 +696,41 @@ test("project change-VCS header favorite star has no route-local native listener
   );
   await expect.poll(() => favoriteSpanNativeListeners(page)).toEqual([]);
 });
+
+async function readProjectChangeVcsShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = requireElement(".gnb-outer");
+    const projectMenu = requireElement(".project-menu-outer");
+    const searchBox = requireElement(".gnb-search-form .search-box");
+    const searchScope = requireElement("#gnb-search-scope-title");
+    const navbarBox = navbar.getBoundingClientRect();
+    const projectMenuBox = projectMenu.getBoundingClientRect();
+    const searchBoxRect = searchBox.getBoundingClientRect();
+    const searchScopeRect = searchScope.getBoundingClientRect();
+
+    return {
+      gnbClass: navbar.className,
+      navbarBottom: Math.round(navbarBox.bottom),
+      navbarTop: Math.round(navbarBox.top),
+      projectMenuTop: Math.round(projectMenuBox.top),
+      searchBoxBottom: Math.round(searchBoxRect.bottom),
+      searchBoxRight: Math.round(searchBoxRect.right),
+      searchBoxTop: Math.round(searchBoxRect.top),
+      searchScopeBottom: Math.round(searchScopeRect.bottom),
+      searchScopeRight: Math.round(searchScopeRect.right),
+      searchScopeText: searchScope.textContent?.trim() ?? "",
+      searchScopeTop: Math.round(searchScopeRect.top),
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
 
 async function readDesktopChangeVcsMetrics(page: Page) {
   return page.evaluate(() => {

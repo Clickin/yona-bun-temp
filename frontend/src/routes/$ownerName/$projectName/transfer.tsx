@@ -1,7 +1,8 @@
-import { useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
+  readProjectContainerQueryOptions,
   readProjectTransferQueryOptions,
   requestProjectTransferRest,
   toggleFavoriteProjectRest,
@@ -34,11 +35,16 @@ export const Route = createFileRoute("/$ownerName/$projectName/transfer")({
 
 function ProjectTransferRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ ownerName, projectName }}
+          runtimeConfig={runtimeConfig}
+          showLegacyProjectHeaderLinks
+        >
           <ProjectTransferScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -46,22 +52,48 @@ function ProjectTransferRoute() {
   );
 }
 
+function useProjectTransferDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const screenTitle = t("title.projectTransfer");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
+}
+
 function ProjectTransferScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const query = useQuery(
+  useProjectTransferDocumentTitle(runtimeConfig, ownerName, projectName);
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const transferQuery = useQuery(
     readProjectTransferQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
 
-  if (!query.data) {
+  if (!projectQuery.data || !transferQuery.data) {
     return null;
   }
 
-  return (
-    <ProjectTransferBody
-      project={query.data as ProjectTransferScreenData}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  const project = {
+    ...projectQuery.data,
+    ...transferQuery.data,
+  } satisfies ProjectTransferScreenData;
+
+  return <ProjectTransferBody project={project} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectTransferBody({
@@ -245,16 +277,13 @@ function ProjectHeader({ project }: { project: ProjectTransferScreenData }) {
   const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const projectId = stringField(project.id, "");
-  const [isFavoritedProject, setIsFavoritedProject] = useState(
-    () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
-  );
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
-  const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
-  const isForked = booleanField(project.isForkedFromOrigin);
-  const originalOwnerName = stringField(project.originalOwnerName, "");
-  const originalProjectName = stringField(project.originalProjectName, "");
+  const projectId = projectIdentifier(project);
+  const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
+  const logoUrl = projectLogoUrl(project);
+  const backgroundImageUrl = projectBackgroundImageUrl(project);
+  const isForked = projectIsForked(project);
+  const originalOwnerName = projectOriginOwnerName(project);
+  const originalProjectName = projectOriginProjectName(project);
   const favoriteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -368,8 +397,8 @@ function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const menuSetting = recordField(project.menuSetting);
-  const memberEnrollmentCount = countField(project.enrolledUsers);
+  const menuSetting = projectMenuSetting(project);
+  const memberEnrollmentCount = projectMemberCount(project);
 
   return (
     <div className="project-menu-outer">
@@ -501,8 +530,7 @@ function ProjectSettingMenu({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const menuSetting = recordField(project.menuSetting);
-  const memberEnrollmentCount = countField(project.enrolledUsers);
+  const memberEnrollmentCount = projectMemberCount(project);
 
   return (
     <ul className="nav nav-tabs">
@@ -576,7 +604,7 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        style={booleanField(projectMenuSetting(project).code) ? undefined : { display: "none" }}
       >
         <Link
           activeOptions={legacyLinkActiveOptions}
@@ -626,4 +654,60 @@ function countField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectMenuSetting(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  const nested = recordField(record.menuSetting);
+  return {
+    board: nested.board ?? record.showBoard,
+    code: nested.code ?? record.showCode,
+    issue: nested.issue ?? record.showIssue,
+    milestone: nested.milestone ?? record.showMilestone,
+    pullRequest: nested.pullRequest ?? record.showPullRequest,
+    review: nested.review ?? record.showReview,
+  };
+}
+
+function projectMemberCount(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return countField(record.enrolledUsers) || numberField(record.memberCount);
+}
+
+function projectIdentifier(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return stringField(record.id, "") || stringField(record.projectId, "");
+}
+
+function projectLogoUrl(project: ProjectTransferScreenData) {
+  return stringField(recordField(project).logoUrl, "") || "/assets/images/project_default_logo.png";
+}
+
+function projectBackgroundImageUrl(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return (
+    stringField(record.backgroundImageUrl, "") ||
+    stringField(record.backgroundUrl, "") ||
+    "/assets/images/bg-default-project.png"
+  );
+}
+
+function projectFavorited(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return booleanField(record.isFavorite) || booleanField(record.isFavorited);
+}
+
+function projectIsForked(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return booleanField(record.isForkedFromOrigin) || booleanField(record.isForked);
+}
+
+function projectOriginOwnerName(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return stringField(record.originalOwnerName, "") || stringField(record.originOwnerName, "");
+}
+
+function projectOriginProjectName(project: ProjectTransferScreenData) {
+  const record = recordField(project);
+  return stringField(record.originalProjectName, "") || stringField(record.originProjectName, "");
 }

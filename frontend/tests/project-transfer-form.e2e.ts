@@ -3,12 +3,14 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PROJECT_TRANSFER_FORM = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
@@ -52,6 +54,26 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page).toHaveTitle("Project Transfer - admin/sample");
+  await expect(page.locator(".gnb-outer")).toHaveClass(/project-header/);
+  expect(
+    await page.locator(".gnb-nav > li > a").evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        href: anchor.getAttribute("href"),
+        text: anchor.textContent?.trim() ?? "",
+      })),
+    ),
+  ).toEqual([
+    { href: `${basePath}`, text: "Y" },
+    { href: `${basePath}/projects`, text: "List All" },
+    { href: "https://github.com/yona-projects/yona/issues", text: "Feedback" },
+  ]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
   await expect(page.locator("#btnTransfer")).toBeVisible();
   await expect(page.locator("#alertTransfer")).toHaveClass(/hide/);
 
@@ -89,6 +111,15 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     rowMinHeight: "0px",
     tabsMarginBottom: "15px",
   });
+  const shellMetrics = await readProjectTransferShellMetrics(page);
+  expect(shellMetrics.searchScope.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
+  expect(shellMetrics.searchScope.bottom).toBeLessThanOrEqual(shellMetrics.navbar.bottom);
+  expect(shellMetrics.searchBox.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
+  expect(shellMetrics.searchBox.bottom).toBeLessThanOrEqual(shellMetrics.navbar.bottom);
+  expect(shellMetrics.searchBox.left).toBeGreaterThanOrEqual(shellMetrics.searchScope.right - 1);
+  expect(shellMetrics.searchBox.right).toBeLessThanOrEqual(shellMetrics.navbar.right);
+  expect(shellMetrics.projectMenu.top).toBeGreaterThanOrEqual(shellMetrics.projectHeader.bottom);
+  expect(shellMetrics.projectMenu.bottom).toBeGreaterThan(shellMetrics.projectMenu.top);
 });
 
 test("project transfer project navigation anchors keep legacy hrefs without route-local native listeners", async ({
@@ -285,12 +316,18 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("as never");
   expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("search={undefined");
-  expect(source).not.toContain("document.");
+  expect(source).not.toContain("document.querySelector");
+  expect(source).not.toContain("document.createElement");
+  expect(source).not.toContain("document.getElementById");
   expect(source).not.toContain("classList");
   expect(source).not.toContain('style={isTransferModalOpen ? { display: "block" } : undefined}');
   expect(source).not.toContain("style.display");
   expect(source).not.toContain("<a href={prefixBasePath");
   expect(source).not.toContain("<a href={projectHref");
+  expect(source).toContain("projectSearchScope={{ ownerName, projectName }}");
+  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain('const screenTitle = t("title.projectTransfer");');
+  expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
@@ -738,12 +775,37 @@ async function readDesktopTransferMetrics(page: Page) {
   });
 }
 
+async function readProjectTransferShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = requireElement(".gnb-outer");
+    const projectHeader = requireElement(".project-header-outer");
+    const searchScope = requireElement("#gnb-search-scope-title");
+    const searchBox = requireElement(".gnb-search-form .search-box.select");
+    const projectMenu = requireElement(".project-menu-outer");
+    return {
+      navbar: navbar.getBoundingClientRect().toJSON(),
+      projectHeader: projectHeader.getBoundingClientRect().toJSON(),
+      projectMenu: projectMenu.getBoundingClientRect().toJSON(),
+      searchBox: searchBox.getBoundingClientRect().toJSON(),
+      searchScope: searchScope.getBoundingClientRect().toJSON(),
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
 async function mockProjectAdmin(
   page: Page,
   options: {
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
-    project?: Partial<ReturnType<typeof transferProject>>;
+    project?: Partial<ReturnType<typeof projectShell>>;
     transferRequests?: {
       body: unknown;
       hasCsrfToken: boolean;
@@ -782,6 +844,12 @@ async function mockProjectAdmin(
           name: "Site Admin",
         },
       }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...projectShell(), ...options.project }),
     });
   });
   await page.route("**/api/v1/owners/admin/projects/sample/transfer", async (route) => {
@@ -971,34 +1039,13 @@ async function favoriteSpanNativeListeners(page: Page) {
 
 function transferProject() {
   return {
-    backgroundImageUrl: "/assets/images/bg-default-project.png",
     destination: "",
-    enrolledUsers: [],
-    enrollmentRequestCount: 0,
-    id: 7,
-    isFavorite: false,
-    isFavorited: false,
-    isForkedFromOrigin: false,
-    isPrivate: false,
-    isProtected: false,
-    logoUrl: "/assets/images/project_default_logo.png",
-    menuSetting: {
-      board: true,
-      code: true,
-      issue: true,
-      milestone: true,
-      pullRequest: true,
-      review: true,
-    },
-    ownerName: "admin",
-    projectName: "sample",
-    vcs: "GIT",
+    ...projectShell(),
     viewerCanTransfer: true,
-    viewerCanUpdate: true,
   };
 }
 
-function projectSettings() {
+function projectShell() {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     backgroundUrl: "/assets/images/bg-default-project.png",
@@ -1023,11 +1070,15 @@ function projectSettings() {
       review: true,
     },
     organizationName: "",
+    openIssueCount: 0,
+    openPullRequestCount: 0,
     overview: "Sample overview",
     ownerName: "admin",
+    postCount: 0,
     projectId: 7,
     projectName: "sample",
     projectScope: "PUBLIC",
+    reviewCount: 0,
     showBoard: true,
     showCode: true,
     showIssue: true,
@@ -1038,6 +1089,10 @@ function projectSettings() {
     viewerCanUpdate: true,
     watchCount: 5,
   };
+}
+
+function projectSettings() {
+  return projectShell();
 }
 
 async function canonicalizeScreenRoots(page: Page) {

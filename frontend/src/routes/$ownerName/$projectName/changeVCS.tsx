@@ -1,8 +1,9 @@
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   changeProjectVcsRest,
+  readProjectContainerQueryOptions,
   readProjectChangeVcsQueryOptions,
   toggleFavoriteProjectRest,
 } from "../../../api/org-project";
@@ -15,7 +16,7 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
-type ProjectChangeVcsScreenData = ProjectChangeVcsResponse & ProjectContainer;
+type ProjectChangeVcsScreenData = ProjectContainer & Partial<ProjectChangeVcsResponse>;
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -34,30 +35,51 @@ function ProjectChangeVcsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectChangeVcsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectChangeVcsRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
+function ProjectChangeVcsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const containerQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const organizationName = stringField(recordField(containerQuery.data).organizationName, "");
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={{
+        organizationName: organizationName || undefined,
+        ownerName,
+        projectName,
+      }}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
+      <ProjectChangeVcsScreen runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
 function ProjectChangeVcsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const query = useQuery(
+  const containerQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const changeVcsQuery = useQuery(
     readProjectChangeVcsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const project = mergeProjectChangeVcsData(containerQuery.data, changeVcsQuery.data);
 
-  if (!query.data) {
+  useProjectChangeVcsDocumentTitle(runtimeConfig, ownerName, projectName);
+
+  if (!project) {
     return null;
   }
 
-  return (
-    <ProjectChangeVcsBody
-      project={query.data as ProjectChangeVcsScreenData}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <ProjectChangeVcsBody project={project} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectChangeVcsBody({
@@ -84,6 +106,9 @@ function ProjectChangeVcsBody({
     onSuccess(response) {
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.changeVcs(ownerName, projectName),
+      });
+      queryClient.invalidateQueries({
+        queryKey: apiQueryKeys.project.container(ownerName, projectName),
       });
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
@@ -218,13 +243,20 @@ function ProjectHeader({ project }: { project: ProjectChangeVcsScreenData }) {
   const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const projectId = stringField(project.id, "");
+  const projectId = stringField(recordField(project).projectId, stringField(project.id, ""));
   const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
   const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
-  const isForked = booleanField(project.isForkedFromOrigin);
-  const originalOwnerName = stringField(project.originalOwnerName, "");
-  const originalProjectName = stringField(project.originalProjectName, "");
+    stringField(recordField(project).backgroundUrl, stringField(project.backgroundImageUrl, "")) ||
+    "/assets/images/bg-default-project.png";
+  const isForked = booleanField(project.isForkedFromOrigin) || booleanField(project.isForked);
+  const originalOwnerName = stringField(
+    recordField(project).originOwnerName,
+    stringField(project.originalOwnerName, ""),
+  );
+  const originalProjectName = stringField(
+    recordField(project).originProjectName,
+    stringField(project.originalProjectName, ""),
+  );
   const [isFavoritedProject, setIsFavoritedProject] = useState(
     () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
   );
@@ -341,9 +373,8 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const menuSetting = recordField(project.menuSetting);
   const canSeeCodeMenu = projectCodeMenuVisible(project);
-  const memberCount = enrolledUserCount(project);
+  const memberCount = projectMemberCount(project);
 
   return (
     <div className="project-menu-outer">
@@ -364,7 +395,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
               to="/$ownerName/$projectName/code"
             />
           ) : null}
-          {booleanField(menuSetting.issue) ? (
+          {projectMenuEnabled(project, "issue", "showIssue") ? (
             <ProjectMenuItem
               label={t("menu.issue")}
               params={{ ownerName, projectName }}
@@ -373,7 +404,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
             />
           ) : null}
           {canSeeCodeMenu &&
-          booleanField(menuSetting.pullRequest) &&
+          projectMenuEnabled(project, "pullRequest", "showPullRequest") &&
           stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
               label={t("menu.pullRequest")}
@@ -382,7 +413,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
               to="/$ownerName/$projectName/pullRequests"
             />
           ) : null}
-          {canSeeCodeMenu && booleanField(menuSetting.review) ? (
+          {canSeeCodeMenu && projectMenuEnabled(project, "review", "showReview") ? (
             <ProjectMenuItem
               label={t("menu.review")}
               params={{ ownerName, projectName }}
@@ -390,7 +421,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
               to="/$ownerName/$projectName/reviews"
             />
           ) : null}
-          {booleanField(menuSetting.milestone) ? (
+          {projectMenuEnabled(project, "milestone", "showMilestone") ? (
             <ProjectMenuItem
               label={t("milestone")}
               params={{ ownerName, projectName }}
@@ -398,7 +429,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
               to="/$ownerName/$projectName/milestones"
             />
           ) : null}
-          {booleanField(menuSetting.board) ? (
+          {projectMenuEnabled(project, "board", "showBoard") ? (
             <ProjectMenuItem
               label={t("menu.board")}
               params={{ ownerName, projectName }}
@@ -407,7 +438,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
             />
           ) : null}
         </ul>
-        {booleanField(project.viewerCanUpdate) ? (
+        {projectAdminMenuVisible(project) ? (
           <div className="project-setting">
             <ul className="project-menu-nav">
               <li className="active">
@@ -435,7 +466,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
 function projectCodeMenuVisible(project: ProjectChangeVcsScreenData) {
   const record = recordField(project);
   return (
-    booleanField(recordField(project.menuSetting).code) &&
+    projectMenuEnabled(project, "code", "showCode") &&
     (!booleanField(record.codeMemberOnly) || booleanField(record.viewerIsProjectMember))
   );
 }
@@ -478,8 +509,7 @@ function ProjectSettingMenu({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const menuSetting = recordField(project.menuSetting);
-  const memberCount = enrolledUserCount(project);
+  const memberCount = projectMemberCount(project);
 
   return (
     <ul className="nav nav-tabs">
@@ -553,7 +583,7 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className="active"
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        style={projectMenuEnabled(project, "code", "showCode") ? undefined : { display: "none" }}
       >
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
@@ -586,6 +616,78 @@ function recordField(value: unknown) {
 function enrolledUserCount(project: ProjectChangeVcsScreenData) {
   const enrolledUsers = recordField(project).enrolledUsers;
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
+}
+
+function projectMemberCount(project: ProjectChangeVcsScreenData) {
+  const memberCount = numberField(recordField(project).memberCount);
+  if (memberCount > 0) {
+    return memberCount;
+  }
+
+  const members = recordField(project).members;
+  if (Array.isArray(members)) {
+    return members.length;
+  }
+
+  return enrolledUserCount(project);
+}
+
+function projectMenuEnabled(
+  project: ProjectChangeVcsScreenData,
+  menuKey: string,
+  fallbackKey: string,
+) {
+  const menuSettingValue = recordField(recordField(project).menuSetting)[menuKey];
+  if (typeof menuSettingValue === "boolean") {
+    return menuSettingValue;
+  }
+
+  return booleanField(recordField(project)[fallbackKey]);
+}
+
+function projectAdminMenuVisible(project: ProjectChangeVcsScreenData) {
+  const record = recordField(project);
+  if (typeof record.showAdmin === "boolean") {
+    return booleanField(record.showAdmin);
+  }
+
+  return booleanField(record.viewerCanUpdate);
+}
+
+function mergeProjectChangeVcsData(
+  container: ProjectContainer | undefined,
+  changeVcs: ProjectChangeVcsResponse | undefined,
+): ProjectChangeVcsScreenData | undefined {
+  if (!container && !changeVcs) {
+    return undefined;
+  }
+
+  return {
+    ...(container ?? {}),
+    ...(changeVcs ?? {}),
+  };
+}
+
+function useProjectChangeVcsDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const screenTitle = t("title.projectChangeVCS");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function stringField(value: unknown, fallback: string) {
