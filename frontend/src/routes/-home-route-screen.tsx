@@ -587,7 +587,7 @@ export function SiteLayoutShell({
 }: {
   activeMenu?: "projects";
   children: React.ReactNode;
-  projectSearchScope?: { organizationName?: string; ownerName: string; projectName: string };
+  projectSearchScope?: { organizationName?: string; ownerName?: string; projectName?: string };
   runtimeConfig: RuntimeConfig;
   showLegacyProjectHeaderLinks?: boolean;
 }) {
@@ -598,12 +598,13 @@ export function SiteLayoutShell({
   const shouldRenderSiteAdminAffix =
     sessionQuery.data?.isAnonymous === false &&
     booleanField(sessionQuery.data, "isSiteAdmin", false);
-  const projectSearchAction = projectSearchScope
-    ? prefixBasePath(
-        runtimeConfig.basePath,
-        `/${projectSearchScope.ownerName}/${projectSearchScope.projectName}/search`,
-      )
-    : null;
+  const projectSearchAction =
+    projectSearchScope?.ownerName && projectSearchScope.projectName
+      ? prefixBasePath(
+          runtimeConfig.basePath,
+          `/${projectSearchScope.ownerName}/${projectSearchScope.projectName}/search`,
+        )
+      : null;
   const groupSearchAction = projectSearchScope?.organizationName
     ? prefixBasePath(
         runtimeConfig.basePath,
@@ -611,19 +612,26 @@ export function SiteLayoutShell({
       )
     : null;
   const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
+  const hasScopedSearch = Boolean(projectSearchAction || groupSearchAction);
   const shouldRenderProjectListingLink =
     runtimeConfig.hideProjectListing !== true &&
     (sessionQuery.data?.isAnonymous === false || showLegacyProjectHeaderLinks);
+  const shouldRenderAllProjectsSearchScope =
+    runtimeConfig.hideProjectListing !== true &&
+    (sessionQuery.data?.isAnonymous === false ||
+      showLegacyProjectHeaderLinks ||
+      (session ? booleanField(session, "isSiteAdmin", false) : false));
   const legacyProjectHeaderFeedbackUrl =
     showLegacyProjectHeaderLinks && (runtimeConfig.feedbackUrl || LEGACY_FEEDBACK_URL);
+  const initialSearchScope = projectSearchAction ? "project" : groupSearchAction ? "group" : "all";
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
-    "all",
+    initialSearchScope,
   );
   const [isSearchScopeMenuOpen, setIsSearchScopeMenuOpen] = React.useState(false);
   React.useEffect(() => {
-    setSelectedSearchScope(projectSearchAction ? "project" : "all");
+    setSelectedSearchScope(initialSearchScope);
     setIsSearchScopeMenuOpen(false);
-  }, [projectSearchAction]);
+  }, [initialSearchScope]);
   const gnbSearchAction =
     selectedSearchScope === "project" && projectSearchAction
       ? projectSearchAction
@@ -690,7 +698,7 @@ export function SiteLayoutShell({
           <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
         </div>
       ) : null}
-      <header className={projectSearchScope ? "gnb-outer project-header" : "gnb-outer"}>
+      <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
         <div className="gnb-inner">
           <div className="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
             <i className="yobicon-arrow-left" />
@@ -735,7 +743,7 @@ export function SiteLayoutShell({
                 name="gnb-search-form"
               >
                 <input type="hidden" name="searchType" value="auto" />
-                {projectSearchAction ? (
+                {hasScopedSearch ? (
                   <div
                     className={isSearchScopeMenuOpen ? "btn-group open" : "btn-group"}
                     onBlur={handleSearchScopeBlur}
@@ -750,17 +758,19 @@ export function SiteLayoutShell({
                       {gnbSearchScopeTitle}
                     </button>
                     <ul className="dropdown-menu flat right">
-                      <li>
-                        <button
-                          type="button"
-                          data-toggle="search-scope"
-                          data-action={projectSearchAction}
-                          onClick={handleSearchScopeItemClick("project")}
-                        >
-                          {t("search.scope.project")}
-                        </button>
-                      </li>
-                      {groupSearchAction ? (
+                      {projectSearchAction ? (
+                        <li>
+                          <button
+                            type="button"
+                            data-toggle="search-scope"
+                            data-action={projectSearchAction}
+                            onClick={handleSearchScopeItemClick("project")}
+                          >
+                            {t("search.scope.project")}
+                          </button>
+                        </li>
+                      ) : null}
+                      {projectSearchAction && groupSearchAction ? (
                         <li>
                           <button
                             type="button"
@@ -772,20 +782,22 @@ export function SiteLayoutShell({
                           </button>
                         </li>
                       ) : null}
-                      <li>
-                        <button
-                          type="button"
-                          data-toggle="search-scope"
-                          data-action={allProjectsSearchAction}
-                          onClick={handleSearchScopeItemClick("all")}
-                        >
-                          {t("search.scope.all")}
-                        </button>
-                      </li>
+                      {shouldRenderAllProjectsSearchScope ? (
+                        <li>
+                          <button
+                            type="button"
+                            data-toggle="search-scope"
+                            data-action={allProjectsSearchAction}
+                            onClick={handleSearchScopeItemClick("all")}
+                          >
+                            {t("search.scope.all")}
+                          </button>
+                        </li>
+                      ) : null}
                     </ul>
                   </div>
                 ) : null}
-                <div className={projectSearchScope ? "search-box select" : "search-box"}>
+                <div className={hasScopedSearch ? "search-box select" : "search-box"}>
                   {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
                   <input type="text" name="keyword" autoComplete="off" accessKey="S" />
                   <button type="submit">

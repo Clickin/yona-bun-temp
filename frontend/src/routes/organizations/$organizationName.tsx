@@ -1,4 +1,4 @@
-import { type MouseEvent, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -32,7 +32,11 @@ function OrganizationHomeRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell
+          projectSearchScope={{ organizationName }}
+          runtimeConfig={runtimeConfig}
+          showLegacyProjectHeaderLinks
+        >
           <OrganizationHomeScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -76,6 +80,17 @@ function OrganizationHomeBody({
   );
   const viewerCanUpdate = booleanField(organization.viewerCanUpdate);
   const showLeaveButton = viewerCanLeave && viewerCanLeaveAfterValidation;
+  const shouldShowMemberPanels = viewerCanUpdate || viewerCanLeave;
+  const siteName = runtimeConfig.siteName ?? "Yona";
+
+  useEffect(() => {
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = organizationName;
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [organizationName, siteName]);
 
   function insulateLeaveModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -189,23 +204,27 @@ function OrganizationHomeBody({
               </ul>
             </div>
             <div className="span3 span-hard-wrap">
-              <MemberPanel
-                basePath={runtimeConfig.basePath}
-                members={organization.adminMembers}
-                onLeaveClick={openLeaveModal}
-                organizationName={organizationName}
-                showLeave={showLeaveButton && viewerCanUpdate}
-                title={t("user.role.org_admin")}
-              />
-              <MemberPanel
-                basePath={runtimeConfig.basePath}
-                className="bubble-wrap gray project-home mt10"
-                members={organization.memberMembers}
-                onLeaveClick={openLeaveModal}
-                organizationName={organizationName}
-                showLeave={showLeaveButton && !viewerCanUpdate}
-                title={t("user.role.org_member")}
-              />
+              {shouldShowMemberPanels ? (
+                <>
+                  <MemberPanel
+                    basePath={runtimeConfig.basePath}
+                    members={organization.adminMembers}
+                    onLeaveClick={openLeaveModal}
+                    organizationName={organizationName}
+                    showLeave={showLeaveButton && viewerCanUpdate}
+                    title={t("user.role.org_admin")}
+                  />
+                  <MemberPanel
+                    basePath={runtimeConfig.basePath}
+                    className="bubble-wrap gray project-home mt10"
+                    members={organization.memberMembers}
+                    onLeaveClick={openLeaveModal}
+                    organizationName={organizationName}
+                    showLeave={showLeaveButton && !viewerCanUpdate}
+                    title={t("user.role.org_member")}
+                  />
+                </>
+              ) : null}
             </div>
           </div>
         </div>
