@@ -1,13 +1,15 @@
 # Playwright Visual Parity Sweep - 2026-06-25
 
-Status: current audit evidence.
+Status: historical audit evidence. The current default legacy parity baseline is
+`http://127.0.0.1:9000`.
 
 ## Scope
 
-- Local target: `http://127.0.0.1:18111/yona`
-- Legacy source target: `http://192.168.45.10:9000`
-- Legacy Playwright target: `http://127.0.0.1:19100`, a temporary localhost
-  proxy that fetches upstream with host `curl`
+- Current default legacy source target for parity work: `http://127.0.0.1:9000`
+- Local target used by this 2026-06-25 run: `http://127.0.0.1:18111/yona`
+- Legacy source target used by this 2026-06-25 run: `http://192.168.45.10:9000`
+- Legacy Playwright target used by this 2026-06-25 run: `http://127.0.0.1:19100`,
+  a temporary localhost proxy that fetches upstream with host `curl`
 - Browser: Playwright Chromium API using the system `msedge` channel, `1366x900`
 - Local runtime: embedded assets, in-memory SQLite, `YONA_SEED_PILOT=1`
 - Local authentication: REST bootstrap through `/api/auth/session`, first-admin registration
@@ -78,12 +80,18 @@ node scripts/audit-legacy-html-pages.mjs
 
 ## Legacy Access Note
 
-`curl` from this host can reach the legacy instance and the existing HTML anchor audit passed.
-However, Playwright through both system Edge and Chrome channels failed to render the legacy
-private-network URL with `net::ERR_ADDRESS_UNREACHABLE`, even when launched outside the Codex
-sandbox and with direct proxy/private-network feature flags. The current browser evidence
-therefore uses `pnpm smoke:legacy-curl-proxy`, a localhost proxy that shells out to `curl` for
-upstream fetches and lets Playwright render the legacy responses from `127.0.0.1`.
+This note is historical. Current parity work should target the localhost legacy
+instance at `http://127.0.0.1:9000` directly unless a distinct browser origin
+is required.
+
+For this 2026-06-25 run, `curl` from this host could reach the homelab legacy
+instance and the existing HTML anchor audit passed. However, Playwright through
+both system Edge and Chrome channels failed to render the private-network URL
+with `net::ERR_ADDRESS_UNREACHABLE`, even when launched outside the Codex
+sandbox and with direct proxy/private-network feature flags. That run therefore
+used `pnpm smoke:legacy-curl-proxy`, a localhost proxy that shells out to
+`curl` for upstream fetches and lets Playwright render the legacy responses
+from `127.0.0.1`.
 
 ## Results
 
