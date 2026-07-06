@@ -12,7 +12,11 @@
       "react-doctor/rerender-state-only-in-handlers",
       "react/no-danger"
     ],
-    "files": ["src/gen/**", "tests/live-legacy-html-parity.ts"],
+    "files": [
+      "src/gen/**",
+      "tests/live-legacy-html-parity.ts",
+      "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx"
+    ],
     "overrides": [
       {
         "files": ["tests/**/*.e2e.ts"],

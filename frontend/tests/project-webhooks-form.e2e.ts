@@ -12,12 +12,14 @@ const POPULATED_WEBHOOKS_LIST = `
 
 const EXPECTED_PROJECT_WEBHOOKS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
@@ -29,7 +31,7 @@ const EXPECTED_PROJECT_WEBHOOKS = `
   </div>
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
+<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li><li></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap webhook-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class="active"><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="formNewWebhook" action="__BASE_PATH__/admin/sample/webhooks" method="post" class="new-webhook-wrap"><strong class="form-legend">Create new webhook</strong><div class="form-wrap form-actions"><div><input type="text" name="payloadUrl" class="input-webhook-payload" maxlength="2000" autocomplete="off" placeholder="Payload URL"><input type="text" name="secret" class="input-webhook-secret" maxlength="250" autocomplete="off" placeholder="Authorization Token"><button type="submit" class="ybtn ybtn-primary btn-submit">Add webhook</button></div><div><label class="radio inline"><input type="radio" name="webhookType" value="SIMPLE" checked=""> Messenger (Only text)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_SLACK"> Slack (Meta)</label><label class="radio inline"><input type="radio" name="webhookType" value="DETAIL_HANGOUT_CHAT"> Google Chat (Thread)</label><label class="radio inline"><input type="radio" name="webhookType" value="JSON"> Continuous Integration tool (Only push event)</label><label class="radio inline">|</label><label class="radio inline"></label><label class="checkbox inline" for="gitPush"><input type="checkbox" id="gitPush" name="gitPush" class="form-check-input"> Include git push events</label></div></div><div>* Every webhook is sent in POST and with Content-Type: application/json header.<br>* If you need to include additional fields and values, please use a query string. e.g. http://abc.com?customKey=value <br>* If you put a value in the Token field, 'Authorization: token input-value' header is added to HTTP header. <br></div></form><div id="webhooksList" class="webhook-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No webhook exists.</p></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
@@ -58,7 +60,16 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
   expect(source).toContain('<LegacyWebhookHelp help={t("project.webhook.help")} />');
   expect(source).toContain("help.split(/\\s*<br\\s*\\/?>/iu)");
   expect(source).toContain('{" "}');
+  expect(source).toContain("const projectSearchScope = containerQuery.data");
+  expect(source).toContain(
+    "organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName)",
+  );
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain('const screenTitle = t("project.webhook");');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
+  expect(source).not.toContain("ProjectForbiddenBody");
+  expect(source).not.toContain("SiteForbiddenBody");
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
@@ -74,8 +85,25 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/webhooks`);
+  await expect(page).toHaveTitle("Webhooks - admin/sample");
   await expect(page.locator("#formNewWebhook")).toBeVisible();
   await expect(page.locator("#webhooksList")).toContainText("No webhook exists.");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
+  expect(await readLegacyGnbTexts(page)).toEqual([
+    "Y",
+    "List All",
+    "Feedback",
+    "This Project",
+    "This Project",
+    "All Projects",
+  ]);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_WEBHOOKS.replaceAll("__BASE_PATH__", basePath)),
@@ -104,6 +132,39 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     submitPadding: "4px 12px",
     tabsMarginBottom: "15px",
   });
+});
+
+test("project webhooks localhost legacy portal success shell is restored", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [], {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/webhooks`);
+  await expect(page).toHaveTitle("Webhooks - weblabs/portal");
+  await expect(page.locator("#formNewWebhook")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
+  expect(await readLegacyGnbTexts(page)).toEqual([
+    "Y",
+    "List All",
+    "Feedback",
+    "This Project",
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
 });
 
 test("project webhooks renders legacy project/partial_webhooks_list.scala.html populated list", async ({
@@ -173,6 +234,7 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   await assertNoTanStackActiveMarkers(headerProjectLink);
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
   await expect(projectMenuLinks).toHaveCount(8);
   await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/code`);
@@ -521,22 +583,30 @@ async function mockProjectAdmin(
     }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
+    ownerName?: string;
+    projectName?: string;
     project?: Partial<ReturnType<typeof projectContainer>>;
   } = {},
 ) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
+  const sessionLoginId = "admin";
+  const sessionUserLabel = "Site Admin";
+  const sessionAvatarUrl = "/assets/images/default-avatar-32.png";
+
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
+        avatarUrl: sessionAvatarUrl,
         defaultLandingPath: "/",
         emailAddress: "admin@example.com",
         isAnonymous: false,
         isConfirmed: true,
         isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
+        loginId: sessionLoginId,
+        userLabel: sessionUserLabel,
       }),
     });
   });
@@ -547,26 +617,32 @@ async function mockProjectAdmin(
       body: JSON.stringify({
         isAuthenticated: true,
         user: {
-          avatarUrl: "/assets/images/default-avatar-32.png",
-          loginId: "admin",
-          name: "Site Admin",
+          avatarUrl: sessionAvatarUrl,
+          loginId: sessionLoginId,
+          name: sessionUserLabel,
         },
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ ...projectContainer(), ...options.project }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify(projectSettings()),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ ...projectContainer(ownerName, projectName), ...options.project }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/settings`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(projectSettings(ownerName, projectName)),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -576,64 +652,70 @@ async function mockProjectAdmin(
         ],
         defaultBranch: "main",
         noHead: false,
-        ownerName: "admin",
+        ownerName,
         permissions: { canDelete: true, canUpdate: true },
-        projectName: "sample",
+        projectName,
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/webhooks", async (route) => {
-    if (route.request().method() === "POST") {
-      const data = route.request().postDataJSON() as {
-        gitPush?: boolean;
-        payloadUrl?: string;
-        secret?: string;
-        webhookType?: string;
-      };
-      options.createRequests?.push({
-        gitPush: data.gitPush === true,
-        payloadUrl: String(data.payloadUrl ?? ""),
-        secret: String(data.secret ?? ""),
-        webhookType: String(data.webhookType ?? ""),
-      });
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/webhooks`,
+    async (route) => {
+      if (route.request().method() === "POST") {
+        const data = route.request().postDataJSON() as {
+          gitPush?: boolean;
+          payloadUrl?: string;
+          secret?: string;
+          webhookType?: string;
+        };
+        options.createRequests?.push({
+          gitPush: data.gitPush === true,
+          payloadUrl: String(data.payloadUrl ?? ""),
+          secret: String(data.secret ?? ""),
+          webhookType: String(data.webhookType ?? ""),
+        });
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            gitPush: data.gitPush === true,
+            id: 99,
+            payloadUrl: data.payloadUrl ?? "",
+            secret: data.secret ?? "",
+            webhookType: data.webhookType ?? "SIMPLE",
+          }),
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          gitPush: data.gitPush === true,
-          id: 99,
-          payloadUrl: data.payloadUrl ?? "",
-          secret: data.secret ?? "",
-          webhookType: data.webhookType ?? "SIMPLE",
+          deliveries: [],
+          ownerName,
+          projectName,
+          viewerCanUpdate: options.project?.viewerCanUpdate === false ? false : true,
+          webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"],
+          webhooks,
         }),
       });
-      return;
-    }
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        deliveries: [],
-        ownerName: "admin",
-        projectName: "sample",
-        viewerCanUpdate: true,
-        webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"],
-        webhooks,
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
-    const request = route.request();
-    options.favoriteRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-webhooks",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
-    });
-  });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/favorite`,
+    async (route) => {
+      const request = route.request();
+      options.favoriteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-webhooks",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
+      });
+    },
+  );
 }
 
-function projectContainer() {
+function projectContainer(ownerName = "admin", projectName = "sample") {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     enrollmentRequestCount: 0,
@@ -651,16 +733,16 @@ function projectContainer() {
       pullRequest: true,
       review: true,
     },
-    ownerName: "admin",
-    projectName: "sample",
+    ownerName,
+    projectName,
     vcs: "GIT",
     viewerCanUpdate: true,
   };
 }
 
-function projectSettings() {
+function projectSettings(ownerName = "admin", projectName = "sample") {
   return {
-    ...projectContainer(),
+    ...projectContainer(ownerName, projectName),
     backgroundUrl: "/assets/images/bg-default-project.png",
     codeMemberOnly: false,
     defaultReviewerCount: 2,
@@ -776,6 +858,22 @@ async function webhookFormMetrics(page: Page) {
       return element;
     }
   });
+}
+
+async function readLegacyGnbTexts(page: Page) {
+  return page.evaluate(() =>
+    [
+      ...Array.from(document.querySelectorAll(".gnb-nav > li > a")).map((node) =>
+        node.textContent?.replace(/\s+/gu, " ").trim(),
+      ),
+      ...Array.from(document.querySelectorAll("#gnb-search-scope-title")).map((node) =>
+        node.textContent?.replace(/\s+/gu, " ").trim(),
+      ),
+      ...Array.from(document.querySelectorAll(".gnb-search-form .dropdown-menu button")).map(
+        (node) => node.textContent?.replace(/\s+/gu, " ").trim(),
+      ),
+    ].filter((value): value is string => Boolean(value)),
+  );
 }
 
 async function installFavoriteSpanNativeListenerAudit(page: Page) {

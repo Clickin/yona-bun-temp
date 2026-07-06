@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useState, type FormEvent } from "react";
 import {
   createProjectWebhookRest,
   deleteProjectWebhookRest,
@@ -36,16 +36,39 @@ function ProjectWebhooksRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectWebhooksScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectWebhooksRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
+function ProjectWebhooksRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const containerQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const projectSearchScope = containerQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
+      <ProjectWebhooksScreen runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
 function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  useProjectWebhooksDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -68,6 +91,28 @@ function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       />
     </>
   );
+}
+
+function useProjectWebhooksDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  const { t } = useLegacyMessages();
+  const screenTitle = t("project.webhook");
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function ProjectWebhooksBody({
@@ -382,16 +427,16 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const projectId = stringField(project.id, "");
+  const projectId = projectIdentifier(project);
   const [isFavoritedProject, setIsFavoritedProject] = useState(
     () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
   );
   const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
-  const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
-  const isForked = booleanField(project.isForkedFromOrigin);
-  const originalOwnerName = stringField(project.originalOwnerName, "");
-  const originalProjectName = stringField(project.originalProjectName, "");
+  const backgroundImageUrl = projectBackgroundImageUrl(project);
+  const isForked =
+    booleanField(project.isForkedFromOrigin) || booleanField(recordField(project).isForked);
+  const originalOwnerName = projectOriginalOwnerName(project);
+  const originalProjectName = projectOriginalProjectName(project);
   const favoriteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -498,7 +543,8 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const menuSetting = recordField(project.menuSetting);
+  const canSeeCodeMenu = projectCodeMenuVisible(project);
+  const memberCount = projectMemberCount(project);
 
   return (
     <div className="project-menu-outer">
@@ -510,7 +556,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
             to="/$ownerName/$projectName"
             params={{ ownerName, projectName }}
           />
-          {booleanField(menuSetting.code) ? (
+          {canSeeCodeMenu ? (
             <ProjectMenuItem
               className="code-menu "
               label={t("menu.code")}
@@ -519,7 +565,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
               params={{ ownerName, projectName }}
             />
           ) : null}
-          {booleanField(menuSetting.issue) ? (
+          {projectMenuEnabled(project, "issue", "showIssue") ? (
             <ProjectMenuItem
               label={t("menu.issue")}
               short="I"
@@ -527,7 +573,9 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
               params={{ ownerName, projectName }}
             />
           ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
+          {canSeeCodeMenu &&
+          projectMenuEnabled(project, "pullRequest", "showPullRequest") &&
+          stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
               label={t("menu.pullRequest")}
               short="P"
@@ -535,7 +583,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
               params={{ ownerName, projectName }}
             />
           ) : null}
-          {booleanField(menuSetting.review) ? (
+          {canSeeCodeMenu && projectMenuEnabled(project, "review", "showReview") ? (
             <ProjectMenuItem
               label={t("menu.review")}
               short="R"
@@ -543,7 +591,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
               params={{ ownerName, projectName }}
             />
           ) : null}
-          {booleanField(menuSetting.milestone) ? (
+          {projectMenuEnabled(project, "milestone", "showMilestone") ? (
             <ProjectMenuItem
               label={t("milestone")}
               short="M"
@@ -551,7 +599,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
               params={{ ownerName, projectName }}
             />
           ) : null}
-          {booleanField(menuSetting.board) ? (
+          {projectMenuEnabled(project, "board", "showBoard") ? (
             <ProjectMenuItem
               label={t("menu.board")}
               short="B"
@@ -560,7 +608,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
             />
           ) : null}
         </ul>
-        {booleanField(project.viewerCanUpdate) ? (
+        {projectAdminMenuVisible(project) ? (
           <div className="project-setting">
             <ul className="project-menu-nav">
               <li className="active">
@@ -573,9 +621,10 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                   <span className="blind">
                     <span className="menu-name">{t("menu.admin")}</span>
                   </span>
-                  <CountBadge count={countField(project.enrolledUsers, 0)} />
+                  <CountBadge count={memberCount} />
                 </Link>
               </li>
+              <li></li>
             </ul>
           </div>
         ) : null}
@@ -624,8 +673,7 @@ function ProjectSettingMenu({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const menuSetting = recordField(project.menuSetting);
-  const memberEnrollmentCount = countField(project.enrolledUsers, 0);
+  const memberCount = projectMemberCount(project);
 
   return (
     <ul className="nav nav-tabs">
@@ -647,7 +695,7 @@ function ProjectSettingMenu({
           params={{ ownerName, projectName }}
         >
           {t("project.member")}
-          <CountBadge count={memberEnrollmentCount} className="num-badge" />
+          <CountBadge count={memberCount} className="num-badge" />
         </Link>
       </li>
       <li id="subMenuIssueLabel" className="">
@@ -693,7 +741,7 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        style={projectMenuEnabled(project, "code", "showCode") ? undefined : { display: "none" }}
       >
         <Link
           {...LEGACY_LINK_PROPS}
@@ -738,4 +786,72 @@ function countField(value: unknown, fallback: number) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectMenuEnabled(project: ProjectContainer, menuKey: string, fallbackKey: string) {
+  const menuSettingValue = recordField(recordField(project).menuSetting)[menuKey];
+  if (typeof menuSettingValue === "boolean") {
+    return menuSettingValue;
+  }
+  return booleanField(recordField(project)[fallbackKey]);
+}
+
+function projectCodeMenuVisible(project: ProjectContainer) {
+  const record = recordField(project);
+  return (
+    projectMenuEnabled(project, "code", "showCode") &&
+    (!booleanField(record.codeMemberOnly) || booleanField(record.viewerIsProjectMember))
+  );
+}
+
+function projectAdminMenuVisible(project: ProjectContainer) {
+  const record = recordField(project);
+  if (typeof record.showAdmin === "boolean") {
+    return booleanField(record.showAdmin);
+  }
+  return booleanField(record.viewerCanUpdate);
+}
+
+function projectMemberCount(project: ProjectContainer) {
+  const record = recordField(project);
+  if (typeof record.memberCount === "number" && Number.isFinite(record.memberCount)) {
+    return record.memberCount;
+  }
+  if (Array.isArray(record.members)) {
+    return record.members.length;
+  }
+  return countField(record.enrolledUsers, 0);
+}
+
+function projectIdentifier(project: ProjectContainer) {
+  const record = recordField(project);
+  return stringField(record.id, "") || stringField(record.projectId, "");
+}
+
+function projectBackgroundImageUrl(project: ProjectContainer) {
+  const record = recordField(project);
+  return (
+    stringField(record.backgroundUrl, "") ||
+    stringField(project.backgroundImageUrl, "") ||
+    "/assets/images/bg-default-project.png"
+  );
+}
+
+function projectOriginalOwnerName(project: ProjectContainer) {
+  const record = recordField(project);
+  return stringField(record.originalOwnerName, "") || stringField(record.originOwnerName, "");
+}
+
+function projectOriginalProjectName(project: ProjectContainer) {
+  const record = recordField(project);
+  return stringField(record.originalProjectName, "") || stringField(record.originProjectName, "");
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const record = recordField(project);
+  const organizationName = stringField(record.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
