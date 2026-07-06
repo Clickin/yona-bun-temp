@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ROOT_CLASS_NAMES = [
   "unsupported hidden",
-  "gnb-outer",
+  "gnb-outer project-header",
   "project-header-outer",
   "project-menu-outer",
   "site-breadcrumb-outer",
@@ -16,10 +16,13 @@ test("organization project search keeps the legacy organization shell with ancho
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const searchApi = await mockOrganizationSearch(page);
 
-  await page.goto(`${basePath}/organizations/weblabs/search?keyword=missing&searchType=project`);
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=sample&searchType=project`);
 
+  await expect(page).toHaveTitle("Search");
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Search");
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   expect(await screenRootClassNames(page)).toEqual(ROOT_CLASS_NAMES);
 
   const categoryLinks = page.locator(".search-category-wrap li > a");
@@ -43,18 +46,18 @@ test("organization project search keeps the legacy organization shell with ancho
 
   await expect(categoryLinks.nth(0)).toHaveAttribute(
     "href",
-    `${basePath}/organizations/weblabs/search?keyword=missing&pageNum=1&searchType=issue`,
+    `${basePath}/organizations/weblabs/search?keyword=sample&pageNum=1&searchType=issue`,
   );
   await expect(categoryLinks.nth(2)).toHaveAttribute(
     "href",
-    `${basePath}/organizations/weblabs/search?keyword=missing&pageNum=1&searchType=project`,
+    `${basePath}/organizations/weblabs/search?keyword=sample&pageNum=1&searchType=project`,
   );
   await expect(page.locator("#searchInnerForm")).toHaveAttribute(
     "action",
     `${basePath}/organizations/weblabs/search`,
   );
   await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("project");
-  await expect(page.locator("#searchKeyword")).toHaveValue("missing");
+  await expect(page.locator("#searchKeyword")).toHaveValue("sample");
   await expect(page.locator(".search-result-title")).toContainText("Found 0 result(s) in Projects");
 
   await page.evaluate(() => {
@@ -87,13 +90,80 @@ test("organization project search keeps the legacy organization shell with ancho
   await expect.poll(() => searchApi.count).toBe(2);
 });
 
+test("organization project search pins the live localhost guest shell title and scope branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSearch(page, {
+    anonymousSession: true,
+    viewerCanCreateProject: false,
+    viewerCanUpdate: false,
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=sample&searchType=project`);
+
+  await expect(page).toHaveTitle("Search");
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
+  await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
+  await expect(page.locator(".project-setting a")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects0");
+  await expect(page.locator(".search-result-title")).toHaveText("Found 0 result(s) in Projects");
+
+  const metrics = await page.evaluate(() => {
+    const navbar = document.querySelector("header.gnb-outer");
+    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const category = document.querySelector(".search-category-wrap");
+    const resultTitle = document.querySelector(".search-result-title");
+    if (!(navbar instanceof HTMLElement)) {
+      throw new Error("Missing header.gnb-outer");
+    }
+    if (!(scopeButton instanceof HTMLElement)) {
+      throw new Error("Missing #gnb-search-scope-title");
+    }
+    if (!(searchBox instanceof HTMLElement)) {
+      throw new Error("Missing .gnb-search-form .search-box");
+    }
+    if (!(category instanceof HTMLElement)) {
+      throw new Error("Missing .search-category-wrap");
+    }
+    if (!(resultTitle instanceof HTMLElement)) {
+      throw new Error("Missing .search-result-title");
+    }
+    return {
+      category: category.getBoundingClientRect(),
+      navbar: navbar.getBoundingClientRect(),
+      resultTitle: resultTitle.getBoundingClientRect(),
+      scopeButton: scopeButton.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+    };
+  });
+
+  expect(metrics.scopeButton.top).toBeGreaterThanOrEqual(metrics.navbar.top);
+  expect(metrics.scopeButton.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.searchBox.top).toBeGreaterThanOrEqual(metrics.navbar.top);
+  expect(metrics.searchBox.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
+  expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
+  expect(metrics.category.right).toBeLessThanOrEqual(metrics.resultTitle.left + 1);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText(["All Projects"]);
+});
+
 test("organization project search preserves the legacy two-column layout geometry", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockOrganizationSearch(page);
 
-  await page.goto(`${basePath}/organizations/weblabs/search?keyword=missing&searchType=project`);
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=sample&searchType=project`);
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
 
   const layout = await page.evaluate(() => {
@@ -196,6 +266,8 @@ test("organization search forbidden keeps the legacy organization shell without 
 
   await page.goto(`${basePath}/organizations/weblabs/search?keyword=blocked&searchType=project`);
 
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".error-wrap .ico.ico-err2")).toHaveCount(1);
@@ -205,7 +277,7 @@ test("organization search forbidden keeps the legacy organization shell without 
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(await screenRootClassNames(page)).toEqual([
     "unsupported hidden",
-    "gnb-outer",
+    "gnb-outer project-header",
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",
@@ -245,25 +317,36 @@ test("organization search internal server error keeps the legacy default error s
 async function mockOrganizationSearch(
   page: Page,
   options: {
+    anonymousSession?: boolean;
     searchStatus?: 403 | 500;
+    viewerCanCreateProject?: boolean;
+    viewerCanUpdate?: boolean;
   } = {},
 ) {
   const apiCalls = { count: 0 };
 
   await page.route("**/api/v1/session", async (route) => {
+    const session = options.anonymousSession
+      ? {
+          defaultLandingPath: "/",
+          isAnonymous: true,
+          isSiteAdmin: false,
+        }
+      : {
+          actorId: 1,
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          defaultLandingPath: "/",
+          emailAddress: "admin@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: true,
+          loginId: "admin",
+          userLabel: "Site Admin",
+        };
+
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
-      }),
+      body: JSON.stringify(session),
     });
   });
   await page.route("**/api/v1/organizations/weblabs/container", async (route) => {
@@ -276,8 +359,8 @@ async function mockOrganizationSearch(
         members: [],
         organizationName: "weblabs",
         visibleProjects: [],
-        viewerCanCreateProject: true,
-        viewerCanUpdate: true,
+        viewerCanCreateProject: options.viewerCanCreateProject ?? true,
+        viewerCanUpdate: options.viewerCanUpdate ?? true,
       }),
     });
   });

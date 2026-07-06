@@ -92,15 +92,14 @@ function OrganizationSearchRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <OrganizationSearchScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <OrganizationSearchScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
 function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
   const { organizationName } = Route.useParams();
   const search = Route.useSearch();
   const organizationQuery = useQuery({
@@ -122,29 +121,55 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       ...search,
       scope: "organization",
     });
+  const useScopedSearchShell =
+    !search.routeInvalid &&
+    !isRequestTextTooLargeError(searchQuery.error) &&
+    !isDefaultInternalServerError(searchQuery.error);
+  const siteName = runtimeConfig.siteName ?? "Yona";
+
+  useEffect(() => {
+    if (!useScopedSearchShell) {
+      return;
+    }
+
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = t("title.search");
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [siteName, t, useScopedSearchShell]);
 
   if (search.routeInvalid) {
     return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.badrequest"
-        runtimeConfig={runtimeConfig}
-        ybtnClassName="ybtn ybtn-info"
-      />
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.badrequest"
+          runtimeConfig={runtimeConfig}
+          ybtnClassName="ybtn ybtn-info"
+        />
+      </SiteLayoutShell>
     );
   }
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
-    return <RequestTextTooLargeErrorBody />;
+    return (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <RequestTextTooLargeErrorBody />
+      </SiteLayoutShell>
+    );
   }
 
   if (isDefaultInternalServerError(searchQuery.error)) {
     return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.internalServerError"
-        runtimeConfig={runtimeConfig}
-      />
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.internalServerError"
+          runtimeConfig={runtimeConfig}
+        />
+      </SiteLayoutShell>
     );
   }
 
@@ -159,19 +184,27 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 
   if (isDefaultForbiddenError(searchQuery.error)) {
     return (
-      <>
+      <SiteLayoutShell
+        projectSearchScope={{ organizationName }}
+        runtimeConfig={runtimeConfig}
+        showLegacyProjectHeaderLinks
+      >
         <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
         <OrganizationMenu
           organizationName={organizationName}
           viewerCanUpdate={Boolean(organizationQuery.data.viewerCanUpdate)}
         />
         <OrganizationSearchErrorBody messageKey="error.forbidden" />
-      </>
+      </SiteLayoutShell>
     );
   }
 
   return (
-    <>
+    <SiteLayoutShell
+      projectSearchScope={{ organizationName }}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
       <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         organizationName={organizationName}
@@ -182,7 +215,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         result={result}
         runtimeConfig={runtimeConfig}
       />
-    </>
+    </SiteLayoutShell>
   );
 }
 
