@@ -26,9 +26,7 @@ function ProjectWatchersRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectWatchersScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectWatchersScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -47,12 +45,18 @@ function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader project={projectQuery.data} />
       <ProjectMenu project={projectQuery.data} />
       <ProjectWatchersBody watchers={watchersQuery.data} />
-    </>
+    </SiteLayoutShell>
   );
 }
 
@@ -237,7 +241,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   <i className="yobicon-lock"></i>
                 </span>
               ) : null}
-              {booleanField(project.isProtected) ? (
+              {projectIsProtected(project) ? (
                 <span className="project-protected" title="Group Project">
                   G
                 </span>
@@ -545,6 +549,14 @@ function enrolledUserCount(project: ProjectContainer) {
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
 function stringField(value: unknown, fallback: string) {
   if (typeof value === "string") {
     return value;
@@ -561,6 +573,11 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
 }
 
 function projectCanWatch(project: ProjectContainer) {

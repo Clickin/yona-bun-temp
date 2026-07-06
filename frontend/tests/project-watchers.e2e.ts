@@ -5,12 +5,12 @@ const PROJECT_WATCHERS_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/watche
 
 const EXPECTED_PROJECT_WATCHERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
@@ -116,10 +116,82 @@ test("project watchers admin cog badge uses enrolled member count instead of enr
   await expect(adminCogBadge).not.toHaveText("5");
 });
 
+test("protected org-owned project watchers expose legacy project-header search scope on localhost", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProtectedPortalWatchers(page);
+
+  await page.goto(`${basePath}/weblabs/portal/watchers`);
+  await expect(page.getByText("This projects watcher list.")).toBeVisible();
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal/watchers`,
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("2");
+  await expect(page.locator(".project-util .watcher-count")).toHaveClass(/watch-on/);
+
+  expect(await readProtectedPortalWatchersShellMetrics(page)).toEqual({
+    gnbClassName: "gnb-outer project-header",
+    pageWrapBelowMenu: true,
+    projectMenuBelowHeader: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
+});
+
 test("project watchers route source uses Link for internal app navigation", () => {
   const source = readFileSync(PROJECT_WATCHERS_ROUTE_SOURCE, "utf8");
 
   expect(source).toContain("import { Link, createFileRoute }");
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(source).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+  expect(source).toContain("return projectIsProtected(project) ? ownerName : undefined;");
+  expect(source).toContain("function projectIsProtected(project: ProjectContainer)");
+  expect(source).toContain('stringField(record.projectScope, "") === "protected"');
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/watchers"');
@@ -348,6 +420,40 @@ async function readDesktopWatchersMetrics(page: Page) {
   });
 }
 
+async function readProtectedPortalWatchersShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnb = requireElement(".gnb-outer");
+    const navbar = requireElement(".gnb-inner");
+    const search = requireElement(".gnb-search-form .search-box");
+    const projectHeader = requireElement(".project-header-outer");
+    const projectMenu = requireElement(".project-menu-outer");
+    const pageWrap = requireElement(".page-wrap-outer");
+    const navbarBox = navbar.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    const projectHeaderBox = projectHeader.getBoundingClientRect();
+    const projectMenuBox = projectMenu.getBoundingClientRect();
+    const pageWrapBox = pageWrap.getBoundingClientRect();
+
+    return {
+      gnbClassName: gnb.className,
+      pageWrapBelowMenu: pageWrapBox.top >= projectMenuBox.bottom,
+      projectMenuBelowHeader: projectMenuBox.top >= projectHeaderBox.bottom,
+      searchBottomWithinNavbar: searchBox.bottom <= navbarBox.bottom,
+      searchLeftWithinNavbar: searchBox.left >= navbarBox.left,
+      searchRightWithinNavbar: searchBox.right <= navbarBox.right,
+      searchTopWithinNavbar: searchBox.top >= navbarBox.top,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
 async function mockProjectAdmin(
   page: Page,
   options: {
@@ -440,6 +546,76 @@ async function mockProjectAdmin(
       body: JSON.stringify({
         isWatching: request.method() === "POST",
         watchingCount: options.watchResponseCount ?? (request.method() === "POST" ? 3 : 1),
+      }),
+    });
+  });
+}
+
+async function mockProtectedPortalWatchers(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-watchers" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...projectContainer(),
+        id: 2,
+        organizationName: "weblabs",
+        ownerName: "weblabs",
+        projectScope: "protected",
+        projectName: "portal",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/watchers", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ownerName: "weblabs",
+        projectName: "portal",
+        totalCount: 2,
+        watchers: [
+          {
+            avatarUrl: "/assets/images/default-avatar-128.png",
+            loginId: "carol",
+            userId: 35,
+            userLabel: "Carol Lee",
+          },
+          {
+            avatarUrl: "/assets/images/default-avatar-128.png",
+            loginId: "admin",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+        ],
       }),
     });
   });
