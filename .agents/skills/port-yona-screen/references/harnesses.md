@@ -12,6 +12,10 @@ Use these references when porting one Yona screen from Scala HTML to React/TanSt
 
 ## Useful Commands
 
+- Legacy parity baseline: keep `http://127.0.0.1:9000` as the default legacy
+  browser/curl target. Only override `YONA_LEGACY_BASE_URL` or
+  `YONA_LEGACY_PROXY_UPSTREAM` when a distinct legacy instance is explicitly
+  under test.
 - Focused E2E: `pnpm --dir frontend test:e2e <frontend/tests/name.e2e.ts>`
 - Frontend typecheck: `pnpm --dir frontend check`
 - Dev script contracts: `pnpm test:dev-scripts`

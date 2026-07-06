@@ -457,8 +457,9 @@ edit this phase file directly.
   prove every tab, modal, validation branch, permission-gated control, and
   mutation-visible state. The older packet results remain valid baseline
   evidence but no longer by themselves close the full UI parity goal directive.
-- Browser parity should use the current localhost curl proxy for the homelab
-  legacy instance when direct Playwright access to `192.168.45.10:9000` fails.
+- Browser parity should use the localhost legacy baseline at
+  `http://127.0.0.1:9000` by default. Use the localhost curl proxy only when a
+  distinct browser origin or curl-forwarded transport is explicitly needed.
   This remains browser-rendered legacy HTML and is stronger than raw curl for
   user-visible checks.
 - Signup, user, project, organization, issue, board, milestone, PR, search, and
