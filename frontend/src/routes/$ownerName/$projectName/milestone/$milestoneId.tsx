@@ -81,6 +81,18 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     return null;
   }
 
+  const currentUser = {
+    avatarUrl: stringField(sessionQuery.data.avatarUrl),
+    id: stringField(sessionQuery.data.actorId),
+    label: stringField(sessionQuery.data.userLabel, stringField(sessionQuery.data.loginId)),
+    loginId: stringField(sessionQuery.data.loginId),
+  };
+  const viewerIsProjectMember = isProjectMember(
+    recordArray(projectQuery.data.members),
+    recordArray(milestoneQuery.data.milestone.assignableUsers),
+    currentUser,
+  );
+
   return (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
@@ -96,14 +108,10 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         projectName={projectName}
       />
       <ProjectMilestoneDetailBody
-        currentUser={{
-          avatarUrl: stringField(sessionQuery.data.avatarUrl),
-          id: stringField(sessionQuery.data.actorId),
-          label: stringField(sessionQuery.data.userLabel, stringField(sessionQuery.data.loginId)),
-          loginId: stringField(sessionQuery.data.loginId),
-        }}
+        currentUser={currentUser}
         milestone={milestoneQuery.data.milestone}
         runtimeConfig={runtimeConfig}
+        viewerIsProjectMember={viewerIsProjectMember}
       />
     </>
   );
@@ -152,10 +160,12 @@ function ProjectMilestoneDetailBody({
   currentUser,
   milestone,
   runtimeConfig,
+  viewerIsProjectMember,
 }: {
   currentUser: { avatarUrl: string; id: string; label: string; loginId: string };
   milestone: ProjectMilestone;
   runtimeConfig: RuntimeConfig;
+  viewerIsProjectMember: boolean;
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
@@ -353,6 +363,7 @@ function ProjectMilestoneDetailBody({
                   onCheckedIssueIdsChange={setCheckedIssueIds}
                   projectPath={projectPath}
                   runtimeConfig={runtimeConfig}
+                  viewerIsProjectMember={viewerIsProjectMember}
                 />
                 <div className="pull-right search search-bar">
                   <input
@@ -395,6 +406,7 @@ function ProjectMilestoneDetailBody({
                     projectName={projectName}
                     projectPath={projectPath}
                     runtimeConfig={runtimeConfig}
+                    viewerIsProjectMember={viewerIsProjectMember}
                   />
                 ))}
               </ul>
@@ -463,6 +475,7 @@ function MassUpdateShell({
   onCheckedIssueIdsChange,
   projectPath,
   runtimeConfig,
+  viewerIsProjectMember,
 }: {
   allIssues: ProjectMilestoneIssue[];
   checkedIssueIds: string[];
@@ -471,16 +484,20 @@ function MassUpdateShell({
   onCheckedIssueIdsChange: (issueIds: string[]) => void;
   projectPath: string;
   runtimeConfig: RuntimeConfig;
+  viewerIsProjectMember: boolean;
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const { ownerName, projectName, milestoneId } = Route.useParams();
-  const issueIds = allIssues.map((issue) => stringField(issue.id, stringField(issue.issueNumber)));
+  const effectiveCheckedIssueIds = viewerIsProjectMember ? checkedIssueIds : [];
+  const issueIds = viewerIsProjectMember
+    ? allIssues.map((issue) => stringField(issue.id, stringField(issue.issueNumber)))
+    : [];
   const selectedIssues = allIssues.filter((issue) =>
-    checkedIssueIds.includes(stringField(issue.id, stringField(issue.issueNumber))),
+    effectiveCheckedIssueIds.includes(stringField(issue.id, stringField(issue.issueNumber))),
   );
-  const allChecked = issueIds.length > 0 && checkedIssueIds.length === issueIds.length;
-  const hasCheckedIssues = checkedIssueIds.length > 0;
+  const allChecked = issueIds.length > 0 && effectiveCheckedIssueIds.length === issueIds.length;
+  const hasCheckedIssues = effectiveCheckedIssueIds.length > 0;
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const labels = projectIssueLabelOptions(recordArray(milestone.projectLabels), allIssues);
   const openMilestones = projectMilestoneOptions(
@@ -493,7 +510,7 @@ function MassUpdateShell({
   const users = projectAssignableUserOptions(
     recordArray(milestone.assignableUsers),
     allIssues,
-    currentUser,
+    viewerIsProjectMember ? currentUser : undefined,
   );
   const toggleDropdown = (id: string, disabled: boolean) => {
     if (disabled) {
@@ -537,7 +554,7 @@ function MassUpdateShell({
   }, [hasCheckedIssues]);
   const submitMassUpdateState = (value: string) => {
     closeDropdown();
-    if (!hasCheckedIssues) {
+    if (!viewerIsProjectMember || !hasCheckedIssues) {
       return;
     }
     const normalizedState = value.toLowerCase();
@@ -633,7 +650,7 @@ function MassUpdateShell({
                 {t("issue.noAssignee")}
               </button>
             </li>
-            {currentUser.id ? (
+            {viewerIsProjectMember && currentUser.id ? (
               <li data-value={currentUser.id}>
                 <button
                   type="button"
@@ -893,6 +910,7 @@ function MilestoneIssueRow({
   projectName,
   projectPath,
   runtimeConfig,
+  viewerIsProjectMember,
 }: {
   checked: boolean;
   currentUserLoginId: string;
@@ -905,6 +923,7 @@ function MilestoneIssueRow({
   projectName: string;
   projectPath: string;
   runtimeConfig: RuntimeConfig;
+  viewerIsProjectMember: boolean;
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
@@ -947,24 +966,26 @@ function MilestoneIssueRow({
       {...issueListItemAttrs}
     >
       <div className="span9 span-hard-wrap">
-        <label
-          htmlFor={`issue-${issueId}`}
-          className="mass-update-check hide-in-mobile"
-          aria-label={`issue-${issueId}`}
-        >
-          <input
-            id={`issue-${issueId}`}
-            type="checkbox"
-            name="checked-issue"
-            data-toggle="issue-checkbox"
-            data-issue-id={issueId}
-            data-issue-labels={issueLabelData(labels)}
-            checked={checked}
-            onChange={(event) => {
-              onCheckedChange(issueId, event.currentTarget.checked);
-            }}
-          />
-        </label>
+        {viewerIsProjectMember ? (
+          <label
+            htmlFor={`issue-${issueId}`}
+            className="mass-update-check hide-in-mobile"
+            aria-label={`issue-${issueId}`}
+          >
+            <input
+              id={`issue-${issueId}`}
+              type="checkbox"
+              name="checked-issue"
+              data-toggle="issue-checkbox"
+              data-issue-id={issueId}
+              data-issue-labels={issueLabelData(labels)}
+              checked={checked}
+              onChange={(event) => {
+                onCheckedChange(issueId, event.currentTarget.checked);
+              }}
+            />
+          </label>
+        ) : null}
         <div {...issueItemRowAttrs} className="issue-item-row">
           <div className="title-wrap">
             <Link
@@ -1535,13 +1556,15 @@ function groupLabels(
 function projectAssignableUserOptions(
   assignableUsers: Array<Record<string, unknown>>,
   issues: ProjectMilestoneIssue[],
-  currentUser: { avatarUrl: string; id: string; label: string; loginId: string },
+  currentUser?: { avatarUrl: string; id: string; label: string; loginId: string },
 ) {
   const users = new Map<
     string,
     { avatarUrl: string; id: string; label: string; loginId: string }
   >();
-  addUser(users, currentUser);
+  if (currentUser) {
+    addUser(users, currentUser);
+  }
   for (const item of assignableUsers) {
     addUser(users, {
       avatarUrl: normalizedAvatarUrl(item.avatarUrl),
@@ -1565,6 +1588,26 @@ function projectAssignableUserOptions(
     });
   }
   return Array.from(users.values());
+}
+
+function isProjectMember(
+  projectMembers: Array<Record<string, unknown>>,
+  assignableUsers: Array<Record<string, unknown>>,
+  currentUser: { id: string; loginId: string },
+) {
+  return (
+    projectMembers.some((member) => sameUser(member, currentUser)) ||
+    assignableUsers.some((member) => sameUser(member, currentUser))
+  );
+}
+
+function sameUser(user: Record<string, unknown>, currentUser: { id: string; loginId: string }) {
+  const userId = stringField(user.userId, stringField(user.id));
+  const loginId = stringField(user.loginId);
+  return (
+    (currentUser.id.length > 0 && userId === currentUser.id) ||
+    (currentUser.loginId.length > 0 && loginId === currentUser.loginId)
+  );
 }
 
 function addUser(

@@ -737,6 +737,88 @@ test("project milestone detail mass update closes the checked issue through REST
   await expect(page.locator("#issue-item-42")).toContainText("#12Closed milestone issue");
 });
 
+test("project milestone detail keeps mass-update shell visible but inert for readable outsiders", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const massUpdateRequests: unknown[] = [];
+  await mockProjectMilestoneDetail(page, [], [], {
+    massUpdateRequests,
+    milestone: {
+      assignableUsers: [
+        {
+          avatarUrl: "/assets/images/admin-avatar.png",
+          displayName: "Site Admin",
+          loginId: "admin",
+          userId: 1,
+        },
+        {
+          avatarUrl: "/assets/images/dev-avatar.png",
+          displayName: "Dev Member",
+          loginId: "dev",
+          userId: 2,
+        },
+      ],
+      viewerCanDelete: false,
+      viewerCanUpdate: false,
+    },
+    project: {
+      members: [
+        {
+          avatarUrl: "/assets/images/admin-avatar.png",
+          loginId: "admin",
+          role: "manager",
+          userId: 1,
+          userLabel: "Site Admin",
+        },
+        {
+          avatarUrl: "/assets/images/dev-avatar.png",
+          loginId: "dev",
+          role: "member",
+          userId: 2,
+          userLabel: "Dev Member",
+        },
+      ],
+      viewerCanUpdate: false,
+    },
+    session: {
+      actorId: 99,
+      avatarUrl: "/assets/images/default-avatar-32.png",
+      isSiteAdmin: false,
+      loginId: "outsider",
+      userLabel: "Readable Outsider",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/milestone/5?state=open#issues`);
+
+  await expect(page.locator("#mass-update-form")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  await expect(page.locator("#issue-item-41 .mass-update-check")).toHaveCount(0);
+  await expect(page.locator('#issue-item-41 input[name="checked-issue"]')).toHaveCount(0);
+  await expect(page.locator("#state > button")).toBeDisabled();
+  await expect(
+    page.locator('.actrow [data-toggle="modal"][data-target="#deleteConfirm"]'),
+  ).toHaveCount(0);
+  await expect(page.locator('.actrow [href$="/milestone/5/editform"]')).toHaveCount(0);
+  await expect(page.locator('.actrow [data-request-uri$="/milestone/5/close"]')).toHaveCount(0);
+  await expect(page.locator("#assignee")).not.toContainText("Assign to me");
+  await expect(page.locator('#assignee li[data-value="99"]')).toHaveCount(0);
+  await expect(page.locator('#assignee li[data-value="1"] .usf-group')).toContainText(
+    "Site Admin @admin",
+  );
+  await expect(page.locator('#assignee li[data-value="2"] .usf-group')).toContainText(
+    "Dev Member @dev",
+  );
+  await expect(page.locator("#assignee")).not.toContainText("outsider");
+
+  await page.click("#check-all");
+
+  await expect(page.locator("#check-all")).not.toBeChecked();
+  await expect(page.locator("#state > button")).toBeDisabled();
+  await expect.poll(() => massUpdateRequests.length).toBe(0);
+});
+
 test("project milestone detail issue labels translate legacy href hash navigation to React buttons", async ({
   page,
 }) => {
@@ -961,11 +1043,13 @@ async function mockProjectMilestoneDetail(
   overrides?: {
     massUpdateRequests?: unknown[];
     milestone?: Record<string, unknown>;
+    project?: Record<string, unknown>;
+    session?: Record<string, unknown>;
   },
 ) {
   let milestone = {
     ...milestoneFixture(),
-    ...(overrides?.milestone ?? {}),
+    ...overrides?.milestone,
   };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -980,6 +1064,7 @@ async function mockProjectMilestoneDetail(
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
+        ...overrides?.session,
       }),
     });
   });
@@ -1003,10 +1088,27 @@ async function mockProjectMilestoneDetail(
           pullRequest: true,
           review: true,
         },
+        members: [
+          {
+            avatarUrl: "/assets/images/admin-avatar.png",
+            loginId: "admin",
+            role: "manager",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+          {
+            avatarUrl: "/assets/images/dev-avatar.png",
+            loginId: "dev",
+            role: "member",
+            userId: 2,
+            userLabel: "Dev Member",
+          },
+        ],
         ownerName: "admin",
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...overrides?.project,
       }),
     });
   });
