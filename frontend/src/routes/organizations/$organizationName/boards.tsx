@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import type { HTMLAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   listOrganizationBoardsQueryOptions,
   type BoardPostListItem,
@@ -43,9 +43,7 @@ function OrganizationBoardsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <OrganizationBoardsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <OrganizationBoardsScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -67,12 +65,18 @@ function OrganizationBoardsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   }
 
   return (
-    <OrganizationBoardsBody
-      boards={boardsQuery.data}
-      organization={organizationQuery.data}
+    <SiteLayoutShell
+      projectSearchScope={{ organizationName }}
       runtimeConfig={runtimeConfig}
-      search={search}
-    />
+      showLegacyProjectHeaderLinks
+    >
+      <OrganizationBoardsBody
+        boards={boardsQuery.data}
+        organization={organizationQuery.data}
+        runtimeConfig={runtimeConfig}
+        search={search}
+      />
+    </SiteLayoutShell>
   );
 }
 
@@ -90,8 +94,18 @@ function OrganizationBoardsBody({
   const { t } = useLegacyMessages();
   const organizationName = stringField(organization.organizationName, boards.organizationName);
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const siteName = runtimeConfig.siteName ?? "Yona";
   const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
   const hasPosts = hasNotices || boards.items.length > 0;
+
+  useEffect(() => {
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = organizationName;
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [organizationName, siteName]);
 
   return (
     <>
