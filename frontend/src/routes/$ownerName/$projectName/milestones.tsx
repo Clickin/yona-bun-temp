@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -38,9 +38,7 @@ function ProjectMilestonesRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectMilestonesScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectMilestonesScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -49,6 +47,7 @@ function ProjectMilestonesRoute() {
 function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
+  useProjectMilestonesDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -69,8 +68,14 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="milestone"
@@ -90,8 +95,27 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         project={projectQuery.data}
         search={search}
       />
-    </>
+    </SiteLayoutShell>
   );
+}
+
+function useProjectMilestonesDocumentTitle(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+) {
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${projectName} - milestone - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName]);
 }
 
 function ProjectMilestonesBody({
@@ -435,9 +459,26 @@ function booleanField(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1";
 }
 
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
+}
+
 function numberField(value: unknown) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function recordField(value: unknown) {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
 function stringField(value: unknown, fallback = "") {

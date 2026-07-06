@@ -123,6 +123,18 @@ test("project milestones route uses direct typed Link targets", () => {
 
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("as never");
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(routeSource).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+  expect(routeSource).toContain("return projectIsProtected(project) ? ownerName : undefined;");
+  expect(routeSource).toContain('stringField(record.projectScope, "") === "protected"');
+  expect(routeSource).toContain(
+    "document.title = `${projectName} - milestone - ${ownerName}/${projectName}`;",
+  );
   expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
   expect(routeSource).toContain("orderBy: optionalStringSearch(search.orderBy)");
@@ -152,6 +164,69 @@ test("project milestones all-state list renders legacy open and closed state met
       EXPECTED_MILESTONES_ALL_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("protected org-owned project milestones restore legacy title and navbar search scope on localhost", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProtectedPortalMilestones(page);
+
+  await page.goto(`${basePath}/weblabs/portal/milestones?state=open&orderBy=dueDate&orderDir=asc`);
+  await expect(page).toHaveTitle("portal - milestone - weblabs/portal");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+  await expect(page.locator("ul.milestones > li.milestone")).toHaveCount(2);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal/watchers`,
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("2");
+  await expect(page.locator(".project-util .watcher-count")).toHaveClass(/watch-on/);
+
+  expect(await readProtectedPortalMilestoneShellMetrics(page)).toEqual({
+    gnbClassName: "gnb-outer project-header",
+    pageWrapBelowMenu: true,
+    projectMenuBelowHeader: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
 });
 
 async function mockProjectMilestones(page: Page, state: "all" | "open" = "open") {
@@ -203,6 +278,65 @@ async function mockProjectMilestones(page: Page, state: "all" | "open" = "open")
       contentType: "application/json",
       body: JSON.stringify({
         milestones: state === "all" ? allStateMilestones() : openStateMilestones(),
+      }),
+    });
+  });
+}
+
+async function mockProtectedPortalMilestones(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        enrollmentRequestCount: 0,
+        id: 2,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: true,
+        isWatching: true,
+        logoUrl: "/assets/images/project_default_logo.png",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        organizationName: "weblabs",
+        ownerName: "weblabs",
+        projectName: "portal",
+        projectScope: "protected",
+        vcs: "GIT",
+        viewerCanUpdate: true,
+        viewerCanWatch: true,
+        watchingCount: 2,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/milestones?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        milestones: openStateMilestones(),
       }),
     });
   });
@@ -468,5 +602,39 @@ async function readMilestoneListMetrics(page: Page) {
       searchInputWidth: Math.round(searchInput.getBoundingClientRect().width),
       tabWrapMarginBottom: getComputedStyle(tabWrap).marginBottom,
     };
+  });
+}
+
+async function readProtectedPortalMilestoneShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const gnb = requireElement(".gnb-outer");
+    const navbar = requireElement(".gnb-inner");
+    const search = requireElement(".gnb-search-form .search-box");
+    const projectHeader = requireElement(".project-header-outer");
+    const projectMenu = requireElement(".project-menu-outer");
+    const pageWrap = requireElement(".page-wrap-outer");
+    const navbarBox = navbar.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    const projectHeaderBox = projectHeader.getBoundingClientRect();
+    const projectMenuBox = projectMenu.getBoundingClientRect();
+    const pageWrapBox = pageWrap.getBoundingClientRect();
+
+    return {
+      gnbClassName: gnb.className,
+      pageWrapBelowMenu: pageWrapBox.top >= projectMenuBox.bottom,
+      projectMenuBelowHeader: projectMenuBox.top >= projectHeaderBox.bottom,
+      searchBottomWithinNavbar: searchBox.bottom <= navbarBox.bottom,
+      searchLeftWithinNavbar: searchBox.left >= navbarBox.left,
+      searchRightWithinNavbar: searchBox.right <= navbarBox.right,
+      searchTopWithinNavbar: searchBox.top >= navbarBox.top,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
   });
 }
