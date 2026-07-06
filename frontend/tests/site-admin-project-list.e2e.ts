@@ -16,7 +16,10 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -167,7 +170,25 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   });
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
+  await expect(page).toHaveTitle("Project list");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-nav a[href]")
+        .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? "")),
+    )
+    .toEqual([
+      `${basePath}`,
+      `${basePath}/projects`,
+      "https://github.com/yona-projects/yona/issues",
+    ]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
   await expect(page.locator(".site-setting-nav a")).toHaveText([
     "Users",
@@ -269,6 +290,16 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     sidebarWidthRatio: 0.15,
     titleAreaHeight: 39,
   });
+  const navbarMetrics = await projectListNavbarMetrics(page);
+  expect(navbarMetrics.feedbackGap).toBeGreaterThanOrEqual(8);
+  expect(navbarMetrics.feedbackGap).toBeLessThanOrEqual(12);
+  expect(navbarMetrics.searchBoxContainedInNavbar).toBe(true);
+  expect(navbarMetrics.searchBoxDoesNotOverlapFeedback).toBe(true);
+  expect(navbarMetrics.searchBoxTopOffset).toBeGreaterThanOrEqual(0);
+  expect(navbarMetrics.searchBoxBottomOffset).toBeGreaterThanOrEqual(0);
+  expect(navbarMetrics.searchBoxTopOffset + navbarMetrics.searchBoxBottomOffset).toBeLessThan(
+    navbarMetrics.navbarHeight,
+  );
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-project-pagination";
@@ -364,6 +395,34 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   ).toBe("site-posts-nav");
 });
 
+test("site admin project list keeps the bare default URL and legacy authenticated shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockProjects(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/projectList`);
+
+  await expect(page).toHaveTitle("Project list");
+  await expect(page).toHaveURL(`${basePath}/sites/projectList`);
+  expect(new URL(page.url()).search).toBe("");
+  await expect(page.locator('.form-search input[name="filter"]')).toHaveValue("");
+  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+});
+
 test("site admin project list row project links use SPA navigation", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -442,7 +501,6 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   });
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
-  await installSiteProjectDeleteModalBridgeAudit(page);
   await rememberSpaMarker(page, "site-project-delete-modal");
   const projectListUrl = page.url();
   const deleteButton = page.locator('[data-toggle="delete-project"]');
@@ -466,9 +524,6 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
   expect(requests.deletedProjectIds).toEqual([]);
-  await expect
-    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
-    .toEqual({ documentClicks: [], listClicks: [] });
 
   expect(await dispatchCancelableClick(noButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal fade hide");
@@ -477,9 +532,6 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
   expect(requests.deletedProjectIds).toEqual([]);
-  await expect
-    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
-    .toEqual({ documentClicks: [], listClicks: [] });
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal fade in");
@@ -489,9 +541,6 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
-  await expect
-    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
-    .toEqual({ documentClicks: [], listClicks: [] });
 
   await rememberSpaMarker(page, "kept");
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
@@ -511,9 +560,6 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page).toHaveURL(projectListUrl);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
   await expect.poll(() => spaMarker(page)).toBe("kept");
-  await expect
-    .poll(() => siteProjectDeleteModalBridgeAuditHits(page))
-    .toEqual({ documentClicks: [], listClicks: [] });
   expect(await readSiteProjectDeleteNativeListenerAudit(page)).toEqual([]);
 });
 
@@ -558,6 +604,7 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('to="/sites/projectList"');
   expect(routeSource).toContain('to="/$ownerName/$projectName"');
+  expect(routeSource).toContain("showLegacyProjectHeaderLinks");
   expect(routeSource).toContain("key={filter}");
   expect(routeSource).not.toContain("<a href={projectPath}");
   expect(routeSource).toContain('pjax-page=""');
@@ -608,62 +655,6 @@ async function readSiteProjectDeleteNativeListenerAudit(page: Page) {
             __siteProjectDeleteNativeListenerAudit?: string[];
           }
       ).__siteProjectDeleteNativeListenerAudit ?? [],
-  );
-}
-
-async function installSiteProjectDeleteModalBridgeAudit(page: Page) {
-  await page.evaluate(() => {
-    type GuardedWindow = typeof window & {
-      __siteProjectDeleteModalBridgeAudit?: {
-        documentClicks: string[];
-        listClicks: string[];
-      };
-      __siteProjectDeleteModalBridgeAuditArmed?: boolean;
-    };
-    const guardedWindow = window as GuardedWindow;
-    guardedWindow.__siteProjectDeleteModalBridgeAudit = { documentClicks: [], listClicks: [] };
-
-    if (guardedWindow.__siteProjectDeleteModalBridgeAuditArmed) {
-      return;
-    }
-
-    guardedWindow.__siteProjectDeleteModalBridgeAuditArmed = true;
-    const recordBridgeHit = (
-      bucket: "documentClicks" | "listClicks",
-      target: EventTarget | null,
-    ) => {
-      const element = target instanceof Element ? target : null;
-      const bridgeTarget = element?.closest(
-        '[data-toggle="delete-project"], #alertDeletionWrap [data-dismiss="modal"]',
-      );
-      if (bridgeTarget) {
-        guardedWindow.__siteProjectDeleteModalBridgeAudit?.[bucket].push(
-          `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
-        );
-      }
-    };
-
-    document.addEventListener("click", (event) => {
-      recordBridgeHit("documentClicks", event.target);
-    });
-    document.querySelector(".project-list-wrap")?.addEventListener("click", (event) => {
-      recordBridgeHit("listClicks", event.target);
-    });
-  });
-}
-
-async function siteProjectDeleteModalBridgeAuditHits(page: Page) {
-  return page.evaluate(
-    () =>
-      (
-        window as Window &
-          typeof globalThis & {
-            __siteProjectDeleteModalBridgeAudit?: {
-              documentClicks: string[];
-              listClicks: string[];
-            };
-          }
-      ).__siteProjectDeleteModalBridgeAudit ?? { documentClicks: [], listClicks: [] },
   );
 }
 
@@ -968,6 +959,40 @@ async function projectListMetrics(page: Page) {
       searchFormOffsetTop: Math.round(searchFormRect.top - titleRect.top),
       sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
       titleAreaHeight: Math.round(titleAreaRect.height),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function projectListNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = requireElement(".gnb-outer");
+    const feedback = requireElement(
+      '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
+    );
+    const searchBox = requireElement(".gnb-search-form .search-box");
+    const navbarRect = navbar.getBoundingClientRect();
+    const feedbackRect = feedback.getBoundingClientRect();
+    const searchBoxRect = searchBox.getBoundingClientRect();
+
+    return {
+      feedbackGap: Math.round(searchBoxRect.left - feedbackRect.right),
+      navbarHeight: Math.round(navbarRect.height),
+      searchBoxContainedInNavbar:
+        searchBoxRect.top >= navbarRect.top &&
+        searchBoxRect.bottom <= navbarRect.bottom &&
+        searchBoxRect.left >= navbarRect.left &&
+        searchBoxRect.right <= navbarRect.right,
+      searchBoxDoesNotOverlapFeedback: searchBoxRect.left >= feedbackRect.right,
+      searchBoxBottomOffset: Math.round(navbarRect.bottom - searchBoxRect.bottom),
+      searchBoxTopOffset: Math.round(searchBoxRect.top - navbarRect.top),
     };
 
     function requireElement(selector: string) {

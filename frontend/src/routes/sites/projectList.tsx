@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
@@ -16,7 +16,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type ProjectListSearch = {
-  filter: string;
+  filter?: string;
   pageNum?: number;
 };
 
@@ -24,6 +24,19 @@ const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+
+function useLegacySiteProjectListDocumentTitle(runtimeConfig: RuntimeConfig) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = t("title.projectList");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [runtimeConfig.siteName, t]);
+}
 
 function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
@@ -33,7 +46,8 @@ function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonEleme
 export const Route = createFileRoute("/sites/projectList")({
   component: SiteProjectListRoute,
   validateSearch: (search: Record<string, unknown>): ProjectListSearch => ({
-    filter: typeof search.filter === "string" ? search.filter : "",
+    filter:
+      typeof search.filter === "string" && search.filter.length > 0 ? search.filter : undefined,
     pageNum: search.pageNum ? Number(search.pageNum) || 1 : undefined,
   }),
 });
@@ -44,7 +58,7 @@ function SiteProjectListRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteProjectListScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -53,10 +67,13 @@ function SiteProjectListRoute() {
 }
 
 function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { filter, pageNum } = Route.useSearch();
+  const routeSearch = Route.useSearch();
+  const filter = routeSearch.filter ?? "";
+  const pageNum = routeSearch.pageNum;
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
+  useLegacySiteProjectListDocumentTitle(runtimeConfig);
   const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const currentPage = pageNum ?? 1;
@@ -157,7 +174,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                       queryKey: apiQueryKeys.siteAdmin.projectsBase(),
                     });
                     void router.navigate({
-                      search: { filter: nextFilter, pageNum: undefined },
+                      search: { filter: nextFilter || undefined, pageNum: undefined },
                       to: "/sites/projectList",
                     });
                   }}
