@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const EXPECTED_PROJECT_REVIEWS_PAGE_WRAP = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-toggle="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="participantId" data-value="1" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="authorId" data-value="1" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__BASE_PATH__/admin/sample/reviews" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" data-field="createdDate" data-value="asc" class="filter" data-toggle="order" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" data-type="state" data-value="open" data-toggle="filter" style="background:rgb(255,255,255);border-style:solid;border-width:1px;border-color:rgb(221,221,221)rgb(221,221,221)transparent;border-radius:4px4px0px0px;color:rgb(85,85,85);cursor:default;display:block;font-family:inherit;font-size:inherit;font-weight:bold;line-height:20px;margin:0px2px0px0px;padding:8px30px;text-align:inherit;width:100%">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" data-type="state" data-value="closed" data-toggle="filter" style="background:transparent;border-style:solid;border-width:1px;border-color:transparent;border-radius:4px4px0px0px;color:rgb(53,146,181);cursor:pointer;display:block;font-family:inherit;font-size:inherit;font-weight:bold;line-height:20px;margin:0px2px0px0px;padding:8px30px;text-align:inherit;width:100%">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__BASE_PATH__/admin/sample/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__BASE_PATH__/admin/sample/commit/fedcba987654#thread-32" class="title">Commit thread without PR</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/reviews?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-toggle="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="participantId" data-value="1" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="authorId" data-value="1" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__BASE_PATH__/admin/sample/reviews" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" data-field="createdDate" data-value="asc" class="filter" data-toggle="order" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" data-type="state" data-value="open" data-toggle="filter" style="background:rgb(255,255,255);border-style:solid;border-width:1px;border-color:rgb(221,221,221)rgb(221,221,221)transparent;border-radius:4px4px0px0px;color:rgb(85,85,85);cursor:default;display:block;font-family:inherit;font-size:inherit;font-weight:bold;line-height:20px;margin:0px2px0px0px;padding:8px30px;text-align:inherit;width:100%">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" data-type="state" data-value="closed" data-toggle="filter" style="background:transparent;border-style:solid;border-width:1px;border-color:transparent;border-radius:4px4px0px0px;color:rgb(53,146,181);cursor:pointer;display:block;font-family:inherit;font-size:inherit;font-weight:bold;line-height:20px;margin:0px2px0px0px;padding:8px30px;text-align:inherit;width:100%">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__BASE_PATH__/admin/sample/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__BASE_PATH__/admin/sample/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/reviews?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
 `;
 
 test("project reviews list matches legacy reviewthread/list.scala.html shell", async ({ page }) => {
@@ -87,7 +87,16 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   ).toHaveAttribute("href", `${basePath}/admin/sample/pullRequest/3/changes#thread-31`);
   await expect(
     page.locator(".review-list-wrap .post-item").nth(1).locator(".title"),
-  ).toHaveAttribute("href", `${basePath}/admin/sample/commit/fedcba987654#thread-32`);
+  ).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/4/changes/fedcba987654#thread-32`,
+  );
+  await expect(
+    page.locator(".review-list-wrap .post-item").nth(1).locator(".comments-count"),
+  ).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/4/changes/fedcba987654#thread-32`,
+  );
 
   const titleSpaMarker = `review-title-${Date.now()}`;
   await page.evaluate((marker) => {
@@ -117,6 +126,42 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
       () => (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker,
     ),
   ).toBe(commentsSpaMarker);
+
+  await page.goto(`${basePath}/admin/sample/reviews?state=open&filter=comment`);
+  const commitSpecificSpaMarker = `review-commit-specific-${Date.now()}`;
+  await page.evaluate((marker) => {
+    (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker = marker;
+  }, commitSpecificSpaMarker);
+  await page.locator(".review-list-wrap .post-item").nth(1).locator(".title").click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `${escapeRegExp(basePath)}/admin/sample/pullRequest/4/changes/fedcba987654#thread-32$`,
+      "u",
+    ),
+  );
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker,
+    ),
+  ).toBe(commitSpecificSpaMarker);
+
+  await page.goto(`${basePath}/admin/sample/reviews?state=open&filter=comment`);
+  const commitSpecificCommentsSpaMarker = `review-commit-comments-${Date.now()}`;
+  await page.evaluate((marker) => {
+    (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker = marker;
+  }, commitSpecificCommentsSpaMarker);
+  await page.locator(".review-list-wrap .post-item").nth(1).locator(".comments-count").click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `${escapeRegExp(basePath)}/admin/sample/pullRequest/4/changes/fedcba987654#thread-32$`,
+      "u",
+    ),
+  );
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker,
+    ),
+  ).toBe(commitSpecificCommentsSpaMarker);
 
   await page.goto(`${basePath}/admin/sample/reviews?state=open&filter=comment`);
   const spaMarker = `reviews-${Date.now()}`;
@@ -285,10 +330,10 @@ async function mockProjectReviews(page: Page) {
                 threadId: 31,
               },
             ],
-            commitId: "abcdef123456",
+            commitId: "",
             createdLabel: "Jul 1, 2026",
             id: 31,
-            path: "app/controllers/Foo.java",
+            path: "",
             pullRequestNumber: 3,
             state: "open",
           },
@@ -303,16 +348,29 @@ async function mockProjectReviews(page: Page) {
                 authorId: 9,
                 authorLabel: "",
                 authorLoginId: "ghost",
-                contentsMarkdown: "Commit thread without PR",
+                contentsMarkdown: "Commit-specific pull request thread",
                 createdLabel: "Jul 2, 2026",
                 id: 2001,
+                threadId: 32,
+              },
+              {
+                authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                authorId: 1,
+                authorLabel: "Site Admin",
+                authorLoginId: "admin",
+                contentsMarkdown: "Ack",
+                createdLabel: "Jul 2, 2026",
+                id: 2002,
                 threadId: 32,
               },
             ],
             commitId: "fedcba987654",
             createdLabel: "Jul 2, 2026",
             id: 32,
-            path: "README.md",
+            path: "src/commit-specific-thread.rs",
+            pullRequestNumber: 4,
+            startLine: 9,
+            startSide: "B",
             state: "open",
           },
         ],

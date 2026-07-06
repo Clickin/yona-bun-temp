@@ -481,6 +481,12 @@ function ProjectReviewPagination({
 
 function reviewThreadRoute(ownerName: string, projectName: string, thread: ReviewThread) {
   const hash = `thread-${thread.id}`;
+  if (thread.pullRequestNumber && thread.commitId) {
+    return {
+      hash,
+      to: `/${ownerName}/${projectName}/pullRequest/${thread.pullRequestNumber}/changes/${thread.commitId}`,
+    };
+  }
   if (thread.pullRequestNumber) {
     return {
       hash,
