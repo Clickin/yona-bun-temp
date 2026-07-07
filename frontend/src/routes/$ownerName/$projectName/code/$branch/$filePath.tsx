@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
+import { currentSessionQueryOptions } from "../../../../../api/session";
 import type { ProjectContainer } from "../../../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
@@ -97,8 +98,9 @@ function ProjectCodeFileScreen({
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { branch, ownerName, path: filePath, projectName }),
   );
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
 
-  if (!project || !codeQuery.data) {
+  if (!project || !codeQuery.data || !sessionQuery.data) {
     return null;
   }
 
@@ -108,6 +110,7 @@ function ProjectCodeFileScreen({
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeFileBody
         code={codeQuery.data}
+        currentUserIsSiteAdmin={booleanField(sessionQuery.data.isSiteAdmin)}
         project={project}
         routeParams={routeParams}
         runtimeConfig={runtimeConfig}
@@ -118,11 +121,13 @@ function ProjectCodeFileScreen({
 
 function ProjectCodeFileBody({
   code,
+  currentUserIsSiteAdmin,
   project,
   routeParams,
   runtimeConfig,
 }: {
   code: CodeBrowserResponse;
+  currentUserIsSiteAdmin: boolean;
   project: ProjectContainer;
   routeParams: ProjectCodeFileRouteParams;
   runtimeConfig: RuntimeConfig;
@@ -257,6 +262,7 @@ function ProjectCodeFileBody({
             <FileView
               file={recordField(code.file)}
               filePath={filePath}
+              currentUserIsSiteAdmin={currentUserIsSiteAdmin}
               ownerName={ownerName}
               project={project}
               projectName={projectName}
@@ -271,6 +277,7 @@ function ProjectCodeFileBody({
 }
 
 function FileView({
+  currentUserIsSiteAdmin,
   file,
   filePath,
   ownerName,
@@ -279,6 +286,7 @@ function FileView({
   runtimeConfig,
   selectedBranch,
 }: {
+  currentUserIsSiteAdmin: boolean;
   file: CodeFile;
   filePath: string;
   ownerName: string;
@@ -472,6 +480,12 @@ function FileView({
       ) : isTooLargeText ? (
         <p>
           {t("code.tooBigFileForCodeBrowser", { args: [MAX_FILE_SIZE_CAN_BE_VIEWED] })}
+          {currentUserIsSiteAdmin ? (
+            <>
+              <br />
+              {t("code.looseFileSizeLimitForCodeBrowser")}
+            </>
+          ) : null}
           <br />
           <Link href={rawHref} to={rawPath} target="_blank" className="filehref ybtn">
             {t("code.viewRaw")}
