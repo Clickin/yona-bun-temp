@@ -67,20 +67,18 @@ export function ProjectForkRouteContent({
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectForkScreen
-            forkOwnerName={forkOwnerName}
-            ownerName={ownerName}
-            projectName={projectName}
-            runtimeConfig={runtimeConfig}
-          />
-        </SiteLayoutShell>
+        <ProjectForkRouteShell
+          forkOwnerName={forkOwnerName}
+          ownerName={ownerName}
+          projectName={projectName}
+          runtimeConfig={runtimeConfig}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectForkScreen({
+function ProjectForkRouteShell({
   forkOwnerName,
   ownerName,
   projectName,
@@ -105,21 +103,55 @@ function ProjectForkScreen({
   });
 
   if (!query.data) {
-    return null;
+    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
   }
 
   if (!isGitProject) {
     return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.badrequest.only.available.for.git"
-        runtimeConfig={runtimeConfig}
-        ybtnClassName="ybtn ybtn-info"
-      />
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.badrequest.only.available.for.git"
+          runtimeConfig={runtimeConfig}
+          ybtnClassName="ybtn ybtn-info"
+        />
+      </SiteLayoutShell>
     );
   }
 
-  const project = projectContainerFromForkSource(query.data.source);
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(query.data.source, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectForkScreen
+        forkOwnerName={forkOwnerName}
+        ownerName={ownerName}
+        options={query.data}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectForkScreen({
+  forkOwnerName,
+  ownerName,
+  options,
+  projectName,
+  runtimeConfig,
+}: {
+  forkOwnerName?: string;
+  ownerName: string;
+  options: ProjectForkOptionsResponse;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const project = projectContainerFromForkSource(options.source);
 
   return (
     <>
@@ -128,7 +160,7 @@ function ProjectForkScreen({
       <ProjectForkBody
         forkOwnerName={forkOwnerName}
         ownerName={ownerName}
-        options={query.data}
+        options={options}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
       />
@@ -696,6 +728,27 @@ function projectContainerFromForkSource(
   };
 }
 
+function projectSearchScopeOrganizationName(
+  source: ProjectForkOptionsResponse["source"],
+  ownerName: string,
+) {
+  const sourceRecord = recordField(source);
+  const organizationName = stringField(sourceRecord.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(sourceRecord) ? ownerName : undefined;
+}
+
+function projectIsProtected(source: Record<string, unknown>) {
+  const projectScope = stringField(source.projectScope, "").toUpperCase();
+  return (
+    booleanField(source.hasGroup) ||
+    booleanField(source.isProtected) ||
+    projectScope === "PROTECTED"
+  );
+}
+
 function userPath(ownerName: string) {
   return `/${ownerName}`;
 }
@@ -735,5 +788,5 @@ function countField(value: unknown) {
 }
 
 function booleanField(value: unknown) {
-  return value === true;
+  return value === true || value === "true" || value === 1 || value === "1";
 }

@@ -7,12 +7,12 @@ const PROJECT_FORK_OWNER_ROUTE_SOURCE =
 
 const EXPECTED_PROJECT_FORK_FORM = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
@@ -66,6 +66,25 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
 
   await page.goto(`${basePath}/admin/sample/newFork`);
   await expect(page.locator("#helpMessage")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
   await expect(page.locator(".content-wrap.frm-wrap form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/fork`,
@@ -80,6 +99,80 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
       ),
     ),
   );
+  const metrics = await projectForkHeaderSearchScopeMetrics(page);
+  expect(metrics.formAction).toBe(`${basePath}/admin/sample/search`);
+  expect(metrics.form.top).toBeGreaterThanOrEqual(metrics.header.top);
+  expect(metrics.form.bottom).toBeLessThanOrEqual(metrics.header.bottom);
+  expect(metrics.input.top).toBeGreaterThanOrEqual(metrics.header.top);
+  expect(metrics.input.bottom).toBeLessThanOrEqual(metrics.header.bottom);
+  expect(metrics.input.right).toBeLessThanOrEqual(metrics.header.right);
+  expect(metrics.searchBox.left).toBeGreaterThanOrEqual(metrics.scope.right - 1);
+  expect(metrics.searchBox.top).toBe(metrics.scope.top);
+  expect(metrics.searchBox.bottom).toBe(metrics.scope.bottom);
+});
+
+test("project fork form exposes group and all-project search scopes without leaving newFork", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    source: {
+      organizationName: "devs",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/newFork`);
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("#helpMessage")).toBeVisible();
+  await expect(page.locator(".content-wrap.frm-wrap form")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/admin/sample/search`,
+      `${basePath}/organizations/devs/search`,
+      `${basePath}/search`,
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/devs/search`,
+  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newFork`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newFork`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newFork`);
 });
 
 test("project fork owner route renders legacy existing-fork state", async ({ page }) => {
@@ -263,6 +356,8 @@ test("project fork admin cog badge uses enrolled users count from legacy project
 test("project fork route has no raw route-local internal anchors", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
 
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain("projectSearchScopeOrganizationName(query.data.source, ownerName)");
   expect(source).not.toMatch(/<a(?:\s|>)/u);
   expect(source).not.toContain("</a>");
   expect(source).not.toContain("href={prefixBasePath");
@@ -685,6 +780,7 @@ function sourceProject() {
       pullRequest: true,
       review: true,
     },
+    organizationName: "",
     ownerName: "admin",
     projectName: "sample",
     projectScope: "PUBLIC",
@@ -845,6 +941,38 @@ async function projectForkBadRequestMetrics(page: Page) {
       messageFontSize: window.getComputedStyle(message).fontSize,
       pageWrapMarginTop: window.getComputedStyle(pageWrap).marginTop,
       pageWrapMinHeight: window.getComputedStyle(pageWrap).minHeight,
+    };
+  });
+}
+
+async function projectForkHeaderSearchScopeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = form?.querySelector<HTMLElement>(".search-box.select");
+    const input = form?.querySelector<HTMLInputElement>('input[name="keyword"]');
+    const missing = Object.entries({ form, header, input, scope, searchBox })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected fork form header search scope targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const rect = (element: HTMLElement) => {
+      const { bottom, left, right, top } = element.getBoundingClientRect();
+      return { bottom, left, right, top };
+    };
+
+    return {
+      formAction: form.getAttribute("action"),
+      form: rect(form),
+      header: rect(header),
+      input: rect(input),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
     };
   });
 }
