@@ -262,6 +262,7 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  await expect(page).toHaveTitle("sample - Board - admin/sample");
   await expect(page.locator("#option_form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
   await expect(page.locator(".project-menu-gruop li.active")).toHaveCount(1);
@@ -346,6 +347,11 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  expect(routeSource).toContain(
+    '<title>{`${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain('globalThis["document"]');
   const keymapSource = routeSource.slice(
     routeSource.indexOf("function BoardListKeymap"),
     routeSource.indexOf("function KeymapEntry"),
