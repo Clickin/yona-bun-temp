@@ -41,7 +41,12 @@ function ProjectCodeHistoryRoute() {
   const isProjectCodeHistoryRoot = pathname === `/${ownerName}/${projectName}/commits`;
 
   if (!isProjectCodeHistoryRoot) {
-    return <Outlet />;
+    return (
+      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <ProjectCodeHistoryTitle />
+        <Outlet />
+      </LegacyI18nProvider>
+    );
   }
 
   return (
@@ -101,11 +106,19 @@ function ProjectCodeHistoryScreen({
 
   return (
     <>
+      <ProjectCodeHistoryTitle />
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeHistoryBody history={historyQuery.data} runtimeConfig={runtimeConfig} />
     </>
   );
+}
+
+function ProjectCodeHistoryTitle() {
+  const { t } = useLegacyMessages();
+  const { ownerName, projectName } = Route.useParams();
+
+  return <title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>;
 }
 
 function ProjectCodeHistoryBody({

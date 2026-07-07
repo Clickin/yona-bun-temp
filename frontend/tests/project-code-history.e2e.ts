@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const ROUTE_SOURCE_PATH = "src/routes/$ownerName/$projectName/commits/$branch.tsx";
 const BARE_ROUTE_SOURCE_PATH = "src/routes/$ownerName/$projectName/commits.tsx";
 const LEGACY_HISTORY_SOURCE_PATH = "../yona-original/app/views/code/history.scala.html";
+const LEGACY_MESSAGES_SOURCE_PATH = "../yona-original/conf/messages";
 const LEGACY_ROUTES_SOURCE_PATH = "../yona-original/conf/routes";
 const LEGACY_CONTROLLER_SOURCE_PATH = "../yona-original/app/controllers/CodeHistoryApp.java";
 
@@ -16,6 +17,7 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   await mockProjectCodeHistory(page);
 
   await page.goto(`${basePath}/admin/sample/commits/main`);
+  await expect(page).toHaveTitle("Commit history - admin/sample");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
   const filesTabLink = page.locator(".nav-tabs a", { hasText: "Files" });
@@ -369,9 +371,12 @@ test("project code history route source has no internal raw anchor patterns", ()
   const source = readFileSync(ROUTE_SOURCE_PATH, "utf8");
   const bareSource = readFileSync(BARE_ROUTE_SOURCE_PATH, "utf8");
   const legacySource = readFileSync(LEGACY_HISTORY_SOURCE_PATH, "utf8");
+  const legacyMessagesSource = readFileSync(LEGACY_MESSAGES_SOURCE_PATH, "utf8");
   const legacyRoutesSource = readFileSync(LEGACY_ROUTES_SOURCE_PATH, "utf8");
   const legacyControllerSource = readFileSync(LEGACY_CONTROLLER_SOURCE_PATH, "utf8");
 
+  expect(legacyMessagesSource).toContain("title.commitHistory = Commit history");
+  expect(legacySource).toContain('@projectLayout(Messages("title.commitHistory"), project');
   expect(legacyRoutesSource).toContain(
     "GET            /:user/:project/commits                                                controllers.CodeHistoryApp.historyUntilHead(user, project)",
   );
@@ -412,7 +417,11 @@ test("project code history route source has no internal raw anchor patterns", ()
 
   expect(bareSource).toContain('createFileRoute("/$ownerName/$projectName/commits")');
   expect(bareSource).toContain("const isProjectCodeHistoryRoot =");
-  expect(bareSource).toContain("return <Outlet />;");
+  expect(bareSource).toContain("<ProjectCodeHistoryTitle />");
+  expect(bareSource).toContain("<Outlet />");
+  expect(bareSource).toContain(
+    '<title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(bareSource).toContain("projectSearchScope={projectSearchScope}");
   expect(bareSource).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
   expect(bareSource).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
@@ -425,6 +434,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).not.toMatch(/<a(?:\s|>)/u);
   expect(bareSource).not.toContain("</a>");
   expect(bareSource).not.toMatch(/\bdocument\./u);
+  expect(bareSource).not.toContain("globalThis.document");
+  expect(bareSource).not.toMatch(/useEffect[\s\S]*document\.title/u);
+  expect(bareSource).not.toMatch(/document\.title[\s\S]*=/u);
   expect(bareSource).not.toContain("addEventListener");
   expect(bareSource).not.toContain("classList");
   expect(bareSource).not.toContain("style.display");
