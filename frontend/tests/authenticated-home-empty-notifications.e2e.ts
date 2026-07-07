@@ -429,6 +429,8 @@ test("shared shell logo keeps legacy navbar link with createLink host ownership"
 });
 
 test("authenticated home route has no generic LegacyInternalLink adapter", () => {
+  const indexRouteSource = readFileSync("src/routes/index.tsx", "utf8");
+  const notificationsRouteSource = readFileSync("src/routes/notifications.tsx", "utf8");
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const legacySources = {
     footer: readFileSync("../yona-original/app/views/common/footer.scala.html", "utf8"),
@@ -442,9 +444,11 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
       "../yona-original/app/views/index/partial_notifications.scala.html",
       "utf8",
     ),
+    layout: readFileSync("../yona-original/app/views/layout.scala.html", "utf8"),
     siteLayout: readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8"),
     usermenu: readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8"),
   };
+  const fullHomeRouteSources = `${indexRouteSource}\n${notificationsRouteSource}`;
 
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("as never");
@@ -459,6 +463,12 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain(["forward", "Ref"].join(""));
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
+  expect(fullHomeRouteSources).not.toContain("document.title");
+  expect(fullHomeRouteSources).not.toContain("globalThis.document");
+  expect(fullHomeRouteSources).not.toContain("window.document");
+  expect(fullHomeRouteSources).not.toMatch(/useEffect[\s\S]{0,120}title/u);
+  expect(indexRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
+  expect(notificationsRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toMatch(/<a[\s>]/u);
   expect(routeSource).not.toContain("document.dispatchEvent");
@@ -498,6 +508,9 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(legacySources.index).toContain("@views.html.index.notifications(currentUser)");
   expect(legacySources.notifications).toContain("@siteLayout(utils.Config.getSiteName");
   expect(legacySources.notifications).toContain("@partial_notifications(0, 20)");
+  expect(legacySources.siteLayout).toContain("@layout(Messages(title))");
+  expect(legacySources.layout).toContain('@titleArray = @{title.split(" \\\\|:\\\\| ")}');
+  expect(legacySources.layout).toContain("<title>@titleArray(0)</title>");
   expect(legacySources.partialNotifications).toContain('data-toggle="learnmore"');
   expect(legacySources.partialNotifications).toContain('id="notification-more"');
   expect(legacySources.navbar).toContain("@common.usermenu()");
@@ -543,6 +556,14 @@ test("authenticated home empty notifications matches legacy index notifications 
   await mockAuthenticatedEmptyNotifications(page);
 
   await page.goto(`${basePath}/`);
+  await expect(page).toHaveTitle("Yona");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .evaluateAll((titles) => titles.map((title) => title.textContent ?? "")),
+    )
+    .toContain("Yona");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
   await expect(page.locator(".warning-none")).toContainText("No notification");
@@ -1203,6 +1224,14 @@ test("direct notifications route matches legacy Application.notifications empty 
   await mockAuthenticatedEmptyNotifications(page);
 
   await page.goto(`${basePath}/notifications`);
+  await expect(page).toHaveTitle("Yona");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .evaluateAll((titles) => titles.map((title) => title.textContent ?? "")),
+    )
+    .toContain("Yona");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
   await expect(page.locator(".warning-none")).toContainText("No notification");

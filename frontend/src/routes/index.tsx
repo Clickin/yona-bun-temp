@@ -24,5 +24,10 @@ function IndexRoute() {
         ? "user.verification.mail.sent"
         : "";
 
-  return <HomeRouteScreen flashMessageKey={flashKey} runtimeConfig={runtimeConfig} />;
+  return (
+    <>
+      <title>{runtimeConfig.siteName ?? "Yona"}</title>
+      <HomeRouteScreen flashMessageKey={flashKey} runtimeConfig={runtimeConfig} />
+    </>
+  );
 }
