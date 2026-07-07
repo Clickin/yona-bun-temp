@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { LegacyI18nProvider } from "../../../i18n";
+import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { type RuntimeConfig } from "../../../runtime-config";
 import { readDirectIssueFormOptions } from "../../../auth-workspace-client";
@@ -37,6 +37,7 @@ function DirectIssueFormProjectScreen({
   mine: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t } = useLegacyMessages();
   const directOptionsQuery = useQuery({
     queryFn: () =>
       readDirectIssueFormOptions(runtimeConfig, {
@@ -57,14 +58,17 @@ function DirectIssueFormProjectScreen({
 
   return (
     <SiteLayoutShell projectSearchScope={selectedProject} runtimeConfig={runtimeConfig}>
-      <ProjectIssueFormProjectScreen
-        initialBodyMarkdown={bodyMarkdown}
-        ownerName={selectedProject.ownerName}
-        projectName={selectedProject.projectName}
-        referCommentId={referCommentId || commentId}
-        runtimeConfig={runtimeConfig}
-        showSubtaskOptionOnMount
-      />
+      <>
+        <title>{`${t("title.newIssue")} - ${selectedProject.ownerName}/${selectedProject.projectName}`}</title>
+        <ProjectIssueFormProjectScreen
+          initialBodyMarkdown={bodyMarkdown}
+          ownerName={selectedProject.ownerName}
+          projectName={selectedProject.projectName}
+          referCommentId={referCommentId || commentId}
+          runtimeConfig={runtimeConfig}
+          showSubtaskOptionOnMount
+        />
+      </>
     </SiteLayoutShell>
   );
 }
