@@ -214,10 +214,42 @@ test("project import form mirrors legacy auth, owner, and menu dependencies", as
   await page.goto(`${basePath}/_import?owner=admin`);
 
   await expect(page.locator("#repoAuth")).toBeHidden();
+  await page.locator("#importGit .actions button.ybtn-primary").click();
+  await expect(page.locator("#url + .popover .popover-content")).toHaveText(
+    "Please type the Git repository URL.",
+  );
+  await expect(page.locator("#project-name + .popover .popover-content")).toHaveText(
+    "Enter name in alphabetnumerical or symbol characters(_-.)",
+  );
   await page.locator("#useRepoAuth").check();
+  await expect(page.locator("#url + .popover")).toHaveCount(0);
+  await expect(page.locator("#project-name + .popover")).toHaveCount(0);
   await expect(page.locator("#repoAuth")).toBeVisible();
   await expect(page.locator("#repoAuth input[name='authId']")).toBeEnabled();
   await expect(page.locator("#repoAuth input[name='authPw']")).toBeEnabled();
+  const repoAuthBoxes = await page.evaluate(() => {
+    const form = document.querySelector("#importGit");
+    const checkbox = document.querySelector("label.checkbox");
+    const repoAuth = document.querySelector("#repoAuth");
+    if (!form || !checkbox || !repoAuth) return null;
+    const f = form.getBoundingClientRect();
+    const c = checkbox.getBoundingClientRect();
+    const r = repoAuth.getBoundingClientRect();
+    return {
+      checkboxBottom: c.bottom,
+      formLeft: f.left,
+      formRight: f.right,
+      repoAuthBottom: r.bottom,
+      repoAuthLeft: r.left,
+      repoAuthRight: r.right,
+      repoAuthTop: r.top,
+    };
+  });
+  expect(repoAuthBoxes).not.toBeNull();
+  expect(repoAuthBoxes!.repoAuthTop).toBeGreaterThanOrEqual(repoAuthBoxes!.checkboxBottom);
+  expect(repoAuthBoxes!.repoAuthLeft).toBeGreaterThanOrEqual(repoAuthBoxes!.formLeft);
+  expect(repoAuthBoxes!.repoAuthRight).toBeLessThanOrEqual(repoAuthBoxes!.formRight);
+  expect(repoAuthBoxes!.repoAuthBottom).toBeGreaterThan(repoAuthBoxes!.repoAuthTop);
   await page.locator("#useRepoAuth").uncheck();
   await expect(page.locator("#repoAuth")).toBeHidden();
   await expect(page.locator("#repoAuth input[name='authId']")).toBeDisabled();

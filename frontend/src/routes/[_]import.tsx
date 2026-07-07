@@ -266,6 +266,8 @@ function ProjectImportScreen({
                       id="useRepoAuth"
                       checked={usesRepoAuth}
                       onChange={(event) => {
+                        setUrlError(null);
+                        setProjectNameError(null);
                         setRepoAuthChanged(true);
                         setUsesRepoAuth(event.currentTarget.checked);
                       }}
