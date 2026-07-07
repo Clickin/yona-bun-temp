@@ -7,6 +7,7 @@ import {
   classifySecretBootstrapResponse,
   commandMatchesLayout,
   commandMatchesPort,
+  rewriteApplicationConf,
 } from "./legacy-localhost.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -103,5 +104,35 @@ test("legacy-localhost requires the managed pid to match the requested port", ()
   assert.equal(
     commandMatchesPort("/usr/bin/java -Dhttp.port=19100 -Dyona.data=/tmp/yona", 9000),
     false,
+  );
+});
+
+test("legacy-localhost rewrites H2 config to keep the DB open at VM shutdown", () => {
+  const rewritten = rewriteApplicationConf(
+    ' db.default.url="jdbc:h2:file:/tmp/yona;MODE=PostgreSQL;MV_STORE=FALSE;AUTO_SERVER=TRUE"\n',
+    {
+      dbDir: "/Users/example/repo/.agent/legacy-localhost/instances/default/data/db",
+    },
+  );
+
+  assert.match(
+    rewritten,
+    /jdbc:h2:file:\/Users\/example\/repo\/\.agent\/legacy-localhost\/instances\/default\/data\/db\/yona;MODE=PostgreSQL;MV_STORE=FALSE;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE/u,
+  );
+});
+
+test("legacy-localhost preserves an existing rotated application secret on force-config rewrites", () => {
+  const rewritten = rewriteApplicationConf(
+    'application.secret="default-secret"\n db.default.url="jdbc:h2:file:/tmp/yona;MODE=PostgreSQL"\n',
+    {
+      dbDir: "/Users/example/repo/.agent/legacy-localhost/instances/default/data/db",
+    },
+    'application.secret="rotated-secret"\n db.default.url="jdbc:h2:file:/old/yona;MODE=PostgreSQL"\n',
+  );
+
+  assert.match(rewritten, /application\.secret="rotated-secret"/u);
+  assert.match(
+    rewritten,
+    /jdbc:h2:file:\/Users\/example\/repo\/\.agent\/legacy-localhost\/instances\/default\/data\/db\/yona;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE/u,
   );
 });

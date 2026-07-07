@@ -100,13 +100,19 @@ and watcher product flows and records the result in
 4. writes `data/conf/application.conf` from the release jar's bundled
    `application.conf.default`
 5. rewrites the bundled H2 JDBC URL so the DB file lives under the instance's
-   own `data/db/yona` path instead of the release install root
+   own `data/db/yona` path instead of the release install root, and appends
+   `DB_CLOSE_ON_EXIT=FALSE` so the embedded H2 database does not close during
+   JVM shutdown hooks
 6. writes `application-logger.xml` and `social-login.conf` into the same
    `YONA_DATA/conf` tree
 
 The bundled release jar already contains an H2-oriented
 `application.conf.default`, so we do not need to keep a separate repo-local
 fork of the legacy config just to run the embedded distribution.
+
+When `prepare --force-config` rewrites the file for a managed instance, the
+harness now preserves an already-rotated `application.secret` instead of
+reopening the `/secret` bootstrap flow on top of an existing database.
 
 ## Java 8
 

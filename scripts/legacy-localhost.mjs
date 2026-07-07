@@ -354,10 +354,17 @@ async function prepare(layout, options) {
   const applicationConfPath = resolve(layout.confDir, "application.conf");
   const loggerConfPath = resolve(layout.confDir, "application-logger.xml");
   const socialLoginConfPath = resolve(layout.confDir, "social-login.conf");
+  const existingApplicationConf = existsSync(applicationConfPath)
+    ? readFileSync(applicationConfPath, "utf8")
+    : null;
 
   if (forceConfig || !existsSync(applicationConfPath)) {
     const source = readBundledFile(layout, "application.conf.default");
-    writeFileSync(applicationConfPath, rewriteApplicationConf(source, layout), "utf8");
+    writeFileSync(
+      applicationConfPath,
+      rewriteApplicationConf(source, layout, existingApplicationConf),
+      "utf8",
+    );
   }
   if (forceConfig || !existsSync(loggerConfPath)) {
     writeFileSync(
@@ -1670,12 +1677,18 @@ async function pageIncludesAllTexts(page, texts) {
 }
 
 async function assertPageContainsTexts(page, pathLabel, texts) {
-  const body = normalizeText(await page.locator("body").innerText());
-  for (const text of texts) {
-    if (!body.includes(normalizeText(text))) {
-      throw new Error(`Expected ${pathLabel} to contain "${text}".`);
+  let body = "";
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    body = normalizeText(await page.locator("body").innerText());
+    const missing = texts.find((text) => !body.includes(normalizeText(text)));
+    if (!missing) {
+      return;
     }
+    await page.waitForTimeout(250);
   }
+  const missing = texts.find((text) => !body.includes(normalizeText(text)));
+  throw new Error(`Expected ${pathLabel} to contain "${missing}".`);
 }
 
 function normalizeText(value) {
@@ -1763,12 +1776,33 @@ function readBundledFile(layout, name) {
   return result.stdout;
 }
 
-function rewriteApplicationConf(source, layout) {
+export function rewriteApplicationConf(source, layout, existingSource = null) {
   const dbPath = resolve(layout.dbDir, "yona");
-  return source.replace(
-    /db\.default\.url="jdbc:h2:file:[^";]+(;[^"]*)"/,
-    `db.default.url="jdbc:h2:file:${dbPath}$1"`,
-  );
+  const rewritten = source.replace(/db\.default\.url="jdbc:h2:file:[^"]*"/, (line) => {
+    const prefix = 'db.default.url="jdbc:h2:file:';
+    const current = line.slice(prefix.length, -1);
+    const paramsIndex = current.indexOf(";");
+    const suffix = paramsIndex >= 0 ? current.slice(paramsIndex) : "";
+    const normalizedSuffix = suffix.includes("DB_CLOSE_ON_EXIT=")
+      ? suffix
+      : `${suffix};DB_CLOSE_ON_EXIT=FALSE`;
+    return `${prefix}${dbPath}${normalizedSuffix}"`;
+  });
+  const existingSecret = extractApplicationSecret(existingSource);
+  if (existingSecret && existingSecret !== defaultSecret) {
+    return rewritten.replace(
+      /application\.secret="[^"]*"/,
+      `application.secret="${existingSecret}"`,
+    );
+  }
+  return rewritten;
+}
+
+function extractApplicationSecret(source) {
+  if (!source) {
+    return null;
+  }
+  return /application\.secret="([^"]+)"/.exec(source)?.[1] ?? null;
 }
 
 function ensureJava8Home(layout, options = {}) {
