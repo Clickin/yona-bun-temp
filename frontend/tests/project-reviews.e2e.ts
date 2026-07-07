@@ -296,6 +296,16 @@ test("project reviews export source uses TanStack Link href", () => {
   expect(exportSource).not.toContain("<a");
 });
 
+test("project reviews title source renders legacy projectLayout title", () => {
+  const source = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
+
+  expect(source).toContain(
+    '<title>{`${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(source).not.toContain("useProjectReviewsDocumentTitle");
+  expect(source).not.toContain("document.title");
+});
+
 async function mockProjectReviews(page: Page) {
   const requests: URL[] = [];
   await page.route("**/api/v1/session", async (route) => {

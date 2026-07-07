@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { type CSSProperties, type FormEvent, useEffect } from "react";
+import { type CSSProperties, type FormEvent } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectReviewsQueryOptions,
@@ -96,7 +96,7 @@ function ProjectReviewsRoute() {
 function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
-  useProjectReviewsDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -125,39 +125,24 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
   };
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="review" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectReviewsBody
-        project={projectQuery.data}
-        reviews={reviewsQuery.data}
-        runtimeConfig={runtimeConfig}
-        search={search}
-      />
-    </SiteLayoutShell>
+    <>
+      <title>{`${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu
+          active="review"
+          basePath={runtimeConfig.basePath}
+          project={projectQuery.data}
+        />
+        <ProjectReviewsBody
+          project={projectQuery.data}
+          reviews={reviewsQuery.data}
+          runtimeConfig={runtimeConfig}
+          search={search}
+        />
+      </SiteLayoutShell>
+    </>
   );
-}
-
-function useProjectReviewsDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const reviewMenuTitle = t("menu.review");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${projectName} - ${reviewMenuTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, reviewMenuTitle, runtimeConfig.siteName]);
 }
 
 function ProjectReviewsBody({
