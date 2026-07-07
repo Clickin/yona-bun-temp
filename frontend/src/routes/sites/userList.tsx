@@ -111,6 +111,11 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     setDeleteUser(user);
     setDeleteModalClosed(false);
   };
+  const dismissPasswordResetAlert = (event: MouseEvent<HTMLButtonElement>, loginId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    clearPasswordResetAlert(loginId);
+  };
   const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateSiteUserDeleteModalButtonClick(event);
     closeDeleteModal();
@@ -284,6 +289,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     onToggleClick={(loginId, action) =>
                       toggleUserMutation.mutate({ action, loginId })
                     }
+                    onDismissPasswordResetAlert={dismissPasswordResetAlert}
                     passwordReset={passwordResetByLoginId[user.loginId]}
                     state={search.state}
                     user={user}
@@ -565,6 +571,7 @@ function UserStateTabs({
 
 function UserListItem({
   onDeleteClick,
+  onDismissPasswordResetAlert,
   onResetPasswordClick,
   onToggleClick,
   passwordReset,
@@ -574,6 +581,7 @@ function UserListItem({
   user,
 }: {
   onDeleteClick: (event: MouseEvent<HTMLButtonElement>, user: SiteUser) => void;
+  onDismissPasswordResetAlert: (event: MouseEvent<HTMLButtonElement>, loginId: string) => void;
   onResetPasswordClick: (loginId: string) => void;
   onToggleClick: (loginId: string, action: UserToggleAction) => void;
   passwordReset?: SiteUserPasswordResetResponse | "pending";
@@ -693,9 +701,16 @@ function UserListItem({
           >
             {t("button.delete")}
           </button>
-          {passwordReset === "pending" ? <RequestWaitingAlert /> : null}
+          {passwordReset === "pending" ? (
+            <RequestWaitingAlert
+              onDismiss={(event) => onDismissPasswordResetAlert(event, user.loginId)}
+            />
+          ) : null}
           {passwordReset && passwordReset !== "pending" ? (
-            <PasswordResetAlert newPassword={passwordReset.newPassword ?? ""} />
+            <PasswordResetAlert
+              newPassword={passwordReset.newPassword ?? ""}
+              onDismiss={(event) => onDismissPasswordResetAlert(event, user.loginId)}
+            />
           ) : null}
         </div>
       ) : (
@@ -727,11 +742,17 @@ function isDefaultUserAvatar(avatarUrl: string) {
   );
 }
 
-function PasswordResetAlert({ newPassword }: { newPassword: string }) {
+function PasswordResetAlert({
+  newPassword,
+  onDismiss,
+}: {
+  newPassword: string;
+  onDismiss: (event: MouseEvent<HTMLButtonElement>) => void;
+}) {
   const { t } = useLegacyMessages();
   return (
     <div className="alert alert-success">
-      <button type="button" className="close" data-dismiss="alert">
+      <button type="button" className="close" data-dismiss="alert" onClick={onDismiss}>
         &times;
       </button>
       <h4>
@@ -741,10 +762,14 @@ function PasswordResetAlert({ newPassword }: { newPassword: string }) {
   );
 }
 
-function RequestWaitingAlert() {
+function RequestWaitingAlert({
+  onDismiss,
+}: {
+  onDismiss: (event: MouseEvent<HTMLButtonElement>) => void;
+}) {
   return (
     <div className="alert alert-fail">
-      <button type="button" className="close" data-dismiss="alert">
+      <button type="button" className="close" data-dismiss="alert" onClick={onDismiss}>
         &times;
       </button>
       <h4>{"sending requestHeader" + "..."}</h4>

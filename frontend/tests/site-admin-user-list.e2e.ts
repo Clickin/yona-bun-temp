@@ -786,6 +786,45 @@ test("site admin user actions follow legacy reset-password alert flow", async ({
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 
+test("site admin user reset-password alerts dismiss through route-owned state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockSiteUsers(page, { resetDelayMs: 500 });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList`);
+  await installAlertDismissBridgeAudit(page);
+  await rememberSpaMarker(page, "site-user-reset-alert-dismiss");
+
+  await page.locator('[data-toggle="reset-password"]').click();
+  const waitingAlert = page.locator(".action-buttons .alert-fail");
+  await expect(waitingAlert).toHaveText("×sending requestHeader...");
+  await expect(waitingAlert.locator(".close")).toHaveAttribute("data-dismiss", "alert");
+  expect(await dispatchCancelableClick(waitingAlert.locator(".close"))).toBe(false);
+  await expect(waitingAlert).toHaveCount(0);
+  await expect.poll(() => alertDismissBridgeAuditHits(page)).toBe(0);
+  expect(await spaMarker(page)).toBe("site-user-reset-alert-dismiss");
+
+  await expect(page.locator(".action-buttons .alert-success h4")).toHaveText(
+    "New password: reset-1234",
+  );
+  const successAlert = page.locator(".action-buttons .alert-success");
+  await expect(successAlert).toHaveClass("alert alert-success");
+  await expect(successAlert.locator(".close")).toHaveAttribute("data-dismiss", "alert");
+  expect(await dispatchCancelableClick(successAlert.locator(".close"))).toBe(false);
+  await expect(successAlert).toHaveCount(0);
+  await expect.poll(() => alertDismissBridgeAuditHits(page)).toBe(0);
+  expect(await spaMarker(page)).toBe("site-user-reset-alert-dismiss");
+});
+
 test("site admin user delete forbidden reloads legacy page", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -848,6 +887,34 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");
   expect(modalSource).not.toContain("addEventListener(");
+});
+
+test("site admin user reset-password alert source is route-owned", () => {
+  const source = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
+  const alertSource = source.slice(
+    source.indexOf("const dismissPasswordResetAlert"),
+    source.indexOf("function legacyUserMutationPath"),
+  );
+
+  expect(alertSource).toContain(
+    "const dismissPasswordResetAlert = (event: MouseEvent<HTMLButtonElement>, loginId: string) => {",
+  );
+  expect(alertSource).toContain("event.preventDefault();");
+  expect(alertSource).toContain("event.stopPropagation();");
+  expect(alertSource).toContain("clearPasswordResetAlert(loginId);");
+  expect(alertSource).toContain("onDismissPasswordResetAlert={dismissPasswordResetAlert}");
+  expect(alertSource).toContain("<RequestWaitingAlert");
+  expect(alertSource).toContain("<PasswordResetAlert");
+  expect(alertSource).toContain('data-dismiss="alert"');
+  expect(alertSource).toContain("onClick={onDismiss}");
+  expect(alertSource).not.toContain("document.");
+  expect(alertSource).not.toContain("addEventListener(");
+  expect(alertSource).not.toContain("querySelector");
+  expect(alertSource).not.toContain("classList");
+  expect(alertSource).not.toContain("style.display");
+  expect(alertSource).not.toContain("innerHTML");
+  expect(alertSource).not.toContain("outerHTML");
+  expect(alertSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("site admin user reset password failure uses legacy alert text", async ({ page }) => {
@@ -979,6 +1046,7 @@ async function mockSiteUsers(
   options: {
     avatarUrl?: string;
     deleteForbidden?: boolean;
+    resetDelayMs?: number;
     resetFails?: boolean;
     resetLogicalFailure?: boolean;
   } = {},
@@ -1036,6 +1104,9 @@ async function mockSiteUsers(
   await page.route("**/api/v1/site/users/*/password/reset", async (route) => {
     const loginId = new URL(route.request().url()).pathname.split("/").at(-3) ?? "";
     requests.resetLoginIds.push(loginId);
+    if (options.resetDelayMs) {
+      await new Promise((resolve) => setTimeout(resolve, options.resetDelayMs));
+    }
     if (options.resetFails) {
       await route.fulfill({
         contentType: "application/json",
@@ -1515,6 +1586,29 @@ async function siteUserDeleteModalBridgeAuditHits(page: Page) {
             };
           }
       ).__siteUserDeleteModalBridgeAudit ?? { documentClicks: [], getElementById: [] },
+  );
+}
+
+async function installAlertDismissBridgeAudit(page: Page) {
+  await page.evaluate(() => {
+    const auditWindow = window as Window &
+      typeof globalThis & { __siteUserAlertDismissBridgeAudit?: number };
+    auditWindow.__siteUserAlertDismissBridgeAudit = 0;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('[data-dismiss="alert"]')) {
+        auditWindow.__siteUserAlertDismissBridgeAudit =
+          (auditWindow.__siteUserAlertDismissBridgeAudit ?? 0) + 1;
+      }
+    });
+  });
+}
+
+async function alertDismissBridgeAuditHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as Window & typeof globalThis & { __siteUserAlertDismissBridgeAudit?: number })
+        .__siteUserAlertDismissBridgeAudit ?? 0,
   );
 }
 
