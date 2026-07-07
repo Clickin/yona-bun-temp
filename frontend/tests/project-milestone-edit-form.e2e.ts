@@ -14,6 +14,10 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
 
   await page.goto(`${basePath}/admin/sample/milestone/5/editform`);
   await expect(page.locator("#milestone-form")).toBeVisible();
+  await expect(page).toHaveTitle("Edit milestone - admin/sample");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "Edit milestone - admin/sample",
+  );
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("#milestone-open")).toBeChecked();
   await expect(page.locator("#dueDate")).toHaveValue("2026-08-31");
@@ -298,6 +302,13 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).toContain("tabIndex={2}");
   expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
   expect(routeSource).toContain("function projectSearchScopeOrganizationName");
+  expect(routeSource).toContain(
+    '<title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(routeSource).not.toMatch(
+    /document\.title|window\.document\.title|window\.parent\.document\.title|globalThis\.document|globalThis\["document"\]\.title/u,
+  );
+  expect(routeSource).not.toMatch(/useEffect\(\s*\(\)\s*=>\s*\{[^}]*title/u);
   expect(routeSource).not.toContain('setAttribute("tabindex"');
   expect(routeSource).not.toContain("tabIndexValue");
   expect(routeSource).not.toContain('t("validation.required")');

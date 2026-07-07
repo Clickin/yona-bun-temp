@@ -33,6 +33,7 @@ function ProjectMilestoneEditFormRoute() {
 }
 
 function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const numericMilestoneId = Number(milestoneId) || 0;
   const projectQuery = useQuery(
@@ -42,9 +43,8 @@ function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: Runt
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
     queryKey: ["project", ownerName, projectName, "milestones", numericMilestoneId],
   });
-
   if (!projectQuery.data || !milestoneQuery.data?.milestone) {
-    return null;
+    return <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>;
   }
 
   const projectSearchScope = {
@@ -55,6 +55,7 @@ function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: Runt
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="milestone"
