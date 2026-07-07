@@ -253,13 +253,6 @@ function RootResetShell() {
         return;
       }
 
-      const dismissAlert = target?.closest<HTMLElement>('[data-dismiss="alert"]');
-      if (dismissAlert) {
-        dismissAlert.closest<HTMLElement>(".alert")?.remove();
-        event.preventDefault();
-        return;
-      }
-
       const toggle = target?.closest<HTMLElement>('[data-toggle="dropdown"]');
       if (toggle) {
         const container = toggle.closest(".btn-group, .dropdown");

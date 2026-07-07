@@ -146,6 +146,31 @@ test("root shell does not own route dropdown selection mutation", async () => {
   expect(ROOT_ROUTE_SOURCE).not.toContain("container.append(hiddenInput)");
 });
 
+test("root shell does not own route alert dismissal", async ({ page }) => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-dismiss="alert"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("dismissAlert");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('closest<HTMLElement>(".alert")');
+  expect(ROOT_ROUTE_SOURCE).toContain('[data-dismiss="modal"]');
+  expect(ROOT_ROUTE_SOURCE).toContain('[data-toggle="modal"]');
+  expect(ROOT_ROUTE_SOURCE).toContain('[data-toggle="dropdown"]');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await page.locator(".page-wrap-outer").evaluate((container) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `<div id="route-owned-alert-fixture" class="alert alert-success">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <h4>Route-owned alert</h4>
+      </div>`,
+    );
+  });
+
+  await page.locator('#route-owned-alert-fixture [data-dismiss="alert"]').click();
+  await expect(page.locator("#route-owned-alert-fixture")).toHaveCount(1);
+});
+
 test("root shell owns login dialog state without delegated document modal mutation", async () => {
   expect(ROOT_ROUTE_SOURCE).not.toContain("handleDocumentSubmit");
   expect(ROOT_ROUTE_SOURCE).not.toContain('document.querySelector<HTMLElement>("#loginDialog")');
