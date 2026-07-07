@@ -87,6 +87,12 @@ function ProjectCodeCompareScreen({
 
   return (
     <>
+      <ProjectCodeCompareTitle
+        compare={compareQuery.data}
+        ownerName={ownerName}
+        projectName={projectName}
+        revisionRange={revisionRange}
+      />
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeCompareBody
@@ -97,6 +103,22 @@ function ProjectCodeCompareScreen({
       />
     </>
   );
+}
+
+function ProjectCodeCompareTitle({
+  compare,
+  ownerName,
+  projectName,
+  revisionRange,
+}: {
+  compare: CodeCompareResponse;
+  ownerName: string;
+  projectName: string;
+  revisionRange: string;
+}) {
+  const { commitA, commitB } = compareCommitIds(compare, revisionRange);
+
+  return <title>{`${commitA}..${commitB} - ${ownerName}/${projectName}`}</title>;
 }
 
 function ProjectCodeCompareBody({
@@ -111,8 +133,8 @@ function ProjectCodeCompareBody({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const commitA = compare.commitA?.commitId || compare.revA;
-  const commitB = compare.commitB?.commitId || compare.revB;
+  const { revisionRange } = Route.useParams();
+  const { commitA, commitB } = compareCommitIds(compare, revisionRange);
   const vcs = typeof project.vcs === "string" ? project.vcs.toUpperCase() : "";
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
 
@@ -377,6 +399,14 @@ function isNullDiffPath(path: string) {
 
 function shortenCommitId(commitId: string) {
   return commitId.length < 7 ? commitId : commitId.slice(0, 7);
+}
+
+function compareCommitIds(compare: CodeCompareResponse, revisionRange: string) {
+  const [rangeA = "", rangeB = ""] = revisionRange.split("..");
+  return {
+    commitA: compare.commitA?.commitId || compare.revA || rangeA,
+    commitB: compare.commitB?.commitId || compare.revB || rangeB,
+  };
 }
 
 function projectTo(ownerName: string, projectName: string, ...parts: string[]) {

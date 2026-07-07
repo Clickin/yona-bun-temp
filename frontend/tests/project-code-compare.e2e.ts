@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ROUTE_SOURCE = readFileSync(
+  "src/routes/$ownerName/$projectName/compare/$revisionRange.tsx",
+  "utf8",
+);
 
 const EXPECTED_COMPARE_BODY = `
 <div class="project-page-wrap"><div class="code-browse-wrap"><p class="commitInfo"><strong class="commitId">@abcdef1234567890..1234567890abcdef</strong></p><div class="alert">No changes</div></div></div>
@@ -28,6 +34,7 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
   await mockProjectCompare(page, compareRequests);
 
   await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
+  await expect(page).toHaveTitle("abcdef1234567890..1234567890abcdef - admin/sample");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".commitInfo .commitId")).toHaveText(
     "@abcdef1234567890..1234567890abcdef",
@@ -36,6 +43,19 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
   expect(await canonicalize(page, ".project-page-wrap")).toEqual(
     await canonicalizeHtml(page, EXPECTED_COMPARE_BODY),
   );
+});
+
+test("project code compare route uses React-rendered legacy projectLayout title metadata", () => {
+  expect(ROUTE_SOURCE).toContain("<ProjectCodeCompareTitle");
+  expect(ROUTE_SOURCE).toContain(
+    "return <title>{`${commitA}..${commitB} - ${ownerName}/${projectName}`}</title>;",
+  );
+  expect(ROUTE_SOURCE).toContain("commitA: compare.commitA?.commitId || compare.revA || rangeA");
+  expect(ROUTE_SOURCE).toContain("commitB: compare.commitB?.commitId || compare.revB || rangeB");
+  expect(ROUTE_SOURCE).not.toContain("document.title");
+  expect(ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(ROUTE_SOURCE).not.toMatch(/\buseEffect\b[\s\S]*?\btitle\b/u);
+  expect(ROUTE_SOURCE).not.toMatch(/\btitle\b[\s\S]*?\buseEffect\b/u);
 });
 
 test("project code compare uses legacy project-scoped GNB search shell", async ({ page }) => {
