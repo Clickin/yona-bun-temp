@@ -52,19 +52,36 @@ export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber"
 
 function ProjectPostDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ ownerName, projectName }}
-          runtimeConfig={runtimeConfig}
-        >
-          <ProjectPostDetailScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectPostDetailShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+
+  if (!projectQuery.data) {
+    return null;
+  }
+
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectPostDetailScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
   );
 }
 
@@ -83,13 +100,16 @@ function useLegacyPostDetailDocumentTitle(runtimeConfig: RuntimeConfig, postTitl
   }, [postTitle, runtimeConfig.siteName]);
 }
 
-function ProjectPostDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectPostDetailScreen({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, postNumber, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
   const postQuery = useQuery(
     readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
   );
@@ -98,20 +118,20 @@ function ProjectPostDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     !isEditChildRoute && postQuery.data ? stringField(postQuery.data.title) : null,
   );
 
-  if (!projectQuery.data || !postQuery.data) {
+  if (!postQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
       {isEditChildRoute ? (
         <Outlet />
       ) : (
         <ProjectPostDetailBody
           post={postQuery.data}
-          project={projectQuery.data}
+          project={project}
           runtimeConfig={runtimeConfig}
         />
       )}
@@ -1641,6 +1661,14 @@ function ctrlKey() {
 
 function siteSearchKeys() {
   return navigator.platform.toLowerCase().includes("mac") ? ["CTRL", "ALT", "S"] : ["ALT", "S"];
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function stringField(value: unknown, fallback = "") {

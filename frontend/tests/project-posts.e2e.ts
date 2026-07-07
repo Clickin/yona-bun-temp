@@ -985,7 +985,10 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
   );
-  expect(routeSource).toContain("projectSearchScope={{ ownerName, projectName }}");
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
   expect(routeSource).toContain("function useLegacyPostDetailDocumentTitle");
   expect(routeSource).toContain("document.title = postTitle;");
 
@@ -1034,6 +1037,110 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     titleFontSize: "18px",
     watchButtonHeight: 30,
   });
+});
+
+test("project board detail renders protected org-owned localhost shell state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "default", {
+    __ownerName: "weblabs",
+    __projectName: "portal",
+    __projectOverrides: {
+      backgroundImageUrl: "/assets/images/project_default.jpg",
+      id: 2,
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/post/3`);
+  await expect(page).toHaveTitle("Release note");
+
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page
+        .locator(".gnb-search-form [data-toggle='search-scope']")
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ]);
+
+  const beforeUrl = page.url();
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page).toHaveURL(beforeUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(beforeUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page).toHaveURL(beforeUrl);
+
+  await expect(page.locator("#post-3 form")).toHaveAttribute(
+    "action",
+    `${basePath}/api/v1/projects/weblabs/portal/posts/3/content`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
+
+  expect(await boardDetailMetrics(page)).toMatchObject({
+    boardTopAtOrBelowMenu: true,
+    deleteUri: `${basePath}/weblabs/portal/post/3`,
+    gnbClassName: "gnb-outer project-header",
+    gnbSearchAction: `${basePath}/weblabs/portal/search`,
+    gnbSearchScopeActions: [
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ],
+    gnbSearchScopeTitle: "This Project",
+    newPostHref: `${basePath}/weblabs/portal/postform`,
+    projectHeaderProjectName: "portal",
+    projectMenuActiveCount: 1,
+    projectMenuActiveText: "Board",
+    scopeBottomWithinNavbar: true,
+    scopeTopWithinNavbar: true,
+    searchBottomWithinNavbar: true,
+    searchLeftWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+  });
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(routeSource).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
 });
 
 test("project board detail toggles legacy watch state through REST", async ({ page }) => {
