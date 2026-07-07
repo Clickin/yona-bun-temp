@@ -138,6 +138,9 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("help/markdown.scala.html");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("legacyMarkdownHelpHtml");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("useProjectBoardCreateFormDocumentTitle");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("document.title");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("document.");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("classList");
@@ -145,8 +148,9 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(POSTFORM_ROUTE_SOURCE).toContain("router.history.back()");
-  expect(POSTFORM_ROUTE_SOURCE).toContain('const screenTitle = t("post.new")');
-  expect(POSTFORM_ROUTE_SOURCE).not.toContain("doc.title = `New -");
+  expect(POSTFORM_ROUTE_SOURCE).toContain(
+    '<title>{`${t("post.new")} - ${ownerName}/${projectName}`}</title>',
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const postRequests: unknown[] = [];

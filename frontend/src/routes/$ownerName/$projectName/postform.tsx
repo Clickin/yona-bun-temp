@@ -52,7 +52,7 @@ function ProjectBoardCreateFormRoute() {
 
 function ProjectBoardCreateFormRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectBoardCreateFormDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -65,33 +65,13 @@ function ProjectBoardCreateFormRouteShell({ runtimeConfig }: { runtimeConfig: Ru
     : { ownerName, projectName };
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectBoardCreateFormScreen runtimeConfig={runtimeConfig} />
-    </SiteLayoutShell>
+    <>
+      <title>{`${t("post.new")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectBoardCreateFormScreen runtimeConfig={runtimeConfig} />
+      </SiteLayoutShell>
+    </>
   );
-}
-
-function useProjectBoardCreateFormDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const screenTitle = t("post.new");
-
-  useEffect(() => {
-    const doc = globalThis.document;
-    if (!doc) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    doc.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      doc.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function ProjectBoardCreateFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
