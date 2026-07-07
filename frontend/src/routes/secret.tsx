@@ -124,6 +124,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 
   return (
     <>
+      <title>{welcome}</title>
       <div className="page-wrap-outer">
         <div className="container page-wrap">
           <div className="page">

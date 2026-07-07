@@ -118,6 +118,7 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   });
 
   await page.goto(`${basePath}/secret`);
+  await expect(page).toHaveTitle("Tada! Welcome to Yona!");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
   const actual = await canonicalizeScreenRoots(page);
@@ -496,6 +497,10 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain("legacyRootHref={homeHref}");
   expect(SECRET_ROUTE_SOURCE).toContain('to="/"');
   expect(SECRET_ROUTE_SOURCE).toContain('"loginId"');
+  expect(SECRET_ROUTE_SOURCE).toContain("<title>{welcome}</title>");
+  expect(SECRET_ROUTE_SOURCE).toContain(
+    'lookupLegacyMessage(language, "app.welcome", { args: [siteName] })',
+  );
   expect(SECRET_ROUTE_SOURCE).toContain('error.message === "user.wrongloginId.alert"');
   expect(SECRET_ROUTE_SOURCE).toContain("errors={fieldErrors.loginId}");
   expect(SECRET_ROUTE_SOURCE).toContain('className="logo"');
@@ -520,7 +525,11 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=["']\/(?!\/)/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bdocument\.title\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/document\./u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bwindow\.document\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bglobalThis\.document\b/u);
+  expect(SECRET_ROUTE_SOURCE).not.toMatch(/\buseEffect\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/addEventListener/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/classList/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/style\.display/u);
