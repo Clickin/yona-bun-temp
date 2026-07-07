@@ -1,6 +1,12 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 test.use({ viewport: { width: 1280, height: 720 } });
+
+const VERIFY_ROUTE_SOURCE = readFileSync(
+  "src/routes/verify/$loginId/$verificationCode.tsx",
+  "utf8",
+);
 
 const EXPECTED_VERIFIED_SCREEN = `
 <div class="unsupported hidden">
@@ -87,6 +93,8 @@ test("verification success matches legacy user/verified.scala.html screen DOM", 
   });
   await page.goto(`${basePath}/verify/door/ok-code`);
   await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page.locator("head > title").first()).toHaveText("");
+  await expect(page).toHaveTitle("");
   await page.setViewportSize({ width: 1280, height: 720 });
 
   const actual = await canonicalizeScreenRoots(page);
@@ -139,9 +147,35 @@ test("pending verification renders inside legacy siteLayout shell", async ({ pag
   await page.goto(`${basePath}/verify/door/pending-code`);
 
   await expect(page.locator(".unsupported.hidden")).toHaveCount(1);
+  await expect(page.locator("head > title").first()).toHaveText("");
+  await expect(page).toHaveTitle("");
   await expect(page.locator(".gnb-outer")).toBeVisible();
   await expect(page.locator(".page.full .tag-line-wrap.reset-password")).toContainText("Loading");
   await expect(page.locator(".page-footer-outer")).toBeVisible();
+});
+
+test("verification route title follows legacy empty siteLayout title without DOM mutation", () => {
+  const legacyUserApp = readFileSync("../yona-original/app/controllers/UserApp.java", "utf8");
+  const legacyVerified = readFileSync(
+    "../yona-original/app/views/user/verified.scala.html",
+    "utf8",
+  );
+  const legacySiteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
+  const legacyLayout = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
+
+  expect(legacyUserApp).toContain('return ok(verified.render("", loginId));');
+  expect(legacyUserApp).toContain('return notFound("Invalid verification");');
+  expect(legacyVerified).toContain("@siteLayout(message, utils.MenuType.NONE)");
+  expect(legacySiteLayout).toContain('@layout(Messages(title))("")');
+  expect(legacyLayout).toContain("<title>@titleArray(0)</title>");
+
+  expect(VERIFY_ROUTE_SOURCE).toContain('const legacyBrowserTitle = "";');
+  expect(VERIFY_ROUTE_SOURCE).toContain("<title>{legacyBrowserTitle}</title>");
+  expect(VERIFY_ROUTE_SOURCE.match(/<title>\{legacyBrowserTitle\}<\/title>/g)).toHaveLength(2);
+  expect(VERIFY_ROUTE_SOURCE).not.toContain("document.title");
+  expect(VERIFY_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(VERIFY_ROUTE_SOURCE).not.toContain("window.document");
+  expect(VERIFY_ROUTE_SOURCE).not.toMatch(/use(?:Layout)?Effect[\s\S]*(?:title|document)/u);
 });
 
 test("invalid verification renders legacy plain not-found body", async ({ page }) => {

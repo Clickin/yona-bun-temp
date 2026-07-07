@@ -25,6 +25,7 @@ function VerifyUserRoute() {
 function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { loginId, verificationCode } = Route.useParams();
   const { t } = useLegacyMessages();
+  const legacyBrowserTitle = "";
   const verificationQuery = useQuery({
     queryKey: ["auth", "verify", loginId, verificationCode],
     queryFn: () =>
@@ -41,13 +42,16 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   if (!verificationQuery.data) {
     return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <div className="page full">
-          <div className="center-wrap tag-line-wrap reset-password">
-            <p className="tag-line">{t("common.loading")}</p>
+      <>
+        <title>{legacyBrowserTitle}</title>
+        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+          <div className="page full">
+            <div className="center-wrap tag-line-wrap reset-password">
+              <p className="tag-line">{t("common.loading")}</p>
+            </div>
           </div>
-        </div>
-      </SiteLayoutShell>
+        </SiteLayoutShell>
+      </>
     );
   }
 
@@ -55,15 +59,18 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     typeof verificationQuery.data.loginId === "string" ? verificationQuery.data.loginId : loginId;
 
   return (
-    <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <div className="page full">
-        <div className="center-wrap tag-line-wrap reset-password">
-          <h1 className="title">{t("user.verified")}</h1>
-          <p>{verifiedLoginId}</p>
-          <hr />
-          <p className="tag-line">{t("user.verified.detail")}</p>
+    <>
+      <title>{legacyBrowserTitle}</title>
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <div className="page full">
+          <div className="center-wrap tag-line-wrap reset-password">
+            <h1 className="title">{t("user.verified")}</h1>
+            <p>{verifiedLoginId}</p>
+            <hr />
+            <p className="tag-line">{t("user.verified.detail")}</p>
+          </div>
         </div>
-      </div>
-    </SiteLayoutShell>
+      </SiteLayoutShell>
+    </>
   );
 }
