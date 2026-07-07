@@ -565,6 +565,7 @@ function ProjectIssueFormBody({
                       type="button"
                       id="draft-save-btn"
                       className="ybtn ybtn-watching draft-save-btn"
+                      title={t("button.draft.save.description")}
                       onClick={(event) => {
                         draftSubmitRef.current = true;
                         event.currentTarget.form?.requestSubmit();
