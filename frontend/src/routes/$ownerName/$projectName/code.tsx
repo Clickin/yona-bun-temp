@@ -27,20 +27,46 @@ function ProjectCodeRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectCodeRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectCodeRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const navigate = useNavigate();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+    >
+      <ProjectCodeScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectCodeScreen({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
+  const navigate = useNavigate();
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { ownerName, projectName, branch: "", path: "" }),
   );
@@ -55,15 +81,15 @@ function ProjectCodeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     }
   }, [codeQuery.data, navigate, ownerName, projectName]);
 
-  if (!projectQuery.data || !codeQuery.data) {
+  if (!project || !codeQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectCodeBody code={codeQuery.data} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+      <ProjectCodeBody code={codeQuery.data} project={project} />
     </>
   );
 }
@@ -180,4 +206,13 @@ function stringField(value: unknown, fallback: string) {
 
 function booleanField(value: unknown) {
   return value === true || value === "true";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }
