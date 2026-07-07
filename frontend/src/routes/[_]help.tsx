@@ -57,6 +57,7 @@ function HelpTocRoute() {
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <div onClickCapture={handleLayoutRootClickCapture}>
+          <HelpTocTitle />
           <SiteLayoutShell runtimeConfig={runtimeConfig}>
             <HelpTocScreen runtimeConfig={runtimeConfig} />
           </SiteLayoutShell>
@@ -64,6 +65,11 @@ function HelpTocRoute() {
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
+}
+
+function HelpTocTitle() {
+  const { t } = useLegacyMessages();
+  return <title>{t("title.help")}</title>;
 }
 
 function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

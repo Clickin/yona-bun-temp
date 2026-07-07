@@ -197,6 +197,13 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).toContain(
     'return reactJsx("a", { ...props, ref, href: legacyHomeHref });',
   );
+  expect(HELP_ROUTE_SOURCE).toContain("<HelpTocTitle />");
+  expect(HELP_ROUTE_SOURCE).toContain('return <title>{t("title.help")}</title>;');
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.title\b/);
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/\b(?:globalThis|window)\.document\b/);
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.querySelector\(["'`]title["'`]\)/);
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.head\b/);
+  expect(HELP_ROUTE_SOURCE).not.toMatch(/useEffect[\s\S]{0,200}\btitle\b/);
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
   expect(HELP_ROUTE_SOURCE).toContain('prefixBasePath(runtimeConfig.basePath, "/")');
   expect(HELP_ROUTE_SOURCE).toContain("handleLayoutRootClickCapture");
@@ -233,6 +240,13 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   });
 
   await page.goto(`${basePath}/_help`);
+  await expect(page).toHaveTitle("Help");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.innerHTML),
+  ).toBe("Help");
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
