@@ -162,6 +162,10 @@ test("project create form matches legacy project/create.scala.html DOM", async (
   await mockProjectCreate(page);
 
   await page.goto(`${basePath}/projectform`);
+  await expect(page).toHaveTitle("Create new project");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "Create new project",
+  );
   await expect(page.locator("#newProjectForm")).toBeVisible();
   await expect(page.locator("#project-owner")).toHaveValue("admin");
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
@@ -402,6 +406,7 @@ test("project create route source keeps cancel navigation on a TanStack root lin
   expect(routeSource).toContain(
     'import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
   );
+  expect(routeSource).toContain('<title>{t("title.newProject")}</title>');
   expect(routeSource).toContain('to="/_import"');
   expect(routeSource).toContain("function ProjectCreateRootLinkAnchor({");
   expect(routeSource).toContain("ref?: React.Ref<HTMLAnchorElement>;");
@@ -415,6 +420,11 @@ test("project create route source keeps cancel navigation on a TanStack root lin
   expect(routeSource).not.toContain("React.createElement");
   expect(routeSource).not.toContain("forwardRef");
   expect(routeSource).not.toContain('<Link to="/" className="ybtn">');
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain("window.document");
+  expect(routeSource).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/iu);
+  expect(routeSource).not.toMatch(/title\s*=\s*["'`]Create new project/iu);
   expect(
     rawAnchorBlocks.filter((block) => /(?:_import|prefixBasePath\([^)]*"\/")/u.test(block)),
   ).toEqual([]);
