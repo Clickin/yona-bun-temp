@@ -158,7 +158,6 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
-      <CommentDeleteModalScripts basePath={runtimeConfig.basePath} />
     </SiteLayoutShell>
   );
 }
@@ -1066,16 +1065,6 @@ function IssueDetailBody({
         cancelLabel={t("button.no")}
       />
     </div>
-  );
-}
-
-function CommentDeleteModalScripts({ basePath }: { basePath: string }) {
-  return (
-    <script
-      defer
-      type="text/javascript"
-      src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.Comment.js")}
-    ></script>
   );
 }
 
@@ -2130,11 +2119,6 @@ function IssueCommentForm({
           </div>
         </div>
       </form>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.CommentForm.js")}
-      ></script>
     </>
   );
 }
