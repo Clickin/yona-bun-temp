@@ -281,15 +281,18 @@ test("organization create route source keeps cancel navigation out of raw anchor
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
 
   expect(routeSource).toContain(
-    'import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";',
+    'import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('data-errtype="name"');
-  expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
-  expect(routeSource).toContain('href: prefixBasePath(runtimeConfig.basePath, ""),');
-  expect(routeSource).toContain("router.history.push(runtimeConfig.basePath);");
-  expect(routeSource).toContain(
-    "<LegacyHrefAnchor {...cancelLinkProps} legacyHref={runtimeConfig.basePath}>",
-  );
+  expect(routeSource).toContain("const MountedRootLink = createLink(MountedRootLinkAnchor);");
+  expect(routeSource).toContain('const cancelHref = prefixBasePath(runtimeConfig.basePath, "");');
+  expect(routeSource).toContain("router.history.push(cancelHref);");
+  expect(routeSource).toContain("<MountedRootLink");
+  expect(routeSource).toContain("legacyHref={cancelHref}");
+  expect(routeSource).toContain("activeProps={legacyAnchorActiveProps}");
+  expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("LegacyHrefAnchor");
+  expect(routeSource).not.toContain("React.createElement");
   expect(routeSource).not.toContain('setAttribute("data-errType"');
   expect(
     rawAnchorBlocks.filter((block) => /Cancel|button\.cancel|prefixBasePath/u.test(block)),

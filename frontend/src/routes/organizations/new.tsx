@@ -1,7 +1,6 @@
-import type { ComponentPropsWithoutRef } from "react";
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { createOrganizationRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
@@ -14,6 +13,26 @@ import { SiteLayoutShell } from "../-home-route-screen";
 type OrganizationCreateSearch = {
   warning?: string;
 };
+
+const legacyAnchorActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
+function MountedRootLinkAnchor({
+  legacyHref,
+  href: _href,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyHref });
+}
+
+const MountedRootLink = createLink(MountedRootLinkAnchor);
 
 export const Route = createFileRoute("/organizations/new")({
   component: OrganizationNewRoute,
@@ -49,17 +68,14 @@ function OrganizationNewScreen({
   const queryClient = useQueryClient();
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
-  // Link to="/" renders the mounted root with a trailing slash; legacy cancel renders bare "/".
-  const cancelLinkProps = useLinkProps({
-    activeOptions: { exact: true },
-    className: "ybtn",
-    href: prefixBasePath(runtimeConfig.basePath, ""),
-    onClick: (event) => {
+  const cancelHref = prefixBasePath(runtimeConfig.basePath, "");
+  const handleCancelClick = React.useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
-      router.history.push(runtimeConfig.basePath);
+      router.history.push(cancelHref);
     },
-    to: "/",
-  });
+    [cancelHref, router.history],
+  );
   const createMutation = useMutation({
     mutationFn: async (input: { description: string; organizationName: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -160,9 +176,16 @@ function OrganizationNewScreen({
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   <i className="yobicon-friends" /> {t("organization.create")}
                 </button>
-                <LegacyHrefAnchor {...cancelLinkProps} legacyHref={runtimeConfig.basePath}>
+                <MountedRootLink
+                  activeOptions={{ exact: true }}
+                  activeProps={legacyAnchorActiveProps}
+                  className="ybtn"
+                  legacyHref={cancelHref}
+                  onClick={handleCancelClick}
+                  to="/"
+                >
                   {t("button.cancel")}
-                </LegacyHrefAnchor>
+                </MountedRootLink>
               </div>
             </form>
           </div>
@@ -170,17 +193,4 @@ function OrganizationNewScreen({
       </div>
     </SiteLayoutShell>
   );
-}
-
-function LegacyHrefAnchor({
-  children,
-  legacyHref,
-  href: _href,
-  ...props
-}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", {
-    ...props,
-    href: legacyHref,
-    children,
-  });
 }
