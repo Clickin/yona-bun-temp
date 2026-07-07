@@ -99,7 +99,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
     </ul>
     <div class="project-setting">
       <ul class="project-menu-nav">
-        <li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li>
+        <li class="active"><a href="__BASE_PATH__/admin/sample/settingform"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li>
         <li></li>
       </ul>
     </div>
@@ -108,7 +108,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
 <div class="page-wrap-outer">
   <div class="project-page-wrap">
     <ul class="nav nav-tabs">
-      <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li>
+      <li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/settingform">Settings</a></li>
       <li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li>
       <li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li>
       <li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li>
@@ -438,7 +438,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   expect(
     await tabLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
-    `${basePath}/admin/sample/setting`,
+    `${basePath}/admin/sample/settingform`,
     `${basePath}/admin/sample/members`,
     `${basePath}/admin/sample/issue/labelsform`,
     `${basePath}/admin/sample/webhooks`,
@@ -449,7 +449,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   expect(await readProjectDeleteSettingsTabAnchorAudit(page)).toEqual([]);
 
   const settingsLink = page.locator("#subMenuProjectSetting a");
-  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(settingsLink).toHaveAttribute("href", `${basePath}/admin/sample/settingform`);
   await expect(page.locator("#subMenuIssueLabel a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/issue/labelsform`,
@@ -460,7 +460,7 @@ test("project delete settings tab links preserve legacy hrefs without native lis
   });
   await settingsLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/settingform`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -625,13 +625,13 @@ test("project delete header and project menu links preserve legacy hrefs and SPA
   ]);
 
   const settingsCog = page.locator(".project-setting a");
-  await expect(settingsCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
+  await expect(settingsCog).toHaveAttribute("href", `${basePath}/admin/sample/settingform`);
   expect(await readLegacyAnchorSnapshots(page, ".project-setting a")).toEqual([
     {
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      href: `${basePath}/admin/sample/setting`,
+      href: `${basePath}/admin/sample/settingform`,
       text: "Project configuration",
     },
   ]);
@@ -640,7 +640,7 @@ test("project delete header and project menu links preserve legacy hrefs and SPA
   });
   await settingsCog.click();
 
-  await expect(page).toHaveURL(`${basePath}/admin/sample/setting`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/settingform`);
   await expect
     .poll(() =>
       page.evaluate(

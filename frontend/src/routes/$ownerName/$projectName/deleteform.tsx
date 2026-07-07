@@ -424,7 +424,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
                 <Link
                   activeOptions={legacyProjectDeleteLinkActiveOptions}
                   activeProps={legacyProjectDeleteLinkActiveProps}
-                  to="/$ownerName/$projectName/setting"
+                  to="/$ownerName/$projectName/settingform"
                   params={{ ownerName, projectName }}
                 >
                   <i className="yobicon-cog"></i>
@@ -501,7 +501,7 @@ function ProjectSettingMenu({
         <Link
           activeOptions={legacyProjectDeleteLinkActiveOptions}
           activeProps={legacyProjectDeleteLinkActiveProps}
-          to="/$ownerName/$projectName/setting"
+          to="/$ownerName/$projectName/settingform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
         >
