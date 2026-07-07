@@ -156,6 +156,11 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain("<title>{profile.loginId}</title>");
   expect(source).not.toContain("document.title");
   expect(source).not.toMatch(/\b(?:document|window\.document|globalThis\.document)\s*\./u);
+  expect(source).toContain("function ConnectedSocialProviderLogo({");
+  expect(source).toContain('normalized === "github"');
+  expect(source).toContain('normalized === "google"');
+  expect(source).toContain("/assets/images/provider-logo/btn_google_light_normal_ios.svg");
+  expect(source).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("public user profile matches legacy user/view.scala.html issues screen", async ({ page }) => {
@@ -184,6 +189,7 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     "href",
     `${basePath}/door/sample/pullRequest/4#comments`,
   );
+  await expect(page.locator(".auth-provider-logo")).toBeEmpty();
   await expect(page.locator('.user-stream-box > .nav-tabs button[data-toggle="tab"]')).toHaveCount(
     3,
   );
@@ -198,6 +204,40 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     userBoxDisplay: "block",
     userInfoWidth: 200,
     userStreamWidth: 1060,
+  });
+});
+
+test("public user profile renders legacy connected social provider logos", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page, {
+    connectedSocialProviders: ["github", "google", "unsupported"],
+  });
+
+  await page.goto(`${basePath}/door`);
+  await expect(page.locator(".user-box")).toBeVisible();
+
+  const providerLogo = page.locator(".user-since .auth-provider-logo");
+  await expect(providerLogo.locator(":scope > .github")).toHaveCount(1);
+  await expect(providerLogo.locator(":scope > .google")).toHaveCount(1);
+  await expect(providerLogo.locator(":scope > *")).toHaveCount(2);
+  await expect(providerLogo.locator(".github svg")).toHaveAttribute("viewBox", "0 0 16 16");
+  await expect(providerLogo.locator(".github svg")).toHaveAttribute("height", "24");
+  await expect(providerLogo.locator(".github svg")).toHaveAttribute("width", "19");
+  await expect(providerLogo.locator(".github svg path")).toHaveCount(1);
+  await expect(providerLogo.locator(".google img")).toHaveAttribute(
+    "src",
+    `${basePath}/assets/images/provider-logo/btn_google_light_normal_ios.svg`,
+  );
+  await expect(page.locator(".provider-name")).toHaveCount(0);
+
+  expect(await readConnectedSocialProviderMetrics(page)).toEqual({
+    authProviderFontFamily: expect.stringContaining("Roboto"),
+    githubDisplay: "inline-block",
+    githubMarginBottom: "3px",
+    githubMarginLeft: "-4px",
+    githubMarginTop: "3px",
+    githubWidth: "30px",
+    svgVerticalAlign: "middle",
   });
 });
 
@@ -453,6 +493,7 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
 
 type MockPublicProfileOptions = {
   anonymousViewer?: boolean;
+  connectedSocialProviders?: string[];
   currentUser?: boolean;
   memberProjectOwnerName?: string;
   pullRequestsEmpty?: boolean;
@@ -462,6 +503,7 @@ type MockPublicProfileOptions = {
 
 async function mockPublicProfile(page: Page, options: MockPublicProfileOptions = {}) {
   const anonymousViewer = options.anonymousViewer ?? false;
+  const connectedSocialProviders = options.connectedSocialProviders ?? [];
   const currentUser = options.currentUser ?? false;
   const memberProjectOwnerName = options.memberProjectOwnerName ?? "door";
   const pullRequestsEmpty = options.pullRequestsEmpty ?? false;
@@ -577,7 +619,7 @@ async function mockPublicProfile(page: Page, options: MockPublicProfileOptions =
         ],
         profile: {
           avatarUrl: "/assets/images/default-avatar-256.png",
-          connectedSocialProviders: [],
+          connectedSocialProviders,
           displayName: "Door User",
           englishName: "Door English",
           isBlocked: false,
@@ -654,6 +696,31 @@ async function readProfileMetrics(page: Page) {
       userBoxDisplay: getComputedStyle(userBox).display,
       userInfoWidth: Math.round(userInfo.getBoundingClientRect().width),
       userStreamWidth: Math.round(userStream.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function readConnectedSocialProviderMetrics(page: Page) {
+  return page.evaluate(() => {
+    const providerLogo = document.querySelector<HTMLElement>(".user-since .auth-provider-logo");
+    const github = document.querySelector<HTMLElement>(".user-since .auth-provider-logo .github");
+    const svg = document.querySelector<SVGElement>(".user-since .auth-provider-logo .github svg");
+    if (!providerLogo || !github || !svg) {
+      throw new Error("Expected connected social provider metric targets are missing.");
+    }
+
+    const providerLogoStyle = getComputedStyle(providerLogo);
+    const githubStyle = getComputedStyle(github);
+    const svgStyle = getComputedStyle(svg);
+
+    return {
+      authProviderFontFamily: providerLogoStyle.fontFamily,
+      githubDisplay: githubStyle.display,
+      githubMarginBottom: githubStyle.marginBottom,
+      githubMarginLeft: githubStyle.marginLeft,
+      githubMarginTop: githubStyle.marginTop,
+      githubWidth: githubStyle.width,
+      svgVerticalAlign: svgStyle.verticalAlign,
     };
   });
 }
