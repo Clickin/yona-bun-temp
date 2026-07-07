@@ -458,11 +458,16 @@ function RootLoginDialog({
       className={visible ? "modal loginDialog in" : "modal hide loginDialog"}
       tabIndex={-1}
       role="dialog"
-      aria-hidden={!visible}
     >
       <div className="modal-body">
         <div className="pull-right">
-          <button type="button" className="close" data-dismiss="modal" onClick={onDismiss}>
+          <button
+            type="button"
+            className="close"
+            data-dismiss="modal"
+            aria-hidden="true"
+            onClick={onDismiss}
+          >
             &times;
           </button>
         </div>
@@ -504,10 +509,7 @@ function RootLoginDialog({
                   />
                 </dd>
               </dl>
-              <div
-                className="error"
-                style={state.errorMessage ? { display: "block" } : { display: "none" }}
-              >
+              <div className="error">
                 <i className="yobicon-error" />
                 <span className="error-message">{state.errorMessage ?? ""}</span>
               </div>

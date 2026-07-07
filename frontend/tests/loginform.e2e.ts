@@ -142,6 +142,38 @@ const EMAIL_VERIFICATION_HELP = `
     <div class="email-verification-help">If you are trying to login for the first time, a confirmation mail will be sent.</div>
 `;
 
+const ROOT_LOGIN_DIALOG_FORM_BODY = `
+      <dl>
+        <dd>
+          <input id="loginIdOrEmailD" name="loginIdOrEmail" type="text" class="text email" autocomplete="off" placeholder="Login ID or E-mail">
+        </dd>
+        <dd>
+          <input id="passwordD" name="password" type="password" class="text password" autocomplete="off" placeholder="Password">
+        </dd>
+      </dl>
+      <div class="error">
+        <i class="yobicon-error"></i>
+        <span class="error-message"></span>
+      </div>
+      <div class="btns-row nm">
+        <button type="submit" class="ybtn ybtn-primary fullsize">Log in</button>
+      </div>
+      <div class="btns-row nm">
+        <div class="social-login-title-line"> or </div>
+        <a href="__BASE_PATH__/authenticate/github" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><span class="github"><svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19"><path></path></svg></span> <span class="provider-name">Sign in with github</span></span></a>
+        <a href="__BASE_PATH__/authenticate/google" class="ybtn oauth-login-btn"><span class="auth-provider-logo"><img src="__BASE_PATH__/assets/images/provider-logo/btn_google_light_normal_ios.svg" alt="login with Google"> Sign in with Google</span></a>
+      </div>
+      <div class="act-row right-txt mt20">
+        <div class="pull-left">
+          <input id="remember-meD" type="checkbox" name="rememberMe" class="checkbox" checked>
+          <label for="remember-meD" class="bg-checkbox">Stay logged in</label>
+        </div>
+        <a href="__BASE_PATH__/lostPassword">Reset password</a>
+        <span class="gray-txt ml10 mr10">|</span>
+        <a href="__BASE_PATH__/users/signupform">Sign up</a>
+      </div>
+`;
+
 test("anonymous login form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
@@ -356,6 +388,84 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   expect(source).not.toMatch(
     /<a\s+href=\{prefixBasePath\(basePath,\s*`\/authenticate\/\$\{normalized\}`\)\}/u,
   );
+});
+
+test("root login dialog visible state matches legacy common/loginDialog.scala.html DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    enabledSocialProviders: ["github", "google"],
+    socialLoginOnly: false,
+  });
+  await page.goto(`${basePath}/users/login?from=legacy`);
+  await page.locator('[data-login="required"]').first().click();
+
+  await expect(page.locator("#loginDialog")).toBeVisible();
+  await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
+  await expect(page.locator("#loginDialog .error")).toBeHidden();
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await assertOAuthProviderLinks(page, basePath);
+
+  const actual = await canonicalizeLoginDialogRoot(page);
+  const expected = await canonicalizeLoginDialogHtml(
+    page,
+    expectedRootLoginDialog(basePath, ROOT_LOGIN_DIALOG_FORM_BODY),
+  );
+
+  expect(actual).toEqual(expected);
+  expect(await readRootLoginDialogMetrics(page)).toEqual({
+    actionRowMarginTop: "20px",
+    actionRowTextAlign: "right",
+    backdropOpacity: "0.8",
+    checkboxMarginTop: "4px",
+    closeButtonFloat: "right",
+    closeButtonFontSize: "20px",
+    closeButtonLineHeight: "20px",
+    dialogDisplay: "block",
+    dialogLeft: 641,
+    dialogMarginLeft: "-230px",
+    dialogPosition: "fixed",
+    dialogTop: 72,
+    dialogWidth: "460px",
+    errorDisplay: "none",
+    formMargin: "20px 15px",
+    formWidth: "400px",
+    loginInputWidth: "386px",
+    modalBodyPadding: "15px",
+    oauthButtonDisplay: "block",
+    passwordInputWidth: "386px",
+    submitButtonWidth: "400px",
+    titleLineMarginTop: "12px",
+  });
+
+  const source = readFileSync("src/routes/__root.tsx", "utf8");
+  const legacyLoginDialog = readFileSync(
+    "../yona-original/app/views/common/loginDialog.scala.html",
+    "utf8",
+  );
+  expect(legacyLoginDialog).toContain('id="loginDialog" class="modal hide loginDialog"');
+  expect(legacyLoginDialog).toContain('tabindex="-1" role="dialog"');
+  expect(legacyLoginDialog).toContain('class="frm-wrap login-form-wrap"');
+  expect(legacyLoginDialog).toContain('id="loginIdOrEmailD"');
+  expect(legacyLoginDialog).toContain('id="passwordD"');
+  expect(legacyLoginDialog).toContain('class="error"');
+  expect(legacyLoginDialog).toContain('class="act-row right-txt mt20"');
+  const rootLoginDialogSource = source.slice(
+    source.indexOf("function RootLoginDialog"),
+    source.indexOf("function RootOAuthProviderLink"),
+  );
+  expect(rootLoginDialogSource).toContain(
+    'className={visible ? "modal loginDialog in" : "modal hide loginDialog"}',
+  );
+  expect(rootLoginDialogSource).toContain("tabIndex={-1}");
+  expect(rootLoginDialogSource).toContain('role="dialog"');
+  expect(rootLoginDialogSource).toContain('aria-hidden="true"');
+  expect(rootLoginDialogSource).not.toContain("dangerouslySetInnerHTML");
+  expect(rootLoginDialogSource).not.toMatch(/\bstyle=\{\{?\s*display/u);
+  expect(rootLoginDialogSource).not.toMatch(/\bdocument\s*\./u);
+  expect(rootLoginDialogSource).not.toContain("addEventListener");
+  expect(rootLoginDialogSource).not.toContain("classList");
 });
 
 test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
@@ -587,6 +697,21 @@ function expectedLoginScreen(
     .replace("__FORM_BODY__", formBody.replaceAll("__BASE_PATH__", basePath));
 }
 
+function expectedRootLoginDialog(basePath: string, formBody: string) {
+  return `
+<div id="loginDialog" class="modal loginDialog in" tabindex="-1" role="dialog">
+  <div class="modal-body">
+    <div class="pull-right">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    </div>
+    <form action="/users/login" method="post" class="frm-wrap login-form-wrap">
+      ${formBody.replaceAll("__BASE_PATH__", basePath)}
+    </form>
+  </div>
+</div>
+`;
+}
+
 async function mockCapabilities(
   page: Page,
   overrides: {
@@ -700,6 +825,130 @@ async function canonicalizeScreenRoots(page: Page) {
   });
 }
 
+async function canonicalizeLoginDialogRoot(page: Page) {
+  return page.evaluate(() => {
+    const root = document.querySelector("#loginDialog");
+    if (!root) {
+      throw new Error("Expected #loginDialog to be present.");
+    }
+    return visit(root);
+
+    function visit(current: Element): string {
+      const stableAttributes = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "method",
+        "action",
+        "autocomplete",
+        "placeholder",
+        "href",
+        "src",
+        "alt",
+        "aria-hidden",
+        "version",
+        "data-dismiss",
+        "for",
+        "checked",
+        "tabindex",
+        "role",
+        "height",
+        "viewBox",
+        "width",
+      ];
+      const attrs = stableAttributes
+        .filter((name) => current.hasAttribute(name))
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
+        .join(" ");
+      const open = attrs
+        ? `<${current.tagName.toLowerCase()} ${attrs}>`
+        : `<${current.tagName.toLowerCase()}>`;
+      const children = Array.from(current.childNodes)
+        .map((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+          }
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            return visit(child as Element);
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("");
+
+      return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeAttribute(current: Element, name: string) {
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
+    }
+  });
+}
+
+async function canonicalizeLoginDialogHtml(page: Page, html: string) {
+  return page.evaluate(
+    ({ markup }) => {
+      const template = document.createElement("template");
+      template.innerHTML = markup.trim();
+      const root = template.content.firstElementChild;
+      if (!root) {
+        throw new Error("Expected login dialog markup is empty.");
+      }
+      return visit(root);
+
+      function visit(current: Element): string {
+        const stableAttributes = [
+          "id",
+          "class",
+          "name",
+          "type",
+          "method",
+          "action",
+          "autocomplete",
+          "placeholder",
+          "href",
+          "src",
+          "alt",
+          "aria-hidden",
+          "version",
+          "data-dismiss",
+          "for",
+          "checked",
+          "tabindex",
+          "role",
+          "height",
+          "viewBox",
+          "width",
+        ];
+        const attrs = stableAttributes
+          .filter((name) => current.hasAttribute(name))
+          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .join(" ");
+        const open = attrs
+          ? `<${current.tagName.toLowerCase()} ${attrs}>`
+          : `<${current.tagName.toLowerCase()}>`;
+        const children = Array.from(current.childNodes)
+          .map((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              return (child.textContent ?? "").replace(/\s+/g, " ").trim();
+            }
+            if (child.nodeType === Node.ELEMENT_NODE) {
+              return visit(child as Element);
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join("");
+
+        return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+    },
+    { markup: html },
+  );
+}
+
 async function canonicalizeScreenAndToastRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
@@ -807,6 +1056,72 @@ async function readSocialLoginMetrics(page: Page) {
       socialTitleMarginBottom: titleStyle.marginBottom,
       socialTitleMarginTop: titleStyle.marginTop,
       svgVerticalAlign: svgStyle.verticalAlign,
+    };
+  });
+}
+
+async function readRootLoginDialogMetrics(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector<HTMLElement>("#loginDialog");
+    const modalBody = document.querySelector<HTMLElement>("#loginDialog .modal-body");
+    const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginDialog #loginIdOrEmailD");
+    const passwordInput = document.querySelector<HTMLElement>("#loginDialog #passwordD");
+    const error = document.querySelector<HTMLElement>("#loginDialog .error");
+    const submitButton = document.querySelector<HTMLElement>("#loginDialog button[type='submit']");
+    const titleLine = document.querySelector<HTMLElement>("#loginDialog .social-login-title-line");
+    const oauthButton = document.querySelector<HTMLElement>("#loginDialog .oauth-login-btn");
+    const actionRow = document.querySelector<HTMLElement>("#loginDialog .act-row");
+    const checkbox = document.querySelector<HTMLElement>("#loginDialog #remember-meD");
+    const closeButton = document.querySelector<HTMLElement>("#loginDialog .close");
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop.in");
+    if (
+      !dialog ||
+      !modalBody ||
+      !form ||
+      !loginInput ||
+      !passwordInput ||
+      !error ||
+      !submitButton ||
+      !titleLine ||
+      !oauthButton ||
+      !actionRow ||
+      !checkbox ||
+      !closeButton ||
+      !backdrop
+    ) {
+      throw new Error("Expected root login dialog metric targets are missing.");
+    }
+
+    const dialogRect = dialog.getBoundingClientRect();
+    const dialogStyle = getComputedStyle(dialog);
+    const formStyle = getComputedStyle(form);
+    const actionRowStyle = getComputedStyle(actionRow);
+    const closeButtonStyle = getComputedStyle(closeButton);
+
+    return {
+      actionRowMarginTop: actionRowStyle.marginTop,
+      actionRowTextAlign: actionRowStyle.textAlign,
+      backdropOpacity: getComputedStyle(backdrop).opacity,
+      checkboxMarginTop: getComputedStyle(checkbox).marginTop,
+      closeButtonFloat: closeButtonStyle.cssFloat,
+      closeButtonFontSize: closeButtonStyle.fontSize,
+      closeButtonLineHeight: closeButtonStyle.lineHeight,
+      dialogDisplay: dialogStyle.display,
+      dialogLeft: Math.round(dialogRect.left + dialogRect.width / 2),
+      dialogMarginLeft: dialogStyle.marginLeft,
+      dialogPosition: dialogStyle.position,
+      dialogTop: Math.round(dialogRect.top),
+      dialogWidth: dialogStyle.width,
+      errorDisplay: getComputedStyle(error).display,
+      formMargin: formStyle.margin,
+      formWidth: formStyle.width,
+      loginInputWidth: getComputedStyle(loginInput).width,
+      modalBodyPadding: getComputedStyle(modalBody).padding,
+      oauthButtonDisplay: getComputedStyle(oauthButton).display,
+      passwordInputWidth: getComputedStyle(passwordInput).width,
+      submitButtonWidth: getComputedStyle(submitButton).width,
+      titleLineMarginTop: getComputedStyle(titleLine).marginTop,
     };
   });
 }
