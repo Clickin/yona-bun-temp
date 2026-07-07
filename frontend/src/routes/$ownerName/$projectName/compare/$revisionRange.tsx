@@ -37,35 +37,62 @@ function ProjectCodeCompareRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeCompareScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectCodeCompareRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeCompareScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectCodeCompareRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, revisionRange } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectCodeCompareScreen
+        project={projectQuery.data}
+        revisionRange={revisionRange}
+        runtimeConfig={runtimeConfig}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectCodeCompareScreen({
+  project,
+  revisionRange,
+  runtimeConfig,
+}: {
+  project: ProjectContainer | undefined;
+  revisionRange: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
   const compareQuery = useQuery(
     codeCompareQueryOptions(runtimeConfig, { ownerName, projectName, revisionRange }),
   );
 
-  if (!projectQuery.data || !compareQuery.data) {
+  if (!project || !compareQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeCompareBody
         compare={compareQuery.data}
         ownerName={ownerName}
-        project={projectQuery.data}
+        project={project}
         projectName={projectName}
       />
     </>
@@ -354,4 +381,23 @@ function shortenCommitId(commitId: string) {
 
 function projectTo(ownerName: string, projectName: string, ...parts: string[]) {
   return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  return (
+    project.isProtected === true ||
+    project.isProtected === "true" ||
+    project.isProtected === 1 ||
+    project.isProtected === "1" ||
+    (typeof project.projectScope === "string" && project.projectScope === "protected")
+  );
 }

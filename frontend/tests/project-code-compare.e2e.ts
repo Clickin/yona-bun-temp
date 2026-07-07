@@ -38,6 +38,86 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
   );
 });
 
+test("project code compare uses legacy project-scoped GNB search shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const compareUrl = `${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`;
+  const compareRequests: string[] = [];
+  await mockProjectCompare(
+    page,
+    compareRequests,
+    {},
+    { isProtected: true, organizationName: "admin" },
+  );
+
+  await page.goto(compareUrl);
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect
+    .poll(() =>
+      scopeButtons.evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/organizations/admin/search`, text: "This Group" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(compareUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(2).click();
+  await expect(page).toHaveURL(compareUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  await expect(page).toHaveURL(compareUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+
+  const metrics = await compareNavbarMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.form.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.form.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.form.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.scope.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.scope.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.searchBox.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.input.top).toBeGreaterThanOrEqual(metrics!.searchBox.top);
+  expect(metrics!.input.bottom).toBeLessThanOrEqual(metrics!.searchBox.bottom + 1);
+  expect(metrics!.projectHeader.top).toBeLessThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.menu.top).toBeGreaterThan(metrics!.projectHeader.top);
+});
+
 test("project code compare file with no hunks renders legacy partial_filediff no-change row", async ({
   page,
 }) => {
@@ -119,6 +199,7 @@ async function mockProjectCompare(
   page: Page,
   compareRequests: string[],
   compareOverrides: Record<string, unknown> = {},
+  projectOverrides: Record<string, unknown> = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -160,6 +241,7 @@ async function mockProjectCompare(
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...projectOverrides,
       }),
     });
   });
@@ -179,6 +261,41 @@ async function mockProjectCompare(
         ...compareOverrides,
       }),
     });
+  });
+}
+
+async function compareNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!navbar || !form || !scope || !searchBox || !input || !projectHeader || !menu) {
+      return null;
+    }
+
+    return {
+      form: rect(form),
+      input: rect(input),
+      menu: rect(menu),
+      navbar: rect(navbar),
+      projectHeader: rect(projectHeader),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
   });
 }
 
