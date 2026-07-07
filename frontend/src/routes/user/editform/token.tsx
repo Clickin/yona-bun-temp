@@ -57,9 +57,14 @@ function UserTokenSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   });
   const apiToken =
     typeof workspaceQuery.data?.apiToken === "string" ? workspaceQuery.data.apiToken : "";
+  const loginId =
+    typeof workspaceQuery.data?.profile?.loginId === "string"
+      ? workspaceQuery.data.profile.loginId
+      : "";
 
   return (
     <>
+      <UserTokenSettingsTitle loginId={loginId} />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{t("userinfo.token")}</h3>
@@ -106,6 +111,10 @@ function UserTokenSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       </div>
     </>
   );
+}
+
+function UserTokenSettingsTitle({ loginId }: { loginId: string }) {
+  return loginId ? <title>{loginId}</title> : null;
 }
 
 function EditTabMenu({ active }: { active: string }) {

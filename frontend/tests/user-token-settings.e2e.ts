@@ -85,6 +85,13 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
 
   await page.goto(`${basePath}/user/editform/token`);
   await expect(page.locator(".token-generate")).toBeAttached();
+  await expect(page).toHaveTitle("admin");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("admin");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -154,6 +161,14 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
 
 test("current-user token settings route uses typed tab Links without a route-local generic adapter", async () => {
   const source = await readFile("src/routes/user/editform/token.tsx", "utf8");
+  expect(source).toContain("<UserTokenSettingsTitle loginId={loginId} />");
+  expect(source).toContain("function UserTokenSettingsTitle");
+  expect(source).toContain("<title>{loginId}</title>");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain('globalThis["document"]');
+  expect(source).not.toMatch(/useEffect\s*\([^)]*title/s);
+  expect(source).not.toMatch(/title[^;]*useEffect|useEffect[^;]*title/s);
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
