@@ -209,9 +209,6 @@ function OrganizationMembersBody({
   }
 
   function selectSuggestion(suggestion: LegacyMemberSuggestionView) {
-    if (loginIdInputRef.current) {
-      loginIdInputRef.current.value = suggestion.loginId;
-    }
     setLoginIdQuery(suggestion.loginId);
     setIsTypeaheadOpen(false);
     setActiveSuggestionIndex(0);
@@ -291,6 +288,7 @@ function OrganizationMembersBody({
                 data-provider="typeahead"
                 autoComplete="off"
                 ref={loginIdInputRef}
+                value={loginIdQuery}
                 placeholder={t("project.members.addMember")}
                 pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
                 title={t("user.wrongloginId.alert")}
@@ -420,9 +418,6 @@ function OrganizationMembersBody({
                   <EnrollmentRequest
                     key={stringField(user.loginId, "")}
                     onAccept={(loginId) => {
-                      if (loginIdInputRef.current) {
-                        loginIdInputRef.current.value = loginId;
-                      }
                       setLoginIdQuery(loginId);
                       setIsTypeaheadOpen(false);
                       setActiveSuggestionIndex(0);
