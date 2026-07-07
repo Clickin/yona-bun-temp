@@ -72,23 +72,18 @@ export function ProjectSettingRouteScreen({
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ ownerName, projectName }}
+        <ProjectSettingRouteShell
+          ownerName={ownerName}
+          projectName={projectName}
           runtimeConfig={runtimeConfig}
-        >
-          <ProjectSettingScreen
-            ownerName={ownerName}
-            projectName={projectName}
-            runtimeConfig={runtimeConfig}
-            selfRoutePath={selfRoutePath}
-          />
-        </SiteLayoutShell>
+          selfRoutePath={selfRoutePath}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectSettingScreen({
+function ProjectSettingRouteShell({
   ownerName,
   projectName,
   runtimeConfig,
@@ -105,16 +100,54 @@ function ProjectSettingScreen({
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
-      <ProjectHeader project={projectQuery.data} runtimeConfig={runtimeConfig} />
-      <ProjectMenu project={projectQuery.data} selfRoutePath={selfRoutePath} />
-      <ProjectSettingBody
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectSettingScreen
         branches={branchesQuery.data.branches.map((branch) => branch.name)}
         defaultBranch={branchesQuery.data.defaultBranch}
         ownerName={ownerName}
-        projectName={projectName}
         project={projectQuery.data}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+        selfRoutePath={selfRoutePath}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectSettingScreen({
+  branches,
+  defaultBranch,
+  ownerName,
+  project,
+  projectName,
+  runtimeConfig,
+  selfRoutePath,
+}: {
+  branches: string[];
+  defaultBranch: string;
+  ownerName: string;
+  project: ProjectContainer;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  selfRoutePath: string;
+}) {
+  return (
+    <>
+      <ProjectHeader project={project} runtimeConfig={runtimeConfig} />
+      <ProjectMenu project={project} selfRoutePath={selfRoutePath} />
+      <ProjectSettingBody
+        branches={branches}
+        defaultBranch={defaultBranch}
+        ownerName={ownerName}
+        projectName={projectName}
+        project={project}
         runtimeConfig={runtimeConfig}
         selfRoutePath={selfRoutePath}
       />
@@ -1130,6 +1163,24 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  return (
+    project.isProtected === true ||
+    project.isProtected === "true" ||
+    project.isProtected === 1 ||
+    project.isProtected === "1" ||
+    stringField(project.projectScope, "").toUpperCase() === "PROTECTED"
+  );
 }
 
 function selectedLogoFile(value: FormDataEntryValue | null) {

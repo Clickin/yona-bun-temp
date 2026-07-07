@@ -539,6 +539,73 @@ test("project settings navbar search scope matches legacy projectLayout common n
     .toBe("kept");
 });
 
+test("org-owned project settings exposes legacy group search scope without leaving route", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    ownerName: "weblabs",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+      ownerName: "weblabs",
+      projectName: "portal",
+      projectScope: "PROTECTED",
+    },
+    projectName: "portal",
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/settingform`);
+
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page).toHaveURL(`${basePath}/weblabs/portal/settingform`);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("weblabs");
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveText("portal");
+
+  const searchForm = page.locator('form[name="gnb-search-form"]');
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+
+  const scopeControls = page.locator(
+    '.gnb-search-form button[type="button"][data-toggle="search-scope"]',
+  );
+  await expect(scopeControls).toHaveCount(3);
+  await expect(scopeControls).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeControls.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(scopeControls.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(scopeControls.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
+  });
+  await page.locator("#gnb-search-scope-title").click();
+  await expect(page.locator(".gnb-search-form .btn-group")).toHaveClass("btn-group open");
+  await scopeControls.nth(1).click();
+  await expect(searchForm).toHaveAttribute("action", `${basePath}/organizations/weblabs/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page).toHaveURL(`${basePath}/weblabs/portal/settingform`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  expect(await navbarSearchContainmentMetrics(page)).toMatchObject({
+    inputInsideNavbar: true,
+    searchBoxInsideForm: true,
+    scopeInsideNavbar: true,
+  });
+});
+
 test("project settings header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
@@ -821,13 +888,18 @@ test("project settings logo input validates image files and auto-submits like le
 async function mockProjectSettings(
   page: Page,
   overrides: Partial<{
+    container: Record<string, unknown>;
     favoriteResponseFavorited: boolean;
     favoriteRequests: { hasCsrfToken: boolean; method: string }[];
+    ownerName: string;
     project: Record<string, unknown>;
+    projectName: string;
     updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[];
     uploadRequests: { hasCsrfToken: boolean; method: string }[];
   }> = {},
 ) {
+  const ownerName = overrides.ownerName ?? "admin";
+  const projectName = overrides.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -865,33 +937,46 @@ async function mockProjectSettings(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        ...projectSettings(),
-        ...overrides.project,
-      }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify(projectContainer()),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
-    const request = route.request();
-    overrides.favoriteRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-settings",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ favorited: overrides.favoriteResponseFavorited ?? true }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/settings`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...projectSettings(ownerName, projectName),
+          ...overrides.project,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...projectContainer(ownerName, projectName),
+          ...overrides.container,
+          ...overrides.project,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/favorite`,
+    async (route) => {
+      const request = route.request();
+      overrides.favoriteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-settings",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ favorited: overrides.favoriteResponseFavorited ?? true }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/owners/${ownerName}/projects/${projectName}`, async (route) => {
     const request = route.request();
     if (request.method() !== "PATCH") {
       await route.fallback();
@@ -905,7 +990,9 @@ async function mockProjectSettings(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        ...projectSettings(),
+        ...projectSettings(ownerName, projectName),
+        ownerName,
+        projectName,
         logoUrl: "/files/42",
       }),
     });
@@ -927,40 +1014,43 @@ async function mockProjectSettings(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/members", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        enrollmentRequests: [],
-        members: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            isOwner: true,
-            loginId: "admin",
-            role: "manager",
-            userId: 1,
-            userLabel: "Site Admin",
-          },
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            isOwner: false,
-            loginId: "alice",
-            role: "member",
-            userId: 2,
-            userLabel: "Alice Doe",
-          },
-        ],
-        ownerName: "admin",
-        projectName: "sample",
-        roleOptions: [
-          { label: "Manager", role: "manager" },
-          { label: "Member", role: "member" },
-        ],
-        viewerCanUpdate: true,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/members`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          enrollmentRequests: [],
+          members: [
+            {
+              avatarUrl: "/assets/images/default-avatar-32.png",
+              isOwner: true,
+              loginId: "admin",
+              role: "manager",
+              userId: 1,
+              userLabel: "Site Admin",
+            },
+            {
+              avatarUrl: "/assets/images/default-avatar-32.png",
+              isOwner: false,
+              loginId: "alice",
+              role: "member",
+              userId: 2,
+              userLabel: "Alice Doe",
+            },
+          ],
+          ownerName,
+          projectName,
+          roleOptions: [
+            { label: "Manager", role: "manager" },
+            { label: "Member", role: "member" },
+          ],
+          viewerCanUpdate: true,
+        }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -970,15 +1060,15 @@ async function mockProjectSettings(
         ],
         defaultBranch: "main",
         noHead: false,
-        ownerName: "admin",
+        ownerName,
         permissions: { canDelete: true, canUpdate: true },
-        projectName: "sample",
+        projectName,
       }),
     });
   });
 }
 
-function projectSettings() {
+function projectSettings(ownerName = "admin", projectName = "sample") {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     backgroundUrl: "/assets/images/bg-default-project.png",
@@ -1005,9 +1095,9 @@ function projectSettings() {
     },
     organizationName: "",
     overview: "Sample overview",
-    ownerName: "admin",
+    ownerName,
     projectId: 7,
-    projectName: "sample",
+    projectName,
     projectScope: "PUBLIC",
     showBoard: true,
     showCode: true,
@@ -1021,7 +1111,7 @@ function projectSettings() {
   };
 }
 
-function projectContainer() {
+function projectContainer(ownerName = "admin", projectName = "sample") {
   return {
     backgroundImageUrl: "/assets/images/bg-default-project.png",
     enrollmentRequestCount: 0,
@@ -1039,8 +1129,8 @@ function projectContainer() {
       pullRequest: true,
       review: true,
     },
-    ownerName: "admin",
-    projectName: "sample",
+    ownerName,
+    projectName,
     vcs: "GIT",
     viewerCanUpdate: true,
   };
@@ -1162,6 +1252,44 @@ async function projectSettingMetrics(page: Page) {
 
     function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
       const element = document.querySelector<T>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function navbarSearchContainmentMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = requireElement(".gnb-outer");
+    const form = requireElement('form[name="gnb-search-form"]');
+    const scope = requireElement("#gnb-search-scope-title");
+    const searchBox = requireElement(".gnb-search-form .search-box");
+    const input = requireElement('.gnb-search-form input[name="keyword"]');
+    const navbarRect = navbar.getBoundingClientRect();
+    const formRect = form.getBoundingClientRect();
+    const scopeRect = scope.getBoundingClientRect();
+    const searchBoxRect = searchBox.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+
+    return {
+      inputInsideNavbar:
+        inputRect.top >= navbarRect.top &&
+        inputRect.bottom <= navbarRect.bottom &&
+        inputRect.right <= navbarRect.right,
+      scopeInsideNavbar:
+        scopeRect.top >= navbarRect.top &&
+        scopeRect.bottom <= navbarRect.bottom &&
+        scopeRect.left >= navbarRect.left,
+      searchBoxInsideForm:
+        searchBoxRect.top >= formRect.top &&
+        searchBoxRect.bottom <= formRect.bottom &&
+        searchBoxRect.right <= formRect.right,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
       if (!element) {
         throw new Error(`Missing ${selector}`);
       }
