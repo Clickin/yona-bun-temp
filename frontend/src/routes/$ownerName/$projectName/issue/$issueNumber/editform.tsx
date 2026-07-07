@@ -42,6 +42,7 @@ function ProjectIssueEditFormRoute() {
 
 function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
+  const { t } = useLegacyMessages();
   const numericIssueNumber = Number(issueNumber) || 0;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -71,6 +72,7 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
   if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>
         {null}
       </SiteLayoutShell>
     );
@@ -78,6 +80,7 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectIssueEditFormBody

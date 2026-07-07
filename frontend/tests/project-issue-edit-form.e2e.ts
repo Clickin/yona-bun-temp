@@ -30,6 +30,10 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await mockProjectIssueEditForm(page);
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  await expect(page).toHaveTitle("Edit issue - admin/sample");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
+    .toBe("Edit issue - admin/sample");
   await expect(page.locator("#issue-form")).toBeVisible();
   await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -98,7 +102,13 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     /help\/markdown\.scala\.html|legacyMarkdownHelpTemplate|legacyMarkdownHelpHtml|dangerouslySetInnerHTML|__html/u,
   );
   expect(ROUTE_SOURCE).not.toMatch(
-    /document\.|addEventListener|classList|style\.display|href="javascript:/u,
+    /document\.|globalThis\["document"\]|window\.parent\.document|addEventListener|classList|style\.display|href="javascript:/u,
+  );
+  expect(ROUTE_SOURCE).toContain(
+    '<title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(ROUTE_SOURCE).not.toMatch(
+    /document\.title|window\.document\.title|window\.parent\.document\.title|globalThis\["document"\]\.title/u,
   );
   await expect(page.locator("#notificationMail")).toBeChecked();
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
