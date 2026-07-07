@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  useRef,
   useState,
   type ButtonHTMLAttributes,
   type ChangeEvent,
@@ -174,11 +173,11 @@ function ProjectSettingBody({
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const logoInputRef = useRef<HTMLInputElement>(null);
   const menuSetting = projectMenuSetting(project);
   const oldPlace = projectOldPlace(project);
   const projectScope = stringField(project.projectScope, "PUBLIC").toUpperCase();
   const isGit = stringField(project.vcs, "GIT") === "GIT";
+  const [logoInputResetKey, setLogoInputResetKey] = useState(0);
   const [menuCodeChecked, setMenuCodeChecked] = useState(() => booleanField(menuSetting.code));
   const [menuPullRequestChecked, setMenuPullRequestChecked] = useState(() =>
     booleanField(menuSetting.pullRequest),
@@ -240,9 +239,7 @@ function ProjectSettingBody({
       return updateResult;
     },
     onSuccess() {
-      if (logoInputRef.current) {
-        logoInputRef.current.value = "";
-      }
+      setLogoInputResetKey((key) => key + 1);
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.base(ownerName, projectName),
       });
@@ -270,7 +267,7 @@ function ProjectSettingBody({
   function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
     if (!isImageFileInput(event.currentTarget)) {
       window.alert(t("project.logo.alert"));
-      event.currentTarget.value = "";
+      setLogoInputResetKey((key) => key + 1);
       return;
     }
 
@@ -329,7 +326,7 @@ function ProjectSettingBody({
                         <div className="nbtn medium white fake-file-wrap">
                           <i className="yobicon-upload"></i> {t("button.upload")}
                           <input
-                            ref={logoInputRef}
+                            key={logoInputResetKey}
                             id="logoPath"
                             type="file"
                             className="file"

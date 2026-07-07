@@ -469,6 +469,16 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(source).not.toContain("createLink");
   expect(source).not.toContain("setAttribute(");
   expect(source).not.toContain("removeAttribute(");
+  expect(source).not.toContain("logoInputRef");
+  expect(source).not.toContain("useRef");
+  expect(source).not.toMatch(/\.current\.value\s*=/);
+  expect(source).not.toMatch(/currentTarget\.value\s*=/);
+  expect(source).not.toMatch(/\b(?:document|window\.document)\.(?:querySelector|getElementById)/);
+  expect(source).not.toContain("addEventListener(");
+  expect(source).not.toContain("classList.");
+  expect(source).not.toContain("style.display");
+  expect(source).not.toContain("dangerouslySetInnerHTML");
+  expect(source).not.toContain("innerHTML");
   expect(source).not.toMatch(/href=["'](?:#|javascript:)/);
   expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("as never");
@@ -841,6 +851,10 @@ test("project settings logo input validates image files and auto-submits like le
   await mockProjectSettings(page, { updateRequests, uploadRequests });
 
   await page.goto(`${basePath}/admin/sample/settingform`);
+  await page.locator("#logoPath").evaluate((input) => {
+    (input as HTMLInputElement & { __reactOwnedResetMarker?: string }).__reactOwnedResetMarker =
+      "initial";
+  });
 
   const dialogPromise = new Promise<string>((resolve) => {
     page.once("dialog", async (dialog) => {
@@ -855,8 +869,23 @@ test("project settings logo input validates image files and auto-submits like le
   });
   await expect(dialogPromise).resolves.toBe("This is not an image file.");
   await expect(page.locator("#logoPath")).toHaveValue("");
+  await expect
+    .poll(() =>
+      page
+        .locator("#logoPath")
+        .evaluate(
+          (input) =>
+            (input as HTMLInputElement & { __reactOwnedResetMarker?: string })
+              .__reactOwnedResetMarker ?? null,
+        ),
+    )
+    .toBeNull();
   expect(uploadRequests).toEqual([]);
   expect(updateRequests).toEqual([]);
+  await page.locator("#logoPath").evaluate((input) => {
+    (input as HTMLInputElement & { __reactOwnedResetMarker?: string }).__reactOwnedResetMarker =
+      "after-invalid-reset";
+  });
 
   const updateResponsePromise = page.waitForResponse(
     (response) =>
@@ -883,6 +912,17 @@ test("project settings logo input validates image files and auto-submits like le
     method: "PATCH",
   });
   await expect(page.locator("#logoPath")).toHaveValue("");
+  await expect
+    .poll(() =>
+      page
+        .locator("#logoPath")
+        .evaluate(
+          (input) =>
+            (input as HTMLInputElement & { __reactOwnedResetMarker?: string })
+              .__reactOwnedResetMarker ?? null,
+        ),
+    )
+    .toBeNull();
 });
 
 async function mockProjectSettings(
