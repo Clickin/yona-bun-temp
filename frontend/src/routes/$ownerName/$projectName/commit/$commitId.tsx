@@ -50,6 +50,7 @@ type ParsedDiffLine =
     };
 
 type ParsedFileDiff = {
+  changeType: "add" | "copy" | "delete" | "modify" | "rename";
   lines: ParsedDiffLine[];
   pathA: string;
   pathB: string;
@@ -651,8 +652,10 @@ function FileDiffView({
   toggleThreadState: (threadId: number, state: string) => void;
   updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
+  const { t } = useLegacyMessages();
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const filePath = parsed.pathB || parsed.pathA || file.path;
+  const fileHeader = fileDiffHeaderLabel(parsed, filePath, t);
   const fileId = filePath.replace(/\//g, "-").replace(/\./g, "-");
   const commitAShort = shortenCommitId(commitA);
   const commitBShort = shortenCommitId(commitB);
@@ -694,7 +697,7 @@ function FileDiffView({
             </div>
           </div>
           <div className="diff-partial-file">
-            <span className="filename">{filePath}</span>
+            <span className="filename">{fileHeader}</span>
           </div>
         </div>
         <div className="diff-partial-code" data-hashcode={filePath}>
@@ -1808,6 +1811,7 @@ function commitCommentsHref(
 }
 
 function parseUnifiedDiff(path: string, patch: string): ParsedFileDiff {
+  let changeType: ParsedFileDiff["changeType"] = "modify";
   let pathA = path;
   let pathB = path;
   let oldLineNumber = 0;
@@ -1815,6 +1819,34 @@ function parseUnifiedDiff(path: string, patch: string): ParsedFileDiff {
   const lines: ParsedDiffLine[] = [];
 
   for (const rawLine of patch.split(/\r?\n/u)) {
+    if (rawLine.startsWith("new file mode ")) {
+      changeType = "add";
+      continue;
+    }
+    if (rawLine.startsWith("deleted file mode ")) {
+      changeType = "delete";
+      continue;
+    }
+    if (rawLine.startsWith("rename from ")) {
+      changeType = "rename";
+      pathA = rawLine.slice("rename from ".length).trim();
+      continue;
+    }
+    if (rawLine.startsWith("rename to ")) {
+      changeType = "rename";
+      pathB = rawLine.slice("rename to ".length).trim();
+      continue;
+    }
+    if (rawLine.startsWith("copy from ")) {
+      changeType = "copy";
+      pathA = rawLine.slice("copy from ".length).trim();
+      continue;
+    }
+    if (rawLine.startsWith("copy to ")) {
+      changeType = "copy";
+      pathB = rawLine.slice("copy to ".length).trim();
+      continue;
+    }
     if (rawLine.startsWith("--- ")) {
       pathA = normalizeDiffPath(rawLine.slice(4));
       continue;
@@ -1871,12 +1903,42 @@ function parseUnifiedDiff(path: string, patch: string): ParsedFileDiff {
     }
   }
 
-  return { lines, pathA, pathB };
+  if (!pathA && pathB) {
+    changeType = "add";
+  } else if (pathA && !pathB) {
+    changeType = "delete";
+  } else if (changeType === "modify" && pathA !== "" && pathB !== "" && pathA !== pathB) {
+    changeType = "rename";
+  }
+
+  return { changeType, lines, pathA, pathB };
 }
 
 function normalizeDiffPath(input: string) {
   const path = input.trim().split(/\s+/u)[0] ?? "";
+  if (path === "/dev/null") {
+    return "";
+  }
   return path.replace(/^[ab]\//u, "");
+}
+
+function fileDiffHeaderLabel(
+  parsed: ParsedFileDiff,
+  filePath: string,
+  t: (key: string, options?: { args?: Array<number | string> }) => string,
+) {
+  switch (parsed.changeType) {
+    case "add":
+      return t("code.addedPath", { args: [parsed.pathB || filePath] });
+    case "copy":
+      return t("code.copiedPath", { args: [parsed.pathA, parsed.pathB || filePath] });
+    case "delete":
+      return t("code.deletedPath", { args: [parsed.pathA || filePath] });
+    case "rename":
+      return t("code.renamedPath", { args: [parsed.pathA, parsed.pathB || filePath] });
+    case "modify":
+      return filePath;
+  }
 }
 
 function shortenCommitId(commitId: string) {

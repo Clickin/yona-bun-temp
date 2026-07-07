@@ -791,6 +791,73 @@ index 1234567..abcdef1 100644
   });
 });
 
+test("project commit detail renders legacy added deleted and renamed filename headers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "docs/new.md",
+        patch: `diff --git a/docs/new.md b/docs/new.md
+new file mode 100644
+index 0000000..abcdef1
+--- /dev/null
++++ b/docs/new.md
+@@ -0,0 +1 @@
++hello`,
+      },
+      {
+        path: "docs/old.md",
+        patch: `diff --git a/docs/old.md b/docs/old.md
+deleted file mode 100644
+index 1234567..0000000
+--- a/docs/old.md
++++ /dev/null
+@@ -1 +0,0 @@
+-bye`,
+      },
+      {
+        path: "docs/new-name.md",
+        patch: `diff --git a/docs/old-name.md b/docs/new-name.md
+similarity index 82%
+rename from docs/old-name.md
+rename to docs/new-name.md
+index 1234567..abcdef1 100644
+--- a/docs/old-name.md
++++ b/docs/new-name.md
+@@ -1 +1 @@
+-old name
++new name`,
+      },
+    ],
+  });
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("code.addedPath");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("code.deletedPath");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("code.renamedPath");
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  await expect(page.locator(".diff-partial-file .filename")).toHaveText([
+    "docs/new.md (added)",
+    "docs/old.md (deleted)",
+    "docs/new-name.md (Renamed from docs/old-name.md)",
+  ]);
+  await expect(page.locator("#docs-new-md .patch-header .path")).toHaveText(["+++ docs/new.md"]);
+  await expect(page.locator("#docs-old-md .patch-header .path")).toHaveText(["--- docs/old.md"]);
+  await expect(page.locator("#docs-new-name-md .patch-header .path")).toHaveText([
+    "--- docs/old-name.md",
+    "+++ docs/new-name.md",
+  ]);
+  await expect(page.locator("#docs-new-md tr.add")).toHaveCount(1);
+  await expect(page.locator("#docs-old-md tr.remove")).toHaveCount(1);
+  await expect(page.locator("#docs-new-name-md tr.remove")).toHaveCount(1);
+  await expect(page.locator("#docs-new-name-md tr.add")).toHaveCount(1);
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 test("project commit detail renders legacy file diff error row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
