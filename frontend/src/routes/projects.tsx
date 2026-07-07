@@ -75,6 +75,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   return (
     <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
+      <title>{t("title.projectList")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <div className="title_area">

@@ -147,6 +147,14 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
 
   await page.goto(`${basePath}/projects?filter=sample`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page).toHaveTitle("Project list");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .evaluateAll((titles) => titles.map((title) => title.textContent ?? "")),
+    )
+    .toContain("Project list");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -541,8 +549,13 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).toContain('"data-status": undefined');
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain("autoFocus");
+  expect(source).toContain('<title>{t("title.projectList")}</title>');
   expect(source).not.toContain('autofocus: ""');
   expect(source).not.toMatch(/setAttribute\(['"]autofocus['"]/);
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain("window.document");
+  expect(source).not.toMatch(/use(?:Layout)?Effect\s*\([\s\S]*?(?:document|title)/u);
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');
   expect(source).not.toContain("const projectHref =");
