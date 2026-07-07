@@ -1,12 +1,21 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
 import {
+  createFileRoute,
+  createLink,
+  Link,
+  Link as RouterLink,
+  useRouter,
+} from "@tanstack/react-router";
+import {
+  type ComponentPropsWithoutRef,
   Fragment,
+  type Ref,
   useEffect,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../api/session";
 import {
@@ -65,6 +74,24 @@ const projectSearchPaginationLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 } as const;
+
+function ProjectSearchCategoryLinkAnchor({
+  searchCategoryType,
+  ref,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & {
+  searchCategoryType: ProjectSearchCategory["type"];
+  ref?: Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", {
+    ...props,
+    "data-toggle": "search-category",
+    "data-type": searchCategoryType,
+    ref,
+  });
+}
+
+const ProjectSearchCategoryLink = createLink(ProjectSearchCategoryLinkAnchor);
 
 export const Route = createFileRoute("/$ownerName/$projectName/search")({
   component: ProjectSearchRoute,
@@ -333,17 +360,19 @@ function ProjectSearchSuccessBody({
                     }`;
                     return (
                       <li className={className} key={category.type}>
-                        <Link
-                          from={searchPath}
+                        <ProjectSearchCategoryLink
+                          from="/$ownerName/$projectName/search"
+                          params={{ ownerName, projectName }}
+                          searchCategoryType={category.type}
                           search={{
                             keyword: keywordValue,
                             searchType: category.type,
                           }}
-                          to={searchPath}
+                          to="/$ownerName/$projectName/search"
                         >
                           {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
-                        </Link>
+                        </ProjectSearchCategoryLink>
                       </li>
                     );
                   })}

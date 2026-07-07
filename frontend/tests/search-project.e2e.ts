@@ -6,6 +6,16 @@ const PROJECT_SEARCH_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
+const EXPECTED_PROJECT_SEARCH_CATEGORIES = [
+  { label: "Issues", type: "issue" },
+  { label: "Users", type: "user" },
+  { label: "Posts", type: "post" },
+  { label: "Milestones", type: "milestone" },
+  { label: "Issue Comments", type: "issue_comment" },
+  { label: "Post Comments", type: "post_comment" },
+  { label: "Code Reviews", type: "review" },
+];
+
 const EXPECTED_PROJECT_SEARCH = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
 <header class="gnb-outer">
@@ -86,8 +96,7 @@ test("project search matches legacy search/result.scala.html project empty revie
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "review", "missing");
   await expect(page.locator(".project-menu-outer .project-menu-nav li.active")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
-  await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
+  await expectProjectSearchCategoryAttributes(page, basePath, "missing");
   await expect(page.locator(".search-result-wrap").locator("> .empty-result")).toHaveCount(1);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -99,7 +108,20 @@ test("project search route source renders legacy projectLayout title without dir
   expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
     '<title>{`${t("title.search")} - ${ownerName}/${projectName}`}</title>',
   );
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain("const ProjectSearchCategoryLink = createLink");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain('"data-toggle": "search-category"');
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain('"data-type": searchCategoryType');
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
+    '<ProjectSearchCategoryLink\n                          from="/$ownerName/$projectName/search"',
+  );
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("<a ");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("<Link\n                          data-");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('href="#"');
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("document.title");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("document.querySelector");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("classList");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("globalThis.document");
 });
 
@@ -480,6 +502,7 @@ test("project search preserves whitespace-only keyword and calls scoped search A
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator("#searchKeyword")).toHaveValue("  ");
   await expect(page.locator(".search-category-wrap li.active")).toHaveText("Code Reviews 0");
+  await expectProjectSearchCategoryAttributes(page, basePath, "  ");
   expect(searchApi.count).toBe(1);
   expect(searchApi.keywords).toEqual(["  "]);
 });
@@ -492,8 +515,7 @@ test("project search category and form navigation stay inside the React SPA", as
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
   await markSearchSpaSession(page);
   await page.locator("#searchKeyword").fill("fresh");
-  await expect(page.locator('.search-category-wrap a[href="#"]')).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap a")).toHaveCount(7);
+  await expectProjectSearchCategoryAttributes(page, basePath, "fresh");
   const issueCategory = page.locator(".search-category-wrap a", { hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute(
     "href",
@@ -673,6 +695,57 @@ async function expectProjectSearchForm(
   await expect(form.locator("input[name='searchType']")).toHaveValue(searchType);
   await expect(form.locator("#searchKeyword[name='keyword'].span11")).toHaveValue(keyword);
   await expect(form.locator("button[type='submit'].ybtn")).toHaveText("Search");
+}
+
+async function expectProjectSearchCategoryAttributes(
+  page: Page,
+  basePath: string,
+  keyword: string,
+) {
+  const categories = await page.locator(".search-category-wrap li > a").evaluateAll((anchors) =>
+    anchors.map((anchor) => {
+      const badge = anchor.querySelector(".num-badge");
+      const label = Array.from(anchor.childNodes)
+        .filter((child) => child.nodeType === Node.TEXT_NODE)
+        .map((child) => child.textContent ?? "")
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim();
+      return {
+        count: badge?.textContent?.trim() ?? "",
+        dataToggle: anchor.getAttribute("data-toggle"),
+        dataType: anchor.getAttribute("data-type"),
+        href: anchor.getAttribute("href"),
+        label,
+      };
+    }),
+  );
+
+  expect(categories).toHaveLength(EXPECTED_PROJECT_SEARCH_CATEGORIES.length);
+  expect(
+    categories.map(({ label, dataToggle, dataType }) => ({ dataToggle, dataType, label })),
+  ).toEqual(
+    EXPECTED_PROJECT_SEARCH_CATEGORIES.map((category) => ({
+      dataToggle: "search-category",
+      dataType: category.type,
+      label: category.label,
+    })),
+  );
+  expect(categories.map(({ count }) => count)).toEqual(
+    categories.map(() => expect.stringMatching(/^\d+$/u)),
+  );
+  expect(categories.some(({ label }) => label === "Projects")).toBe(false);
+
+  for (const [index, category] of categories.entries()) {
+    expect(category.href).not.toBe("#");
+    expect(category.href).not.toBeNull();
+    const href = new URL(category.href!, "http://127.0.0.1");
+    expect(`${href.pathname}`).toBe(`${basePath}/admin/sample/search`);
+    expect(href.searchParams.get("keyword")).toBe(keyword);
+    expect(href.searchParams.get("searchType")).toBe(
+      EXPECTED_PROJECT_SEARCH_CATEGORIES[index]?.type,
+    );
+  }
 }
 
 async function mockProjectSearch(
