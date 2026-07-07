@@ -219,6 +219,56 @@ test("project issue detail uses route-owned timeline and comment hash links", as
   ).resolves.toBe("issue-hash-links");
 });
 
+test("project issue detail folds original email message in route-owned comment body", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        childComments: [],
+        contentsHtml: "<p>Server HTML should not render</p>",
+        contentsMarkdown:
+          "Fresh reply before quoted tail\n\n--- Original Message ---\nQuoted tail starts hidden\n\n> previous note",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: true,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+    timeline: [],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const commentBody = page.locator("#comment-77 .comment-body.markdown-wrap");
+  await expect(commentBody).toHaveAttribute("data-via-email", "true");
+  await expect(commentBody).toHaveAttribute("data-yobi-original-message-processed", "true");
+  await expect(commentBody.getByText("Fresh reply before quoted tail")).toBeVisible();
+  await expect(commentBody.getByText("Quoted tail starts hidden")).toBeHidden();
+
+  await page.waitForTimeout(100);
+  const toggle = commentBody.locator('button[type="button"]').filter({ hasText: "..." });
+  await expect(toggle).toHaveCount(1);
+  await expect(toggle).toBeVisible();
+  await expect(commentBody.locator('button[type="button"]:visible')).toHaveCount(1);
+
+  await toggle.click();
+  await expect(commentBody.getByText("Quoted tail starts hidden")).toBeVisible();
+  await expect(commentBody.getByText("previous note")).toBeVisible();
+
+  await toggle.click();
+  await expect(commentBody.getByText("Quoted tail starts hidden")).toBeHidden();
+  await expect(commentBody.getByText("previous note")).toBeHidden();
+});
+
 test("project issue detail preserves legacy clickable right-pane index comments", async ({
   page,
 }) => {
@@ -261,6 +311,12 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain("yobi.Mention({");
   expect(routeSource).not.toContain(":contains(");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(routeSource).not.toContain("yobi.OriginalMessage.hide");
+  expect(routeSource).toMatch(
+    /data-yobi-original-message-processed=\{viaEmail\s*\?\s*"true"\s*:\s*undefined\}/u,
+  );
+  expect(routeSource).toContain("function OriginalMessageMarkdown({");
+  expect(routeSource).toContain("function splitOriginalMessage(contentsMarkdown: string)");
   expect(routeSource).not.toMatch(
     /function CommentDeleteModalScripts[\s\S]*dangerouslySetInnerHTML[\s\S]*function IssueViewBootstrapScript/u,
   );

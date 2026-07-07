@@ -2453,6 +2453,7 @@ function IssueCommentRow({
   const [commentEditOpen, setCommentEditOpen] = useState(false);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const contentsMarkdown = translatedContentsMarkdown ?? stringField(comment.contentsMarkdown);
+  const viaEmail = booleanField(comment.viaEmail);
   const voters = comment.voters ?? [];
   const childComments = Array.isArray(comment.childComments)
     ? (comment.childComments as IssueChildComment[])
@@ -2668,9 +2669,10 @@ function IssueCommentRow({
           <div
             className="comment-body markdown-wrap"
             data-allowed-update={String(canUpdate)}
-            data-via-email={String(booleanField(comment.viaEmail))}
+            data-via-email={String(viaEmail)}
+            data-yobi-original-message-processed={viaEmail ? "true" : undefined}
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>
+            <OriginalMessageMarkdown contentsMarkdown={contentsMarkdown} viaEmail={viaEmail} />
           </div>
           <div
             className="attachments pull-left"
@@ -2699,6 +2701,60 @@ function IssueCommentRow({
       />
     </li>
   );
+}
+
+function OriginalMessageMarkdown({
+  contentsMarkdown,
+  viaEmail,
+}: {
+  contentsMarkdown: string;
+  viaEmail: boolean;
+}) {
+  const [showOriginalMessage, setShowOriginalMessage] = useState(false);
+  const originalMessage = viaEmail ? splitOriginalMessage(contentsMarkdown) : null;
+
+  if (!originalMessage) {
+    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+  }
+
+  return (
+    <>
+      {originalMessage.visibleMarkdown ? (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+      ) : null}
+      <button
+        type="button"
+        style={{ border: 0, paddingLeft: "5px", paddingRight: "5px" }}
+        onClick={() => setShowOriginalMessage((current) => !current)}
+      >
+        ...
+      </button>
+      <div hidden={!showOriginalMessage}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {originalMessage.originalMarkdown}
+        </ReactMarkdown>
+      </div>
+    </>
+  );
+}
+
+function splitOriginalMessage(contentsMarkdown: string) {
+  const lines = contentsMarkdown.split(/\r?\n/u);
+  const delimiterIndex = lines.findIndex((line, index) => {
+    if (index === 0) {
+      return false;
+    }
+    return /^---+[^-]*---+\s*$/u.test(line.trim());
+  });
+
+  if (delimiterIndex < 0) {
+    return null;
+  }
+
+  return {
+    originalMarkdown: lines.slice(delimiterIndex).join("\n"),
+    visibleMarkdown: lines.slice(0, delimiterIndex).join("\n"),
+  };
 }
 
 function ChildCommentAnchors({ childComments }: { childComments: IssueChildComment[] }) {
