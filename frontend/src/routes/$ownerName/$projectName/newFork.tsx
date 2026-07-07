@@ -95,12 +95,6 @@ function ProjectForkRouteShell({
   const isGitProject = query.data
     ? stringField(recordField(query.data.source).vcs, "").toUpperCase() === "GIT"
     : null;
-  useProjectForkDocumentTitle({
-    isGitProject,
-    ownerName,
-    projectName,
-    runtimeConfig,
-  });
 
   if (!query.data) {
     return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
@@ -109,6 +103,7 @@ function ProjectForkRouteShell({
   if (!isGitProject) {
     return (
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <ProjectForkTitle isGitProject={false} ownerName={ownerName} projectName={projectName} />
         <DefaultSearchErrorBody
           iconClassName="ico-404"
           messageKey="error.badrequest.only.available.for.git"
@@ -127,6 +122,7 @@ function ProjectForkRouteShell({
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectForkTitle isGitProject={true} ownerName={ownerName} projectName={projectName} />
       <ProjectForkScreen
         forkOwnerName={forkOwnerName}
         ownerName={ownerName}
@@ -168,33 +164,24 @@ function ProjectForkScreen({
   );
 }
 
-function useProjectForkDocumentTitle({
+function ProjectForkTitle({
   isGitProject,
   ownerName,
   projectName,
-  runtimeConfig,
 }: {
-  isGitProject: boolean | null;
+  isGitProject: boolean;
   ownerName: string;
   projectName: string;
-  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
 
-  useEffect(() => {
-    if (typeof document === "undefined" || isGitProject === null) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = isGitProject
-      ? `${t("fork")} - ${ownerName}/${projectName}`
-      : t("error.badrequest.only.available.for.git");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [isGitProject, ownerName, projectName, runtimeConfig.siteName, t]);
+  return (
+    <title>
+      {isGitProject
+        ? `${t("fork")} - ${ownerName}/${projectName}`
+        : t("error.badrequest.only.available.for.git")}
+    </title>
+  );
 }
 
 function ProjectForkBody({

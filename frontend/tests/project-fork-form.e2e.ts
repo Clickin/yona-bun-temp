@@ -65,6 +65,10 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/newFork`);
+  await expect(page).toHaveTitle("Fork - admin/sample");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
+    .toBe("Fork - admin/sample");
   await expect(page.locator("#helpMessage")).toBeVisible();
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -197,6 +201,9 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   await page.goto(`${basePath}/admin/svnplayground/newFork`);
 
   await expect(page).toHaveTitle("This request is only supported in a git project.");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
+    .toBe("This request is only supported in a git project.");
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
@@ -364,6 +371,21 @@ test("project fork route has no raw route-local internal anchors", async () => {
   expect(source).not.toContain("href={projectHref");
   expect(source).not.toContain("as unknown as ProjectContainer");
   expect(source).not.toContain("onMouseDown=");
+});
+
+test("project fork browser title is rendered through React head title", async () => {
+  const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
+
+  expect(source).toContain("<ProjectForkTitle isGitProject={true}");
+  expect(source).toContain("<ProjectForkTitle isGitProject={false}");
+  expect(source).toContain("<title>");
+  expect(source).toContain('`${t("fork")} - ${ownerName}/${projectName}`');
+  expect(source).toContain('t("error.badrequest.only.available.for.git")');
+  expect(source).toContain("useEffect(() =>");
+  expect(source).not.toMatch(/document\s*\.\s*title/u);
+  expect(source).not.toMatch(/(?:window\s*\.\s*)?parent\s*\.\s*document\s*\.\s*title/u);
+  expect(source).not.toMatch(/document\s*\.\s*querySelector\s*\(\s*["']title["']/u);
+  expect(source).not.toMatch(/document\s*\.\s*head/u);
 });
 
 test("project fork owner select navigates by legacy data-url without full reload", async ({
