@@ -932,6 +932,9 @@ function PostCommentRow({
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
   const avatarUrl = "/assets/images/default-avatar-32.png";
   const isEditing = editingCommentId === commentId;
+  const viaEmail = booleanField(comment.viaEmail);
+  const hasRouteOwnedOriginalMessage =
+    viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown) !== null;
 
   return (
     <li className="comment" id={`comment-${commentId}`}>
@@ -1056,10 +1059,14 @@ function PostCommentRow({
           <TasklistBar />
           <div
             className="comment-body markdown-wrap"
-            data-via-email={String(booleanField(comment.viaEmail))}
+            data-via-email={String(viaEmail)}
             data-allowed-update={String(canUpdate)}
+            data-yobi-original-message-processed={hasRouteOwnedOriginalMessage ? "true" : undefined}
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
+            <OriginalMessageMarkdown
+              contentsMarkdown={comment.contentsMarkdown}
+              viaEmail={viaEmail}
+            />
           </div>
           <div className="attachments" data-attachments={JSON.stringify(comment.attachments ?? [])}>
             <AttachedFiles basePath={basePath} attachments={comment.attachments} />
@@ -1080,6 +1087,57 @@ function PostCommentRow({
       />
     </li>
   );
+}
+
+function OriginalMessageMarkdown({
+  contentsMarkdown,
+  viaEmail,
+}: {
+  contentsMarkdown: string;
+  viaEmail: boolean;
+}) {
+  const [showsOriginalMessage, setShowsOriginalMessage] = useState(false);
+  const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
+
+  if (!originalMessage) {
+    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+  }
+
+  return (
+    <>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+      <button
+        type="button"
+        style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setShowsOriginalMessage((current) => !current);
+        }}
+      >
+        ...
+      </button>
+      <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.hiddenMarkdown}</ReactMarkdown>
+      </div>
+    </>
+  );
+}
+
+function splitOriginalMessageMarkdown(contentsMarkdown: string) {
+  const lines = contentsMarkdown.split(/\r?\n/u);
+  const delimiterIndex = lines.findIndex(
+    (line, index) => index > 0 && /^---+[^-]*---+\s*$/u.test(line.trim()),
+  );
+
+  if (delimiterIndex < 0) {
+    return null;
+  }
+
+  return {
+    visibleMarkdown: lines.slice(0, delimiterIndex).join("\n").trimEnd(),
+    hiddenMarkdown: lines.slice(delimiterIndex).join("\n").trim(),
+  };
 }
 
 function PostCommentUpdateForm({

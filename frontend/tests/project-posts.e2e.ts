@@ -1890,6 +1890,84 @@ test("project board detail renders legacy parent comments", async ({ page }) => 
   );
 });
 
+test("project board detail folds original message content in via-email comments", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "viaEmailComment");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+
+  const commentBody = page.locator("#comment-body-21 .comment-body");
+  await expect(commentBody).toHaveAttribute("data-via-email", "true");
+  await expect(commentBody).toHaveAttribute("data-yobi-original-message-processed", "true");
+  await expect(commentBody.locator("p").first()).toHaveText("Reply before quoted mail.");
+
+  const toggle = commentBody.locator('button[type="button"]', { hasText: "..." });
+  await page.waitForTimeout(100);
+  await expect(toggle).toHaveCount(1);
+  await expect(toggle).toBeVisible();
+  await expect
+    .poll(() =>
+      commentBody.locator('button[type="button"]').evaluateAll(
+        (buttons) =>
+          buttons.filter((button) => {
+            const element = button as HTMLElement;
+            return element.textContent?.trim() === "..." && element.offsetParent !== null;
+          }).length,
+      ),
+    )
+    .toBe(1);
+  await expect(commentBody.locator('[data-original-message-owner="route"]')).toBeHidden();
+  await expect(commentBody.getByText("Original author wrote:")).toBeHidden();
+  await expect(commentBody.getByText("Quoted original line")).toBeHidden();
+
+  await toggle.click();
+  await expect(commentBody.locator('[data-original-message-owner="route"]')).toBeVisible();
+  await expect(commentBody.getByText("Original author wrote:")).toBeVisible();
+  await expect(commentBody.getByText("Quoted original line")).toBeVisible();
+
+  await toggle.click();
+  await expect(commentBody.locator('[data-original-message-owner="route"]')).toBeHidden();
+  await expect(commentBody.getByText("Quoted original line")).toBeHidden();
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const originalMessageSource = routeSource.slice(
+    routeSource.indexOf("function PostCommentRow"),
+    routeSource.indexOf("function PostCommentUpdateForm"),
+  );
+  expect(originalMessageSource).toContain("hasRouteOwnedOriginalMessage");
+  expect(originalMessageSource).toContain("data-yobi-original-message-processed={");
+  expect(originalMessageSource).toContain('hasRouteOwnedOriginalMessage ? "true" : undefined');
+  const originalMessageComponentSource = routeSource.slice(
+    routeSource.indexOf("function OriginalMessageMarkdown"),
+    routeSource.indexOf("function PostCommentUpdateForm"),
+  );
+  expect(originalMessageComponentSource).toContain("useState(false)");
+  expect(originalMessageComponentSource).toContain(
+    "setShowsOriginalMessage((current) => !current)",
+  );
+  expect(originalMessageComponentSource).toContain('data-original-message-owner="route"');
+  expect(originalMessageComponentSource).toContain("hidden={!showsOriginalMessage}");
+  expect(originalMessageSource).not.toContain("document.");
+  expect(originalMessageComponentSource).not.toContain("document.");
+  expect(originalMessageSource).not.toContain("addEventListener");
+  expect(originalMessageComponentSource).not.toContain("addEventListener");
+  expect(originalMessageSource).not.toContain("classList");
+  expect(originalMessageComponentSource).not.toContain("classList");
+  expect(originalMessageSource).not.toContain("style.display");
+  expect(originalMessageComponentSource).not.toContain("style.display");
+  expect(originalMessageSource).not.toContain("innerHTML");
+  expect(originalMessageComponentSource).not.toContain("innerHTML");
+  expect(originalMessageSource).not.toContain("outerHTML");
+  expect(originalMessageComponentSource).not.toContain("outerHTML");
+  expect(originalMessageSource).not.toContain("dangerouslySetInnerHTML");
+  expect(originalMessageComponentSource).not.toContain("dangerouslySetInnerHTML");
+});
+
 test("project board detail owns comment hash links through router", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "childComment");
@@ -2585,6 +2663,7 @@ async function mockProjectPosts(
     | "readonlyLabel"
     | "comment"
     | "commentUpdate"
+    | "viaEmailComment"
     | "attachments"
     | "childComment" = "default",
   overrides: Record<string, unknown> = {},
@@ -2808,7 +2887,10 @@ async function mockProjectPosts(
         bodyHtml: "<p>Server HTML should not render</p>",
         bodyMarkdown: "Post **markdown**",
         commentCount:
-          state === "comment" || state === "commentUpdate" || state === "attachments"
+          state === "comment" ||
+          state === "commentUpdate" ||
+          state === "viaEmailComment" ||
+          state === "attachments"
             ? 1
             : state === "childComment"
               ? 2
@@ -2816,6 +2898,7 @@ async function mockProjectPosts(
         comments:
           state === "comment" ||
           state === "commentUpdate" ||
+          state === "viaEmailComment" ||
           state === "attachments" ||
           state === "childComment"
             ? [
@@ -2835,11 +2918,14 @@ async function mockProjectPosts(
                   authorLabel: "Dev Member",
                   authorLoginId: "dev",
                   contentsHtml: "<p>Server HTML should not render</p>",
-                  contentsMarkdown: "First **comment**",
+                  contentsMarkdown:
+                    state === "viaEmailComment"
+                      ? "Reply before quoted mail.\n\n---- Original Message ----\nOriginal author wrote:\n\n> Quoted original line"
+                      : "First **comment**",
                   createdLabel: "Jul 3, 2026",
                   id: "21",
                   parentCommentId: "",
-                  viaEmail: false,
+                  viaEmail: state === "viaEmailComment",
                 },
                 ...(state === "childComment"
                   ? [
