@@ -121,8 +121,27 @@ function ProjectIssueEditFormBody({
   const [titleFocusRequest, setTitleFocusRequest] = useState(1);
   const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
+  const parentIssueId = stringField(issueRecord.parentIssueId, "");
+  const currentIssueId = stringField(issueRecord.issueId, "");
+  const showSubtaskOptionOnMount = parentIssueId !== "" || currentIssueId !== "";
+  const [isSubtaskOptionVisible, setIsSubtaskOptionVisible] = useState(showSubtaskOptionOnMount);
+  const [isSubtaskMessageOn, setIsSubtaskMessageOn] = useState(false);
   const dueDateRef = useRef<HTMLInputElement>(null);
   const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
+
+  function toggleSubtaskOption() {
+    setIsSubtaskOptionVisible((current) => {
+      const next = !current;
+      setIsSubtaskMessageOn(next);
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    setIsSubtaskOptionVisible(showSubtaskOptionOnMount);
+    setIsSubtaskMessageOn(false);
+  }, [showSubtaskOptionOnMount]);
+
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -244,9 +263,20 @@ function ProjectIssueEditFormBody({
                           }}
                         />
                       </div>
-                      <div className="span1 subtask-message">{t("issue.option")}</div>
+                      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- legacy partial_select_subtask.scala.html renders a clickable div, and DOM parity depends on preserving it. */}
+                      <div
+                        className={`span1 subtask-message${isSubtaskMessageOn ? " option-on" : ""}`}
+                        onClick={toggleSubtaskOption}
+                      >
+                        {t("issue.option")}
+                      </div>
                     </div>
-                    <SubtaskSelects issue={issue} parentOptions={parentOptions} project={project} />
+                    <SubtaskSelects
+                      issue={issue}
+                      parentOptions={parentOptions}
+                      project={project}
+                      showOption={isSubtaskOptionVisible}
+                    />
                   </dd>
                 </dl>
               </div>
@@ -472,6 +502,7 @@ function SubtaskSelects({
   issue,
   parentOptions,
   project,
+  showOption,
 }: {
   issue: RestIssueDetailResponse;
   parentOptions: Array<{
@@ -481,10 +512,15 @@ function SubtaskSelects({
     title: string;
   }>;
   project: ProjectContainer;
+  showOption: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const parentIssueId = stringField((issue as YonaRecord).parentIssueId, "");
-  const showOption = parentIssueId !== "";
+  const issueRecord = issue as YonaRecord;
+  const parentIssueId = stringField(issueRecord.parentIssueId, "");
+  const hasChildIssue = booleanField(issueRecord.hasChildIssue);
+  const visibleParentOptions = hasChildIssue
+    ? parentOptions.filter((parentIssue) => String(parentIssue.id) === parentIssueId)
+    : parentOptions;
   return (
     <div className={`subtask-wrap ${showOption ? "show" : ""}`}>
       <div className="span3">
@@ -513,8 +549,10 @@ function SubtaskSelects({
           disabled={!showOption}
           defaultValue={parentIssueId}
         >
-          <option value="">{t("issue.subtask.select")}</option>
-          {parentOptions.map((parentIssue) => (
+          <option value="">
+            {hasChildIssue ? "이미 부모 이슈입니다." : t("issue.subtask.select")}
+          </option>
+          {visibleParentOptions.map((parentIssue) => (
             <option key={String(parentIssue.id)} value={String(parentIssue.id)}>
               #{String(parentIssue.issueNumber)}. {parentIssue.title}
             </option>
