@@ -15,7 +15,7 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   secretSetupRequired?: boolean;
 };
 
-type FieldErrors = Partial<Record<"email" | "password" | "retypedPassword", string[]>>;
+type FieldErrors = Partial<Record<"loginId" | "email" | "password" | "retypedPassword", string[]>>;
 
 const legacyAnchorActiveProps = {
   "aria-current": undefined,
@@ -92,7 +92,15 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     onError(error) {
       if (!(error instanceof RestApiError)) return;
       const message = t(error.message);
+      if (error.message === "user.wrongloginId.alert") {
+        setFieldErrors({ loginId: [message] });
+        return;
+      }
       if (error.message === "validation.invalidEmail") {
+        setFieldErrors({ email: [message] });
+        return;
+      }
+      if (error.message === "user.email.duplicate") {
         setFieldErrors({ email: [message] });
         return;
       }
@@ -133,6 +141,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                 <dl>
                   <dt>
                     <label htmlFor="loginId">{t("user.signupId")}</label>
+                    <FieldErrorLabels errors={fieldErrors.loginId} />
                   </dt>
                   <dd>
                     <input

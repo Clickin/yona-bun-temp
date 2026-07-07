@@ -315,6 +315,61 @@ test("first-run secret setup renders REST validation errors in legacy field labe
   await expect(page).toHaveURL(`${basePath}/secret`);
 });
 
+test("first-run secret setup renders legacy loginId REST errors beside the readonly label", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ secretSetupRequired: true }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "x-csrf-token": "csrf-secret",
+      },
+      body: JSON.stringify({ csrfToken: "csrf-secret" }),
+    });
+  });
+  await page.route("**/api/v1/auth/secret", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 400,
+      body: JSON.stringify({
+        error: {
+          code: "bad_request",
+          message: "user.wrongloginId.alert",
+          status: 400,
+        },
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/secret`);
+  await page.fill("#uname", "Site Admin");
+  await page.fill("#email", "admin@example.com");
+  await page.fill("#password", "secret-pass");
+  await page.fill("#retypedPassword", "secret-pass");
+  await page.locator(".signup-form-wrap").locator('button[type="submit"]').click();
+
+  const loginIdError = page.locator('dt:has(label[for="loginId"]) .label.label-important');
+  await expect(loginIdError).toHaveText("Enter Valid ID");
+  await expect(page.locator('dt:has(label[for="email"]) .label.label-important')).toHaveCount(0);
+  await expect(page.locator('dt:has(label[for="password"]) .label.label-important')).toHaveCount(0);
+  await expect(
+    page.locator('dt:has(label[for="retypedPassword"]) .label.label-important'),
+  ).toHaveCount(0);
+  expect(await readLoginIdErrorPlacementMetrics(page)).toEqual({
+    errorBottomWithinLabelRow: true,
+    errorLeftAfterLabel: true,
+    errorTopWithinLabelRow: true,
+  });
+  await expect(page).toHaveURL(`${basePath}/secret`);
+});
+
 test("first-run secret setup keeps legacy mobile standalone form proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.route("**/api/v1/auth/capabilities", async (route) => {
@@ -439,6 +494,9 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain("useLinkProps");
   expect(SECRET_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
   expect(SECRET_ROUTE_SOURCE).toContain("legacyHref={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).toContain('"loginId"');
+  expect(SECRET_ROUTE_SOURCE).toContain('error.message === "user.wrongloginId.alert"');
+  expect(SECRET_ROUTE_SOURCE).toContain("errors={fieldErrors.loginId}");
   expect(SECRET_ROUTE_SOURCE).toContain('className: "logo"');
   expect(SECRET_ROUTE_SOURCE).toContain('className: "ybtn ybtn-info"');
   expect(SECRET_ROUTE_SOURCE).toContain('"aria-current": undefined');
@@ -553,6 +611,29 @@ async function expectLegacyAnchor(
   }
   await expect(link).not.toHaveAttribute("aria-current", /.+/u);
   await expect(link).not.toHaveAttribute("data-status", /.+/u);
+}
+
+async function readLoginIdErrorPlacementMetrics(page: Page) {
+  return page.evaluate(() => {
+    const labelRow = document.querySelector<HTMLElement>('dt:has(label[for="loginId"])');
+    const label = document.querySelector<HTMLElement>('label[for="loginId"]');
+    const error = document.querySelector<HTMLElement>(
+      'dt:has(label[for="loginId"]) .label.label-important',
+    );
+    if (!labelRow || !label || !error) {
+      throw new Error("Expected loginId field-error metric targets are missing.");
+    }
+
+    const rowBox = labelRow.getBoundingClientRect();
+    const labelBox = label.getBoundingClientRect();
+    const errorBox = error.getBoundingClientRect();
+
+    return {
+      errorBottomWithinLabelRow: errorBox.bottom <= rowBox.bottom,
+      errorLeftAfterLabel: errorBox.left >= labelBox.right,
+      errorTopWithinLabelRow: errorBox.top >= rowBox.top,
+    };
+  });
 }
 
 async function readMobileSecretMetrics(page: Page) {
