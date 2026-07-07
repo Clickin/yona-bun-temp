@@ -274,6 +274,7 @@ const questionButtonStyle = {
   background: "transparent",
   border: 0,
   boxShadow: "none",
+  lineHeight: "inherit",
   padding: 0,
   textAlign: "left",
 } satisfies React.CSSProperties;

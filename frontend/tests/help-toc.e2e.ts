@@ -67,7 +67,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">Yona를 설치하고 싶어요.</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yona를 설치하고 싶어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -80,7 +80,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">프로젝트를 새로 생성하고 싶어요.</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">프로젝트를 새로 생성하고 싶어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -110,7 +110,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">내가 참여하는 프로젝트들은 어디서 볼수 있나요?</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">내가 참여하는 프로젝트들은 어디서 볼수 있나요?</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -126,7 +126,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">프로젝트 탈퇴는 어떻게 하나요.</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">프로젝트 탈퇴는 어떻게 하나요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -140,7 +140,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">게시판에서는 어떠한 것들을 할수 있나요?</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">게시판에서는 어떠한 것들을 할수 있나요?</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -161,7 +161,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; padding: 0px; text-align: left;">Yona의 버그를 발견했어요.</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yona의 버그를 발견했어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -273,6 +273,20 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       text: "Yona 이슈트래커에 등록",
     },
   ]);
+  expect(await readExternalAnswerLinkContainment(page)).toEqual([
+    {
+      href: "https://github.com/doortts/yona#korean",
+      text: "https://github.com/doortts/yona#korean",
+      containedInAnswer: true,
+      hasVisibleArea: true,
+    },
+    {
+      href: "https://github.com/nforge/yobi/issues",
+      text: "Yona 이슈트래커에 등록",
+      containedInAnswer: true,
+      hasVisibleArea: true,
+    },
+  ]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -308,6 +322,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     providerMarginLeft: "4px",
     qasMarginTop: "30px",
     questionFontSize: "14px",
+    questionLineHeight: "16.8px",
     questionMarginBottomClosed: "14px",
     questionMarginBottomOpen: "16px",
     questionWidth: "892.5px",
@@ -410,6 +425,38 @@ async function renderedHelpAnswerLinkActiveMarkers(page: Page) {
   );
 }
 
+async function readExternalAnswerLinkContainment(page: Page) {
+  return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
+    links
+      .filter((link) => link.getAttribute("href")?.startsWith("https://github.com/"))
+      .map((link) => {
+        const answer = link.closest(".answer");
+        const qa = link.closest(".qa");
+        if (!answer) {
+          throw new Error("Expected external FAQ link to stay inside a legacy answer cell.");
+        }
+        const wasOpen = qa?.classList.contains("open") ?? false;
+        qa?.classList.add("open");
+        const linkBox = link.getBoundingClientRect();
+        const answerBox = answer.getBoundingClientRect();
+        const result = {
+          href: link.getAttribute("href"),
+          text: link.textContent?.trim(),
+          containedInAnswer:
+            linkBox.left >= answerBox.left &&
+            linkBox.top >= answerBox.top &&
+            linkBox.right <= answerBox.right &&
+            linkBox.bottom <= answerBox.bottom,
+          hasVisibleArea: linkBox.width > 0 && linkBox.height > 0,
+        };
+        if (!wasOpen) {
+          qa?.classList.remove("open");
+        }
+        return result;
+      }),
+  );
+}
+
 async function readDesktopHelpMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
@@ -494,6 +541,7 @@ async function readDesktopHelpMetrics(page: Page) {
       providerMarginLeft: providerStyle.marginLeft,
       qasMarginTop: qasStyle.marginTop,
       questionFontSize: questionStyle.fontSize,
+      questionLineHeight: questionStyle.lineHeight,
       questionMarginBottomClosed: closedQuestionMarginBottom,
       questionMarginBottomOpen: questionWrapOpenStyle.marginBottom,
       questionWidth: questionStyle.width,
