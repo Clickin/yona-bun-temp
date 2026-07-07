@@ -167,6 +167,29 @@ const NON_RANGED_THREAD = {
   path: "",
 };
 
+const VIA_EMAIL_NON_RANGED_THREAD = {
+  ...NON_RANGED_THREAD,
+  comments: [
+    {
+      attachments: [],
+      authorAvatarUrl: "/avatars/dev.png",
+      authorId: 2,
+      authorLabel: "Dev Member",
+      authorLoginId: "dev",
+      canDelete: false,
+      canUpdate: false,
+      contentsHtml: "<p>Server HTML should not render</p>",
+      contentsMarkdown:
+        "Reply before quoted mail.\n\n-----Original Message-----\nOriginal author wrote:\nQuoted original line",
+      createdLabel: "Jul 7, 2026",
+      id: 802,
+      threadId: 94,
+      viaEmail: true,
+    },
+  ],
+  id: 94,
+};
+
 const OUTDATED_REVIEW_THREAD = {
   ...REVIEW_THREAD,
   id: 93,
@@ -618,6 +641,77 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
           .__commentDeleteBubbles,
     ),
   ).toBe(0);
+});
+
+test("project pull request changes folds original message content in via-email review comments", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    cardThreads: [VIA_EMAIL_NON_RANGED_THREAD],
+    nonRangedThreads: [VIA_EMAIL_NON_RANGED_THREAD],
+    threads: [VIA_EMAIL_NON_RANGED_THREAD],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+
+  const commentBody = page.locator("#comment-802 .comment-body.markdown-wrap");
+  await expect(commentBody).toHaveAttribute("data-via-email", "true");
+  await expect(commentBody).toHaveAttribute("data-yobi-original-message-processed", "true");
+  await expect(commentBody.locator("p").first()).toHaveText("Reply before quoted mail.");
+
+  const toggle = commentBody.locator('button[type="button"]', { hasText: "..." });
+  await page.waitForTimeout(100);
+  await expect(toggle).toHaveCount(1);
+  await expect(toggle).toBeVisible();
+  await expect
+    .poll(() =>
+      commentBody.locator('button[type="button"]').evaluateAll(
+        (buttons) =>
+          buttons.filter((button) => {
+            const element = button as HTMLElement;
+            return element.textContent?.trim() === "..." && element.offsetParent !== null;
+          }).length,
+      ),
+    )
+    .toBe(1);
+
+  const foldedOriginal = commentBody.locator('[data-original-message-owner="route"]');
+  await expect(foldedOriginal).toBeHidden();
+  await expect(foldedOriginal.getByText("Original author wrote:")).toBeHidden();
+  await expect(foldedOriginal.getByText("Quoted original line")).toBeHidden();
+
+  await toggle.click();
+  await expect(foldedOriginal).toBeVisible();
+  await expect(foldedOriginal.getByText("Original author wrote:")).toBeVisible();
+  await expect(foldedOriginal.getByText("Quoted original line")).toBeVisible();
+
+  await toggle.click();
+  await expect(foldedOriginal).toBeHidden();
+  await expect(foldedOriginal.getByText("Quoted original line")).toBeHidden();
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
+    "utf8",
+  );
+  const originalMessageSource = routeSource.slice(
+    routeSource.indexOf("function NonRangedThreadComment"),
+    routeSource.indexOf("function CommentDeleteModal"),
+  );
+  expect(originalMessageSource).toContain("hasRouteOwnedOriginalMessage");
+  expect(originalMessageSource).toContain("data-yobi-original-message-processed={");
+  expect(originalMessageSource).toContain("function OriginalMessageMarkdown");
+  expect(originalMessageSource).toContain("setShowsOriginalMessage((current) => !current)");
+  expect(originalMessageSource).toContain('data-original-message-owner="route"');
+  expect(originalMessageSource).toContain("hidden={!showsOriginalMessage}");
+  expect(originalMessageSource).not.toContain("document.");
+  expect(originalMessageSource).not.toContain("addEventListener");
+  expect(originalMessageSource).not.toContain("querySelector");
+  expect(originalMessageSource).not.toContain("classList");
+  expect(originalMessageSource).not.toContain("style.display");
+  expect(originalMessageSource).not.toContain("innerHTML");
+  expect(originalMessageSource).not.toContain("outerHTML");
+  expect(originalMessageSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("project pull request changes owns comment hash links through router", async ({ page }) => {
