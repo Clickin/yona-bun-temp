@@ -1729,7 +1729,12 @@ test("project board detail internal links are router-owned", async ({ page }) =>
   expect(routeSource).toContain("const legacyRouteLocalActiveProps");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
-  expect(routeSource).toContain("to={`/${ownerName}/${projectName}/posts?labelIds=${label.id}`}");
+  expect(routeSource).toContain('to="/$ownerName/$projectName/posts"');
+  expect(routeSource).toContain("params={{ ownerName, projectName }}");
+  expect(routeSource).toContain("search={{ labelIds: [label.id] }}");
+  expect(routeSource).toContain(
+    "mask={{ to: `/${ownerName}/${projectName}/posts?labelIds=${label.id}` }}",
+  );
   expect(routeSource).not.toContain("legacySingleLabelIds");
   expect(routeSource).not.toContain("toJSON");
   expect(routeSource).not.toContain("window.location.assign");
@@ -1743,7 +1748,6 @@ test("project board detail internal links are router-owned", async ({ page }) =>
   expect(selectedLabelsSource).not.toContain("router.history.push");
   const renderedRouteSource = routeSource.slice(0, routeSource.indexOf("function AttachedFiles"));
   expect(renderedRouteSource).not.toContain("<a");
-  expect(renderedRouteSource).not.toContain("href=");
 });
 
 test("project board detail renders legacy parent comments", async ({ page }) => {

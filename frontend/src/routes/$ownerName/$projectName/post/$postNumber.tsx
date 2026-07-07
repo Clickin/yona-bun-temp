@@ -649,7 +649,10 @@ function PostSelectedLabels({
       <dd>
         {labels.map((label) => (
           <Link
-            to={`/${ownerName}/${projectName}/posts?labelIds=${label.id}`}
+            to="/$ownerName/$projectName/posts"
+            params={{ ownerName, projectName }}
+            search={{ labelIds: [label.id] }}
+            mask={{ to: `/${ownerName}/${projectName}/posts?labelIds=${label.id}` }}
             activeProps={legacyRouteLocalActiveProps}
             className="label issue-label active static"
             key={label.id}
