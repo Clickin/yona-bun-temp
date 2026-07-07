@@ -45,6 +45,8 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page).toHaveTitle("Fix flaky issue");
+  await expect.poll(() => headTitleText(page)).toBe("Fix flaky issue");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator("#vote.voter-exists")).toBeVisible();
   await expect(page.locator("#voters.voters-dialog")).toHaveCount(1);
@@ -294,8 +296,15 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain('data-request-method="post"');
   expect(routeSource).toContain("data-request-uri={voteHref}");
   expect(routeSource).not.toMatch(
-    /document\.|querySelector|addEventListener|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
+    /document\.title|globalThis\[[^\]]*document[^\]]*\]|querySelector|addEventListener|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
   );
+  expect(routeSource).toContain("function ProjectIssueDetailTitle({ issueTitle }");
+  expect(routeSource).toContain("return issueTitle ? <title>{issueTitle}</title> : null;");
+  expect(routeSource).toContain("function ProjectIssueNotFoundTitle({");
+  expect(routeSource).toContain(
+    '<title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(routeSource).not.toContain("useProjectIssueDetailDocumentTitle");
   expect(routeSource).toContain('data-toggle="comment-edit"');
   expect(routeSource).toContain("setCommentEditOpen((current) => !current)");
   expect(routeSource).toContain("event.stopPropagation();");
@@ -496,6 +505,9 @@ test("project issue detail not found renders legacy project error shell", async 
       page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary"),
     ).toHaveAttribute("href", `${basePath}/${ownerName}/${projectName}/issues?state=all`);
     await expect(page).toHaveTitle(`Page not found - ${ownerName}/${projectName}`);
+    await expect
+      .poll(() => headTitleText(page))
+      .toBe(`Page not found - ${ownerName}/${projectName}`);
     await expect(page.locator(".board-view")).toHaveCount(0);
     await expect(page.locator("#issueUpdateForm")).toHaveCount(0);
     await expect(page.locator("#comment-form")).toHaveCount(0);
@@ -3924,6 +3936,10 @@ async function issueNotFoundMetrics(page: Page) {
       return element;
     }
   });
+}
+
+async function headTitleText(page: Page) {
+  return page.evaluate(() => document.querySelector("head > title")?.textContent ?? "");
 }
 
 async function commentDeleteModalMetrics(page: Page) {

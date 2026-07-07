@@ -77,8 +77,6 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       return restApiErrorStatus(error) !== 404 && failureCount < 3;
     },
   });
-  const issueTitle = stringField(issueQuery.data?.title);
-  useProjectIssueDetailDocumentTitle(runtimeConfig, issueTitle);
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -114,13 +112,10 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   if (restApiErrorStatus(issueQuery.error) === 404) {
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectIssueNotFoundBody
-          ownerName={ownerName}
-          projectName={projectName}
-          runtimeConfig={runtimeConfig}
-        />
+        <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
       </SiteLayoutShell>
     );
   }
@@ -136,6 +131,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectIssueDetailTitle issueTitle={stringField(issueQuery.data.title)} />
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <IssueDetailAssets
@@ -162,20 +158,20 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   );
 }
 
-function useProjectIssueDetailDocumentTitle(runtimeConfig: RuntimeConfig, issueTitle: string) {
-  useEffect(() => {
-    const doc = globalThis["document"];
-    if (!doc || issueTitle === "") {
-      return;
-    }
+function ProjectIssueDetailTitle({ issueTitle }: { issueTitle: string }) {
+  return issueTitle ? <title>{issueTitle}</title> : null;
+}
 
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    doc.title = issueTitle;
+function ProjectIssueNotFoundTitle({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
 
-    return () => {
-      doc.title = siteName;
-    };
-  }, [issueTitle, runtimeConfig.siteName]);
+  return <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>;
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
@@ -368,26 +364,11 @@ function IssueDetailSelect2Partial({
 function ProjectIssueNotFoundBody({
   ownerName,
   projectName,
-  runtimeConfig,
 }: {
   ownerName: string;
   projectName: string;
-  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${t("error.notfound")} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, t]);
 
   return (
     <div className="page-wrap-outer">
