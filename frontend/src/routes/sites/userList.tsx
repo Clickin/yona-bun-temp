@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -58,22 +58,15 @@ export const Route = createFileRoute("/sites/userList")({
   }),
 });
 
-function useLegacySiteUserListDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.siteSetting");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
-}
-
 function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
   event.stopPropagation();
+}
+
+function LegacySiteUserListTitle() {
+  const { t } = useLegacyMessages();
+
+  return <title>{t("title.siteSetting")}</title>;
 }
 
 function SiteUserListRoute() {
@@ -96,7 +89,6 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
-  useLegacySiteUserListDocumentTitle(runtimeConfig);
   const [deleteUser, setDeleteUser] = useState<SiteUser | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const [passwordResetByLoginId, setPasswordResetByLoginId] = useState<
@@ -196,6 +188,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 
   return (
     <>
+      <LegacySiteUserListTitle />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>

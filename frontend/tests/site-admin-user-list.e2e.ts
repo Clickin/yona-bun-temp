@@ -187,6 +187,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
 
   await page.goto(`${basePath}/sites/userList`);
   await expect(page).toHaveTitle("Site settings");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent))
+    .toBe("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/userList`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
   await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
@@ -352,6 +355,10 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toMatch(/<a\b/u);
+  expect(routeSource).toContain('<title>{t("title.siteSetting")}</title>');
+  expect(routeSource).not.toContain("useLegacySiteUserListDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toMatch(/useEffect\s*\(/u);
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
