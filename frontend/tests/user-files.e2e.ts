@@ -49,7 +49,7 @@ const EXPECTED_USER_FILES_SCREEN = `
       </div>
       <div class="attachment-file-detail row">
         <div class="file-preview span1"><a href="__BASE_PATH__/files/7" target="_blank"><img src="__BASE_PATH__/files/7"></a></div>
-        <div class="span5 file-name"><a href="__BASE_PATH__/files/7" target="_blank"><i class="icon png-icon font-larger"></i>avatar.png</a></div>
+        <div class="span5 file-name"><a href="__BASE_PATH__/files/7" target="_blank"><i class="icon image-icon light-orange font-larger"></i>avatar.png</a></div>
         <div class="span1 file-size">12.3 kB</div>
         <div class="span1 file-download"><a href="__BASE_PATH__/files/7?action=download"><button type="button" class="ybtn"><i class="yobicon-cloud-download"></i></button></a></div>
         <div class="span2 file-date">2026-06-30 7:05 PM</div>
@@ -141,7 +141,7 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await expect(fileNameLink).not.toHaveAttribute("class", /./);
   await expect(fileNameLink).not.toHaveAttribute("data-status", /./);
   await expect(fileNameLink).toHaveText("avatar.png");
-  await expect(fileNameLink.locator("i")).toHaveClass("icon png-icon font-larger");
+  await expect(fileNameLink.locator("i")).toHaveClass("icon image-icon light-orange font-larger");
 
   const downloadLink = page.locator(".attachment-file-detail .file-download > a");
   await expect(downloadLink).toHaveAttribute("href", `${basePath}/files/7?action=download`);
@@ -340,6 +340,9 @@ test("current-user files leaves location cell empty when source URL is missing",
     .locator(".file-location");
   await expect(missingLocationCell).toBeEmpty();
   await expect(missingLocationCell.locator("a")).toHaveCount(0);
+  await expect(page.locator(".attachment-file-detail").first().locator(".file-name i")).toHaveClass(
+    "icon text-icon medium-blue font-larger",
+  );
 
   const normalLocationLink = page
     .locator(".attachment-file-detail")

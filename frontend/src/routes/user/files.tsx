@@ -317,5 +317,12 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
 }
 
 function fileIconClass(fileName: string) {
-  return fileName.toLowerCase().endsWith(".png") ? "png-icon font-larger" : "text-icon";
+  const normalizedFileName = fileName.toLowerCase();
+  if (/\.(?:apng|png|svgz)$/u.test(normalizedFileName)) {
+    return "image-icon light-orange font-larger";
+  }
+  if (/\.te?xt$|\.irclog$|\.uot$/u.test(normalizedFileName)) {
+    return "text-icon medium-blue font-larger";
+  }
+  return "text-icon";
 }
