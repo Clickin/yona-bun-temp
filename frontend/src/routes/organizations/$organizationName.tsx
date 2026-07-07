@@ -1,4 +1,4 @@
-import { type MouseEvent, useEffect, useState } from "react";
+import { type MouseEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -82,16 +82,6 @@ function OrganizationHomeBody({
   const viewerCanUpdate = booleanField(organization.viewerCanUpdate);
   const showLeaveButton = viewerCanLeave && viewerCanLeaveAfterValidation;
   const shouldShowMemberPanels = viewerCanUpdate || viewerCanLeave;
-  const siteName = runtimeConfig.siteName ?? "Yona";
-
-  useEffect(() => {
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = organizationName;
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [organizationName, siteName]);
 
   function insulateLeaveModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -132,6 +122,7 @@ function OrganizationHomeBody({
 
   return (
     <>
+      <title>{organizationName}</title>
       <OrganizationHeader
         enrollmentRequested={booleanField(organization.enrollmentRequested)}
         logoUrl={logoUrl}

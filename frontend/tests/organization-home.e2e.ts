@@ -19,6 +19,9 @@ test("organization home matches legacy organization/view.scala.html DOM", async 
 
   await page.goto(`${basePath}/organizations/weblabs`);
   await expect(page).toHaveTitle("weblabs");
+  await expect
+    .poll(() => page.evaluate(() => document.querySelector("head > title")?.textContent))
+    .toBe("weblabs");
   await expect(page.locator("#mylist-filter")).toBeVisible();
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
   await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
@@ -571,7 +574,11 @@ test("organization home project card route source uses Link for internal card na
   expect(source).not.toMatch(/<a\b/);
   expect(source).toContain("event.preventDefault();");
   expect(source).toContain("event.stopPropagation();");
+  expect(source).toContain("<title>{organizationName}</title>");
   expect(source).toContain('hash="organization-home-active-sentinel"');
+  expect(source).not.toContain("useEffect");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${ownerName}`)}");
   expect(source).not.toContain("href={prefixBasePath(basePath, `/${stringField(member.loginId");
   expect(source).not.toContain("href={prefixBasePath(runtimeConfig.basePath");
