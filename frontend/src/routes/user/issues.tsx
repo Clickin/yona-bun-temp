@@ -34,6 +34,10 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
 };
 type LegacyPjaxListItemAttrs = HTMLAttributes<HTMLLIElement> & { "data-pjax": "" };
 type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
+type LegacyTooltipAttrs = {
+  "data-placement": "bottom";
+  "data-toggle": "tooltip";
+};
 
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
@@ -810,6 +814,10 @@ function UserIssueItem({
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const legacyTooltipAttrs = {
+    "data-placement": "bottom",
+    "data-toggle": "tooltip",
+  } satisfies LegacyTooltipAttrs;
   const legacyIssueRowAttrs = {
     className: "post-item title",
     href: issueHref,
@@ -841,7 +849,12 @@ function UserIssueItem({
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">
-            <Link to={projectRoutePath} className="title project" title={t("project.name")}>
+            <Link
+              to={projectRoutePath}
+              className="title project"
+              {...legacyTooltipAttrs}
+              title={t("project.name")}
+            >
               {issue.projectName}
             </Link>
           </span>
@@ -937,7 +950,7 @@ function UserIssueItem({
             </span>
             {issue.milestoneId ? (
               <span className="mileston-tag">
-                <Link to={milestoneRoutePath} title={t("milestone")}>
+                <Link to={milestoneRoutePath} {...legacyTooltipAttrs} title={t("milestone")}>
                   {issue.milestoneTitle}
                 </Link>
               </span>
@@ -960,7 +973,12 @@ function UserIssueItem({
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
             <div className="mt5 pull-right hide-in-mobile">
-              <Link to={assigneeRoutePath} className="avatar-wrap assinee" title={assigneeTitle}>
+              <Link
+                to={assigneeRoutePath}
+                className="avatar-wrap assinee"
+                {...legacyTooltipAttrs}
+                title={assigneeTitle}
+              >
                 <img
                   src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
                   width="32"
@@ -985,8 +1003,18 @@ function UserIssueAuthorLink({
   loginId: string;
   to: string;
 }) {
+  const legacyTooltipAttrs = {
+    "data-placement": "bottom",
+    "data-toggle": "tooltip",
+  } satisfies LegacyTooltipAttrs;
+
   return (
-    <Link to={to} className="infos-item infos-link-item author-cell" title={loginId}>
+    <Link
+      to={to}
+      className="infos-item infos-link-item author-cell"
+      {...legacyTooltipAttrs}
+      title={loginId}
+    >
       {label}
     </Link>
   );
