@@ -378,9 +378,12 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("document.querySelector");
   expect(source).not.toContain("document.createElement");
   expect(source).not.toContain("document.getElementById");
+  expect(source).not.toContain("document.title");
   expect(source).not.toContain("classList");
   expect(source).not.toContain('style={isTransferModalOpen ? { display: "block" } : undefined}');
   expect(source).not.toContain("style.display");
+  expect(source).not.toContain("useProjectTransferDocumentTitle");
+  expect(source).not.toContain("const screenTitle");
   expect(source).not.toContain("<a href={prefixBasePath");
   expect(source).not.toContain("<a href={projectHref");
   expect(source).toContain("ProjectTransferRouteShell");
@@ -395,8 +398,9 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
     "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
   );
   expect(source).toContain("showLegacyProjectHeaderLinks");
-  expect(source).toContain('const screenTitle = t("title.projectTransfer");');
-  expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
+  expect(source).toContain(
+    '<title>{`${t("title.projectTransfer")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');

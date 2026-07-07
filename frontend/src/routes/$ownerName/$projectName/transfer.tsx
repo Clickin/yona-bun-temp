@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useRef, useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -69,31 +69,9 @@ function ProjectTransferRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
   );
 }
 
-function useProjectTransferDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const screenTitle = t("title.projectTransfer");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
-}
-
 function ProjectTransferScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectTransferDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -110,7 +88,12 @@ function ProjectTransferScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     ...transferQuery.data,
   } satisfies ProjectTransferScreenData;
 
-  return <ProjectTransferBody project={project} runtimeConfig={runtimeConfig} />;
+  return (
+    <>
+      <title>{`${t("title.projectTransfer")} - ${ownerName}/${projectName}`}</title>
+      <ProjectTransferBody project={project} runtimeConfig={runtimeConfig} />
+    </>
+  );
 }
 
 function ProjectTransferBody({
