@@ -201,14 +201,6 @@ function RootResetShell() {
       return;
     }
 
-    function closeDropdowns(except?: Element | null) {
-      document.querySelectorAll(".btn-group.open, .dropdown.open").forEach((container) => {
-        if (container !== except) {
-          container.classList.remove("open");
-        }
-      });
-    }
-
     function handleDocumentClick(event: MouseEvent) {
       const target = event.target instanceof Element ? event.target : null;
       const dismissModal = target?.closest<HTMLElement>('[data-dismiss="modal"]');
@@ -251,29 +243,6 @@ function RootResetShell() {
         }
         event.preventDefault();
         return;
-      }
-
-      const toggle = target?.closest<HTMLElement>('[data-toggle="dropdown"]');
-      if (toggle) {
-        const container = toggle.closest(".btn-group, .dropdown");
-        const isOpen = container?.classList.contains("open") ?? false;
-        closeDropdowns(container);
-        container?.classList.toggle("open", !isOpen);
-        event.preventDefault();
-        return;
-      }
-
-      const manualDropdownItem = target?.closest<HTMLElement>(
-        '.btn-group[data-activate="manual"] .dropdown-menu li',
-      );
-      if (manualDropdownItem) {
-        closeDropdowns();
-        event.preventDefault();
-        return;
-      }
-
-      if (!target?.closest(".btn-group.open, .dropdown.open")) {
-        closeDropdowns();
       }
     }
 

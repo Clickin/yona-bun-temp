@@ -150,7 +150,12 @@ test("root shell does not own delegated original-message scanning", async () => 
   expect(ROOT_ROUTE_SOURCE).not.toContain("(^|^<[^>]+>)---+[^-]*---+");
 });
 
-test("root shell does not own route dropdown selection mutation", async () => {
+test("root shell does not own route dropdown open, close, or selection mutation", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain("closeDropdowns");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="dropdown"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('data-activate="manual"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain(".btn-group.open, .dropdown.open");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('classList.toggle("open"');
   expect(ROOT_ROUTE_SOURCE).not.toContain(".btn-group[data-name] .dropdown-menu li");
   expect(ROOT_ROUTE_SOURCE).not.toContain("label.innerHTML = selectedItem.innerHTML");
   expect(ROOT_ROUTE_SOURCE).not.toContain("CSS.escape(fieldName)");
@@ -163,7 +168,6 @@ test("root shell does not own route alert dismissal", async ({ page }) => {
   expect(ROOT_ROUTE_SOURCE).not.toContain('closest<HTMLElement>(".alert")');
   expect(ROOT_ROUTE_SOURCE).toContain('[data-dismiss="modal"]');
   expect(ROOT_ROUTE_SOURCE).toContain('[data-toggle="modal"]');
-  expect(ROOT_ROUTE_SOURCE).toContain('[data-toggle="dropdown"]');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -268,7 +272,7 @@ test("standalone UI kit dropdown matches legacy yobi.ui.Dropdown interaction", a
   await expect(dropdown.locator('input[type="hidden"][name="assigneeId"]')).toHaveValue("0");
 });
 
-test("standalone UI kit root shell skips yobi dropdown mutation for data-activate manual", async ({
+test("standalone UI kit root shell does not open synthetic data-toggle dropdowns", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -277,29 +281,27 @@ test("standalone UI kit root shell skips yobi dropdown mutation for data-activat
   await page.locator(".page-wrap-outer").evaluate((container) => {
     container.insertAdjacentHTML(
       "beforeend",
-      `<div id="manual-branch-dropdown" class="btn-group branches pull-right" data-name="branch" data-activate="manual">
+      `<div id="synthetic-dropdown-fixture" class="btn-group" data-name="watcherId">
         <button class="btn dropdown-toggle large" data-toggle="dropdown">
           <span class="d-label">HEAD</span>
           <span class="d-caret"><span class="caret"></span></span>
         </button>
         <ul class="dropdown-menu">
-          <li data-value="main"><a href="/yona/project/commits/main">main</a></li>
+          <li data-value="0"><button type="button">Watcher 없음</button></li>
         </ul>
       </div>`,
     );
   });
 
-  const dropdown = page.locator("#manual-branch-dropdown");
+  const dropdown = page.locator("#synthetic-dropdown-fixture");
   await dropdown.locator('[data-toggle="dropdown"]').click();
-  await expect(dropdown).toHaveClass(/open/);
-
-  await dropdown.locator('li[data-value="main"]').click();
+  await expect(dropdown).not.toHaveClass(/open/);
   await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
   await expect(dropdown.locator("li.active")).toHaveCount(0);
-  await expect(dropdown.locator('input[type="hidden"][name="branch"]')).toHaveCount(0);
+  await expect(dropdown.locator('input[type="hidden"][name="watcherId"]')).toHaveCount(0);
 });
 
-test("standalone UI kit root shell does not auto-bind route-owned dropdown selection", async ({
+test("standalone UI kit root shell does not close or mutate pre-open synthetic dropdowns", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -308,7 +310,8 @@ test("standalone UI kit root shell does not auto-bind route-owned dropdown selec
   await page.locator(".page-wrap-outer").evaluate((container) => {
     container.insertAdjacentHTML(
       "beforeend",
-      `<div id="delegated-dropdown-fixture" class="btn-group" data-name="watcherId">
+      `<button id="outside-dropdown-fixture" type="button">Outside</button>
+      <div id="delegated-dropdown-fixture" class="btn-group open" data-name="watcherId" data-activate="manual">
         <button class="btn dropdown-toggle large" data-toggle="dropdown">
           <span class="d-label">HEAD</span>
           <span class="d-caret"><span class="caret"></span></span>
@@ -321,10 +324,13 @@ test("standalone UI kit root shell does not auto-bind route-owned dropdown selec
   });
 
   const dropdown = page.locator("#delegated-dropdown-fixture");
-  await dropdown.locator('[data-toggle="dropdown"]').click();
+  await expect(dropdown).toHaveClass(/open/);
+
+  await page.locator("#outside-dropdown-fixture").click();
   await expect(dropdown).toHaveClass(/open/);
 
   await dropdown.locator('li[data-value="0"] button').click();
+  await expect(dropdown).toHaveClass(/open/);
   await expect(dropdown.locator(".d-label")).toHaveText("HEAD");
   await expect(dropdown.locator("li.active")).toHaveCount(0);
   await expect(dropdown.locator('input[type="hidden"][name="watcherId"]')).toHaveCount(0);
