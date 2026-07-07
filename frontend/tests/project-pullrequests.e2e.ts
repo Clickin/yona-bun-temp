@@ -5,6 +5,10 @@ const PROJECT_PULLREQUESTS_ROUTE_SOURCE = readFileSync(
   "src/routes/$ownerName/$projectName/pullRequests.tsx",
   "utf8",
 );
+const PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE = readFileSync(
+  "src/routes/$ownerName/$projectName/closedPullRequests.tsx",
+  "utf8",
+);
 
 const EXPECTED_PROJECT_PULLREQUESTS_EMPTY = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -154,6 +158,26 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   await mockProjectPullRequests(page);
 
   await page.goto(`${basePath}/admin/sample/closedPullRequests?filter=empty`);
+  expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
+  await expect
+    .poll(() =>
+      page
+        .locator('.gnb-search-form button[data-toggle="search-scope"]')
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute("data-action") ?? ""),
+        ),
+    )
+    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
@@ -166,6 +190,27 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedClosedPullRequestsEmpty(basePath)),
   );
+
+  const headerMetrics = await pullRequestHeaderSearchScopeMetrics(page);
+  expect(headerMetrics.formAction).toBe(`${basePath}/admin/sample/search`);
+  expect(headerMetrics.form.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.form.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.form.right).toBeLessThanOrEqual(headerMetrics.header.right);
+  expect(headerMetrics.scope.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.scope.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.searchBox.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.searchBox.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.input.top).toBeGreaterThanOrEqual(headerMetrics.searchBox.top);
+  expect(headerMetrics.input.bottom).toBeLessThanOrEqual(headerMetrics.searchBox.bottom);
+  expect(headerMetrics.input.left).toBeGreaterThanOrEqual(headerMetrics.searchBox.left);
+  expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Closed");
 });
 
 test("project sent pull request empty list matches legacy git/list.scala.html DOM", async ({
@@ -345,6 +390,19 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('hash="reviewers"');
 });
 
+test("project closed pull request route source keeps the legacy project search scope shell", () => {
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName })",
+  );
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "projectSearchScope={projectSearchScope}",
+  );
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain("project={projectQuery.data}");
+  expect(PROJECT_CLOSED_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+});
+
 test("project pull request reviewer-count row matches legacy git/partial_list.scala.html DOM", async ({
   page,
 }) => {
@@ -499,6 +557,78 @@ test("protected org-owned project pull request restores legacy title and search-
     .toBe(`${basePath}/weblabs/portal/search`);
 });
 
+test("protected org-owned project closed pull request restores project search-scope header", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProtectedOrgProjectPullRequests(page);
+
+  await page.goto(`${basePath}/weblabs/portal/closedPullRequests?filter=empty`);
+  expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
+  await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Closed");
+  await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
+  await expect
+    .poll(() =>
+      page.locator('.gnb-search-form button[data-toggle="search-scope"]').evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
+      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  const headerMetrics = await pullRequestHeaderSearchScopeMetrics(page);
+  expect(headerMetrics.formAction).toBe(`${basePath}/weblabs/portal/search`);
+  expect(headerMetrics.form.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.form.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.form.right).toBeLessThanOrEqual(headerMetrics.header.right);
+  expect(headerMetrics.scope.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.scope.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.searchBox.top).toBeGreaterThanOrEqual(headerMetrics.header.top);
+  expect(headerMetrics.searchBox.bottom).toBeLessThanOrEqual(headerMetrics.header.bottom);
+  expect(headerMetrics.input.top).toBeGreaterThanOrEqual(headerMetrics.searchBox.top);
+  expect(headerMetrics.input.bottom).toBeLessThanOrEqual(headerMetrics.searchBox.bottom);
+  expect(headerMetrics.input.left).toBeGreaterThanOrEqual(headerMetrics.searchBox.left);
+  expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(0).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator(".pullrequeset-tab-menu li.active a")).toContainText("Closed");
+  expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
+});
+
 test("project closed pull request title-prefix keeps the closed list route", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPullRequests(page);
@@ -587,6 +717,12 @@ async function expectLegacyPlainListLink(locator: Locator) {
     .not.toMatch(/\bactive\b/u);
 }
 
+function expectClosedPullRequestsLocation(page: Page, pathname: string, filter: string) {
+  const url = new URL(page.url());
+  expect(url.pathname).toBe(pathname);
+  expect(url.searchParams.get("filter")).toBe(filter);
+}
+
 test("project pull request multi-page list matches legacy pagination DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPullRequests(page);
@@ -632,7 +768,7 @@ test("project pull request pagination input follows legacy editable behavior", a
 });
 
 function expectedClosedPullRequestsEmpty(basePath: string) {
-  return withoutProjectSearchScopeHeader(expectedProjectPullRequestsEmpty(basePath), basePath)
+  return expectedProjectPullRequestsEmpty(basePath)
     .replace(
       `action="${basePath}/admin/sample/pullRequests"`,
       `action="${basePath}/admin/sample/closedPullRequests"`,
@@ -1601,6 +1737,7 @@ async function pullRequestHeaderSearchScopeMetrics(page: Page) {
 
     return {
       formAction: form.getAttribute("action"),
+      form: rect(form),
       header: rect(header),
       input: rect(input),
       scope: rect(scope),
