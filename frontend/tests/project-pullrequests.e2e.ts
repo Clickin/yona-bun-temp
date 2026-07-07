@@ -55,6 +55,13 @@ test("project pull request empty list matches legacy git/list.scala.html DOM", a
   await mockProjectPullRequests(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequests?filter=empty`);
+  await expect(page).toHaveTitle("sample - Pull request - admin/sample");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("sample - Pull request - admin/sample");
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
@@ -377,6 +384,13 @@ test("project pull request populated row links use SPA navigation with legacy hr
 });
 
 test("project pull request row source uses TanStack Link for internal row navigation", () => {
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("document.title");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("window.document");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("window.parent.document");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("useProjectPullRequestsDocumentTitle");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("function ProjectPullRequestsBrowserTitle");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("return <title>{browserTitle}</title>;");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("projectPullRequestsBrowserTitle({");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("as never");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("as unknown as");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("pjaxContainer");

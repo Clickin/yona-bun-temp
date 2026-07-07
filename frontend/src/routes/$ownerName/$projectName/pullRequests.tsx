@@ -135,10 +135,13 @@ function ProjectPullRequestsBadRequestRouteShell({
   projectName: string;
   runtimeConfig: RuntimeConfig;
 }) {
-  useProjectPullRequestsDocumentTitle(runtimeConfig, ownerName, projectName, false);
-
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
+      <ProjectPullRequestsBrowserTitle
+        isGitProject={false}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <ProjectPullRequestsBadRequestBody runtimeConfig={runtimeConfig} />
     </SiteLayoutShell>
   );
@@ -177,7 +180,6 @@ export function ProjectPullRequestsScreen({
   );
   const project = initialProject ?? projectQuery.data;
   const isGitProject = stringField(project?.vcs, "GIT") === "GIT";
-  useProjectPullRequestsDocumentTitle(runtimeConfig, ownerName, projectName, isGitProject);
   const pullRequestsQuery = useQuery({
     ...projectPullRequestListQueryOptions(runtimeConfig, {
       category,
@@ -195,7 +197,16 @@ export function ProjectPullRequestsScreen({
   }
 
   if (!isGitProject) {
-    return <ProjectPullRequestsBadRequestBody runtimeConfig={runtimeConfig} />;
+    return (
+      <>
+        <ProjectPullRequestsBrowserTitle
+          isGitProject={false}
+          ownerName={ownerName}
+          projectName={projectName}
+        />
+        <ProjectPullRequestsBadRequestBody runtimeConfig={runtimeConfig} />
+      </>
+    );
   }
 
   if (!pullRequestsQuery.data) {
@@ -204,6 +215,11 @@ export function ProjectPullRequestsScreen({
 
   return (
     <>
+      <ProjectPullRequestsBrowserTitle
+        isGitProject={isGitProject}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
       <ProjectPullRequestsBody
@@ -925,37 +941,45 @@ function splitHeaderWordsInBrackets(title: string) {
   };
 }
 
-function useProjectPullRequestsDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-  isGitProject: boolean,
-) {
+function ProjectPullRequestsBrowserTitle({
+  isGitProject,
+  ownerName,
+  projectName,
+}: {
+  isGitProject: boolean;
+  ownerName: string;
+  projectName: string;
+}) {
   const { t } = useLegacyMessages();
   const pullRequestMenuTitle = t("menu.pullRequest");
   const badRequestOnlyForGit = t("error.badrequest.only.available.for.git");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = isGitProject
-      ? `${projectName} - ${pullRequestMenuTitle} - ${ownerName}/${projectName}`
-      : badRequestOnlyForGit;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [
+  const browserTitle = projectPullRequestsBrowserTitle({
     badRequestOnlyForGit,
     isGitProject,
     ownerName,
     projectName,
     pullRequestMenuTitle,
-    runtimeConfig.siteName,
-  ]);
+  });
+
+  return <title>{browserTitle}</title>;
+}
+
+function projectPullRequestsBrowserTitle({
+  badRequestOnlyForGit,
+  isGitProject,
+  ownerName,
+  projectName,
+  pullRequestMenuTitle,
+}: {
+  badRequestOnlyForGit: string;
+  isGitProject: boolean;
+  ownerName: string;
+  projectName: string;
+  pullRequestMenuTitle: string;
+}) {
+  return isGitProject
+    ? `${projectName} - ${pullRequestMenuTitle} - ${ownerName}/${projectName}`
+    : badRequestOnlyForGit;
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
