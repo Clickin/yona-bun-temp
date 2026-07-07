@@ -20,6 +20,13 @@ const ROUTE_SOURCE = readFileSync(
   ),
   "utf8",
 );
+const PULL_REQUEST_PARENT_ROUTE_SOURCE = readFileSync(
+  new URL(
+    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function withLegacyFileUploader(html: string) {
   return html.replace(
@@ -44,9 +51,55 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
 
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
   const editFormUrl = page.url();
+  expect(ROUTE_SOURCE).not.toContain("<SiteLayoutShell runtimeConfig={runtimeConfig}>");
+  expect(PULL_REQUEST_PARENT_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(PULL_REQUEST_PARENT_ROUTE_SOURCE).toContain("function projectSearchScopeOrganizationName");
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  const shell = pullRequestEditScopedShell(page);
+  await expect(shell).toBeVisible();
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
+  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await shell.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  expect(page.url()).toBe(editFormUrl);
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await shell.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  expect(page.url()).toBe(editFormUrl);
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+
+  const navbarMetrics = await navbarSearchMetrics(page);
+  expect(navbarMetrics).not.toBeNull();
+  expect(navbarMetrics!.form.top).toBeGreaterThanOrEqual(navbarMetrics!.navbar.top);
+  expect(navbarMetrics!.form.bottom).toBeLessThanOrEqual(navbarMetrics!.navbar.bottom);
+  expect(navbarMetrics!.form.right).toBeLessThanOrEqual(navbarMetrics!.navbar.right);
+  expect(navbarMetrics!.scope.top).toBeGreaterThanOrEqual(navbarMetrics!.navbar.top);
+  expect(navbarMetrics!.scope.bottom).toBeLessThanOrEqual(navbarMetrics!.navbar.bottom);
+  expect(navbarMetrics!.searchBox.top).toBeGreaterThanOrEqual(navbarMetrics!.navbar.top);
+  expect(navbarMetrics!.searchBox.bottom).toBeLessThanOrEqual(navbarMetrics!.navbar.bottom);
+  expect(navbarMetrics!.input.left).toBeGreaterThanOrEqual(navbarMetrics!.searchBox.left);
+  expect(navbarMetrics!.input.right).toBeLessThanOrEqual(navbarMetrics!.searchBox.right);
+
   await expect(page.locator("form.nm")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/pullRequest/7/edit`,
@@ -198,6 +251,45 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
     .poll(() => patchRequests)
     .toEqual([{ attachmentIds: [], bodyMarkdown: "Updated body", title: "Updated title" }]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
+});
+
+test("project pull request edit form exposes group search scope when project org data exists", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const editFormUrl = `${basePath}/admin/sample/pullRequest/7/editform`;
+  const patchRequests: unknown[] = [];
+  await mockProjectPullRequestEditForm(page, patchRequests, {
+    project: { isProtected: true, organizationName: "admin" },
+  });
+
+  await page.goto(editFormUrl);
+  const actualEditFormUrl = page.url();
+  await expect(page.locator("form.nm")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
+    "Pull request",
+  );
+  const shell = pullRequestEditScopedShell(page);
+  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/admin/search`,
+  );
+  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await shell.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  expect(page.url()).toBe(actualEditFormUrl);
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
 });
 
 test("project pull request edit form blocks submit when merge result has no commits", async ({
@@ -431,6 +523,39 @@ function expectPullRequestEditConflictConfirmUsesRouteOwnedModal() {
   expect(ROUTE_SOURCE).toContain("setConflictConfirmOpen(true)");
 }
 
+function pullRequestEditScopedShell(page: Page) {
+  return page.locator("header.gnb-outer.project-header");
+}
+
+async function navbarSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    if (!navbar || !form || !scope || !searchBox || !input) {
+      return null;
+    }
+    const rect = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    };
+    return {
+      form: rect(form),
+      input: rect(input),
+      navbar: rect(navbar),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
+    };
+  });
+}
+
 async function waitForDialog(page: Page, expectedType: "alert" | "confirm", accept = true) {
   return page.waitForEvent("dialog").then(async (dialog) => {
     expect(dialog.type()).toBe(expectedType);
@@ -450,6 +575,22 @@ type MockProjectPullRequestEditFormOptions = {
     conflict: boolean;
     noHead: boolean;
   };
+  project?: Partial<{
+    backgroundImageUrl: string;
+    enrollmentRequestCount: number;
+    id: number;
+    isFavorite: boolean;
+    isForkedFromOrigin: boolean;
+    isPrivate: boolean;
+    isProtected: boolean;
+    logoUrl: string;
+    organizationName: string;
+    ownerName: string;
+    projectName: string;
+    projectScope: string;
+    vcs: string;
+    viewerCanUpdate: boolean;
+  }>;
 };
 
 async function mockProjectPullRequestEditForm(
@@ -509,6 +650,7 @@ async function mockProjectPullRequestEditForm(
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...options.project,
       }),
     });
   });

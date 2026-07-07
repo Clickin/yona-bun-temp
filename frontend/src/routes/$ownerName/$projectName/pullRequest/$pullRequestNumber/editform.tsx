@@ -14,7 +14,6 @@ import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
 
@@ -30,9 +29,7 @@ function ProjectPullRequestEditRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPullRequestEditScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectPullRequestEditScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
