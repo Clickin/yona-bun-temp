@@ -300,12 +300,21 @@ test("site admin update renders the legacy available-version branch", async ({ p
     "https://example.test/yona-1.1.0",
   );
   await expect(page.locator("a.ybtn.ybtn-success")).not.toHaveAttribute("target", /.*/);
+  await expect
+    .poll(async () => downloadLinkDom(page))
+    .toEqual({
+      className: "ybtn ybtn-success",
+      href: "https://example.test/yona-1.1.0",
+      tagName: "A",
+      target: null,
+      text: "Download",
+    });
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
   expect(routeSource).toContain("const releaseUrl = response.versionToUpdate");
   expect(routeSource).toContain("href={releaseUrl}");
   expect(routeSource).not.toContain("as never");
-  expect(routeSource).toContain("to={releaseUrl}");
+  expect(routeSource).not.toContain("to={releaseUrl}");
   expect(routeSource).not.toContain("reloadDocument");
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
@@ -432,6 +441,16 @@ async function updateAvailableMetrics(page: Page) {
       titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
     };
   });
+}
+
+async function downloadLinkDom(page: Page) {
+  return page.locator(".site-setting-wrap a.ybtn.ybtn-success").evaluate((link) => ({
+    className: link.getAttribute("class"),
+    href: link.getAttribute("href"),
+    tagName: link.tagName,
+    target: link.getAttribute("target"),
+    text: link.textContent?.trim() ?? "",
+  }));
 }
 
 async function updateErrorMetrics(page: Page) {

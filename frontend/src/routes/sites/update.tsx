@@ -121,13 +121,14 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
     ? (response.releaseUrl ??
       `https://github.com/yona-projects/yona/releases/tag/v${response.versionToUpdate}`)
     : "";
+  const externalReleaseUrl = releaseUrl;
 
   return (
     <>
       {response.versionToUpdate ? (
         <p>
           <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>{" "}
-          <Link href={releaseUrl} to={releaseUrl} className="ybtn ybtn-success">
+          <Link href={releaseUrl} to={externalReleaseUrl} className="ybtn ybtn-success">
             {t("site.update.download")}
           </Link>
         </p>
