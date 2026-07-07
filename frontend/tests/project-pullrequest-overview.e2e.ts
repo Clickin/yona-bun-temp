@@ -1128,6 +1128,49 @@ test("project pull request overview watch button posts and toggles legacy watchi
   await expect(watchButton).not.toHaveClass(/ybtn-watching/u);
 });
 
+test("project pull request overview close and reopen footer controls post and update state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { stateRequests } = await mockPullRequestOverview(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  const closeButton = page.locator('.board-footer button[data-request-uri$="/close"]');
+  await expect(closeButton).toHaveText("Close");
+  await expect(page.locator(".badge-issue-open")).toHaveText("Open");
+
+  const closeResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/pull-requests/9/close") &&
+      response.request().method() === "POST",
+  );
+  await closeButton.click();
+  await closeResponsePromise;
+
+  await expect(page.locator(".badge-issue-closed")).toHaveText("Closed");
+  await expect(page.locator("#state")).toBeEmpty();
+  const reopenButton = page.locator('.board-footer button[data-request-uri$="/open"]');
+  await expect(reopenButton).toHaveText("Reopen");
+
+  const reopenResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/pull-requests/9/open") &&
+      response.request().method() === "POST",
+  );
+  await reopenButton.click();
+  await reopenResponsePromise;
+
+  await expect(page.locator(".badge-issue-open")).toHaveText("Open");
+  await expect(page.locator("#state .alert-success")).toContainText(
+    "This pull request can be merged safely.",
+  );
+  await expect(closeButton).toHaveText("Close");
+  expect(stateRequests).toEqual([
+    { hasCsrfToken: true, method: "POST", path: "close" },
+    { hasCsrfToken: true, method: "POST", path: "open" },
+  ]);
+});
+
 test("project pull request overview renders legacy reviewer controls DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestOverview(page, {
@@ -1394,6 +1437,7 @@ async function mockPullRequestOverview(
   } = {},
 ) {
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  const stateRequests: { hasCsrfToken: boolean; method: string; path: "close" | "open" }[] = [];
   const detail = {
     attachments: [],
     bodyHtml: "<p>Initial body</p>",
@@ -1537,6 +1581,37 @@ async function mockPullRequestOverview(
     },
   );
   await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/close",
+    async (route) => {
+      stateRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        path: "close",
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...detail,
+          state: "closed",
+        }),
+      });
+    },
+  );
+  await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/9/open", async (route) => {
+    stateRequests.push({
+      hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+      method: route.request().method(),
+      path: "open",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...detail,
+        state: "open",
+      }),
+    });
+  });
+  await page.route(
     "**/api/v1/owners/admin/projects/sample/pull-requests/9/changes**",
     async (route) => {
       const url = new URL(route.request().url());
@@ -1556,7 +1631,7 @@ async function mockPullRequestOverview(
     },
   );
 
-  return { watchRequests };
+  return { stateRequests, watchRequests };
 }
 
 async function expectLegacyAnchor(

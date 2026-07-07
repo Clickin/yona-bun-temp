@@ -4,6 +4,8 @@ import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  closePullRequestRest,
+  openPullRequestRest,
   pullRequestDetailQueryOptions,
   unwatchPullRequestRest,
   watchPullRequestRest,
@@ -159,6 +161,20 @@ function PullRequestOverviewBody({
       );
     },
   });
+  const stateMutation = useMutation({
+    mutationFn: async (nextState: "closed" | "open") => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return nextState === "closed"
+        ? closePullRequestRest(runtimeConfig, csrfToken, pullRequestInput)
+        : openPullRequestRest(runtimeConfig, csrfToken, pullRequestInput);
+    },
+    onSuccess(response) {
+      queryClient.setQueryData(
+        pullRequestDetailQueryOptions(runtimeConfig, pullRequestInput).queryKey,
+        response,
+      );
+    },
+  });
 
   return (
     <>
@@ -244,6 +260,7 @@ function PullRequestOverviewBody({
                   data-request-method="post"
                   data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/close`)}
                   className="ybtn"
+                  onClick={() => stateMutation.mutate("closed")}
                 >
                   {t("pullRequest.close")}
                 </button>
@@ -255,6 +272,7 @@ function PullRequestOverviewBody({
                   data-request-method="post"
                   data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/open`)}
                   className="ybtn"
+                  onClick={() => stateMutation.mutate("open")}
                 >
                   {t("pullRequest.reopen")}
                 </button>
