@@ -516,6 +516,54 @@ test("project closed pull request title-prefix keeps the closed list route", asy
   await expect(page.locator('#search input[name="filter"]')).toHaveValue("[API]");
 });
 
+test("svn project pull request route matches legacy badrequest_default site shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { pullRequestListRequestCount } = await mockSvnProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/svnplayground/pullRequests`);
+  await expect(page).toHaveTitle("This request is only supported in a git project.");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator(".gnb-nav a.show-progress-bar")).toHaveText("List All");
+  await expect(page.locator(".gnb-nav a.show-progress-bar")).toHaveAttribute(
+    "href",
+    `${basePath}/projects`,
+  );
+  await expect(
+    page.locator('.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]'),
+  ).toHaveText("Feedback");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
+  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
+  await expect(page.locator(".error-wrap i.ico.ico-err2")).toHaveCount(0);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "This request is only supported in a git project.",
+  );
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveText("Home");
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator("#search")).toHaveCount(0);
+  await expect(page.locator(".pullrequeset-tab-menu")).toHaveCount(0);
+  await expect.poll(() => pullRequestListRequestCount()).toBe(0);
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedSvnPullRequestsBadRequest(basePath)),
+  );
+  expect(await pullRequestBadRequestMetrics(page)).toEqual({
+    errorTextAlign: "center",
+    gnbBackground: "rgb(27, 27, 27)",
+    gnbClassName: "gnb-outer",
+    homeButtonClassName: "ybtn ybtn-info",
+    messageColor: "rgb(137, 137, 137)",
+    messageFontSize: "16px",
+    pageWrapMarginTop: "10px",
+    pageWrapMinHeight: "450px",
+  });
+});
+
 async function markPullRequestSpaSession(page: Page) {
   await page.evaluate(() => {
     Object.defineProperty(window, "__pullRequestSpaMarker", {
@@ -605,6 +653,15 @@ function expectedClosedPullRequestsEmpty(basePath: string) {
         basePath +
         '/admin/sample/closedPullRequests" data-type="state">Closed',
     );
+}
+
+function expectedSvnPullRequestsBadRequest(basePath: string) {
+  return `
+<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
+<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`.replaceAll("__BASE_PATH__", basePath);
 }
 
 function expectedSentPullRequestsEmpty(basePath: string) {
@@ -1132,6 +1189,67 @@ async function mockProtectedOrgProjectPullRequests(page: Page) {
   });
 }
 
+async function mockSvnProjectPullRequests(page: Page) {
+  let pullRequestListRequestCount = 0;
+
+  await mockProjectPullRequests(page);
+  await page.route("**/api/v1/owners/admin/projects/svnplayground/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        enrollmentRequestCount: 0,
+        id: 9,
+        isUsingReviewerCount: false,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        logoUrl: "/assets/images/project_default_logo.png",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        ownerName: "admin",
+        projectName: "svnplayground",
+        vcs: "SVN",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route(
+    "**/api/v1/owners/admin/projects/svnplayground/pull-requests**",
+    async (route) => {
+      pullRequestListRequestCount += 1;
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          acceptedCount: 0,
+          category: "open",
+          closedCount: 0,
+          contributors: [],
+          currentUserId: 1,
+          items: [],
+          openCount: 0,
+          pageNum: 1,
+          pageSize: 15,
+          recentlyPushedBranches: [],
+          sentCount: 0,
+          totalCount: 0,
+        }),
+      });
+    },
+  );
+
+  return {
+    pullRequestListRequestCount: () => pullRequestListRequestCount,
+  };
+}
+
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
@@ -1487,6 +1605,33 @@ async function pullRequestHeaderSearchScopeMetrics(page: Page) {
       input: rect(input),
       scope: rect(scope),
       searchBox: rect(searchBox),
+    };
+  });
+}
+
+async function pullRequestBadRequestMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const message = errorWrap?.querySelector<HTMLElement>("p");
+    const homeButton = errorWrap?.querySelector<HTMLElement>("a.ybtn.ybtn-info");
+    const missing = Object.entries({ errorWrap, header, homeButton, message, pageWrap })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected PR bad-request metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    return {
+      errorTextAlign: window.getComputedStyle(errorWrap).textAlign,
+      gnbBackground: window.getComputedStyle(header).backgroundColor,
+      gnbClassName: header.className,
+      homeButtonClassName: homeButton.className,
+      messageColor: window.getComputedStyle(message).color,
+      messageFontSize: window.getComputedStyle(message).fontSize,
+      pageWrapMarginTop: window.getComputedStyle(pageWrap).marginTop,
+      pageWrapMinHeight: window.getComputedStyle(pageWrap).minHeight,
     };
   });
 }

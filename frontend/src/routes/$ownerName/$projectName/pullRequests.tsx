@@ -17,6 +17,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { DefaultSearchErrorBody } from "../../-search-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
@@ -92,14 +93,26 @@ function ProjectOpenPullRequestsRouteShell({
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
+  const isGitProject = stringField(projectQuery.data.vcs, "GIT") === "GIT";
+  if (!isGitProject) {
+    return (
+      <ProjectPullRequestsBadRequestRouteShell
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+    <SiteLayoutShell
+      projectSearchScope={{
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }}
+      runtimeConfig={runtimeConfig}
+    >
       <ProjectPullRequestsScreen
         category="open"
         ownerName={ownerName}
@@ -110,6 +123,35 @@ function ProjectOpenPullRequestsRouteShell({
         search={search}
       />
     </SiteLayoutShell>
+  );
+}
+
+function ProjectPullRequestsBadRequestRouteShell({
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  useProjectPullRequestsDocumentTitle(runtimeConfig, ownerName, projectName, false);
+
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
+      <ProjectPullRequestsBadRequestBody runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectPullRequestsBadRequestBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <DefaultSearchErrorBody
+      iconClassName="ico-404"
+      messageKey="error.badrequest.only.available.for.git"
+      runtimeConfig={runtimeConfig}
+      ybtnClassName="ybtn ybtn-info"
+    />
   );
 }
 
@@ -130,12 +172,14 @@ export function ProjectPullRequestsScreen({
   runtimeConfig: RuntimeConfig;
   search: ProjectPullRequestsSearch;
 }) {
-  useProjectPullRequestsDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const pullRequestsQuery = useQuery(
-    projectPullRequestListQueryOptions(runtimeConfig, {
+  const project = initialProject ?? projectQuery.data;
+  const isGitProject = stringField(project?.vcs, "GIT") === "GIT";
+  useProjectPullRequestsDocumentTitle(runtimeConfig, ownerName, projectName, isGitProject);
+  const pullRequestsQuery = useQuery({
+    ...projectPullRequestListQueryOptions(runtimeConfig, {
       category,
       contributorId: search.contributorId,
       filter: search.filter,
@@ -143,10 +187,18 @@ export function ProjectPullRequestsScreen({
       pageNum: search.pageNum,
       projectName,
     }),
-  );
-  const project = initialProject ?? projectQuery.data;
+    enabled: isGitProject,
+  });
 
-  if (!project || !pullRequestsQuery.data) {
+  if (!project) {
+    return null;
+  }
+
+  if (!isGitProject) {
+    return <ProjectPullRequestsBadRequestBody runtimeConfig={runtimeConfig} />;
+  }
+
+  if (!pullRequestsQuery.data) {
     return null;
   }
 
@@ -877,9 +929,11 @@ function useProjectPullRequestsDocumentTitle(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
+  isGitProject: boolean,
 ) {
   const { t } = useLegacyMessages();
   const pullRequestMenuTitle = t("menu.pullRequest");
+  const badRequestOnlyForGit = t("error.badrequest.only.available.for.git");
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -887,12 +941,21 @@ function useProjectPullRequestsDocumentTitle(
     }
 
     const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${projectName} - ${pullRequestMenuTitle} - ${ownerName}/${projectName}`;
+    document.title = isGitProject
+      ? `${projectName} - ${pullRequestMenuTitle} - ${ownerName}/${projectName}`
+      : badRequestOnlyForGit;
 
     return () => {
       document.title = siteName;
     };
-  }, [ownerName, projectName, pullRequestMenuTitle, runtimeConfig.siteName]);
+  }, [
+    badRequestOnlyForGit,
+    isGitProject,
+    ownerName,
+    projectName,
+    pullRequestMenuTitle,
+    runtimeConfig.siteName,
+  ]);
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
