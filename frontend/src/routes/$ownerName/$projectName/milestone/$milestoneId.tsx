@@ -183,7 +183,6 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
       {projectShell}
       <MilestoneDetailAssets
         basePath={runtimeConfig.basePath}
-        currentUserLoginId={currentUser.loginId}
         ownerName={ownerName}
         projectName={projectName}
       />
@@ -243,12 +242,10 @@ function ProjectMilestoneNotFoundBody({ runtimeConfig }: { runtimeConfig: Runtim
 
 function MilestoneDetailAssets({
   basePath,
-  currentUserLoginId,
   ownerName,
   projectName,
 }: {
   basePath: string;
-  currentUserLoginId: string;
   ownerName: string;
   projectName: string;
 }) {
@@ -260,22 +257,11 @@ function MilestoneDetailAssets({
         type="text/css"
         href={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/styles/default.css")}
       />
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/highlight.pack.js")}
-      ></script>
-      <script
-        defer
-        type="text/javascript"
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/marked.js")}
-      ></script>
       <link
         rel="stylesheet"
         type="text/css"
         href={prefixBasePath(basePath, `${projectPath}/issue/labels.css`)}
       />
-      <meta name="yona-current-user-login-id" content={currentUserLoginId} />
     </>
   );
 }

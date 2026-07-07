@@ -688,6 +688,8 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     descPaddingLeft: "15px",
     descPaddingTop: "10px",
     filterMinHeight: "30px",
+    markdownInsideDesc: true,
+    markdownScriptBootstrapCount: 0,
     progressBackgroundColor: "rgb(182, 218, 84)",
     progressBarBackgroundColor: "rgb(94, 185, 94)",
   });
@@ -1082,6 +1084,9 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
+  expect(routeSource).not.toContain("<script");
+  expect(routeSource).not.toContain("highlight.pack.js");
+  expect(routeSource).not.toContain("marked.js");
   expect(routeSource).not.toContain("<div for={`issue-");
   expect(routeSource).not.toContain(
     "!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending",
@@ -1228,19 +1233,13 @@ async function expectMilestoneDetailAssets(page: Page, basePath: string) {
   await expect(labelLink).toHaveAttribute("rel", "stylesheet");
   await expect(labelLink).toHaveAttribute("type", "text/css");
 
-  for (const src of [
-    `${basePath}/assets/javascripts/lib/highlight/highlight.pack.js`,
-    `${basePath}/assets/javascripts/lib/marked.js`,
-  ]) {
-    const script = page.locator(`script[src="${src}"]`);
-    await expect(script).toHaveAttribute("type", "text/javascript");
-    await expect(script).toHaveAttribute("defer", "");
-  }
-
-  await expect(page.locator('meta[name="yona-current-user-login-id"]')).toHaveAttribute(
-    "content",
-    "admin",
-  );
+  await expect(
+    page.locator(`script[src="${basePath}/assets/javascripts/lib/highlight/highlight.pack.js"]`),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(`script[src="${basePath}/assets/javascripts/lib/marked.js"]`),
+  ).toHaveCount(0);
+  await expect(page.locator('meta[name="yona-current-user-login-id"]')).toHaveCount(0);
 
   const legacyInlineScript = await page.evaluate(() => {
     return [...document.scripts]
@@ -1688,13 +1687,16 @@ async function issueLabelColorMetrics(page: Page, selector: string) {
 async function milestoneDetailMetrics(page: Page) {
   return page.evaluate(() => {
     const desc = document.querySelector<HTMLElement>(".milestone-desc");
+    const markdown = document.querySelector<HTMLElement>(".milestone-desc .markdown-wrap");
     const filter = document.querySelector<HTMLElement>(".milesion-wrap #issues .filter-wrap");
     const progress = document.querySelector<HTMLElement>(".milesion-wrap .progress");
     const progressBar = document.querySelector<HTMLElement>(".milesion-wrap .progress .bar");
-    if (!desc || !filter || !progress || !progressBar) {
+    if (!desc || !markdown || !filter || !progress || !progressBar) {
       throw new Error("Expected milestone detail metric targets are missing.");
     }
     const descStyle = getComputedStyle(desc);
+    const descBox = desc.getBoundingClientRect();
+    const markdownBox = markdown.getBoundingClientRect();
     return {
       descBackgroundColor: descStyle.backgroundColor,
       descBorderBottomWidth: descStyle.borderBottomWidth,
@@ -1704,6 +1706,14 @@ async function milestoneDetailMetrics(page: Page) {
       descPaddingLeft: descStyle.paddingLeft,
       descPaddingTop: descStyle.paddingTop,
       filterMinHeight: getComputedStyle(filter).minHeight,
+      markdownInsideDesc:
+        markdownBox.top >= descBox.top &&
+        markdownBox.bottom <= descBox.bottom &&
+        markdownBox.left >= descBox.left &&
+        markdownBox.right <= descBox.right,
+      markdownScriptBootstrapCount: document.querySelectorAll(
+        'script[src*="highlight.pack.js"], script[src*="marked.js"]',
+      ).length,
       progressBackgroundColor: getComputedStyle(progress).backgroundColor,
       progressBarBackgroundColor: getComputedStyle(progressBar).backgroundColor,
     };
