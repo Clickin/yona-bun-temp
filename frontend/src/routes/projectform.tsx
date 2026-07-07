@@ -122,7 +122,8 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
-  const cancelHref = runtimeConfig.basePath;
+  const legacyCancelHref = "/";
+  const cancelNavigationHref = prefixBasePath(runtimeConfig.basePath, "/");
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -471,14 +472,14 @@ function ProjectCreateScreen({
                 </button>
                 <ProjectCreateRootLink
                   to="/"
-                  href={cancelHref}
-                  legacyRootHref={cancelHref}
+                  href={legacyCancelHref}
+                  legacyRootHref={legacyCancelHref}
                   className="ybtn"
                   activeOptions={legacyProjectCreateRootLinkActiveOptions}
                   activeProps={legacyProjectCreateRootLinkActiveProps}
                   onClick={(event) => {
                     event.preventDefault();
-                    router.history.push(cancelHref);
+                    router.history.push(cancelNavigationHref);
                   }}
                 >
                   {t("button.cancel")}
