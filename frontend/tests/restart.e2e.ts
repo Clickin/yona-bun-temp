@@ -46,6 +46,8 @@ const EXPECTED_FAILED_SECRET_RESTART_SCREEN = `
 test("restart notice matches legacy welcome/restart.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/restart`);
+  await expect(page).toHaveTitle("Welcome!");
+  await expectHeadTitle(page, "Welcome!");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
 
@@ -82,6 +84,8 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
 test("restart failed secret state adds the legacy manual update notice", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/restart?hasFailedToUpdateSecret=true`);
+  await expect(page).toHaveTitle("Welcome!");
+  await expectHeadTitle(page, "Welcome!");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
 
   await expect(page.locator(".secret-box")).toHaveText(
@@ -136,6 +140,7 @@ test("restart route source keeps TanStack-owned home navigation with the legacy 
     'import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
   );
   expect(source).toContain("hasFailedToUpdateSecret");
+  expect(source).toContain('<title>{t("app.restart.welcome")}</title>');
   expect(source).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
   expect(source).toContain("ref?: React.Ref<HTMLAnchorElement>;");
   expect(source).toContain('return reactJsx("a", { ...props, ref, href: legacyHref });');
@@ -146,8 +151,14 @@ test("restart route source keeps TanStack-owned home navigation with the legacy 
   expect(source).not.toContain("useLinkProps");
   expect(source).not.toContain("LegacyHrefAnchor");
   expect(source).not.toContain("React.createElement");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain("window.document");
   expect(source).not.toMatch(
     /<a\s+|dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
+  );
+  expect(source).not.toMatch(
+    /(?:useEffect|useLayoutEffect|React\.useEffect|React\.useLayoutEffect)\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|\btitle\s*=)/u,
   );
 });
 
@@ -214,6 +225,17 @@ async function readDesktopRestartMetrics(page: Page) {
       secretWrapPaddingTop: secretWrapStyle.paddingTop,
     };
   });
+}
+
+async function expectHeadTitle(page: Page, expected: string) {
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .first()
+        .evaluate((node) => node.textContent),
+    )
+    .toBe(expected);
 }
 
 async function readMobileRestartMetrics(page: Page) {

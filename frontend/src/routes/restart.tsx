@@ -63,6 +63,7 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
 
   return (
     <>
+      <title>{t("app.restart.welcome")}</title>
       <div className="page-wrap-outer">
         <div className="container page-wrap">
           <div className="page">
