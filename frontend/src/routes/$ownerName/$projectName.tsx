@@ -80,6 +80,20 @@ function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLButtonElement
   event.stopPropagation();
 }
 
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const record = recordField(project);
+  const organizationName = stringField(record.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  const record = recordField(project);
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
+}
+
 function ProjectHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
@@ -93,18 +107,14 @@ function ProjectHomeRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectHomeScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectHomeRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectHomeRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectHomeDocumentTitle(runtimeConfig, projectName);
-  const { tabId } = Route.useSearch();
   const query = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -113,15 +123,35 @@ function ProjectHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(query.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectHomeScreen project={query.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectHomeScreen({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { projectName } = Route.useParams();
+  useProjectHomeDocumentTitle(runtimeConfig, projectName);
+  const { tabId } = Route.useSearch();
+
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={query.data} />
-      <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={query.data} />
-      <ProjectHomeBody
-        project={query.data}
-        runtimeConfig={runtimeConfig}
-        tabId={tabId || "readme"}
-      />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={project} />
+      <ProjectHomeBody project={project} runtimeConfig={runtimeConfig} tabId={tabId || "readme"} />
     </>
   );
 }

@@ -47,6 +47,82 @@ test("protected org-owned project home restores the legacy browser title", async
   await expect(page).toHaveTitle("portal - Home");
 });
 
+test("protected org-owned project home uses legacy project and group search scopes", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/weblabs/portal`);
+  await expect(page.locator(".gnb-outer")).toHaveClass(/project-header/);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator('[data-toggle="search-scope"]')).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
+  await expect(page.locator('[data-action$="/weblabs/portal/search"]')).toHaveAttribute(
+    "data-action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator('[data-action$="/organizations/weblabs/search"]')).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(
+    page.locator(".project-menu-nav.project-menu-gruop > li.active .menu-name"),
+  ).toHaveText("Project home");
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('[data-action$="/organizations/weblabs/search"]').click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page).toHaveURL(`${basePath}/weblabs/portal`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('[data-action$="/search"]').last().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+  await expect(page).toHaveURL(`${basePath}/weblabs/portal`);
+
+  const metrics = await projectHomeNavbarSearchMetrics(page);
+  expect(metrics.searchTop).toBeGreaterThanOrEqual(metrics.navbarTop);
+  expect(metrics.searchBottom).toBeLessThanOrEqual(metrics.navbarBottom);
+  expect(metrics.formLeft).toBeGreaterThanOrEqual(metrics.navbarLeft);
+  expect(metrics.formRight).toBeLessThanOrEqual(metrics.navbarRight);
+  expect(metrics.searchRight).toBeLessThanOrEqual(metrics.formRight);
+  expect(metrics.scopeRight).toBeLessThanOrEqual(metrics.searchLeft + 1);
+  expect(metrics.scopeBottom).toBeLessThanOrEqual(metrics.navbarBottom);
+
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  const rootShellSource = routeSource.slice(
+    routeSource.indexOf("function ProjectHomeRouteShell"),
+    routeSource.indexOf("function ProjectHomeScreen"),
+  );
+  expect(rootShellSource).toContain("readProjectContainerQueryOptions");
+  expect(rootShellSource).toContain("projectSearchScopeOrganizationName(query.data, ownerName)");
+  expect(rootShellSource).toContain("<SiteLayoutShell projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain("return projectIsProtected(project) ? ownerName : undefined;");
+});
+
 test("project home README tab keeps legacy desktop and mobile proportions", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectHome(page, {
@@ -989,6 +1065,32 @@ async function projectHomeLayoutMetrics(page: Page) {
       rightPanePercent: (rightPane.width / pageWrap.width) * 100,
       mobileMediaMatches: window.matchMedia("(max-width: 900px)").matches,
       viewportWidth: window.innerWidth,
+    };
+  });
+}
+
+async function projectHomeNavbarSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) =>
+      (document.querySelector(selector) as HTMLElement).getBoundingClientRect();
+    const navbar = rect(".gnb-outer");
+    const form = rect('form[name="gnb-search-form"]');
+    const scope = rect("#gnb-search-scope-title");
+    const search = rect(".gnb-search-form .search-box");
+
+    return {
+      formLeft: form.left,
+      formRight: form.right,
+      navbarBottom: navbar.bottom,
+      navbarLeft: navbar.left,
+      navbarRight: navbar.right,
+      navbarTop: navbar.top,
+      scopeBottom: scope.bottom,
+      scopeRight: scope.right,
+      searchBottom: search.bottom,
+      searchLeft: search.left,
+      searchRight: search.right,
+      searchTop: search.top,
     };
   });
 }
