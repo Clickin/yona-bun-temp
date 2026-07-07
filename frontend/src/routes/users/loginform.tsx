@@ -89,6 +89,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return (
     <>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <title>{t("title.login")}</title>
         <div className="page full">
           <div className="center-wrap tag-line-wrap login">
             <h1 className="title">

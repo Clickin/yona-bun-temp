@@ -146,6 +146,10 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
 
+  await expect(page).toHaveTitle("Log in");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "Log in",
+  );
   await expect(page.locator(".page.full")).toBeVisible();
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(page, expectedLoginScreen(basePath, defaultFormBody()));
@@ -221,6 +225,18 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   await expect(page.locator(".links-wrap a")).toHaveAttribute("href", `${basePath}/lostPassword`);
   expect(readFileSync("src/routes/users/loginform.tsx", "utf8")).not.toContain(
     "LegacyInternalLink",
+  );
+});
+
+test("anonymous login form renders legacy browser title without imperative mutation", () => {
+  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
+
+  expect(source).toContain('<title>{t("title.login")}</title>');
+  expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/u);
+  expect(source).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
+  expect(source).not.toMatch(/\bwindow\s*\.\s*document\b/u);
+  expect(source).not.toMatch(
+    /use(?:Layout)?Effect\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|title\s*=)/u,
   );
 });
 
