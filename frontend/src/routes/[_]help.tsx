@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
@@ -16,13 +16,19 @@ const legacyAnswerLinkActiveProps = {
   "data-status": undefined,
 };
 
-function LegacyHrefAnchor({
-  legacyHref,
+function HelpRootLinkAnchor({
+  legacyHomeHref,
   href: _href,
+  ref,
   ...props
-}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyHomeHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyHomeHref });
 }
+
+const HelpRootLink = createLink(HelpRootLinkAnchor);
 
 export const Route = createFileRoute("/_help")({
   component: HelpTocRoute,
@@ -30,13 +36,31 @@ export const Route = createFileRoute("/_help")({
 
 function HelpTocRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const router = useRouter();
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
+  const handleLayoutRootClickCapture = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof HTMLAnchorElement)) {
+        return;
+      }
+      if (target.className !== "logo logo-letter" || target.getAttribute("href") !== homeHref) {
+        return;
+      }
+      event.preventDefault();
+      router.history.push(homeHref);
+    },
+    [homeHref, router.history],
+  );
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <HelpTocScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <div onClickCapture={handleLayoutRootClickCapture}>
+          <SiteLayoutShell runtimeConfig={runtimeConfig}>
+            <HelpTocScreen runtimeConfig={runtimeConfig} />
+          </SiteLayoutShell>
+        </div>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -48,15 +72,13 @@ function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
   const appName = t("app.name");
   const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
-  const homeLinkProps = useLinkProps({
-    activeOptions: legacyAnswerLinkActiveOptions,
-    activeProps: legacyAnswerLinkActiveProps,
-    onClick: (event) => {
+  const handleHomeClick = React.useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       router.history.push(homeHref);
     },
-    to: "/",
-  });
+    [homeHref, router.history],
+  );
   const toggleQuestion = (index: number) => {
     setOpenQuestionIndexes((current) => {
       const next = new Set(current);
@@ -165,9 +187,16 @@ function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  <LegacyHrefAnchor {...homeLinkProps} legacyHref={homeHref}>
+                  <HelpRootLink
+                    to="/"
+                    href={homeHref}
+                    legacyHomeHref={homeHref}
+                    activeOptions={legacyAnswerLinkActiveOptions}
+                    activeProps={legacyAnswerLinkActiveProps}
+                    onClick={handleHomeClick}
+                  >
                     메인화면
-                  </LegacyHrefAnchor>{" "}
+                  </HelpRootLink>{" "}
                   우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
                   있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
                   <Link

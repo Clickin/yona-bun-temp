@@ -188,17 +188,30 @@ const EXPECTED_HELP_SCREEN = `
 test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
-  expect(HELP_ROUTE_SOURCE).not.toMatch(/\bcreateLink\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
+  expect(HELP_ROUTE_SOURCE).toContain(
+    'import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
+  );
+  expect(HELP_ROUTE_SOURCE).toContain("const HelpRootLink = createLink(HelpRootLinkAnchor);");
+  expect(HELP_ROUTE_SOURCE).toContain("ref?: React.Ref<HTMLAnchorElement>;");
+  expect(HELP_ROUTE_SOURCE).toContain(
+    'return reactJsx("a", { ...props, ref, href: legacyHomeHref });',
+  );
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
-  expect(HELP_ROUTE_SOURCE).toContain("useLinkProps");
-  expect(HELP_ROUTE_SOURCE).toContain('to: "/"');
   expect(HELP_ROUTE_SOURCE).toContain('prefixBasePath(runtimeConfig.basePath, "/")');
+  expect(HELP_ROUTE_SOURCE).toContain("handleLayoutRootClickCapture");
+  expect(HELP_ROUTE_SOURCE).toContain('target.className !== "logo logo-letter"');
   expect(HELP_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
-  expect(HELP_ROUTE_SOURCE).toContain("legacyHref={homeHref}");
+  expect(HELP_ROUTE_SOURCE).toContain("<HelpRootLink");
+  expect(HELP_ROUTE_SOURCE).toContain('to="/"');
+  expect(HELP_ROUTE_SOURCE).toContain("href={homeHref}");
+  expect(HELP_ROUTE_SOURCE).toContain("legacyHomeHref={homeHref}");
   expect(HELP_ROUTE_SOURCE).toContain('to="/info"');
   expect(HELP_ROUTE_SOURCE).not.toContain("href={infoHref}");
   expect(HELP_ROUTE_SOURCE).not.toContain('reloadDocument to="/info"');
+  expect(HELP_ROUTE_SOURCE).not.toContain("useLinkProps");
+  expect(HELP_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
+  expect(HELP_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(HELP_ROUTE_SOURCE).toContain('"aria-current": undefined');
   expect(HELP_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/nforge/yobi/issues"');
@@ -376,6 +389,22 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       ),
     )
     .toBe("home-link");
+
+  await page.goto(`${basePath}/_help`);
+  const logoLink = page.locator(".gnb-nav .logo-letter");
+  await expect(logoLink).toHaveAttribute("href", basePath);
+  await page.evaluate(() => {
+    (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "logo-link";
+  });
+  await logoLink.click();
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker,
+      ),
+    )
+    .toBe("logo-link");
 });
 
 test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }) => {
