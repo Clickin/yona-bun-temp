@@ -306,6 +306,8 @@ function IssueStateTab({ selected, state }: { selected: SiteIssueState; state: S
 }
 
 function IssueListItem({ issue }: { issue: SiteIssue }) {
+  const projectLogoUrl = issue.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
+
   return (
     <li className="row-fluid listitem">
       <Link
@@ -313,7 +315,7 @@ function IssueListItem({ issue }: { issue: SiteIssue }) {
         params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
         className="avatar-wrap list-avatar"
       >
-        <img src={issue.projectLogoUrl} alt={issue.projectName} />
+        <img src={projectLogoUrl} alt={issue.projectName} />
       </Link>
       <div className="post-info-wrap">
         <Link

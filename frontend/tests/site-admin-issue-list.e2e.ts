@@ -426,6 +426,42 @@ test("site admin issue list renders legacy update notification badge", async ({ 
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin issue list falls back to the legacy default project logo for blank logo URLs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+    }
+  });
+  await mockSiteAdminSession(page);
+  await mockIssues(page, {
+    projectLogoUrl: "",
+  });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=open`);
+
+  await expect(page.locator(".post-list-wrap .list-avatar img")).toHaveAttribute(
+    "src",
+    "/assets/images/project_default_logo.png",
+  );
+  await expect(page.locator('.post-list-wrap .list-avatar img[src=""]')).toHaveCount(0);
+  expect(
+    consoleErrors.find((message) =>
+      message.includes('An empty string ("") was passed to the src attribute'),
+    ),
+  ).toBeUndefined();
+});
+
 test("site admin issue list custom author avatar alt uses legacy user name", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -531,7 +567,7 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockIssues(page: Page) {
+async function mockIssues(page: Page, overrides: { projectLogoUrl?: string } = {}) {
   await page.route("https://www.gravatar.com/avatar/alice-default?s=16", async (route) => {
     await route.fulfill({
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
@@ -559,7 +595,7 @@ async function mockIssues(page: Page) {
             labels: [],
             milestoneTitle: "",
             ownerName: "acme",
-            projectLogoUrl: "/assets/images/default-project-logo.png",
+            projectLogoUrl: overrides.projectLogoUrl ?? "/assets/images/default-project-logo.png",
             projectName: "roadmap",
             state: "open",
             title: "Fix release blocker",
