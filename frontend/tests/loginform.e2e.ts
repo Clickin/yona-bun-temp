@@ -464,32 +464,36 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   });
 });
 
-test("root notify scanner renders legacy yobi toast without parsing message html", async ({
+test("root yobi toast renders legacy shell DOM through React context without parsing message html", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
-
-  await page.evaluate(() => {
-    const source = document.createElement("div");
-    source.dataset.toggle = "yobi-notify";
-    source.dataset.message = "Saved <b>markup</b>";
-    document.body.append(source);
-    document.dispatchEvent(new Event("yobi:notify-scan"));
-  });
+  await page.goto(`${basePath}/users/loginform?password=reset`);
 
   await expect(page.locator("#yobiToasts .toast")).toHaveCount(1);
   await expect(page.locator("#yobiToasts .btn-dismiss button")).toHaveText("×");
   await expect(page.locator("#yobiToasts .toast .center-text .v")).toHaveCount(1);
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("Saved <b>markup</b>");
-  expect(await page.locator("#yobiToasts .toast .msg").innerHTML()).toBe(
-    "Saved &lt;b&gt;markup&lt;/b&gt;",
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "Please log in with the new password!",
   );
+  expect(await page.locator("#yobiToasts .toast .msg").innerHTML()).toBe(
+    "Please log in with the new password!",
+  );
+  expect(await page.locator("#tplYobiToast").textContent()).toContain('<div class="msg"></div>');
 
   const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
+  const loginSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
   expect(rootSource).toContain("<RootYobiToast");
-  expect(rootSource).toContain("key: `notify:${source.dataset.message");
+  expect(rootSource).toContain("ROOT_YOBI_TOAST_DURATION_MS = 5000");
+  expect(rootSource).toContain("durationMs={rootToast.durationMs}");
+  expect(rootSource).toContain('<div className="msg">{message}</div>');
+  expect(loginSource).toContain("useRootToast");
+  expect(loginSource).toContain('setRootToast({ key: "loginform-password-reset", message });');
+  expect(rootSource).not.toContain("scanNotifySources");
+  expect(rootSource).not.toContain("yobi:notify-scan");
+  expect(rootSource).not.toContain('[data-toggle="yobi-notify"]');
   expect(rootSource).not.toContain("toast.innerHTML");
+  expect(rootSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("root select2 template scripts match legacy common/select2.scala.html without html injection", async ({

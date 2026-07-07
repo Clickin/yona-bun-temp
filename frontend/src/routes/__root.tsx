@@ -33,6 +33,7 @@ const legacyPlainLinkActiveProps = {
 };
 
 type RootToast = {
+  durationMs?: number;
   key: string;
   message: string;
 };
@@ -67,6 +68,7 @@ type RootLoginDialogProps = {
 const RootToastContext = React.createContext<React.Dispatch<
   React.SetStateAction<RootToast | null>
 > | null>(null);
+const ROOT_YOBI_TOAST_DURATION_MS = 5000;
 
 export function useRootToast() {
   const setRootToast = React.use(RootToastContext);
@@ -210,6 +212,7 @@ function RootResetShell() {
           <div id="yobiToasts" className="yobiToasts">
             {rootToast ? (
               <RootYobiToast
+                durationMs={rootToast.durationMs}
                 key={rootToast.key}
                 message={rootToast.message}
                 onDismiss={() => setRootToast(null)}
@@ -273,7 +276,24 @@ function RootResetShell() {
   );
 }
 
-function RootYobiToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+function RootYobiToast({
+  durationMs,
+  message,
+  onDismiss,
+}: {
+  durationMs?: number;
+  message: string;
+  onDismiss: () => void;
+}) {
+  React.useEffect(() => {
+    const timeoutMs = durationMs ?? ROOT_YOBI_TOAST_DURATION_MS;
+    if (timeoutMs <= 0) {
+      return;
+    }
+    const timeoutId = window.setTimeout(onDismiss, timeoutMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [durationMs, onDismiss]);
+
   return (
     <div className="toast" tabIndex={-1}>
       <div className="btn-dismiss">
