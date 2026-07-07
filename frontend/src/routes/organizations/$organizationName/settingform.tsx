@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
+import { RestApiError } from "../../../api/rest-client";
 import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -54,19 +55,10 @@ function OrganizationSettingsBody({
   const queryClient = useQueryClient();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [wrongNameMessage, setWrongNameMessage] = useState("");
+  const [serverNameError, setServerNameError] = useState("");
   const organizationName = stringField(organization.organizationName, "organization");
-  const siteName = runtimeConfig.siteName ?? "Yona";
   const organizationId = stringField(organization.id, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-
-  useEffect(() => {
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = organizationName;
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [organizationName, siteName]);
 
   const updateMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -80,6 +72,14 @@ function OrganizationSettingsBody({
         logoAttachmentId,
         organizationName: String(formData.get("name") ?? ""),
       });
+    },
+    onError(error) {
+      if (error instanceof RestApiError) {
+        setServerNameError(t(error.message));
+      }
+    },
+    onMutate() {
+      setServerNameError("");
     },
     onSuccess(updatedOrganization) {
       if (logoInputRef.current) {
@@ -97,6 +97,7 @@ function OrganizationSettingsBody({
     const formData = new FormData(event.currentTarget);
     if (!isLegacyOrganizationName(String(formData.get("name") ?? ""))) {
       setWrongNameMessage(t("organization.name.alert"));
+      setServerNameError("");
       return;
     }
     setWrongNameMessage("");
@@ -118,6 +119,7 @@ function OrganizationSettingsBody({
 
   return (
     <>
+      <title>{organizationName}</title>
       <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         organizationName={organizationName}
@@ -184,6 +186,7 @@ function OrganizationSettingsBody({
                       defaultValue={organizationName}
                     />
                     <div className="orange-txt">
+                      {serverNameError ? <span className="warning">{serverNameError}</span> : null}
                       <span
                         className="msg wrongName"
                         style={wrongNameMessage ? undefined : { display: "none" }}

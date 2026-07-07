@@ -354,6 +354,75 @@ test("organization settings name submit shows legacy validation warning", async 
   expect(updateRequests).toEqual([]);
 });
 
+test("organization settings duplicate name error stays under the name field like legacy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[] =
+    [];
+  await mockOrganizationSettings(page, {
+    updateErrorMessage: "organization.name.duplicate",
+    updateRequests,
+  });
+
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+
+  await page.locator("#project-name").fill("weblabs2");
+  await page.locator("#save").click();
+
+  const warning = page.locator("#saveSetting .orange-txt .warning");
+  await expect(warning).toHaveText("Already existent user's login id or group name.");
+  await expect(warning).toBeVisible();
+  await expect(page.locator("#saveSetting .orange-txt .wrongName")).toBeHidden();
+  expect(updateRequests).toEqual([
+    {
+      body: {
+        description: "Web labs group",
+        organizationName: "weblabs2",
+      },
+      hasCsrfToken: true,
+      method: "PATCH",
+    },
+  ]);
+
+  const errorMetrics = await page.evaluate(() => {
+    const nameField = mustElement("#project-name");
+    const errorWrap = mustElement("#project-name + .orange-txt");
+    const warningElement = mustElement("#project-name + .orange-txt .warning");
+    const wrongNameElement = mustElement("#project-name + .orange-txt .wrongName");
+    const fieldBox = nameField.getBoundingClientRect();
+    const wrapBox = errorWrap.getBoundingClientRect();
+    const warningBox = warningElement.getBoundingClientRect();
+
+    return {
+      warningAfterField: warningBox.top >= fieldBox.bottom,
+      warningBeforeWrongName: warningElement.compareDocumentPosition(wrongNameElement),
+      warningInsideWrap:
+        warningBox.left >= wrapBox.left &&
+        warningBox.right <= wrapBox.right &&
+        warningBox.top >= wrapBox.top &&
+        warningBox.bottom <= wrapBox.bottom,
+      wrapLeftAlignedWithField: Math.round(wrapBox.left - fieldBox.left),
+      wrapWidth: Math.round(wrapBox.width),
+    };
+
+    function mustElement(selector: string) {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing selector: ${selector}`);
+      }
+      return element;
+    }
+  });
+
+  expect(errorMetrics.warningAfterField).toBe(true);
+  expect((errorMetrics.warningBeforeWrongName & 4) !== 0).toBe(true);
+  expect(errorMetrics.warningInsideWrap).toBe(true);
+  expect(errorMetrics.wrapLeftAlignedWithField).toBe(0);
+  expect(errorMetrics.wrapWidth).toBeGreaterThan(300);
+});
+
 test("organization settings navigation anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
@@ -442,6 +511,9 @@ test("organization settings breadcrumb source uses direct Link without Link prop
   expect(headerBreadcrumb).toContain("<Link");
   expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
   expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain("<title>{organizationName}</title>");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain("document.title");
   expect(source).not.toContain("Parameters<typeof Link>");
   expect(source).not.toContain("as unknown as");
   expect(headerBreadcrumb).not.toContain(
@@ -684,6 +756,7 @@ async function organizationSettingsMetrics(page: Page) {
 async function mockOrganizationSettings(
   page: Page,
   overrides: Partial<{
+    updateErrorMessage: string;
     updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[];
     uploadRequests: { hasCsrfToken: boolean; method: string }[];
   }> = {},
@@ -740,6 +813,20 @@ async function mockOrganizationSettings(
       hasCsrfToken: Boolean(request.headers()["x-csrf-token"]),
       method: request.method(),
     });
+    if (overrides.updateErrorMessage) {
+      await route.fulfill({
+        contentType: "application/json",
+        status: 400,
+        body: JSON.stringify({
+          error: {
+            code: "bad_request",
+            message: overrides.updateErrorMessage,
+            status: 400,
+          },
+        }),
+      });
+      return;
+    }
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
