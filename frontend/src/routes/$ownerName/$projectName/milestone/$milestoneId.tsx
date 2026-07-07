@@ -6,7 +6,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
-import type { ProjectMilestone, ProjectMilestoneIssue, YonaLabel } from "../../../../api/types";
+import type {
+  ProjectContainer,
+  ProjectMilestone,
+  ProjectMilestoneIssue,
+  YonaLabel,
+} from "../../../../api/types";
 import {
   closeProjectMilestone,
   deleteProjectMilestone,
@@ -71,18 +76,11 @@ function restApiErrorStatus(error: unknown) {
 
 function ProjectMilestoneDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ ownerName, projectName }}
-          runtimeConfig={runtimeConfig}
-          showLegacyProjectHeaderLinks
-        >
-          <ProjectMilestoneDetailScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectMilestoneDetailScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -117,6 +115,11 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
   const projectShell = (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
@@ -134,15 +137,27 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
 
   if (milestoneNotFound) {
     return (
-      <>
+      <SiteLayoutShell
+        projectSearchScope={projectSearchScope}
+        runtimeConfig={runtimeConfig}
+        showLegacyProjectHeaderLinks
+      >
         {projectShell}
         <ProjectMilestoneNotFoundBody runtimeConfig={runtimeConfig} />
-      </>
+      </SiteLayoutShell>
     );
   }
 
   if (milestoneQuery.isPending || !milestoneQuery.data?.milestone) {
-    return projectShell;
+    return (
+      <SiteLayoutShell
+        projectSearchScope={projectSearchScope}
+        runtimeConfig={runtimeConfig}
+        showLegacyProjectHeaderLinks
+      >
+        {projectShell}
+      </SiteLayoutShell>
+    );
   }
 
   const currentUser = {
@@ -160,7 +175,11 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     );
 
   return (
-    <>
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
       {projectShell}
       <MilestoneDetailAssets
         basePath={runtimeConfig.basePath}
@@ -174,8 +193,16 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         runtimeConfig={runtimeConfig}
         viewerIsProjectMember={viewerIsProjectMember}
       />
-    </>
+    </SiteLayoutShell>
   );
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function ProjectMilestoneNotFoundBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

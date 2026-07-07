@@ -217,6 +217,91 @@ test("project milestone detail keeps the legacy project shell and title for /adm
   expect(shellMetrics.titleWithinPage).toBe(true);
 });
 
+test("project milestone detail exposes legacy group search scope for org-owned projects", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestoneDetail(page, [], [], {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/milestone/5?state=open`);
+
+  await expect(page).toHaveTitle("v1.0 - weblabs/portal");
+  await expect(page).toHaveURL(`${basePath}/weblabs/portal/milestone/5?state=open`);
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal/milestone/5`,
+  );
+  await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
+  await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
+  expect(
+    await page.locator('[data-toggle="search-scope"]').evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        action: node.getAttribute("data-action"),
+        text: node.textContent?.replace(/\s+/g, " ").trim(),
+      })),
+    ),
+  ).toEqual([
+    { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
+    { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
+    { action: `${basePath}/search`, text: "All Projects" },
+  ]);
+
+  const stableUrl = page.url();
+  await page.locator("#gnb-search-scope-title").click();
+  await page
+    .locator('[data-toggle="search-scope"][data-action$="/organizations/weblabs/search"]')
+    .click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page).toHaveURL(stableUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('[data-toggle="search-scope"][data-action$="/search"]').last().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(stableUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('[data-toggle="search-scope"][data-action$="/weblabs/portal/search"]').click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page).toHaveURL(stableUrl);
+
+  const shellMetrics = await milestoneDetailShellMetrics(page);
+  expect(shellMetrics.headerHeight).toBeGreaterThanOrEqual(120);
+  expect(shellMetrics.menuHeight).toBeGreaterThanOrEqual(39);
+  expect(shellMetrics.menuBelowHeader).toBe(true);
+  expect(shellMetrics.pageWrapBelowMenu).toBe(true);
+  expect(shellMetrics.titleBelowMenu).toBe(true);
+  expect(shellMetrics.titleWithinPage).toBe(true);
+  expect(await milestoneDetailGnbSearchMetrics(page)).toEqual({
+    formInsideHeader: true,
+    inputInsideForm: true,
+    scopeInsideForm: true,
+  });
+});
+
 test("project milestone detail open state matches legacy milestone/view.scala.html whole route DOM", async ({
   page,
 }) => {
@@ -1001,6 +1086,17 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain(
     "!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending",
   );
+  expect(routeSource).not.toContain("projectSearchScope={{ ownerName, projectName }}");
+  expect(routeSource).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(routeSource).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+  expect(routeSource).toContain(
+    "return booleanField(project.isProtected) ? ownerName : undefined;",
+  );
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
   expect(routeSource).toContain(
     "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
@@ -1168,12 +1264,16 @@ async function mockProjectMilestoneDetail(
     massUpdateRequests?: unknown[];
     milestoneId?: number;
     milestoneNotFound?: boolean;
+    ownerName?: string;
+    projectName?: string;
     milestone?: Record<string, unknown>;
     project?: Record<string, unknown>;
     session?: Record<string, unknown>;
     sessionUnavailable?: boolean;
   },
 ) {
+  const ownerName = overrides?.ownerName ?? "admin";
+  const projectName = overrides?.projectName ?? "sample";
   const milestoneId = overrides?.milestoneId ?? 5;
   let milestone = {
     ...(milestoneId === 1 ? parityLaunchMilestoneFixture() : milestoneFixture()),
@@ -1210,56 +1310,59 @@ async function mockProjectMilestoneDetail(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        members: [
-          {
-            avatarUrl: "/assets/images/admin-avatar.png",
-            loginId: "admin",
-            role: "manager",
-            userId: 1,
-            userLabel: "Site Admin",
-          },
-          {
-            avatarUrl: "/assets/images/dev-avatar.png",
-            loginId: "dev",
-            role: "member",
-            userId: 2,
-            userLabel: "Dev Member",
-          },
-        ],
-        openIssueCount: 1,
-        openPullRequestCount: 1,
-        ownerName: "admin",
-        postCount: 1,
-        projectName: "sample",
-        reviewCount: 2,
-        vcs: "GIT",
-        viewerCanUpdate: true,
-        ...overrides?.project,
-      }),
-    });
-  });
   await page.route(
-    `**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
+          },
+          members: [
+            {
+              avatarUrl: "/assets/images/admin-avatar.png",
+              loginId: "admin",
+              role: "manager",
+              userId: 1,
+              userLabel: "Site Admin",
+            },
+            {
+              avatarUrl: "/assets/images/dev-avatar.png",
+              loginId: "dev",
+              role: "member",
+              userId: 2,
+              userLabel: "Dev Member",
+            },
+          ],
+          openIssueCount: 1,
+          openPullRequestCount: 1,
+          ownerName,
+          postCount: 1,
+          projectName,
+          reviewCount: 2,
+          vcs: "GIT",
+          viewerCanUpdate: true,
+          ...overrides?.project,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/milestones/${milestoneId}`,
     async (route) => {
       if (route.request().method() === "DELETE") {
         deleteRequests.push("DELETE");
@@ -1290,7 +1393,7 @@ async function mockProjectMilestoneDetail(
     },
   );
   await page.route(
-    `**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}/state`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/milestones/${milestoneId}/state`,
     async (route) => {
       stateRequests.push(route.request().postDataJSON());
       await route.fulfill({
@@ -1533,6 +1636,39 @@ async function milestoneDetailShellMetrics(page: Page) {
       pageWrapBelowMenu: pageWrapBox.top >= menuBox.bottom - 1,
       titleBelowMenu: titleBox.top >= menuBox.bottom - 1,
       titleWithinPage: titleBox.left >= pageWrapBox.left && titleBox.right <= pageWrapBox.right,
+    };
+  });
+}
+
+async function milestoneDetailGnbSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const input = document.querySelector<HTMLElement>(".gnb-search-form input[name='keyword']");
+    if (!header || !form || !scope || !input) {
+      throw new Error("Expected GNB search metric targets are missing.");
+    }
+    const headerBox = header.getBoundingClientRect();
+    const formBox = form.getBoundingClientRect();
+    const scopeBox = scope.getBoundingClientRect();
+    const inputBox = input.getBoundingClientRect();
+    return {
+      formInsideHeader:
+        formBox.top >= headerBox.top &&
+        formBox.bottom <= headerBox.bottom &&
+        formBox.left >= headerBox.left &&
+        formBox.right <= headerBox.right,
+      inputInsideForm:
+        inputBox.top >= formBox.top &&
+        inputBox.bottom <= formBox.bottom &&
+        inputBox.left >= formBox.left &&
+        inputBox.right <= formBox.right,
+      scopeInsideForm:
+        scopeBox.top >= formBox.top &&
+        scopeBox.bottom <= formBox.bottom &&
+        scopeBox.left >= formBox.left &&
+        scopeBox.right <= formBox.right,
     };
   });
 }
