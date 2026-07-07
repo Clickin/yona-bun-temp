@@ -53,6 +53,9 @@ test("organization pull request aggregate matches legacy group_pullrequest_list.
 
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
   await expect(page).toHaveTitle("weblabs");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "weblabs",
+  );
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Pull request");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
@@ -466,6 +469,9 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).not.toContain("LiHTMLAttributes");
   expect(source).not.toContain("<a\n          href={");
   expect(source).not.toContain("as unknown");
+  expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/u);
+  expect(source).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
+  expect(source).not.toMatch(/\bwindow\s*\.\s*document\b/u);
   expect(source).toContain("type LegacyPjaxContainerAttrs");
   expect(source).toContain("type LegacyListItemHrefAttrs");
   expect(source).toContain('{ "pjax-container": "" } satisfies LegacyPjaxContainerAttrs');
@@ -485,6 +491,7 @@ test("organization pull request route source keeps direct typed row links", asyn
   expect(source).toContain('className="title-prefix"');
   expect(source).toContain('type="button"');
   expect(source).toContain("const applyTitlePrefixFilter");
+  expect(source).toContain("<title>{organizationName}</title>");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
   expect(headerBreadcrumb).toContain("<Link");

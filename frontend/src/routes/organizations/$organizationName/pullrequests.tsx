@@ -5,7 +5,6 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from "react";
-import { useEffect } from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
@@ -119,7 +118,6 @@ function OrganizationPullRequestsBody({
   const router = useRouter();
   const organizationName = stringField(organization.organizationName, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-  const siteName = runtimeConfig.siteName ?? "Yona";
   const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const openAction = prefixBasePath(
     runtimeConfig.basePath,
@@ -146,17 +144,9 @@ function OrganizationPullRequestsBody({
     router.history.push(to);
   };
 
-  useEffect(() => {
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = organizationName;
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [organizationName, siteName]);
-
   return (
     <>
+      <title>{organizationName}</title>
       <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         active="pullrequests"
