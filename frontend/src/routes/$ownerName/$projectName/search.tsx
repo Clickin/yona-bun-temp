@@ -33,8 +33,8 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type ProjectSearchRouteSearch = {
   keyword: string;
-  pageNum: number;
-  routeInvalid: boolean;
+  pageNum?: number;
+  routeInvalid?: boolean;
   searchType: SearchType;
 };
 
@@ -71,6 +71,8 @@ export const Route = createFileRoute("/$ownerName/$projectName/search")({
   validateSearch: (search: Record<string, unknown>): ProjectSearchRouteSearch => {
     const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
     const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
+    const hasExplicitPageNum =
+      typeof search.pageNum === "number" || typeof search.pageNum === "string";
     const rawPageNum =
       typeof search.pageNum === "number"
         ? search.pageNum
@@ -80,8 +82,14 @@ export const Route = createFileRoute("/$ownerName/$projectName/search")({
     const validSearchType = isSearchType(rawSearchType);
     return {
       keyword: rawKeyword,
-      pageNum: Number.isFinite(rawPageNum) && rawPageNum > 0 ? rawPageNum : 1,
-      routeInvalid: rawKeyword.length === 0 || !validSearchType || rawSearchType === "project",
+      pageNum:
+        hasExplicitPageNum && Number.isFinite(rawPageNum) && rawPageNum > 0
+          ? rawPageNum
+          : undefined,
+      routeInvalid:
+        rawKeyword.length === 0 || !validSearchType || rawSearchType === "project"
+          ? true
+          : undefined,
       searchType: validSearchType && rawSearchType !== "project" ? rawSearchType : "auto",
     };
   },
@@ -118,9 +126,11 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   });
   const currentSessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const hasKeyword = search.keyword.length > 0;
+  const pageNum = search.pageNum ?? 1;
   const searchQuery = useQuery({
     ...projectSearchQueryOptions(runtimeConfig, {
       ...search,
+      pageNum,
       ownerName,
       projectName,
     }),
@@ -130,6 +140,7 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     searchQuery.data ??
     emptySearchResult({
       ...search,
+      pageNum,
       scope: "project",
     });
 
@@ -258,7 +269,6 @@ function ProjectSearchSuccessBody({
     void router.navigate({
       search: {
         keyword,
-        pageNum: 1,
         searchType,
       },
       to: searchPath,
@@ -289,7 +299,6 @@ function ProjectSearchSuccessBody({
                           from={searchPath}
                           search={{
                             keyword: keywordValue,
-                            pageNum: 1,
                             searchType: category.type,
                           }}
                           to={searchPath}
@@ -831,7 +840,11 @@ function legacyProjectSearchRedirectUrl(
   const params = new URLSearchParams();
   params.set("keyword", search.keyword);
   params.set("searchType", search.searchType);
-  params.set("pageNum", String(search.pageNum));
+  if (typeof search.pageNum === "number" && Number.isFinite(search.pageNum) && search.pageNum > 1) {
+    params.set("pageNum", String(search.pageNum));
+  } else if (search.pageNum === 1) {
+    params.set("pageNum", "1");
+  }
   return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/search`)}?${params.toString()}`;
 }
 

@@ -93,6 +93,7 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
 
   await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
 
+  await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue", "sample");
   await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
@@ -470,6 +471,7 @@ test("project search category and form navigation stay inside the React SPA", as
   await mockProjectSearch(page);
 
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
   await markSearchSpaSession(page);
   await page.locator("#searchKeyword").fill("fresh");
   await expect(page.locator('.search-category-wrap a[href="#"]')).toHaveCount(0);
@@ -477,16 +479,15 @@ test("project search category and form navigation stay inside the React SPA", as
   const issueCategory = page.locator(".search-category-wrap a", { hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/search?keyword=fresh&pageNum=1&searchType=issue`,
+    `${basePath}/admin/sample/search?keyword=fresh&searchType=issue`,
   );
   await issueCategory.click();
-  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/search\\?`));
-  expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");
-  expect(new URL(page.url()).searchParams.get("searchType")).toBe("issue");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=fresh&searchType=issue`);
   await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
   await expectSearchSpaSession(page);
 
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
   await markSearchSpaSession(page);
   await page.locator("#searchKeyword").fill("typed");
   await page.locator("#searchInnerForm").evaluate((form) => {
@@ -494,9 +495,7 @@ test("project search category and form navigation stay inside the React SPA", as
       form.requestSubmit();
     }
   });
-  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/search\\?`));
-  expect(new URL(page.url()).searchParams.get("keyword")).toBe("typed");
-  expect(new URL(page.url()).searchParams.get("searchType")).toBe("review");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=typed&searchType=review`);
   await expectSearchSpaSession(page);
 });
 
