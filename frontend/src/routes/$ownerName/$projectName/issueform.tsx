@@ -82,45 +82,25 @@ function ProjectIssueFormShell({
 
 function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
   const search = Route.useSearch();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const legacySearch = legacyUrlSearch(locationHref);
   const parentIssueId = search.parentIssueId || stringSearch(legacySearch.get("parentIssueId"));
   const commentId = search.commentId || stringSearch(legacySearch.get("commentId"));
-  useProjectIssueFormDocumentTitle(runtimeConfig, ownerName, projectName);
 
   return (
-    <ProjectIssueFormProjectScreen
-      ownerName={ownerName}
-      projectName={projectName}
-      parentIssueId={parentIssueId}
-      referCommentId={commentId}
-      runtimeConfig={runtimeConfig}
-    />
+    <>
+      <title>{`${t("issue.menu.new")} - ${ownerName}/${projectName}`}</title>
+      <ProjectIssueFormProjectScreen
+        ownerName={ownerName}
+        projectName={projectName}
+        parentIssueId={parentIssueId}
+        referCommentId={commentId}
+        runtimeConfig={runtimeConfig}
+      />
+    </>
   );
-}
-
-function useProjectIssueFormDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const newIssueTitle = t("issue.menu.new");
-
-  useEffect(() => {
-    const doc = globalThis["document"];
-    if (!doc) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    doc.title = `${newIssueTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      doc.title = siteName;
-    };
-  }, [newIssueTitle, ownerName, projectName, runtimeConfig.siteName]);
 }
 
 export function ProjectIssueFormProjectScreen({

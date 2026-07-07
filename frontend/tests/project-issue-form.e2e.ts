@@ -466,11 +466,17 @@ test("project issue create form source uses TanStack Link and no uploader templa
   );
 
   expect(source).toContain("<Link");
+  expect(source).toContain(
+    '<title>{`${t("issue.menu.new")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(source).toContain('className="label-edit"');
   expect(source).toContain('import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";');
   expect(source).toContain("router.history.back()");
   expect(source).toContain('t("issue.error.emptyTitle")');
   expect(source).toContain('t("issue.error.invalid.duedate")');
+  expect(source).not.toContain("useProjectIssueFormDocumentTitle");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain('globalThis["document"]');
   expect(source).not.toContain("window.history.back()");
   expect(source).not.toContain('t("validation.required")');
   expect(source).not.toContain('querySelector<HTMLInputElement>("#isDraft")');
