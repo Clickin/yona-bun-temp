@@ -323,8 +323,10 @@ function PostListItem({ post }: { post: SitePost }) {
 }
 
 function isDefaultAuthorAvatar(avatarUrl: string) {
-  return /^https:\/\/www\.gravatar\.com\/avatar\/[^?]+\?s=16&d=https%3A%2F%2Fko\.gravatar\.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6\.png$/u.test(
-    avatarUrl,
+  return (
+    /^https:\/\/www\.gravatar\.com\/avatar\/[^?]+\?s=16&d=https%3A%2F%2Fko\.gravatar\.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6\.png$/u.test(
+      avatarUrl,
+    ) || /\/assets\/images\/default-avatar-\d+\.png$/u.test(avatarUrl)
   );
 }
 

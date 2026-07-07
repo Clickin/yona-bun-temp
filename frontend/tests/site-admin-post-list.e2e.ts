@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
-const LEGACY_DEFAULT_AUTHOR_AVATAR_URL =
-  "https://www.gravatar.com/avatar/c160f8cc69a4f0bf2b0362752353d060?s=16&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png";
+const LEGACY_DEFAULT_AUTHOR_AVATAR_URL = "/assets/images/default-avatar-128.png";
 
 const EXPECTED_POST_LIST_SCREEN = `
 <div class="unsupported hidden">
@@ -539,6 +538,7 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('document.title = t("title.siteSetting");');
   expect(source).toContain("const legacyPaginationLinkProps = {");
+  expect(source).toContain("/\\/assets\\/images\\/default-avatar-\\d+\\.png$/u.test(avatarUrl)");
   expect(source).toContain("explicitUndefined: true");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain("className: undefined");
