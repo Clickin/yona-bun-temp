@@ -37,6 +37,13 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
   await mockProjectMembers(page);
 
   await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page).toHaveTitle("Member list - admin/sample");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("Member list - admin/sample");
   await expect(page.locator("#addNewMember")).toBeVisible();
   await expect(page.locator(".members.project .member")).toHaveCount(2);
   await expect(page.locator("legend")).toContainText("Sign-up request (1)");
@@ -492,6 +499,9 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).not.toContain("react/jsx-runtime");
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
+  expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/);
+  expect(source).not.toMatch(/\bwindow\s*\.\s*document\s*\.\s*title\b/);
+  expect(source).not.toContain("useProjectMembersDocumentTitle");
   expect(source).not.toContain("DOMParser");
   expect(source).not.toContain("parseFromString");
   expect(source).not.toContain(".querySelector");
@@ -536,6 +546,8 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).toContain("function projectWatchingCount(project: ProjectContainer)");
   expect(source).toContain("function projectWatchingCountValue(project: ProjectContainer)");
   expect(source).toContain("watchMutation.mutate(!watchState.isWatching);");
+  expect(source).toContain("function ProjectMembersBrowserTitle");
+  expect(source).toContain("<title>{`${screenTitle} - ${ownerName}/${projectName}`}</title>");
   expect(source).toContain('id="projectMemberDeleteConfirm"');
   expect(source).toContain('className="modal yobiDialog in"');
   expect(source).toContain('className="ybtn ybtn-default"');

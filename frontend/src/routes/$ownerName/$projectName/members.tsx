@@ -113,15 +113,24 @@ function ProjectMembersScreen({
       : membersErrorStatus === 401 || membersErrorStatus === 403
         ? "error.forbidden"
         : "title.projectMembers";
-  useProjectMembersDocumentTitle(runtimeConfig, ownerName, projectName, documentTitleKey);
-
   if (!projectData) {
-    return null;
+    return (
+      <ProjectMembersBrowserTitle
+        ownerName={ownerName}
+        projectName={projectName}
+        titleKey={documentTitleKey}
+      />
+    );
   }
 
   if (membersErrorStatus === 400) {
     return (
       <>
+        <ProjectMembersBrowserTitle
+          ownerName={ownerName}
+          projectName={projectName}
+          titleKey={documentTitleKey}
+        />
         <ProjectHeader project={projectData} />
         <ProjectMenu active="setting" project={projectData} />
         <ProjectMembersErrorBody messageKey="error.badrequest" />
@@ -132,6 +141,11 @@ function ProjectMembersScreen({
   if (membersErrorStatus === 401 || membersErrorStatus === 403) {
     return (
       <>
+        <ProjectMembersBrowserTitle
+          ownerName={ownerName}
+          projectName={projectName}
+          titleKey={documentTitleKey}
+        />
         <ProjectHeader project={projectData} />
         <ProjectMenu active="home" project={projectData} />
         <ProjectMembersErrorBody
@@ -150,6 +164,11 @@ function ProjectMembersScreen({
 
   return (
     <>
+      <ProjectMembersBrowserTitle
+        ownerName={ownerName}
+        projectName={projectName}
+        titleKey={documentTitleKey}
+      />
       <ProjectHeader project={projectData} />
       <ProjectMenu active="setting" project={projectData} />
       <ProjectMembersBody
@@ -161,27 +180,19 @@ function ProjectMembersScreen({
   );
 }
 
-function useProjectMembersDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-  titleKey: string,
-) {
+function ProjectMembersBrowserTitle({
+  ownerName,
+  projectName,
+  titleKey,
+}: {
+  ownerName: string;
+  projectName: string;
+  titleKey: string;
+}) {
   const { t } = useLegacyMessages();
   const screenTitle = t(titleKey);
 
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
+  return <title>{`${screenTitle} - ${ownerName}/${projectName}`}</title>;
 }
 
 function ProjectMembersErrorBody({
