@@ -133,6 +133,10 @@ test("organizations list matches legacy organization/list.scala.html DOM", async
   await page.goto(`${basePath}/orgs?filter=weblabs`);
   const filterInput = page.locator('#search input[name="filter"]');
   await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect.poll(() => page.title()).toBe("Project list");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent))
+    .toBe("Project list");
   await expect.poll(() => filterInput.getAttribute("autofocus")).toBeNull();
   await expect(filterInput).toBeFocused();
 
@@ -454,7 +458,17 @@ test("organization directory source uses Link for internal route anchors", () =>
   expect(source).not.toContain("prefixBasePath(basePath, `/organizations/${organizationName}`)");
   expect(source).not.toContain('setAttribute("autofocus"');
   expect(source).not.toContain('autofocus: ""');
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain("window.document");
+  expect(source).not.toMatch(
+    /(?:useEffect|useLayoutEffect)[\s\S]{0,300}(?:document|globalThis\.document|window\.document)[\s\S]{0,160}(?:\.title|title\s*=)/u,
+  );
+  expect(source).not.toMatch(
+    /(?:useEffect|useLayoutEffect)[\s\S]{0,300}(?:\.title|title\s*=)[\s\S]{0,160}(?:document|globalThis\.document|window\.document)/u,
+  );
   expect(source).toContain("autoFocus");
+  expect(source).toContain('<title>{t("title.projectList")}</title>');
   expect(source).toContain('to="/projects"');
   expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/organizations/$organizationName"');

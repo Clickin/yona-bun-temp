@@ -62,87 +62,90 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const currentPage = clampPageNum(search.pageNum ?? responsePage, totalPages);
 
   return (
-    <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <div className="title_area">
-            <ul className="nav nav-tabs">
-              <li>
-                <Link
-                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  to="/projects"
-                >
-                  {t("project.public")} {t("title.projectList")}
-                </Link>
-              </li>
-              <li className="active">
-                <Link
-                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  to="/orgs"
-                >
-                  {t("title.organization.list")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="search-wrap">
-            <div id="search" className="pull-left">
-              <form action={prefixBasePath(runtimeConfig.basePath, "/orgs")} method="get">
-                <div className="search-bar">
-                  <input
-                    autoFocus
-                    name="filter"
-                    className="textbox"
-                    type="text"
-                    placeholder={t("site.organization.filter")}
-                    defaultValue={filter}
-                  />
-                  <button type="submit" className="search-btn">
-                    <i className="yobicon-search"></i>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          {organizations.length === 0 ? (
-            <div className="error-wrap">
-              <i className="ico ico-err1"></i>
-              <p>{t("organization.is.empty")}</p>
-            </div>
-          ) : (
-            <>
-              <ul className="all-projects">
-                {organizations.map((organization) => (
-                  <OrganizationListItem
-                    key={organizationDisplayName(organization)}
-                    organization={organization}
-                  />
-                ))}
+    <>
+      <title>{t("title.projectList")}</title>
+      <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
+        <div className="site-breadcrumb-outer">
+          <div className="site-breadcrumb-inner">
+            <div className="title_area">
+              <ul className="nav nav-tabs">
+                <li>
+                  <Link
+                    activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
+                    to="/projects"
+                  >
+                    {t("project.public")} {t("title.projectList")}
+                  </Link>
+                </li>
+                <li className="active">
+                  <Link
+                    activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
+                    to="/orgs"
+                  >
+                    {t("title.organization.list")}
+                  </Link>
+                </li>
               </ul>
-              <OrganizationsPagination
-                currentPage={currentPage}
-                filter={filter}
-                totalPages={totalPages}
-              />
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
-    </SiteLayoutShell>
+        <div className="page-wrap-outer">
+          <div className="project-page-wrap">
+            <div className="search-wrap">
+              <div id="search" className="pull-left">
+                <form action={prefixBasePath(runtimeConfig.basePath, "/orgs")} method="get">
+                  <div className="search-bar">
+                    <input
+                      autoFocus
+                      name="filter"
+                      className="textbox"
+                      type="text"
+                      placeholder={t("site.organization.filter")}
+                      defaultValue={filter}
+                    />
+                    <button type="submit" className="search-btn">
+                      <i className="yobicon-search"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            {organizations.length === 0 ? (
+              <div className="error-wrap">
+                <i className="ico ico-err1"></i>
+                <p>{t("organization.is.empty")}</p>
+              </div>
+            ) : (
+              <>
+                <ul className="all-projects">
+                  {organizations.map((organization) => (
+                    <OrganizationListItem
+                      key={organizationDisplayName(organization)}
+                      organization={organization}
+                    />
+                  ))}
+                </ul>
+                <OrganizationsPagination
+                  currentPage={currentPage}
+                  filter={filter}
+                  totalPages={totalPages}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </SiteLayoutShell>
+    </>
   );
 }
 
