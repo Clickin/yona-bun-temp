@@ -11,7 +11,7 @@ const EXPECTED_ORGANIZATION_ISSUES = `
 <header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="page-wrap"><div pjax-container="" class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button pjax-filter="" type="button" data-assignee-id="" data-author-id="" data-mention-id="" data-project-names="" data-milestone-id="">All issues</button></li><li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-project-names="" data-milestone-id="" data-mention-id="">Assigned</button></li><li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="">Created</button></li><li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="1">Mentioned</button></li></ul><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/issues" method="get"><select id="projects" name="projectNames[]" multiple="" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="sample" data-avatar-url="/assets/images/project_default_logo.png">sample</option><option value="playground" data-avatar-url="/assets/images/project_default_logo.png">playground</option></select><hr><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="assigneeId" value="" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="bug"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><ul class="post-list-wrap"><li class="post-item title" id="issue-item-42" href="__BASE_PATH__/weblabs/sample/issue/11"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item mileston-tag"><a href="__BASE_PATH__/weblabs/sample/milestone/5" data-toggle="tooltip" data-placement="top" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/weblabs/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id margin-right-5">#11</span><a href="__BASE_PATH__/weblabs/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label" data-label-id="8" style="background:rgb(81,170,204)">bug</a></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2"></i>Overdue</div></div></li></ul><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/organizations/weblabs/issues?filter=bug&amp;orderBy=createdDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="page-wrap"><div pjax-container="" class="row-fluid issue-list-wrap"><div class="left-menu span2 span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button pjax-filter="" type="button" data-assignee-id="" data-author-id="" data-mention-id="" data-project-names="" data-milestone-id="">All issues</button></li><li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-project-names="" data-milestone-id="" data-mention-id="">Assigned</button></li><li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="">Created</button></li><li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-milestone-id="" data-project-names="" data-mention-id="1">Mentioned</button></li></ul><form id="search" name="search" action="__BASE_PATH__/organizations/weblabs/issues" method="get"><select id="projects" name="projectNames[]" multiple="" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize" style="width:100%"><option value="sample" data-avatar-url="/assets/images/project_default_logo.png">sample</option><option value="playground" data-avatar-url="/assets/images/project_default_logo.png">playground</option></select><hr><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open"><input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="assigneeId" value="" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><div class="search"><div class="search-bar"><input name="filter" class="textbox full" type="text" value="bug"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div></form></div></div><div class="span10 span-hard-wrap" id="span10"><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li></ul><ul class="post-list-wrap"><li class="post-item title" id="issue-item-42" href="__BASE_PATH__/weblabs/sample/issue/11"><div class="span10 span-hard-wrap"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item mileston-tag"><a href="__BASE_PATH__/weblabs/sample/milestone/5" data-toggle="tooltip" data-placement="top" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/issue/11#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">3</span></a><a href="__BASE_PATH__/weblabs/sample/issue/11#vote"><span class="count-groups item-icon strong"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id margin-right-5">#11</span><a href="__BASE_PATH__/weblabs/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label" data-label-id="8" style="background:rgb(81,170,204)">bug</a></div></div><div class="span2 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-toggle="tooltip" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="mr20 mt10 pull-right overdue" data-toggle="tooltip" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2"></i>Overdue</div></div></li></ul><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/organizations/weblabs/issues?filter=bug&amp;orderBy=createdDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -127,6 +127,132 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
       EXPECTED_ORGANIZATION_ISSUES.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization issues project selector submits legacy search state through React navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mock = await mockOrganizationIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(
+    `${basePath}/organizations/weblabs/issues?state=open&filter=bug&pageNum=3&orderBy=createdDate&orderDir=desc`,
+  );
+
+  const projects = page.locator("#search > select#projects");
+  await expect(page.locator("#search")).toBeVisible();
+  await expect(projects).toHaveAttribute("name", "projectNames[]");
+  await expect(projects).toHaveAttribute("multiple", "");
+  await expect(projects).toHaveAttribute("data-placeholder", "Choose projects");
+  await expect(projects).toHaveAttribute("data-toggle", "select2");
+  await expect(projects).toHaveAttribute("data-container-css-class", "fullsize");
+  await expect(projects.locator("option")).toHaveText(["sample", "playground"]);
+  await expect(projects.locator("option").nth(0)).toHaveAttribute("value", "sample");
+  await expect(projects.locator("option").nth(1)).toHaveAttribute("value", "playground");
+
+  expect(
+    await page.locator("#search").evaluate((form) =>
+      Array.from(form.children).map((child) => {
+        if (!(child instanceof HTMLElement)) {
+          return child.tagName.toLowerCase();
+        }
+        return (
+          child.id || child.getAttribute("name") || child.className || child.tagName.toLowerCase()
+        );
+      }),
+    ),
+  ).toEqual([
+    "projects",
+    "hr",
+    "orderBy",
+    "orderDir",
+    "state",
+    "authorId",
+    "assigneeId",
+    "mentionId",
+    "search",
+  ]);
+  await expect(page.locator(".lst-stacked > li")).toHaveText([
+    "All issues",
+    "Assigned",
+    "Created",
+    "Mentioned",
+  ]);
+  await expect(page.locator("#span10 > .nav-tabs.nm > li").nth(0)).toContainText("Open1");
+  await expect(page.locator("#span10 > .nav-tabs.nm > li").nth(1)).toContainText("Closed2");
+  await expect(page.locator('#search input[name="filter"]')).toHaveValue("bug");
+  await expect(page.locator("#search .search-bar .search-btn .yobicon-search")).toHaveCount(1);
+
+  const issueRequestCountBeforeSelect = mock.issueRequestUrls.length;
+  await projects.selectOption(["sample"]);
+  await expect
+    .poll(() => currentOrganizationIssueSearch(page))
+    .toMatchObject({
+      filter: "bug",
+      orderBy: "createdDate",
+      orderDir: "desc",
+      pageNum: "1",
+      projectNames: "sample",
+      state: "open",
+    });
+  await expect
+    .poll(() => mock.issueRequestUrls.length)
+    .toBeGreaterThan(issueRequestCountBeforeSelect);
+  expect(mock.issueRequestUrls.at(-1)).toContain("projectNames=sample");
+
+  // Live legacy rendering is not available in this harness; these are Scala HTML/LESS-derived
+  // containment metrics, not a claim of screenshot-level visual parity.
+  const boxes = await page.evaluate(() => {
+    const selectors = {
+      header: ".project-header-outer",
+      leftMenu: ".issue-list-wrap > .left-menu",
+      list: ".post-list-wrap",
+      menu: ".project-menu-outer",
+      pageWrap: ".page-wrap",
+      projects: "#projects",
+      searchBar: "#search .search-bar",
+      searchForm: "#search",
+      span10: "#span10",
+      tabs: "#span10 > .nav-tabs.nm",
+    } as const;
+    return Object.fromEntries(
+      Object.entries(selectors).map(([name, selector]) => {
+        const element = document.querySelector(selector);
+        if (!(element instanceof HTMLElement)) {
+          throw new Error(`Missing ${selector}`);
+        }
+        const rect = element.getBoundingClientRect();
+        return [
+          name,
+          {
+            bottom: rect.bottom,
+            height: rect.height,
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            width: rect.width,
+          },
+        ];
+      }),
+    );
+  });
+
+  expect(boxes.header.bottom).toBeLessThanOrEqual(boxes.menu.top + 1);
+  expect(boxes.menu.bottom).toBeLessThanOrEqual(boxes.pageWrap.top);
+  expect(boxes.leftMenu.left).toBeGreaterThanOrEqual(boxes.pageWrap.left);
+  expect(boxes.span10.right).toBeLessThanOrEqual(boxes.pageWrap.right + 1);
+  expect(boxes.leftMenu.right).toBeLessThanOrEqual(boxes.span10.left + 1);
+  expect(boxes.searchForm.left).toBeGreaterThanOrEqual(boxes.leftMenu.left);
+  expect(boxes.searchForm.right).toBeLessThanOrEqual(boxes.leftMenu.right + 1);
+  expect(boxes.projects.left).toBeGreaterThanOrEqual(boxes.searchForm.left);
+  expect(boxes.projects.right).toBeLessThanOrEqual(boxes.searchForm.right + 1);
+  expect(boxes.projects.bottom).toBeLessThanOrEqual(boxes.searchBar.top);
+  expect(boxes.tabs.left).toBeGreaterThanOrEqual(boxes.span10.left);
+  expect(boxes.tabs.right).toBeLessThanOrEqual(boxes.span10.right + 1);
+  expect(boxes.list.left).toBeGreaterThanOrEqual(boxes.span10.left);
+  expect(boxes.list.right).toBeLessThanOrEqual(boxes.span10.right + 1);
+  expect(boxes.tabs.bottom).toBeLessThanOrEqual(boxes.list.top);
 });
 
 test("organization issue aggregate pins the live localhost guest shell title and scope branch", async ({
@@ -325,6 +451,8 @@ test("organization issues top menu source uses direct Link targets", () => {
 test("organization issues source renders legacy browser title without document mutation", () => {
   const source = readFileSync(ORGANIZATION_ISSUES_ROUTE_SOURCE, "utf8");
   expect(source).toContain("<title>{organizationName}</title>");
+  expect(source).toContain("onChange={handleProjectsChange}");
+  expect(source).toContain("onSubmit={handleSearchSubmit}");
   expect(source).not.toMatch(/\bdocument\.title\b/u);
   expect(source).not.toMatch(/\b(?:globalThis|window)\.document\.title\b/u);
   expect(source).not.toContain("htmlDocument.title");
@@ -507,6 +635,7 @@ async function currentOrganizationIssueSearch(page: Page) {
       orderBy: params.get("orderBy") ?? "",
       orderDir: params.get("orderDir") ?? "",
       pageNum: params.get("pageNum") ?? "",
+      projectNames: params.getAll("projectNames[]").join(","),
       state: params.get("state") ?? "",
     };
   });
@@ -550,6 +679,7 @@ async function mockOrganizationIssues(
   page: Page,
   options: { isAnonymous?: boolean; itemCount?: number; viewerCanUpdate?: boolean } = {},
 ) {
+  const issueRequestUrls: string[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -581,6 +711,7 @@ async function mockOrganizationIssues(
     });
   });
   await page.route("**/api/v1/organizations/weblabs/issues**", async (route) => {
+    issueRequestUrls.push(route.request().url());
     const itemCount = options.itemCount ?? 1;
     await route.fulfill({
       contentType: "application/json",
@@ -675,6 +806,7 @@ async function mockOrganizationIssues(
       }),
     });
   });
+  return { issueRequestUrls };
 }
 
 async function canonicalizeScreenRoots(page: Page) {

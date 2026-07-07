@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
+  type ChangeEvent,
+  type FormEvent,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
@@ -170,6 +172,34 @@ function OrganizationIssuesBody({
     event.preventDefault();
     void navigate({ to: organizationIssuesRoutePath(organizationName, nextSearch) });
   };
+  const submitSearchForm = (form: HTMLFormElement) => {
+    const formData = new FormData(form);
+    void navigate({
+      to: organizationIssuesRoutePath(organizationName, {
+        ...search,
+        assigneeId: stringFormValue(formData, "assigneeId"),
+        authorId: stringFormValue(formData, "authorId"),
+        filter: stringFormValue(formData, "filter"),
+        mentionId: stringFormValue(formData, "mentionId"),
+        orderBy: stringFormValue(formData, "orderBy", "createdDate"),
+        orderDir: stringFormValue(formData, "orderDir", "desc"),
+        pageNum: 1,
+        projectNames: formData
+          .getAll("projectNames[]")
+          .filter((value): value is string => typeof value === "string"),
+        state: stringFormValue(formData, "state") === "closed" ? "closed" : "open",
+      }),
+    });
+  };
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitSearchForm(event.currentTarget);
+  };
+  const handleProjectsChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    if (event.currentTarget.form) {
+      submitSearchForm(event.currentTarget.form);
+    }
+  };
   const handleQuickSearch = (
     event: MouseEvent<HTMLButtonElement>,
     {
@@ -238,6 +268,7 @@ function OrganizationIssuesBody({
                     `/organizations/${organizationName}/issues`,
                   )}
                   method="get"
+                  onSubmit={handleSearchSubmit}
                 >
                   <select
                     id="projects"
@@ -247,6 +278,8 @@ function OrganizationIssuesBody({
                     data-toggle="select2"
                     data-container-css-class="fullsize"
                     defaultValue={search.projectNames}
+                    onChange={handleProjectsChange}
+                    style={{ width: "100%" }}
                   >
                     {issues.visibleProjects.map((project) => (
                       <option
@@ -998,6 +1031,11 @@ const knownOrganizationIssueSearchParams = new Set([
 
 function optionalSearchEntries(values: Record<string, string>) {
   return Object.entries(values).filter((entry): entry is [string, string] => entry[1] !== "");
+}
+
+function stringFormValue(formData: FormData, name: string, fallback = "") {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : fallback;
 }
 
 function stringSearch(value: unknown, fallback = "") {
