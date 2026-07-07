@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -55,24 +55,6 @@ function legacyQueryString(value: unknown) {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : "";
-}
-
-function useProjectHomeDocumentTitle(runtimeConfig: RuntimeConfig, projectName: string) {
-  const { t } = useLegacyMessages();
-  const homeTitle = t("menu.home");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${projectName} - ${homeTitle}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [homeTitle, projectName, runtimeConfig.siteName]);
 }
 
 function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
@@ -131,24 +113,20 @@ function ProjectHomeRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHomeScreen project={query.data} runtimeConfig={runtimeConfig} />
+      <ProjectHomeScreen project={query.data} />
     </SiteLayoutShell>
   );
 }
 
-function ProjectHomeScreen({
-  project,
-  runtimeConfig,
-}: {
-  project: ProjectContainer;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ProjectHomeScreen({ project }: { project: ProjectContainer }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { projectName } = Route.useParams();
-  useProjectHomeDocumentTitle(runtimeConfig, projectName);
+  const { t } = useLegacyMessages();
   const { tabId } = Route.useSearch();
 
   return (
     <>
+      <title>{`${projectName} - ${t("menu.home")}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={project} />
       <ProjectHomeBody project={project} runtimeConfig={runtimeConfig} tabId={tabId || "readme"} />
