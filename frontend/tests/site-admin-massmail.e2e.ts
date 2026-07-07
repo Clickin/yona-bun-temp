@@ -133,6 +133,14 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
 
   await page.goto(`${basePath}/sites/massmail`);
   await expect(page).toHaveTitle("Send mass mails");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .first()
+        .evaluate((title) => title.textContent),
+    )
+    .toBe("Send mass mails");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
   await expect
@@ -335,7 +343,11 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   const routeSource = readFileSync("src/routes/sites/massmail.tsx", "utf8");
 
   expect(routeSource).toContain("showLegacyProjectHeaderLinks");
-  expect(routeSource).toContain('document.title = t("title.massMail");');
+  expect(routeSource).toContain('<title>{t("title.massMail")}</title>');
+  expect(routeSource).not.toContain("useLegacySiteMassMailDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain('globalThis["document"]');
+  expect(routeSource).not.toContain("globalThis.document");
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("document.createElement");
   expect(routeSource).not.toContain("document.getElementById");

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { listProjectsQueryOptions } from "../../api/org-project";
 import { readSiteMailListRest, siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -39,11 +39,11 @@ function SiteMassMailRoute() {
 }
 
 function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  useLegacySiteMassMailDocumentTitle(runtimeConfig);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
     <>
+      <SiteMassMailTitle />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>
@@ -72,17 +72,9 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   );
 }
 
-function useLegacySiteMassMailDocumentTitle(runtimeConfig: RuntimeConfig) {
+function SiteMassMailTitle() {
   const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.massMail");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
+  return <title>{t("title.massMail")}</title>;
 }
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
