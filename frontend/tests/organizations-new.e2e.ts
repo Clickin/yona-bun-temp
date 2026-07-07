@@ -297,6 +297,7 @@ test("organization create route source keeps cancel navigation out of raw anchor
   expect(routeSource).not.toContain(
     '<Link to="/" activeOptions={{ exact: true }} className="ybtn">',
   );
+  expect(routeSource).not.toContain("href={runtimeConfig.basePath}");
   expect(routeSource).not.toContain("<Link {...cancelLinkProps}>");
   expect(routeSource).not.toMatch(
     /dangerouslySetInnerHTML|document\.|addEventListener|classList|\.style\.display/u,

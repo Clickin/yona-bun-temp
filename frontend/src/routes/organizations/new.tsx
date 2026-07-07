@@ -49,6 +49,7 @@ function OrganizationNewScreen({
   const queryClient = useQueryClient();
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
+  // Link to="/" renders the mounted root with a trailing slash; legacy cancel renders bare "/".
   const cancelLinkProps = useLinkProps({
     activeOptions: { exact: true },
     className: "ybtn",
