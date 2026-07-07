@@ -653,8 +653,13 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   );
   expect(source).toContain("return project.isProtected === true ? ownerName : undefined;");
   expect(source).toContain("showLegacyProjectHeaderLinks");
-  expect(source).toContain('const screenTitle = t("title.projectChangeVCS");');
-  expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
+  expect(source).toContain("function ProjectChangeVcsTitle");
+  expect(source).toContain(
+    '<title>{`${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(source).not.toContain("useProjectChangeVcsDocumentTitle");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
   expect(source).toContain('to="/$user"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
@@ -1251,101 +1256,4 @@ function projectSettings() {
     viewerCanUpdate: true,
     watchCount: 5,
   };
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .filter((attr) => !shouldIgnoreAttr(node, attr))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-
-    function shouldIgnoreAttr(node: Element, attr: Attr) {
-      return (
-        (attr.name === "aria-current" || attr.name === "data-status") &&
-        !node.matches(".project-page-wrap > .nav.nav-tabs a")
-      );
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .filter((attr) => !shouldIgnoreAttr(node, attr))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-
-    function shouldIgnoreAttr(node: Element, attr: Attr) {
-      return (
-        (attr.name === "aria-current" || attr.name === "data-status") &&
-        !node.matches(".project-page-wrap > .nav.nav-tabs a")
-      );
-    }
-  }, html);
 }

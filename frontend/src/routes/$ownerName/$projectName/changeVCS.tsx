@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -77,13 +77,28 @@ function ProjectChangeVcsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   );
   const project = mergeProjectChangeVcsData(containerQuery.data, changeVcsQuery.data);
 
-  useProjectChangeVcsDocumentTitle(runtimeConfig, ownerName, projectName);
-
   if (!project) {
-    return null;
+    return <ProjectChangeVcsTitle ownerName={ownerName} projectName={projectName} />;
   }
 
-  return <ProjectChangeVcsBody project={project} runtimeConfig={runtimeConfig} />;
+  return (
+    <>
+      <ProjectChangeVcsTitle ownerName={ownerName} projectName={projectName} />
+      <ProjectChangeVcsBody project={project} runtimeConfig={runtimeConfig} />
+    </>
+  );
+}
+
+function ProjectChangeVcsTitle({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return <title>{`${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`}</title>;
 }
 
 function ProjectChangeVcsBody({
@@ -675,32 +690,13 @@ function mergeProjectChangeVcsData(
     return undefined;
   }
 
-  return {
-    ...(container ?? {}),
-    ...(changeVcs ?? {}),
-  };
-}
-
-function useProjectChangeVcsDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const screenTitle = t("title.projectChangeVCS");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
+  if (!container) {
+    return { ...changeVcs };
+  }
+  if (!changeVcs) {
+    return { ...container };
+  }
+  return { ...container, ...changeVcs };
 }
 
 function stringField(value: unknown, fallback: string) {
