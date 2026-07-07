@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, type KeyboardEvent } from "react";
+import { type KeyboardEvent } from "react";
 import {
   siteIssuesQueryOptions,
   siteUpdateQueryOptions,
@@ -44,19 +44,6 @@ export const Route = createFileRoute("/sites/issueList")({
   }),
 });
 
-function useLegacySiteIssueListDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.siteSetting");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
-}
-
 function SiteIssueListRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -75,12 +62,13 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const routeSearch = Route.useSearch();
   const search = normalizeIssueListSearch(routeSearch);
   const { pageNum, state } = search;
-  useLegacySiteIssueListDocumentTitle(runtimeConfig);
+  const { t } = useLegacyMessages();
   const query = useQuery(siteIssuesQueryOptions(runtimeConfig, { page: pageNum, state }));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
     <>
+      <title>{t("title.siteSetting")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>

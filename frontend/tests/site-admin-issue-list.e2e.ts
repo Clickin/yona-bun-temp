@@ -156,6 +156,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await page.goto(`${basePath}/sites/issueList`);
   await expect(page).toHaveTitle("Site settings");
   await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .first()
+        .evaluate((title) => title.textContent),
+    )
+    .toBe("Site settings");
+  await expect
     .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
     .toBe(`${basePath}/sites/issueList`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
@@ -385,8 +393,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-posts-nav");
 
   const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
-  expect(routeSource).toContain("function useLegacySiteIssueListDocumentTitle");
-  expect(routeSource).toContain('document.title = t("title.siteSetting")');
+  expect(routeSource).toContain('<title>{t("title.siteSetting")}</title>');
+  expect(routeSource).not.toContain("useLegacySiteIssueListDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).toContain(
     "<SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>",
   );
