@@ -4,7 +4,6 @@ import {
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
-  useEffect,
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
@@ -148,20 +147,10 @@ function OrganizationIssuesBody({
   const navigate = useNavigate();
   const organizationName = stringField(organization.organizationName, issues.organizationName);
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-  const siteName = runtimeConfig.siteName ?? "Yona";
   const legacyPjaxRootAttrs = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement> & {
     "pjax-container": string;
   };
   const hasIssues = issues.items.length > 0;
-
-  useEffect(() => {
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = organizationName;
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [organizationName, siteName]);
 
   const navigateToSearch = (
     event: MouseEvent<HTMLButtonElement>,
@@ -223,6 +212,7 @@ function OrganizationIssuesBody({
 
   return (
     <>
+      <title>{organizationName}</title>
       <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         active="issues"

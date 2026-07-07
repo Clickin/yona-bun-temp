@@ -23,6 +23,7 @@ test("organization issue aggregate matches legacy group_issue_list.scala.html DO
 
   await page.goto(`${basePath}/organizations/weblabs/issues?state=open&filter=bug`);
   await expect(page).toHaveTitle("weblabs");
+  await expect.poll(() => firstHeadTitleText(page)).toBe("weblabs");
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("weblabs");
   await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
@@ -137,6 +138,7 @@ test("organization issue aggregate pins the live localhost guest shell title and
   await page.goto(`${basePath}/organizations/weblabs/issues?state=open&filter=bug`);
 
   await expect(page).toHaveTitle("weblabs");
+  await expect.poll(() => firstHeadTitleText(page)).toBe("weblabs");
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
   await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
@@ -318,6 +320,14 @@ test("organization issues top menu source uses direct Link targets", () => {
   expect(source).toContain("to={`/organizations/${organizationName}/settingform`}");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
+});
+
+test("organization issues source renders legacy browser title without document mutation", () => {
+  const source = readFileSync(ORGANIZATION_ISSUES_ROUTE_SOURCE, "utf8");
+  expect(source).toContain("<title>{organizationName}</title>");
+  expect(source).not.toMatch(/\bdocument\.title\b/u);
+  expect(source).not.toMatch(/\b(?:globalThis|window)\.document\.title\b/u);
+  expect(source).not.toContain("htmlDocument.title");
 });
 
 test("organization issue aggregate filter controls are React buttons with legacy search evidence", async ({
@@ -513,6 +523,10 @@ async function spaMarker(page: Page) {
   return page.evaluate(
     () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
   );
+}
+
+async function firstHeadTitleText(page: Page) {
+  return page.evaluate(() => document.head.querySelector("title")?.textContent ?? "");
 }
 
 async function hrefs(page: Page, selector: string) {
