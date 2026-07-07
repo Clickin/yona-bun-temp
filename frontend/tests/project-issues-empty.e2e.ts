@@ -436,6 +436,13 @@ test("project issue list route source does not inject route-local bootstrap scri
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('$yobi.loadModule("issue.List")');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobi.ShortcutKey.setKeymapLink");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("/assets/javascripts/lib/jquery.pageslide.js");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    "/assets/javascripts/service/yona.twoColumnMode.js",
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    "/assets/javascripts/service/yona.showSubtask.js",
+  );
 });
 
 test("project issue list keymap modal is route-owned React state", async () => {
@@ -653,9 +660,6 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     `${basePath}/assets/javascripts/lib/moment-with-langs.min.js`,
     `${basePath}/assets/javascripts/lib/pikaday/pikaday.js`,
     `${basePath}/assets/javascripts/common/yobi.ui.Calendar.js`,
-    `${basePath}/assets/javascripts/lib/jquery.pageslide.js`,
-    `${basePath}/assets/javascripts/service/yona.twoColumnMode.js`,
-    `${basePath}/assets/javascripts/service/yona.showSubtask.js`,
   ]);
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.List")')).toBe(false);
   expect(await scriptTextContains(page, "yobi.ShortcutKey.setKeymapLink")).toBe(false);
@@ -3125,9 +3129,6 @@ async function issueListAssetSources(page: Page, basePath: string) {
     "/assets/javascripts/lib/moment-with-langs.min.js",
     "/assets/javascripts/lib/pikaday/pikaday.js",
     "/assets/javascripts/common/yobi.ui.Calendar.js",
-    "/assets/javascripts/lib/jquery.pageslide.js",
-    "/assets/javascripts/service/yona.twoColumnMode.js",
-    "/assets/javascripts/service/yona.showSubtask.js",
   ];
   return page.evaluate(
     ({ basePath, sourceSuffixes }) =>

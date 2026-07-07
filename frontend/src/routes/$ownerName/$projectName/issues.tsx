@@ -342,18 +342,6 @@ function IssueListAssets({
         defer
         src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Calendar.js")}
       ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/jquery.pageslide.js")}
-      ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.twoColumnMode.js")}
-      ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/service/yona.showSubtask.js")}
-      ></script>
     </>
   );
 }
