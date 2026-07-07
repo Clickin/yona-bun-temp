@@ -117,6 +117,79 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   });
 });
 
+test("project code history uses legacy project-scoped GNB search shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyPageUrl = `${basePath}/admin/sample/commits/main`;
+  await mockProjectCodeHistory(page, {
+    project: { isProtected: true, organizationName: "admin" },
+  });
+
+  await page.goto(historyPageUrl);
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect
+    .poll(() =>
+      scopeButtons.evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/organizations/admin/search`, text: "This Group" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expectHistoryRoutePath(page, historyPageUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(2).click();
+  await expectHistoryRoutePath(page, historyPageUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  await expectHistoryRoutePath(page, historyPageUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+
+  const metrics = await historyNavbarMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.form.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.form.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.form.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.scope.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.scope.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.searchBox.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.input.left).toBeGreaterThanOrEqual(metrics!.searchBox.left);
+  expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
+  expect(metrics!.menu.top).toBeGreaterThanOrEqual(metrics!.projectHeader.bottom - 1);
+});
+
 test("project bare code history renders default branch on the legacy commits URL", async ({
   page,
 }) => {
@@ -268,6 +341,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(legacySource).toContain("routes.CodeHistoryApp.show");
   expect(source).toContain("validateSearch(search): ProjectCodeHistorySearch");
   expect(source).toContain("return Number.isFinite(page) && page > 0 ? { page } : {};");
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
+  expect(source).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
   expect(source).toContain("const showCommitSearch = commitDetailSearch(selectedBranch);");
   expect(source).toContain("return { branch };");
   expect(source).toMatch(/projectRoutePath\(\s*ownerName,\s*projectName,\s*"commit",/u);
@@ -295,6 +371,8 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source).not.toContain("activeProps={{ className: undefined }}");
 
   expect(bareSource).toContain('createFileRoute("/$ownerName/$projectName/commits")');
+  expect(bareSource).toContain("const isProjectCodeHistoryRoot =");
+  expect(bareSource).toContain("return <Outlet />;");
   expect(bareSource).toContain(
     'codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName })',
   );
@@ -317,6 +395,10 @@ test("project code history route source has no internal raw anchor patterns", ()
 async function expectNoTanStackActiveMarkers(locator: Locator) {
   await expect(locator).not.toHaveAttribute("aria-current", /.*/u);
   await expect(locator).not.toHaveAttribute("data-status", /.*/u);
+}
+
+async function expectHistoryRoutePath(page: Page, expectedPath: string) {
+  await expect.poll(() => new URL(page.url()).pathname).toBe(expectedPath);
 }
 
 async function historyLayoutMetrics(page: Page) {
@@ -402,9 +484,47 @@ async function historyLayoutMetrics(page: Page) {
   });
 }
 
+async function historyNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!navbar || !form || !scope || !searchBox || !input || !projectHeader || !menu) {
+      return null;
+    }
+    return {
+      form: rect(form),
+      input: rect(input),
+      menu: rect(menu),
+      navbar: rect(navbar),
+      projectHeader: rect(projectHeader),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
+  });
+}
+
 async function mockProjectCodeHistory(
   page: Page,
-  options: { onHistoryRequest?: (requestUrl: URL) => void; secondMessage?: string } = {},
+  options: {
+    onHistoryRequest?: (requestUrl: URL) => void;
+    project?: Record<string, unknown>;
+    secondMessage?: string;
+  } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -446,6 +566,7 @@ async function mockProjectCodeHistory(
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...options.project,
       }),
     });
   });
