@@ -12,7 +12,7 @@ const EXPECTED_PROJECT_STATISTICS = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -77,21 +77,41 @@ test("project statistics navbar uses legacy project search scope", async ({ page
   await page.goto(`${basePath}/admin/sample/statistics`);
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
 
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/admin/sample/search`,
+  await assertStatisticsProjectSearchShell(page, {
+    actions: [`${basePath}/admin/sample/search`, `${basePath}/search`],
+    basePath,
+    currentUrl: `${basePath}/admin/sample/statistics`,
+    groupAction: null,
+    projectAction: `${basePath}/admin/sample/search`,
+  });
+});
+
+test("protected org-owned project statistics expose legacy group search scope", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProtectedPortalStatistics(page);
+
+  await page.goto(`${basePath}/weblabs/portal/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+
+  await assertStatisticsProjectSearchShell(page, {
+    actions: [
+      `${basePath}/weblabs/portal/search`,
+      `${basePath}/organizations/weblabs/search`,
+      `${basePath}/search`,
+    ],
+    basePath,
+    currentUrl: `${basePath}/weblabs/portal/statistics`,
+    groupAction: `${basePath}/organizations/weblabs/search`,
+    projectAction: `${basePath}/weblabs/portal/search`,
+  });
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal/watchers`,
   );
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect(
-    attributes(page, ".gnb-search-form [data-toggle='search-scope']", "data-action"),
-  ).resolves.toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
-
-  await page.locator(".gnb-search-form [data-action$='/search']").last().dispatchEvent("click");
-
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("3");
 });
 
 test("project statistics breadcrumb links navigate through the SPA history marker", async ({
@@ -111,6 +131,22 @@ test("project statistics breadcrumb links navigate through the SPA history marke
 
 test("project statistics route TSX has no route-local raw anchor elements", () => {
   expect(STATISTICS_ROUTE_SOURCE).toContain("Link");
+  expect(STATISTICS_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "organizationName: projectSearchScopeOrganizationName(project, ownerName)",
+  );
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "return projectIsProtected(project) ? ownerName : undefined;",
+  );
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "function projectIsProtected(project: ProjectContainer)",
+  );
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    'stringField(project.projectScope, "") === "protected"',
+  );
   expect(STATISTICS_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(STATISTICS_ROUTE_SOURCE).toContain("onClick=");
   expect(STATISTICS_ROUTE_SOURCE).toContain("event.preventDefault();");
@@ -308,6 +344,106 @@ async function readDesktopStatisticsMetrics(page: Page) {
   });
 }
 
+async function assertStatisticsProjectSearchShell(
+  page: Page,
+  {
+    actions,
+    currentUrl,
+    groupAction,
+    projectAction,
+  }: {
+    actions: string[];
+    basePath: string;
+    currentUrl: string;
+    groupAction: string | null;
+    projectAction: string;
+  },
+) {
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect(
+    attributes(page, ".gnb-search-form [data-toggle='search-scope']", "data-action"),
+  ).resolves.toEqual(actions);
+
+  if (groupAction) {
+    await page.locator("#gnb-search-scope-title").click();
+    await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+    await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+    await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", groupAction);
+    await expect(page).toHaveURL(currentUrl);
+  }
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").last().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    actions[actions.length - 1],
+  );
+  await expect(page).toHaveURL(currentUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
+  await expect(page).toHaveURL(currentUrl);
+
+  expect(await readStatisticsSearchMetrics(page)).toEqual({
+    formBottomWithinNavbar: true,
+    formRightWithinNavbar: true,
+    formTopWithinNavbar: true,
+    inputWithinSearchBox: true,
+    scopeButtonWithinNavbar: true,
+    submitWithinSearchBox: true,
+  });
+}
+
+async function readStatisticsSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector(".gnb-outer.project-header");
+    const form = document.querySelector(".gnb-search-form");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    const input = document.querySelector('.gnb-search-form input[name="keyword"]');
+    const submit = document.querySelector('.gnb-search-form button[type="submit"]');
+    if (!navbar || !form || !searchBox || !scopeButton || !input || !submit) {
+      return null;
+    }
+    const rect = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    };
+    const navbarBox = rect(navbar);
+    const formBox = rect(form);
+    const searchBoxBox = rect(searchBox);
+    const scopeButtonBox = rect(scopeButton);
+    const inputBox = rect(input);
+    const submitBox = rect(submit);
+    return {
+      formBottomWithinNavbar: formBox.bottom <= navbarBox.bottom,
+      formRightWithinNavbar: formBox.right <= navbarBox.right,
+      formTopWithinNavbar: formBox.top >= navbarBox.top,
+      inputWithinSearchBox:
+        inputBox.top >= searchBoxBox.top &&
+        inputBox.bottom <= searchBoxBox.bottom &&
+        inputBox.right <= searchBoxBox.right,
+      scopeButtonWithinNavbar:
+        scopeButtonBox.top >= navbarBox.top && scopeButtonBox.bottom <= navbarBox.bottom,
+      submitWithinSearchBox:
+        submitBox.top >= searchBoxBox.top &&
+        submitBox.bottom <= searchBoxBox.bottom &&
+        submitBox.right <= searchBoxBox.right,
+    };
+  });
+}
+
 async function attributes(page: Page, selector: string, name: string) {
   return page
     .locator(selector)
@@ -465,6 +601,53 @@ async function mockProjectAdmin(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({ ...projectContainer(), isWatching: true, watchingCount: 4 }),
+    });
+  });
+}
+
+async function mockProtectedPortalStatistics(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-statistics" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          name: "Site Admin",
+        },
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...projectContainer(),
+        id: 2,
+        isProtected: true,
+        organizationName: "weblabs",
+        ownerName: "weblabs",
+        projectName: "portal",
+        projectScope: "protected",
+      }),
     });
   });
 }

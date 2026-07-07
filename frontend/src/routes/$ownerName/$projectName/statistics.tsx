@@ -25,35 +25,44 @@ const LEGACY_LINK_PROPS = {
 
 function ProjectStatisticsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ ownerName, projectName }}
-          runtimeConfig={runtimeConfig}
-        >
-          <ProjectStatisticsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectStatisticsRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectStatisticsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectStatisticsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const query = useQuery(
+  const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const project = projectQuery.data;
 
-  if (!query.data) {
+  if (!project) {
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(project, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectStatisticsScreen project={project} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectStatisticsScreen({ project }: { project: ProjectContainer }) {
   return (
     <>
-      <ProjectHeader project={query.data} />
+      <ProjectHeader project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h1>Under Construction</h1>
@@ -328,4 +337,22 @@ function projectWatchingCountValue(project: ProjectContainer) {
     }
   }
   return undefined;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  return (
+    project.isProtected === true ||
+    project.isProtected === "true" ||
+    project.isProtected === 1 ||
+    project.isProtected === "1" ||
+    stringField(project.projectScope, "") === "protected"
+  );
 }
