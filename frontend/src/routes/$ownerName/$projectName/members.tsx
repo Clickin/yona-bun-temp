@@ -1,16 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useLinkProps } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   useEffect,
   useRef,
   useState,
-  type ComponentPropsWithRef,
   type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
-import { jsx as reactJsx } from "react/jsx-runtime";
 import {
   addProjectMemberRest,
   deleteProjectMemberRest,
@@ -92,14 +90,6 @@ function focusProjectMemberDeleteConfirmButton(button: HTMLButtonElement | null)
   button?.focus();
 }
 
-function LegacyHrefAnchor({
-  legacyHref,
-  href: _href,
-  ...props
-}: ComponentPropsWithRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
-}
-
 function ProjectMembersScreen({
   project,
   runtimeConfig,
@@ -134,7 +124,7 @@ function ProjectMembersScreen({
       <>
         <ProjectHeader project={projectData} />
         <ProjectMenu active="setting" project={projectData} />
-        <ProjectMembersErrorBody messageKey="error.badrequest" runtimeConfig={runtimeConfig} />
+        <ProjectMembersErrorBody messageKey="error.badrequest" />
       </>
     );
   }
@@ -149,7 +139,6 @@ function ProjectMembersScreen({
             membersErrorStatus === 401 ? `/${ownerName}/${projectName}/members` : undefined
           }
           messageKey="error.forbidden"
-          runtimeConfig={runtimeConfig}
         />
       </>
     );
@@ -198,23 +187,11 @@ function useProjectMembersDocumentTitle(
 function ProjectMembersErrorBody({
   loginRedirectPath,
   messageKey,
-  runtimeConfig,
 }: {
   loginRedirectPath?: string;
   messageKey: string;
-  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const legacyLoginHref = loginRedirectPath
-    ? prefixBasePath(runtimeConfig.basePath, `/users/loginform?redirectUrl=${loginRedirectPath}`)
-    : undefined;
-  const legacyLoginLinkProps = useLinkProps({
-    activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
-    activeProps: legacyLinkActiveProps,
-    className: "ybtn ybtn-primary",
-    search: loginRedirectPath ? { redirectUrl: loginRedirectPath } : undefined,
-    to: "/users/loginform",
-  });
 
   return (
     <div className="page-wrap-outer">
@@ -223,13 +200,17 @@ function ProjectMembersErrorBody({
           <i className="ico ico-err2"></i>
           <p>{t(messageKey)}</p>
           {loginRedirectPath ? (
-            <LegacyHrefAnchor
-              {...legacyLoginLinkProps}
+            <Link
+              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+              activeProps={legacyLinkActiveProps}
+              className="ybtn ybtn-primary"
               data-login="required"
-              legacyHref={legacyLoginHref ?? ""}
+              mask={{ to: `/users/loginform?redirectUrl=${loginRedirectPath}` }}
+              search={{ redirectUrl: loginRedirectPath }}
+              to="/users/loginform"
             >
               {t("title.login")}
-            </LegacyHrefAnchor>
+            </Link>
           ) : null}
         </div>
       </div>

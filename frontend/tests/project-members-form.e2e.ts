@@ -487,6 +487,9 @@ test("project members route source keeps navigation in Link, mutation URLs in da
 
   expect(source).not.toContain("createLink");
   expect(source).not.toMatch(/<a\b/);
+  expect(source).not.toContain("LegacyHrefAnchor");
+  expect(source).not.toContain("reactJsx");
+  expect(source).not.toContain("react/jsx-runtime");
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("DOMParser");
@@ -511,6 +514,9 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).toContain("data-href={prefixBasePath(");
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
+  expect(source).toContain('to="/users/loginform"');
+  expect(source).toContain("mask={{ to: `/users/loginform?redirectUrl=${loginRedirectPath}` }}");
+  expect(source).toContain("search={{ redirectUrl: loginRedirectPath }}");
   expect(source).toContain('to="/$user"');
   expect(source).toContain("function enrolledUserCount(project: ProjectContainer)");
   expect(source).toContain("<CountBadge count={enrolledUserCount(project)} />");
@@ -1007,6 +1013,18 @@ test("project members pins the live localhost 401 forbidden shell", async ({ pag
     "data-login",
     "required",
   );
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).not.toHaveAttribute(
+    "aria-current",
+    /.+/,
+  );
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).not.toHaveAttribute(
+    "data-status",
+    /.+/,
+  );
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveAttribute(
+    "class",
+    "ybtn ybtn-primary",
+  );
   await expect(page.locator(".gnb-nav")).toContainText("List All");
   await expect(page.locator(".gnb-nav")).toContainText("Feedback");
   await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
@@ -1038,6 +1056,13 @@ test("project members pins the live localhost 401 forbidden shell", async ({ pag
       }),
     ),
   );
+  expect(await projectMemberLoginErrorCtaMetrics(page)).toEqual({
+    buttonBottomWithinWrap: true,
+    buttonCenterOffsetFromWrap: 0,
+    buttonDisplay: "inline-block",
+    buttonTopBelowMessage: true,
+    errorTextMarginBottom: "30px",
+  });
 });
 
 test("project members uses live container menu toggles in the readable members screen", async ({
@@ -1825,6 +1850,39 @@ async function projectMemberErrorMetrics(page: Page) {
       errorTextMarginTop: errorTextStyle.marginTop,
       pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
       projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function projectMemberLoginErrorCtaMetrics(page: Page) {
+  return page.evaluate(() => {
+    const errorWrap = requireElement(".error-wrap");
+    const errorText = requireElement(".error-wrap p");
+    const loginLink = requireElement(".error-wrap a.ybtn.ybtn-primary");
+    const errorWrapRect = errorWrap.getBoundingClientRect();
+    const errorTextRect = errorText.getBoundingClientRect();
+    const loginLinkRect = loginLink.getBoundingClientRect();
+    const loginLinkStyle = getComputedStyle(loginLink);
+    const errorTextStyle = getComputedStyle(errorText);
+    const errorWrapCenter = errorWrapRect.left + errorWrapRect.width / 2;
+    const loginLinkCenter = loginLinkRect.left + loginLinkRect.width / 2;
+
+    const centerOffset = Math.round(loginLinkCenter - errorWrapCenter);
+
+    return {
+      buttonBottomWithinWrap: loginLinkRect.bottom <= errorWrapRect.bottom,
+      buttonCenterOffsetFromWrap: Object.is(centerOffset, -0) ? 0 : centerOffset,
+      buttonDisplay: loginLinkStyle.display,
+      buttonTopBelowMessage: loginLinkRect.top >= errorTextRect.bottom,
+      errorTextMarginBottom: errorTextStyle.marginBottom,
     };
 
     function requireElement(selector: string) {
