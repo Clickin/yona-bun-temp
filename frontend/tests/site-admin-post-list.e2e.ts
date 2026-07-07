@@ -153,6 +153,11 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
 
   await page.goto(`${basePath}/sites/postList`);
   await expect(page).toHaveTitle("Site settings");
+  expect(
+    await page
+      .locator("head > title")
+      .evaluateAll((titles) => titles.map((title) => title.innerHTML)),
+  ).toContain("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
   await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
@@ -566,8 +571,12 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(source).not.toContain("useLegacySitePostListDocumentTitle");
+  expect(source).not.toContain("useEffect");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain('globalThis["document"]');
   expect(source).toContain("showLegacyProjectHeaderLinks");
-  expect(source).toContain('document.title = t("title.siteSetting");');
+  expect(source).toContain('<title>{t("title.siteSetting")}</title>');
   expect(source).toContain("const legacyPaginationLinkProps = {");
   expect(source).toContain(
     'const projectLogoUrl = post.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";',

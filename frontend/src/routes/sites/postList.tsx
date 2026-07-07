@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -31,19 +30,6 @@ export const Route = createFileRoute("/sites/postList")({
   }),
 });
 
-function useLegacySitePostListDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.siteSetting");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
-}
-
 function SitePostListRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -61,12 +47,13 @@ function SitePostListRoute() {
 function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { pageNum } = Route.useSearch();
   const currentPage = pageNum ?? 1;
-  useLegacySitePostListDocumentTitle(runtimeConfig);
+  const { t } = useLegacyMessages();
   const query = useQuery(sitePostsQueryOptions(runtimeConfig, { page: currentPage }));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
     <>
+      <title>{t("title.siteSetting")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>
