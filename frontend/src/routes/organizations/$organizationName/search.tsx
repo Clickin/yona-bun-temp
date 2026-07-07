@@ -243,6 +243,13 @@ function OrganizationSearchBody({
     pageNum,
     searchType,
   });
+  const submitSearch = (searchType: SearchType, keyword: string) => {
+    void navigate({
+      params: { organizationName },
+      search: searchParams(searchType, keyword),
+      to: ORGANIZATION_SEARCH_ROUTE,
+    });
+  };
 
   useEffect(() => {
     setKeywordValue(result.keyword);
@@ -270,16 +277,17 @@ function OrganizationSearchBody({
                         }`}
                         key={category.type}
                       >
-                        <Link
-                          activeOptions={legacySearchLinkActiveOptions}
-                          activeProps={legacySearchLinkActiveProps}
-                          params={{ organizationName }}
-                          search={searchParams(category.type, keywordValue)}
-                          to={ORGANIZATION_SEARCH_ROUTE}
+                        <button
+                          type="button"
+                          data-toggle="search-category"
+                          data-type={category.type}
+                          onClick={() => {
+                            submitSearch(category.type, keywordValue);
+                          }}
                         >
                           {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
-                        </Link>
+                        </button>
                       </li>
                     );
                   })}
@@ -293,11 +301,7 @@ function OrganizationSearchBody({
                     action={prefixBasePath(runtimeConfig.basePath, searchPath)}
                     onSubmit={(event) => {
                       event.preventDefault();
-                      void navigate({
-                        params: { organizationName },
-                        search: searchParams(activeType, keywordValue),
-                        to: ORGANIZATION_SEARCH_ROUTE,
-                      });
+                      submitSearch(activeType, keywordValue);
                     }}
                   >
                     <input type="hidden" name="searchType" value={activeType} />

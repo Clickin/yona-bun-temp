@@ -10,7 +10,7 @@ const ROOT_CLASS_NAMES = [
   "page-footer-outer",
 ];
 
-test("organization project search keeps the legacy organization shell with anchor-based category navigation", async ({
+test("organization project search keeps the legacy organization shell with button-driven category switches and SPA submit navigation", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -25,13 +25,13 @@ test("organization project search keeps the legacy organization shell with ancho
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   expect(await screenRootClassNames(page)).toEqual(ROOT_CLASS_NAMES);
 
-  const categoryLinks = page.locator(".search-category-wrap li > a");
-  await expect(categoryLinks).toHaveCount(8);
-  await expect(page.locator(".search-category-wrap li > button")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects 0");
+  const categoryButtons = page.locator(".search-category-wrap li > button");
+  await expect(categoryButtons).toHaveCount(8);
+  await expect(page.locator(".search-category-wrap li > a")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Projects 0");
 
-  const labels = await categoryLinks.evaluateAll((links) =>
-    links.map((link) => link.textContent?.replace(/\s+/g, " ").trim() ?? ""),
+  const labels = await categoryButtons.evaluateAll((buttons) =>
+    buttons.map((button) => button.textContent?.replace(/\s+/g, " ").trim() ?? ""),
   );
   expect(labels).toEqual([
     "Issues 0",
@@ -43,15 +43,10 @@ test("organization project search keeps the legacy organization shell with ancho
     "Post Comments 0",
     "Code Reviews 0",
   ]);
-
-  await expect(categoryLinks.nth(0)).toHaveAttribute(
-    "href",
-    `${basePath}/organizations/weblabs/search?keyword=sample&pageNum=1&searchType=issue`,
-  );
-  await expect(categoryLinks.nth(2)).toHaveAttribute(
-    "href",
-    `${basePath}/organizations/weblabs/search?keyword=sample&pageNum=1&searchType=project`,
-  );
+  await expect(categoryButtons.nth(0)).toHaveAttribute("type", "button");
+  await expect(categoryButtons.nth(0)).toHaveAttribute("data-toggle", "search-category");
+  await expect(categoryButtons.nth(0)).toHaveAttribute("data-type", "issue");
+  await expect(categoryButtons.nth(2)).toHaveAttribute("data-type", "project");
   await expect(page.locator("#searchInnerForm")).toHaveAttribute(
     "action",
     `${basePath}/organizations/weblabs/search`,
@@ -63,14 +58,27 @@ test("organization project search keeps the legacy organization shell with ancho
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
+  await page.locator("#searchKeyword").fill("resubmit");
+  await page.locator('#searchInnerForm button[type="submit"]').click();
+
+  const submittedUrl = new URL(page.url());
+  expect(submittedUrl.pathname).toBe(`${basePath}/organizations/weblabs/search`);
+  expect(submittedUrl.searchParams.get("keyword")).toBe("resubmit");
+  expect(submittedUrl.searchParams.get("pageNum")).toBe("1");
+  expect(submittedUrl.searchParams.get("searchType")).toBe("project");
+  await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("project");
+  await expect(page.locator("#searchKeyword")).toHaveValue("resubmit");
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Projects 0");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
   await page.locator("#searchKeyword").fill("fresh");
-  await expect(
-    page.locator(".search-category-wrap li", { hasText: "Issues" }).locator("a"),
-  ).toHaveAttribute(
-    "href",
-    `${basePath}/organizations/weblabs/search?keyword=fresh&pageNum=1&searchType=issue`,
-  );
-  await page.locator(".search-category-wrap li", { hasText: "Issues" }).locator("a").click();
+  await page.locator(".search-category-wrap li", { hasText: "Issues" }).locator("button").click();
 
   const navigatedUrl = new URL(page.url());
   expect(navigatedUrl.pathname).toBe(`${basePath}/organizations/weblabs/search`);
@@ -79,7 +87,7 @@ test("organization project search keeps the legacy organization shell with ancho
   expect(navigatedUrl.searchParams.get("searchType")).toBe("issue");
   await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
   await expect(page.locator("#searchKeyword")).toHaveValue("fresh");
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues 0");
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues 0");
   await expect
     .poll(() =>
       page.evaluate(
@@ -87,7 +95,7 @@ test("organization project search keeps the legacy organization shell with ancho
       ),
     )
     .toBe("kept");
-  await expect.poll(() => searchApi.count).toBe(2);
+  await expect.poll(() => searchApi.count).toBe(3);
 });
 
 test("organization project search exact missing state pins the live localhost guest shell title, scope branch, and default group art", async ({
@@ -113,7 +121,7 @@ test("organization project search exact missing state pins the live localhost gu
   await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
   await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
   await expect(page.locator(".project-setting a")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects 0");
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Projects 0");
   await expect(page.locator(".search-result-title")).toHaveText("Found 0 result(s) in Projects");
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
