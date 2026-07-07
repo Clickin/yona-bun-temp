@@ -133,8 +133,11 @@ test("project milestones route uses direct typed Link targets", () => {
   expect(routeSource).toContain("return projectIsProtected(project) ? ownerName : undefined;");
   expect(routeSource).toContain('stringField(record.projectScope, "") === "protected"');
   expect(routeSource).toContain(
-    "document.title = `${projectName} - milestone - ${ownerName}/${projectName}`;",
+    "<title>{`${projectName} - milestone - ${ownerName}/${projectName}`}</title>",
   );
+  expect(routeSource).not.toContain("useProjectMilestonesDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
   expect(routeSource).toContain("orderBy: optionalStringSearch(search.orderBy)");

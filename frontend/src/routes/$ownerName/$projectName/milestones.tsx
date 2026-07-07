@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -47,7 +47,6 @@ function ProjectMilestonesRoute() {
 function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
-  useProjectMilestonesDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -75,47 +74,31 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   };
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="milestone"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
-      <link
-        rel="stylesheet"
-        href={prefixBasePath(
-          runtimeConfig.basePath,
-          `/${ownerName}/${projectName}/issue/labels.css`,
-        )}
-        type="text/css"
-      />
-      <ProjectMilestonesBody
-        milestones={milestonesQuery.data.milestones}
-        project={projectQuery.data}
-        search={search}
-      />
-    </SiteLayoutShell>
+    <>
+      <title>{`${projectName} - milestone - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu
+          active="milestone"
+          basePath={runtimeConfig.basePath}
+          project={projectQuery.data}
+        />
+        <link
+          rel="stylesheet"
+          href={prefixBasePath(
+            runtimeConfig.basePath,
+            `/${ownerName}/${projectName}/issue/labels.css`,
+          )}
+          type="text/css"
+        />
+        <ProjectMilestonesBody
+          milestones={milestonesQuery.data.milestones}
+          project={projectQuery.data}
+          search={search}
+        />
+      </SiteLayoutShell>
+    </>
   );
-}
-
-function useProjectMilestonesDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${projectName} - milestone - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName]);
 }
 
 function ProjectMilestonesBody({
