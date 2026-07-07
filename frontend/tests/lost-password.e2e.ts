@@ -149,6 +149,16 @@ test("anonymous lost-password form matches legacy site/lostPassword.scala.html s
   });
 });
 
+test("lost-password browser title follows legacy siteLayout title key", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword`);
+
+  await expect(page).toHaveTitle("Password reset request");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "Password reset request",
+  );
+});
+
 test("authenticated lost-password form prefills current user like legacy", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedSession(page);
@@ -176,6 +186,20 @@ test("lost-password route does not mutate required attributes after render", () 
   const routeSource = readFileSync(resolve("src/routes/lostPassword.tsx"), "utf8");
 
   expect(routeSource).not.toContain('setAttribute("required"');
+});
+
+test("lost-password route renders title from legacy key without imperative title mutation", () => {
+  const routeSource = readFileSync(resolve("src/routes/lostPassword.tsx"), "utf8");
+
+  expect(routeSource).toContain('const browserTitle = t("site.resetPasswordEmail.title");');
+  expect(routeSource).toContain("<title>{browserTitle}</title>");
+  expect(routeSource).not.toMatch(/\bdocument\s*\.\s*title\b/u);
+  expect(routeSource).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
+  expect(routeSource).not.toMatch(/\bwindow\s*\.\s*document\b/u);
+  for (const effectSource of readReactEffectCallSources(routeSource)) {
+    expect(effectSource).not.toMatch(/\btitle\b/u);
+    expect(effectSource).not.toMatch(/\bdocument\b|\bwindow\b|\bglobalThis\b/u);
+  }
 });
 
 test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({
@@ -607,5 +631,12 @@ async function canonicalizeHtml(page: Page, html: string) {
         .join("");
     },
     { markup: html },
+  );
+}
+
+function readReactEffectCallSources(source: string) {
+  return Array.from(
+    source.matchAll(/(?:React\.)?use(?:Layout)?Effect\s*\([\s\S]*?\},\s*\[[^\]]*\]\s*\);/gu),
+    ([match]) => match,
   );
 }

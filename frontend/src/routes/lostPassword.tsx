@@ -42,6 +42,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const [submitError, setSubmitError] = React.useState("");
   const siteName = runtimeConfig.siteName ?? "Yona";
+  const browserTitle = t("site.resetPasswordEmail.title");
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],
   });
@@ -86,6 +87,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <title>{browserTitle}</title>
       <div className="page full">
         <div className="center-wrap tag-line-wrap reset-password">
           <h1 className="title">
