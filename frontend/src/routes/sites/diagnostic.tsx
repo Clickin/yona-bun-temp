@@ -121,16 +121,16 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 
 function DiagnosticBody({ response }: { response: SiteDiagnosticsResponse | undefined }) {
   const { t } = useLegacyMessages();
-  const errors = response?.errors ?? [];
-  if (errors.length === 0) {
+  const diagnosticErrors = response?.errors ?? [];
+  if (diagnosticErrors.length === 0) {
     return <p>{t("site.diagnostic.errorNotFound")}</p>;
   }
 
   return (
     <>
-      <p>{t("site.diagnostic.errorFound", { args: [String(errors.length)] })}</p>
+      <p>{t("site.diagnostic.errorFound", { args: [String(diagnosticErrors.length)] })}</p>
       <ul>
-        {errors.map((error) => (
+        {diagnosticErrors.map((error) => (
           <li key={error}>
             <pre>{error}</pre>
           </li>

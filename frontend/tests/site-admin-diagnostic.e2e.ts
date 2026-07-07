@@ -251,13 +251,25 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
   });
 
   await page.goto(`${basePath}/sites/diagnostic`);
-  await expect(page.getByText("2 errors were found")).toBeVisible();
-  await expect(page.locator(".site-setting-wrap .span10 > ul li pre")).toHaveText([
+  await expect(page.getByText("No errors were found")).toHaveCount(0);
+  await expect(page.locator(".site-setting-wrap .span10 > p")).toHaveText("2 errors were found");
+  await expect(page.locator(".site-setting-nav li.active")).toHaveText("Diagnostics");
+  await expect(page.locator(".site-setting-nav li.active a")).toHaveAttribute(
+    "href",
+    `${basePath}/sites/diagnostic`,
+  );
+  await expect(page.locator(".site-setting-wrap .span10 > ul")).toHaveCount(1);
+  await expect(page.locator(".site-setting-wrap .span10 > ul > li")).toHaveCount(2);
+  await expect(page.locator(".site-setting-wrap .span10 > ul > li > pre")).toHaveText([
     "database probe failed",
     "repository path is unavailable",
   ]);
   expect(await diagnosticErrorMetrics(page)).toEqual({
     contentWidthRatio: 0.83,
+    contentRightWithinRow: true,
+    errorListContainsFirstPre: true,
+    errorListLeftAlignedWithMessage: true,
+    errorListTopAfterMessage: true,
     errorPreBackground: "rgb(245, 245, 245)",
     errorPreBorderRadius: 4,
     errorPreBorderTopWidth: 1,
@@ -267,9 +279,14 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
     errorPrePaddingBlock: 20,
     errorPrePaddingInline: 20,
     errorPreWhiteSpace: "pre-wrap",
+    messageContainedByContent: true,
     messageLineHeight: 20,
+    messageTopAfterTitle: true,
+    navAndContentDoNotOverlap: true,
+    sidebarAlignedWithContent: true,
     sidebarWidthRatio: 0.15,
     titleAreaBorderBottomWidth: 1,
+    titleAreaContainedByContent: true,
     titleAreaMarginBottom: 29,
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
@@ -364,11 +381,16 @@ async function diagnosticErrorMetrics(page: Page) {
     const titleArea = requireElement(".site-setting-wrap .title_area");
     const title = requireElement(".site-setting-wrap .title_area h2");
     const message = requireElement(".site-setting-wrap .span10 > p");
+    const errorList = requireElement(".site-setting-wrap .span10 > ul");
     const pre = requireElement(".site-setting-wrap .span10 > ul li pre");
 
     const rowRect = row.getBoundingClientRect();
     const sidebarRect = sidebar.getBoundingClientRect();
     const contentRect = content.getBoundingClientRect();
+    const titleAreaRect = titleArea.getBoundingClientRect();
+    const messageRect = message.getBoundingClientRect();
+    const errorListRect = errorList.getBoundingClientRect();
+    const preRect = pre.getBoundingClientRect();
     const titleAreaStyle = getComputedStyle(titleArea);
     const titleStyle = getComputedStyle(title);
     const messageStyle = getComputedStyle(message);
@@ -376,6 +398,14 @@ async function diagnosticErrorMetrics(page: Page) {
 
     return {
       contentWidthRatio: Number((contentRect.width / rowRect.width).toFixed(2)),
+      contentRightWithinRow: contentRect.right <= rowRect.right + 1,
+      errorListContainsFirstPre:
+        preRect.top >= errorListRect.top &&
+        preRect.left >= errorListRect.left &&
+        preRect.right <= errorListRect.right + 1 &&
+        preRect.bottom <= errorListRect.bottom + 1,
+      errorListLeftAlignedWithMessage: Math.abs(errorListRect.left - messageRect.left) <= 1,
+      errorListTopAfterMessage: errorListRect.top >= messageRect.bottom,
       errorPreBackground: preStyle.backgroundColor,
       errorPreBorderRadius: Math.round(parseFloat(preStyle.borderTopLeftRadius)),
       errorPreBorderTopWidth: Math.round(parseFloat(preStyle.borderTopWidth)),
@@ -389,9 +419,22 @@ async function diagnosticErrorMetrics(page: Page) {
         Math.round(parseFloat(preStyle.paddingLeft)) +
         Math.round(parseFloat(preStyle.paddingRight)),
       errorPreWhiteSpace: preStyle.whiteSpace,
+      messageContainedByContent:
+        messageRect.left >= contentRect.left &&
+        messageRect.right <= contentRect.right + 1 &&
+        messageRect.top >= contentRect.top &&
+        messageRect.bottom <= contentRect.bottom + 1,
       messageLineHeight: Math.round(parseFloat(messageStyle.lineHeight)),
+      messageTopAfterTitle: messageRect.top >= titleAreaRect.bottom,
+      navAndContentDoNotOverlap: sidebarRect.right <= contentRect.left,
+      sidebarAlignedWithContent: Math.abs(sidebarRect.top - contentRect.top) <= 1,
       sidebarWidthRatio: Number((sidebarRect.width / rowRect.width).toFixed(2)),
       titleAreaBorderBottomWidth: Math.round(parseFloat(titleAreaStyle.borderBottomWidth)),
+      titleAreaContainedByContent:
+        titleAreaRect.left >= contentRect.left &&
+        titleAreaRect.right <= contentRect.right + 1 &&
+        titleAreaRect.top >= contentRect.top &&
+        titleAreaRect.bottom <= contentRect.bottom + 1,
       titleAreaMarginBottom: Math.round(parseFloat(titleAreaStyle.marginBottom)),
       titleAreaPaddingBottom: Math.round(parseFloat(titleAreaStyle.paddingBottom)),
       titleLineHeight: Math.round(parseFloat(titleStyle.lineHeight)),
