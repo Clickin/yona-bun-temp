@@ -2221,7 +2221,12 @@ function IssueEventRow({
         <span className="state changed">moved</span>
         {sender} moved this issue from{" "}
         <strong>
-          <Link {...LEGACY_LINK_PROPS} to={`/${fromProjectName}`} className="link">
+          <Link
+            {...LEGACY_LINK_PROPS}
+            to="/$ownerName/$projectName"
+            params={{ ownerName: fromOwner, projectName: fromProject }}
+            className="link"
+          >
             {fromProjectName}
           </Link>
         </strong>

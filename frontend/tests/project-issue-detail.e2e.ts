@@ -2650,6 +2650,15 @@ test("project issue detail renders legacy null milestone timeline event", async 
 
 test("project issue detail renders legacy moved timeline event", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).toContain('to="/$ownerName/$projectName"');
+  expect(routeSource).toContain("params={{ ownerName: fromOwner, projectName: fromProject }}");
+  expect(routeSource).not.toContain("to={`/${fromProjectName}`}");
+
   await mockProjectIssueDetail(page, {
     commentCount: 0,
     comments: [],
@@ -2669,6 +2678,11 @@ test("project issue detail renders legacy moved timeline event", async ({ page }
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#event-92 .state.changed")).toHaveText("moved");
+  await expect(page.locator("#event-92 strong .link")).toHaveText("old-owner/old-project");
+  await expect(page.locator("#event-92 strong .link")).toHaveAttribute(
+    "href",
+    `${basePath}/old-owner/old-project`,
+  );
 
   expect(await canonicalize(page, ".span-left-pane > #comments")).toEqual(
     await canonicalizeHtml(page, LEFT_MOVED_EVENT_TIMELINE.replaceAll("__BASE_PATH__", basePath)),
