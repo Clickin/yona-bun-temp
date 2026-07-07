@@ -680,10 +680,7 @@ function UserListItem({
               user.isSiteAdmin ? "ybtn ybtn-small ybtn-info" : "ybtn ybtn-small label-info"
             }
             data-request-method="post"
-            data-request-uri={prefixBasePath(
-              runtimeConfig.basePath,
-              `/sites/toggleSiteAdminRole/${user.loginId}`,
-            )}
+            data-request-uri={legacySiteAdminRoleMutationPath(runtimeConfig.basePath, user.loginId)}
             onClick={() => onToggleClick(user.loginId, "site-admin")}
           >
             {user.isSiteAdmin
@@ -775,6 +772,10 @@ function RequestWaitingAlert({
       <h4>{"sending requestHeader" + "..."}</h4>
     </div>
   );
+}
+
+function legacySiteAdminRoleMutationPath(basePath: string, loginId: string) {
+  return prefixBasePath(basePath, `/sites/toggleSiteAdminRole/${loginId}`);
 }
 
 function legacyUserMutationPath(

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const SITE_USER_LIST_ROUTE_SOURCE = new URL("../src/routes/sites/userList.tsx", import.meta.url);
+type MockSiteUserState = "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN";
 
 const EXPECTED_USER_LIST_SCREEN = `
 <div class="unsupported hidden">
@@ -673,6 +674,114 @@ test("site admin deleted user tab renders legacy leave column without action but
   expect(routeSource).toMatch(/state !== "DELETED" \? \(/u);
 });
 
+test("site admin user list renders SITE_ADMIN query state with revoke controls", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockSiteUsers(page, {
+    avatarUrl: "/avatars/siteboss.png",
+    displayName: "Site Boss",
+    emailAddress: "siteboss@example.com",
+    isSiteAdmin: true,
+    loginId: "siteboss",
+    siteAdminCount: 3,
+    userId: 7,
+  });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/userList?state=SITE_ADMIN&query=siteboss`);
+
+  await expect
+    .poll(() => requests.userListSearches.at(-1))
+    .toEqual({
+      page: "1",
+      query: "siteboss",
+      state: "SITE_ADMIN",
+    });
+  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText("Site admin2");
+  await expect(page.locator(".site-setting-wrap .nav-tabs li.active .num-badge")).toHaveText("2");
+  await expect(page.locator('.form-search input[type="hidden"][name="state"]')).toHaveValue(
+    "SITE_ADMIN",
+  );
+  await expect(page.locator('.form-search input[name="query"]')).toHaveValue("siteboss");
+  await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
+  await expect(page.locator(".user-list-wrap .user-name")).toHaveText("Site Boss");
+  await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@siteboss");
+  await expect(page.locator(".user-list-wrap .email")).toHaveText("siteboss@example.com");
+  await expect(page.locator(".user-list-wrap .list-avatar")).toHaveAttribute(
+    "href",
+    `${basePath}/siteboss`,
+  );
+  await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute(
+    "alt",
+    "Site Boss",
+  );
+
+  const guestButton = page.locator(
+    '.action-buttons button[data-request-uri$="/sites/toggleGuestMode?loginId=siteboss&state=SITE_ADMIN&query=siteboss"]',
+  );
+  await expect(guestButton).toHaveText("Make Guest");
+  await expect(guestButton).toHaveClass("ybtn ybtn-small");
+  await expect(guestButton).toHaveAttribute("data-request-method", "post");
+  const accountLockButton = page.locator(
+    '.action-buttons button[data-request-uri$="/sites/toggleAccountLock?loginId=siteboss&state=SITE_ADMIN&query=siteboss"]',
+  );
+  await expect(accountLockButton).toHaveText("Lock account");
+  await expect(accountLockButton).toHaveClass("ybtn ybtn-small");
+  await expect(accountLockButton).toHaveAttribute("data-request-method", "post");
+  const revokeButton = page.locator(
+    '.action-buttons button[data-request-uri$="/sites/toggleSiteAdminRole/siteboss"]',
+  );
+  await expect(revokeButton).toHaveText("Revoke site admin role");
+  await expect(revokeButton).toHaveClass("ybtn ybtn-small ybtn-info");
+  await expect(revokeButton).toHaveAttribute("data-request-method", "post");
+  await expect(page.locator(".action-buttons")).not.toContainText("Upgrade to Site admin");
+  await expect(page.locator('[data-toggle="account-delete"]')).toHaveAttribute(
+    "data-href",
+    `${basePath}/sites/user/delete7`,
+  );
+  await expect(page.locator("#pagination a", { hasText: "Next page" })).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList?pageNum=2&query=siteboss&state=SITE_ADMIN`,
+  );
+  await expect(page.getByRole("link", { exact: true, name: "Unlocked user" })).toHaveAttribute(
+    "href",
+    `${basePath}/sites/userList?state=ACTIVE`,
+  );
+
+  expect(await userListMetrics(page)).toMatchObject({
+    actionRowButtonCount: 5,
+    contentWidthRatio: 0.83,
+    sidebarWidthRatio: 0.15,
+    tabHeight: 38,
+    userSearchInputWidth: 350,
+  });
+  expect(await siteAdminStateLayoutFlags(page)).toEqual({
+    actionColumnInsideRow: true,
+    actionControlsDoNotOverlap: true,
+    badgeInsideActiveTab: true,
+    contentAfterSidebar: true,
+    listBelowTabs: true,
+    rowInsideContent: true,
+    searchAfterTitle: true,
+    searchInsideTitleArea: true,
+  });
+
+  const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
+  expect(routeSource).toContain("legacySiteAdminRoleMutationPath");
+  expect(routeSource).toContain('user.isSiteAdmin ? "ybtn ybtn-small ybtn-info"');
+  expect(routeSource).toContain('t("button.user.revoke.site.admin.role")');
+  expect(routeSource).toContain("state: search.state");
+  expect(routeSource).toContain("legacyUserMutationPath(");
+});
+
 test("site admin user delete modal stays route-owned across open dismiss and confirm", async ({
   page,
 }) => {
@@ -1046,18 +1155,29 @@ async function mockSiteUsers(
   options: {
     avatarUrl?: string;
     deleteForbidden?: boolean;
+    displayName?: string;
+    emailAddress?: string;
+    isSiteAdmin?: boolean;
+    loginId?: string;
     resetDelayMs?: number;
     resetFails?: boolean;
     resetLogicalFailure?: boolean;
+    siteAdminCount?: number;
+    userId?: number;
   } = {},
 ) {
+  const loginId = options.loginId ?? "doortts";
+  const displayName = options.displayName ?? "Door TTS";
+  const emailAddress = options.emailAddress ?? "doortts@example.com";
+  const userId = options.userId ?? 42;
   const requests = {
     deletedLoginIds: [] as string[],
     resetLoginIds: [] as string[],
     toggledActions: [] as string[],
+    userListSearches: [] as Array<{ page: string; query: string; state: string }>,
   };
 
-  await page.route("**/avatars/doortts.png", async (route) => {
+  await page.route("**/avatars/*.png", async (route) => {
     await route.fulfill({
       body: Buffer.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADgwGdrZtEwwAAAABJRU5ErkJggg==",
@@ -1071,14 +1191,21 @@ async function mockSiteUsers(
     const url = new URL(route.request().url());
     const pageNum =
       Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
-    const state = url.searchParams.get("state") === "DELETED" ? "DELETED" : "ACTIVE";
+    const requestedState = url.searchParams.get("state");
+    const state = isMockSiteUserState(requestedState) ? requestedState : "ACTIVE";
+    const query = url.searchParams.get("query") ?? "";
+    requests.userListSearches.push({
+      page: String(pageNum),
+      query,
+      state,
+    });
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         page: pageNum,
         pageSize: 20,
-        query: "",
-        siteAdminCount: 3,
+        query,
+        siteAdminCount: options.siteAdminCount ?? 3,
         state,
         total: 2,
         totalPages: 2,
@@ -1086,14 +1213,14 @@ async function mockSiteUsers(
           {
             avatarUrl: options.avatarUrl ?? "/avatars/doortts.png",
             createdAt: "2026-06-28 12:00:00",
-            displayName: "Door TTS",
-            emailAddress: "doortts@example.com",
-            id: 42,
+            displayName,
+            emailAddress,
+            id: userId,
             isGuest: false,
-            isSiteAdmin: false,
+            isSiteAdmin: options.isSiteAdmin ?? state === "SITE_ADMIN",
             lastStateModifiedAt: state === "DELETED" ? undefined : "",
             lastStateModifiedDate: state === "DELETED" ? "2026-07-01 10:30:00" : undefined,
-            loginId: "doortts",
+            loginId,
             state,
           },
         ],
@@ -1160,9 +1287,9 @@ async function mockSiteUsers(
           user: {
             avatarUrl: "/avatars/doortts.png",
             createdAt: "2026-06-28 12:00:00",
-            displayName: "Door TTS",
-            emailAddress: "doortts@example.com",
-            id: 42,
+            displayName,
+            emailAddress,
+            id: userId,
             isGuest: action === "guest",
             isSiteAdmin: action === "site-admin",
             lastStateModifiedAt: "",
@@ -1195,9 +1322,9 @@ async function mockSiteUsers(
           user: {
             avatarUrl: "/avatars/doortts.png",
             createdAt: "2026-06-28 12:00:00",
-            displayName: "Door TTS",
-            emailAddress: "doortts@example.com",
-            id: 42,
+            displayName,
+            emailAddress,
+            id: userId,
             isGuest: false,
             isSiteAdmin: false,
             lastStateModifiedAt: "2026-06-30 09:00:00",
@@ -1212,6 +1339,16 @@ async function mockSiteUsers(
   });
 
   return requests;
+}
+
+function isMockSiteUserState(value: string | null): value is MockSiteUserState {
+  return (
+    value === "ACTIVE" ||
+    value === "LOCKED" ||
+    value === "DELETED" ||
+    value === "GUEST" ||
+    value === "SITE_ADMIN"
+  );
 }
 
 async function mockPosts(page: Page) {
@@ -1453,6 +1590,80 @@ async function userListMetrics(page: Page) {
       userNameFontWeight: userNameStyle.fontWeight,
       userNameMarginTop: Math.round(parseFloat(userNameStyle.marginTop)),
       userSearchInputWidth: Math.round(searchInputRect.width),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function siteAdminStateLayoutFlags(page: Page) {
+  return page.evaluate(() => {
+    const title = requireElement(".title_area h2");
+    const titleArea = requireElement(".title_area");
+    const searchForm = requireElement(".title_area .form-search");
+    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
+    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const activeTab = requireElement(".site-setting-wrap .nav-tabs li.active a");
+    const badge = requireElement(".site-setting-wrap .nav-tabs li.active .num-badge");
+    const tabs = requireElement(".site-setting-wrap .nav-tabs");
+    const listHead = requireElement(".site-setting-wrap .listhead");
+    const row = requireElement(".user-list-wrap .listitem");
+    const actionColumn = requireElement(".user-list-wrap .action-buttons");
+    const titleRect = title.getBoundingClientRect();
+    const titleAreaRect = titleArea.getBoundingClientRect();
+    const searchRect = searchForm.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const activeTabRect = activeTab.getBoundingClientRect();
+    const badgeRect = badge.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const listHeadRect = listHead.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const actionRect = actionColumn.getBoundingClientRect();
+    const actionButtonRects = Array.from(actionColumn.querySelectorAll<HTMLElement>(".ybtn")).map(
+      (button) => {
+        const rect = button.getBoundingClientRect();
+        return {
+          bottom: rect.bottom,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+        };
+      },
+    );
+
+    return {
+      actionColumnInsideRow: actionRect.right <= rowRect.right + 1,
+      actionControlsDoNotOverlap: actionButtonRects.every((rect, index) =>
+        actionButtonRects
+          .slice(index + 1)
+          .every(
+            (other) =>
+              rect.right <= other.left ||
+              other.right <= rect.left ||
+              rect.bottom <= other.top ||
+              other.bottom <= rect.top,
+          ),
+      ),
+      badgeInsideActiveTab:
+        badgeRect.left >= activeTabRect.left &&
+        badgeRect.right <= activeTabRect.right &&
+        badgeRect.top >= activeTabRect.top &&
+        badgeRect.bottom <= activeTabRect.bottom,
+      contentAfterSidebar: contentRect.left >= sidebarRect.right,
+      listBelowTabs: listHeadRect.top >= tabsRect.bottom,
+      rowInsideContent: rowRect.left >= contentRect.left && rowRect.right <= contentRect.right + 1,
+      searchAfterTitle: searchRect.left >= titleRect.right,
+      searchInsideTitleArea:
+        searchRect.top >= titleAreaRect.top &&
+        searchRect.right <= titleAreaRect.right &&
+        searchRect.bottom <= titleAreaRect.bottom,
     };
 
     function requireElement(selector: string) {
