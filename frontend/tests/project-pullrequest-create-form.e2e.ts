@@ -72,7 +72,11 @@ test("project pull request create form restores legacy shell parity for project 
 
   expect(ROUTE_SOURCE).toContain("<ProjectNewPullRequestRouteShell");
   expect(ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
-  expect(ROUTE_SOURCE).toContain('const screenTitle = t("title.newPullRequest")');
+  expect(ROUTE_SOURCE).toContain(
+    '<title>{`${t("title.newPullRequest")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(ROUTE_SOURCE).not.toContain("document.title");
+  expect(ROUTE_SOURCE).not.toContain("globalThis.document");
 
   for (const scenario of scenarios) {
     await page.unrouteAll({ behavior: "ignoreErrors" });
@@ -82,6 +86,9 @@ test("project pull request create form restores legacy shell parity for project 
     );
 
     await expect(page).toHaveTitle(scenario.title);
+    await expect
+      .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
+      .toBe(scenario.title);
     await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);

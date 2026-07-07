@@ -52,7 +52,7 @@ function ProjectNewPullRequestRoute() {
 
 function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectNewPullRequestDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -65,9 +65,12 @@ function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: Run
     : { ownerName, projectName };
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectNewPullRequestScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
-    </SiteLayoutShell>
+    <>
+      <title>{`${t("title.newPullRequest")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectNewPullRequestScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      </SiteLayoutShell>
+    </>
   );
 }
 
@@ -109,29 +112,6 @@ function ProjectNewPullRequestScreen({
       ) : null}
     </>
   );
-}
-
-function useProjectNewPullRequestDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const screenTitle = t("title.newPullRequest");
-
-  useEffect(() => {
-    const doc = globalThis.document;
-    if (!doc) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    doc.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      doc.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function ProjectNewPullRequestBody({
