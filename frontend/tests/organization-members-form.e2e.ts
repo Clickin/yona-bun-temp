@@ -206,6 +206,17 @@ test("organization members mutation controls preserve legacy data hooks", async 
   expect(requests.acceptedUserIds).toEqual([]);
 });
 
+test("organization members focuses add member input on load like legacy member module", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationMembers(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/members`);
+
+  await expect(page.locator("#loginId")).toBeFocused();
+});
+
 test("organization members add-member input performs legacy typeahead lookup, render, and select on #loginId", async ({
   page,
 }) => {
@@ -221,6 +232,8 @@ test("organization members add-member input performs legacy typeahead lookup, re
   await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("car");
   const typeaheadMenu = page.locator(".inner-bubble .typeahead.dropdown-menu");
   await expect(typeaheadMenu).toBeVisible();
+  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble open");
+  await expect(typeaheadMenu).not.toHaveAttribute("style", /.+/);
   await expect(typeaheadMenu.locator("li")).toHaveCount(2);
   await expect(typeaheadMenu.locator("li").nth(0)).toHaveClass("active");
   await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_image")).toHaveAttribute(
@@ -270,6 +283,7 @@ test("organization members add-member input performs legacy typeahead lookup, re
 
   await expect(addInput).toHaveValue("carmine");
   await expect(typeaheadMenu).toHaveCount(0);
+  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble");
   await expect.poll(() => requests.addedLoginIds).toEqual([]);
 
   await page.locator("#addNewMember .ybtn.ybtn-success").click();
@@ -280,9 +294,12 @@ test("organization members add-member input performs legacy typeahead lookup, re
   await expect(addInput).toHaveValue("cal");
   await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("cal");
   await expect(typeaheadMenu).toBeVisible();
+  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble open");
+  await expect(typeaheadMenu).not.toHaveAttribute("style", /.+/);
   await typeaheadMenu.locator("li").nth(0).locator("button").click();
   await expect(addInput).toHaveValue("carol");
   await expect(typeaheadMenu).toHaveCount(0);
+  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble");
 
   await page.locator("#addNewMember .ybtn.ybtn-success").click();
   await expect.poll(() => requests.addedLoginIds).toEqual(["carmine", "carol"]);
@@ -463,6 +480,9 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('data-provider="typeahead"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("value={loginIdQuery}");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("loginIdInputRef.current?.focus()");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
+    'className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}',
+  );
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("projectSearchScope={{ organizationName }}");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("<title>{organizationName}</title>");
@@ -485,6 +505,10 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("addEventListener(");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("classList");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(".style.display");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('style={{ display: "block" }}');
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toMatch(/\bdocument\s*\./);
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("jQuery");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("$(");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("innerHTML");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("globalThis.document");

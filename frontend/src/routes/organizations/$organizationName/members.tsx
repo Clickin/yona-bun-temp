@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  useEffect,
   useRef,
   useState,
   type FocusEvent,
@@ -251,6 +252,12 @@ function OrganizationMembersBody({
     }
   }
 
+  useEffect(() => {
+    if (booleanField(organization.viewerCanUpdate)) {
+      loginIdInputRef.current?.focus();
+    }
+  }, [organization.viewerCanUpdate]);
+
   return (
     <>
       <title>{organizationName}</title>
@@ -268,7 +275,7 @@ function OrganizationMembersBody({
             organizationName={organizationName}
           />
 
-          <div className="inner-bubble">
+          <div className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}>
             <form
               className="nm"
               action={prefixBasePath(
@@ -311,7 +318,7 @@ function OrganizationMembersBody({
               </button>
             </form>
             {showTypeaheadSuggestions ? (
-              <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+              <ul className="typeahead dropdown-menu">
                 {memberSuggestions.map((suggestion, index) => (
                   <li
                     className={index === activeSuggestionIndex ? "active" : undefined}
