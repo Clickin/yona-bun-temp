@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
+import type { ProjectContainer } from "../../../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { type RuntimeConfig } from "../../../../../runtime-config";
@@ -56,19 +57,17 @@ export function ProjectCodeFileHistoryRouteFrame({
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeFileHistoryScreen
-            page={page}
-            routeParams={routeParams}
-            runtimeConfig={runtimeConfig}
-          />
-        </SiteLayoutShell>
+        <ProjectCodeFileHistoryRouteShell
+          page={page}
+          routeParams={routeParams}
+          runtimeConfig={runtimeConfig}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeFileHistoryScreen({
+function ProjectCodeFileHistoryRouteShell({
   page,
   routeParams,
   runtimeConfig,
@@ -77,10 +76,47 @@ function ProjectCodeFileHistoryScreen({
   routeParams: ProjectCodeFileHistoryRouteParams;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { branch, filePath, ownerName, projectName } = routeParams;
+  const { ownerName, projectName } = routeParams;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+    >
+      <ProjectCodeFileHistoryScreen
+        page={page}
+        project={projectQuery.data}
+        routeParams={routeParams}
+        runtimeConfig={runtimeConfig}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectCodeFileHistoryScreen({
+  page,
+  project,
+  routeParams,
+  runtimeConfig,
+}: {
+  page: number;
+  project: ProjectContainer | undefined;
+  routeParams: ProjectCodeFileHistoryRouteParams;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { branch, filePath, ownerName, projectName } = routeParams;
   const historyQuery = useQuery(
     codeHistoryQueryOptions(runtimeConfig, {
       branch,
@@ -91,14 +127,14 @@ function ProjectCodeFileHistoryScreen({
     }),
   );
 
-  if (!projectQuery.data || !historyQuery.data) {
+  if (!project || !historyQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeFileHistoryBody history={historyQuery.data} routeParams={routeParams} />
     </>
   );
@@ -370,4 +406,13 @@ function codePathHash(filePath: string) {
 
 function projectRoutePath(ownerName: string, projectName: string, ...parts: string[]) {
   return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }

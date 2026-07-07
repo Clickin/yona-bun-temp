@@ -17,6 +17,7 @@ test("project code file history matches legacy code/history.scala.html path DOM"
   await mockProjectCodeFileHistory(page, historyRequests, "README.md");
 
   await page.goto(`${basePath}/admin/sample/commits/main/README.md?page=2`);
+  await assertProjectSearchShell(page, basePath);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator("#history .code-table.commits.mt10 tbody tr")).toHaveCount(1);
   expect(historyRequests).toEqual(["branch=main&page=2&path=README.md"]);
@@ -113,6 +114,8 @@ test("project code file history route uses TanStack Link for internal anchors", 
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
   expect(routeSource).toContain('import { Link, createFileRoute } from "@tanstack/react-router"');
   expect(
     routeSource.match(
@@ -151,7 +154,7 @@ async function mockProjectCodeFileHistory(page: Page, historyRequests: string[],
         isFavorite: false,
         isForkedFromOrigin: false,
         isPrivate: false,
-        isProtected: false,
+        isProtected: true,
         logoUrl: "/assets/images/project_default_logo.png",
         menuSetting: {
           board: true,
@@ -162,6 +165,7 @@ async function mockProjectCodeFileHistory(page: Page, historyRequests: string[],
           review: true,
         },
         ownerName: "admin",
+        organizationName: "admin",
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
@@ -201,6 +205,84 @@ async function mockProjectCodeFileHistory(page: Page, historyRequests: string[],
       }),
     });
   });
+}
+
+async function assertProjectSearchShell(page: Page, basePath: string) {
+  await expect(page.locator(".gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+
+  const currentUrl = `${basePath}/admin/sample/commits/main/README.md?page=2`;
+  const projectScope = page.locator('[data-toggle="search-scope"]', { hasText: "This Project" });
+  const groupScope = page.locator('[data-toggle="search-scope"]', { hasText: "This Group" });
+  const allScope = page.locator('[data-toggle="search-scope"]', { hasText: "All Projects" });
+  await expect(projectScope).toHaveAttribute("data-action", `${basePath}/admin/sample/search`);
+  await expect(groupScope).toHaveAttribute("data-action", `${basePath}/organizations/admin/search`);
+  await expect(allScope).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await groupScope.click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+  await expect(page).toHaveURL(currentUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await allScope.click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(currentUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await projectScope.click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page).toHaveURL(currentUrl);
+
+  const boxes = await page.evaluate(() => {
+    const navbar = document.querySelector(".gnb-outer.project-header");
+    const form = document.querySelector(".gnb-search-form");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const scopeButton = document.querySelector("#gnb-search-scope-title");
+    if (!navbar || !form || !searchBox || !scopeButton) {
+      return null;
+    }
+    const rect = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        height: box.height,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        width: box.width,
+      };
+    };
+    return {
+      form: rect(form),
+      navbar: rect(navbar),
+      scopeButton: rect(scopeButton),
+      searchBox: rect(searchBox),
+    };
+  });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.form.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+  expect(boxes!.form.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+  expect(boxes!.form.right).toBeLessThanOrEqual(boxes!.navbar.right);
+  expect(boxes!.scopeButton.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+  expect(boxes!.scopeButton.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+  expect(boxes!.searchBox.top).toBeGreaterThanOrEqual(boxes!.navbar.top);
+  expect(boxes!.searchBox.bottom).toBeLessThanOrEqual(boxes!.navbar.bottom);
+  expect(boxes!.scopeButton.right).toBeLessThanOrEqual(boxes!.searchBox.left + 1);
+  expect(boxes!.searchBox.right).toBeLessThanOrEqual(boxes!.form.right);
 }
 
 function breadcrumbsFor(filePath: string) {
