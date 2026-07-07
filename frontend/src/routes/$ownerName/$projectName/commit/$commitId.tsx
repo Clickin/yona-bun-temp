@@ -1159,10 +1159,16 @@ function CodeCommentThreadView({
                   <div
                     className="comment-body markdown-wrap"
                     data-via-email={String(comment.viaEmail)}
+                    data-yobi-original-message-processed={
+                      comment.viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown)
+                        ? "true"
+                        : undefined
+                    }
                   >
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {comment.contentsMarkdown}
-                    </ReactMarkdown>
+                    <OriginalMessageMarkdown
+                      contentsMarkdown={comment.contentsMarkdown}
+                      viaEmail={comment.viaEmail}
+                    />
                   </div>
                   <div
                     className="attachments"
@@ -1234,6 +1240,57 @@ function CodeCommentThreadView({
       </div>
     </div>
   );
+}
+
+function OriginalMessageMarkdown({
+  contentsMarkdown,
+  viaEmail,
+}: {
+  contentsMarkdown: string;
+  viaEmail: boolean;
+}) {
+  const [showsOriginalMessage, setShowsOriginalMessage] = useState(false);
+  const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
+
+  if (!originalMessage) {
+    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+  }
+
+  return (
+    <>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+      <button
+        type="button"
+        style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setShowsOriginalMessage((current) => !current);
+        }}
+      >
+        ...
+      </button>
+      <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.hiddenMarkdown}</ReactMarkdown>
+      </div>
+    </>
+  );
+}
+
+function splitOriginalMessageMarkdown(contentsMarkdown: string) {
+  const lines = contentsMarkdown.split(/\r?\n/u);
+  const delimiterIndex = lines.findIndex(
+    (line, index) => index > 0 && /^---+[^-]*---+\s*$/u.test(line.trim()),
+  );
+
+  if (delimiterIndex < 0) {
+    return null;
+  }
+
+  return {
+    visibleMarkdown: lines.slice(0, delimiterIndex).join("\n").trimEnd(),
+    hiddenMarkdown: lines.slice(delimiterIndex).join("\n").trim(),
+  };
 }
 
 function CodeCommentUpdateForm({

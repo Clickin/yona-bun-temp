@@ -207,6 +207,7 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setEditingCommentIds");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-toggle="comment-edit"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.stopPropagation();");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
@@ -214,7 +215,79 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("setAttribute");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("removeAttribute");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project commit detail folds original email message in route-owned comments", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    threads: [
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [
+          {
+            authorId: 2,
+            authorAvatarUrl: "/avatars/dev.png",
+            authorLabel: "Dev User",
+            authorLoginId: "dev",
+            canDelete: true,
+            contentsHtml: "<p>Server HTML should not render</p>",
+            contentsMarkdown: [
+              "Visible reply from reviewer",
+              "",
+              "--- Original Message ---",
+              "Quoted tail from mail client",
+            ].join("\n"),
+            createdLabel: "Jul 1, 2026",
+            id: 603,
+            threadId: 89,
+            viaEmail: true,
+          },
+        ],
+        commitId: "abcdef1234567890",
+        createdLabel: "Jul 1, 2026",
+        endLine: null,
+        id: 89,
+        path: "",
+        prevCommitId: "1234567890abcdef",
+        startLine: null,
+        state: "open",
+      },
+    ],
+  });
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("OriginalMessageMarkdown");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("data-yobi-original-message-processed={");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("querySelector");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("classList");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("style.display");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  const commentBody = page.locator("#comment-603 .comment-body.markdown-wrap");
+  await expect(commentBody).toHaveAttribute("data-via-email", "true");
+  await expect(commentBody).toHaveAttribute("data-yobi-original-message-processed", "true");
+  await expect(commentBody.getByText("Visible reply from reviewer")).toBeVisible();
+  await expect(commentBody.getByText("Quoted tail from mail client")).toBeHidden();
+
+  await page.waitForTimeout(100);
+  const originalMessageToggle = page.getByRole("button", { name: "..." });
+  await expect(originalMessageToggle).toHaveCount(1);
+  await originalMessageToggle.click();
+  await expect(commentBody.getByText("Quoted tail from mail client")).toBeVisible();
+  await originalMessageToggle.click();
+  await expect(commentBody.getByText("Quoted tail from mail client")).toBeHidden();
+  expect(detailRequests).toEqual(["branch=main"]);
 });
 
 test("project commit detail comment delete modal is route-owned React state", async () => {
