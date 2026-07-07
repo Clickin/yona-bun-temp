@@ -310,7 +310,7 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       const bob = database.prepare("select name from n4user where login_id = 'bob'").get();
       const issue = database
         .prepare(
-          "select title, body, due_date, num_of_comments, assignee_id from issue where project_id = 2 and number = 1",
+          "select title, body, state, due_date, num_of_comments, assignee_id from issue where project_id = 2 and number = 1",
         )
         .get();
       const post = database
@@ -345,6 +345,7 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         issue.body,
         "Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
       );
+      assert.equal(Number(issue.state), 0);
       assert.equal(issue.due_date, "2026-07-24 23:59:59.999");
       assert.equal(Number(issue.num_of_comments), 1);
       assert.ok(Number(issue.assignee_id) > 0);
