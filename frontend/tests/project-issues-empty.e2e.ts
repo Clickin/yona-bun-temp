@@ -359,6 +359,7 @@ test("project issue list route source uses Link for navigation and buttons for s
     '<title>{`${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`}</title>',
   );
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.title");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("globalThis.document");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(["syncIssueSearch", "UserSelect"].join(""));
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(["selected", "Index"].join(""));
@@ -368,6 +369,9 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("window.jQuery");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("jQuery?:");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(".jQuery?.");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('type IssueListState = "all" | "closed" | "open"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("state: issueListStateSearch(search.state)");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('state: issueListStateSearch(data.get("state"))');
 });
 
 test("project issue list mass update option buttons keep click ownership route-local", async () => {
@@ -1510,6 +1514,54 @@ test("project issue search button submits route like legacy partial_searchform.s
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-search-submit");
+});
+
+test("project issue list preserves legacy state=all destination and search payload semantics", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "empty");
+
+  const initialIssueListRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      request.method() === "GET" &&
+      url.pathname.endsWith("/api/v1/projects/admin/sample/issues") &&
+      url.searchParams.get("state") === "all"
+    );
+  });
+
+  await page.goto(`${basePath}/admin/sample/issues?state=all`);
+  const initialRequest = await initialIssueListRequest;
+  const initialUrl = new URL(initialRequest.url());
+  expect(initialUrl.searchParams.get("state")).toBe("all");
+
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator("#search input[name='state']")).toHaveValue("all");
+  await expect(page.locator(".left-menu .lst-stacked > li").first()).toContainText("Open");
+  await expect(page.locator("#span10 > .nav-tabs [state]")).toHaveCount(2);
+  await expect(page.locator("#span10 > .nav-tabs [state='open']")).toBeVisible();
+  await expect(page.locator("#span10 > .nav-tabs [state='closed']")).toBeVisible();
+  await expect(page.locator("#span10 > .nav-tabs > li.active")).toHaveCount(0);
+
+  const submittedIssueListRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      request.method() === "GET" &&
+      url.pathname.endsWith("/api/v1/projects/admin/sample/issues") &&
+      url.searchParams.get("filter") === "urgent" &&
+      url.searchParams.get("state") === "all"
+    );
+  });
+  await page.locator("#search input[name='filter']").fill("urgent");
+  await page.locator("#search [data-submit='submit']").click();
+  const submittedRequest = await submittedIssueListRequest;
+  const submittedUrl = new URL(submittedRequest.url());
+
+  expect(submittedUrl.searchParams.get("filter")).toBe("urgent");
+  expect(submittedUrl.searchParams.get("state")).toBe("all");
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("urgent");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state") ?? "").toBe("all");
 });
 
 test("project issue unchanged blur keeps URL and skips issue-list GET like legacy partial_searchform.scala.html change submit", async ({

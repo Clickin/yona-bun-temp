@@ -44,8 +44,10 @@ type ProjectIssuesSearch = {
   orderBy: string;
   orderDir: string;
   pageNum: number;
-  state: "closed" | "open";
+  state: IssueListState;
 };
+
+type IssueListState = "all" | "closed" | "open";
 
 type ProjectAssignableUserOptionSource = {
   avatarUrl?: string;
@@ -121,7 +123,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/issues")({
       orderBy: stringSearch(search.orderBy, "updatedDate"),
       orderDir: stringSearch(search.orderDir, "desc"),
       pageNum: Number(search.pageNum) || 1,
-      state: stringSearch(search.state, "open") === "closed" ? "closed" : "open",
+      state: issueListStateSearch(search.state),
     };
   },
 });
@@ -991,7 +993,7 @@ function IssueSortFilter({
 
 function shouldShowDraftItems(search: ProjectIssuesSearch) {
   return (
-    search.state === "open" &&
+    search.state !== "closed" &&
     search.pageNum === 1 &&
     !search.assigneeId &&
     !search.authorId &&
@@ -2238,7 +2240,7 @@ function QuickSearch({
   issues: ProjectIssueListRestResponse;
   onQuickSearch: (search: ProjectIssuesSearch) => void;
   search: ProjectIssuesSearch;
-  state: "closed" | "open";
+  state: IssueListState;
 }) {
   const { t } = useLegacyMessages();
   const quickSearchLegacyAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttributes;
@@ -2402,12 +2404,16 @@ function projectIssuesSearchFromForm(
     orderBy: stringFormValue(data, "orderBy"),
     orderDir: stringFormValue(data, "orderDir"),
     pageNum: 1,
-    state: stringFormValue(data, "state") === "closed" ? "closed" : "open",
+    state: issueListStateSearch(data.get("state")),
   };
 }
 
 function stringFormValue(data: FormData, name: string) {
   return String(data.get(name) ?? "");
+}
+
+function issueListStateSearch(value: unknown): IssueListState {
+  return value === "all" || value === "closed" ? value : "open";
 }
 
 function issueSearchUserFormValue(data: FormData, name: string) {
