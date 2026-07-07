@@ -34,9 +34,7 @@ function ProjectIssueEditFormRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectIssueEditFormScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectIssueEditFormScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -62,13 +60,24 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
       }),
     queryKey: ["project", ownerName, projectName, "issues", "parent-options", numericIssueNumber],
   });
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
 
   if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
-    return null;
+    return (
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        {null}
+      </SiteLayoutShell>
+    );
   }
 
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectIssueEditFormBody
@@ -78,7 +87,7 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
-    </>
+    </SiteLayoutShell>
   );
 }
 
@@ -729,6 +738,17 @@ function groupLabels(labels: YonaRecord[]) {
 
 function projectLogoUrl(project: ProjectContainer) {
   return stringField((project as YonaRecord).logoUrl, "/assets/images/project_default_logo.png");
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const record = project as YonaRecord;
+  const organizationName = stringField(record.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected"
+    ? ownerName
+    : undefined;
 }
 
 function stringFormValue(formData: FormData, name: string) {

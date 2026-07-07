@@ -31,7 +31,45 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
   await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+  const issueEditFormUrl = page.url();
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(issueEditFormUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  await expect(page).toHaveURL(issueEditFormUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  const metrics = await navbarSearchMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.form.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.form.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.form.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.scope.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.scope.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.searchBox.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.input.left).toBeGreaterThanOrEqual(metrics!.searchBox.left);
+  expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
   await expect(page.locator('#labelIds option[value="8"]')).toHaveJSProperty("selected", true);
   const labelEditLink = page.locator("dl.issue-option dt .label-edit");
@@ -118,7 +156,6 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   const cancelButton = await expectModernCancelControl(page);
   expect(ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(ROUTE_SOURCE).toContain("router.history.back()");
-  const issueEditFormUrl = page.url();
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -239,6 +276,53 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     .toBe("kept");
 });
 
+test("project issue edit form exposes legacy group search scope when org data exists", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const issueEditFormUrl = `${basePath}/admin/sample/issue/1/editform`;
+  await mockProjectIssueEditForm(page, {
+    project: { isProtected: true, organizationName: "admin", projectScope: "protected" },
+  });
+
+  await page.goto(issueEditFormUrl);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/admin/search`,
+  );
+  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(issueEditFormUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(2).click();
+  await expect(page).toHaveURL(issueEditFormUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+});
+
 test("project issue edit form translates legacy write validation behavior", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   let updateRequests = 0;
@@ -343,6 +427,7 @@ async function mockProjectIssueEditForm(
   page: Page,
   options: {
     issue?: Partial<Record<string, unknown>>;
+    project?: Partial<Record<string, unknown>>;
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -385,6 +470,7 @@ async function mockProjectIssueEditForm(
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...options.project,
       }),
     });
   });
@@ -447,6 +533,36 @@ async function mockProjectIssueEditForm(
       contentType: "application/json",
       body: JSON.stringify(issue),
     });
+  });
+}
+
+async function navbarSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    if (!navbar || !form || !scope || !searchBox || !input) {
+      return null;
+    }
+    return {
+      form: rect(form),
+      input: rect(input),
+      navbar: rect(navbar),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
   });
 }
 
