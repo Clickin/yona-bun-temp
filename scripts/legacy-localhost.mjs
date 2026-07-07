@@ -15,9 +15,9 @@ import process from "node:process";
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const frontendRequire = createRequire(new URL("../frontend/package.json", import.meta.url));
 const defaultVersion = process.env.YONA_LEGACY_VERSION ?? "1.16.0";
-const defaultPort = numberValue(process.env.YONA_LEGACY_PORT, 19100);
+const defaultPort = numberValue(process.env.YONA_LEGACY_PORT, 9000);
 const defaultHost = process.env.YONA_LEGACY_HOST ?? "127.0.0.1";
-const defaultInstance = process.env.YONA_LEGACY_INSTANCE ?? "default";
+const defaultInstance = process.env.YONA_LEGACY_INSTANCE ?? "parity";
 const defaultReleaseUrl =
   process.env.YONA_LEGACY_RELEASE_URL ??
   `https://github.com/yona-projects/yona/releases/download/v${defaultVersion}/yona-h2-v${defaultVersion}-bin.zip`;

@@ -11,9 +11,9 @@ legacy build. That keeps us out of the old build-specific `flatdoc`/packaging
 path and matches the user instruction to work from the published binary.
 
 Current parity verification should target the localhost legacy instance at
-`http://127.0.0.1:9000`. The harness still keeps a sidecar default on `19100`
-for smoke iteration, but the canonical verification target is the `parity`
-slot on `9000`.
+`http://127.0.0.1:9000`. The harness now defaults its unsuffixed localhost
+wrappers to that canonical `parity` slot on `9000`; `19100` remains available
+only as an explicit sidecar target for non-canonical smoke iteration.
 
 For the mounted Rust dev runtime, the repo-local startup harness now also
 reconciles `.yona-data/dev.db` so an existing `admin` user keeps a
@@ -27,12 +27,13 @@ from the localhost legacy parity assumption that `admin` / `admin` can read the
 - Release URL:
   `https://github.com/yona-projects/yona/releases/download/v1.16.0/yona-h2-v1.16.0-bin.zip`
 - Local workspace: `.agent/legacy-localhost/`
-- Default bind: `127.0.0.1:19100`
+- Default bind: `127.0.0.1:9000`
 - Default admin bootstrap credentials:
   `admin` / `admin@example.com` / `admin`
 
-`19100` remains deliberate for non-canonical smoke runs. The parity target
-itself now belongs on `127.0.0.1:9000` through the `parity` slot.
+The default instance is now `parity` on `127.0.0.1:9000`. Use the `:sidecar`
+wrappers only when you intentionally want an extra localhost legacy process on
+`19100`.
 
 Use the parity-targeted wrappers below, or pass `--port 9000 --instance parity`,
 when you want to prepare the canonical verification target.
@@ -51,7 +52,8 @@ pnpm legacy:localhost:stop
 
 The commands are thin wrappers over `scripts/legacy-localhost.mjs`.
 
-For the active localhost parity target on `9000`, use:
+Those unsuffixed commands now target the active localhost parity baseline on
+`9000`. The explicit parity aliases remain available:
 
 ```bash
 pnpm legacy:localhost:status:parity
@@ -63,9 +65,21 @@ pnpm legacy:localhost:seed-content:parity
 pnpm legacy:localhost:stop:parity
 ```
 
-`status:parity` is useful even when the `9000` instance was not started by this
-harness because it also probes `/users/loginform` and reports whether the
-current localhost baseline is reachable.
+`status` and `status:parity` are useful even when the `9000` instance was not
+started by this harness because they also probe `/users/loginform` and report
+whether the current localhost baseline is reachable.
+
+For an optional sidecar instance on `19100`, use:
+
+```bash
+pnpm legacy:localhost:status:sidecar
+pnpm legacy:localhost:prepare:sidecar
+pnpm legacy:localhost:start:sidecar
+pnpm legacy:localhost:seed-admin:sidecar
+pnpm legacy:localhost:seed-foundation:sidecar
+pnpm legacy:localhost:seed-content:sidecar
+pnpm legacy:localhost:stop:sidecar
+```
 
 When `9000` is already served by a manually started localhost legacy Yona, the
 harness now treats that as a valid parity target instead of insisting on the

@@ -34,11 +34,15 @@ test("legacy-localhost package scripts expose parity content wrappers", () => {
 
   assert.equal(
     packageJson.scripts["legacy:localhost:seed-content"],
-    "node scripts/legacy-localhost.mjs seed-parity-content",
+    "node scripts/legacy-localhost.mjs seed-parity-content --instance parity --port 9000",
   );
   assert.equal(
     packageJson.scripts["legacy:localhost:seed-content:parity"],
     "node scripts/legacy-localhost.mjs seed-parity-content --instance parity --port 9000",
+  );
+  assert.equal(
+    packageJson.scripts["legacy:localhost:seed-content:sidecar"],
+    "node scripts/legacy-localhost.mjs seed-parity-content --instance default --port 19100",
   );
 });
 
