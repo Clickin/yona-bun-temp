@@ -500,6 +500,117 @@ test("site admin post list row links keep legacy hrefs and SPA navigation", asyn
   await expectSpaClick(page, ".post-meta-item", `${basePath}/alice`, "site-post-author");
 });
 
+test("site admin post list preserves mixed legacy row branches and pagination containment", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockPosts(page, [
+    {
+      authorAvatarUrl: "https://www.gravatar.com/avatar/bob-custom?s=16&d=retro",
+      authorLabel: "Bob Custom",
+      authorLoginId: "bob",
+      commentCount: 11,
+      createdLabel: "2 hours ago",
+      createdTitle: "2026-06-30 11:45",
+      ownerName: "acme",
+      postNumber: "8",
+      projectLogoUrl: "/uploads/project-roadmap.png",
+      projectName: "roadmap",
+      title: "Custom logo branch",
+    },
+    {
+      authorAvatarUrl: LEGACY_DEFAULT_AUTHOR_AVATAR_URL,
+      authorLabel: "Carol",
+      authorLoginId: "carol",
+      commentCount: 0,
+      createdLabel: "Jun 29, 2026",
+      createdTitle: undefined,
+      ownerName: "labs",
+      postNumber: "9",
+      projectLogoUrl: " ",
+      projectName: "ops",
+      title: "Default artwork branch",
+    },
+  ]);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/postList`);
+
+  const rows = page.locator(".post-list-wrap > .listitem");
+  await expect(rows).toHaveCount(2);
+  expect(await sitePostRowDom(page)).toEqual([
+    {
+      authorAvatarHeight: "16",
+      authorAvatarSrc: "https://www.gravatar.com/avatar/bob-custom?s=16&d=retro",
+      authorAvatarWidth: "16",
+      authorHref: `${basePath}/bob`,
+      authorImgAlt: "Bob Custom",
+      authorText: "Bob Custom",
+      childClasses: ["avatar-wrap list-avatar", "post-info-wrap", "post-meta-wrap"],
+      commentHref: `${basePath}/acme/roadmap/post/8#comments`,
+      commentText: "11",
+      dateText: "2 hours ago",
+      dateTitle: "2026-06-30 11:45",
+      projectHref: `${basePath}/acme/roadmap`,
+      projectImgAlt: "roadmap",
+      projectImgSrc: "/uploads/project-roadmap.png",
+      projectText: "acme/roadmap",
+      separatorText: "·",
+      titleHref: `${basePath}/acme/roadmap/post/8`,
+      titleText: "Custom logo branch",
+    },
+    {
+      authorAvatarHeight: null,
+      authorAvatarSrc: LEGACY_DEFAULT_AUTHOR_AVATAR_URL,
+      authorAvatarWidth: null,
+      authorHref: `${basePath}/carol`,
+      authorImgAlt: null,
+      authorText: "Carol",
+      childClasses: ["avatar-wrap list-avatar", "post-info-wrap", "post-meta-wrap"],
+      commentHref: `${basePath}/labs/ops/post/9#comments`,
+      commentText: "0",
+      dateText: "Jun 29, 2026",
+      dateTitle: "Jun 29, 2026",
+      projectHref: `${basePath}/labs/ops`,
+      projectImgAlt: "ops",
+      projectImgSrc: "/assets/images/project_default_logo.png",
+      projectText: "labs/ops",
+      separatorText: "·",
+      titleHref: `${basePath}/labs/ops/post/9`,
+      titleText: "Default artwork branch",
+    },
+  ]);
+
+  const metrics = await postListContainmentMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.list.left).toBeGreaterThanOrEqual(metrics!.content.left);
+  expect(metrics!.list.right).toBeLessThanOrEqual(metrics!.content.right);
+  expect(metrics!.list.bottom).toBeLessThanOrEqual(metrics!.pagination.top);
+  expect(metrics!.pagination.left).toBeGreaterThanOrEqual(metrics!.content.left);
+  expect(metrics!.pagination.right).toBeLessThanOrEqual(metrics!.content.right);
+  expect(metrics!.pagination.top).toBeGreaterThan(metrics!.rows[1].bottom);
+  expect(metrics!.pagination.bottom).toBeGreaterThan(metrics!.pagination.top);
+  for (const row of metrics!.rows) {
+    expect(row.left).toBeGreaterThanOrEqual(metrics!.list.left);
+    expect(row.right).toBeLessThanOrEqual(metrics!.list.right);
+    expect(row.avatar.right).toBeLessThanOrEqual(row.project.left);
+    expect(row.avatar.right).toBeLessThanOrEqual(row.title.left);
+    expect(row.avatar.right).toBeLessThanOrEqual(row.author.left);
+    expect(row.info.bottom).toBeLessThanOrEqual(row.bottom);
+    expect(row.meta.bottom).toBeLessThanOrEqual(row.bottom);
+    expect(row.comments.left).toBeGreaterThan(row.date.right);
+    expect(row.comments.right).toBeLessThanOrEqual(row.right);
+  }
+  expect(metrics!.rows[0].bottom).toBeLessThanOrEqual(metrics!.rows[1].top);
+});
+
 test("site admin post list custom gravatar author avatar keeps legacy custom attributes", async ({
   page,
 }) => {
@@ -578,8 +689,9 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('<title>{t("title.siteSetting")}</title>');
   expect(source).toContain("const legacyPaginationLinkProps = {");
+  expect(source).toContain("function legacyProjectLogoUrl(projectLogoUrl: string)");
   expect(source).toContain(
-    'const projectLogoUrl = post.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";',
+    'return projectLogoUrl.trim() || "/assets/images/project_default_logo.png";',
   );
   expect(source).toContain("/\\/assets\\/images\\/default-avatar-\\d+\\.png$/u.test(avatarUrl)");
   expect(source).toContain("explicitUndefined: true");
@@ -637,6 +749,123 @@ async function paginationAnchorAttrs(anchor: ReturnType<Page["locator"]>) {
   }));
 }
 
+async function sitePostRowDom(page: Page) {
+  return page.locator(".post-list-wrap > .listitem").evaluateAll((rows) =>
+    rows.map((row) => {
+      function requireElement<TElement extends Element = Element>(root: Element, selector: string) {
+        const element = root.querySelector<TElement>(selector);
+        if (!element) {
+          throw new Error(`Missing ${selector}`);
+        }
+        return element;
+      }
+
+      const directElementChildren = Array.from(row.children);
+      const projectLink = requireElement<HTMLAnchorElement>(row, ":scope > .list-avatar");
+      const projectImage = requireElement<HTMLImageElement>(row, ":scope > .list-avatar img");
+      const projectNameLink = requireElement<HTMLAnchorElement>(row, ".post-project");
+      const separator = requireElement(row, ".post-info-separator");
+      const titleLink = requireElement<HTMLAnchorElement>(row, ".post-title");
+      const authorAvatarLink = requireElement<HTMLAnchorElement>(
+        row,
+        ".post-meta-wrap > .avatar-wrap",
+      );
+      const authorImage = requireElement<HTMLImageElement>(
+        row,
+        ".post-meta-wrap > .avatar-wrap img",
+      );
+      const authorLink = requireElement<HTMLAnchorElement>(
+        row,
+        ".post-meta-wrap > .post-meta-item[href]",
+      );
+      const date = requireElement(row, ".post-meta-wrap > span.post-meta-item:not(.post-comments)");
+      const comments = requireElement<HTMLAnchorElement>(row, ".post-comments > a");
+
+      return {
+        authorAvatarHeight: authorImage.getAttribute("height"),
+        authorAvatarSrc: authorImage.getAttribute("src"),
+        authorAvatarWidth: authorImage.getAttribute("width"),
+        authorHref: authorAvatarLink.getAttribute("href"),
+        authorImgAlt: authorImage.getAttribute("alt"),
+        authorText: authorLink.textContent?.trim() ?? "",
+        childClasses: directElementChildren.map((child) => child.getAttribute("class")),
+        commentHref: comments.getAttribute("href"),
+        commentText: comments.textContent?.replace(/\s+/g, " ").trim() ?? "",
+        dateText: date.textContent?.trim() ?? "",
+        dateTitle: date.getAttribute("title"),
+        projectHref: projectLink.getAttribute("href"),
+        projectImgAlt: projectImage.getAttribute("alt"),
+        projectImgSrc: projectImage.getAttribute("src"),
+        projectText: projectNameLink.textContent?.trim() ?? "",
+        separatorText: separator.textContent?.trim() ?? "",
+        titleHref: titleLink.getAttribute("href"),
+        titleText: titleLink.textContent?.trim() ?? "",
+      };
+    }),
+  );
+}
+
+async function postListContainmentMetrics(page: Page) {
+  return page.evaluate(() => {
+    const content = document.querySelector<HTMLElement>(".site-setting-wrap .span10");
+    const list = document.querySelector<HTMLElement>(".post-list-wrap");
+    const pagination = document.querySelector<HTMLElement>("#pagination");
+    const rows = Array.from(document.querySelectorAll<HTMLElement>(".post-list-wrap > .listitem"));
+    if (!content || !list || !pagination || rows.length === 0) {
+      return null;
+    }
+
+    return {
+      content: rect(content),
+      list: rect(list),
+      pagination: rect(pagination),
+      rows: rows.map((row) => {
+        const avatar = requireElement(row, ":scope > .list-avatar");
+        const info = requireElement(row, ":scope > .post-info-wrap");
+        const meta = requireElement(row, ":scope > .post-meta-wrap");
+        const project = requireElement(row, ".post-project");
+        const title = requireElement(row, ".post-title");
+        const author = requireElement(row, ".post-meta-wrap > .post-meta-item[href]");
+        const date = requireElement(
+          row,
+          ".post-meta-wrap > span.post-meta-item:not(.post-comments)",
+        );
+        const comments = requireElement(row, ".post-comments");
+
+        return {
+          ...rect(row),
+          avatar: rect(avatar),
+          author: rect(author),
+          comments: rect(comments),
+          date: rect(date),
+          info: rect(info),
+          meta: rect(meta),
+          project: rect(project),
+          title: rect(title),
+        };
+      }),
+    };
+
+    function rect(element: Element) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: Math.round(box.bottom),
+        left: Math.round(box.left),
+        right: Math.round(box.right),
+        top: Math.round(box.top),
+      };
+    }
+
+    function requireElement(root: Element, selector: string) {
+      const element = root.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
 async function mockSiteAdminSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -657,8 +886,40 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockPosts(page: Page, postOverrides: Partial<SiteAdminPostFixture> = {}) {
-  const post = {
+async function mockPosts(
+  page: Page,
+  postOverrides: Partial<SiteAdminPostFixture> | Array<Partial<SiteAdminPostFixture>> = {},
+) {
+  const postFixtures = (Array.isArray(postOverrides) ? postOverrides : [postOverrides]).map(
+    (overrides) => ({
+      ...baseSiteAdminPostFixture(),
+      ...overrides,
+    }),
+  );
+
+  for (const post of postFixtures) {
+    await routeFixtureImage(page, post.authorAvatarUrl, 16, 16);
+  }
+
+  await page.route("**/api/v1/site/posts?*", async (route) => {
+    const url = new URL(route.request().url());
+    const pageNum =
+      Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        page: pageNum,
+        pageSize: 20,
+        posts: postFixtures,
+        total: Math.max(postFixtures.length, 2),
+        totalPages: 2,
+      }),
+    });
+  });
+}
+
+function baseSiteAdminPostFixture(): SiteAdminPostFixture {
+  return {
     authorAvatarUrl: LEGACY_DEFAULT_AUTHOR_AVATAR_URL,
     authorLabel: "Alice",
     authorLoginId: "alice",
@@ -674,29 +935,18 @@ async function mockPosts(page: Page, postOverrides: Partial<SiteAdminPostFixture
     readme: false,
     title: "Release checklist",
     updatedLabel: "1 day ago",
-    ...postOverrides,
   };
+}
 
-  await page.route(post.authorAvatarUrl, async (route) => {
+async function routeFixtureImage(page: Page, imageUrl: string, width: number, height: number) {
+  if (!imageUrl.trim()) {
+    return;
+  }
+
+  await page.route(imageUrl, async (route) => {
     await route.fulfill({
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
+      body: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"></svg>`,
       contentType: "image/svg+xml",
-    });
-  });
-
-  await page.route("**/api/v1/site/posts?*", async (route) => {
-    const url = new URL(route.request().url());
-    const pageNum =
-      Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        page: pageNum,
-        pageSize: 20,
-        posts: [post],
-        total: 2,
-        totalPages: 2,
-      }),
     });
   });
 }
@@ -707,7 +957,7 @@ type SiteAdminPostFixture = {
   authorLoginId: string;
   commentCount: number;
   createdLabel: string;
-  createdTitle: string;
+  createdTitle?: string;
   labels: Array<never>;
   notice: boolean;
   ownerName: string;

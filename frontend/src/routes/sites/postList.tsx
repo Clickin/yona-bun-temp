@@ -245,7 +245,8 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 }
 
 function PostListItem({ post }: { post: SitePost }) {
-  const projectLogoUrl = post.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
+  const projectLogoUrl = legacyProjectLogoUrl(post.projectLogoUrl);
+  const createdTitle = post.createdTitle ?? post.createdLabel;
 
   return (
     <li className="row-fluid listitem">
@@ -289,7 +290,7 @@ function PostListItem({ post }: { post: SitePost }) {
         <Link className="post-meta-item" params={{ user: post.authorLoginId }} to="/$user">
           {post.authorLabel}
         </Link>
-        <span className="post-meta-item" title={post.createdTitle}>
+        <span className="post-meta-item" title={createdTitle}>
           {post.createdLabel}
         </span>
         <span className="post-comments post-meta-item">
@@ -309,6 +310,10 @@ function PostListItem({ post }: { post: SitePost }) {
       </div>
     </li>
   );
+}
+
+function legacyProjectLogoUrl(projectLogoUrl: string) {
+  return projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 }
 
 function isDefaultAuthorAvatar(avatarUrl: string) {
