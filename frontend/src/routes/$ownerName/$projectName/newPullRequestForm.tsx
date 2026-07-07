@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type MouseEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -126,10 +126,11 @@ function ProjectNewPullRequestBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const selected = formOptions.selected;
-  const titleRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const pendingConflictSubmitRef = useRef<HTMLFormElement | null>(null);
   const [formValues, setFormValues] = useState<PullRequestFormSelected>(selected);
+  const [titleValue, setTitleValue] = useState("");
+  const [bodyValue, setBodyValue] = useState("");
+  const [mergeSuggestionRevision, setMergeSuggestionRevision] = useState(0);
   const [forceSubmit, setForceSubmit] = useState(false);
   const [isUserHasTyped, setIsUserHasTyped] = useState(false);
   const [isConflictConfirmOpen, setIsConflictConfirmOpen] = useState(false);
@@ -159,15 +160,12 @@ function ProjectNewPullRequestBody({
   }, [selected.fromBranch, selected.fromProjectId, selected.toBranch, selected.toProjectId]);
 
   useEffect(() => {
-    if ((mergeResultTitle === "" && mergeResultBody === "") || isUserHasTyped) {
+    if (isUserHasTyped) {
       return;
     }
-    if (titleRef.current) {
-      titleRef.current.value = mergeResultTitle;
-    }
-    if (bodyRef.current) {
-      bodyRef.current.value = mergeResultBody;
-    }
+    setTitleValue(mergeResultTitle);
+    setBodyValue(mergeResultBody);
+    setMergeSuggestionRevision((revision) => revision + 1);
   }, [isUserHasTyped, mergeResultBody, mergeResultTitle]);
 
   useEffect(() => {
@@ -208,6 +206,7 @@ function ProjectNewPullRequestBody({
     pendingConflictSubmitRef.current = null;
     setIsConflictConfirmOpen(false);
   };
+  const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
 
   const submitPullRequestForm = (
     form: HTMLFormElement,
@@ -280,18 +279,23 @@ function ProjectNewPullRequestBody({
                   maxLength={255}
                   className="text"
                   placeholder={t("title")}
-                  ref={titleRef}
-                  onKeyUp={(event) => {
-                    if (event.key !== "Enter") {
-                      setIsUserHasTyped(true);
-                    }
+                  key={`title-${mergeSuggestionRevision}`}
+                  defaultValue={titleValue}
+                  onChange={(event) => {
+                    setTitleValue(event.currentTarget.value);
+                    setIsUserHasTyped(true);
                   }}
+                  {...userTypedAttr}
                 />
                 <div style={{ position: "relative" }}>
                   <PullRequestMarkdownEditor
-                    bodyRef={bodyRef}
+                    bodyValue={bodyValue}
                     isUserHasTyped={isUserHasTyped}
-                    onUserTyped={() => setIsUserHasTyped(true)}
+                    mergeSuggestionRevision={mergeSuggestionRevision}
+                    onBodyChange={(nextBody) => {
+                      setBodyValue(nextBody);
+                      setIsUserHasTyped(true);
+                    }}
                   />
                 </div>
                 <PullRequestFileUploader />
@@ -466,13 +470,15 @@ function PullRequestBranchSelectors({
 }
 
 function PullRequestMarkdownEditor({
-  bodyRef,
+  bodyValue,
   isUserHasTyped = false,
-  onUserTyped,
+  mergeSuggestionRevision,
+  onBodyChange,
 }: {
-  bodyRef: RefObject<HTMLTextAreaElement | null>;
+  bodyValue: string;
   isUserHasTyped?: boolean;
-  onUserTyped: () => void;
+  mergeSuggestionRevision: number;
+  onBodyChange: (nextBody: string) => void;
 }) {
   const { t } = useLegacyMessages();
   const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
@@ -536,12 +542,9 @@ function PullRequestMarkdownEditor({
               className="editorSeries content comment nm"
               data-editor-mode="content-body"
               id="editor-body-body"
-              ref={bodyRef}
-              onKeyUp={(event) => {
-                if (event.key !== "Enter") {
-                  onUserTyped();
-                }
-              }}
+              key={`body-${mergeSuggestionRevision}`}
+              defaultValue={bodyValue}
+              onChange={(event) => onBodyChange(event.currentTarget.value)}
               {...userTypedAttr}
               {...{ markdown: "true" }}
             ></textarea>

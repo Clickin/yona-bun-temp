@@ -317,6 +317,72 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page).toHaveURL(`${basePath}/admin/sample/pullRequests`);
 });
 
+test("pull request merge result suggestions are state-owned until the user types", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const postRequests: unknown[] = [];
+  const mergeResultRequests: string[] = [];
+  await mockProjectPullRequestCreateForm(page, postRequests, {
+    mergeResultRequests,
+    suggestedBody: true,
+  });
+
+  expect(ROUTE_SOURCE).not.toContain(".current.value = mergeResultTitle");
+  expect(ROUTE_SOURCE).not.toContain(".current.value = mergeResultBody");
+  expect(ROUTE_SOURCE).not.toContain("titleRef.current");
+  expect(ROUTE_SOURCE).not.toContain("bodyRef.current");
+  expect(ROUTE_SOURCE).not.toContain("document.querySelector");
+  expect(ROUTE_SOURCE).not.toContain("document.getElementById");
+  expect(ROUTE_SOURCE).not.toContain("addEventListener(");
+  expect(ROUTE_SOURCE).not.toContain("classList.");
+  expect(ROUTE_SOURCE).not.toContain("innerHTML");
+  expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(ROUTE_SOURCE).toContain('const [titleValue, setTitleValue] = useState("");');
+  expect(ROUTE_SOURCE).toContain('const [bodyValue, setBodyValue] = useState("");');
+  expect(ROUTE_SOURCE).toContain("setTitleValue(mergeResultTitle)");
+  expect(ROUTE_SOURCE).toContain("setBodyValue(mergeResultBody)");
+  expect(ROUTE_SOURCE).toContain("defaultValue={titleValue}");
+  expect(ROUTE_SOURCE).toContain("defaultValue={bodyValue}");
+
+  await page.goto(
+    `${basePath}/admin/sample/newPullRequestForm?fromBranch=feature/ui&toBranch=main`,
+  );
+
+  await expect(page.locator("#title")).toHaveValue("Add UI");
+  await expect(page.locator("#editor-body-body")).toHaveValue("Suggested body");
+  await expect(page.locator("#title")).not.toHaveAttribute("data-is-user-has-typed", /.*/u);
+  await expect(page.locator("#editor-body-body")).not.toHaveAttribute(
+    "data-is-user-has-typed",
+    /.*/u,
+  );
+  await expect(page.locator("#mergeResult")).toHaveAttribute("data-pullrequest-title", "Add UI");
+  await expect(page.locator("#mergeResult")).toHaveAttribute(
+    "data-pullrequest-body",
+    "Suggested body",
+  );
+
+  await page.fill("#title", "Manual title");
+  await page.fill("#editor-body-body", "Manual body");
+  await expect(page.locator("#title")).toHaveAttribute("data-is-user-has-typed", "true");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("data-is-user-has-typed", "true");
+
+  await selectLegacyOption(page, "#fromBranch", "main");
+  await expect(page).toHaveURL(/fromBranch=main/u);
+  expect(mergeResultRequests.some((url) => url.includes("fromBranch=main"))).toBe(true);
+  await expect(page.locator("#mergeResult")).toHaveAttribute(
+    "data-pullrequest-title",
+    "Main branch change",
+  );
+  await expect(page.locator("#mergeResult")).toHaveAttribute(
+    "data-pullrequest-body",
+    "Updated body",
+  );
+  await expect(page.locator("#title")).toHaveValue("Manual title");
+  await expect(page.locator("#editor-body-body")).toHaveValue("Manual body");
+  expect(postRequests).toEqual([]);
+});
+
 test("pull request create form preserves legacy yobi.git.Write submit validation", async ({
   page,
 }) => {
@@ -586,6 +652,7 @@ async function mockProjectPullRequestCreateForm(
     mergeMode?: "conflict" | "empty" | "normal";
     mergeResultRequests?: string[];
     project?: Partial<MockProjectRoute>;
+    suggestedBody?: boolean;
   } = {},
 ) {
   const project = { ...DEFAULT_PROJECT_ROUTE, ...options.project };
@@ -701,7 +768,14 @@ async function mockProjectPullRequestCreateForm(
     const url = new URL(route.request().url());
     options.mergeResultRequests?.push(url.toString());
     const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
-    const commitMessage = fromBranch === "main" ? "Main branch change" : "Add UI";
+    const commitMessage =
+      fromBranch === "main"
+        ? options.suggestedBody
+          ? "Main branch change\n\nUpdated body"
+          : "Main branch change"
+        : options.suggestedBody
+          ? "Add UI\n\nSuggested body"
+          : "Add UI";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -815,7 +889,12 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value"),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -854,7 +933,12 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            !(node instanceof HTMLInputElement && node.id === "title" && attr.name === "value"),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
