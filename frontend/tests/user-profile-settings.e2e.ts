@@ -136,6 +136,8 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
 
   await page.goto(`${basePath}/user/editform`);
   await expect(page.locator("#frmBasic")).toBeAttached();
+  await expect(page).toHaveTitle("admin");
+  expect(await firstHeadTitleText(page)).toBe("admin");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -205,7 +207,8 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     mimeType: "image/png",
     name: "avatar.png",
   });
-  await expect(page.locator("#avatarCropWrap")).not.toHaveClass(/hide/);
+  await expect(page.locator("#avatarCropWrap")).toHaveClass("modal hide in");
+  await expect(page.locator("#avatarCropWrap")).toHaveCSS("display", "block");
   await expect(page.locator("#avatarCropWrap .modal-body > img")).toHaveAttribute("src", /^blob:/);
   await page.locator("#avatarCropWrap .btnSubmitCrop").click();
   await expect.poll(() => profileUpdates.length).toBe(2);
@@ -224,6 +227,18 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
 });
 
 test("current-user profile settings tabs use typed TanStack links without route-local adapter", () => {
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).toContain(
+    "<UserProfileSettingsTitle loginId={loginId} />",
+  );
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).toContain("function UserProfileSettingsTitle");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).toContain("<title>{loginId}</title>");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("document.title");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain('globalThis["document"]');
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toMatch(/useEffect\s*\([^)]*title/s);
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toMatch(
+    /title[^;]*useEffect|useEffect[^;]*title/s,
+  );
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("ComponentType");
@@ -597,6 +612,10 @@ async function spaMarker(page: Page) {
   return page.evaluate(
     () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
   );
+}
+
+async function firstHeadTitleText(page: Page) {
+  return page.evaluate(() => document.querySelector("head > title")?.textContent ?? "");
 }
 
 async function canonicalizeScreenRoots(page: Page) {

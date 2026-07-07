@@ -147,6 +147,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
   return (
     <>
+      <UserProfileSettingsTitle loginId={loginId} />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{t("userinfo.accountSetting")}</h3>
@@ -314,6 +315,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
     </>
   );
+}
+
+function UserProfileSettingsTitle({ loginId }: { loginId: string }) {
+  return loginId ? <title>{loginId}</title> : null;
 }
 
 function EditTabMenu({ active }: { active: string }) {
