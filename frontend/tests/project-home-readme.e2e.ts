@@ -307,12 +307,15 @@ test("project home description edit mirrors legacy toggle and save", async ({ pa
   await expect(page.locator(".project-description-edit")).not.toHaveClass(/hidden/);
   await expect(page.locator("#project-description-input")).toBeFocused();
 
+  await page.locator("#project-description-input").fill("Draft overview");
   await page.locator('[data-toggle="description-cancel"]').click();
   await expect(page.locator(".project-description")).not.toHaveClass(/hidden/);
   await expect(page.locator(".project-description-edit")).toHaveClass(/hidden/);
+  await expect(page.locator("#project-description")).toHaveText("Sample overview");
   expect(overviewRequests).toEqual([]);
 
   await page.locator('[data-toggle="description-edit"]').click();
+  await expect(page.locator("#project-description-input")).toHaveValue("Sample overview");
   await page.locator("#project-description-input").fill("Updated overview");
   await page.locator("#descriptionSaveBtn").click();
   await expect(page.locator(".project-description")).not.toHaveClass(/hidden/);
@@ -321,6 +324,9 @@ test("project home description edit mirrors legacy toggle and save", async ({ pa
   expect(overviewRequests).toEqual([
     { hasCsrfToken: true, method: "PATCH", overview: "Updated overview" },
   ]);
+
+  await page.locator('[data-toggle="description-edit"]').click();
+  await expect(page.locator("#project-description-input")).toHaveValue("Updated overview");
 });
 
 test("project home clone URL input selects the full URL on click", async ({ page }) => {
@@ -710,9 +716,18 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).not.toContain("function closeProjectUtilDropdown");
   expect(source).not.toContain('querySelectorAll(".project-util li.open")');
   expect(source).not.toMatch(/querySelector(?:<[^>]+>)?\(\s*["']#project-description-input/u);
+  expect(source).not.toContain("descriptionInputRef.current?.value");
+  expect(source).not.toContain("descriptionInputRef.current.value");
+  expect(source).not.toMatch(/overviewMutation\.mutate\(\s*descriptionInputRef\.current/u);
+  expect(source).not.toMatch(/document\.(?:querySelector|getElementById)/u);
   expect(source).not.toContain(".classList");
   expect(source).toContain('useState<"enrollment" | "watch" | null>');
-  expect(source).toContain('overviewMutation.mutate(descriptionInputRef.current?.value ?? "")');
+  expect(source).toContain("const [descriptionDraft, setDescriptionDraft] = useState");
+  expect(source).toContain("value={descriptionDraft}");
+  expect(source).toContain("onChange={(event) => setDescriptionDraft(event.currentTarget.value)}");
+  expect(source).toContain("onClick={() => overviewMutation.mutate(descriptionDraft)}");
+  expect(source).toContain("setDescriptionDraft(overviewText);");
+  expect(source).toContain("window.setTimeout(() => descriptionInputRef.current?.focus());");
   expect(source).toContain('className={projectUtilDropdown === "enrollment" ? "open" : undefined}');
   expect(source).toContain('className={projectUtilDropdown === "watch" ? "open" : undefined}');
   expect(enrollmentDropdownHandlers).toHaveLength(2);

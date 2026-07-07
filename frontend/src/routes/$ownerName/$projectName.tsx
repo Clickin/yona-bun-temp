@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -154,6 +154,7 @@ function ProjectHomeBody({
     null,
   );
   const [overviewText, setOverviewText] = useState(initialOverview);
+  const [descriptionDraft, setDescriptionDraft] = useState(initialOverview);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const projectRecord = recordField(project);
   const isGitProject = stringField(project.vcs, "GIT") === "GIT";
@@ -197,13 +198,28 @@ function ProjectHomeBody({
       return updateProjectOverviewRest(runtimeConfig, csrfToken, ownerName, projectName, overview);
     },
     onSuccess(response, overview) {
-      setOverviewText(stringField(response.overview, overview));
+      const nextOverview = stringField(response.overview, overview);
+      setOverviewText(nextOverview);
+      setDescriptionDraft(nextOverview);
       setDescriptionEditing(false);
       queryClient.invalidateQueries({
         queryKey: apiQueryKeys.project.container(ownerName, projectName),
       });
     },
   });
+  useEffect(() => {
+    setOverviewText(initialOverview);
+    setDescriptionDraft(initialOverview);
+  }, [initialOverview]);
+  const openDescriptionEditor = () => {
+    setDescriptionDraft(overviewText);
+    setDescriptionEditing(true);
+    window.setTimeout(() => descriptionInputRef.current?.focus());
+  };
+  const cancelDescriptionEditor = () => {
+    setDescriptionDraft(overviewText);
+    setDescriptionEditing(false);
+  };
   const openLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateProjectHomeModalButtonClick(event);
     setLeaveModalOpen(true);
@@ -263,10 +279,7 @@ function ProjectHomeBody({
                     type="button"
                     className="ybtn ybtn-minimum"
                     data-toggle="description-edit"
-                    onClick={() => {
-                      setDescriptionEditing(true);
-                      window.setTimeout(() => descriptionInputRef.current?.focus());
-                    }}
+                    onClick={openDescriptionEditor}
                   >
                     <i className="yobicon-edit"></i>
                   </button>
@@ -292,13 +305,14 @@ function ProjectHomeBody({
                   ref={descriptionInputRef}
                   className="span6"
                   placeholder={t("project.description.placeholder")}
-                  defaultValue={overviewText}
+                  value={descriptionDraft}
+                  onChange={(event) => setDescriptionDraft(event.currentTarget.value)}
                 />
                 <button
                   type="button"
                   className="ybtn ybtn-success"
                   id="descriptionSaveBtn"
-                  onClick={() => overviewMutation.mutate(descriptionInputRef.current?.value ?? "")}
+                  onClick={() => overviewMutation.mutate(descriptionDraft)}
                 >
                   {t("button.save")}
                 </button>{" "}
@@ -306,7 +320,7 @@ function ProjectHomeBody({
                   type="button"
                   className="ybtn"
                   data-toggle="description-cancel"
-                  onClick={() => setDescriptionEditing(false)}
+                  onClick={cancelDescriptionEditor}
                 >
                   {t("button.cancel")}
                 </button>
