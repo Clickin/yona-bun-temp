@@ -66,6 +66,14 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
 
   await page.goto(`${basePath}/restricted`);
   await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page).toHaveTitle("Yona");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.head.querySelectorAll("title"), (title) => title.textContent ?? ""),
+      ),
+    )
+    .toContain("Yona");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
   await expect(page.locator("iframe")).toHaveAttribute(
@@ -186,6 +194,19 @@ test("restricted route source keeps internal navigation out of raw anchors", asy
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
+});
+
+test("restricted route source renders legacy site title without imperative mutation", async () => {
+  expect(RESTRICTED_ROUTE_SOURCE).toContain(
+    'const browserTitle = runtimeConfig.siteName ?? "Yona";',
+  );
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("<title>{browserTitle}</title>");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/\bdocument\s*\.\s*title\b/u);
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/\bwindow\s*\.\s*document\b/u);
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(
+    /useEffect\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|title\s*=)/u,
+  );
 });
 
 test("restricted route source keeps footer links as external href Links", async () => {

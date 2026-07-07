@@ -65,6 +65,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const provider = stringValue(currentAuth?.provider) || "password";
   const authId = stringValue(currentAuth?.id) || stringValue(localUser?.loginId) || "";
   const expires = numberValue(currentAuth?.expires, -1);
+  const browserTitle = runtimeConfig.siteName ?? "Yona";
   const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
   const handleHomeClick = React.useCallback(
     (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -76,6 +77,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   return (
     <>
+      <title>{browserTitle}</title>
       <div className="unsupported hidden">
         <div className="unsupported-inner">
           <p id="unsupported-content" />
