@@ -615,10 +615,9 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       event.stopPropagation();
       setActiveUsermenuTab(tab);
     };
-  const basePath = runtimeConfig.basePath === "/" ? "" : runtimeConfig.basePath;
-  const pathname =
-    typeof window === "undefined" ? "/" : window.location.pathname.slice(basePath.length) || "/";
-  const resetPasswordSearch = useRouterState({ select: (state) => state.location.search });
+  const rootAliasLocation = useRouterState({ select: (state) => state.location });
+  const pathname = rootAliasLocation.pathname;
+  const resetPasswordSearch = rootAliasLocation.search;
   const feedbackUrl: string = "https://github.com/nforge/yobi/issues?state=open";
   const projectListPath: string = "/projects";
   const loginFormPath: string = "/users/loginform";

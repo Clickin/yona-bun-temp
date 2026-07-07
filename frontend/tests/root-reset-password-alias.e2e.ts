@@ -29,11 +29,18 @@ test("root fallback reset-password alias source uses router navigation", () => {
   expect(rootFallbackSource).toContain('to="/"');
   expect(rootFallbackSource).toContain("activeOptions={legacyPlainLinkActiveOptions}");
   expect(rootFallbackSource).toContain("activeProps={legacyPlainLinkActiveProps}");
+  expect(rootFallbackSource).toContain(
+    "const rootAliasLocation = useRouterState({ select: (state) => state.location });",
+  );
+  expect(rootFallbackSource).toContain("const pathname = rootAliasLocation.pathname;");
+  expect(rootFallbackSource).toContain("const resetPasswordSearch = rootAliasLocation.search;");
   expect(rootFallbackSource).toContain("router.history.push(homeHref);");
   expect(source).not.toContain("useLinkProps");
   expect(source).not.toContain("LegacyHrefAnchor");
   expect(source).not.toContain("React.createElement");
   expect(source).not.toContain("forwardRef");
+  expect(rootFallbackSource).not.toContain("window.location");
+  expect(source).not.toContain("window.location.pathname");
   expect(rootFallbackSource).not.toContain("window.location.replace");
 });
 
