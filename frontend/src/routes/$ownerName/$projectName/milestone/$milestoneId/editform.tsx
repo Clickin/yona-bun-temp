@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
-import type { ProjectMilestone } from "../../../../../api/types";
+import type { ProjectContainer, ProjectMilestone } from "../../../../../api/types";
 import {
   readProjectMilestone,
   readSessionBootstrap,
@@ -26,9 +26,7 @@ function ProjectMilestoneEditFormRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectMilestoneEditFormScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectMilestoneEditFormScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -49,8 +47,14 @@ function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: Runt
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="milestone"
@@ -61,7 +65,7 @@ function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: Runt
         milestone={milestoneQuery.data.milestone}
         runtimeConfig={runtimeConfig}
       />
-    </>
+    </SiteLayoutShell>
   );
 }
 
@@ -411,4 +415,16 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function booleanField(value: unknown) {
+  return value === true || value === "true" || value === 1 || value === "1";
 }

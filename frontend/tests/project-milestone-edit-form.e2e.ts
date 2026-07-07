@@ -132,6 +132,93 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   ]);
 });
 
+test("project milestone edit form uses legacy project-scoped GNB search shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const editFormUrl = `${basePath}/admin/sample/milestone/5/editform`;
+  const patchRequests: unknown[] = [];
+  await mockProjectMilestoneEditForm(page, patchRequests);
+
+  await page.goto(editFormUrl);
+  await expect(page.locator("#milestone-form")).toBeVisible();
+  const shell = milestoneEditScopedShell(page);
+  await expect(shell).toBeVisible();
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+
+  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+  const urlBeforeScopeChange = page.url();
+
+  await shell.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  expect(page.url()).toBe(urlBeforeScopeChange);
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await shell.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  expect(page.url()).toBe(urlBeforeScopeChange);
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+
+  const metrics = await navbarSearchMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.form.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.form.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.form.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.scope.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.scope.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.searchBox.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.input.left).toBeGreaterThanOrEqual(metrics!.searchBox.left);
+  expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
+});
+
+test("project milestone edit form exposes group search scope when project org data exists", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const editFormUrl = `${basePath}/admin/sample/milestone/5/editform`;
+  const patchRequests: unknown[] = [];
+  await mockProjectMilestoneEditForm(page, patchRequests, {
+    project: { isProtected: true, organizationName: "admin" },
+  });
+
+  await page.goto(editFormUrl);
+  await expect(page.locator("#milestone-form")).toBeVisible();
+  const shell = milestoneEditScopedShell(page);
+  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/admin/search`,
+  );
+  const urlBeforeScopeChange = page.url();
+
+  await shell.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  expect(page.url()).toBe(urlBeforeScopeChange);
+  await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+});
+
 test("project milestone edit form preserves legacy write validation and focus behavior", async ({
   page,
 }) => {
@@ -209,6 +296,8 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).toContain('event.key === "Enter"');
   expect(routeSource).toContain("tabIndex={1}");
   expect(routeSource).toContain("tabIndex={2}");
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain("function projectSearchScopeOrganizationName");
   expect(routeSource).not.toContain('setAttribute("tabindex"');
   expect(routeSource).not.toContain("tabIndexValue");
   expect(routeSource).not.toContain('t("validation.required")');
@@ -218,7 +307,27 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).not.toContain("style.display");
 });
 
-async function mockProjectMilestoneEditForm(page: Page, patchRequests: unknown[]) {
+async function mockProjectMilestoneEditForm(
+  page: Page,
+  patchRequests: unknown[],
+  overrides: {
+    project?: Partial<{
+      backgroundImageUrl: string;
+      enrollmentRequestCount: number;
+      id: number;
+      isFavorite: boolean;
+      isForkedFromOrigin: boolean;
+      isPrivate: boolean;
+      isProtected: boolean;
+      logoUrl: string;
+      organizationName: string;
+      ownerName: string;
+      projectName: string;
+      vcs: string;
+      viewerCanUpdate: boolean;
+    }>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -259,6 +368,7 @@ async function mockProjectMilestoneEditForm(page: Page, patchRequests: unknown[]
         projectName: "sample",
         vcs: "GIT",
         viewerCanUpdate: true,
+        ...overrides.project,
       }),
     });
   });
@@ -298,6 +408,10 @@ function acceptNextAlert(page: Page) {
       resolve(message);
     });
   });
+}
+
+function milestoneEditScopedShell(page: Page) {
+  return page.locator("header.gnb-outer.project-header").last();
 }
 
 async function readMilestoneEditFormMetrics(page: Page) {
@@ -357,6 +471,37 @@ async function readMilestoneEditFormMetrics(page: Page) {
       titleMarginTop: titleStyle.marginTop,
       titleWidth: Math.round(title.getBoundingClientRect().width),
     };
+  });
+}
+
+async function navbarSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const shells = document.querySelectorAll<HTMLElement>("header.gnb-outer.project-header");
+    const navbar = shells.item(shells.length - 1);
+    const form = navbar?.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = navbar?.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = navbar?.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const input = navbar?.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    if (!navbar || !form || !scope || !searchBox || !input) {
+      return null;
+    }
+    return {
+      form: rect(form),
+      input: rect(input),
+      navbar: rect(navbar),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
   });
 }
 
