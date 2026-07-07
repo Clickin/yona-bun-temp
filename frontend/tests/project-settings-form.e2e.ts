@@ -30,6 +30,10 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   await mockProjectSettings(page);
 
   await page.goto(`${basePath}/admin/sample/settingform`);
+  await expect(page).toHaveTitle("Project settings - admin/sample");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent))
+    .toBe("Project settings - admin/sample");
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#project-default-branch")).toHaveValue("main");
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
@@ -471,6 +475,10 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(source).not.toContain("removeAttribute(");
   expect(source).not.toContain("logoInputRef");
   expect(source).not.toContain("useRef");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain("window.document");
+  expect(source).not.toMatch(/use(?:Layout)?Effect\s*\([\s\S]*?title/i);
   expect(source).not.toMatch(/\.current\.value\s*=/);
   expect(source).not.toMatch(/currentTarget\.value\s*=/);
   expect(source).not.toMatch(/\b(?:document|window\.document)\.(?:querySelector|getElementById)/);
@@ -495,6 +503,9 @@ test("project settings route source keeps internal navigation on Link", async ()
   );
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('target="_blank"');
+  expect(source).toContain(
+    '<title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(source).toContain('createFileRoute("/$ownerName/$projectName/setting")');
   expect(source).toContain("selfRoutePath={LEGACY_PROJECT_SETTINGS_ROUTE}");
   expect(settingFormSource).toContain('createFileRoute("/$ownerName/$projectName/settingform")');

@@ -137,8 +137,11 @@ function ProjectSettingScreen({
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
 }) {
+  const { t } = useLegacyMessages();
+
   return (
     <>
+      <title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader project={project} runtimeConfig={runtimeConfig} />
       <ProjectMenu project={project} selfRoutePath={selfRoutePath} />
       <ProjectSettingBody
