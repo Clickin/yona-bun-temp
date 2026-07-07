@@ -64,6 +64,15 @@ type ProjectIssueSearchUserOptionSource = {
   userId?: string;
 };
 
+type ProjectIssueSearchUserOption = {
+  avatarUrl: string;
+  id: string;
+  label: string;
+  loginId: string;
+};
+
+const ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX = "__currentUserShortcut__:";
+
 type LegacyPjaxContainerAttributes = HTMLAttributes<HTMLDivElement> & {
   "pjax-container": "";
 };
@@ -2380,8 +2389,8 @@ function projectIssuesSearchFromForm(
   const data = new FormData(form);
   return {
     ...search,
-    assigneeId: stringFormValue(data, "assigneeId"),
-    authorId: stringFormValue(data, "authorId"),
+    assigneeId: issueSearchUserFormValue(data, "assigneeId"),
+    authorId: issueSearchUserFormValue(data, "authorId"),
     commenterId: stringFormValue(data, "commenterId"),
     dueDate: stringFormValue(data, "dueDate"),
     filter: stringFormValue(data, "filter"),
@@ -2399,6 +2408,14 @@ function projectIssuesSearchFromForm(
 
 function stringFormValue(data: FormData, name: string) {
   return String(data.get(name) ?? "");
+}
+
+function issueSearchUserFormValue(data: FormData, name: string) {
+  const value = stringFormValue(data, name);
+  if (value.startsWith(ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX)) {
+    return value.slice(ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX.length);
+  }
+  return value;
 }
 
 function isValidIssueDueDate(value: string) {
@@ -2475,19 +2492,23 @@ function IssueSearchForm({
 }) {
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
-  const authorSelectRef = useRef<HTMLSelectElement>(null);
-  const assigneeSelectRef = useRef<HTMLSelectElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
   const selectedMilestone = selectedSearchMilestone(search.milestoneId, milestones);
-  useEffect(() => {
-    syncIssueSearchUserSelect(authorSelectRef.current, search.authorId, currentUserId);
-  }, [currentUserId, search.authorId]);
-  useEffect(() => {
-    syncIssueSearchUserSelect(assigneeSelectRef.current, search.assigneeId, currentUserId);
-  }, [currentUserId, search.assigneeId]);
+  const authorHasCurrentUserOption = issueSearchUserOptionsIncludeUser(authors, currentUserId);
+  const assigneeHasCurrentUserOption = issueSearchUserOptionsIncludeUser(assignees, currentUserId);
+  const authorCurrentUserShortcutValue = issueSearchCurrentUserShortcutValue(
+    search.authorId,
+    currentUserId,
+    authorHasCurrentUserOption,
+  );
+  const assigneeCurrentUserShortcutValue = issueSearchCurrentUserShortcutValue(
+    search.assigneeId,
+    currentUserId,
+    assigneeHasCurrentUserOption,
+  );
   const handleSubmit = (event: ReactFormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const dueDateInput = dueDateInputRef.current;
@@ -2561,7 +2582,7 @@ function IssueSearchForm({
           <dt>{t("issue.author")}</dt>
           <dd>
             <select
-              ref={authorSelectRef}
+              key={issueSearchUserSelectKey("author", search.authorId, authors)}
               id="authorId"
               name="authorId"
               data-search="authorId"
@@ -2573,7 +2594,9 @@ function IssueSearchForm({
             >
               <option value="">{t("common.order.all")}</option>
               {!isAnonymous && showAuthorCurrentUserOption ? (
-                <option value={currentUserId}>{t("issue.list.authoredByMe")}</option>
+                <option value={authorCurrentUserShortcutValue}>
+                  {t("issue.list.authoredByMe")}
+                </option>
               ) : null}
               {authors.map((author) => (
                 <option
@@ -2592,7 +2615,7 @@ function IssueSearchForm({
           <dt>{t("issue.assignee")}</dt>
           <dd>
             <select
-              ref={assigneeSelectRef}
+              key={issueSearchUserSelectKey("assignee", search.assigneeId, assignees)}
               id="assigneeId"
               name="assigneeId"
               data-search="assigneeId"
@@ -2605,7 +2628,9 @@ function IssueSearchForm({
               <option value="">{t("common.order.all")}</option>
               <option value="0">{t("issue.noAssignee")}</option>
               {!isAnonymous && showAssigneeCurrentUserOption ? (
-                <option value={currentUserId}>{t("issue.list.assignedToMe")}</option>
+                <option value={assigneeCurrentUserShortcutValue}>
+                  {t("issue.list.assignedToMe")}
+                </option>
               ) : null}
               {assignees.map((assignee) => (
                 <option
@@ -2723,6 +2748,34 @@ function IssueSearchForm({
   );
 }
 
+function issueSearchUserOptionsIncludeUser(
+  options: ProjectIssueSearchUserOption[],
+  userId: string,
+) {
+  return options.some((option) => option.id === userId);
+}
+
+function issueSearchCurrentUserShortcutValue(
+  selectedUserId: string,
+  currentUserId: string,
+  hasCurrentUserOption: boolean,
+) {
+  if (selectedUserId === currentUserId && hasCurrentUserOption) {
+    return `${ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX}${currentUserId}`;
+  }
+  return currentUserId;
+}
+
+function issueSearchUserSelectKey(
+  role: "assignee" | "author",
+  selectedUserId: string,
+  options: ProjectIssueSearchUserOption[],
+) {
+  return [role, selectedUserId, ...options.map((option) => `${option.id}:${option.loginId}`)].join(
+    "|",
+  );
+}
+
 function SearchMilestoneStatus({
   milestone,
   ownerName,
@@ -2792,53 +2845,6 @@ function selectedSearchMilestone(
       (milestone) => stringField(milestone.id, "") === milestoneId,
     ) ?? null
   );
-}
-
-function syncIssueSearchUserSelect(
-  select: HTMLSelectElement | null,
-  selectedUserId: string,
-  currentUserId: string,
-) {
-  if (!select) {
-    return;
-  }
-
-  const nextOption = preferredIssueSearchUserOption(select, selectedUserId, currentUserId);
-  const nextSelectedIndex = nextOption?.index ?? 0;
-  if (select.selectedIndex === nextSelectedIndex) {
-    return;
-  }
-
-  select.selectedIndex = nextSelectedIndex;
-  (
-    window as Window & {
-      jQuery?: (target: HTMLSelectElement) => { triggerHandler: (eventName: string) => void };
-    }
-  )
-    .jQuery?.(select)
-    .triggerHandler("change.select2");
-}
-
-function preferredIssueSearchUserOption(
-  select: HTMLSelectElement,
-  selectedUserId: string,
-  currentUserId: string,
-) {
-  if (!selectedUserId) {
-    return null;
-  }
-
-  const options = Array.from(select.options);
-  if (selectedUserId === currentUserId) {
-    for (let index = options.length - 1; index >= 0; index -= 1) {
-      const option = options[index];
-      if (option.value === selectedUserId && option.dataset.loginId) {
-        return option;
-      }
-    }
-  }
-
-  return options.find((option) => option.value === selectedUserId) ?? null;
 }
 
 function IssueSearchLabelSelect({

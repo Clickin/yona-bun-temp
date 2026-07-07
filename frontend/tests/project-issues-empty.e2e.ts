@@ -360,6 +360,14 @@ test("project issue list route source uses Link for navigation and buttons for s
   );
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.title");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(["syncIssueSearch", "UserSelect"].join(""));
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(["selected", "Index"].join(""));
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    ["triggerHandler", '("change.select2")'].join(""),
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("window.jQuery");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("jQuery?:");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(".jQuery?.");
 });
 
 test("project issue list mass update option buttons keep click ownership route-local", async () => {
@@ -888,6 +896,77 @@ test("project issue search keeps member self-filters without update controls lik
     "Assigned",
     "Site Admin",
   ]);
+});
+
+test("project issue advanced search prefers legacy current-user options and submits them", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&authorId=1&assigneeId=1&pageNum=3`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator("#authorId option")).toHaveText([
+    "All",
+    "Created",
+    "Dev Member",
+    "Site Admin",
+  ]);
+  await expect(page.locator("#assigneeId option")).toHaveText([
+    "All",
+    "No assignee",
+    "Assigned",
+    "Site Admin",
+  ]);
+  await expect
+    .poll(async () =>
+      page.locator("#authorId").evaluate((select) => {
+        const selectedOption = select.selectedOptions.item(0);
+        return {
+          loginId: selectedOption?.getAttribute("data-login-id") ?? "",
+          text: selectedOption?.textContent?.trim() ?? "",
+          value: select.value,
+        };
+      }),
+    )
+    .toEqual({
+      loginId: "admin",
+      text: "Site Admin",
+      value: "1",
+    });
+  await expect
+    .poll(async () =>
+      page.locator("#assigneeId").evaluate((select) => {
+        const selectedOption = select.selectedOptions.item(0);
+        return {
+          loginId: selectedOption?.getAttribute("data-login-id") ?? "",
+          text: selectedOption?.textContent?.trim() ?? "",
+          value: select.value,
+        };
+      }),
+    )
+    .toEqual({
+      loginId: "admin",
+      text: "Site Admin",
+      value: "1",
+    });
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "issue-advanced-search-submit";
+  });
+  await page.locator("#search input[name='filter']").fill("current-user");
+  await page.locator("#search [data-submit='submit']").click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("authorId") ?? "").toBe("1");
+  await expect.poll(() => new URL(page.url()).searchParams.get("assigneeId") ?? "").toBe("1");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("filter") ?? "")
+    .toBe("current-user");
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("issue-advanced-search-submit");
 });
 
 test("populated project issue list matches legacy partial_list.scala.html DOM", async ({
