@@ -242,6 +242,73 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
   });
 });
 
+test("project pull request overview exposes legacy project-header search scope", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestOverview(page, {
+    container: {
+      isProtected: true,
+      organizationName: "admin",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
+    "Pull request",
+  );
+  await expect
+    .poll(() =>
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/organizations/admin/search`, text: "This Group" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/pullRequest/9`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
+    "Pull request",
+  );
+
+  const boxes = await pullRequestOverviewNavbarMetrics(page);
+  expect(boxes).not.toBeNull();
+  expect(boxes!.form.top).toBeGreaterThanOrEqual(boxes!.nav.top);
+  expect(boxes!.form.bottom).toBeLessThanOrEqual(boxes!.nav.bottom);
+  expect(boxes!.search.left).toBeGreaterThanOrEqual(boxes!.form.left);
+  expect(boxes!.search.right).toBeLessThanOrEqual(boxes!.form.right);
+  expect(boxes!.scope.top).toBeGreaterThanOrEqual(boxes!.nav.top);
+  expect(boxes!.scope.bottom).toBeLessThanOrEqual(boxes!.nav.bottom);
+  expect(boxes!.menu.top).toBeGreaterThanOrEqual(boxes!.header.bottom - 1);
+});
+
 async function pullRequestOverviewMetrics(page: Page) {
   return page.locator(".page-wrap-outer").evaluate((root) => {
     const header = root.querySelector<HTMLElement>(".board-header.issue");
@@ -325,6 +392,37 @@ async function pullRequestOverviewMetrics(page: Page) {
       titleIdColor: boardIdStyle.color,
       titleIdFontSize: boardIdStyle.fontSize,
       titleIdPaddingRight: boardIdStyle.paddingRight,
+    };
+  });
+}
+
+async function pullRequestOverviewNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const header = document.querySelector<HTMLElement>(".project-header-outer");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!navbar || !form || !search || !scope || !header || !menu) {
+      return null;
+    }
+    const toBox = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    };
+    return {
+      form: toBox(form),
+      header: toBox(header),
+      menu: toBox(menu),
+      nav: toBox(navbar),
+      scope: toBox(scope),
+      search: toBox(search),
     };
   });
 }

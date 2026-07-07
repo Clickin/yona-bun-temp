@@ -42,9 +42,7 @@ function ProjectPullRequestOverviewRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPullRequestOverviewScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectPullRequestOverviewScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -59,7 +57,6 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
   const prNumber = Number(pullRequestNumber) || 0;
   const projectQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-    enabled: !isChildRoute,
   });
   const pullRequestQuery = useQuery({
     ...pullRequestDetailQueryOptions(runtimeConfig, {
@@ -74,29 +71,41 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
     enabled: !isChildRoute,
   });
 
-  if (isChildRoute) {
-    return <Outlet />;
-  }
-
-  if (!projectQuery.data || !pullRequestQuery.data || !sessionQuery.data) {
+  if (!projectQuery.data) {
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  if (isChildRoute) {
+    return (
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <Outlet />
+      </SiteLayoutShell>
+    );
+  }
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="pullRequest"
         basePath={runtimeConfig.basePath}
         project={projectQuery.data}
       />
-      <PullRequestOverviewBody
-        currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
-        project={projectQuery.data}
-        pullRequest={pullRequestQuery.data}
-        runtimeConfig={runtimeConfig}
-      />
-    </>
+      {pullRequestQuery.data && sessionQuery.data ? (
+        <PullRequestOverviewBody
+          currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
+          project={projectQuery.data}
+          pullRequest={pullRequestQuery.data}
+          runtimeConfig={runtimeConfig}
+        />
+      ) : null}
+    </SiteLayoutShell>
   );
 }
 
@@ -992,6 +1001,22 @@ function PullRequestHelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
 function isOpenState(state: PullRequestState) {
   return state.toLowerCase() === "open";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function stringField(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function booleanField(value: unknown) {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function disabledAcceptButtonTitle(
