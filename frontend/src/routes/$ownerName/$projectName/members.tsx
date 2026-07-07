@@ -773,28 +773,18 @@ type LegacyMemberSuggestionView = {
   userLabel: string;
 };
 
+const defaultMemberSuggestionAvatar = "/assets/images/default-avatar-32.png";
+
 function parseLegacyMemberSearchItem(item: {
   info: string;
   loginId: string;
 }): LegacyMemberSuggestionView {
   const info = stringField(item.info, "");
   const loginId = stringField(item.loginId, "");
-  if (typeof DOMParser === "undefined" || info === "") {
-    return {
-      imageSrc: "/assets/images/default-avatar-32.png",
-      info,
-      loginId,
-      mentionUsername: `@${loginId}`,
-      userLabel: loginId,
-    };
-  }
-  const documentFragment = new DOMParser().parseFromString(info, "text/html");
   const imageSrc =
-    documentFragment.querySelector(".mention_image")?.getAttribute("src") ??
-    "/assets/images/default-avatar-32.png";
-  const userLabel = documentFragment.querySelector(".mention_name")?.textContent?.trim() || loginId;
-  const mentionUsername =
-    documentFragment.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
+    extractLegacyClassAttribute(info, "mention_image", "src") || defaultMemberSuggestionAvatar;
+  const userLabel = extractLegacyClassText(info, "mention_name") || loginId;
+  const mentionUsername = extractLegacyClassText(info, "mention_username") || `@${loginId}`;
 
   return {
     imageSrc,
@@ -803,6 +793,74 @@ function parseLegacyMemberSearchItem(item: {
     mentionUsername,
     userLabel,
   };
+}
+
+function extractLegacyClassAttribute(html: string, className: string, attributeName: string) {
+  const match = findLegacyTagWithClass(html, className);
+  return match ? decodeLegacyHtmlValue(readLegacyAttribute(match.attributes, attributeName)) : "";
+}
+
+function extractLegacyClassText(html: string, className: string) {
+  const match = findLegacyTagWithClass(html, className);
+  if (!match) {
+    return "";
+  }
+  const closeMatch = new RegExp(`</${escapeRegExp(match.tagName)}\\s*>`, "i").exec(
+    html.slice(match.endIndex),
+  );
+  if (!closeMatch) {
+    return "";
+  }
+  return decodeLegacyHtmlValue(html.slice(match.endIndex, match.endIndex + closeMatch.index))
+    .replace(/<[^>]*>/g, "")
+    .trim();
+}
+
+function findLegacyTagWithClass(html: string, className: string) {
+  const tagPattern = /<([a-zA-Z][\w:-]*)([^>]*)>/g;
+  let match: RegExpExecArray | null;
+  while ((match = tagPattern.exec(html)) !== null) {
+    const attributes = match[2] ?? "";
+    const classValue = readLegacyAttribute(attributes, "class");
+    if (new Set(classValue.split(/\s+/)).has(className)) {
+      return {
+        attributes,
+        endIndex: tagPattern.lastIndex,
+        tagName: match[1],
+      };
+    }
+  }
+  return null;
+}
+
+function readLegacyAttribute(attributes: string, attributeName: string) {
+  const attributePattern = new RegExp(
+    `(?:^|\\s)${escapeRegExp(attributeName)}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>]+))`,
+    "i",
+  );
+  const match = attributePattern.exec(attributes);
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? "";
+}
+
+function decodeLegacyHtmlValue(value: string) {
+  return value.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|amp|lt|gt|quot|apos);/g, (entity, code) => {
+    if (code === "amp") return "&";
+    if (code === "lt") return "<";
+    if (code === "gt") return ">";
+    if (code === "quot") return '"';
+    if (code === "apos") return "'";
+    const numericValue =
+      typeof code === "string" && code.startsWith("#x")
+        ? Number.parseInt(code.slice(2), 16)
+        : Number.parseInt(String(code).slice(1), 10);
+    return Number.isFinite(numericValue) && numericValue >= 0 && numericValue <= 0x10ffff
+      ? String.fromCodePoint(numericValue)
+      : entity;
+  });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function legacyProjectRoleId(role: ProjectMembersResponse["roleOptions"][number]) {

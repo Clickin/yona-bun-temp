@@ -125,7 +125,14 @@ test("project members add-member input performs legacy typeahead lookup, render,
     "@carol",
   );
   await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_name")).toHaveText(
-    "Carmine Poe",
+    "Carmine & Poe",
+  );
+  await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_username")).toHaveText(
+    "@carmine",
+  );
+  await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_image")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
   );
 
   const typeaheadMetrics = await page.evaluate(() => {
@@ -472,6 +479,10 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).not.toMatch(/<a\b/);
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("DOMParser");
+  expect(source).not.toContain("parseFromString");
+  expect(source).not.toContain(".querySelector");
+  expect(source).not.toContain(".querySelectorAll");
   expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("as never");
   expect(source).not.toContain("dangerouslySetInnerHTML");
@@ -1472,7 +1483,7 @@ function legacyMemberSearchDirectory() {
       },
     },
     {
-      info: legacyMemberSearchInfo("Carmine Poe", "carmine"),
+      info: legacyMemberSearchInfoWithoutAvatar("Carmine &amp; Poe", "carmine"),
       loginId: "carmine",
       matchesQuery(query: string) {
         return query !== "" && "carmine carmine poe".includes(query);
@@ -1483,6 +1494,10 @@ function legacyMemberSearchDirectory() {
 
 function legacyMemberSearchInfo(userLabel: string, loginId: string) {
   return `<img class='mention_image' src='/assets/images/default-avatar-128.png'><b class='mention_name'>${userLabel}</b><span class='mention_username'> @${loginId}</span>`;
+}
+
+function legacyMemberSearchInfoWithoutAvatar(userLabel: string, loginId: string) {
+  return `<span class="mention_username">@${loginId}</span><b data-extra="true" class="other mention_name">${userLabel}</b>`;
 }
 
 function legacyMentionStylesheetHref(basePath: string) {
