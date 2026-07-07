@@ -575,6 +575,91 @@ test("project labels category typeahead suggests rendered categories and suppres
   expect(await spaMarker(page)).toBe("project-labels-category-typeahead");
   await expect(page.locator("#newCategoryConfirm")).toHaveCount(0);
   expect(labelRequests).toHaveLength(0);
+
+  await categoryInput.fill("p");
+  await expect(typeahead).toBeVisible();
+  await categoryInput.press("Enter");
+  await expect(categoryInput).toHaveValue("priority");
+  await page.locator('#frmNewLabel input[name="name"]').focus();
+  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#ff9800");
+  await page.fill('#frmNewLabel input[name="name"]', "urgent");
+  await expect(newLabelFormData(page)).resolves.toEqual({
+    category: "priority",
+    color: "#ff9800",
+    name: "urgent",
+  });
+  await page.locator("#frmNewLabel").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
+    form.requestSubmit();
+  });
+  await expect.poll(() => labelRequests.length).toBe(1);
+  expect(labelRequests[0]).toMatchObject({
+    body: {
+      categoryName: "priority",
+      labelColor: "#ff9800",
+      labelName: "urgent",
+    },
+    method: "POST",
+  });
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-category-typeahead");
+});
+
+test("project labels new-label color field refines state and submits form value", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  const labelRequests: { body: unknown; method: string; url: string }[] = [];
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+    ],
+    { labelRequests },
+  );
+
+  await page.goto(labelsPageUrl);
+  await rememberSpaMarker(page, "project-labels-new-label-color-state");
+
+  await page.fill('#frmNewLabel input[name="category"]', "type");
+  await page.locator('#frmNewLabel input[name="name"]').focus();
+  await expect(page.locator("#frmNewLabel .label-preset-colors")).toBeVisible();
+  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#e11d48");
+  await page.locator("#frmNewLabel .btn-preset-color").nth(4).click();
+  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#2196f3");
+  await page.fill('#frmNewLabel input[name="color"]', "rgb(255, 87, 34)");
+  await page.locator('#frmNewLabel input[name="color"]').blur();
+  await expect(page.locator('#frmNewLabel input[name="color"]')).toHaveValue("#ff5722");
+  await page.fill('#frmNewLabel input[name="name"]', "regression");
+  await expect(newLabelFormData(page)).resolves.toEqual({
+    category: "type",
+    color: "#ff5722",
+    name: "regression",
+  });
+
+  await page.locator("#frmNewLabel").evaluate((form) => {
+    if (!(form instanceof HTMLFormElement)) throw new Error("missing form");
+    form.requestSubmit();
+  });
+  await expect.poll(() => labelRequests.length).toBe(1);
+  expect(labelRequests[0]).toMatchObject({
+    body: {
+      categoryName: "type",
+      labelColor: "#ff5722",
+      labelName: "regression",
+    },
+    method: "POST",
+  });
+  await expect(page).toHaveURL(labelsPageUrl);
+  expect(await spaMarker(page)).toBe("project-labels-new-label-color-state");
 });
 
 test("project labels edit modals submit through route mutations", async ({ page }) => {
@@ -815,10 +900,18 @@ test("project labels typeahead source stays React-owned and legacy-enter guarded
   );
   expect(routeSource).toContain('data-provider="typeahead"');
   expect(routeSource).toContain('className="typeahead dropdown-menu"');
+  expect(routeSource).toContain("value={categoryTypeaheadQuery}");
+  expect(routeSource).toContain("value={newLabelColor}");
+  expect(routeSource).toContain("setCategoryTypeaheadQuery(categoryName);");
+  expect(routeSource).toContain("setNewLabelColor(refinedColor);");
   expect(routeSource).toContain('event.key === "Enter"');
   expect(routeSource).toContain('event.key === "ArrowDown"');
   expect(routeSource).toContain('event.key === "ArrowUp"');
   expect(routeSource).toContain("event.preventDefault();");
+  expect(routeSource).not.toContain("newLabelCategoryInputRef.current.value");
+  expect(routeSource).not.toContain("newLabelColorInputRef.current.value");
+  expect(routeSource).not.toContain("querySelector");
+  expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain(".typeahead(");
   expect(routeSource).not.toContain('data("typeahead")');
   expect(routeSource).not.toContain("document.location.reload");
@@ -1014,6 +1107,21 @@ async function spaMarker(page: Page) {
   return page.evaluate(
     () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
   );
+}
+
+async function newLabelFormData(page: Page) {
+  return page.evaluate(() => {
+    const form = document.querySelector<HTMLFormElement>("#frmNewLabel");
+    if (!form) {
+      throw new Error("missing #frmNewLabel");
+    }
+    const formData = new FormData(form);
+    return {
+      category: String(formData.get("category") ?? ""),
+      color: String(formData.get("color") ?? ""),
+      name: String(formData.get("name") ?? ""),
+    };
+  });
 }
 
 async function dispatchCancelableClick(locator: Locator) {
@@ -1342,7 +1450,8 @@ async function canonicalizeScreenRoots(page: Page) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            !isEmptyInputValueAttr(node, attr),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -1364,6 +1473,10 @@ async function canonicalizeScreenRoots(page: Page) {
         return normalizeStyle(attr.value);
       }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function isEmptyInputValueAttr(node: Element, attr: Attr) {
+      return node instanceof HTMLInputElement && attr.name === "value" && attr.value === "";
     }
 
     function normalizeStyle(value: string) {
@@ -1397,7 +1510,12 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            !isEmptyInputValueAttr(node, attr),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -1418,6 +1536,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         return normalizeStyle(attr.value);
       }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function isEmptyInputValueAttr(node: Element, attr: Attr) {
+      return node instanceof HTMLInputElement && attr.name === "value" && attr.value === "";
     }
 
     function normalizeStyle(value: string) {

@@ -161,7 +161,6 @@ function ProjectLabelsBody({
     useState<PendingCategoryCreation | null>(null);
   const [pendingLabelDeletion, setPendingLabelDeletion] = useState<string | null>(null);
   const newLabelCategoryInputRef = useRef<HTMLInputElement>(null);
-  const newLabelColorInputRef = useRef<HTMLInputElement>(null);
   const categoryTypeaheadSuggestions = legacyTypeaheadSuggestions(
     categoryTypeaheadSource,
     categoryTypeaheadQuery,
@@ -308,9 +307,6 @@ function ProjectLabelsBody({
     setCategoryTypeaheadQuery(categoryName);
     setIsCategoryTypeaheadOpen(false);
     setActiveCategorySuggestionIndex(0);
-    if (newLabelCategoryInputRef.current) {
-      newLabelCategoryInputRef.current.value = categoryName;
-    }
   }
 
   function onCategoryInputBlur(event: FocusEvent<HTMLInputElement>) {
@@ -355,13 +351,12 @@ function ProjectLabelsBody({
     }
   }
 
-  function onNameFocus(event: FocusEvent<HTMLInputElement>) {
-    const form = event.currentTarget.form;
+  function onNameFocus() {
     setIsNewLabelColorsVisible(true);
-    if (!form || newLabelColor) {
+    if (newLabelColor) {
       return;
     }
-    const categoryName = String(new FormData(form).get("category") ?? "").trim();
+    const categoryName = categoryTypeaheadQuery.trim();
     const existingCategory = labelCategories.find((category) => category.name === categoryName);
     const fallbackColor =
       stringField(
@@ -371,16 +366,10 @@ function ProjectLabelsBody({
     const refinedColor = refineHexColor(fallbackColor) || fallbackColor;
     setNewLabelColor(refinedColor);
     setNewLabelNameColor(refinedColor);
-    if (newLabelColorInputRef.current) {
-      newLabelColorInputRef.current.value = refinedColor;
-    }
   }
 
   function onNewLabelColorChange(color: string) {
     setNewLabelColor(color);
-    if (newLabelColorInputRef.current) {
-      newLabelColorInputRef.current.value = color;
-    }
     const refinedColor = refineHexColor(color);
     if (refinedColor) {
       setNewLabelNameColor(refinedColor);
@@ -388,7 +377,7 @@ function ProjectLabelsBody({
   }
 
   function onNewLabelColorBlur() {
-    const color = newLabelColorInputRef.current?.value ?? "";
+    const color = newLabelColor;
     if (!color) {
       return;
     }
@@ -399,9 +388,6 @@ function ProjectLabelsBody({
     }
     setNewLabelColor(refinedColor);
     setNewLabelNameColor(refinedColor);
-    if (newLabelColorInputRef.current) {
-      newLabelColorInputRef.current.value = refinedColor;
-    }
   }
 
   return (
@@ -470,6 +456,7 @@ function ProjectLabelsBody({
                       autoComplete="off"
                       placeholder={t("label.category")}
                       ref={newLabelCategoryInputRef}
+                      value={categoryTypeaheadQuery}
                       onBlur={onCategoryInputBlur}
                       onChange={(event) => {
                         const nextQuery = event.currentTarget.value;
@@ -550,7 +537,7 @@ function ProjectLabelsBody({
                       name="color"
                       className="input-small input-label-color"
                       placeholder={t("label.customColor")}
-                      ref={newLabelColorInputRef}
+                      value={newLabelColor}
                       onBlur={onNewLabelColorBlur}
                       onChange={(event) => {
                         setNewLabelColor(event.currentTarget.value);
