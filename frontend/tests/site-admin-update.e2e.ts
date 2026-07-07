@@ -243,7 +243,11 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   await expect(diagnosticsLink).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).toContain("showLegacyProjectHeaderLinks");
-  expect(routeSource).toContain('document.title = t("title.siteSetting");');
+  expect(routeSource).toContain('<title>{t("title.siteSetting")}</title>');
+  expect(routeSource).not.toContain("useLegacySiteUpdateDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("useEffect");
+  expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
   expect(await siteLayoutRootOrder(page)).toEqual([
