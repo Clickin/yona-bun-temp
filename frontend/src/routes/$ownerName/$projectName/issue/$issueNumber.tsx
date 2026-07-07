@@ -2719,6 +2719,9 @@ function ChildComments({
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
+  const isMac =
+    typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
+  const replyShortcutKey = isMac ? "⌘" : "CTRL";
   const newCommentAction = prefixBasePath(
     basePath,
     `/${ownerName}/${projectName}/issue/${issueNumber}/comments`,
@@ -2771,7 +2774,7 @@ function ChildComments({
                   className="editorSeries"
                   name="contents"
                   rows={1}
-                  placeholder="Reply (CTRL + ENTER)"
+                  placeholder={`Reply (${replyShortcutKey} + ENTER)`}
                   onFocus={() => setNotificationVisible(true)}
                   onKeyUp={(event) => {
                     if (event.key === "Escape") {
