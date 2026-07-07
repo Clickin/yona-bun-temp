@@ -100,6 +100,13 @@ function UserFilesScreen({
   return (
     <>
       <title>{t("user.files")}</title>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        media="all"
+        precedence="legacy-filetype"
+        href={prefixBasePath(basePath, "/assets/stylesheets/filetype.css")}
+      />
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <ul className="nav nav-tabs">

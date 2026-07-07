@@ -118,6 +118,12 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
   await expect(page).toHaveTitle("My Files");
+  await expect(
+    page.locator('head link[rel="stylesheet"][href$="/assets/stylesheets/filetype.css"]'),
+  ).toHaveAttribute("media", "all");
+  await expect(
+    page.locator('head link[rel="stylesheet"][href$="/assets/stylesheets/filetype.css"]'),
+  ).toHaveAttribute("type", "text/css");
   await expect(page.locator(".attachment-files")).toBeVisible();
   await expect(page.locator(".attachment-file-detail")).toHaveCount(1);
   const fileRow = page.locator(".attachment-file-detail").first();
@@ -341,9 +347,11 @@ test("current-user files leaves location cell empty when source URL is missing",
     .locator(".file-location");
   await expect(missingLocationCell).toBeEmpty();
   await expect(missingLocationCell.locator("a")).toHaveCount(0);
-  await expect(page.locator(".attachment-file-detail").first().locator(".file-name i")).toHaveClass(
-    "icon text-icon medium-blue font-larger",
-  );
+  await expect(
+    page.locator(".attachment-file-detail").first().locator(".file-preview img"),
+  ).toHaveCount(0);
+  const textFileIcon = page.locator(".attachment-file-detail").first().locator(".file-name i");
+  await expect(textFileIcon).toHaveClass("icon text-icon medium-blue font-larger");
 
   const normalLocationLink = page
     .locator(".attachment-file-detail")
@@ -370,6 +378,15 @@ test("current-user files route renders legacy browser title without DOM mutation
   expect(routeSource).not.toContain("globalThis.document");
   expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).not.toMatch(/\buseEffect\b[\s\S]*?\btitle\b/u);
+});
+
+test("current-user files route owns legacy filetype stylesheet asset", () => {
+  const routeSource = readFileSync("src/routes/user/files.tsx", "utf8");
+  expect(routeSource).toContain('media="all"');
+  expect(routeSource).toContain('precedence="legacy-filetype"');
+  expect(routeSource).toContain(
+    'href={prefixBasePath(basePath, "/assets/stylesheets/filetype.css")}',
+  );
 });
 
 test("current-user files row uses href semantics for backend file URLs", () => {
