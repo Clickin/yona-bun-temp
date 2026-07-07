@@ -172,6 +172,17 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
   expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
 });
 
+test("project labels renders legacy projectLayout browser title through React head", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectLabels(page);
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  await expect(page).toHaveTitle("Label - admin/sample");
+});
+
 test("project labels exposes group search scope when project org data exists", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
@@ -200,6 +211,13 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
     new URL("../src/routes/$ownerName/$projectName/issue/labelsform.tsx", import.meta.url),
     "utf8",
   );
+  expect(routeSource).toContain("<title>{legacyTitle}</title>");
+  expect(routeSource).toContain(
+    'const legacyTitle = `${t("label")} - ${ownerName}/${projectName}`;',
+  );
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain("window.document");
   expect(routeSource).not.toMatch(/<a\b/);
   expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("search={undefined");

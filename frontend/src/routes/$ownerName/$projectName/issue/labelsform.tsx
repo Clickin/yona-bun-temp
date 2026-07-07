@@ -111,16 +111,19 @@ function ProjectLabelsScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const legacyTitle = `${t("label")} - ${ownerName}/${projectName}`;
 
   if (!project || !labelsQuery.data) {
-    return null;
+    return <title>{legacyTitle}</title>;
   }
 
   return (
     <>
+      <title>{legacyTitle}</title>
       <ProjectHeader project={project} />
       <ProjectMenu project={project} />
       <ProjectLabelsBody
