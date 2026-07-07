@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type HTMLAttributes } from "react";
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type HTMLAttributes,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -269,6 +275,12 @@ function ProjectPullRequestsBody({
   const [contributorIdValue, setContributorIdValue] = useState(
     search.contributorId ? String(search.contributorId) : "",
   );
+  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
+  const [highlightedPullRequestId, setHighlightedPullRequestId] = useState("");
+  const [leftMenuHiddenByTwoColumnMode, setLeftMenuHiddenByTwoColumnMode] = useState(false);
 
   useEffect(() => {
     setFilterValue(search.filter);
@@ -330,7 +342,10 @@ function ProjectPullRequestsBody({
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div {...legacyPjaxAttrs} className="row-fluid cb">
-          <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
+          <div
+            className="left-menu span2 search-wrap hide-in-mobile"
+            style={{ paddingTop: 0, ...(leftMenuHiddenByTwoColumnMode ? { display: "none" } : {}) }}
+          >
             <form
               id="search"
               name="search"
@@ -462,7 +477,17 @@ function ProjectPullRequestsBody({
                 </li>
               ) : null}
               <li>
-                <TwoColumnModeCheckbox />
+                <TwoColumnModeCheckbox
+                  checked={useTwoColumnMode}
+                  onToggle={(checked) => {
+                    localStorage.setItem("useTwoColumnMode", String(checked));
+                    if (!checked) {
+                      setHighlightedPullRequestId("");
+                      setLeftMenuHiddenByTwoColumnMode(false);
+                    }
+                    setUseTwoColumnMode(checked);
+                  }}
+                />
               </li>
             </ul>
             <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
@@ -477,8 +502,19 @@ function ProjectPullRequestsBody({
                   pullRequests={pullRequests}
                   projectName={projectName}
                   search={search}
+                  highlightedPullRequestId={highlightedPullRequestId}
                   titlePrefixRoute={titlePrefixRoute}
                   titlePrefixSearch={(prefix) => searchFor(prefix)}
+                  useTwoColumnMode={useTwoColumnMode}
+                  onTwoColumnPullRequestTarget={(pullRequestId, href, title) => {
+                    applyTwoColumnLocation({
+                      highlightedPullRequestId: pullRequestId,
+                      href,
+                      title,
+                    });
+                    setHighlightedPullRequestId(pullRequestId);
+                    setLeftMenuHiddenByTwoColumnMode(true);
+                  }}
                 />
               </div>
             </div>
@@ -589,8 +625,11 @@ function ProjectPullRequestRows({
   pullRequests,
   projectName,
   search,
+  highlightedPullRequestId,
   titlePrefixRoute,
   titlePrefixSearch,
+  useTwoColumnMode,
+  onTwoColumnPullRequestTarget,
 }: {
   basePath: string;
   currentUserLabel: string;
@@ -601,8 +640,11 @@ function ProjectPullRequestRows({
   pullRequests: PullRequestListResponse;
   projectName: string;
   search: ProjectPullRequestsSearch;
+  highlightedPullRequestId: string;
   titlePrefixRoute: PullRequestListRouteTarget;
   titlePrefixSearch: (prefix: string) => ProjectPullRequestsSearch;
+  useTwoColumnMode: boolean;
+  onTwoColumnPullRequestTarget: (pullRequestId: string, href: string, title: string) => void;
 }) {
   const { t } = useLegacyMessages();
 
@@ -629,8 +671,14 @@ function ProjectPullRequestRows({
           ownerName={ownerName}
           pullRequest={pullRequest}
           projectName={projectName}
+          highlighted={
+            highlightedPullRequestId ===
+            stringField(pullRequest.id, String(pullRequest.pullRequestNumber))
+          }
           titlePrefixRoute={titlePrefixRoute}
           titlePrefixSearch={titlePrefixSearch}
+          useTwoColumnMode={useTwoColumnMode}
+          onTwoColumnPullRequestTarget={onTwoColumnPullRequestTarget}
         />
       ))}
       <ProjectPullRequestPagination
@@ -676,8 +724,11 @@ function ProjectPullRequestRow({
   ownerName,
   pullRequest,
   projectName,
+  highlighted,
   titlePrefixRoute,
   titlePrefixSearch,
+  useTwoColumnMode,
+  onTwoColumnPullRequestTarget,
 }: {
   basePath: string;
   currentUserLabel: string;
@@ -686,8 +737,11 @@ function ProjectPullRequestRow({
   ownerName: string;
   pullRequest: PullRequestListItem;
   projectName: string;
+  highlighted: boolean;
   titlePrefixRoute: PullRequestListRouteTarget;
   titlePrefixSearch: (prefix: string) => ProjectPullRequestsSearch;
+  useTwoColumnMode: boolean;
+  onTwoColumnPullRequestTarget: (pullRequestId: string, href: string, title: string) => void;
 }) {
   const { t } = useLegacyMessages();
   const projectHref = prefixBasePath(
@@ -709,9 +763,34 @@ function ProjectPullRequestRow({
     ? "infos-item over"
     : "infos-item";
   const legacyPullRequestRowAttrs = { href: pullRequestHref } satisfies LegacyPullRequestRowAttrs;
+  const pullRequestId = stringField(pullRequest.id, String(pullRequest.pullRequestNumber));
+  const rowStyle: CSSProperties | undefined = useTwoColumnMode ? { cursor: "pointer" } : undefined;
+  const titleHistoryLabel = `${pullRequest.pullRequestNumber} ${titleParts.title}`;
+  const handleRowClickCapture = (event: ReactMouseEvent<HTMLLIElement>) => {
+    if (!useTwoColumnMode) {
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(".title-prefix")) {
+      return;
+    }
+    const titleTarget = target?.closest(".title-wrap > .title");
+    onTwoColumnPullRequestTarget(
+      pullRequestId,
+      pullRequestHref,
+      titleTarget ? titleHistoryLabel : (event.currentTarget.textContent ?? ""),
+    );
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   return (
-    <li className="post-item title" {...legacyPullRequestRowAttrs}>
+    <li
+      className={`post-item title${highlighted ? " highlightBg" : ""}`}
+      onClickCapture={handleRowClickCapture}
+      style={rowStyle}
+      {...legacyPullRequestRowAttrs}
+    >
       <div className="span10 span-hard-wrap">
         <Link
           to="/$user"
@@ -842,23 +921,59 @@ function stripBasePath(basePath: string, href: string) {
   return href;
 }
 
-function TwoColumnModeCheckbox() {
+function TwoColumnModeCheckbox({
+  checked,
+  onToggle,
+}: {
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}) {
+  const { t } = useLegacyMessages();
+
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
-      title="Two Column Mode"
-      data-content="Splits list and body into columns respectively"
+      title={t("common.two.column.mode")}
+      data-content={t("common.two.column.mode.desc")}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper without aria-label. */}
       <label className="checkbox">
         <div className="two-column-icon-border">
-          <input id="two-column-mode" type="checkbox" />
-          <span className="two-column-mode-text">Column View</span>
+          <input
+            id="two-column-mode"
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => {
+              onToggle(event.currentTarget.checked);
+            }}
+          />
+          <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
     </div>
   );
+}
+
+function applyTwoColumnLocation({
+  highlightedPullRequestId,
+  href,
+  title,
+}: {
+  highlightedPullRequestId: string;
+  href: string;
+  title: string;
+}) {
+  const nextState = {
+    ...(history.state as Record<string, unknown> | null),
+    startPath: location.pathname,
+    yonaPullRequestListHighlightedPullRequestId: highlightedPullRequestId,
+  };
+  if (!history.state) {
+    History.prototype.pushState.call(history, nextState, title, href);
+    return;
+  }
+  History.prototype.replaceState.call(history, nextState, title, href);
 }
 
 function projectPullRequestsHref(basePath: string, ownerName: string, projectName: string) {

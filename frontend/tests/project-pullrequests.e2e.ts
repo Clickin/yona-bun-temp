@@ -383,8 +383,103 @@ test("project pull request populated row links use SPA navigation with legacy hr
   await expectPullRequestSpaSession(page);
 });
 
+test("project pull request two-column mode follows legacy persisted row behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
+  const toggle = page.locator("#two-column-mode");
+  const row = page.locator(".post-list-wrap .post-item").first();
+  await expect(toggle).not.toBeChecked();
+  await expect(row).not.toHaveCSS("cursor", "pointer");
+
+  await toggle.click();
+  await expect(toggle).toBeChecked();
+  await expect(row).toHaveCSS("cursor", "pointer");
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("true");
+
+  await page.reload();
+  await expect(page.locator("#two-column-mode")).toBeChecked();
+  await expect(page.locator(".post-list-wrap .post-item").first()).toHaveCSS("cursor", "pointer");
+
+  await page.evaluate(() => {
+    (window as Window & { __pullRequestSpaMarker?: string }).__pullRequestSpaMarker =
+      "pr-two-column-title";
+  });
+  await page.locator(".post-list-wrap .title-wrap > a.title").click();
+  await expect(page.locator(".post-list-wrap .post-item").first()).toHaveClass(/highlightBg/u);
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath}/admin/sample/pullRequest/7`);
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __pullRequestSpaMarker?: string }).__pullRequestSpaMarker,
+    ),
+  ).toBe("pr-two-column-title");
+  expect(await pullRequestTwoColumnMetrics(page)).toEqual({
+    leftMenuDisplay: "none",
+    rowCursor: "pointer",
+    toggleChecked: true,
+  });
+
+  await page.locator("#two-column-mode").click();
+  await expect(page.locator("#two-column-mode")).not.toBeChecked();
+  await expect(page.locator(".post-list-wrap .post-item").first()).not.toHaveClass(/highlightBg/u);
+  await expect(page.locator(".post-list-wrap .post-item").first()).not.toHaveCSS(
+    "cursor",
+    "pointer",
+  );
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("false");
+  expect(await pullRequestTwoColumnMetrics(page)).toEqual({
+    leftMenuDisplay: "block",
+    rowCursor: "auto",
+    toggleChecked: false,
+  });
+});
+
+test("project pull request two-column row click uses legacy post-item href branch", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPullRequests(page);
+
+  await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
+  await page.locator("#two-column-mode").click();
+  await expect(page.locator(".post-list-wrap .post-item").first()).toHaveCSS("cursor", "pointer");
+  await page.evaluate(() => {
+    (window as Window & { __pullRequestSpaMarker?: string }).__pullRequestSpaMarker =
+      "pr-two-column-row";
+  });
+
+  await page.locator(".post-list-wrap .infos").click({ position: { x: 8, y: 8 } });
+
+  await expect(page.locator(".post-list-wrap .post-item").first()).toHaveClass(/highlightBg/u);
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath}/admin/sample/pullRequest/7`);
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __pullRequestSpaMarker?: string }).__pullRequestSpaMarker,
+    ),
+  ).toBe("pr-two-column-row");
+});
+
 test("project pull request row source uses TanStack Link for internal row navigation", () => {
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("document.title");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("addEventListener");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("classList");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("style.display");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("window.document");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("window.parent.document");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("useProjectPullRequestsDocumentTitle");
@@ -430,7 +525,18 @@ test("project pull request row source uses TanStack Link for internal row naviga
     "const legacyPullRequestRowAttrs = { href: pullRequestHref } satisfies LegacyPullRequestRowAttrs",
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
-    '<li className="post-item title" {...legacyPullRequestRowAttrs}>',
+    'className={`post-item title${highlighted ? " highlightBg" : ""}`}',
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('localStorage.getItem("useTwoColumnMode")');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    'localStorage.setItem("useTwoColumnMode", String(checked))',
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain("onClickCapture={handleRowClickCapture}");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "History.prototype.pushState.call(history, nextState, title, href)",
+  );
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
+    "History.prototype.replaceState.call(history, nextState, title, href)",
   );
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain('to="/$user"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).toContain(
@@ -1810,6 +1916,26 @@ async function pullRequestListMetrics(page: Page) {
       titleFontSize: titleStyle.fontSize,
       titleText: title.textContent?.trim(),
       titleWrapMarginLeft: window.getComputedStyle(titleWrap).marginLeft,
+    };
+  });
+}
+
+async function pullRequestTwoColumnMetrics(page: Page) {
+  return page.locator(".project-page-wrap").evaluate((wrap) => {
+    const leftMenu = wrap.querySelector<HTMLElement>(".left-menu.search-wrap");
+    const row = wrap.querySelector<HTMLElement>(".post-list-wrap .post-item");
+    const toggle = wrap.querySelector<HTMLInputElement>("#two-column-mode");
+    const missing = Object.entries({ leftMenu, row, toggle })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected PR two-column metric targets are missing: ${missing.join(", ")}`);
+    }
+
+    return {
+      leftMenuDisplay: window.getComputedStyle(leftMenu).display,
+      rowCursor: window.getComputedStyle(row).cursor,
+      toggleChecked: toggle.checked,
     };
   });
 }
