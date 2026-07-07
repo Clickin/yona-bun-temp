@@ -144,6 +144,8 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".span10 h2")).toHaveText("Data");
   await expectSiteAdminSidebar(page, basePath);
+  await expect(page.locator(".site-setting-nav")).not.toContainText("Data");
+  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(0);
   const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
   await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
   await expect(
@@ -197,6 +199,22 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
     titleFontSize: 19.5,
     titleLineHeight: 30,
   });
+  expect(await readSiteDataContainmentMetrics(page)).toEqual({
+    contentContainedByWrap: true,
+    contentDoesNotOverlapSidebar: true,
+    cuDescBelowTitle: true,
+    exportButtonBelowExportCopy: true,
+    exportButtonContainedByContent: true,
+    formContainedByContent: true,
+    formLeftAlignedWithContent: true,
+    formSubmitBelowFileInput: true,
+    importCopyBelowImportTitle: true,
+    importFormBelowImportCopy: true,
+    importTitleBelowExportButton: true,
+    navContainedByWrap: true,
+    titleContainedByContent: true,
+    titleLeftAlignedWithContent: true,
+  });
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-data-sidebar";
@@ -248,13 +266,18 @@ test("site admin data source keeps export as legacy href without route escape", 
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).toContain("<Link");
-  expect(routeSource).toContain('href={prefixBasePath(runtimeConfig.basePath, "/sites/export")}');
+  expect(routeSource).toContain(
+    'const exportDataHref = prefixBasePath(runtimeConfig.basePath, "/sites/export");',
+  );
+  expect(routeSource).toContain('const exportDataPath = "/sites/export" as "/";');
+  expect(routeSource).toContain("href={exportDataHref}");
+  expect(routeSource).toContain("to={exportDataPath}");
   expect(routeSource).toContain("reloadDocument");
   expect(routeSource).not.toContain("to={exportPath as never}");
   expect(routeSource).not.toContain('to={"/sites/export" as never}');
   expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toMatch(/<a\b[\s\S]*\/sites\/export/u);
-  expect(routeSource).toContain('to="/sites/export"');
+  expect(routeSource).not.toContain('to="/sites/export"');
 });
 
 async function expectSiteAdminSidebar(page: Page, basePath: string) {
@@ -415,6 +438,87 @@ async function readSiteDataMetrics(page: Page) {
         throw new Error(`Missing ${selector}`);
       }
       return element;
+    }
+  });
+}
+
+async function readSiteDataContainmentMetrics(page: Page) {
+  return page.evaluate(() => {
+    const wrap = requireElement(".site-setting-wrap");
+    const sidebar = requireElement(".site-setting-wrap .span2");
+    const nav = requireElement(".site-setting-nav");
+    const content = requireElement(".site-setting-wrap .span10");
+    const titleArea = requireElement(".title_area");
+    const title = requireElement(".title_area h2");
+    const cuDesc = requireElement(".cu-desc");
+    const exportTitle = requireElement(".span10 > h3:nth-of-type(1)");
+    const exportCopy = requireElement(".span10 > p:nth-of-type(1)");
+    const exportButton = requireElement("a.ybtn.ybtn-primary");
+    const importTitle = requireElement(".span10 > h3:nth-of-type(2)");
+    const importCopy = requireElement(".span10 > p:nth-of-type(2)");
+    const importForm = requireElement('form[action$="/sites/import"]');
+    const fileInput = requireElement('input[type="file"][name="data"]');
+    const submitInput = requireElement('form[action$="/sites/import"] input[type="submit"]');
+
+    const wrapBox = box(wrap);
+    const sidebarBox = box(sidebar);
+    const navBox = box(nav);
+    const contentBox = box(content);
+    const titleAreaBox = box(titleArea);
+    const titleBox = box(title);
+    const cuDescBox = box(cuDesc);
+    const exportCopyBox = box(exportCopy);
+    const exportButtonBox = box(exportButton);
+    const importTitleBox = box(importTitle);
+    const importCopyBox = box(importCopy);
+    const importFormBox = box(importForm);
+    const fileInputBox = box(fileInput);
+    const submitInputBox = box(submitInput);
+    const tolerance = 1;
+
+    return {
+      contentContainedByWrap: containsHorizontally(wrapBox, contentBox, tolerance),
+      contentDoesNotOverlapSidebar: sidebarBox.right <= contentBox.left + tolerance,
+      cuDescBelowTitle: cuDescBox.top >= titleAreaBox.bottom - tolerance,
+      exportButtonBelowExportCopy: exportButtonBox.top >= exportCopyBox.bottom - tolerance,
+      exportButtonContainedByContent: containsHorizontally(contentBox, exportButtonBox, tolerance),
+      formContainedByContent: containsHorizontally(contentBox, importFormBox, tolerance),
+      formLeftAlignedWithContent: Math.abs(importFormBox.left - contentBox.left) <= tolerance,
+      formSubmitBelowFileInput: submitInputBox.top >= fileInputBox.bottom - tolerance,
+      importCopyBelowImportTitle: importCopyBox.top >= importTitleBox.bottom - tolerance,
+      importFormBelowImportCopy: importFormBox.top >= importCopyBox.bottom - tolerance,
+      importTitleBelowExportButton: importTitleBox.top >= exportButtonBox.bottom - tolerance,
+      navContainedByWrap: containsHorizontally(wrapBox, navBox, tolerance),
+      titleContainedByContent:
+        containsHorizontally(contentBox, titleAreaBox, tolerance) &&
+        containsHorizontally(contentBox, titleBox, tolerance),
+      titleLeftAlignedWithContent: Math.abs(titleAreaBox.left - contentBox.left) <= tolerance,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+
+    function box(element: HTMLElement) {
+      const rect = element.getBoundingClientRect();
+      return {
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+      };
+    }
+
+    function containsHorizontally(
+      outer: { left: number; right: number },
+      inner: { left: number; right: number },
+      tolerance: number,
+    ) {
+      return inner.left >= outer.left - tolerance && inner.right <= outer.right + tolerance;
     }
   });
 }

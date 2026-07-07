@@ -37,6 +37,8 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     queryFn: () => readSessionBootstrap(runtimeConfig),
     queryKey: ["site-data", "session-bootstrap"],
   });
+  const exportDataPath = "/sites/export" as "/";
+  const exportDataHref = prefixBasePath(runtimeConfig.basePath, "/sites/export");
 
   return (
     <>
@@ -75,8 +77,8 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <p>{t("site.data.export.info")}</p>
 
               <Link
-                href={prefixBasePath(runtimeConfig.basePath, "/sites/export")}
-                to="/sites/export"
+                href={exportDataHref}
+                to={exportDataPath}
                 reloadDocument
                 className="ybtn ybtn-primary"
               >
