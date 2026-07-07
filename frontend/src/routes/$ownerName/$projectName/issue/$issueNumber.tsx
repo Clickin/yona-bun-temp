@@ -6,7 +6,6 @@ import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
-import { RestApiError } from "../../../../api/rest-client";
 import { translateLegacyResource } from "../../../../api/translation";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
 import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../../api/types";
@@ -74,6 +73,9 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const issueQuery = useQuery({
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project-issue-detail", ownerName, projectName, numericIssueNumber],
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
   });
   const issueTitle = stringField(issueQuery.data?.title);
   useProjectIssueDetailDocumentTitle(runtimeConfig, issueTitle);
@@ -109,12 +111,16 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     projectName,
   };
 
-  if (issueQuery.error instanceof RestApiError && issueQuery.error.status === 404) {
+  if (restApiErrorStatus(issueQuery.error) === 404) {
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
+        <ProjectIssueNotFoundBody
+          ownerName={ownerName}
+          projectName={projectName}
+          runtimeConfig={runtimeConfig}
+        />
       </SiteLayoutShell>
     );
   }
@@ -178,6 +184,15 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
     return organizationName;
   }
   return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) {
+    return undefined;
+  }
+
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
 }
 
 function IssueDetailAssets({
@@ -353,11 +368,26 @@ function IssueDetailSelect2Partial({
 function ProjectIssueNotFoundBody({
   ownerName,
   projectName,
+  runtimeConfig,
 }: {
   ownerName: string;
   projectName: string;
+  runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = `${t("error.notfound")} - ${ownerName}/${projectName}`;
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [ownerName, projectName, runtimeConfig.siteName, t]);
 
   return (
     <div className="page-wrap-outer">

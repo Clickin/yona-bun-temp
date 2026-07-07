@@ -468,39 +468,51 @@ async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
 
 test("project issue detail not found renders legacy project error shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueDetail(page, { __issueNumber: 999, __issueStatus: 404 });
+  const cases = [
+    { ownerName: "admin", projectName: "svnplayground" },
+    { ownerName: "alice", projectName: "sample" },
+  ];
 
-  await page.goto(`${basePath}/admin/sample/issue/999`);
+  for (const { ownerName, projectName } of cases) {
+    await mockProjectIssueDetail(page, {
+      __issueNumber: 1,
+      __issueStatus: 404,
+      __ownerName: ownerName,
+      __projectName: projectName,
+    });
 
-  await expect(page.locator(".project-header-outer")).toBeVisible();
-  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
-  await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
-  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
-    "Issue does not exist",
-  );
-  await expect(page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary")).toHaveText(
-    "List",
-  );
-  await expect(page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
-    "href",
-    `${basePath}/admin/sample/issues?state=all`,
-  );
-  await expect(page.locator(".board-view")).toHaveCount(0);
-  await expect(page.locator("#issueUpdateForm")).toHaveCount(0);
-  await expect(page.locator("#comment-form")).toHaveCount(0);
+    await page.goto(`${basePath}/${ownerName}/${projectName}/issue/1`);
 
-  expect(await issueNotFoundMetrics(page)).toEqual({
-    buttonDisplay: "inline-block",
-    buttonHeight: 30,
-    buttonLineHeight: "20px",
-    errorPaddingBlock: 200,
-    iconClass: "ico ico-err2",
-    messageFontSize: "16px",
-    messageFontWeight: "700",
-    messageMarginBottom: 30,
-    messageMarginTop: 30,
-    pageWrapChildCount: 1,
-  });
+    await expect(page.locator(".project-header-outer")).toBeVisible();
+    await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+    await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible({ timeout: 1500 });
+    await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+      "Issue does not exist",
+    );
+    await expect(page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary")).toHaveText(
+      "List",
+    );
+    await expect(
+      page.locator(".project-page-wrap > .error-wrap .ybtn.ybtn-primary"),
+    ).toHaveAttribute("href", `${basePath}/${ownerName}/${projectName}/issues?state=all`);
+    await expect(page).toHaveTitle(`Page not found - ${ownerName}/${projectName}`);
+    await expect(page.locator(".board-view")).toHaveCount(0);
+    await expect(page.locator("#issueUpdateForm")).toHaveCount(0);
+    await expect(page.locator("#comment-form")).toHaveCount(0);
+
+    expect(await issueNotFoundMetrics(page)).toEqual({
+      buttonDisplay: "inline-block",
+      buttonHeight: 30,
+      buttonLineHeight: "20px",
+      errorPaddingBlock: 200,
+      iconClass: "ico ico-err2",
+      messageFontSize: "16px",
+      messageFontWeight: "700",
+      messageMarginBottom: 30,
+      messageMarginTop: 30,
+      pageWrapChildCount: 1,
+    });
+  }
 });
 
 test("project issue detail new subtask link preserves legacy href with SPA transition", async ({
