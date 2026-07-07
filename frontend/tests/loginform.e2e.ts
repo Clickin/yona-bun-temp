@@ -358,6 +358,7 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   await expect(
     page.locator(`#loginDialog a[href="${basePath}/authenticate/github"]`),
   ).toContainText("Sign in with github");
+  await expect(page.locator("#loginDialog .github svg path")).not.toHaveAttribute("d", "");
   await expect(page.locator(`#loginDialog a[href="${basePath}/authenticate/google"]`)).toHaveClass(
     "ybtn oauth-login-btn",
   );
@@ -382,6 +383,7 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   expect(source).toContain("const providerLoginPath: string = `/authenticate/${normalized}`;");
   expect(source).toContain("href={prefixBasePath(basePath, providerLoginPath)}");
   expect(source).toContain("reloadDocument");
+  expect(source).toContain("GITHUB_OAUTH_LOGO_PATH");
   expect(source).not.toContain("as never");
   expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/lostPassword"\)\}/u);
   expect(source).not.toMatch(/<a\s+href=\{prefixBasePath\(basePath,\s*"\/users\/signupform"\)\}/u);
@@ -399,13 +401,18 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     socialLoginOnly: false,
   });
   await page.goto(`${basePath}/users/login?from=legacy`);
+  await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
   await page.locator('[data-login="required"]').first().click();
 
   await expect(page.locator("#loginDialog")).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
   await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
   await expect(page.locator("#loginDialog .error")).toBeHidden();
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await assertOAuthProviderLinks(page, basePath);
+  await expect(page.locator("#loginDialog > .modal-body > .pull-right + form")).toHaveClass(
+    "frm-wrap login-form-wrap",
+  );
 
   const actual = await canonicalizeLoginDialogRoot(page);
   const expected = await canonicalizeLoginDialogHtml(
@@ -431,12 +438,29 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     errorDisplay: "none",
     formMargin: "20px 15px",
     formWidth: "400px",
+    loginInputBoxSizing: "content-box",
+    loginInputHeight: 36,
     loginInputWidth: "386px",
     modalBodyPadding: "15px",
     oauthButtonDisplay: "block",
+    passwordInputHeight: 36,
     passwordInputWidth: "386px",
     submitButtonWidth: "400px",
     titleLineMarginTop: "12px",
+  });
+  expect(await readRootLoginDialogLayout(page)).toEqual({
+    actionRowBelowOauth: true,
+    backdropBehindDialog: true,
+    bodyContainsForm: true,
+    closeRightAligned: true,
+    dialogCentered: true,
+    formBelowCloseRow: true,
+    formContainsFields: true,
+    formContainsSubmit: true,
+    inputStacked: true,
+    modalBodyContained: true,
+    passwordAboveError: true,
+    submitAboveOauth: true,
   });
 
   const source = readFileSync("src/routes/__root.tsx", "utf8");
@@ -1094,6 +1118,8 @@ async function readRootLoginDialogMetrics(page: Page) {
     }
 
     const dialogRect = dialog.getBoundingClientRect();
+    const loginRect = loginInput.getBoundingClientRect();
+    const passwordRect = passwordInput.getBoundingClientRect();
     const dialogStyle = getComputedStyle(dialog);
     const formStyle = getComputedStyle(form);
     const actionRowStyle = getComputedStyle(actionRow);
@@ -1116,12 +1142,91 @@ async function readRootLoginDialogMetrics(page: Page) {
       errorDisplay: getComputedStyle(error).display,
       formMargin: formStyle.margin,
       formWidth: formStyle.width,
+      loginInputBoxSizing: getComputedStyle(loginInput).boxSizing,
+      loginInputHeight: Math.round(loginRect.height),
       loginInputWidth: getComputedStyle(loginInput).width,
       modalBodyPadding: getComputedStyle(modalBody).padding,
       oauthButtonDisplay: getComputedStyle(oauthButton).display,
+      passwordInputHeight: Math.round(passwordRect.height),
       passwordInputWidth: getComputedStyle(passwordInput).width,
       submitButtonWidth: getComputedStyle(submitButton).width,
       titleLineMarginTop: getComputedStyle(titleLine).marginTop,
+    };
+  });
+}
+
+async function readRootLoginDialogLayout(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector<HTMLElement>("#loginDialog");
+    const modalBody = document.querySelector<HTMLElement>("#loginDialog .modal-body");
+    const closeRow = document.querySelector<HTMLElement>("#loginDialog .pull-right");
+    const closeButton = document.querySelector<HTMLElement>("#loginDialog .close");
+    const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
+    const loginInput = document.querySelector<HTMLElement>("#loginDialog #loginIdOrEmailD");
+    const passwordInput = document.querySelector<HTMLElement>("#loginDialog #passwordD");
+    const error = document.querySelector<HTMLElement>("#loginDialog .error");
+    const submitButton = document.querySelector<HTMLElement>("#loginDialog button[type='submit']");
+    const oauthRow = document.querySelector<HTMLElement>(
+      "#loginDialog .btns-row.nm:has(.oauth-login-btn)",
+    );
+    const actionRow = document.querySelector<HTMLElement>("#loginDialog .act-row");
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop.in");
+    if (
+      !dialog ||
+      !modalBody ||
+      !closeRow ||
+      !closeButton ||
+      !form ||
+      !loginInput ||
+      !passwordInput ||
+      !error ||
+      !submitButton ||
+      !oauthRow ||
+      !actionRow ||
+      !backdrop
+    ) {
+      throw new Error("Expected root login dialog layout targets are missing.");
+    }
+
+    const viewportCenter = window.innerWidth / 2;
+    const dialogRect = dialog.getBoundingClientRect();
+    const bodyRect = modalBody.getBoundingClientRect();
+    const closeRowRect = closeRow.getBoundingClientRect();
+    const closeRect = closeButton.getBoundingClientRect();
+    const formRect = form.getBoundingClientRect();
+    const loginRect = loginInput.getBoundingClientRect();
+    const passwordRect = passwordInput.getBoundingClientRect();
+    const submitRect = submitButton.getBoundingClientRect();
+    const oauthRect = oauthRow.getBoundingClientRect();
+    const actionRect = actionRow.getBoundingClientRect();
+
+    return {
+      actionRowBelowOauth: actionRect.top >= oauthRect.bottom,
+      backdropBehindDialog:
+        Number(getComputedStyle(backdrop).zIndex) < Number(getComputedStyle(dialog).zIndex),
+      bodyContainsForm:
+        formRect.left >= bodyRect.left &&
+        formRect.right <= bodyRect.right &&
+        formRect.top >= bodyRect.top &&
+        formRect.bottom <= bodyRect.bottom,
+      closeRightAligned: closeRect.right <= bodyRect.right && closeRect.left >= closeRowRect.left,
+      dialogCentered: Math.abs(dialogRect.left + dialogRect.width / 2 - viewportCenter) <= 1,
+      formBelowCloseRow: formRect.top >= closeRowRect.bottom,
+      formContainsFields:
+        loginRect.left >= formRect.left &&
+        loginRect.right <= formRect.right &&
+        passwordRect.left >= formRect.left &&
+        passwordRect.right <= formRect.right,
+      formContainsSubmit: submitRect.left >= formRect.left && submitRect.right <= formRect.right,
+      inputStacked: passwordRect.top >= loginRect.bottom,
+      modalBodyContained:
+        bodyRect.left >= dialogRect.left &&
+        bodyRect.right <= dialogRect.right &&
+        bodyRect.top >= dialogRect.top &&
+        bodyRect.bottom <= dialogRect.bottom,
+      passwordAboveError:
+        (passwordInput.compareDocumentPosition(error) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+      submitAboveOauth: oauthRect.top >= submitRect.bottom,
     };
   });
 }
