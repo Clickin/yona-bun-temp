@@ -863,30 +863,61 @@ function parseLegacyMemberSearchItem(item: {
 }): LegacyMemberSuggestionView {
   const info = stringField(item.info, "");
   const loginId = stringField(item.loginId, "");
-  if (typeof DOMParser === "undefined" || info === "") {
-    return {
-      imageSrc: "/assets/images/default-avatar-32.png",
-      info,
-      loginId,
-      mentionUsername: `@${loginId}`,
-      userLabel: loginId,
-    };
-  }
-  const documentFragment = new DOMParser().parseFromString(info, "text/html");
-  const imageSrc =
-    documentFragment.querySelector(".mention_image")?.getAttribute("src") ??
-    "/assets/images/default-avatar-32.png";
-  const userLabel = documentFragment.querySelector(".mention_name")?.textContent?.trim() || loginId;
-  const mentionUsername =
-    documentFragment.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
 
   return {
-    imageSrc,
+    imageSrc:
+      legacyClassedImageSrc(info, "mention_image") || "/assets/images/default-avatar-32.png",
     info,
     loginId,
-    mentionUsername,
-    userLabel,
+    mentionUsername: legacyClassedText(info, "mention_username") || `@${loginId}`,
+    userLabel: legacyClassedText(info, "mention_name") || loginId,
   };
+}
+
+function legacyClassedImageSrc(markup: string, className: string) {
+  const tagPattern = /<img\b[^>]*>/gi;
+  for (const match of markup.matchAll(tagPattern)) {
+    const tag = match[0];
+    if (legacyTagHasClass(tag, className)) {
+      return legacyTagAttribute(tag, "src");
+    }
+  }
+  return "";
+}
+
+function legacyClassedText(markup: string, className: string) {
+  const tagPattern = /<([a-zA-Z][\w:-]*)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  for (const match of markup.matchAll(tagPattern)) {
+    const tag = match[0];
+    if (legacyTagHasClass(tag, className)) {
+      return legacyPlainText(match[2]).trim();
+    }
+  }
+  return "";
+}
+
+function legacyTagAttribute(tag: string, attributeName: string) {
+  const pattern = new RegExp(`\\b${escapeRegExp(attributeName)}\\s*=\\s*(["'])(.*?)\\1`, "i");
+  return pattern.exec(tag)?.[2]?.trim() ?? "";
+}
+
+function legacyTagHasClass(tag: string, className: string) {
+  return legacyTagAttribute(tag, "class").split(/\s+/u).includes(className);
+}
+
+function legacyPlainText(markup: string) {
+  return markup
+    .replaceAll(/<[^>]*>/g, "")
+    .replaceAll(/&nbsp;/gi, " ")
+    .replaceAll(/&amp;/gi, "&")
+    .replaceAll(/&lt;/gi, "<")
+    .replaceAll(/&gt;/gi, ">")
+    .replaceAll(/&quot;/gi, '"')
+    .replaceAll(/&#39;/gi, "'");
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function stringField(value: unknown, fallback: string) {

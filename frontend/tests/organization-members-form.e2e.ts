@@ -226,6 +226,13 @@ test("organization members add-member input performs legacy typeahead lookup, re
   await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_name")).toHaveText(
     "Carmine Poe",
   );
+  await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_username")).toHaveText(
+    "@carmine",
+  );
+  await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_image")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
+  );
 
   const typeaheadMetrics = await page.evaluate(() => {
     const input = document.querySelector<HTMLElement>("#loginId");
@@ -446,6 +453,9 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("LegacyUserLinkProps");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("legacyOrganizationLinkProps");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("legacyUserLinkProps");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("DOMParser");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("parseFromString");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("querySelector");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("<a ");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("</a>");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("organizationHref(");
@@ -817,7 +827,7 @@ async function mockOrganizationMembers(
           loginId: "carol",
         },
         {
-          info: legacyMemberSearchInfo("Carmine Poe", "carmine"),
+          info: legacyMemberSearchInfoWithFallbackAvatar("Carmine Poe", "carmine"),
           loginId: "carmine",
         },
       ]),
@@ -940,6 +950,10 @@ function organizationAdminPayload() {
 
 function legacyMemberSearchInfo(userLabel: string, loginId: string) {
   return `<img class='mention_image' src='/assets/images/default-avatar-128.png'><b class='mention_name'>${userLabel}</b><span class='mention_username'> @${loginId}</span>`;
+}
+
+function legacyMemberSearchInfoWithFallbackAvatar(userLabel: string, loginId: string) {
+  return `<span class="mention_username"> @${loginId}</span><b data-source="legacy" class="mention_name"> ${userLabel} </b><img class="avatar mention_image">`;
 }
 
 async function organizationMemberMetrics(page: Page) {
