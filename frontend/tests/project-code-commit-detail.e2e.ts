@@ -219,6 +219,27 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("project commit detail browser title follows legacy project layout", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests);
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("function ProjectCommitDetailTitle");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("<ProjectCommitDetailTitle");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    '<title>{`${t("code.commits")} @${commitId} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.title");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(/useEffect[\s\S]{0,240}title/u);
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(/title[\s\S]{0,120}= /u);
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  await expect(page).toHaveTitle("Commit @abcdef1234567890 - admin/sample");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 test("project commit detail folds original email message in route-owned comments", async ({
   page,
 }) => {

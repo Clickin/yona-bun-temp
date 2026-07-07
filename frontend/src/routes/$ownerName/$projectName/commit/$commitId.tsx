@@ -134,6 +134,7 @@ function ProjectCommitDetailScreen({
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectCommitDetailTitle commitId={detailQuery.data.commit?.commitId ?? commitId} />
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectCommitDetailBody
@@ -159,6 +160,13 @@ function ProjectCommitDetailScreen({
       />
     </SiteLayoutShell>
   );
+}
+
+function ProjectCommitDetailTitle({ commitId }: { commitId: string }) {
+  const { t } = useLegacyMessages();
+  const { ownerName, projectName } = Route.useParams();
+
+  return <title>{`${t("code.commits")} @${commitId} - ${ownerName}/${projectName}`}</title>;
 }
 
 function ProjectCommitDetailBody({
