@@ -91,16 +91,19 @@ function ProjectSettingRouteShell({
   const projectQuery = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const branchesQuery = useQuery(
-    codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const project = projectQuery.data;
+  const isGitProject = project ? stringField(project.vcs, "GIT") === "GIT" : false;
+  const branchesQuery = useQuery({
+    ...codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: isGitProject,
+  });
 
-  if (!projectQuery.data || !branchesQuery.data) {
+  if (!project || (isGitProject && !branchesQuery.data)) {
     return null;
   }
 
   const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    organizationName: projectSearchScopeOrganizationName(project, ownerName),
     ownerName,
     projectName,
   };
@@ -108,10 +111,12 @@ function ProjectSettingRouteShell({
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectSettingScreen
-        branches={branchesQuery.data.branches.map((branch) => branch.name)}
-        defaultBranch={branchesQuery.data.defaultBranch}
+        branches={
+          isGitProject ? (branchesQuery.data?.branches.map((branch) => branch.name) ?? []) : []
+        }
+        defaultBranch={isGitProject ? (branchesQuery.data?.defaultBranch ?? "") : ""}
         ownerName={ownerName}
-        project={projectQuery.data}
+        project={project}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
         selfRoutePath={selfRoutePath}
@@ -212,18 +217,24 @@ function ProjectSettingBody({
       const updateInput = {
         board: formData.get("board") === "true",
         code: formData.get("code") === "true",
-        defaultReviewerCount: Number(formData.get("defaultReviewerCount") ?? defaultReviewerCount),
         issue: formData.get("issue") === "true",
         isCodeAccessibleMemberOnly: formData.get("isCodeAccessibleMemberOnly") === "true",
-        isUsingReviewerCount: formData.get("isUsingReviewerCount") === "true",
         logoAttachmentId,
         milestone: formData.get("milestone") === "true",
         overview: String(formData.get("overview") ?? ""),
         ownerName,
         projectName: String(formData.get("name") ?? projectName),
         projectScope: String(formData.get("projectScope") ?? projectScope),
-        pullRequest: formData.get("pullRequest") === "true",
         review: formData.get("review") === "true",
+        ...(isGit
+          ? {
+              defaultReviewerCount: Number(
+                formData.get("defaultReviewerCount") ?? defaultReviewerCount,
+              ),
+              isUsingReviewerCount: formData.get("isUsingReviewerCount") === "true",
+              pullRequest: formData.get("pullRequest") === "true",
+            }
+          : {}),
       };
       const updateResult = await updateProjectRest(
         runtimeConfig,
@@ -232,7 +243,7 @@ function ProjectSettingBody({
         projectName,
         updateInput,
       );
-      if (selectedDefaultBranch && selectedDefaultBranch !== defaultBranch) {
+      if (isGit && selectedDefaultBranch && selectedDefaultBranch !== defaultBranch) {
         await setDefaultCodeBranchRest(runtimeConfig, csrfToken, {
           branchName: selectedDefaultBranch,
           ownerName,

@@ -87,6 +87,96 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   });
 });
 
+test("project SVN settings omit Git-only setting controls while preserving legacy shell", async ({
+  page,
+}) => {
+  test.info().annotations.push({
+    type: "gap",
+    description:
+      "Live legacy visual confirmation was unavailable in this run; assertions are Scala HTML/LESS source and browser-metric derived.",
+  });
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const branchRequests: string[] = [];
+  await mockProjectSettings(page, {
+    branchRequests,
+    projectName: "svnplayground",
+    project: {
+      menuSetting: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        pullRequest: true,
+        review: true,
+      },
+      projectName: "svnplayground",
+      showPullRequest: true,
+      vcs: "SVN",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/svnplayground/settingform`);
+
+  await expect(page).toHaveTitle("Project settings - admin/svnplayground");
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator(".project-setting li")).toHaveClass("active");
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveText("svnplayground");
+  await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
+    "action",
+    `${basePath}/admin/svnplayground/search`,
+  );
+  expect(await navbarSearchContainmentMetrics(page)).toMatchObject({
+    inputInsideNavbar: true,
+    scopeInsideNavbar: true,
+    searchBoxInsideForm: true,
+  });
+
+  await expect(page.locator("#project-default-branch")).toHaveCount(0);
+  await expect(page.locator("#defaultBranceSettingPanel")).toHaveCount(0);
+  await expect(page.locator("#reviewerCountSettingPanel")).toHaveCount(0);
+  await expect(page.locator("#welReviewerCount")).toHaveCount(0);
+  await expect(page.locator("#menuSettingPullRequest")).toHaveCount(0);
+  await expect(page.locator('.cu-desc .ybtn[target="_blank"]')).toHaveCount(0);
+  await expect(page.locator(".box-wrap.middle", { hasText: "Issue Template" })).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop a", { hasText: "Pull request" })).toHaveCount(0);
+
+  await expect(page.locator(".box-wrap.middle > .cu-label")).toHaveText([
+    "Share Options",
+    "Only project members can access code or related menus",
+    "Menu Setting",
+  ]);
+  await expect(page.locator(".box-wrap.middle:last-of-type .inline-list")).toHaveText([
+    "Code",
+    "Issue",
+    "Review",
+    "Milestone",
+    "Board",
+  ]);
+  await expect(page.locator("#subMenuProjectChangeVCS")).toBeVisible();
+  await expect(page.locator("#subMenuProjectChangeVCS a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/svnplayground/changeVCS`,
+  );
+
+  expect(await projectNonGitSettingMetrics(page)).toMatchObject({
+    formAction: `${basePath}/admin/svnplayground/setting`,
+    hasDefaultBranchPayload: false,
+    hasDefaultReviewerCountPayload: false,
+    hasPullRequestPayload: false,
+    hasReviewerCountPayload: false,
+    menuCheckboxOrder: ["code", "issue", "review", "milestone", "board"],
+    middleLabels: [
+      "Share Options",
+      "Only project members can access code or related menus",
+      "Menu Setting",
+    ],
+    shellContained: true,
+    topColumnsDoNotOverlap: true,
+  });
+  expect(branchRequests).toEqual([]);
+});
+
 test("project settings renders legacy old-place notice below the project name", async ({
   page,
 }) => {
@@ -503,6 +593,9 @@ test("project settings route source keeps internal navigation on Link", async ()
   );
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('target="_blank"');
+  expect(source).toContain("const isGitProject = project ?");
+  expect(source).toContain("enabled: isGitProject");
+  expect(source).toContain("{isGit ? (");
   expect(source).toContain(
     '<title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>',
   );
@@ -942,6 +1035,7 @@ async function mockProjectSettings(
     container: Record<string, unknown>;
     favoriteResponseFavorited: boolean;
     favoriteRequests: { hasCsrfToken: boolean; method: string }[];
+    branchRequests: string[];
     ownerName: string;
     project: Record<string, unknown>;
     projectName: string;
@@ -1102,6 +1196,7 @@ async function mockProjectSettings(
     },
   );
   await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
+    overrides.branchRequests?.push(route.request().method());
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1299,6 +1394,50 @@ async function projectSettingMetrics(page: Page) {
       saveTextAlign: getComputedStyle(saveWrap).textAlign,
       textareaHeight: Math.round(textareaRect.height),
       watchingCount: form.querySelector<HTMLInputElement>('input[name="watchingCount"]')?.value,
+    };
+
+    function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
+      const element = document.querySelector<T>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function projectNonGitSettingMetrics(page: Page) {
+  return page.evaluate(() => {
+    const form = requireElement<HTMLFormElement>("#saveSetting");
+    const pageWrap = requireElement(".page-wrap-outer");
+    const projectWrap = requireElement(".project-page-wrap");
+    const leftBox = requireElement(".setting-box.left");
+    const rightBox = requireElement(".setting-box.right");
+    const middleRows = Array.from(document.querySelectorAll<HTMLElement>(".box-wrap.middle"));
+    const middleLabels = middleRows.map((row) =>
+      row.querySelector<HTMLElement>(":scope > .cu-label")?.textContent?.trim(),
+    );
+    const menuCheckboxes = Array.from(
+      document.querySelectorAll<HTMLInputElement>(".box-wrap.middle:last-of-type input.radio-btn"),
+    );
+    const pageWrapRect = pageWrap.getBoundingClientRect();
+    const projectWrapRect = projectWrap.getBoundingClientRect();
+    const leftBoxRect = leftBox.getBoundingClientRect();
+    const rightBoxRect = rightBox.getBoundingClientRect();
+
+    return {
+      formAction: form.getAttribute("action"),
+      hasDefaultBranchPayload: form.querySelector('[name="defaultBranch"]') !== null,
+      hasDefaultReviewerCountPayload: form.querySelector('[name="defaultReviewerCount"]') !== null,
+      hasPullRequestPayload: form.querySelector('[name="pullRequest"]') !== null,
+      hasReviewerCountPayload: form.querySelector('[name="isUsingReviewerCount"]') !== null,
+      menuCheckboxOrder: menuCheckboxes.map((input) => input.name),
+      middleLabels,
+      shellContained:
+        projectWrapRect.left >= pageWrapRect.left &&
+        projectWrapRect.right <= pageWrapRect.right &&
+        projectWrapRect.top >= pageWrapRect.top,
+      topColumnsDoNotOverlap: leftBoxRect.right <= rightBoxRect.left,
     };
 
     function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
