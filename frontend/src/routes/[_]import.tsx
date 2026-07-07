@@ -1,7 +1,6 @@
-import type { ComponentPropsWithoutRef } from "react";
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import {
   importProjectRest,
@@ -35,6 +34,20 @@ const legacyImportActionLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+
+function LegacyRootLinkAnchor({
+  legacyRootHref,
+  href: _href,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyRootHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyRootHref });
+}
+
+const LegacyRootLink = createLink(LegacyRootLinkAnchor);
 
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRoute,
@@ -102,17 +115,6 @@ function ProjectImportScreen({
   const [urlError, setUrlError] = React.useState<string | null>(null);
   const [projectNameError, setProjectNameError] = React.useState<string | null>(null);
   const cancelHref = runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath;
-  const cancelLinkProps = useLinkProps({
-    activeOptions: legacyImportActionLinkActiveOptions,
-    activeProps: legacyImportActionLinkActiveProps,
-    className: "ybtn",
-    href: cancelHref,
-    onClick: (event) => {
-      event.preventDefault();
-      router.history.push(cancelHref);
-    },
-    to: "/" as const,
-  });
   const authIdRef = React.useRef<HTMLInputElement>(null);
   const didFocusInitialFieldRef = React.useRef(false);
   const urlRef = React.useRef<HTMLInputElement>(null);
@@ -526,9 +528,20 @@ function ProjectImportScreen({
                 <button className="ybtn ybtn-primary" disabled={importMutation.isPending}>
                   {t("project.create")}
                 </button>
-                <LegacyHrefAnchor {...cancelLinkProps} legacyHref={cancelHref}>
+                <LegacyRootLink
+                  to="/"
+                  href={cancelHref}
+                  legacyRootHref={cancelHref}
+                  className="ybtn"
+                  activeOptions={legacyImportActionLinkActiveOptions}
+                  activeProps={legacyImportActionLinkActiveProps}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    router.history.push(cancelHref);
+                  }}
+                >
                   {t("button.cancel")}
-                </LegacyHrefAnchor>
+                </LegacyRootLink>
               </div>
             </form>
           </div>
@@ -597,17 +610,4 @@ function MenuCheckbox({
       {label}
     </label>
   );
-}
-
-function LegacyHrefAnchor({
-  children,
-  legacyHref,
-  href: _href,
-  ...props
-}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", {
-    ...props,
-    href: legacyHref,
-    children,
-  });
 }

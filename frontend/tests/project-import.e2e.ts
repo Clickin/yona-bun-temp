@@ -389,7 +389,7 @@ test("project import form blocks empty URL submit with legacy validation copy", 
   await expect.poll(() => importPosts).toBe(0);
 });
 
-test("project import form links preserve legacy hrefs and navigate in the SPA", async ({
+test("project import form links preserve legacy destinations and navigate in the SPA", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -447,34 +447,30 @@ test("project import form links preserve legacy hrefs and navigate in the SPA", 
 test("project import form navigation links use TanStack Router Link in route source", () => {
   const routeSource = readFileSync(PROJECT_IMPORT_ROUTE_SOURCE, "utf8");
 
-  expect(routeSource).toContain("import { Link, createFileRoute, useLinkProps, useRouter }");
-  expect(routeSource).toContain('import { jsx as reactJsx } from "react/jsx-runtime";');
+  expect(routeSource).toContain("import { Link, createFileRoute, createLink, useRouter }");
+  expect(routeSource).toContain("const LegacyRootLink = createLink");
+  expect(routeSource).toContain("legacyRootHref={cancelHref}");
   expect(routeSource).toContain("const legacyImportActionLinkActiveOptions =");
   expect(routeSource).toContain("const legacyImportActionLinkActiveProps =");
   expect(routeSource).toContain(
     'const cancelHref = runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath;',
   );
-  expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
-  expect(routeSource).toContain("href: cancelHref,");
+  expect(routeSource).toContain('<LegacyRootLink\n                  to="/"');
   expect(routeSource).toContain("router.history.push(cancelHref);");
-  expect(routeSource).toContain('to: "/" as const,');
+  expect(routeSource).toContain("activeOptions={legacyImportActionLinkActiveOptions}");
+  expect(routeSource).toContain("activeProps={legacyImportActionLinkActiveProps}");
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('<Link\n                    to="/projectform"');
-  expect(routeSource).toContain("<LegacyHrefAnchor {...cancelLinkProps} legacyHref={cancelHref}>");
-  expect(routeSource).toContain("function LegacyHrefAnchor({");
-  expect(routeSource).toContain("href: _href,");
-  expect(routeSource).toContain('return reactJsx("a", {');
-  expect(routeSource).toContain("activeOptions={legacyImportActionLinkActiveOptions}");
-  expect(routeSource).toContain("activeProps={legacyImportActionLinkActiveProps}");
-  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("LegacyHrefAnchor");
   expect(routeSource).not.toContain("LegacyHrefLink");
+  expect(routeSource).not.toContain("React.createElement");
   expect(routeSource).not.toMatch(/<a\b/);
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
-  expect(routeSource).not.toContain('<Link\n                  to="/"');
 });
 
 async function mockProjectImport(
