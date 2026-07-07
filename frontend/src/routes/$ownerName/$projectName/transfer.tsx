@@ -35,20 +35,37 @@ export const Route = createFileRoute("/$ownerName/$projectName/transfer")({
 
 function ProjectTransferRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ ownerName, projectName }}
-          runtimeConfig={runtimeConfig}
-          showLegacyProjectHeaderLinks
-        >
-          <ProjectTransferScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectTransferRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function ProjectTransferRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
+      <ProjectTransferScreen runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
   );
 }
 
@@ -654,6 +671,14 @@ function countField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function projectMenuSetting(project: ProjectTransferScreenData) {

@@ -122,6 +122,65 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
   expect(shellMetrics.projectMenu.bottom).toBeGreaterThan(shellMetrics.projectMenu.top);
 });
 
+test("project transfer exposes legacy group search scope for organization-owned projects", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const transferFormUrl = `${basePath}/admin/sample/transfer`;
+  await mockProjectAdmin(page, {
+    project: { isProtected: true, organizationName: "weblabs", projectScope: "protected" },
+  });
+
+  await page.goto(transferFormUrl);
+  await expect(page).toHaveTitle("Project Transfer - admin/sample");
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-setting li.active a .menu-name")).toHaveText(
+    "Project configuration",
+  );
+  await expect(page.locator("#subMenuProjectTransfer")).toHaveClass("active");
+  await expect(page.locator("#btnTransfer")).toBeVisible();
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(2).click();
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  const shellMetrics = await readProjectTransferShellMetrics(page);
+  expect(shellMetrics.searchScope.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
+  expect(shellMetrics.searchScope.bottom).toBeLessThanOrEqual(shellMetrics.navbar.bottom);
+  expect(shellMetrics.searchBox.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
+  expect(shellMetrics.searchBox.bottom).toBeLessThanOrEqual(shellMetrics.navbar.bottom);
+  expect(shellMetrics.searchBox.left).toBeGreaterThanOrEqual(shellMetrics.searchScope.right - 1);
+  expect(shellMetrics.searchBox.right).toBeLessThanOrEqual(shellMetrics.navbar.right);
+});
+
 test("project transfer project navigation anchors keep legacy hrefs without route-local native listeners", async ({
   page,
 }) => {
@@ -324,7 +383,17 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("style.display");
   expect(source).not.toContain("<a href={prefixBasePath");
   expect(source).not.toContain("<a href={projectHref");
-  expect(source).toContain("projectSearchScope={{ ownerName, projectName }}");
+  expect(source).toContain("ProjectTransferRouteShell");
+  expect(source).toContain(
+    "readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName })",
+  );
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(source).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('const screenTitle = t("title.projectTransfer");');
   expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
