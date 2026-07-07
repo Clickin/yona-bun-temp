@@ -91,11 +91,22 @@ test("standalone UI kit route renders JSX without raw legacy body injection", as
 });
 
 test("standalone UI kit dropdown stays on React handlers without route document listeners", async () => {
+  const routeSourceOutsideCodeSamples = UIKIT_ROUTE_SOURCE.replace(
+    /<CodeSample>[\s\S]*?<\/CodeSample>/g,
+    "",
+  );
+
   expect(UIKIT_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(UIKIT_ROUTE_SOURCE).not.toContain("removeEventListener");
-  expect(UIKIT_ROUTE_SOURCE).toContain('data-toggle="dropdown"');
-  expect(UIKIT_ROUTE_SOURCE).toContain("setSelectedValue");
-  expect(UIKIT_ROUTE_SOURCE).toContain("setHasSelectedValue");
+  expect(routeSourceOutsideCodeSamples).toContain('data-toggle="dropdown"');
+  expect(routeSourceOutsideCodeSamples).toContain(
+    'className={`btn-group${isOpen ? " open" : ""}`}',
+  );
+  expect(routeSourceOutsideCodeSamples).toContain("event.stopPropagation()");
+  expect(routeSourceOutsideCodeSamples).toContain("setIsOpen((current) => !current)");
+  expect(routeSourceOutsideCodeSamples).toContain("setSelectedValue");
+  expect(routeSourceOutsideCodeSamples).toContain("setHasSelectedValue");
+  expect(routeSourceOutsideCodeSamples).toContain("setIsOpen(false)");
 });
 
 test("root shell does not own route comment edit toggles", async () => {
@@ -250,6 +261,8 @@ test("standalone UI kit dropdown matches legacy yobi.ui.Dropdown interaction", a
   await expect(dropdown.locator(".dropdown-menu")).toBeVisible();
 
   await dropdown.locator('li[data-value="0"]').click();
+  await expect(dropdown).not.toHaveClass(/open/);
+  await expect(dropdown.locator(".dropdown-menu")).toBeHidden();
   await expect(dropdown.locator(".d-label")).toHaveText("담당자 없음");
   await expect(dropdown.locator('li[data-value="0"]')).toHaveClass(/active/);
   await expect(dropdown.locator('input[type="hidden"][name="assigneeId"]')).toHaveValue("0");

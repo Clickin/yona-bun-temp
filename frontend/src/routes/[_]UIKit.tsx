@@ -268,6 +268,7 @@ function OriginalMessageDemo() {
 }
 
 function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
+  const [isOpen, setIsOpen] = React.useState(false);
   const [selectedValue, setSelectedValue] = React.useState("");
   const [hasSelectedValue, setHasSelectedValue] = React.useState(false);
   const selectedLabel = selectedValue === "0" ? "담당자 없음" : "전체";
@@ -278,8 +279,17 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
         <span className="css">.{size}</span>
       </dt>
       <dd>
-        <div className="btn-group" data-name="assigneeId">
-          <button type="button" className={`btn dropdown-toggle ${size}`} data-toggle="dropdown">
+        <div className={`btn-group${isOpen ? " open" : ""}`} data-name="assigneeId">
+          <button
+            type="button"
+            className={`btn dropdown-toggle ${size}`}
+            data-toggle="dropdown"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsOpen((current) => !current);
+            }}
+          >
             <span className="d-label">{selectedLabel}</span>
             <span className="d-caret">
               <span className="caret" />
@@ -289,9 +299,11 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
             <li data-value="" data-selected="true" className={selectedValue === "" ? "active" : ""}>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   setSelectedValue("");
                   setHasSelectedValue(true);
+                  setIsOpen(false);
                 }}
               >
                 전체
@@ -300,9 +312,11 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
             <li data-value="0" className={selectedValue === "0" ? "active" : ""}>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   setSelectedValue("0");
                   setHasSelectedValue(true);
+                  setIsOpen(false);
                 }}
               >
                 담당자 없음
