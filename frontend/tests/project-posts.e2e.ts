@@ -1054,6 +1054,52 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   });
 });
 
+test("project board detail editable edit buttons route to edit form without reload", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator(".board-actrow > span > button[title='Edit']")).toHaveCount(1);
+  await expect(page.locator(".right-menu-icons > button[title='Edit']")).toHaveCount(1);
+  await expect(page.locator(".board-actrow > span > a, .right-menu-icons > a")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-detail-top-edit";
+  });
+  await page.locator(".board-actrow > span > button[title='Edit']").click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform`);
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-detail-top-edit");
+
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await page.evaluate(() => {
+    (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-detail-side-edit";
+  });
+  await page.locator(".right-menu-icons > button[title='Edit']").click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform`);
+  expect(
+    await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
+  ).toBe("board-detail-side-edit");
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const actionButtonsSource = routeSource.slice(
+    routeSource.indexOf("function PostActionButtons"),
+    routeSource.indexOf("function PostComments"),
+  );
+  expect(actionButtonsSource).toContain("onEditClick");
+  expect(actionButtonsSource).toContain("event.preventDefault();");
+  expect(actionButtonsSource).toContain("event.stopPropagation();");
+  expect(actionButtonsSource).not.toContain("window.location");
+  expect(actionButtonsSource).not.toContain("document.");
+  expect(actionButtonsSource).not.toContain("<a");
+});
+
 test("project board detail renders protected org-owned localhost shell state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "default", {

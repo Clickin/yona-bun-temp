@@ -349,6 +349,7 @@ function ProjectPostDetailBody({
                 canUpdate={canUpdate}
                 editRoutePath={editRoutePath}
                 onDeleteClick={() => setOpenPostModal("deleteConfirm")}
+                onEditClick={() => router.history.push(prefixBasePath(basePath, editRoutePath))}
               />
             </div>
             <div className="watcher-list"></div>
@@ -400,6 +401,7 @@ function ProjectPostDetailBody({
                   canUpdate={canUpdate}
                   editRoutePath={editRoutePath}
                   onDeleteClick={() => setOpenPostModal("deleteConfirm")}
+                  onEditClick={() => router.history.push(prefixBasePath(basePath, editRoutePath))}
                   wrap={false}
                 />
               </div>
@@ -679,12 +681,14 @@ function PostActionButtons({
   canUpdate,
   editRoutePath,
   onDeleteClick,
+  onEditClick,
   wrap = true,
 }: {
   canDelete: boolean;
   canUpdate: boolean;
   editRoutePath: string;
   onDeleteClick: () => void;
+  onEditClick: () => void;
   wrap?: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -696,6 +700,11 @@ function PostActionButtons({
           className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
           data-toggle="tooltip"
           title={t("button.edit")}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onEditClick();
+          }}
         >
           <i className="yobicon-edit-2"></i>
         </button>
