@@ -557,7 +557,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
   const aliceAccount = {
     emailAddress: "alice@example.com",
     loginId: "alice",
-    name: "Alice",
+    name: "Alice Kim",
     password: "admin",
   };
   const carolAccount = {
