@@ -101,6 +101,10 @@ test("current-user password settings page matches legacy user/edit_password.scal
 
   await page.goto(`${basePath}/user/editform/password`);
   await expect(page.locator("#frmPassword")).toBeAttached();
+  await expect(page).toHaveTitle("admin");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "admin",
+  );
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -194,6 +198,16 @@ test("current-user password settings tabs use typed TanStack links without route
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
+});
+
+test("current-user password settings title is rendered metadata, not route-local document mutation", () => {
+  const source = readFileSync("src/routes/user/editform/password.tsx", "utf8");
+  expect(source).toContain("<UserPasswordSettingsTitle loginId={loginId} />");
+  expect(source).toContain("<title>{loginId}</title>");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toMatch(/useEffect\s*\([^)]*title/s);
+  expect(source).not.toMatch(/useLayoutEffect\s*\([^)]*title/s);
 });
 
 async function expectPasswordValidationPopovers(page: Page, messages: string[]) {

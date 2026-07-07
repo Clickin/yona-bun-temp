@@ -78,6 +78,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
 
   return (
     <>
+      <UserPasswordSettingsTitle loginId={loginId} />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{t("userinfo.accountSetting")}</h3>
@@ -166,6 +167,10 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
       </div>
     </>
   );
+}
+
+function UserPasswordSettingsTitle({ loginId }: { loginId: string }) {
+  return loginId ? <title>{loginId}</title> : null;
 }
 
 function validatePasswordForm(
