@@ -1,8 +1,14 @@
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
+import { jsx as reactJsx } from "react/jsx-runtime";
 import remarkGfm from "remark-gfm";
-import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../../api/code-browser";
+import {
+  codeBrowserQueryOptions,
+  type CodeBrowserEntry,
+  type CodeBrowserResponse,
+} from "../../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../../api/session";
 import type { ProjectContainer } from "../../../../../api/types";
@@ -19,6 +25,28 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$fil
 type CodeFile = Record<string, unknown>;
 
 const MAX_FILE_SIZE_CAN_BE_VIEWED = 1024 * 1024;
+
+function CodeBrowserEntryLinkAnchor({
+  href,
+  legacyDataTargetPath,
+  legacyDataType,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyDataTargetPath: string;
+  legacyDataType?: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", {
+    ...props,
+    ref,
+    href,
+    ...(legacyDataType ? { "data-type": legacyDataType } : {}),
+    "data-targetpath": legacyDataTargetPath,
+  });
+}
+
+const CodeBrowserEntryLink = createLink(CodeBrowserEntryLinkAnchor);
 
 export type ProjectCodeFileRouteParams = {
   branch: string;
@@ -141,7 +169,8 @@ function ProjectCodeFileBody({
   const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
-  const newFilePath = directoryPath(filePath);
+  const isFolder = code.file === null;
+  const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
   const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
   const archiveHref = prefixBasePath(runtimeConfig.basePath, archivePath);
@@ -155,13 +184,79 @@ function ProjectCodeFileBody({
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div className="code-browse-wrap">
+          {isFolder ? (
+            <ul className="nav nav-tabs">
+              <li className="active">
+                <Link
+                  to={projectPath(
+                    ownerName,
+                    projectName,
+                    "code",
+                    encodedBranch,
+                    pathWithoutFileName(filePath),
+                  )}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                >
+                  {t("code.files")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to={projectPath(ownerName, projectName, "commits", encodedBranch)}
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                >
+                  {t("code.commits")}
+                </Link>
+              </li>
+              {isGit ? (
+                <li>
+                  <Link
+                    to={projectPath(ownerName, projectName, "branches")}
+                    activeOptions={{
+                      exact: true,
+                      explicitUndefined: true,
+                      includeHash: true,
+                      includeSearch: true,
+                    }}
+                    activeProps={{
+                      "aria-current": undefined,
+                      className: undefined,
+                      "data-status": undefined,
+                    }}
+                  >
+                    {t("title.branches")}
+                  </Link>
+                </li>
+              ) : null}
+            </ul>
+          ) : null}
           <div className="code-browse-header">
             <select
               id="branches"
               data-toggle="select2"
               data-format="branch"
               data-dropdown-css-class="branches"
-              className="pull-left mb10"
+              className={`pull-left${isFolder ? "" : " mb10"}`}
               defaultValue={projectHref(
                 runtimeConfig.basePath,
                 ownerName,
@@ -263,19 +358,148 @@ function ProjectCodeFileBody({
 
           <div className="code-viewer-wrap">
             <div id="spin" style={{ position: "fixed", top: "50%", left: "50%" }}></div>
-            <FileView
-              file={recordField(code.file)}
-              filePath={filePath}
-              currentUserIsSiteAdmin={currentUserIsSiteAdmin}
-              ownerName={ownerName}
-              project={project}
-              projectName={projectName}
-              runtimeConfig={runtimeConfig}
-              selectedBranch={selectedBranch}
-            />
+            {isFolder ? (
+              <FolderList
+                code={code}
+                filePath={filePath}
+                ownerName={ownerName}
+                projectName={projectName}
+                selectedBranch={selectedBranch}
+              />
+            ) : (
+              <FileView
+                file={recordField(code.file)}
+                filePath={filePath}
+                currentUserIsSiteAdmin={currentUserIsSiteAdmin}
+                ownerName={ownerName}
+                project={project}
+                projectName={projectName}
+                runtimeConfig={runtimeConfig}
+                selectedBranch={selectedBranch}
+              />
+            )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FolderList({
+  code,
+  filePath,
+  ownerName,
+  projectName,
+  selectedBranch,
+}: {
+  code: CodeBrowserResponse;
+  filePath: string;
+  ownerName: string;
+  projectName: string;
+  selectedBranch: string;
+}) {
+  const { t } = useLegacyMessages();
+  const folders = code.entries.filter((entry) => entry.kind === "folder");
+  const files = code.entries.filter((entry) => entry.kind !== "folder");
+
+  return (
+    <div className="list-wrap" data-type="folder" data-listpath={filePath}>
+      <div className="row-fluid listhead">
+        <div className="span6 filename">
+          <strong>{t("code.filename")}</strong>
+        </div>
+        <div className="span4 commitMsg">
+          <strong>{t("code.commitMsg")}</strong>
+        </div>
+        <div className="span2 commitDate">
+          <strong>{t("code.commitDate")}</strong>
+        </div>
+      </div>
+
+      {code.entries.length === 0 ? (
+        <div className="alert alert-warning nm" style={{ borderTop: 0, paddingLeft: "23px" }}>
+          {t("code.nofiles")}
+        </div>
+      ) : null}
+
+      {[...folders, ...files].map((entry) => (
+        <FolderListEntry
+          entry={entry}
+          key={entry.path}
+          listPath={filePath}
+          ownerName={ownerName}
+          projectName={projectName}
+          selectedBranch={selectedBranch}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FolderListEntry({
+  entry,
+  listPath,
+  ownerName,
+  projectName,
+  selectedBranch,
+}: {
+  entry: CodeBrowserEntry;
+  listPath: string;
+  ownerName: string;
+  projectName: string;
+  selectedBranch: string;
+}) {
+  const rowId = `cb-${listPath}${entry.name}`;
+  const encodedBranch = encodeURIComponent(selectedBranch);
+
+  return (
+    <div id={rowId} className="row-fluid listitem" data-path={entry.path}>
+      <div className="span6 filename">
+        <CodeBrowserEntryLink
+          activeOptions={{
+            exact: true,
+            explicitUndefined: true,
+            includeHash: true,
+            includeSearch: true,
+          }}
+          activeProps={{
+            "aria-current": undefined,
+            className: undefined,
+            "data-status": undefined,
+          }}
+          to={projectPath(ownerName, projectName, "code", encodedBranch, entry.path)}
+          hash={entry.kind === "folder" ? rowId : undefined}
+          className={entry.kind === "folder" ? "folder" : "file"}
+          title={entry.name}
+          legacyDataTargetPath={entry.path}
+          legacyDataType={entry.kind === "folder" ? "folder" : undefined}
+        >
+          <span className="dynatree-icon vmiddle"></span>
+          {entry.name}
+        </CodeBrowserEntryLink>
+      </div>
+      <div className="span5 commitMsg">
+        <span className="ml5">
+          <Link
+            activeOptions={{
+              exact: true,
+              explicitUndefined: true,
+              includeHash: true,
+              includeSearch: true,
+            }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
+            to={projectPath(ownerName, projectName, "commit", entry.commitShortId)}
+            search={{ branch: selectedBranch }}
+          >
+            {entry.commitMessage}
+          </Link>
+        </span>
+      </div>
+      <div className="span1 commitDate">{entry.commitDate}</div>
     </div>
   );
 }
@@ -522,6 +746,11 @@ function projectPath(ownerName: string, projectName: string, ...parts: string[])
 function directoryPath(filePath: string) {
   const slash = filePath.lastIndexOf("/");
   return slash > 0 ? `${filePath.slice(0, slash)}/` : "";
+}
+
+function pathWithoutFileName(filePath: string) {
+  const slash = filePath.lastIndexOf("/");
+  return slash > 0 ? filePath.slice(0, slash) : "";
 }
 
 function isMarkdownPath(filePath: string) {

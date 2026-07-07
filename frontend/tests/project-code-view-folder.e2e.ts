@@ -5,6 +5,10 @@ const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/code/$branch.tsx", import.meta.url),
   "utf8",
 );
+const FILE_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/code/$branch/$filePath.tsx", import.meta.url),
+  "utf8",
+);
 
 const EXPECTED_CODE_FOLDER_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap" data-type="folder"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem" data-path="src"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src" data-type="folder" data-targetpath="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem" data-path="README.md"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md" data-targetpath="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
@@ -195,6 +199,60 @@ test("project code branch folder links navigate with TanStack Router without doc
     .toBe(markerBefore);
 });
 
+test("project code nested folder matches legacy partial_view_folder.scala.html DOM contract", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page);
+
+  await page.goto(`${basePath}/admin/sample/code/main/src`);
+
+  await expect(page.locator('.code-viewer-wrap .file-wrap[data-type="file"]')).toHaveCount(0);
+  await expect(page.locator('.code-viewer-wrap .list-wrap[data-type="folder"]')).toHaveAttribute(
+    "data-listpath",
+    "src",
+  );
+  await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
+  await expect(page.locator("#branches")).toHaveClass("pull-left");
+  await expect(page.locator("#new-file-link")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?path=src/&branch=main`,
+  );
+  await expect(page.locator("#breadcrumbs a")).toHaveText(["sample", "src"]);
+  await expect(page.locator("#breadcrumbs a").nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src`,
+  );
+
+  const folderRow = page.locator("#cb-srcmain");
+  await expect(folderRow).toHaveAttribute("data-path", "src/main");
+  await expect(folderRow.locator(".filename a")).toHaveAttribute("data-type", "folder");
+  await expect(folderRow.locator(".filename a")).toHaveAttribute("data-targetpath", "src/main");
+  await expect(folderRow.locator(".filename a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src/main#cb-srcmain`,
+  );
+
+  const fileRow = page.locator('[id="cb-srclib.rs"]');
+  await expect(fileRow).toHaveAttribute("data-path", "src/lib.rs");
+  await expect(fileRow.locator(".filename a")).not.toHaveAttribute("data-type", /.+/u);
+  await expect(fileRow.locator(".filename a")).toHaveAttribute("data-targetpath", "src/lib.rs");
+  await expect(fileRow.locator(".filename a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src/lib.rs`,
+  );
+  await expect(fileRow.locator(".commitMsg a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/7654321?branch=main`,
+  );
+
+  expect(await folderViewMetrics(page)).toMatchObject({
+    headerHeight: "40px",
+    headerMarginBottom: "5px",
+    rowLineHeight: "40px",
+  });
+});
+
 test("project code branch selector navigates slash branch in the SPA", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCodeFolder(page);
@@ -259,6 +317,21 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).not.toContain("href={commitHref(");
   expect(ROUTE_SOURCE).not.toContain("href={`${projectHref(");
   expect(ROUTE_SOURCE).not.toContain('id="new-file-link"\n                      href=');
+});
+
+test("project code file route source keeps nested folder view in React Link state", async () => {
+  expect(FILE_ROUTE_SOURCE).toContain("function FolderList(");
+  expect(FILE_ROUTE_SOURCE).toContain('data-type="folder"');
+  expect(FILE_ROUTE_SOURCE).toContain("data-listpath={filePath}");
+  expect(FILE_ROUTE_SOURCE).toContain("const isFolder = code.file === null");
+  expect(FILE_ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
+  expect(FILE_ROUTE_SOURCE).not.toContain("document.");
+  expect(FILE_ROUTE_SOURCE).not.toContain("classList");
+  expect(FILE_ROUTE_SOURCE).not.toContain("style.display");
+  expect(FILE_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(FILE_ROUTE_SOURCE).not.toContain("<a");
+  expect(FILE_ROUTE_SOURCE).not.toContain("tplFileListItem");
+  expect(FILE_ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
 });
 
 async function folderViewMetrics(page: Page) {
@@ -410,35 +483,67 @@ async function mockProjectCodeFolder(
     });
   });
   await page.route("**/api/v1/projects/admin/sample/code**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.searchParams.get("path") ?? "";
+    const branch = url.searchParams.get("branch") ?? selectedBranch;
+    const folderResponse =
+      path === "src"
+        ? {
+            breadcrumbs: [{ name: "src", path: "src" }],
+            entries: [
+              {
+                commitDate: "Jul 3, 2026",
+                commitMessage: "Add main module",
+                commitShortId: "fedcba9",
+                kind: "folder",
+                name: "main",
+                path: "src/main",
+              },
+              {
+                commitDate: "Jul 4, 2026",
+                commitMessage: "Add library",
+                commitShortId: "7654321",
+                kind: "file",
+                name: "lib.rs",
+                path: "src/lib.rs",
+              },
+            ],
+            path: "src",
+          }
+        : {
+            breadcrumbs: [],
+            entries: [
+              {
+                commitDate: "Jul 1, 2026",
+                commitMessage: "Add source",
+                commitShortId: "abcdef1",
+                kind: "folder",
+                name: "src",
+                path: "src",
+              },
+              {
+                commitDate: "Jul 2, 2026",
+                commitMessage: "Update README",
+                commitShortId: "1234567",
+                kind: "file",
+                name: "README.md",
+                path: "README.md",
+              },
+            ],
+            path: "",
+          };
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         branches,
-        breadcrumbs: [],
-        entries: [
-          {
-            commitDate: "Jul 1, 2026",
-            commitMessage: "Add source",
-            commitShortId: "abcdef1",
-            kind: "folder",
-            name: "src",
-            path: "src",
-          },
-          {
-            commitDate: "Jul 2, 2026",
-            commitMessage: "Update README",
-            commitShortId: "1234567",
-            kind: "file",
-            name: "README.md",
-            path: "README.md",
-          },
-        ],
+        breadcrumbs: folderResponse.breadcrumbs,
+        entries: folderResponse.entries,
         file: null,
         noHead: false,
         ownerName: "admin",
-        path: "",
+        path: folderResponse.path,
         projectName: "sample",
-        selectedBranch,
+        selectedBranch: branch,
       }),
     });
   });
