@@ -427,7 +427,8 @@ function ProjectIssuesBody({
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
   const issueListWrapLegacyAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttributes;
-  const hasIssues = issues.items.length > 0;
+  const currentPageItems = issues.items;
+  const currentPageHasItems = currentPageItems.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
@@ -450,7 +451,7 @@ function ProjectIssuesBody({
   const draftItems = rawDraftItems.filter(
     (issue) => stringField(issue.authorLoginId, "") === currentUserLoginId,
   );
-  const normalItems = issues.items.filter(
+  const normalItems = currentPageItems.filter(
     (issue) => !issue.isDraft || stringField(issue.authorLoginId, "") === currentUserLoginId,
   );
   const visibleMassUpdateIssues = useMemo(
@@ -595,7 +596,7 @@ function ProjectIssuesBody({
               currentUserId={currentUserId}
               issueAssignees={issueAssignees}
               issueAuthors={issueAuthors}
-              issues={issues.items}
+              issues={currentPageItems}
               isAnonymous={isAnonymous}
               labels={labels}
               milestones={milestones}
@@ -666,7 +667,7 @@ function ProjectIssuesBody({
                 />
               </li>
             </ul>
-            {!hasIssues ? (
+            {!currentPageHasItems ? (
               <>
                 <div className="error-wrap">
                   <i className="ico ico-err1"></i>

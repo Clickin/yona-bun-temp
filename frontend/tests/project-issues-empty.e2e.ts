@@ -2006,6 +2006,16 @@ test("project issue draft row renders before normal list like legacy partial_lis
     "",
   );
   await expect(draftRow.locator(".empty-avatar-wrap")).toHaveText("\u00a0");
+  expect(await issueListDraftMetrics(page)).toEqual({
+    draftBeforeNormalList: true,
+    draftListContainedInRightPane: true,
+    draftRowAlignedWithNormalRow: true,
+    filterBeforeDraftList: true,
+    filterDoesNotOverlapDraftList: true,
+    newIssueDoesNotOverlapTabs: true,
+    normalListContainedInRightPane: true,
+    tabsBeforeFilter: true,
+  });
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -2013,6 +2023,34 @@ test("project issue draft row renders before normal list like legacy partial_lis
       withPopulatedSearchUsers(EXPECTED_PROJECT_ISSUES_DRAFT).replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  await page.goto(`${basePath}/admin/sample/issues?pageNum=2`);
+  await expect(page.locator("#issue-item-41")).toHaveCount(0);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toHaveCount(1);
+});
+
+test("project issue draft side-channel stays hidden in empty current page branch like legacy partial_list_wrap.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "draft-only-empty");
+
+  await page.goto(`${basePath}/admin/sample/issues`);
+
+  await expect(page.locator(".error-wrap")).toContainText("No issue found");
+  await expect(page.locator("#issue-item-41")).toHaveCount(0);
+  await expect(page.locator("#span10 > .post-list-wrap.row-fluid")).toHaveCount(0);
+  await expect(page.locator("#span10 > .filter-wrap.board")).toHaveCount(0);
+  await expect(page.locator("#span10 .yobicon-file-excel")).toHaveCount(0);
+  await expect(page.locator("#pagination")).toHaveCount(0);
+  expect(await issueListEmptyDraftSuppressionMetrics(page)).toEqual({
+    emptyStateAfterTabs: true,
+    emptyStateContainedInRightPane: true,
+    newIssueDoesNotOverlapTabs: true,
+    noDraftList: true,
+    noFilterWrap: true,
+    tabsAfterNewIssue: true,
+  });
 });
 
 test("project issue list hides other users' draft rows like legacy partial_list_draft.scala.html", async ({
@@ -2902,6 +2940,72 @@ async function issueListMassUpdateMetrics(page: Page) {
   });
 }
 
+async function issueListDraftMetrics(page: Page) {
+  return page.locator("#span10").evaluate((rightPane) => {
+    const newIssue = rightPane.querySelector(":scope > .pull-right") as HTMLElement;
+    const tabs = rightPane.querySelector(":scope > .nav-tabs") as HTMLElement;
+    const filterWrap = rightPane.querySelector(":scope > .filter-wrap") as HTMLElement;
+    const lists = Array.from(
+      rightPane.querySelectorAll<HTMLElement>(":scope > .post-list-wrap.row-fluid"),
+    );
+    const draftList = lists[0];
+    const normalList = lists[1];
+    const draftRow = draftList?.querySelector("#issue-item-41") as HTMLElement | null;
+    const normalRow = normalList?.querySelector("#issue-item-42") as HTMLElement | null;
+    if (!newIssue || !tabs || !filterWrap || !draftList || !normalList || !draftRow || !normalRow) {
+      return null;
+    }
+    const rightRect = rightPane.getBoundingClientRect();
+    const newIssueRect = newIssue.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const filterRect = filterWrap.getBoundingClientRect();
+    const draftListRect = draftList.getBoundingClientRect();
+    const normalListRect = normalList.getBoundingClientRect();
+    const draftRowRect = draftRow.getBoundingClientRect();
+    const normalRowRect = normalRow.getBoundingClientRect();
+
+    // Live legacy visual confirmation is unavailable in this harness; these are
+    // Scala HTML/LESS-derived containment and ordering checks.
+    return {
+      draftBeforeNormalList: draftListRect.top < normalListRect.top,
+      draftListContainedInRightPane:
+        draftListRect.left >= rightRect.left - 1 && draftListRect.right <= rightRect.right + 1,
+      draftRowAlignedWithNormalRow: Math.abs(draftRowRect.left - normalRowRect.left) <= 1,
+      filterBeforeDraftList: filterRect.top <= draftListRect.top,
+      filterDoesNotOverlapDraftList: filterRect.bottom <= draftListRect.top + 1,
+      newIssueDoesNotOverlapTabs: newIssueRect.bottom <= tabsRect.bottom + 1,
+      normalListContainedInRightPane:
+        normalListRect.left >= rightRect.left - 1 && normalListRect.right <= rightRect.right + 1,
+      tabsBeforeFilter: tabsRect.top < filterRect.top,
+    };
+  });
+}
+
+async function issueListEmptyDraftSuppressionMetrics(page: Page) {
+  return page.locator("#span10").evaluate((rightPane) => {
+    const newIssue = rightPane.querySelector(":scope > .pull-right") as HTMLElement;
+    const tabs = rightPane.querySelector(":scope > .nav-tabs") as HTMLElement;
+    const emptyState = rightPane.querySelector(":scope > .error-wrap") as HTMLElement;
+    if (!newIssue || !tabs || !emptyState) {
+      return null;
+    }
+    const rightRect = rightPane.getBoundingClientRect();
+    const newIssueRect = newIssue.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const emptyRect = emptyState.getBoundingClientRect();
+
+    return {
+      emptyStateAfterTabs: tabsRect.bottom <= emptyRect.top + 1,
+      emptyStateContainedInRightPane:
+        emptyRect.left >= rightRect.left - 1 && emptyRect.right <= rightRect.right + 1,
+      newIssueDoesNotOverlapTabs: newIssueRect.bottom <= tabsRect.bottom + 1,
+      noDraftList: rightPane.querySelectorAll(":scope > .post-list-wrap.row-fluid").length === 0,
+      noFilterWrap: !rightPane.querySelector(":scope > .filter-wrap.board"),
+      tabsAfterNewIssue: newIssueRect.top <= tabsRect.top,
+    };
+  });
+}
+
 async function issueLabelDomMetrics(page: Page, selector: string) {
   return page
     .locator(selector)
@@ -3053,6 +3157,7 @@ async function mockProjectIssues(
     | "child-draft"
     | "children"
     | "draft"
+    | "draft-only-empty"
     | "empty-avatar-options"
     | "empty"
     | "foreign-draft"
@@ -3726,40 +3831,29 @@ async function mockProjectIssues(
                                     totalCount: 1,
                                     totalPages: 1,
                                   }
-                                : state === "bulk"
+                                : state === "draft-only-empty"
                                   ? {
-                                      closedIssueCount: 2,
-                                      draftItems: [],
-                                      items: [
-                                        populatedIssueResponse().items[0],
+                                      closedIssueCount: 0,
+                                      draftItems: [
                                         {
                                           authorAvatarUrl: "/assets/images/default-avatar-32.png",
                                           authorLabel: "Site Admin",
                                           authorLoginId: "admin",
+                                          authorUserId: 1,
                                           commentCount: 0,
-                                          createdLabel: "Jul 2, 2026",
-                                          id: 43,
-                                          issueNumber: 12,
+                                          createdLabel: "Jul 1, 2026",
+                                          id: 41,
+                                          isDraft: true,
+                                          issueNumber: 10,
                                           labels: [],
                                           ownerName: "admin",
                                           projectName: "sample",
                                           state: "open",
-                                          title: "Follow up issue",
-                                          updatedLabel: "Jul 2, 2026",
+                                          title: "Draft issue",
+                                          updatedLabel: "Jul 1, 2026",
                                           voterCount: 0,
                                         },
                                       ],
-                                      openIssueCount: 2,
-                                      ownerName: "admin",
-                                      pageNum: 1,
-                                      pageSize: 15,
-                                      projectName: "sample",
-                                      totalCount: 2,
-                                      totalPages: 1,
-                                    }
-                                  : {
-                                      closedIssueCount: 0,
-                                      draftItems: [],
                                       items: [],
                                       openIssueCount: 0,
                                       ownerName: "admin",
@@ -3767,7 +3861,50 @@ async function mockProjectIssues(
                                       pageSize: 15,
                                       projectName: "sample",
                                       totalCount: 0,
-                                    },
+                                      totalPages: 0,
+                                    }
+                                  : state === "bulk"
+                                    ? {
+                                        closedIssueCount: 2,
+                                        draftItems: [],
+                                        items: [
+                                          populatedIssueResponse().items[0],
+                                          {
+                                            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                                            authorLabel: "Site Admin",
+                                            authorLoginId: "admin",
+                                            commentCount: 0,
+                                            createdLabel: "Jul 2, 2026",
+                                            id: 43,
+                                            issueNumber: 12,
+                                            labels: [],
+                                            ownerName: "admin",
+                                            projectName: "sample",
+                                            state: "open",
+                                            title: "Follow up issue",
+                                            updatedLabel: "Jul 2, 2026",
+                                            voterCount: 0,
+                                          },
+                                        ],
+                                        openIssueCount: 2,
+                                        ownerName: "admin",
+                                        pageNum: 1,
+                                        pageSize: 15,
+                                        projectName: "sample",
+                                        totalCount: 2,
+                                        totalPages: 1,
+                                      }
+                                    : {
+                                        closedIssueCount: 0,
+                                        draftItems: [],
+                                        items: [],
+                                        openIssueCount: 0,
+                                        ownerName: "admin",
+                                        pageNum: 1,
+                                        pageSize: 15,
+                                        projectName: "sample",
+                                        totalCount: 0,
+                                      },
       ),
     });
   });
