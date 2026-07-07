@@ -1,8 +1,28 @@
-import type { ComponentPropsWithoutRef } from "react";
-import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import * as React from "react";
+import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
+
+const legacyLogoLinkActiveProps = {
+  "aria-current": undefined,
+  className: undefined,
+  "data-status": undefined,
+};
+
+function LegacyLogoLinkAnchor({
+  legacyHref,
+  href: _href,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyHref });
+}
+
+const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);
 
 export const Route = createFileRoute("/restart")({
   component: RestartRoute,
@@ -33,15 +53,13 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
   const { hasFailedToUpdateSecret } = Route.useSearch();
   const { t } = useLegacyMessages();
   const router = useRouter();
-  const logoLinkProps = useLinkProps({
-    className: "logo",
-    href: basePath,
-    onClick: (event) => {
+  const handleLogoClick = React.useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       router.history.push(basePath);
     },
-    to: "/",
-  });
+    [basePath, router.history],
+  );
 
   return (
     <>
@@ -49,9 +67,16 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <LegacyHrefAnchor {...logoLinkProps} legacyHref={basePath}>
+              <LegacyLogoLink
+                href={basePath}
+                legacyHref={basePath}
+                to="/"
+                activeProps={legacyLogoLinkActiveProps}
+                className="logo"
+                onClick={handleLogoClick}
+              >
                 <span>{siteName}</span>
-              </LegacyHrefAnchor>
+              </LegacyLogoLink>
 
               <h3>{t("app.restart.welcome")}</h3>
               <p className="secret-box txt-center">
@@ -71,17 +96,4 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
       </footer>
     </>
   );
-}
-
-function LegacyHrefAnchor({
-  children,
-  legacyHref,
-  href: _href,
-  ...props
-}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", {
-    ...props,
-    href: legacyHref,
-    children,
-  });
 }

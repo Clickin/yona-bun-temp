@@ -133,13 +133,19 @@ test("restart route source keeps TanStack-owned home navigation with the legacy 
   const source = await readFile(new URL("../src/routes/restart.tsx", import.meta.url), "utf8");
 
   expect(source).toContain(
-    'import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";',
+    'import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
   );
   expect(source).toContain("hasFailedToUpdateSecret");
-  expect(source).toContain("const logoLinkProps = useLinkProps({");
+  expect(source).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
+  expect(source).toContain("ref?: React.Ref<HTMLAnchorElement>;");
+  expect(source).toContain('return reactJsx("a", { ...props, ref, href: legacyHref });');
   expect(source).toContain("router.history.push(basePath);");
-  expect(source).toContain("<LegacyHrefAnchor {...logoLinkProps} legacyHref={basePath}>");
-  expect(source).toContain('return reactJsx("a", {');
+  expect(source).toContain("<LegacyLogoLink");
+  expect(source).toContain("legacyHref={basePath}");
+  expect(source).toContain('to="/"');
+  expect(source).not.toContain("useLinkProps");
+  expect(source).not.toContain("LegacyHrefAnchor");
+  expect(source).not.toContain("React.createElement");
   expect(source).not.toMatch(
     /<a\s+|dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
   );
