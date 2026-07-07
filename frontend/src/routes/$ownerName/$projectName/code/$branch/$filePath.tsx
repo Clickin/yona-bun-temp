@@ -43,40 +43,72 @@ export function ProjectCodeFileRouteFrame({
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCodeFileScreen routeParams={routeParams} runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectCodeFileRouteShell routeParams={routeParams} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectCodeFileScreen({
+function ProjectCodeFileRouteShell({
   routeParams,
   runtimeConfig,
 }: {
   routeParams: ProjectCodeFileRouteParams;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { branch, filePath, ownerName, projectName } = routeParams;
+  const { ownerName, projectName } = routeParams;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+    >
+      <ProjectCodeFileScreen
+        project={projectQuery.data}
+        routeParams={routeParams}
+        runtimeConfig={runtimeConfig}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectCodeFileScreen({
+  project,
+  routeParams,
+  runtimeConfig,
+}: {
+  project: ProjectContainer | undefined;
+  routeParams: ProjectCodeFileRouteParams;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { branch, filePath, ownerName, projectName } = routeParams;
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { branch, ownerName, path: filePath, projectName }),
   );
 
-  if (!projectQuery.data || !codeQuery.data) {
+  if (!project || !codeQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeFileBody
         code={codeQuery.data}
-        project={projectQuery.data}
+        project={project}
         routeParams={routeParams}
         runtimeConfig={runtimeConfig}
       />
@@ -494,4 +526,13 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true || value === "true";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }

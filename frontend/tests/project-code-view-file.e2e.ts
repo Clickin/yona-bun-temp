@@ -41,7 +41,35 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   await mockProjectCodeFile(page, codeRequests, "README.txt");
 
   await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect
+    .poll(() =>
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  const fileUrl = page.url();
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(fileUrl);
+
   await expect(page.locator(".file-wrap[data-type=file] #commitMessage")).toHaveText(
     "Update README",
   );
@@ -68,6 +96,76 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
     viewerWidth: 1260,
     wrapPosition: "relative",
   });
+  expect(await readCodeFileNavbarMetrics(page)).toEqual({
+    formBottomWithinNavbar: true,
+    formRightWithinNavbar: true,
+    formTopWithinNavbar: true,
+    headerClassName: "gnb-outer project-header",
+    searchBottomWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+    scopeBottomWithinNavbar: true,
+    scopeTopWithinNavbar: true,
+  });
+});
+
+test("project code text file includes legacy group search scope when project has org data", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(
+    page,
+    codeRequests,
+    "README.txt",
+    "# sample\nLine two",
+    {},
+    { organizationName: "weblabs" },
+  );
+
+  await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  const fileUrl = page.url();
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page).toHaveURL(fileUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(fileUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page).toHaveURL(fileUrl);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  expect(codeRequests).toEqual(["branch=main&path=README.txt"]);
 });
 
 test("project code file internal links keep legacy hrefs and navigate through the SPA", async ({
@@ -222,6 +320,13 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).toContain("<Link href={archiveHref} to={archivePath} reloadDocument");
   expect(routeSource).toContain("<Link href={rawHref} to={rawPath}");
   expect(routeSource).toContain("href={openHref}");
+  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(routeSource).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
   expect(directLegacyLinkActiveProps).toHaveLength(8);
   expect(directLegacyLinkActiveOptions).toHaveLength(8);
   expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
@@ -270,6 +375,39 @@ async function fileViewMetrics(page: Page) {
       viewerOverflow: viewerStyle.overflow,
       viewerWidth: Math.round(viewer.getBoundingClientRect().width),
       wrapPosition: wrapStyle.position,
+    };
+  });
+}
+
+async function readCodeFileNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const missing = Object.entries({ form, header, scope, search })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected code file navbar metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const headerBox = header.getBoundingClientRect();
+    const formBox = form.getBoundingClientRect();
+    const scopeBox = scope.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    return {
+      formBottomWithinNavbar: formBox.bottom <= headerBox.bottom + 1,
+      formRightWithinNavbar: formBox.right <= headerBox.right,
+      formTopWithinNavbar: formBox.top >= headerBox.top,
+      headerClassName: header.className,
+      searchBottomWithinNavbar: searchBox.bottom <= headerBox.bottom + 1,
+      searchRightWithinNavbar: searchBox.right <= headerBox.right,
+      searchTopWithinNavbar: searchBox.top >= headerBox.top,
+      scopeBottomWithinNavbar: scopeBox.bottom <= headerBox.bottom + 1,
+      scopeTopWithinNavbar: scopeBox.top >= headerBox.top,
     };
   });
 }
