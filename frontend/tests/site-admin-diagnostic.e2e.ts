@@ -122,6 +122,14 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page).toHaveTitle("Site settings");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .first()
+        .evaluate((title) => title.textContent),
+    )
+    .toBe("Site settings");
   await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
   expect(
     await page
@@ -290,12 +298,15 @@ test("site admin diagnostics renders legacy update notification badge", async ({
 
 test("site admin diagnostics sidebar uses typed route Links without a route-local generic adapter", async () => {
   const source = readFileSync("src/routes/sites/diagnostic.tsx", "utf8");
+  expect(source).toContain('<title>{t("title.siteSetting")}</title>');
+  expect(source).not.toContain("useLegacySiteDiagnosticDocumentTitle");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain('globalThis["document"]');
+  expect(source).not.toMatch(/useEffect\s*\(/u);
   expect(source).not.toContain("LegacyInternalLink");
   expect(source).not.toContain("AnchorHTMLAttributes");
   expect(source).not.toContain("ComponentType");
   expect(source).not.toContain("to={item.href}");
-  expect(source).toContain("function useLegacySiteDiagnosticDocumentTitle");
-  expect(source).toContain('document.title = t("title.siteSetting")');
   expect(source).toContain(
     "<SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>",
   );

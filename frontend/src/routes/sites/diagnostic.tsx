@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { siteDiagnosticsQueryOptions, siteUpdateQueryOptions } from "../../api/site-admin";
 import type { SiteDiagnosticsResponse } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -18,19 +17,6 @@ export const Route = createFileRoute("/sites/diagnostic")({
   component: SiteDiagnosticRoute,
 });
 
-function useLegacySiteDiagnosticDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.siteSetting");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
-}
-
 function SiteDiagnosticRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -46,12 +32,13 @@ function SiteDiagnosticRoute() {
 }
 
 function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
   const query = useQuery(siteDiagnosticsQueryOptions(runtimeConfig));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
-  useLegacySiteDiagnosticDocumentTitle(runtimeConfig);
 
   return (
     <>
+      <title>{t("title.siteSetting")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>
