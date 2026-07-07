@@ -142,6 +142,7 @@ function ProjectCodeFileScreen({
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeFileBody
         code={codeQuery.data}
+        currentUserIsAnonymous={booleanField(sessionQuery.data.isAnonymous)}
         currentUserIsSiteAdmin={booleanField(sessionQuery.data.isSiteAdmin)}
         project={project}
         routeParams={routeParams}
@@ -153,12 +154,14 @@ function ProjectCodeFileScreen({
 
 function ProjectCodeFileBody({
   code,
+  currentUserIsAnonymous,
   currentUserIsSiteAdmin,
   project,
   routeParams,
   runtimeConfig,
 }: {
   code: CodeBrowserResponse;
+  currentUserIsAnonymous: boolean;
   currentUserIsSiteAdmin: boolean;
   project: ProjectContainer;
   routeParams: ProjectCodeFileRouteParams;
@@ -330,7 +333,7 @@ function ProjectCodeFileBody({
                     {t("code.download")}
                   </Link>
                 </div>
-                {booleanField(project.viewerCanUpdate) ? (
+                {!currentUserIsAnonymous ? (
                   <div className="pull-right">
                     <Link
                       id="new-file-link"
@@ -370,6 +373,7 @@ function ProjectCodeFileBody({
               <FileView
                 file={recordField(code.file)}
                 filePath={filePath}
+                currentUserIsAnonymous={currentUserIsAnonymous}
                 currentUserIsSiteAdmin={currentUserIsSiteAdmin}
                 ownerName={ownerName}
                 project={project}
@@ -505,6 +509,7 @@ function FolderListEntry({
 }
 
 function FileView({
+  currentUserIsAnonymous,
   currentUserIsSiteAdmin,
   file,
   filePath,
@@ -514,6 +519,7 @@ function FileView({
   runtimeConfig,
   selectedBranch,
 }: {
+  currentUserIsAnonymous: boolean;
   currentUserIsSiteAdmin: boolean;
   file: CodeFile;
   filePath: string;
@@ -636,7 +642,7 @@ function FileView({
               <Link href={rawHref} to={rawPath} className="ybtn" target="_blank">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
               </Link>
-              {booleanField(project.viewerCanUpdate) ? (
+              {!currentUserIsAnonymous ? (
                 <Link
                   to={editPathWithSearch}
                   activeOptions={{

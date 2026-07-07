@@ -234,6 +234,48 @@ test("project code file internal links keep legacy hrefs and navigate through th
   expect(documentRequests).toEqual([]);
 });
 
+test("project code logged-in read-only viewer still sees legacy new-file and edit actions", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(
+    page,
+    codeRequests,
+    "README.txt",
+    "# sample\nLine two",
+    {},
+    { viewerCanUpdate: false },
+    undefined,
+    undefined,
+    { isAnonymous: false, userLabel: "Read-only member" },
+  );
+
+  await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
+
+  await expect(page.locator("#new-file-link")).toHaveText("New file");
+  await expect(page.locator("#new-file-link")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?path=&branch=main`,
+  );
+  await expect(page.locator(".file-header .pull-right a", { hasText: "Edit" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?path=README.txt&branch=main&edit=true`,
+  );
+  await expect(
+    page.locator(".code-browse-header .pull-right a", { hasText: "Download" }),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/archive/main.zip`);
+  await expect(page.locator(".file-header .pull-right a", { hasText: "Raw" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/rawcode/main/README.txt`,
+  );
+  await expect(page.locator("#open-in-browser")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/files/main/README.txt`,
+  );
+  expect(codeRequests).toEqual(["branch=main&path=README.txt"]);
+});
+
 test("project code file branch selector navigates slash branch in the SPA", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const codeRequests: string[] = [];
@@ -306,12 +348,13 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(rawAnchorBlocks).toEqual([]);
   expect(backendAnchorHrefs).toEqual([]);
   expect(linkHrefs).toHaveLength(5);
-  expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
+  expect(routeSource).toContain("import { Link, createFileRoute, createLink, useRouter }");
   expect(routeSource).toContain("router.history.push(event.currentTarget.value)");
   expect(routeSource).not.toContain("legacyLinkProps");
   expect(routeSource).not.toContain("legacyEmptySearch");
   expect(routeSource).not.toContain("legacyInactiveSearch");
   expect(routeSource).not.toContain("__legacyInactive");
+  expect(routeSource).not.toContain("project.viewerCanUpdate");
   expect(routeSource).not.toContain(" as never");
   expect(routeSource).not.toContain("search={{} as never}");
   expect(routeSource).not.toContain("to={archivePath as never}");
@@ -335,8 +378,8 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).toContain(
     "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
   );
-  expect(directLegacyLinkActiveProps).toHaveLength(8);
-  expect(directLegacyLinkActiveOptions).toHaveLength(8);
+  expect(directLegacyLinkActiveProps).toHaveLength(13);
+  expect(directLegacyLinkActiveOptions).toHaveLength(13);
   expect(routeSource).toContain('to="/$ownerName/$projectName/code/$branch"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/commit/$commitId"');
   expect(routeSource).toContain("const newFilePathWithSearch =");
