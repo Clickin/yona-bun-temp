@@ -131,6 +131,8 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
   await mockPullRequestOverview(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page).toHaveTitle("Pull request - admin/sample");
+  await expect.poll(() => firstHeadTitleText(page)).toBe("Pull request - admin/sample");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
@@ -396,6 +398,10 @@ async function pullRequestOverviewMetrics(page: Page) {
   });
 }
 
+async function firstHeadTitleText(page: Page) {
+  return page.evaluate(() => document.head.querySelector("title")?.textContent ?? "");
+}
+
 async function pullRequestOverviewNavbarMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
@@ -459,6 +465,9 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")',
   );
+  expect(routeSource).toContain(
+    '<title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("LegacyLink");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
@@ -470,6 +479,11 @@ test("project pull request overview route source uses direct Links", async () =>
   );
   expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("window.location");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toMatch(
+    /(?:useEffect|useLayoutEffect)[\s\S]{0,240}(?:document|globalThis\.document)[\s\S]{0,120}\.title/u,
+  );
   expect(routeSource).toContain('to="/$user"');
   expect(routeSource).toContain("params={{ user: pullRequest.contributor.loginId }}");
   expect(routeSource).toContain("params={{ user: event.senderLoginId }}");

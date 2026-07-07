@@ -91,6 +91,7 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <PullRequestOverviewTitle ownerName={ownerName} projectName={projectName} />
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="pullRequest"
@@ -107,6 +108,18 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
       ) : null}
     </SiteLayoutShell>
   );
+}
+
+function PullRequestOverviewTitle({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return <title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>;
 }
 
 function PullRequestOverviewBody({
