@@ -328,6 +328,8 @@ must not be counted as successful Scala HTML goal implementation turns:
 
 ## Rebuilt From This Audit
 
+| 2026-07-07 | `/admin/sample/issues?filter=bug` standard project-owned issue-list shell/menu parity | `yona-original/app/views/issue/list.scala.html`, `yona-original/app/views/projectLayout.scala.html`, `yona-original/app/views/projectMenu.scala.html`, `yona-original/app/views/project/header.scala.html`, `yona-original/conf/messages` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` keeps the legacy issue-list project shell for standard project-owned routes by enabling the legacy project-header GNB links only when the search scope has no organization owner, preserving `ProjectHeader`, and feeding explicit project-container `postCount`, `openIssueCount`, `openPullRequestCount`, and `reviewCount` values into `ProjectMenu` so the active Issue menu and count badges match `projectMenu.scala.html`. | `frontend/tests/project-issues-empty.e2e.ts` extends the standard project-owned issue-list shell coverage to assert legacy List All/Feedback GNB links, This Project/All Projects search scope behavior, active Issue menu state, project-menu count badges from project container data, and shell layout ordering/containment metrics; focused command: `pnpm --dir frontend test:e2e tests/project-issues-empty.e2e.ts --grep "standard project-owned issue list restores"`. |
+
 Manual multi-screen exception note, 2026-07-05:
 
 - Routes: `/admin/sample`, `/admin/sample/milestone/5`, `/`.

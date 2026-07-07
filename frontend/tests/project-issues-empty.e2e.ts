@@ -1084,6 +1084,40 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
     { count: "2", name: "Review" },
     { count: "1", name: "Board" },
   ]);
+
+  await expect(page.locator(".project-menu-gruop > li.active .menu-name")).toHaveText("Issue");
+  const shellBoxes = await page.evaluate(() => {
+    const gnb = document.querySelector(".gnb-outer.project-header");
+    const header = document.querySelector(".project-header-outer");
+    const menu = document.querySelector(".project-menu-outer");
+    const pageWrap = document.querySelector(".page-wrap-outer");
+    const activeIssue = document.querySelector(".project-menu-gruop > li.active");
+    const issueCount = activeIssue?.querySelector(".project-menu-count");
+    if (!gnb || !header || !menu || !pageWrap || !activeIssue || !issueCount) return null;
+    const g = gnb.getBoundingClientRect();
+    const h = header.getBoundingClientRect();
+    const m = menu.getBoundingClientRect();
+    const p = pageWrap.getBoundingClientRect();
+    const active = activeIssue.getBoundingClientRect();
+    const count = issueCount.getBoundingClientRect();
+    return {
+      active,
+      count,
+      gnb: g,
+      header: h,
+      menu: m,
+      pageWrap: p,
+    };
+  });
+  expect(shellBoxes).not.toBeNull();
+  expect(shellBoxes!.header.top).toBeGreaterThanOrEqual(shellBoxes!.gnb.top);
+  expect(shellBoxes!.menu.top).toBeGreaterThanOrEqual(shellBoxes!.gnb.bottom - 1);
+  expect(shellBoxes!.menu.top).toBeGreaterThanOrEqual(shellBoxes!.header.top);
+  expect(shellBoxes!.pageWrap.top).toBeGreaterThanOrEqual(shellBoxes!.menu.bottom - 1);
+  expect(shellBoxes!.active.top).toBeGreaterThanOrEqual(shellBoxes!.menu.top);
+  expect(shellBoxes!.active.bottom).toBeLessThanOrEqual(shellBoxes!.menu.bottom + 1);
+  expect(shellBoxes!.count.left).toBeGreaterThan(shellBoxes!.active.left);
+  expect(shellBoxes!.count.right).toBeLessThanOrEqual(shellBoxes!.active.right + 1);
 });
 
 test("project issue normal list draft marker matches legacy partial_list.scala.html", async ({

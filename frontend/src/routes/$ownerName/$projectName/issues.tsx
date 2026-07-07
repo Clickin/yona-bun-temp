@@ -239,11 +239,31 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     ownerName,
     projectName,
   };
+  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
+  const projectMenuCounts = isStandardProjectOwnedShell
+    ? {
+        board: numberField((projectQuery.data as Record<string, unknown>).postCount),
+        issue: numberField((projectQuery.data as Record<string, unknown>).openIssueCount),
+        pullRequest: numberField(
+          (projectQuery.data as Record<string, unknown>).openPullRequestCount,
+        ),
+        review: numberField((projectQuery.data as Record<string, unknown>).reviewCount),
+      }
+    : undefined;
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+    >
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu
+        active="issue"
+        basePath={runtimeConfig.basePath}
+        counts={projectMenuCounts}
+        project={projectQuery.data}
+      />
       <link
         rel="stylesheet"
         href={prefixBasePath(
