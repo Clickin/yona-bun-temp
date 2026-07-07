@@ -313,8 +313,9 @@ test("site admin update renders the legacy available-version branch", async ({ p
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
   expect(routeSource).toContain("const releaseUrl = response.versionToUpdate");
   expect(routeSource).toContain("href={releaseUrl}");
+  expect(routeSource).toContain("to={releaseUrl}");
+  expect(routeSource).not.toContain("externalReleaseUrl");
   expect(routeSource).not.toContain("as never");
-  expect(routeSource).not.toContain("to={releaseUrl}");
   expect(routeSource).not.toContain("reloadDocument");
   await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
