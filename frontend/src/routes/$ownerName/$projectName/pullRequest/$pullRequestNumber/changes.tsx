@@ -19,7 +19,6 @@ import type { ProjectContainer } from "../../../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
 import {
   PullRequestBranchInfo,
@@ -81,26 +80,44 @@ export function ProjectPullRequestChangesPage({
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectPullRequestChangesScreen commitId={commitId} runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectPullRequestChangesShell commitId={commitId} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectPullRequestChangesScreen({
+function ProjectPullRequestChangesShell({
   commitId,
   runtimeConfig,
 }: {
   commitId: string;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { ownerName, projectName, pullRequestNumber } = Route.useParams();
-  const prNumber = Number(pullRequestNumber) || 0;
+  const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+
+  return projectQuery.data ? (
+    <ProjectPullRequestChangesScreen
+      commitId={commitId}
+      project={projectQuery.data}
+      runtimeConfig={runtimeConfig}
+    />
+  ) : null;
+}
+
+function ProjectPullRequestChangesScreen({
+  commitId,
+  project,
+  runtimeConfig,
+}: {
+  commitId: string;
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName, pullRequestNumber } = Route.useParams();
+  const prNumber = Number(pullRequestNumber) || 0;
   const changesQuery = useQuery(
     pullRequestChangesQueryOptions(runtimeConfig, {
       ownerName,
@@ -111,18 +128,14 @@ function ProjectPullRequestChangesScreen({
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
 
-  if (!projectQuery.data || !changesQuery.data || !sessionQuery.data) {
+  if (!changesQuery.data || !sessionQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="pullRequest"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
       <ProjectPullRequestChangesBody
         changes={changesQuery.data}
         commitId={commitId}
@@ -137,7 +150,7 @@ function ProjectPullRequestChangesScreen({
             stringField(sessionQuery.data.loginId, ""),
           ),
         }}
-        project={projectQuery.data}
+        project={project}
         runtimeConfig={runtimeConfig}
       />
     </>
