@@ -285,15 +285,18 @@ function ProjectSearchSuccessBody({
                     }`;
                     return (
                       <li className={className} key={category.type}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigateToSearch(category.type, keywordValue);
+                        <Link
+                          from={searchPath}
+                          search={{
+                            keyword: keywordValue,
+                            pageNum: 1,
+                            searchType: category.type,
                           }}
+                          to={searchPath}
                         >
-                          {t(category.labelKey)}
+                          {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
-                        </button>
+                        </Link>
                       </li>
                     );
                   })}

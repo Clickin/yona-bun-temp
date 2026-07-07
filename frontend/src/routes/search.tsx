@@ -59,8 +59,8 @@ const legacySearchPaginationLinkActiveProps = {
 
 type SearchRouteSearch = {
   keyword: string;
-  pageNum: number;
-  routeInvalid: boolean;
+  pageNum?: number;
+  routeInvalid?: boolean;
   searchType: SearchType;
 };
 
@@ -69,6 +69,8 @@ export const Route = createFileRoute("/search")({
   validateSearch: (search: Record<string, unknown>): SearchRouteSearch => {
     const rawSearchType = typeof search.searchType === "string" ? search.searchType : "";
     const rawKeyword = typeof search.keyword === "string" ? search.keyword : "";
+    const hasExplicitPageNum =
+      typeof search.pageNum === "number" || typeof search.pageNum === "string";
     const rawPageNum =
       typeof search.pageNum === "number"
         ? search.pageNum
@@ -78,8 +80,11 @@ export const Route = createFileRoute("/search")({
     const validSearchType = isSearchType(rawSearchType);
     return {
       keyword: rawKeyword,
-      pageNum: Number.isFinite(rawPageNum) && rawPageNum > 0 ? rawPageNum : 1,
-      routeInvalid: rawKeyword.length === 0 || !validSearchType,
+      pageNum:
+        hasExplicitPageNum && Number.isFinite(rawPageNum) && rawPageNum > 0
+          ? rawPageNum
+          : undefined,
+      routeInvalid: rawKeyword.length === 0 || !validSearchType ? true : undefined,
       searchType: validSearchType ? rawSearchType : "auto",
     };
   },
@@ -91,7 +96,7 @@ function SearchRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SearchScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
@@ -100,18 +105,43 @@ function SearchRoute() {
 }
 
 function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
   const search = Route.useSearch();
   const hasKeyword = search.keyword.length > 0;
+  const pageNum = search.pageNum ?? 1;
   const searchQuery = useQuery({
-    ...globalSearchQueryOptions(runtimeConfig, search),
+    ...globalSearchQueryOptions(runtimeConfig, {
+      ...search,
+      pageNum,
+    }),
     enabled: hasKeyword && !search.routeInvalid,
   });
   const result =
     searchQuery.data ??
     emptySearchResult({
       ...search,
+      pageNum,
       scope: "global",
     });
+  const useSearchSuccessTitle =
+    !search.routeInvalid &&
+    !isRequestTextTooLargeError(searchQuery.error) &&
+    !isDefaultForbiddenError(searchQuery.error) &&
+    !isDefaultInternalServerError(searchQuery.error);
+  const siteName = runtimeConfig.siteName ?? "Yona";
+
+  useEffect(() => {
+    if (!useSearchSuccessTitle) {
+      return;
+    }
+
+    const htmlDocument = globalThis.document;
+    htmlDocument.title = t("title.search");
+
+    return () => {
+      htmlDocument.title = siteName;
+    };
+  }, [siteName, t, useSearchSuccessTitle]);
 
   if (search.routeInvalid) {
     return (
@@ -169,7 +199,6 @@ function GlobalSearchSuccessBody({
   const searchTarget = (searchType: SearchType, keyword: string) => ({
     search: {
       keyword,
-      pageNum: 1,
       searchType,
     },
     to: "/search" as const,
@@ -210,18 +239,18 @@ function GlobalSearchSuccessBody({
                         }`}
                         key={category.type}
                       >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigationMutation.mutate({
-                              keyword: keywordValue,
-                              searchType: category.type,
-                            });
+                        <Link
+                          to="/search"
+                          search={{
+                            keyword: keywordValue,
+                            searchType: category.type,
                           }}
+                          activeOptions={legacySearchPaginationLinkActiveOptions}
+                          activeProps={legacySearchPaginationLinkActiveProps}
                         >
-                          {t(category.labelKey)}
+                          {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
-                        </button>
+                        </Link>
                       </li>
                     );
                   })}

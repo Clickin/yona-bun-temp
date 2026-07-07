@@ -180,7 +180,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const logoUrl =
     typeof organizationQuery.data.logoUrl === "string" && organizationQuery.data.logoUrl.length > 0
       ? organizationQuery.data.logoUrl
-      : "/assets/images/organization_default_logo.png";
+      : prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png");
 
   if (isDefaultForbiddenError(searchQuery.error)) {
     return (
@@ -277,7 +277,7 @@ function OrganizationSearchBody({
                           search={searchParams(category.type, keywordValue)}
                           to={ORGANIZATION_SEARCH_ROUTE}
                         >
-                          {t(category.labelKey)}
+                          {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
                         </Link>
                       </li>

@@ -28,20 +28,20 @@ test("organization project search keeps the legacy organization shell with ancho
   const categoryLinks = page.locator(".search-category-wrap li > a");
   await expect(categoryLinks).toHaveCount(8);
   await expect(page.locator(".search-category-wrap li > button")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects0");
+  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects 0");
 
   const labels = await categoryLinks.evaluateAll((links) =>
     links.map((link) => link.textContent?.replace(/\s+/g, " ").trim() ?? ""),
   );
   expect(labels).toEqual([
-    "Issues0",
-    "Users0",
-    "Projects0",
-    "Posts0",
-    "Milestones0",
-    "Issue Comments0",
-    "Post Comments0",
-    "Code Reviews0",
+    "Issues 0",
+    "Users 0",
+    "Projects 0",
+    "Posts 0",
+    "Milestones 0",
+    "Issue Comments 0",
+    "Post Comments 0",
+    "Code Reviews 0",
   ]);
 
   await expect(categoryLinks.nth(0)).toHaveAttribute(
@@ -79,7 +79,7 @@ test("organization project search keeps the legacy organization shell with ancho
   expect(navigatedUrl.searchParams.get("searchType")).toBe("issue");
   await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
   await expect(page.locator("#searchKeyword")).toHaveValue("fresh");
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues0");
+  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Issues 0");
   await expect
     .poll(() =>
       page.evaluate(
@@ -90,7 +90,7 @@ test("organization project search keeps the legacy organization shell with ancho
   await expect.poll(() => searchApi.count).toBe(2);
 });
 
-test("organization project search pins the live localhost guest shell title and scope branch", async ({
+test("organization project search exact missing state pins the live localhost guest shell title, scope branch, and default group art", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -100,7 +100,7 @@ test("organization project search pins the live localhost guest shell title and 
     viewerCanUpdate: false,
   });
 
-  await page.goto(`${basePath}/organizations/weblabs/search?keyword=sample&searchType=project`);
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=missing&searchType=project`);
 
   await expect(page).toHaveTitle("Search");
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
@@ -113,17 +113,29 @@ test("organization project search pins the live localhost guest shell title and 
   await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
   await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
   await expect(page.locator(".project-setting a")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects0");
+  await expect(page.locator(".search-category-wrap li.active a")).toHaveText("Projects 0");
   await expect(page.locator(".search-result-title")).toHaveText("Found 0 result(s) in Projects");
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${basePath}/legacy-assets/images/group_default.png`,
+  );
 
   const metrics = await page.evaluate(() => {
     const navbar = document.querySelector("header.gnb-outer");
+    const projectHeader = document.querySelector(".project-header-outer");
+    const projectHeaderAvatar = document.querySelector(".project-header-avatar img");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
     const searchBox = document.querySelector(".gnb-search-form .search-box");
     const category = document.querySelector(".search-category-wrap");
     const resultTitle = document.querySelector(".search-result-title");
     if (!(navbar instanceof HTMLElement)) {
       throw new Error("Missing header.gnb-outer");
+    }
+    if (!(projectHeader instanceof HTMLElement)) {
+      throw new Error("Missing .project-header-outer");
+    }
+    if (!(projectHeaderAvatar instanceof HTMLImageElement)) {
+      throw new Error("Missing .project-header-avatar img");
     }
     if (!(scopeButton instanceof HTMLElement)) {
       throw new Error("Missing #gnb-search-scope-title");
@@ -140,12 +152,16 @@ test("organization project search pins the live localhost guest shell title and 
     return {
       category: category.getBoundingClientRect(),
       navbar: navbar.getBoundingClientRect(),
+      projectHeaderBackgroundImage: getComputedStyle(projectHeader).backgroundImage,
+      projectHeaderAvatarSrc: projectHeaderAvatar.getAttribute("src"),
       resultTitle: resultTitle.getBoundingClientRect(),
       scopeButton: scopeButton.getBoundingClientRect(),
       searchBox: searchBox.getBoundingClientRect(),
     };
   });
 
+  expect(metrics.projectHeaderBackgroundImage).toContain("group_default.png");
+  expect(metrics.projectHeaderAvatarSrc).toBe(`${basePath}/legacy-assets/images/group_default.png`);
   expect(metrics.scopeButton.top).toBeGreaterThanOrEqual(metrics.navbar.top);
   expect(metrics.scopeButton.bottom).toBeLessThanOrEqual(metrics.navbar.bottom);
   expect(metrics.searchBox.top).toBeGreaterThanOrEqual(metrics.navbar.top);
@@ -354,7 +370,7 @@ async function mockOrganizationSearch(
       contentType: "application/json",
       body: JSON.stringify({
         description: "Web labs group",
-        logoUrl: "/assets/images/organization_default_logo.png",
+        logoUrl: "",
         managers: [],
         members: [],
         organizationName: "weblabs",

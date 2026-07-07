@@ -15,6 +15,9 @@ const EXPECTED_GLOBAL_SEARCH = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -99,6 +102,107 @@ const EXPECTED_GLOBAL_SEARCH = `
 </footer>
 `;
 
+const EXPECTED_GLOBAL_EMPTY_ISSUE_SEARCH = `
+<div class="unsupported hidden">
+  <div class="unsupported-inner">
+    <p id="unsupported-content"></p>
+  </div>
+</div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+      <i class="yobicon-arrow-left"></i>
+      <i class="yobicon-arrow-right"></i>
+    </div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
+      <li>
+        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+          <input type="hidden" name="searchType" value="auto">
+          <div class="search-box">
+            <input type="text" name="keyword" autocomplete="off" accesskey="S">
+            <button type="submit"><i class="yobicon-search"></i></button>
+          </div>
+        </form>
+      </li>
+    </ul>
+    <div id="mySidenav" class="sidenav">
+      <div class="span5 right-menu span-hard-wrap">
+        <div class="row-fluid user-menu-wrap">
+          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
+          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
+          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
+        </div>
+        <ul class="nav nav-tabs nm">
+          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
+          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
+          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+        </ul>
+        <div class="tab-content tab-box">
+          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" id="required-logged-in">
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
+      </li>
+      <li class="divider"></li>
+      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
+    </ul>
+  </div>
+</header>
+<div class="site-breadcrumb-outer">
+  <div class="site-breadcrumb-inner">
+    <h3>Search</h3>
+  </div>
+</div>
+<div class="page-wrap-outer">
+  <div class="project-page-wrap">
+    <div class="project-page-wrap">
+      <div class="row-fluid">
+        <div class="span2">
+          <ul class="lst-stacked unstyled search-category-wrap">
+            <li class="active empty"><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">0</span></a></li>
+            <li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li>
+            <li class=" "><a href="#" data-toggle="search-category" data-type="project">Projects<span class="num-badge pull-right">2</span></a></li>
+            <li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li>
+            <li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li>
+            <li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li>
+            <li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li>
+            <li class=" empty"><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">0</span></a></li>
+          </ul>
+        </div>
+        <div class="span10">
+          <div class="search-box-wrap">
+            <form id="searchInnerForm" method="get" action="__BASE_PATH__/search">
+              <input type="hidden" name="searchType" value="issue">
+              <input type="text" id="searchKeyword" name="keyword" class="span11" value="sample">
+              <button type="submit" class="ybtn">Search</button>
+            </form>
+            <h3 class="search-result-title">Found <strong>0</strong> result(s) in Issues</h3>
+          </div>
+          <div class="search-result-wrap">
+            <div class="empty-result"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="page-footer-outer">
+  <div class="page-footer">
+    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
+      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
+      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
+      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+  </div>
+</footer>
+`;
+
 const EXPECTED_REQUEST_TEXT_TOO_LARGE = `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
@@ -108,6 +212,9 @@ const EXPECTED_REQUEST_TEXT_TOO_LARGE = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -127,6 +234,9 @@ const EXPECTED_GLOBAL_PROJECT_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -147,6 +257,9 @@ const EXPECTED_GLOBAL_USER_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -169,6 +282,9 @@ const EXPECTED_GLOBAL_DEFAULT_USER_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -189,6 +305,9 @@ const EXPECTED_GLOBAL_ISSUE_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -209,6 +328,9 @@ const EXPECTED_GLOBAL_POST_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -229,6 +351,9 @@ const EXPECTED_GLOBAL_MILESTONE_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -249,6 +374,9 @@ const EXPECTED_GLOBAL_ISSUE_COMMENT_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -269,6 +397,9 @@ const EXPECTED_GLOBAL_POST_COMMENT_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -289,6 +420,9 @@ const EXPECTED_GLOBAL_REVIEW_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -309,6 +443,9 @@ const EXPECTED_GLOBAL_INLINE_REVIEW_SEARCH = `
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -320,17 +457,24 @@ const EXPECTED_GLOBAL_INLINE_REVIEW_SEARCH = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
-test("global search matches legacy search/result.scala.html empty project result DOM", async ({
+test("global search matches localhost legacy empty issue result DOM for sample keyword", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockGlobalSearch(page);
 
-  await page.goto(`${basePath}/search?keyword=missing&searchType=project`);
+  await page.goto(`${basePath}/search?keyword=sample&searchType=issue`);
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
+  await expect(page).toHaveURL(`${basePath}/search?keyword=sample&searchType=issue`);
+  await expect(page).toHaveTitle("Search");
+  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_GLOBAL_SEARCH.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_GLOBAL_EMPTY_ISSUE_SEARCH.replaceAll("__BASE_PATH__", basePath),
+    ),
   );
   expect(await readSearchResultShellMetrics(page)).toEqual({
     activeCategoryBackground: "rgb(81, 170, 204)",
@@ -345,7 +489,7 @@ test("global search matches legacy search/result.scala.html empty project result
     innerProjectWrapWidth: 1260,
     keywordHeight: 30,
     keywordPadding: "4px 6px",
-    keywordValue: "missing",
+    keywordValue: "sample",
     pageWrapOuterMinHeight: "450px",
     resultColumnWidth: 1046,
     resultWrapMarginTop: "0px",
@@ -419,6 +563,10 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
     routeSource.indexOf("function GlobalSearchResultList"),
     routeSource.indexOf("function globalSearchInternalLinkTarget"),
   );
+  const categoryListSource = routeBodySource.slice(
+    routeBodySource.indexOf("GLOBAL_SEARCH_CATEGORIES.map"),
+    routeBodySource.indexOf("</ul>"),
+  );
   expect(routeBodySource).not.toMatch(/<a[\s>]/u);
   expect(routeSource).not.toContain("LegacySearchBody");
   expect(routeSource).not.toContain("includeProjectCategory");
@@ -441,7 +589,10 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(resultListSource).toContain("<RouterLink");
   expect(resultListSource).toContain("to={itemLink.to}");
   expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
-  expect(routeBodySource).toContain('<button\n                          type="button"');
+  expect(categoryListSource).toContain("<Link");
+  expect(categoryListSource).not.toContain('<button\n                          type="button"');
+  expect(categoryListSource).toContain("activeOptions={legacySearchPaginationLinkActiveOptions}");
+  expect(categoryListSource).toContain("activeProps={legacySearchPaginationLinkActiveProps}");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toMatch(/<a[\s>]/u);
   expect(routeSource).not.toContain("setAttribute");
@@ -459,17 +610,29 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).toContain('"data-status": undefined');
 });
 
-test("global search category button uses React SPA navigation", async ({ page }) => {
+test("global search category Link keeps legacy SPA navigation without query noise", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=missing&searchType=project`);
   await expect(page.locator('.search-category-wrap a[href="#"]')).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
-  const issueCategory = page.locator(".search-category-wrap button").filter({ hasText: "Issues" });
-  await expect(issueCategory).toHaveAttribute("type", "button");
+  await expect(page.locator(".search-category-wrap a")).toHaveCount(8);
+  const issueCategory = page.locator(".search-category-wrap a").filter({ hasText: "Issues" });
   await expect(issueCategory).not.toHaveAttribute("data-toggle");
   await expect(issueCategory).not.toHaveAttribute("data-type");
+  await expect(issueCategory).not.toHaveAttribute("class");
+  await expect(issueCategory).not.toHaveAttribute("aria-current");
+  await expect(issueCategory).not.toHaveAttribute("data-status");
+  const issueHref = await issueCategory.getAttribute("href");
+  expect(issueHref).not.toBeNull();
+  const issueUrl = new URL(issueHref ?? "", page.url());
+  expect(issueUrl.pathname).toBe(`${basePath}/search`);
+  expect(issueUrl.searchParams.get("keyword")).toBe("missing");
+  expect(issueUrl.searchParams.get("searchType")).toBe("issue");
+  expect(issueUrl.searchParams.has("pageNum")).toBe(false);
+  expect(issueUrl.searchParams.has("routeInvalid")).toBe(false);
   await page.locator("#searchKeyword").fill("fresh");
 
   await page.evaluate(() => {
@@ -480,6 +643,8 @@ test("global search category button uses React SPA navigation", async ({ page })
   await expect(page).toHaveURL(new RegExp(`${basePath}/search\\?`));
   expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");
   expect(new URL(page.url()).searchParams.get("searchType")).toBe("issue");
+  expect(new URL(page.url()).searchParams.has("pageNum")).toBe(false);
+  expect(new URL(page.url()).searchParams.has("routeInvalid")).toBe(false);
   await expect
     .poll(() =>
       page.evaluate(
@@ -489,7 +654,7 @@ test("global search category button uses React SPA navigation", async ({ page })
     .toBe("kept");
   await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("issue");
   await expect(page.locator("#searchKeyword")).toHaveValue("fresh");
-  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues0");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
 });
 
 test("global search without required query renders legacy badrequest_default.scala.html shell", async ({
@@ -1157,6 +1322,37 @@ async function mockGlobalSearch(page: Page) {
       });
       return;
     }
+    if (keyword === "sample" && requestUrl.searchParams.get("searchType") === "issue") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 0,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 2,
+            reviews: 0,
+            users: 0,
+          },
+          items: [],
+          keyword: "sample",
+          pageNum: 1,
+          pageSize: 20,
+          requestedSearchType: "issue",
+          scope: "global",
+          searchType: "issue",
+          totalCount: 0,
+        }),
+      });
+      return;
+    }
     if (keyword === "sample") {
       await route.fulfill({
         contentType: "application/json",
@@ -1747,6 +1943,9 @@ function expectedDefaultSearchErrorScreen({
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
+      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="${basePath}/user/anonymous">Profile</a></span><span class="user-menu"><a href="${basePath}/user/editform">Account</a></span><a href="${basePath}/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>

@@ -97,7 +97,7 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   await expectProjectSearchForm(page, basePath, "issue", "sample");
   await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
   await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues1");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Issues");
   await expect(page.locator(".search-result-title strong")).toHaveText("1");
   await expect(page.locator(".search-result-wrap > .search-list-wrap")).toHaveCount(1);
@@ -179,7 +179,7 @@ test("project issue comment search renders legacy partial_issue_comments.scala.h
   await expectProjectSearchForm(page, basePath, "issue_comment", "sample");
   await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
   await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments1");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments 1");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 1 result(s) in Issue Comments",
   );
@@ -265,7 +265,7 @@ test("project search pins the live localhost issue-comment zero-result project s
   ]);
   await expect(page.locator(".project-setting")).toHaveCount(0);
   await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments0");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments 0");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 0 result(s) in Issue Comments",
   );
@@ -460,7 +460,7 @@ test("project search preserves whitespace-only keyword and calls scoped search A
   await page.goto(`${basePath}/admin/sample/search?keyword=%20%20&searchType=review`);
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator("#searchKeyword")).toHaveValue("  ");
-  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Code Reviews0");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Code Reviews 0");
   expect(searchApi.count).toBe(1);
   expect(searchApi.keywords).toEqual(["  "]);
 });
@@ -473,14 +473,17 @@ test("project search category and form navigation stay inside the React SPA", as
   await markSearchSpaSession(page);
   await page.locator("#searchKeyword").fill("fresh");
   await expect(page.locator('.search-category-wrap a[href="#"]')).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap a")).toHaveCount(0);
-  const issueCategory = page.locator(".search-category-wrap button", { hasText: "Issues" });
-  await expect(issueCategory).toHaveAttribute("type", "button");
+  await expect(page.locator(".search-category-wrap a")).toHaveCount(7);
+  const issueCategory = page.locator(".search-category-wrap a", { hasText: "Issues" });
+  await expect(issueCategory).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/search?keyword=fresh&pageNum=1&searchType=issue`,
+  );
   await issueCategory.click();
   await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/search\\?`));
   expect(new URL(page.url()).searchParams.get("keyword")).toBe("fresh");
   expect(new URL(page.url()).searchParams.get("searchType")).toBe("issue");
-  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues0");
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
   await expectSearchSpaSession(page);
 
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
