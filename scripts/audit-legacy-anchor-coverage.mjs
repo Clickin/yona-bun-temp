@@ -24,6 +24,22 @@ function collectFrontendFiles(root) {
 }
 
 const legacyAudit = JSON.parse(readFileSync(legacyAuditPath, "utf8"));
+if (!Array.isArray(legacyAudit.results)) {
+  const summary = {
+    checkedAt: new Date().toISOString(),
+    legacyAuditCheckedAt: legacyAudit.checkedAt,
+    status: "legacy-audit-unavailable",
+    error: legacyAudit.error ?? "legacy audit has no results array",
+    totalPages: 0,
+    totalAnchors: 0,
+    missingAnchorEvidence: 0,
+    entries: [],
+  };
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
+  console.log(JSON.stringify(summary, null, 2));
+  process.exit(1);
+}
 const frontendFiles = collectFrontendFiles(frontendSrc).map((path) => ({
   path: path.replace(`${repoRoot}/`, ""),
   source: readFileSync(path, "utf8"),

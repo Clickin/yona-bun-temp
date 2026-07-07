@@ -12,9 +12,27 @@ if (!existsSync(legacyAuditPath)) {
 }
 
 const legacyAudit = JSON.parse(readFileSync(legacyAuditPath, "utf8"));
+if (!Array.isArray(legacyAudit.results)) {
+  const summary = {
+    checkedAt: new Date().toISOString(),
+    legacyAuditCheckedAt: legacyAudit.checkedAt,
+    status: "legacy-audit-unavailable",
+    error: legacyAudit.error ?? "legacy audit has no results array",
+    total: 0,
+    routed: 0,
+    missing: 0,
+    entries: [],
+  };
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
+  console.log(JSON.stringify(summary, null, 2));
+  process.exit(1);
+}
 const routeTree = readFileSync(routeTreePath, "utf8");
 const rustRoutes = new Set(
-  [...routeTree.matchAll(/fullPath: '([^']+)'/g)].map((match) => match[1].replace(/\/$/, "") || "/"),
+  [...routeTree.matchAll(/fullPath: '([^']+)'/g)].map(
+    (match) => match[1].replace(/\/$/, "") || "/",
+  ),
 );
 const covered = legacyAudit.results.map((result) => {
   const rustRoute = normalizeLegacyAuditPath(result.path, rustRoutes);

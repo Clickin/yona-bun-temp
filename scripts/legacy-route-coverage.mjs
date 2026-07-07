@@ -51,7 +51,9 @@ export function normalizeLegacyAuditPath(path, rustRoutes) {
   }
   const projectMatch = cleanPath.match(/^\/[^/]+\/[^/]+(?<suffix>\/.*)?$/);
   if (projectMatch && !cleanPath.startsWith("/user/") && !cleanPath.startsWith("/users/")) {
-    return `/$owner/$projectName${normalizeProjectSuffix(projectMatch.groups.suffix ?? "")}`;
+    const suffix = normalizeProjectSuffix(projectMatch.groups.suffix ?? "");
+    const candidates = [`/$ownerName/$projectName${suffix}`, `/$owner/$projectName${suffix}`];
+    return candidates.find((candidate) => rustRoutes.has(candidate)) ?? candidates[0];
   }
   return cleanPath;
 }

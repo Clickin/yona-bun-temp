@@ -30,7 +30,10 @@ function routeEvidenceNeedles(route) {
     needles.add("SiteAdmin");
     needles.add("site-admin");
   }
-  if (normalized.startsWith("/$owner/$projectName")) {
+  if (
+    normalized.startsWith("/$ownerName/$projectName") ||
+    normalized.startsWith("/$owner/$projectName")
+  ) {
     needles.add("project-header-outer");
     needles.add("project-menu-outer");
   }

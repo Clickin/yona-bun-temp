@@ -33,7 +33,7 @@ function routeKey(input) {
   ) {
     let suffix = projectMatch.groups.suffix ?? "";
     suffix = suffix.replace(/^\/issue\/\d+$/, "/issue/$issueNumber");
-    return `/$owner/$projectName${suffix}`;
+    return `/$ownerName/$projectName${suffix}`;
   }
 
   return cleanPath;
@@ -41,6 +41,27 @@ function routeKey(input) {
 
 const legacyAudit = JSON.parse(readFileSync(legacyAuditPath, "utf8"));
 const routeCoverage = JSON.parse(readFileSync(routeCoveragePath, "utf8"));
+if (!Array.isArray(legacyAudit.results) || !Array.isArray(routeCoverage.entries)) {
+  const summary = {
+    checkedAt: new Date().toISOString(),
+    routeCoverageCheckedAt: routeCoverage.checkedAt,
+    status: "legacy-audit-unavailable",
+    error:
+      legacyAudit.error ??
+      routeCoverage.error ??
+      "legacy audit results or route coverage entries are unavailable",
+    total: 0,
+    withRenderedE2eEvidence: 0,
+    missingRenderedE2eEvidence: 0,
+    withRenderedLegacySignalEvidence: 0,
+    missingRenderedLegacySignalEvidence: 0,
+    entries: [],
+  };
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
+  console.log(JSON.stringify(summary, null, 2));
+  process.exit(1);
+}
 const e2eNavigations = new Map();
 const e2eSources = new Map();
 const legacySignals = new Map(
