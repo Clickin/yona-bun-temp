@@ -364,7 +364,10 @@ function ProjectMilestoneDetailBody({
             <div className="content empty-content"></div>
           )}
 
-          <div className="actrow right-txt row-fluid" style={{ clear: "both", padding: "15px 0" }}>
+          <div
+            className="actrow right-txt row-fluid"
+            style={{ clear: "both", display: "block", padding: "15px 0" }}
+          >
             <Link
               to="/$ownerName/$projectName/milestones"
               params={{ ownerName, projectName }}

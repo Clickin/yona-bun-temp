@@ -314,6 +314,17 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     `${basePath}/admin/sample/milestones`,
   );
   await expect(page.locator('.actrow .ybtn[href$="/milestone/5/editform"]')).toHaveText("Edit");
+  const actionRowMetrics = await milestoneDetailActionRowMetrics(page);
+  expect(actionRowMetrics.actionRowDisplay).toBe("block");
+  expect(actionRowMetrics.listLeft).toBeLessThanOrEqual(actionRowMetrics.actionRowLeft + 10);
+  expect(actionRowMetrics.listRight).toBeLessThan(actionRowMetrics.deleteLeft);
+  expect(actionRowMetrics.deleteLeft).toBeGreaterThan(
+    actionRowMetrics.actionRowLeft +
+      (actionRowMetrics.actionRowRight - actionRowMetrics.actionRowLeft) / 2,
+  );
+  expect(actionRowMetrics.deleteLeft).toBeLessThan(actionRowMetrics.editLeft);
+  expect(actionRowMetrics.editLeft).toBeLessThan(actionRowMetrics.closeLeft);
+  expect(actionRowMetrics.closeRight).toBeGreaterThanOrEqual(actionRowMetrics.actionRowRight - 2);
   const deleteTrigger = page.locator(
     '.actrow button.ybtn-danger[data-toggle="modal"][data-target="#deleteConfirm"]:has-text("Delete")',
   );
@@ -987,12 +998,16 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("<div for={`issue-");
-  expect(routeSource).not.toContain("!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending");
+  expect(routeSource).not.toContain(
+    "!projectQuery.data || !sessionQuery.data || milestoneQuery.isPending",
+  );
   expect(routeSource).toContain(
     "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
   expect(routeSource).toContain("function useProjectMilestoneDetailDocumentTitle(");
-  expect(routeSource).toContain("document.title = `${milestoneTitle} - ${ownerName}/${projectName}`;");
+  expect(routeSource).toContain(
+    "document.title = `${milestoneTitle} - ${ownerName}/${projectName}`;",
+  );
   expect(routeSource).toContain("type LegacyIssueItemRowAttrs = {");
   expect(routeSource).toContain("const issueListItemAttrs = {");
   expect(routeSource).toContain("href: issueHref");
@@ -1243,47 +1258,50 @@ async function mockProjectMilestoneDetail(
       }),
     });
   });
-  await page.route(`**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}`, async (route) => {
-    if (route.request().method() === "DELETE") {
-      deleteRequests.push("DELETE");
+  await page.route(
+    `**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}`,
+    async (route) => {
+      if (route.request().method() === "DELETE") {
+        deleteRequests.push("DELETE");
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ redirectPath: "/admin/sample/milestones" }),
+        });
+        return;
+      }
+      if (overrides?.milestoneNotFound) {
+        await route.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: {
+              code: "milestone_not_found",
+              message: "Milestone does not exist",
+              status: 404,
+            },
+          }),
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ redirectPath: "/admin/sample/milestones" }),
+        body: JSON.stringify({ milestone }),
       });
-      return;
-    }
-    if (overrides?.milestoneNotFound) {
-      await route.fulfill({
-        status: 404,
-        contentType: "application/json",
-        body: JSON.stringify({
-          error: {
-            code: "milestone_not_found",
-            message: "Milestone does not exist",
-            status: 404,
-          },
-        }),
-      });
-      return;
-    }
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ milestone }),
-    });
-  });
+    },
+  );
   await page.route(
     `**/api/v1/owners/admin/projects/sample/milestones/${milestoneId}/state`,
     async (route) => {
-    stateRequests.push(route.request().postDataJSON());
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        milestone: {
-          ...milestone,
-          state: "closed",
-        },
-      }),
-    });
+      stateRequests.push(route.request().postDataJSON());
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          milestone: {
+            ...milestone,
+            state: "closed",
+          },
+        }),
+      });
     },
   );
   await page.route("**/issues/mass-update", async (route) => {
@@ -1556,6 +1574,34 @@ async function milestoneDetailMetrics(page: Page) {
   });
 }
 
+async function milestoneDetailActionRowMetrics(page: Page) {
+  return page.evaluate(() => {
+    const actionRow = document.querySelector<HTMLElement>(".actrow.right-txt.row-fluid");
+    const listButton = document.querySelector<HTMLElement>(".actrow .ybtn.pull-left");
+    const deleteButton = document.querySelector<HTMLElement>(".actrow .ybtn.ybtn-danger");
+    const editButton = document.querySelector<HTMLElement>(
+      '.actrow .ybtn[href$="/milestone/5/editform"]',
+    );
+    const closeButton = document.querySelector<HTMLElement>(
+      '.actrow [data-request-uri$="/milestone/5/close"]',
+    );
+    if (!actionRow || !listButton || !deleteButton || !editButton || !closeButton) {
+      throw new Error("Expected milestone detail action row controls are missing.");
+    }
+    return {
+      actionRowDisplay: getComputedStyle(actionRow).display,
+      actionRowLeft: Math.round(actionRow.getBoundingClientRect().left),
+      actionRowRight: Math.round(actionRow.getBoundingClientRect().right),
+      closeLeft: Math.round(closeButton.getBoundingClientRect().left),
+      closeRight: Math.round(closeButton.getBoundingClientRect().right),
+      deleteLeft: Math.round(deleteButton.getBoundingClientRect().left),
+      editLeft: Math.round(editButton.getBoundingClientRect().left),
+      listLeft: Math.round(listButton.getBoundingClientRect().left),
+      listRight: Math.round(listButton.getBoundingClientRect().right),
+    };
+  });
+}
+
 async function canonicalizeMilestoneRouteRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(document.querySelectorAll(".page-wrap-outer, #deleteConfirm"));
@@ -1576,7 +1622,7 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
       const attrs = Array.from(node.attributes)
         .filter((attr) => shouldKeepAttr(node, attr))
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(node, attr))}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
@@ -1590,12 +1636,19 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+    function normalizeAttr(element: Element, attr: Attr) {
+      return attr.name === "style" ? normalizeStyleAttr(element, attr.value) : attr.value;
     }
 
-    function normalizeStyleAttr(value: string) {
-      return value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+    function normalizeStyleAttr(element: Element, value: string) {
+      const normalized = value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      if (element.matches(".actrow.right-txt.row-fluid") && normalized.includes("display:block")) {
+        return normalized
+          .replace("display:block;", "")
+          .replace(";display:block", "")
+          .replace("display:block", "");
+      }
+      return normalized;
     }
 
     function shouldKeepAttr(node: Element, attr: Attr) {
@@ -1608,7 +1661,7 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
       ) {
         return false;
       }
-      return attr.name !== "class" || normalizeAttr(attr) !== "";
+      return attr.name !== "class" || normalizeAttr(node, attr) !== "";
     }
   });
 }
