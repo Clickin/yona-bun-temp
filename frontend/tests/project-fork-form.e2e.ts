@@ -11,7 +11,7 @@ const EXPECTED_PROJECT_FORK_FORM = `
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="__ROOT_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
@@ -35,6 +35,28 @@ const EXPECTED_PROJECT_FORK_CLONE_BODY = `
 
 const EXPECTED_PROJECT_FORK_EXISTING_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="devs"><fieldset><legend><h4 style="padding-top:10px">admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="help-messages center-txt"><i class="ico ico-err2"></i><p>Same forked project already exists.</p><p><strong class="vmiddle">admin / sample</strong><i class="yobicon-right vmiddle"></i><a href="__BASE_PATH__/devs/sample" class="vmiddle primary-txt">devs / sample</a></p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option data-url="__BASE_PATH__/admin/sample/newFork/admin" value="admin">admin</option><option data-url="__BASE_PATH__/admin/sample/newFork/devs" value="devs" selected="">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="protected" value="PROTECTED" class="radio-btn"><label for="protected" class="bg-radiobtn label-protected">GROUP PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
+`;
+
+const EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN = `
+<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
+<header class="gnb-outer">
+  <div class="gnb-inner">
+    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
+    <ul class="gnb-nav">
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+    </ul>
+    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
+    <ul class="gnb-usermenu">
+      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
+    </ul>
+  </div>
+</header>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
 test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }) => {
@@ -73,6 +95,46 @@ test("project fork owner route renders legacy existing-fork state", async ({ pag
       EXPECTED_PROJECT_FORK_EXISTING_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("project fork non-git access renders the legacy bad-request site shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockNonGitProjectForkAccess(page);
+
+  await page.goto(`${basePath}/admin/svnplayground/newFork`);
+
+  await expect(page).toHaveTitle("This request is only supported in a git project.");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
+  await expect(page.locator(".content-wrap.frm-wrap")).toHaveCount(0);
+  await expect(page.locator("#helpMessage")).toHaveCount(0);
+  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "This request is only supported in a git project.",
+  );
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveText("Home");
+
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+  expect(await projectForkBadRequestMetrics(page)).toEqual({
+    errorTextAlign: "center",
+    gnbBackground: "rgb(27, 27, 27)",
+    gnbClassName: "gnb-outer",
+    homeButtonClassName: "ybtn ybtn-info",
+    messageColor: "rgb(137, 137, 137)",
+    messageFontSize: "16px",
+    pageWrapMarginTop: "10px",
+    pageWrapMinHeight: "450px",
+  });
 });
 
 test("project fork owner route remounts the legacy fork form for concrete owner state", async () => {
@@ -437,6 +499,31 @@ async function mockProjectAdminWithExistingFork(page: Page) {
   });
 }
 
+async function mockNonGitProjectForkAccess(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/svnplayground/fork-options", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(nonGitProjectForkOptions()),
+    });
+  });
+}
+
 async function mockPullRequestsDestination(page: Page) {
   await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
     await route.fulfill({
@@ -552,6 +639,28 @@ function existingProjectForkOptions() {
       ownerName: "devs",
       projectName: "sample",
       projectScope: "PUBLIC",
+    },
+  };
+}
+
+function nonGitProjectForkOptions() {
+  return {
+    ...projectForkOptions({
+      ownerName: "admin",
+      projectName: "svnplayground",
+      vcs: "SVN",
+    }),
+    canFork: false,
+    selected: {
+      ownerName: "admin",
+      projectName: "svnplayground",
+      projectScope: "PUBLIC",
+    },
+    source: {
+      ...sourceProject(),
+      ownerName: "admin",
+      projectName: "svnplayground",
+      vcs: "SVN",
     },
   };
 }
@@ -707,6 +816,35 @@ async function forkCloneProgressMetrics(page: Page) {
       legendText: legend.textContent?.trim(),
       outerMinHeight: outerStyle.minHeight,
       projectWrapMarginTop: getComputedStyle(projectWrap).marginTop,
+    };
+  });
+}
+
+async function projectForkBadRequestMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const message = errorWrap?.querySelector<HTMLElement>("p");
+    const homeButton = errorWrap?.querySelector<HTMLElement>("a.ybtn.ybtn-info");
+    const missing = Object.entries({ errorWrap, header, homeButton, message, pageWrap })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected fork bad-request metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    return {
+      errorTextAlign: window.getComputedStyle(errorWrap).textAlign,
+      gnbBackground: window.getComputedStyle(header).backgroundColor,
+      gnbClassName: header.className,
+      homeButtonClassName: homeButton.className,
+      messageColor: window.getComputedStyle(message).color,
+      messageFontSize: window.getComputedStyle(message).fontSize,
+      pageWrapMarginTop: window.getComputedStyle(pageWrap).marginTop,
+      pageWrapMinHeight: window.getComputedStyle(pageWrap).minHeight,
     };
   });
 }

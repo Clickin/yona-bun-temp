@@ -14,6 +14,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { DefaultSearchErrorBody } from "../../-search-screen";
 
 type ForkCloneProgress = {
   originalOwnerName: string;
@@ -93,9 +94,29 @@ function ProjectForkScreen({
   const query = useQuery(
     readProjectForkOptionsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const isGitProject = query.data
+    ? stringField(recordField(query.data.source).vcs, "").toUpperCase() === "GIT"
+    : null;
+  useProjectForkDocumentTitle({
+    isGitProject,
+    ownerName,
+    projectName,
+    runtimeConfig,
+  });
 
   if (!query.data) {
     return null;
+  }
+
+  if (!isGitProject) {
+    return (
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest.only.available.for.git"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
+    );
   }
 
   const project = projectContainerFromForkSource(query.data.source);
@@ -113,6 +134,35 @@ function ProjectForkScreen({
       />
     </>
   );
+}
+
+function useProjectForkDocumentTitle({
+  isGitProject,
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  isGitProject: boolean | null;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { t } = useLegacyMessages();
+
+  useEffect(() => {
+    if (typeof document === "undefined" || isGitProject === null) {
+      return;
+    }
+
+    const siteName = runtimeConfig.siteName ?? "Yona";
+    document.title = isGitProject
+      ? `${t("fork")} - ${ownerName}/${projectName}`
+      : t("error.badrequest.only.available.for.git");
+
+    return () => {
+      document.title = siteName;
+    };
+  }, [isGitProject, ownerName, projectName, runtimeConfig.siteName, t]);
 }
 
 function ProjectForkBody({
