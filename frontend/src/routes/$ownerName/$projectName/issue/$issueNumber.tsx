@@ -131,7 +131,12 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectIssueDetailTitle issueTitle={stringField(issueQuery.data.title)} />
+      <ProjectIssueDetailTitle
+        issueBodyMarkdown={stringField(issueQuery.data.bodyMarkdown)}
+        issueTitle={stringField(issueQuery.data.title)}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <IssueDetailAssets
@@ -158,8 +163,40 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   );
 }
 
-function ProjectIssueDetailTitle({ issueTitle }: { issueTitle: string }) {
-  return issueTitle ? <title>{issueTitle}</title> : null;
+function ProjectIssueDetailTitle({
+  issueBodyMarkdown,
+  issueTitle,
+  ownerName,
+  projectName,
+}: {
+  issueBodyMarkdown: string;
+  issueTitle: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  if (!issueTitle) {
+    return null;
+  }
+
+  const description = legacyIssueOpenGraphDescription(issueBodyMarkdown, ownerName, projectName);
+
+  return (
+    <>
+      <title>{issueTitle}</title>
+      <meta property="og:title" content={issueTitle} />
+      <meta property="og:description" content={description} />
+      <meta name="twitter:title" content={issueTitle} />
+      <meta name="twitter:description" content={description} />
+    </>
+  );
+}
+
+function legacyIssueOpenGraphDescription(
+  issueBodyMarkdown: string,
+  ownerName: string,
+  projectName: string,
+) {
+  return `${issueBodyMarkdown.slice(0, 200)} - ${ownerName}/${projectName}`;
 }
 
 function ProjectIssueNotFoundTitle({

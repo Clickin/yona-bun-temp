@@ -47,6 +47,18 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page).toHaveTitle("Fix flaky issue");
   await expect.poll(() => headTitleText(page)).toBe("Fix flaky issue");
+  await expect
+    .poll(() => lastHeadMetaContent(page, 'meta[property="og:title"]'))
+    .toBe("Fix flaky issue");
+  await expect
+    .poll(() => lastHeadMetaContent(page, 'meta[property="og:description"]'))
+    .toBe("Body **markdown** - admin/sample");
+  await expect
+    .poll(() => lastHeadMetaContent(page, 'meta[name="twitter:title"]'))
+    .toBe("Fix flaky issue");
+  await expect
+    .poll(() => lastHeadMetaContent(page, 'meta[name="twitter:description"]'))
+    .toBe("Body **markdown** - admin/sample");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   await expect(page.locator("#vote.voter-exists")).toBeVisible();
   await expect(page.locator("#voters.voters-dialog")).toHaveCount(1);
@@ -354,8 +366,16 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toMatch(
     /document\.title|globalThis\[[^\]]*document[^\]]*\]|querySelector|addEventListener|classList|style\.display|setAttribute|removeAttribute|innerHTML|dangerouslySetInnerHTML|jQuery|\$\(/u,
   );
-  expect(routeSource).toContain("function ProjectIssueDetailTitle({ issueTitle }");
-  expect(routeSource).toContain("return issueTitle ? <title>{issueTitle}</title> : null;");
+  expect(routeSource).toContain("function ProjectIssueDetailTitle({");
+  expect(routeSource).toContain("function legacyIssueOpenGraphDescription(");
+  expect(routeSource).toContain("issueBodyMarkdown.slice(0, 200)");
+  expect(routeSource).toContain(
+    "return `${issueBodyMarkdown.slice(0, 200)} - ${ownerName}/${projectName}`;",
+  );
+  expect(routeSource).toContain('<meta property="og:title" content={issueTitle} />');
+  expect(routeSource).toContain('<meta property="og:description" content={description} />');
+  expect(routeSource).toContain('<meta name="twitter:title" content={issueTitle} />');
+  expect(routeSource).toContain('<meta name="twitter:description" content={description} />');
   expect(routeSource).toContain("function ProjectIssueNotFoundTitle({");
   expect(routeSource).toContain(
     '<title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>',
@@ -3996,6 +4016,13 @@ async function issueNotFoundMetrics(page: Page) {
 
 async function headTitleText(page: Page) {
   return page.evaluate(() => document.querySelector("head > title")?.textContent ?? "");
+}
+
+async function lastHeadMetaContent(page: Page, selector: string) {
+  return page.evaluate((metaSelector) => {
+    const matches = document.querySelectorAll<HTMLMetaElement>(metaSelector);
+    return matches.item(matches.length - 1)?.content ?? "";
+  }, selector);
 }
 
 async function commentDeleteModalMetrics(page: Page) {
