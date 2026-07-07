@@ -224,11 +224,8 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
             <div className="avatar-frm">
               <div className="avatar-wrap xlarge">
-                <img
-                  src={avatarUrl || undefined}
-                  style={{ maxWidth: "none", width: "128px" }}
-                  alt=""
-                />
+                {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
+                <img src={avatarUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
               </div>
               <div
                 className="upload-progress avatar"
@@ -280,15 +277,16 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
           >
             <div className="modal-header center-txt">
               <div className="avatar-wrap xlarge">
+                {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
                 <img
                   src={avatarPreviewUrl || undefined}
                   style={{ maxWidth: "none", width: "128px" }}
-                  alt=""
                 />
               </div>
             </div>
             <div className="modal-body">
-              <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "500px" }} alt="" />
+              {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop preview image without an alt attribute. */}
+              <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "500px" }} />
               <canvas width="128" height="128" className="hide"></canvas>
             </div>
             <div className="modal-footer">
@@ -303,7 +301,6 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               <button
                 type="button"
                 className="ybtn ybtn-success btnSubmitCrop"
-                disabled={!avatarFile || avatarMutation.isPending}
                 onClick={submitAvatarCrop}
               >
                 {t("button.save")}

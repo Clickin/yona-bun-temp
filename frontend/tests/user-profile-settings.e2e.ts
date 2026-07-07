@@ -145,6 +145,18 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
     EXPECTED_USER_PROFILE_SETTINGS_SCREEN.replaceAll("__BASE_PATH__", basePath),
   );
   expect(actual).toEqual(expected);
+  await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).not.toHaveAttribute(
+    "alt",
+    /.*/,
+  );
+  await expect(
+    page.locator("#avatarCropWrap .modal-header .avatar-wrap > img"),
+  ).not.toHaveAttribute("alt", /.*/);
+  await expect(page.locator("#avatarCropWrap .modal-body > img")).not.toHaveAttribute("alt", /.*/);
+  await expect(page.locator("#avatarCropWrap .btnSubmitCrop")).not.toHaveAttribute(
+    "disabled",
+    /.*/,
+  );
 
   expect(await readProfileSettingsMetrics(page)).toEqual({
     avatarFormFloat: "left",
@@ -209,7 +221,15 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   });
   await expect(page.locator("#avatarCropWrap")).toHaveClass("modal hide in");
   await expect(page.locator("#avatarCropWrap")).toHaveCSS("display", "block");
+  await expect(page.locator("#avatarCropWrap .btnSubmitCrop")).not.toHaveAttribute(
+    "disabled",
+    /.*/,
+  );
   await expect(page.locator("#avatarCropWrap .modal-body > img")).toHaveAttribute("src", /^blob:/);
+  await expect(
+    page.locator("#avatarCropWrap .modal-header .avatar-wrap > img"),
+  ).not.toHaveAttribute("alt", /.*/);
+  await expect(page.locator("#avatarCropWrap .modal-body > img")).not.toHaveAttribute("alt", /.*/);
   await page.locator("#avatarCropWrap .btnSubmitCrop").click();
   await expect.poll(() => profileUpdates.length).toBe(2);
   expect(fileUploads).toHaveLength(1);
@@ -322,11 +342,20 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
   await expect(avatarCropModal).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page.locator(cancelButton)).toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).not.toHaveAttribute(
+    "alt",
+    /.*/,
+  );
   await expect(page.locator("#avatarCropWrap .modal-header .avatar-wrap > img")).toHaveAttribute(
     "src",
     /^blob:/,
   );
+  await expect(
+    page.locator("#avatarCropWrap .modal-header .avatar-wrap > img"),
+  ).not.toHaveAttribute("alt", /.*/);
   await expect(page.locator("#avatarCropWrap .modal-body > img")).toHaveAttribute("src", /^blob:/);
+  await expect(page.locator("#avatarCropWrap .modal-body > img")).not.toHaveAttribute("alt", /.*/);
+  await expect(page.locator(saveButton)).not.toHaveAttribute("disabled", /.*/);
   await expect(page).toHaveURL(editFormUrl);
   await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
   await expect
@@ -425,6 +454,8 @@ test("user profile avatar crop modal source stays route-owned", () => {
   expect(modalSource).toContain("onClick={dismissAvatarCropModal}");
   expect(modalSource).toContain("onClick={submitAvatarCrop}");
   expect(modalSource).toContain('className="modal-backdrop in"');
+  expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain('alt=""');
+  expect(modalSource).not.toContain("disabled=");
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");
   expect(modalSource).not.toContain("addEventListener(");
@@ -643,7 +674,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-placement",
         "data-backdrop",
         "data-dismiss",
-      ];
+      ].concat(legacyAvatarAttributeNames(current));
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
         .map((name) => normalizeAttribute(current, name))
@@ -671,6 +702,11 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string) {
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
+    }
+    function legacyAvatarAttributeNames(current: Element) {
+      return current.matches("#frmAvatar img, #avatarCropWrap img, #avatarCropWrap button")
+        ? ["alt", "disabled"]
+        : [];
     }
 
     return Array.from(
@@ -709,7 +745,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           "data-placement",
           "data-backdrop",
           "data-dismiss",
-        ];
+        ].concat(legacyAvatarAttributeNames(current));
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
           .map((name) => normalizeAttribute(current, name))
@@ -737,6 +773,11 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       function normalizeAttribute(current: Element, name: string) {
         return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
+      }
+      function legacyAvatarAttributeNames(current: Element) {
+        return current.matches("#frmAvatar img, #avatarCropWrap img, #avatarCropWrap button")
+          ? ["alt", "disabled"]
+          : [];
       }
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
