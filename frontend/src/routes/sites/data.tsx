@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -16,19 +15,6 @@ const legacySiteSidebarLinkProps = {
 export const Route = createFileRoute("/sites/data")({
   component: SiteDataRoute,
 });
-
-function useLegacySiteDataDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.siteSetting");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
-}
 
 function SiteDataRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -46,7 +32,6 @@ function SiteDataRoute() {
 
 function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  useLegacySiteDataDocumentTitle(runtimeConfig);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
   const sessionBootstrapQuery = useQuery({
     queryFn: () => readSessionBootstrap(runtimeConfig),
@@ -55,6 +40,7 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   return (
     <>
+      <title>{t("title.siteSetting")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{t("site.sidebar")}</h3>

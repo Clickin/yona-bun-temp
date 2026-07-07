@@ -238,6 +238,11 @@ test("site admin data export link preserves legacy download href", async ({ page
 test("site admin data source keeps export as legacy href without route escape", () => {
   const routeSource = readFileSync("src/routes/sites/data.tsx", "utf8");
 
+  expect(routeSource).toContain('<title>{t("title.siteSetting")}</title>');
+  expect(routeSource).not.toContain("useLegacySiteDataDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("useEffect");
+  expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
