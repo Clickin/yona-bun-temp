@@ -1,6 +1,6 @@
-import type { ComponentPropsWithRef } from "react";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { currentSessionQueryOptions } from "../api/session";
 import type { YonaRecord } from "../api/types";
@@ -29,13 +29,19 @@ const legacyPlainLinkActiveProps = {
   "data-status": undefined,
 };
 
-function LegacyHrefAnchor({
-  legacyHref,
+function LegacyRootLinkAnchor({
+  legacyRootHref,
   href: _href,
+  ref,
   ...props
-}: ComponentPropsWithRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyRootHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyRootHref });
 }
+
+const LegacyRootLink = createLink(LegacyRootLinkAnchor);
 
 function RestrictedRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -60,16 +66,13 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const authId = stringValue(currentAuth?.id) || stringValue(localUser?.loginId) || "";
   const expires = numberValue(currentAuth?.expires, -1);
   const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
-  const logoLinkProps = useLinkProps({
-    activeOptions: legacyPlainLinkActiveOptions,
-    activeProps: legacyPlainLinkActiveProps,
-    className: "logo logo-letter",
-    onClick: (event) => {
+  const handleHomeClick = React.useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       router.history.push(homeHref);
     },
-    to: "/",
-  });
+    [homeHref, router.history],
+  );
 
   return (
     <>
@@ -86,9 +89,16 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
           <ul className="gnb-nav">
             <li>
-              <LegacyHrefAnchor {...logoLinkProps} legacyHref={homeHref}>
+              <LegacyRootLink
+                activeOptions={legacyPlainLinkActiveOptions}
+                activeProps={legacyPlainLinkActiveProps}
+                className="logo logo-letter"
+                legacyRootHref={homeHref}
+                onClick={handleHomeClick}
+                to="/"
+              >
                 Y
-              </LegacyHrefAnchor>
+              </LegacyRootLink>
             </li>
             <li>
               <form

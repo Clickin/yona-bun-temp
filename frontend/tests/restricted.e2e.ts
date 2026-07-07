@@ -174,12 +174,17 @@ test("restricted footer links preserve legacy external anchors without router ma
 });
 
 test("restricted route source keeps internal navigation out of raw anchors", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("useLinkProps({");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('className: "logo logo-letter"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps: legacyPlainLinkActiveProps");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('to: "/"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("const LegacyRootLink = createLink");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("function LegacyRootLinkAnchor");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('className="logo logo-letter"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("legacyRootHref={homeHref}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps={legacyPlainLinkActiveProps}");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('to="/"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("<LegacyHrefAnchor");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("<LegacyRootLink");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("useLinkProps");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
 });
 
