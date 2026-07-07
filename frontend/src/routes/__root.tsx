@@ -106,7 +106,6 @@ function RootResetShell() {
     password: "",
     rememberMe: true,
   });
-  const locationHref = useRouterState({ select: (state) => state.location.href });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const rendersPlainResponseState = pathname.startsWith("/verify/");
   const rendersStandaloneLoginState = pathname === "/users/loginform";
@@ -185,27 +184,6 @@ function RootResetShell() {
     },
     [rootLoginDialogState, runtimeConfig],
   );
-
-  React.useEffect(() => {
-    if (rendersPlainResponseState) {
-      return;
-    }
-    scanOriginalMessageSources();
-    const timeoutId = window.setTimeout(() => {
-      scanOriginalMessageSources();
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [locationHref, rendersPlainResponseState]);
-
-  React.useEffect(() => {
-    if (rendersPlainResponseState) {
-      return;
-    }
-    document.addEventListener("yobi:original-message-scan", scanOriginalMessageSources);
-    return () => {
-      document.removeEventListener("yobi:original-message-scan", scanOriginalMessageSources);
-    };
-  }, [rendersPlainResponseState]);
 
   React.useEffect(() => {
     if (rootShellModal !== "loginDialog") {
@@ -311,64 +289,6 @@ function RootResetShell() {
       document.removeEventListener("click", handleDocumentClick);
     };
   }, [rendersPlainResponseState]);
-
-  function scanOriginalMessageSources() {
-    document.querySelectorAll<HTMLElement>("[data-via-email]").forEach((target) => {
-      if (target.dataset.yobiOriginalMessageProcessed === "true") {
-        return;
-      }
-      target.dataset.yobiOriginalMessageProcessed = "true";
-
-      const delimiter = Array.from(target.querySelectorAll<HTMLElement>("*")).find((candidate) => {
-        const html = candidate.innerHTML;
-        return (
-          candidate !== target.firstElementChild &&
-          html.includes("---") &&
-          /(^|^<[^>]+>)---+[^-]*---+/.test(html)
-        );
-      });
-      if (!delimiter) {
-        return;
-      }
-
-      const originalMessage = new Set<HTMLElement>();
-      function addFollowingSiblings(element: Element) {
-        let sibling = element.nextElementSibling;
-        while (sibling) {
-          if (sibling instanceof HTMLElement) {
-            originalMessage.add(sibling);
-          }
-          sibling = sibling.nextElementSibling;
-        }
-      }
-
-      originalMessage.add(delimiter);
-      addFollowingSiblings(delimiter);
-      let parent = delimiter.parentElement;
-      while (parent && parent !== target) {
-        addFollowingSiblings(parent);
-        parent = parent.parentElement;
-      }
-
-      originalMessage.forEach((element) => {
-        element.style.display = "none";
-      });
-
-      const toggle = document.createElement("button");
-      toggle.type = "button";
-      toggle.textContent = "...";
-      toggle.style.cssText = "border: 0px; padding-left: 5px; padding-right: 5px;";
-      toggle.addEventListener("click", () => {
-        const shouldShow = Array.from(originalMessage).some(
-          (element) => element.style.display === "none",
-        );
-        originalMessage.forEach((element) => {
-          element.style.display = shouldShow ? "" : "none";
-        });
-      });
-      delimiter.before(toggle);
-    });
-  }
 
   const rootShellContent = (
     <>

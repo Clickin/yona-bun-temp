@@ -124,6 +124,21 @@ test("root shell does not own route tab, search scope, or notify bridge state", 
   expect(ROOT_ROUTE_SOURCE).toContain('<div id="yobiToasts" className="yobiToasts">');
 });
 
+test("root shell does not own delegated original-message scanning", async () => {
+  expect(ROOT_ROUTE_SOURCE).not.toContain("scanOriginalMessageSources");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("yobi:original-message-scan");
+  expect(ROOT_ROUTE_SOURCE).not.toContain(
+    'document.querySelectorAll<HTMLElement>("[data-via-email]")',
+  );
+  expect(ROOT_ROUTE_SOURCE).not.toContain('document.querySelectorAll("[data-via-email]")');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("yobiOriginalMessageProcessed");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("data-yobi-original-message-processed");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("delimiter.before(toggle)");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('toggle.textContent = "..."');
+  expect(ROOT_ROUTE_SOURCE).not.toContain('toggle.addEventListener("click"');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("(^|^<[^>]+>)---+[^-]*---+");
+});
+
 test("root shell does not own route dropdown selection mutation", async () => {
   expect(ROOT_ROUTE_SOURCE).not.toContain(".btn-group[data-name] .dropdown-menu li");
   expect(ROOT_ROUTE_SOURCE).not.toContain("label.innerHTML = selectedItem.innerHTML");
@@ -599,6 +614,14 @@ test("standalone UI kit route owns legacy data-via-email original message", asyn
   await expect(fixture).toHaveAttribute("data-original-message-owner", "route");
   await expect(fixture.locator("blockquote > :first-child")).toHaveText("...");
   await expect(fixture.locator('button[type="button"]')).toHaveText("...");
+  await expect(page.locator("#via-email-delimiter")).toBeHidden();
+  await expect(page.locator("#via-email-hidden-line")).toBeHidden();
+  await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
+
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event("yobi:original-message-scan"));
+  });
+  await expect(fixture.locator('button[type="button"]')).toHaveCount(1);
   await expect(page.locator("#via-email-delimiter")).toBeHidden();
   await expect(page.locator("#via-email-hidden-line")).toBeHidden();
   await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
