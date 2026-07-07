@@ -196,62 +196,6 @@ function RootResetShell() {
     return () => window.clearTimeout(timeoutId);
   }, [rootShellModal]);
 
-  React.useEffect(() => {
-    if (rendersPlainResponseState) {
-      return;
-    }
-
-    function handleDocumentClick(event: MouseEvent) {
-      const target = event.target instanceof Element ? event.target : null;
-      const dismissModal = target?.closest<HTMLElement>('[data-dismiss="modal"]');
-      if (dismissModal) {
-        if (dismissModal.closest("#loginDialog, #yobiDialog")) {
-          return;
-        }
-        const modal = dismissModal.closest<HTMLElement>(".modal");
-        if (modal) {
-          modal.classList.add("hide");
-          modal.classList.remove("in");
-          modal.style.display = "none";
-          modal.setAttribute("aria-hidden", "true");
-        }
-        document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
-        event.preventDefault();
-        return;
-      }
-
-      const modalToggle = target?.closest<HTMLElement>('[data-toggle="modal"]');
-      if (modalToggle) {
-        const selector = getModalToggleSelector(modalToggle);
-        if (getRootShellModalId(selector)) {
-          return;
-        }
-        const modal = selector?.startsWith("#") ? document.getElementById(selector.slice(1)) : null;
-        if (modal) {
-          modal.classList.remove("hide");
-          modal.classList.add("in");
-          modal.style.display = "block";
-          modal.setAttribute("aria-hidden", "false");
-          if (!document.querySelector(".modal-backdrop")) {
-            const backdrop = document.createElement("div");
-            backdrop.className = modal.classList.contains("fade")
-              ? "modal-backdrop fade in"
-              : "modal-backdrop in";
-            document.body.append(backdrop);
-          }
-          window.setTimeout(() => modal.focus(), 0);
-        }
-        event.preventDefault();
-        return;
-      }
-    }
-
-    document.addEventListener("click", handleDocumentClick);
-    return () => {
-      document.removeEventListener("click", handleDocumentClick);
-    };
-  }, [rendersPlainResponseState]);
-
   const rootShellContent = (
     <>
       <Outlet />
