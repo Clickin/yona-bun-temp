@@ -163,6 +163,8 @@ test("reset password form matches legacy user/resetPassword.scala.html screen DO
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/resetPassword?s=reset-token`);
   await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page).toHaveTitle("Reset password");
+  expect(await readHeadTitle(page)).toBe("Reset password");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -336,6 +338,14 @@ test("reset password route keeps route-local internal anchors on TanStack Link",
   expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
     'const homeHref = prefixBasePath(runtimeConfig.basePath, "")',
   );
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('const browserTitle = t("title.resetPassword");');
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("<title>{browserTitle}</title>");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("document.title");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("window.document");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(
+    /React\.use(?:Layout)?Effect\([\s\S]{0,500}(?:document|window|globalThis)[\s\S]{0,200}title/u,
+  );
   expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("function ResetPasswordRootLinkAnchor({");
   expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
     "const ResetPasswordRootLink = createLink(ResetPasswordRootLinkAnchor);",
@@ -420,6 +430,10 @@ async function canonicalizeScreenRoots(page: Page) {
     );
     return roots.map((root) => visit(root)).join("");
   });
+}
+
+async function readHeadTitle(page: Page) {
+  return page.evaluate(() => document.querySelector("head > title")?.textContent ?? "");
 }
 
 async function readDesktopResetPasswordMetrics(page: Page) {

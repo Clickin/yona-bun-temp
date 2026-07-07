@@ -70,6 +70,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     Partial<Record<"password" | "retypedPassword", string>>
   >({});
   const siteName = runtimeConfig.siteName ?? "Yona";
+  const browserTitle = t("title.resetPassword");
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],
   });
@@ -106,6 +107,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <title>{browserTitle}</title>
       <div className="page full">
         <div className="center-wrap tag-line-wrap reset-password">
           <h1 className="title">
