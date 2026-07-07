@@ -900,6 +900,7 @@ function PullRequestConflictGuide({
   const toBranchName = branchItemName(pullRequest.toBranch);
   const upstreamUrl = projectCodeUrlWithLogin(
     runtimeConfig.basePath,
+    browserRuntimeOrigin(),
     pullRequest.ownerName,
     pullRequest.projectName,
     pullRequest.contributor.loginId,
@@ -1039,17 +1040,22 @@ function disabledAcceptButtonTitle(
 
 function projectCodeUrlWithLogin(
   basePath: string,
+  origin: string,
   ownerName: string,
   projectName: string,
   loginId: string,
 ) {
   const path = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
-  if (typeof window === "undefined") {
+  if (!origin) {
     return path;
   }
-  const url = new URL(path, window.location.origin);
+  const url = new URL(path, origin);
   url.username = loginId;
   return url.toString();
+}
+
+function browserRuntimeOrigin() {
+  return typeof globalThis.origin === "string" ? globalThis.origin : "";
 }
 
 function branchItemName(branch: string) {

@@ -469,6 +469,7 @@ test("project pull request overview route source uses direct Links", async () =>
     "href={prefixBasePath(runtimeConfig.basePath, `/${pullRequest.contributor.loginId}`)}",
   );
   expect(routeSource).not.toContain("as never");
+  expect(routeSource).not.toContain("window.location");
   expect(routeSource).toContain('to="/$user"');
   expect(routeSource).toContain("params={{ user: pullRequest.contributor.loginId }}");
   expect(routeSource).toContain("params={{ user: event.senderLoginId }}");
@@ -1190,12 +1191,11 @@ test("project pull request overview renders legacy contributor conflict guide DO
   });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
-  const upstreamUrl = await page.evaluate((mountedBasePath) => {
-    const url = new URL(`${mountedBasePath}/admin/sample`, window.location.origin);
-    url.username = "dev";
-    return url.toString();
-  }, basePath);
+  const upstreamUrl = projectCodeUrlWithLogin(page.url(), basePath, "admin", "sample", "dev");
   await expect(page.locator(".howto-resolve-conflict")).toContainText("Resolving conflicts");
+  await expect(page.locator(".howto-resolve-conflict li").nth(1).locator("code")).toHaveText(
+    `git remote add upstream ${upstreamUrl}`,
+  );
   await expect(page.locator(".howto-resolve-conflict code")).toContainText([
     "git checkout feature/ui",
     `git remote add upstream ${upstreamUrl}`,
@@ -1234,11 +1234,7 @@ test("project pull request overview renders legacy refs heads branch names", asy
   });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
-  const upstreamUrl = await page.evaluate((mountedBasePath) => {
-    const url = new URL(`${mountedBasePath}/admin/sample`, window.location.origin);
-    url.username = "dev";
-    return url.toString();
-  }, basePath);
+  const upstreamUrl = projectCodeUrlWithLogin(page.url(), basePath, "admin", "sample", "dev");
   await expect(page.locator(".pullRequest-branchInfo .from .branchName")).toHaveText(
     "release/hotfix",
   );
@@ -1246,6 +1242,9 @@ test("project pull request overview renders legacy refs heads branch names", asy
   await expect(page.locator(".pullRequest-branchInfo .from .branchName")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/release%2Fhotfix`,
+  );
+  await expect(page.locator(".howto-resolve-conflict li").nth(1).locator("code")).toHaveText(
+    `git remote add upstream ${upstreamUrl}`,
   );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
@@ -1564,6 +1563,18 @@ async function expectLegacyAnchor(
   await expect(locator).toHaveText(attrs.text);
   await expect(locator).not.toHaveAttribute("aria-current", /.+/u);
   await expect(locator).not.toHaveAttribute("data-status", /.+/u);
+}
+
+function projectCodeUrlWithLogin(
+  currentPageUrl: string,
+  basePath: string,
+  ownerName: string,
+  projectName: string,
+  loginId: string,
+) {
+  const url = new URL(`${basePath}/${ownerName}/${projectName}`, currentPageUrl);
+  url.username = loginId;
+  return url.toString();
 }
 
 async function canonicalizeAll(page: Page, selector: string) {
