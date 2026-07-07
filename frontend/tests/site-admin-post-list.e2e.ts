@@ -524,6 +524,37 @@ test("site admin post list custom gravatar author avatar keeps legacy custom att
   await expect(authorAvatar).toHaveAttribute("height", "16");
 });
 
+test("site admin post list falls back to the legacy default project logo when the API returns blank", async ({
+  page,
+}) => {
+  const consoleMessages: string[] = [];
+  page.on("console", (message) => {
+    consoleMessages.push(message.text());
+  });
+
+  await mockSiteAdminSession(page);
+  await mockPosts(page, {
+    projectLogoUrl: "   ",
+  });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/sites/postList`);
+
+  const projectLogo = page.locator(".post-list-wrap .list-avatar img");
+  await expect(projectLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
+  expect(consoleMessages).not.toEqual(
+    expect.arrayContaining([
+      expect.stringContaining('An empty string ("") was passed to the src attribute'),
+    ]),
+  );
+});
+
 test("site admin post list route source keeps direct typed links", async () => {
   const source = await readFile("src/routes/sites/postList.tsx", "utf8");
 
@@ -538,6 +569,9 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('document.title = t("title.siteSetting");');
   expect(source).toContain("const legacyPaginationLinkProps = {");
+  expect(source).toContain(
+    'const projectLogoUrl = post.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";',
+  );
   expect(source).toContain("/\\/assets\\/images\\/default-avatar-\\d+\\.png$/u.test(avatarUrl)");
   expect(source).toContain("explicitUndefined: true");
   expect(source).toContain('"aria-current": undefined');

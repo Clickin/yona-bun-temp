@@ -258,6 +258,8 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 }
 
 function PostListItem({ post }: { post: SitePost }) {
+  const projectLogoUrl = post.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
+
   return (
     <li className="row-fluid listitem">
       <Link
@@ -265,7 +267,7 @@ function PostListItem({ post }: { post: SitePost }) {
         params={{ ownerName: post.ownerName, projectName: post.projectName }}
         to="/$ownerName/$projectName"
       >
-        <img src={post.projectLogoUrl} alt={post.projectName} />
+        <img src={projectLogoUrl} alt={post.projectName} />
       </Link>
       <div className="post-info-wrap">
         <Link
