@@ -55,12 +55,15 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
 
   await page.goto(`${basePath}/`);
   await expect(page.locator(".siteintro-bg")).toBeVisible();
+  const canonicalTitle = await page.title();
   const canonicalIndexRoots = await canonicalizeIndexRoots(page);
   const canonicalIndexMetrics = await readDesktopIndexMetrics(page);
 
   await page.goto(`${basePath}/users/login?from=legacy`);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/login`);
   expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
+  await expect(page).toHaveTitle(canonicalTitle);
+  expect(await page.locator("head title").allTextContents()).toContain(canonicalTitle);
   await expect(page.locator(".gnb-outer")).toBeVisible();
   await expect(page.locator(".siteintro-bg")).toBeVisible();
   await expect(page.locator(".signup-btn a")).toHaveAttribute(
@@ -69,6 +72,18 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
   );
   expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
   expect(await readDesktopIndexMetrics(page)).toEqual(canonicalIndexMetrics);
+});
+
+test("legacy GET /users/login title source renders React metadata without imperative document mutation", async () => {
+  const source = readFileSync("src/routes/users/login.tsx", "utf8");
+
+  expect(source).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
+  expect(source).toContain('<HomeRouteScreen routePath="/users/login"');
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain("window.document");
+  expect(source).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/isu);
+  expect(source).not.toMatch(/querySelector\s*\([^)]*title/isu);
 });
 
 test("legacy GET /users/login keeps the public index mobile proportions", async ({ page }) => {

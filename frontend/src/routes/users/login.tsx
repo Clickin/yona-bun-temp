@@ -8,5 +8,10 @@ export const Route = createFileRoute("/users/login")({
 function UsersLoginRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
-  return <HomeRouteScreen routePath="/users/login" runtimeConfig={runtimeConfig} />;
+  return (
+    <>
+      <title>{runtimeConfig.siteName ?? "Yona"}</title>
+      <HomeRouteScreen routePath="/users/login" runtimeConfig={runtimeConfig} />
+    </>
+  );
 }
