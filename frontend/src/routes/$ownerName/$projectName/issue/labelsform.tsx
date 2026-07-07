@@ -148,6 +148,7 @@ function ProjectLabelsBody({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const labelCategories = groupedLabels(labels);
+  const canManageIssueLabels = projectCanManageIssueLabels(project);
   const categoryTypeaheadSource = buildCategoryTypeaheadSource(labelCategories);
   const [newLabelColor, setNewLabelColor] = useState("");
   const [isNewLabelColorsVisible, setIsNewLabelColorsVisible] = useState(false);
@@ -401,7 +402,7 @@ function ProjectLabelsBody({
             projectName={projectName}
           />
 
-          {booleanField(project.viewerCanUpdate) ? (
+          {canManageIssueLabels ? (
             <>
               <form
                 id="copyLabel"
@@ -563,6 +564,7 @@ function ProjectLabelsBody({
               onDeleteLabel={setPendingLabelDeletion}
               onEditCategory={setEditingCategory}
               onEditLabel={setEditingLabel}
+              canManageIssueLabels={canManageIssueLabels}
               labels={labels}
               ownerName={ownerName}
               project={project}
@@ -656,6 +658,7 @@ function ProjectLabelsBody({
 
 function ProjectLabelsList({
   basePath,
+  canManageIssueLabels,
   labels,
   onDeleteLabel,
   onEditCategory,
@@ -665,6 +668,7 @@ function ProjectLabelsList({
   projectName,
 }: {
   basePath: string;
+  canManageIssueLabels: boolean;
   labels: YonaRecord[];
   onDeleteLabel: (labelId: string) => void;
   onEditCategory: (category: EditableCategory) => void;
@@ -685,7 +689,6 @@ function ProjectLabelsList({
   }
 
   const categories = groupedLabels(labels);
-  const canUpdate = booleanField(project.viewerCanUpdate);
   const projectIdValue = projectId(project);
 
   return (
@@ -719,7 +722,7 @@ function ProjectLabelsList({
                       : "label.category.option.multiple",
                   )}`}
                 ></i>
-                {canUpdate ? (
+                {canManageIssueLabels ? (
                   <button
                     type="button"
                     className="ybtn ybtn-mini"
@@ -757,7 +760,7 @@ function ProjectLabelsList({
                         </span>
                       </td>
                       <td className="actions">
-                        {canUpdate ? (
+                        {canManageIssueLabels ? (
                           <>
                             <button
                               type="button"
@@ -1654,6 +1657,25 @@ function projectFavorited(project: ProjectContainer) {
   return (
     booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
   );
+}
+
+function projectCanManageIssueLabels(project: ProjectContainer) {
+  const record = recordField(project);
+  const permissions = recordField(record.permissions);
+  const explicitFields = [
+    record.viewerCanManageIssueLabels,
+    record.viewerCanCreateIssueLabel,
+    record.viewerCanUpdateIssueLabel,
+    record.viewerCanDeleteIssueLabel,
+    permissions.canManageIssueLabels,
+    permissions.canCreateIssueLabel,
+    permissions.canUpdateIssueLabel,
+    permissions.canDeleteIssueLabel,
+  ];
+  if (explicitFields.some((value) => typeof value === "boolean")) {
+    return explicitFields.some((value) => value === true);
+  }
+  return booleanField(record.viewerCanUpdate);
 }
 
 function recordField(value: unknown) {

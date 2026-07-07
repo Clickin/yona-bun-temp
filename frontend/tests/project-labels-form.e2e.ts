@@ -377,6 +377,90 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
   });
 });
 
+test("project labels renders read-only label management state from legacy permission gates", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#3f51b5",
+        id: "9",
+        name: "feature",
+      },
+      {
+        category: "priority",
+        categoryId: "4",
+        categoryIsExclusive: true,
+        color: "#ff9800",
+        id: "10",
+        name: "high",
+      },
+    ],
+    {
+      project: {
+        viewerCanCreateIssueLabel: false,
+        viewerCanDeleteIssueLabel: false,
+        viewerCanManageIssueLabels: false,
+        viewerCanUpdate: true,
+        viewerCanUpdateIssueLabel: false,
+      },
+    },
+  );
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  await expect(page.locator(".project-setting .project-menu-nav li.active")).toBeVisible();
+  await expect(page.locator("#subMenuIssueLabel.active > a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
+  await expect(page.locator("#copyLabel")).toHaveCount(0);
+  await expect(page.locator("#frmNewLabel")).toHaveCount(0);
+  await expect(page.locator("#labelsList .list-head")).toBeVisible();
+  await expect(page.locator("#labelsList .category-wrap")).toHaveCount(2);
+  await expect(page.locator("#labelsList .category-name")).toHaveText(["type", "priority"]);
+  await expect(page.locator("#labelsList .issue-label.active")).toHaveText([
+    "bug",
+    "feature",
+    "high",
+  ]);
+  await expect(page.locator("#labelsList button[data-category-update-uri]")).toHaveCount(0);
+  await expect(page.locator("#labelsList button[data-delete-uri]")).toHaveCount(0);
+  await expect(page.locator("#labelsList button[data-update-uri]")).toHaveCount(0);
+  await expect(
+    page.locator('#labelsList link[href$="/admin/sample/issue/labels.css"]'),
+  ).toHaveCount(1);
+  await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator('#editLabel select[name="category.id"] option')).toHaveText([
+    "type",
+    "priority",
+  ]);
+
+  const metrics = await readOnlyLabelManagementMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.tabs.bottom).toBeLessThanOrEqual(metrics!.listHead.top);
+  expect(metrics!.firstCategory.top).toBeGreaterThanOrEqual(metrics!.listHead.bottom);
+  expect(metrics!.firstLabel.left).toBeGreaterThanOrEqual(metrics!.firstCategory.left);
+  expect(metrics!.firstLabel.right).toBeLessThanOrEqual(metrics!.pageWrap.right);
+  expect(metrics!.actionsCellWidth).toBeGreaterThanOrEqual(140);
+  expect(metrics!.categoryHeaderAlign).toBe("right");
+  expect(metrics!.listHeadBackground).toBe("rgb(250, 250, 250)");
+});
+
 test("project labels new-category confirm modal preserves legacy option semantics", async ({
   page,
 }) => {
@@ -1266,6 +1350,43 @@ async function labelListMetrics(page: Page) {
       labelName: firstLabel?.getAttribute("data-label-name"),
       updateUri: editButton?.getAttribute("data-update-uri"),
     };
+  });
+}
+
+async function readOnlyLabelManagementMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrap = document.querySelector<HTMLElement>(".project-page-wrap.label-editor-wrap");
+    const tabs = document.querySelector<HTMLElement>(".project-page-wrap > .nav.nav-tabs");
+    const listHead = document.querySelector<HTMLElement>("#labelsList .list-head");
+    const categoryHead = document.querySelector<HTMLElement>("#labelsList .list-head .category");
+    const firstCategory = document.querySelector<HTMLElement>("#labelsList .category-wrap");
+    const firstLabel = document.querySelector<HTMLElement>(
+      "#labelsList tr[data-label-id] .issue-label",
+    );
+    const actionsCell = document.querySelector<HTMLElement>("#labelsList td.actions");
+    if (!pageWrap || !tabs || !listHead || !categoryHead || !firstCategory || !firstLabel) {
+      return null;
+    }
+    return {
+      actionsCellWidth: actionsCell ? Math.round(actionsCell.getBoundingClientRect().width) : 0,
+      categoryHeaderAlign: getComputedStyle(categoryHead).textAlign,
+      firstCategory: rect(firstCategory),
+      firstLabel: rect(firstLabel),
+      listHead: rect(listHead),
+      listHeadBackground: getComputedStyle(listHead).backgroundColor,
+      pageWrap: rect(pageWrap),
+      tabs: rect(tabs),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
   });
 }
 
