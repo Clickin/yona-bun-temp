@@ -875,7 +875,7 @@ function DashboardPane({
             <>
               <h5>{t("project.dashboard.openIssuesByAssignee")}</h5>
               <div className="overview-assignee">
-                {assignees.length === 0 && unassignedCount === 0 ? (
+                {totalOpenIssues === 0 ? (
                   <DashboardEmpty
                     actionHref={prefixBasePath(basePath, `/${ownerName}/${projectName}/issueform`)}
                     actionText={t("issue.menu.new")}

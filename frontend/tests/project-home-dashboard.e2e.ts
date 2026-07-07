@@ -142,6 +142,47 @@ test("project home Dashboard tab follows legacy non-empty row filters and pull r
   );
 });
 
+test("project home Dashboard tab uses legacy assignee empty branch when every assignee count is zero", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    dashboard: {
+      assignees: [
+        {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "idle",
+          openIssueCount: 0,
+          userId: 3,
+          userLabel: "Idle Member",
+        },
+      ],
+      unassignedOpenIssueCount: 0,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample?tabId=dashboard`);
+  await expect(page.locator(".project-overview-home")).toBeVisible();
+
+  const assigneeOverview = page.locator(".overview-assignee");
+  await expect(assigneeOverview.locator(".empty")).toHaveCount(1);
+  await expect(assigneeOverview).toContainText("No issue found");
+  await expect(assigneeOverview.locator(".empty .ybtn")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issueform`,
+  );
+  await expect(assigneeOverview.locator(".usf-group")).toHaveCount(0);
+  await expect(assigneeOverview).not.toContainText("Idle Member");
+  await expect(assigneeOverview).not.toContainText("No assignee");
+
+  expect(await dashboardAssigneeEmptyMetrics(page)).toEqual({
+    actionContained: true,
+    actionTextAlign: "center",
+    messageContained: true,
+    messageMarginBottom: 15,
+  });
+});
+
 test("project home Dashboard tab treats zero-open milestones as non-empty legacy branch", async ({
   page,
 }) => {
@@ -556,6 +597,43 @@ async function dashboardLabelMetrics(page: Page) {
       overviewLabelBorderBottomWidth: Math.round(parseFloat(overviewStyle.borderBottomWidth)),
       overviewLabelPaddingBottom: Math.round(parseFloat(overviewStyle.paddingBottom)),
       overviewLabelPaddingTop: Math.round(parseFloat(overviewStyle.paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function dashboardAssigneeEmptyMetrics(page: Page) {
+  return page.evaluate(() => {
+    const overview = requireElement(".overview-assignee");
+    const empty = requireElement(".overview-assignee .empty");
+    const message = requireElement(".overview-assignee .empty p");
+    const action = requireElement(".overview-assignee .empty .ybtn");
+    const overviewRect = overview.getBoundingClientRect();
+    const messageRect = message.getBoundingClientRect();
+    const actionRect = action.getBoundingClientRect();
+    const emptyStyle = getComputedStyle(empty);
+    const messageStyle = getComputedStyle(message);
+
+    return {
+      actionContained:
+        actionRect.left >= overviewRect.left &&
+        actionRect.right <= overviewRect.right &&
+        actionRect.top >= overviewRect.top &&
+        actionRect.bottom <= overviewRect.bottom,
+      actionTextAlign: emptyStyle.textAlign,
+      messageContained:
+        messageRect.left >= overviewRect.left &&
+        messageRect.right <= overviewRect.right &&
+        messageRect.top >= overviewRect.top &&
+        messageRect.bottom <= overviewRect.bottom,
+      messageMarginBottom: Math.round(parseFloat(messageStyle.marginBottom)),
     };
 
     function requireElement(selector: string) {
