@@ -97,6 +97,8 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
+  // Legacy renders the cancel anchor as href="/" which becomes the mounted bare base path.
+  // TanStack's root Link normalizes that to a trailing-slash URL, so keep the href override narrow.
   const cancelLinkProps = useLinkProps({
     className: "ybtn",
     href: runtimeConfig.basePath,

@@ -172,6 +172,7 @@ test("project create form matches legacy project/create.scala.html DOM", async (
   );
   expect(await projectCreateMetrics(page)).toMatchObject({
     actionTextAlign: "center",
+    actionButtonsContained: true,
     advancedBackground: "rgb(250, 250, 250)",
     advancedBorderRadius: "10px",
     formAction: `${basePath}/projects`,
@@ -179,6 +180,7 @@ test("project create form matches legacy project/create.scala.html DOM", async (
     formWidth: 700,
     groupAvatarUrl: "/assets/images/organization_default_logo.png",
     groupDataType: "group",
+    importLinkContained: true,
     inputWidthRatio: 0.98,
     ownerDataFormat: "user",
     ownerDataToggle: "select2",
@@ -400,6 +402,8 @@ test("project create route source keeps cancel navigation on a local link-props 
   );
   expect(routeSource).toContain('to="/_import"');
   expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
+  expect(routeSource).toContain("mounted bare base path");
+  expect(routeSource).toContain("href override narrow");
   expect(routeSource).toContain("legacyHref={runtimeConfig.basePath}");
   expect(routeSource).toContain("router.history.push(runtimeConfig.basePath);");
   expect(routeSource).not.toContain('<Link to="/" className="ybtn">');
@@ -517,14 +521,30 @@ async function projectCreateMetrics(page: Page) {
     const nameInput = requireElement<HTMLInputElement>("#project-name");
     const advanced = requireElement(".advanced-options");
     const actions = requireElement(".actions");
+    const submitButton = requireElement<HTMLButtonElement>(".actions .ybtn-success");
+    const cancelLink = requireElement<HTMLAnchorElement>(".actions a.ybtn");
+    const legend = requireElement("legend");
+    const importLink = requireElement<HTMLAnchorElement>("legend a.ybtn-small");
     const userOption = owner.querySelector('option[value="admin"]');
     const groupOption = owner.querySelector('option[value="weblabs"]');
     const formWrapRect = formWrap.getBoundingClientRect();
     const nameRect = nameInput.getBoundingClientRect();
+    const actionsRect = actions.getBoundingClientRect();
+    const submitRect = submitButton.getBoundingClientRect();
+    const cancelRect = cancelLink.getBoundingClientRect();
+    const legendRect = legend.getBoundingClientRect();
+    const importRect = importLink.getBoundingClientRect();
     const advancedStyle = getComputedStyle(advanced);
 
     return {
       actionTextAlign: getComputedStyle(actions).textAlign,
+      actionButtonsContained:
+        submitRect.top >= actionsRect.top &&
+        cancelRect.top >= actionsRect.top &&
+        submitRect.bottom <= actionsRect.bottom &&
+        cancelRect.bottom <= actionsRect.bottom &&
+        submitRect.left >= actionsRect.left &&
+        cancelRect.right <= actionsRect.right,
       advancedBackground: advancedStyle.backgroundColor,
       advancedBorderRadius: advancedStyle.borderTopLeftRadius,
       formAction: form.getAttribute("action"),
@@ -532,6 +552,11 @@ async function projectCreateMetrics(page: Page) {
       formWidth: Math.round(formWrapRect.width),
       groupAvatarUrl: groupOption?.getAttribute("data-avatar-url"),
       groupDataType: groupOption?.getAttribute("data-type"),
+      importLinkContained:
+        importRect.top >= legendRect.top &&
+        importRect.bottom <= legendRect.bottom &&
+        importRect.left >= legendRect.left &&
+        importRect.right <= legendRect.right,
       inputWidthRatio: Number((nameRect.width / formWrapRect.width).toFixed(2)),
       ownerDataFormat: owner.getAttribute("data-format"),
       ownerDataToggle: owner.getAttribute("data-toggle"),
