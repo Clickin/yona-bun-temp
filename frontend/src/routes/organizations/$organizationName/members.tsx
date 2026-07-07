@@ -416,8 +416,7 @@ function OrganizationMembersBody({
             <>
               <legend>
                 <h3>
-                  {t("project.member.enrollment.request")} ({organization.enrollmentRequests.length}
-                  )
+                  {`${t("project.member.enrollment.request")} (${organization.enrollmentRequests.length})`}
                 </h3>
               </legend>
               <div className="row-fluid">
