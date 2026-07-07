@@ -2,7 +2,10 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const ROUTE_SOURCE_PATH = "src/routes/$ownerName/$projectName/commits/$branch.tsx";
+const BARE_ROUTE_SOURCE_PATH = "src/routes/$ownerName/$projectName/commits.tsx";
 const LEGACY_HISTORY_SOURCE_PATH = "../yona-original/app/views/code/history.scala.html";
+const LEGACY_ROUTES_SOURCE_PATH = "../yona-original/conf/routes";
+const LEGACY_CONTROLLER_SOURCE_PATH = "../yona-original/app/controllers/CodeHistoryApp.java";
 
 const EXPECTED_HISTORY_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><select id="branches" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" class="pull-right"><option value="__BASE_PATH__/admin/sample/commits/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/commits/feature%2Frelease">feature/release</option></select><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div id="history" class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>…</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png"></a></td></tr><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="1234567890abcdef"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" title="View commit">1234567</a></td><td class="messages"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" class="commitMsg short">Second commit</a></td><td class="date">Jul 2, 2026</td><td class="author"><span class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="dev@example.com"><img src="/assets/images/default-avatar-32.png"></span></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main?page=2" class="ybtn pull-left">Older</a></div></div></div></div>
@@ -114,6 +117,69 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   });
 });
 
+test("project bare code history renders default branch on the legacy commits URL", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyRequestUrls: string[] = [];
+  await mockProjectCodeHistory(page, {
+    onHistoryRequest: (requestUrl) => historyRequestUrls.push(requestUrl.href),
+  });
+
+  await page.goto(`${basePath}/admin/sample/commits`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/commits`);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
+  expect(historyRequestUrls).toHaveLength(1);
+  const historyRequest = new URL(historyRequestUrls[0]);
+  expect(historyRequest.searchParams.get("branch")).toBeNull();
+  expect(historyRequest.searchParams.get("path")).toBeNull();
+  expect(page.locator("#branches")).toHaveValue(`${basePath}/admin/sample/commits/main`);
+  await expect(page.locator(".nav-tabs a", { hasText: "Files" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/HEAD`,
+  );
+  await expect(page.locator(".nav-tabs a", { hasText: "Commit" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits`,
+  );
+  await expect(page.locator(".commit-id a", { hasText: "abcdef1" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef1234567890`,
+  );
+  await expect(
+    page.locator(".messages a.commitMsg.short", { hasText: "Initial commit" }),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/commit/abcdef1234567890`);
+  await expect(page.locator(".actrow a.ybtn", { hasText: "Older" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commits?page=2`,
+  );
+
+  const boxes = await page.evaluate(() => {
+    const tabs = document.querySelector<HTMLElement>(".code-browse-wrap .nav-tabs");
+    const history = document.querySelector<HTMLElement>("#history.commit-wrap");
+    const table = document.querySelector<HTMLElement>("#history .code-table.commits");
+    const older = document.querySelector<HTMLElement>(".actrow .ybtn");
+    if (!tabs || !history || !table || !older) return null;
+    const tabBox = tabs.getBoundingClientRect();
+    const historyBox = history.getBoundingClientRect();
+    const tableBox = table.getBoundingClientRect();
+    const olderBox = older.getBoundingClientRect();
+    return {
+      historyLeft: Math.round(historyBox.left),
+      historyTop: Math.round(historyBox.top),
+      olderTop: Math.round(olderBox.top),
+      tableLeft: Math.round(tableBox.left),
+      tabBottom: Math.round(tabBox.bottom),
+    };
+  });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.historyLeft).toBe(boxes!.tableLeft);
+  expect(boxes!.historyTop - boxes!.tabBottom).toBe(20);
+  expect(boxes!.olderTop).toBeGreaterThan(boxes!.historyTop);
+});
+
 test("project code history multiline commit message disclosure toggles per row", async ({
   page,
 }) => {
@@ -188,8 +254,15 @@ test("project code history branch selector navigates slash branch in the SPA", a
 
 test("project code history route source has no internal raw anchor patterns", () => {
   const source = readFileSync(ROUTE_SOURCE_PATH, "utf8");
+  const bareSource = readFileSync(BARE_ROUTE_SOURCE_PATH, "utf8");
   const legacySource = readFileSync(LEGACY_HISTORY_SOURCE_PATH, "utf8");
+  const legacyRoutesSource = readFileSync(LEGACY_ROUTES_SOURCE_PATH, "utf8");
+  const legacyControllerSource = readFileSync(LEGACY_CONTROLLER_SOURCE_PATH, "utf8");
 
+  expect(legacyRoutesSource).toContain(
+    "GET            /:user/:project/commits                                                controllers.CodeHistoryApp.historyUntilHead(user, project)",
+  );
+  expect(legacyControllerSource).toContain("return history(ownerName, projectName, null, null);");
   expect(legacySource).toContain("@getHistoryURL(path)?page=@(page + 1)");
   expect(legacySource).toContain('queryString += "&path=" + path + "#"');
   expect(legacySource).toContain("routes.CodeHistoryApp.show");
@@ -220,6 +293,25 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source.match(/activeOptions=\{legacyCodeHistoryLinkActiveOptions\}/gu)).toHaveLength(8);
   expect(source.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(8);
   expect(source).not.toContain("activeProps={{ className: undefined }}");
+
+  expect(bareSource).toContain('createFileRoute("/$ownerName/$projectName/commits")');
+  expect(bareSource).toContain(
+    'codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName })',
+  );
+  expect(bareSource).toContain('to="/$ownerName/$projectName/commits"');
+  expect(bareSource).toContain('params={{ branch: "HEAD", ownerName, projectName }}');
+  expect(bareSource).not.toContain("historyUntilHead");
+  expect(bareSource).not.toMatch(/<a(?:\s|>)/u);
+  expect(bareSource).not.toContain("</a>");
+  expect(bareSource).not.toMatch(/\bdocument\./u);
+  expect(bareSource).not.toContain("addEventListener");
+  expect(bareSource).not.toContain("classList");
+  expect(bareSource).not.toContain("style.display");
+  expect(bareSource).not.toContain("dangerouslySetInnerHTML");
+  expect(bareSource.match(/activeOptions=\{legacyCodeHistoryLinkActiveOptions\}/gu)).toHaveLength(
+    8,
+  );
+  expect(bareSource.match(/activeProps=\{legacyCodeHistoryLinkActiveProps\}/gu)).toHaveLength(8);
 });
 
 async function expectNoTanStackActiveMarkers(locator: Locator) {
@@ -310,7 +402,10 @@ async function historyLayoutMetrics(page: Page) {
   });
 }
 
-async function mockProjectCodeHistory(page: Page, options: { secondMessage?: string } = {}) {
+async function mockProjectCodeHistory(
+  page: Page,
+  options: { onHistoryRequest?: (requestUrl: URL) => void; secondMessage?: string } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -356,6 +451,7 @@ async function mockProjectCodeHistory(page: Page, options: { secondMessage?: str
   });
   await page.route("**/api/v1/projects/admin/sample/commits**", async (route) => {
     const requestUrl = new URL(route.request().url());
+    options.onHistoryRequest?.(requestUrl);
     const selectedBranch = requestUrl.searchParams.get("branch") || "main";
     await route.fulfill({
       contentType: "application/json",
