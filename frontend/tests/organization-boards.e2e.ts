@@ -58,6 +58,9 @@ test("organization board aggregate matches legacy group_board_list.scala.html DO
     `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
   );
   await expect(page).toHaveTitle("weblabs");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
+    .toBe("weblabs");
   await expect(page.locator("#option_form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a")).toHaveText("Board");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(2);
@@ -397,6 +400,12 @@ test("organization board route source uses direct Links for row navigation", asy
 
 test("organization board route source uses direct Links for organization top, filter, and header navigation", async () => {
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toMatch(/<a\b/u);
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toMatch(
+    /\b(?:document|globalThis\.document|window\.document|window\.parent\.document)\.title\b/u,
+  );
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("htmlDocument.title");
+  expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain("<title>{organizationName}</title>");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("boardListHref");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("organizationHref");
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toContain("OrganizationRouteLink");
