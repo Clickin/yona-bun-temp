@@ -170,6 +170,13 @@ test("current-user issues page matches legacy issue/my_list.scala.html shell", a
   );
 
   await page.goto(`${basePath}/user/issues`);
+  await expect(page).toHaveTitle("My Issues");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.innerHTML),
+  ).toBe("My Issues");
   await expect(page.locator(".post-list-wrap.my-issues .post-item")).toHaveCount(2);
   const topTabAnchors = page.locator(".page-wrap > .nav-tabs a");
   await expect(topTabAnchors).toHaveText(["Notification", "My Issues", "My Files"]);
@@ -343,6 +350,11 @@ test("current-user issues route uses direct TanStack Link targets without generi
   );
 
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).toContain("function UserIssuesTitle()");
+  expect(routeSource).toContain('<title>{t("issue.myIssue")}</title>');
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toMatch(/useEffect\s*\([\s\S]{0,240}title/i);
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("as unknown as");

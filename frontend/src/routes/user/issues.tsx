@@ -60,12 +60,18 @@ function UserIssuesRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <UserIssuesTitle />
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
           <UserIssuesScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
+}
+
+function UserIssuesTitle() {
+  const { t } = useLegacyMessages();
+  return <title>{t("issue.myIssue")}</title>;
 }
 
 function UserIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
