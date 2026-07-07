@@ -712,6 +712,13 @@ test("authenticated home flash renders legacy toast without route-local notify s
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
+  const routeSource = readFileSync("src/routes/index.tsx", "utf8");
+
+  expect(routeSource).toContain("const { signup, verify } = Route.useSearch();");
+  expect(routeSource).toContain('signup === "requested"');
+  expect(routeSource).toContain('verify === "sent"');
+  expect(routeSource).not.toContain("window.location.search");
+  expect(routeSource).not.toContain("new URLSearchParams(window.location.search)");
 
   await page.goto(`${basePath}/?signup=requested`);
   await expect(page.locator(".activity-streams.notification-wrap .warning-none")).toContainText(
@@ -728,6 +735,13 @@ test("authenticated home flash renders legacy toast without route-local notify s
   );
   await toast.locator("button.btn-transparent").click();
   await expect(toast).toHaveCount(0);
+
+  await page.goto(`${basePath}/?verify=sent`);
+  const verificationToast = page.locator(".yobiToasts .toast", {
+    hasText: "User verification mail was sent.",
+  });
+  await expect(verificationToast).toBeVisible();
+  await expect(verificationToast.locator(".msg")).toHaveText("User verification mail was sent.");
 });
 
 test("authenticated shell renders legacy custom navbar link before my issues", async ({ page }) => {

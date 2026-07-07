@@ -17,16 +17,10 @@ export const Route = createFileRoute("/")({
 function IndexRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { signup, verify } = Route.useSearch();
-  const browserSearch =
-    typeof window === "undefined"
-      ? new URLSearchParams()
-      : new URLSearchParams(window.location.search);
-  const signupState = signup || browserSearch.get("signup") || "";
-  const verifyState = verify || browserSearch.get("verify") || "";
   const flashKey =
-    signupState === "requested"
+    signup === "requested"
       ? "user.signup.requested"
-      : verifyState === "sent"
+      : verify === "sent"
         ? "user.verification.mail.sent"
         : "";
 
