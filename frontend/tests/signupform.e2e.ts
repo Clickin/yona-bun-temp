@@ -14,7 +14,7 @@ const EXPECTED_SIGNUP_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -44,7 +44,7 @@ const EXPECTED_SIGNUP_SCREEN = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success active">Sign up</a></li>
@@ -142,7 +142,7 @@ const EXPECTED_PUBLIC_LANDING = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -172,7 +172,7 @@ const EXPECTED_PUBLIC_LANDING = `
     </div>
     <ul class="gnb-usermenu">
       <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn">Log in</a>
+        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
       </li>
       <li class="divider"></li>
       <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
@@ -262,6 +262,10 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
   await page.goto(`${basePath}/users/signupform`);
 
   await expect(page.locator(".page.full")).toBeVisible();
+  await expect(page).toHaveTitle("Sign up");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "Sign up",
+  );
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
@@ -308,8 +312,14 @@ test("anonymous signup form matches legacy user/signup.scala.html screen DOM", a
     signupDefinitionListTextAlign: "right",
   });
   await expect(page.locator(".go-login")).toHaveAttribute("href", `${basePath}/users/loginform`);
-  expect(readFileSync("src/routes/users/signupform.tsx", "utf8")).not.toContain(
-    "LegacyInternalLink",
+  const routeSource = readFileSync("src/routes/users/signupform.tsx", "utf8");
+  expect(routeSource).toContain('<title>{t("title.signup")}</title>');
+  expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain("window.document");
+  expect(routeSource).not.toMatch(
+    /useEffect\s*\([\s\S]*?(?:document|querySelector\s*\(\s*["']title["'])[\s\S]*?(?:title|textContent|innerText)\s*=/,
   );
 });
 

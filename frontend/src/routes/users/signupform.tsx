@@ -90,138 +90,141 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   });
 
   return (
-    <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <div className="page full">
-        <div className="center-wrap tag-line-wrap signup">
-          <h1 className="title">
-            <HighlightedLegacyMessage message={title} />
-          </h1>
-          <p className="tag-line">{t("app.description")}</p>
-        </div>
-
-        {signupRequireConfirm ? (
-          <div className="center-txt">
-            <p>{t("title.signupConfirmDesc")}</p>
-            <p>
-              <ObfuscatedContactMessage
-                message={lookupLegacyMessage(language, "title.signupConfirmDesc2", {
-                  args: [String(capabilities?.defaultAdminContact ?? "")],
-                })}
-              />
-            </p>
+    <>
+      <title>{t("title.signup")}</title>
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <div className="page full">
+          <div className="center-wrap tag-line-wrap signup">
+            <h1 className="title">
+              <HighlightedLegacyMessage message={title} />
+            </h1>
+            <p className="tag-line">{t("app.description")}</p>
           </div>
-        ) : null}
 
-        <div className="signup-form-wrap frm-wrap">
-          <form action="/users/signup" method="post" name="signup" onSubmit={handleSubmit}>
-            {socialLoginOnly ? (
-              <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
-            ) : (
-              <>
-                <dl>
-                  <dt>
-                    <label htmlFor="loginId">{t("user.signupId")}</label>
-                  </dt>
-                  <dd>
-                    <input
-                      id="loginId"
-                      ref={loginIdRef}
-                      type="text"
-                      name="loginId"
-                      className="text password"
-                      placeholder=""
-                      autoComplete="off"
-                      onBlur={handleLoginIdBlur}
-                    />
-                    <FieldPopover message={fieldErrors.loginId} />
-                  </dd>
+          {signupRequireConfirm ? (
+            <div className="center-txt">
+              <p>{t("title.signupConfirmDesc")}</p>
+              <p>
+                <ObfuscatedContactMessage
+                  message={lookupLegacyMessage(language, "title.signupConfirmDesc2", {
+                    args: [String(capabilities?.defaultAdminContact ?? "")],
+                  })}
+                />
+              </p>
+            </div>
+          ) : null}
 
-                  <dt>
-                    <label htmlFor="uname">{t("user.name")}</label>
-                  </dt>
-                  <dd>
-                    <input
-                      id="uname"
-                      type="text"
-                      name="name"
-                      className="text password"
-                      placeholder=""
-                      autoComplete="off"
-                    />
-                  </dd>
+          <div className="signup-form-wrap frm-wrap">
+            <form action="/users/signup" method="post" name="signup" onSubmit={handleSubmit}>
+              {socialLoginOnly ? (
+                <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
+              ) : (
+                <>
+                  <dl>
+                    <dt>
+                      <label htmlFor="loginId">{t("user.signupId")}</label>
+                    </dt>
+                    <dd>
+                      <input
+                        id="loginId"
+                        ref={loginIdRef}
+                        type="text"
+                        name="loginId"
+                        className="text password"
+                        placeholder=""
+                        autoComplete="off"
+                        onBlur={handleLoginIdBlur}
+                      />
+                      <FieldPopover message={fieldErrors.loginId} />
+                    </dd>
 
-                  <dt>
-                    <label htmlFor="email">{t("user.email")}</label>
-                  </dt>
-                  <dd>
-                    <input
-                      id="email"
-                      type="text"
-                      name="email"
-                      className="text password"
-                      placeholder=""
-                      autoComplete="off"
-                      onBlur={handleEmailBlur}
-                    />
-                    <FieldPopover message={fieldErrors.email} />
-                  </dd>
+                    <dt>
+                      <label htmlFor="uname">{t("user.name")}</label>
+                    </dt>
+                    <dd>
+                      <input
+                        id="uname"
+                        type="text"
+                        name="name"
+                        className="text password"
+                        placeholder=""
+                        autoComplete="off"
+                      />
+                    </dd>
 
-                  <dt>
-                    <label htmlFor="password">{t("user.password")}</label>
-                  </dt>
-                  <dd>
-                    <input
-                      id="password"
-                      type="password"
-                      name="password"
-                      className="text password"
-                      placeholder=""
-                      autoComplete="off"
-                      onKeyUp={handlePasswordKeyUp}
-                    />
-                    <FieldPopover message={fieldErrors.password} />
-                  </dd>
+                    <dt>
+                      <label htmlFor="email">{t("user.email")}</label>
+                    </dt>
+                    <dd>
+                      <input
+                        id="email"
+                        type="text"
+                        name="email"
+                        className="text password"
+                        placeholder=""
+                        autoComplete="off"
+                        onBlur={handleEmailBlur}
+                      />
+                      <FieldPopover message={fieldErrors.email} />
+                    </dd>
 
-                  <dt>
-                    <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
-                  </dt>
-                  <dd>
-                    <input
-                      id="retypedPassword"
-                      type="password"
-                      name="retypedPassword"
-                      className="text password"
-                      placeholder=""
-                      autoComplete="off"
-                      onKeyUp={handleRetypedPasswordKeyUp}
-                    />
-                    <FieldPopover message={fieldErrors.retypedPassword} />
-                  </dd>
-                </dl>
+                    <dt>
+                      <label htmlFor="password">{t("user.password")}</label>
+                    </dt>
+                    <dd>
+                      <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        className="text password"
+                        placeholder=""
+                        autoComplete="off"
+                        onKeyUp={handlePasswordKeyUp}
+                      />
+                      <FieldPopover message={fieldErrors.password} />
+                    </dd>
 
-                {submitError ? <div className="error-message">{submitError}</div> : null}
-                <div className="btns-row">
-                  <button
-                    type="submit"
-                    className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
-                    disabled={registerMutation.isPending}
-                  >
-                    {t("user.signupBtn")}
-                  </button>
-                </div>
+                    <dt>
+                      <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
+                    </dt>
+                    <dd>
+                      <input
+                        id="retypedPassword"
+                        type="password"
+                        name="retypedPassword"
+                        className="text password"
+                        placeholder=""
+                        autoComplete="off"
+                        onKeyUp={handleRetypedPasswordKeyUp}
+                      />
+                      <FieldPopover message={fieldErrors.retypedPassword} />
+                    </dd>
+                  </dl>
 
-                <div className="act-row">
-                  {t("user.isAlreadySignupUser")}{" "}
-                  <Link to="/users/loginform" className="go-login">
-                    {t("title.login")}
-                  </Link>
-                </div>
-              </>
-            )}
-          </form>
+                  {submitError ? <div className="error-message">{submitError}</div> : null}
+                  <div className="btns-row">
+                    <button
+                      type="submit"
+                      className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                      disabled={registerMutation.isPending}
+                    >
+                      {t("user.signupBtn")}
+                    </button>
+                  </div>
+
+                  <div className="act-row">
+                    {t("user.isAlreadySignupUser")}{" "}
+                    <Link to="/users/loginform" className="go-login">
+                      {t("title.login")}
+                    </Link>
+                  </div>
+                </>
+              )}
+            </form>
+          </div>
         </div>
-      </div>
-    </SiteLayoutShell>
+      </SiteLayoutShell>
+    </>
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
