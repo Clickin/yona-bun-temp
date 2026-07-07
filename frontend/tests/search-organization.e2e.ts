@@ -114,8 +114,53 @@ test("organization project search keeps the legacy organization shell with butto
 
 test("organization search route renders the legacy search title without direct document mutation", () => {
   expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain("<title>{searchTitle}</title>");
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain('data-toggle="tooltip"');
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain('data-placement="top"');
   expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("document.title");
   expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("globalThis.document");
+});
+
+test("organization user search preserves legacy tooltip attributes on avatar links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSearch(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=member&searchType=user`);
+
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Users 1");
+  await expect(page.locator(".search-result-title")).toContainText("Found 1 result(s) in Users");
+
+  const avatarLink = page.locator(".search-list-item.project .avatar-wrap");
+  await expect(avatarLink).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(avatarLink).toHaveAttribute("title", "alice");
+  await expect(avatarLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(avatarLink).toHaveAttribute("data-placement", "top");
+  await expect(avatarLink.locator("img")).toHaveAttribute("alt", "Alice");
+  await expect(page.locator(".search-list-item.project .title.user-link")).toHaveText(
+    "Alice (@alice)",
+  );
+});
+
+test("organization issue search preserves legacy tooltip attributes on author meta links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSearch(page);
+
+  await page.goto(`${basePath}/organizations/weblabs/search?keyword=bug&searchType=issue`);
+
+  await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Issues 1");
+  await expect(page.locator(".search-result-title")).toContainText("Found 1 result(s) in Issues");
+
+  const authorLink = page.locator(".search-meta-info .meta-item[title='alice']");
+  await expect(authorLink).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(authorLink).toHaveAttribute("data-toggle", "tooltip");
+  await expect(authorLink).toHaveAttribute("data-placement", "top");
+  await expect(authorLink).toHaveText("Alice");
+  await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveText(
+    "admin/sample",
+  );
 });
 
 test("organization project search exact missing state pins the live localhost guest shell title, scope branch, and default group art", async ({
@@ -428,6 +473,106 @@ async function mockOrganizationSearch(
     const keyword = url.searchParams.get("keyword") ?? "missing";
     const searchType = url.searchParams.get("searchType") ?? "project";
     const pageNum = Number.parseInt(url.searchParams.get("pageNum") ?? "1", 10);
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+    if (keyword === "member" && searchType === "user") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "weblabs",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 0,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 0,
+            users: 1,
+          },
+          items: [
+            {
+              authorLabel: "Alice",
+              authorLoginId: "alice",
+              avatarUrl: `${basePath}/files/7`,
+              createdLabel: "Jun 30, 2026",
+              href: `${basePath}/alice`,
+              id: "10",
+              number: "",
+              ownerName: "",
+              projectName: "",
+              snippets: [],
+              state: "active",
+              title: "Alice",
+              type: "user",
+              updatedLabel: "",
+            },
+          ],
+          keyword,
+          pageNum,
+          pageSize: 20,
+          requestedSearchType: searchType,
+          scope: "organization",
+          searchType,
+          totalCount: 1,
+          totalPages: 1,
+        }),
+      });
+      return;
+    }
+
+    if (keyword === "bug" && searchType === "issue") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          context: {
+            organizationName: "weblabs",
+            ownerName: "",
+            projectName: "",
+          },
+          counts: {
+            issueComments: 0,
+            issues: 1,
+            milestones: 0,
+            postComments: 0,
+            posts: 0,
+            projects: 0,
+            reviews: 0,
+            users: 0,
+          },
+          items: [
+            {
+              authorLabel: "Alice",
+              authorLoginId: "alice",
+              createdLabel: "Jun 30, 2026",
+              href: `${basePath}/admin/sample/issue/42`,
+              id: "42",
+              number: "42",
+              ownerName: "admin",
+              projectName: "sample",
+              snippets: [{ highlights: [], text: "Crash when saving", truncated: true }],
+              state: "open",
+              title: "Save button fails",
+              type: "issue",
+              updatedLabel: "Jun 30, 2026",
+            },
+          ],
+          keyword,
+          pageNum,
+          pageSize: 20,
+          requestedSearchType: searchType,
+          scope: "organization",
+          searchType,
+          totalCount: 1,
+          totalPages: 1,
+        }),
+      });
+      return;
+    }
 
     await route.fulfill({
       contentType: "application/json",
