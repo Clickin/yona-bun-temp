@@ -241,6 +241,19 @@ test("project commit detail comment delete modal is route-owned React state", as
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("project commit detail route mounts legacy project-scoped search shell", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    "function projectIsProtected(project: ProjectContainer)",
+  );
+});
+
 test("project SVN commit detail branch dropdown is route-owned React state", async () => {
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("branchDropdownOpen");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBranchDropdownOpen((isOpen) => !isOpen)");
@@ -289,6 +302,97 @@ test("project commit detail internal nav links keep legacy hrefs with SPA naviga
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).toBe("commit-route-link");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
+test("project commit detail restores legacy project GNB search scope", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests);
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+  await expect
+    .poll(() =>
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  const commitUrl = page.url();
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(commitUrl);
+
+  expect(await readCommitDetailNavbarMetrics(page)).toEqual({
+    formBottomWithinNavbar: true,
+    formRightWithinNavbar: true,
+    formTopWithinNavbar: true,
+    headerClassName: "gnb-outer project-header",
+    searchBottomWithinNavbar: true,
+    searchRightWithinNavbar: true,
+    searchTopWithinNavbar: true,
+    scopeBottomWithinNavbar: true,
+    scopeTopWithinNavbar: true,
+  });
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
+test("project commit detail includes group search scope when project container has org data", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {}, { organizationName: "weblabs" });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect
+    .poll(() =>
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      { action: `${basePath}/admin/sample/search`, text: "This Project" },
+      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
+      { action: `${basePath}/search`, text: "All Projects" },
+    ]);
+
+  const commitUrl = page.url();
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page).toHaveURL(commitUrl);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page).toHaveURL(commitUrl);
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
@@ -1394,6 +1498,39 @@ test("project SVN commit detail branch dropdown uses route-local state", async (
   ).toBe(false);
   expect(detailRequests).toEqual(["branch=trunk"]);
 });
+
+async function readCommitDetailNavbarMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const missing = Object.entries({ form, header, scope, search })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected commit detail navbar metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const headerBox = header.getBoundingClientRect();
+    const formBox = form.getBoundingClientRect();
+    const scopeBox = scope.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    return {
+      formBottomWithinNavbar: formBox.bottom <= headerBox.bottom + 1,
+      formRightWithinNavbar: formBox.right <= headerBox.right,
+      formTopWithinNavbar: formBox.top >= headerBox.top,
+      headerClassName: header.className,
+      searchBottomWithinNavbar: searchBox.bottom <= headerBox.bottom + 1,
+      searchRightWithinNavbar: searchBox.right <= headerBox.right,
+      searchTopWithinNavbar: searchBox.top >= headerBox.top,
+      scopeBottomWithinNavbar: scopeBox.bottom <= headerBox.bottom + 1,
+      scopeTopWithinNavbar: scopeBox.top >= headerBox.top,
+    };
+  });
+}
 
 async function readCommitDiffShellMetrics(page: Page) {
   return page.evaluate(() => {

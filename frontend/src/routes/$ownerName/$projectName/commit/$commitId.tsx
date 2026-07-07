@@ -85,14 +85,12 @@ function ProjectCommitDetailRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectCommitDetailScreen
-            branch={search.branch}
-            path={search.path}
-            routeParams={routeParams}
-            runtimeConfig={runtimeConfig}
-          />
-        </SiteLayoutShell>
+        <ProjectCommitDetailScreen
+          branch={search.branch}
+          path={search.path}
+          routeParams={routeParams}
+          runtimeConfig={runtimeConfig}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -128,8 +126,14 @@ function ProjectCommitDetailScreen({
     return null;
   }
 
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
   return (
-    <>
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectCommitDetailBody
@@ -153,7 +157,7 @@ function ProjectCommitDetailScreen({
         onClose={() => setCommentDeleteRequestUri(null)}
         requestUri={commentDeleteRequestUri}
       />
-    </>
+    </SiteLayoutShell>
   );
 }
 
@@ -1476,6 +1480,24 @@ function ReviewForm({ action, currentUser }: { action: string; currentUser: Curr
 
 function stringField(value: unknown, fallback: string) {
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  return (
+    project.isProtected === true ||
+    project.isProtected === "true" ||
+    project.isProtected === 1 ||
+    project.isProtected === "1" ||
+    stringField(project.projectScope, "") === "protected"
+  );
 }
 
 function Editor({
