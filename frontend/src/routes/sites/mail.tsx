@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
   sendSiteMailRest,
@@ -70,13 +70,14 @@ function SiteMailScreen({
   runtimeConfig: RuntimeConfig;
   sentBySearch: boolean;
 }) {
-  useLegacySiteMailDocumentTitle(runtimeConfig);
+  const { t } = useLegacyMessages();
   const mailOptions = siteMailOptionsQueryOptions(runtimeConfig);
   const query = useQuery(mailOptions);
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
     <>
+      <title>{t("title.sendMail")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>
@@ -110,19 +111,6 @@ function normalizeSiteMailSearch(search: SiteMailRouteSearch): SiteMailSearch {
     errorMessage: search.errorMessage ?? "",
     sended: search.sended === true,
   };
-}
-
-function useLegacySiteMailDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.sendMail");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
 }
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
