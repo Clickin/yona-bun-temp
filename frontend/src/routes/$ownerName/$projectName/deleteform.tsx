@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -67,38 +67,22 @@ function ProjectDeleteFormRouteShell({ runtimeConfig }: { runtimeConfig: Runtime
 
 function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectDeleteDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
+  const legacyTitle = `${t("project.delete")} - ${ownerName}/${projectName}`;
   const query = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
 
   if (!query.data) {
-    return null;
+    return <title>{legacyTitle}</title>;
   }
 
-  return <ProjectDeleteFormBody project={query.data} runtimeConfig={runtimeConfig} />;
-}
-
-function useProjectDeleteDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const screenTitle = t("project.delete");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
+  return (
+    <>
+      <title>{legacyTitle}</title>
+      <ProjectDeleteFormBody project={query.data} runtimeConfig={runtimeConfig} />
+    </>
+  );
 }
 
 function ProjectDeleteFormBody({

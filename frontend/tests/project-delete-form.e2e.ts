@@ -263,7 +263,13 @@ test("project delete form route has no TanStack route-cast escapes", async () =>
   expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).toContain("projectSearchScope={projectSearchScope}");
   expect(source).toContain("showLegacyProjectHeaderLinks");
-  expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
+  expect(source).toContain(
+    'const legacyTitle = `${t("project.delete")} - ${ownerName}/${projectName}`;',
+  );
+  expect(source).toContain("<title>{legacyTitle}</title>");
+  expect(source).not.toContain("useProjectDeleteDocumentTitle");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
   expect(source).toContain("onClick=");
 });
 
