@@ -121,24 +121,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       ...search,
       scope: "organization",
     });
-  const useScopedSearchShell =
-    !search.routeInvalid &&
-    !isRequestTextTooLargeError(searchQuery.error) &&
-    !isDefaultInternalServerError(searchQuery.error);
-  const siteName = runtimeConfig.siteName ?? "Yona";
-
-  useEffect(() => {
-    if (!useScopedSearchShell) {
-      return;
-    }
-
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = t("title.search");
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [siteName, t, useScopedSearchShell]);
+  const searchTitle = t("title.search");
 
   if (search.routeInvalid) {
     return (
@@ -189,6 +172,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         runtimeConfig={runtimeConfig}
         showLegacyProjectHeaderLinks
       >
+        <title>{searchTitle}</title>
         <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
         <OrganizationMenu
           organizationName={organizationName}
@@ -205,6 +189,7 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks
     >
+      <title>{searchTitle}</title>
       <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         organizationName={organizationName}

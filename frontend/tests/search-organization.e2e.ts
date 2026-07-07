@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const ORGANIZATION_SEARCH_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/organizations/$organizationName/search.tsx", import.meta.url),
+  "utf8",
+);
 
 const ROOT_CLASS_NAMES = [
   "unsupported hidden",
@@ -19,6 +25,14 @@ test("organization project search keeps the legacy organization shell with butto
   await page.goto(`${basePath}/organizations/weblabs/search?keyword=sample&searchType=project`);
 
   await expect(page).toHaveTitle("Search");
+  const titleState = await page.evaluate(() => {
+    const headTitle = document.head.querySelector("title");
+    return {
+      documentTitle: document.title,
+      headTitle: headTitle instanceof HTMLTitleElement ? headTitle.text : "",
+    };
+  });
+  expect(titleState).toEqual({ documentTitle: "Search", headTitle: "Search" });
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Search");
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
@@ -96,6 +110,12 @@ test("organization project search keeps the legacy organization shell with butto
     )
     .toBe("kept");
   await expect.poll(() => searchApi.count).toBe(3);
+});
+
+test("organization search route renders the legacy search title without direct document mutation", () => {
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain("<title>{searchTitle}</title>");
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("document.title");
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("globalThis.document");
 });
 
 test("organization project search exact missing state pins the live localhost guest shell title, scope branch, and default group art", async ({
