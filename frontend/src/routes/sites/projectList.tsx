@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
@@ -24,19 +24,6 @@ const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-
-function useLegacySiteProjectListDocumentTitle(runtimeConfig: RuntimeConfig) {
-  const { t } = useLegacyMessages();
-
-  useEffect(() => {
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = t("title.projectList");
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [runtimeConfig.siteName, t]);
-}
 
 function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
@@ -73,7 +60,6 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
-  useLegacySiteProjectListDocumentTitle(runtimeConfig);
   const [deleteProject, setDeleteProject] = useState<SiteProject | null>(null);
   const [deleteModalClosed, setDeleteModalClosed] = useState(false);
   const currentPage = pageNum ?? 1;
@@ -145,6 +131,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
   return (
     <>
+      <title>{t("title.projectList")}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>

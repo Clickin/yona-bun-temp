@@ -171,6 +171,14 @@ test("site admin project list matches legacy site/projectList.scala.html populat
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
   await expect(page).toHaveTitle("Project list");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .first()
+        .evaluate((title) => title.textContent),
+    )
+    .toBe("Project list");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
   await expect
@@ -621,6 +629,10 @@ test("site admin project list falls back to the legacy default project logo for 
 test("site admin project list uses direct typed links", () => {
   const routeSource = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
 
+  expect(routeSource).toContain('<title>{t("title.projectList")}</title>');
+  expect(routeSource).not.toContain("useLegacySiteProjectListDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toMatch(/<a(?:\s|>)/u);
