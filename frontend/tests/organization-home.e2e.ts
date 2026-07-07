@@ -745,7 +745,7 @@ test("organization home leave modal stays route-owned across open dismiss and co
   const leaveResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/organizations/weblabs/leave") &&
-      response.request().method() === "POST",
+      response.request().method() === "DELETE",
   );
   await dispatchCancelableClick(page, "#leaveBtn");
   await leaveResponsePromise;
@@ -757,7 +757,7 @@ test("organization home leave modal stays route-owned across open dismiss and co
       ),
     )
     .toBe("kept");
-  expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "POST" }]);
+  expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 });
 

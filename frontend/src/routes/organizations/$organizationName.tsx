@@ -8,7 +8,13 @@ import {
   readOrganizationContainerRest,
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
-import type { OrganizationContainer, YonaRecord, YonaUserItem } from "../../api/types";
+import { RestApiError, restFetch } from "../../api/rest-client";
+import type {
+  OrganizationContainer,
+  OrganizationRedirectResult,
+  YonaRecord,
+  YonaUserItem,
+} from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -106,7 +112,21 @@ function OrganizationHomeBody({
   const leaveMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return leaveOrganizationRest(runtimeConfig, csrfToken, organizationName);
+      try {
+        return await restFetch<OrganizationRedirectResult>(
+          runtimeConfig,
+          `/organizations/${encodeURIComponent(organizationName)}/leave`,
+          {
+            csrfToken,
+            method: "DELETE",
+          },
+        );
+      } catch (error) {
+        if (error instanceof RestApiError && (error.status === 404 || error.status === 405)) {
+          return leaveOrganizationRest(runtimeConfig, csrfToken, organizationName);
+        }
+        throw error;
+      }
     },
     onSuccess(response) {
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
