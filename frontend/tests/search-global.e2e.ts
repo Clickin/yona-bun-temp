@@ -467,6 +467,13 @@ test("global search matches localhost legacy empty issue result DOM for sample k
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page).toHaveURL(`${basePath}/search?keyword=sample&searchType=issue`);
   await expect(page).toHaveTitle("Search");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.head.querySelectorAll("title"), (title) => title.textContent ?? ""),
+      ),
+    )
+    .toContain("Search");
   await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
   await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
 
@@ -575,7 +582,7 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).toContain("function GlobalSearchPagination");
   expect(routeSource).toContain("function globalSearchInternalLinkTarget");
   expect(routeSource).toContain("function GlobalSearchHighlightedText");
-  expect(routeSource).toContain("return <GlobalSearchSuccessBody");
+  expect(routeSource).toContain("<GlobalSearchSuccessBody");
   expect(routeBodySource).not.toContain('href="#"');
   expect(routeBodySource).not.toContain("<Link href");
   expect(routeBodySource).not.toContain('data-toggle="search-category"');
@@ -597,6 +604,9 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).not.toMatch(/<a[\s>]/u);
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).toContain('<title>{t("title.search")}</title>');
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveOptions =");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveProps =");

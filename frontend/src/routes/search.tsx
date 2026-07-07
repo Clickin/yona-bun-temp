@@ -123,25 +123,6 @@ function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       pageNum,
       scope: "global",
     });
-  const useSearchSuccessTitle =
-    !search.routeInvalid &&
-    !isRequestTextTooLargeError(searchQuery.error) &&
-    !isDefaultForbiddenError(searchQuery.error) &&
-    !isDefaultInternalServerError(searchQuery.error);
-  const siteName = runtimeConfig.siteName ?? "Yona";
-
-  useEffect(() => {
-    if (!useSearchSuccessTitle) {
-      return;
-    }
-
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = t("title.search");
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [siteName, t, useSearchSuccessTitle]);
 
   if (search.routeInvalid) {
     return (
@@ -176,7 +157,12 @@ function SearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     );
   }
 
-  return <GlobalSearchSuccessBody result={result} runtimeConfig={runtimeConfig} />;
+  return (
+    <>
+      <title>{t("title.search")}</title>
+      <GlobalSearchSuccessBody result={result} runtimeConfig={runtimeConfig} />
+    </>
+  );
 }
 
 function GlobalSearchSuccessBody({
