@@ -54,6 +54,7 @@ function ProjectStatisticsRouteShell({ runtimeConfig }: { runtimeConfig: Runtime
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <title>{`statistics - ${ownerName}/${projectName}`}</title>
       <ProjectStatisticsScreen project={project} />
     </SiteLayoutShell>
   );

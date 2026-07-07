@@ -35,6 +35,7 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
 
   await page.goto(`${basePath}/admin/sample/statistics`);
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  await expect(page).toHaveTitle("statistics - admin/sample");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_STATISTICS.replaceAll("__BASE_PATH__", basePath)),
@@ -45,8 +46,10 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     headingLineHeight: "32.5px",
     headingMarginBottom: "18px",
     headingMarginTop: "0px",
+    headingContainedInProjectPage: true,
     pageWrapMinWidth: "1100px",
     projectHeaderHeight: "120px",
+    projectPageBelowProjectHeader: true,
     projectPageMarginTop: "20px",
     projectPageWidth: 1260,
   });
@@ -94,6 +97,7 @@ test("protected org-owned project statistics expose legacy group search scope", 
 
   await page.goto(`${basePath}/weblabs/portal/statistics`);
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  await expect(page).toHaveTitle("statistics - weblabs/portal");
 
   await assertStatisticsProjectSearchShell(page, {
     actions: [
@@ -148,6 +152,9 @@ test("project statistics route TSX has no route-local raw anchor elements", () =
     'stringField(project.projectScope, "") === "protected"',
   );
   expect(STATISTICS_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "<title>{`statistics - ${ownerName}/${projectName}`}</title>",
+  );
   expect(STATISTICS_ROUTE_SOURCE).toContain("onClick=");
   expect(STATISTICS_ROUTE_SOURCE).toContain("event.preventDefault();");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("onMouseDown=");
@@ -322,14 +329,24 @@ async function readDesktopStatisticsMetrics(page: Page) {
     const pageWrapStyle = getComputedStyle(pageWrapOuter);
     const projectPageStyle = getComputedStyle(projectPageWrap);
     const headingStyle = getComputedStyle(heading);
+    const projectHeaderBox = projectHeader.getBoundingClientRect();
+    const pageWrapBox = pageWrapOuter.getBoundingClientRect();
+    const projectPageBox = projectPageWrap.getBoundingClientRect();
+    const headingBox = heading.getBoundingClientRect();
     return {
       headingFontSize: headingStyle.fontSize,
       headingFontWeight: headingStyle.fontWeight,
       headingLineHeight: headingStyle.lineHeight,
       headingMarginBottom: headingStyle.marginBottom,
       headingMarginTop: headingStyle.marginTop,
+      headingContainedInProjectPage:
+        headingBox.top >= projectPageBox.top &&
+        headingBox.left >= projectPageBox.left &&
+        headingBox.right <= projectPageBox.right &&
+        headingBox.bottom <= projectPageBox.bottom,
       pageWrapMinWidth: pageWrapStyle.minWidth,
       projectHeaderHeight: projectHeaderStyle.height,
+      projectPageBelowProjectHeader: pageWrapBox.top >= projectHeaderBox.bottom,
       projectPageMarginTop: projectPageStyle.marginTop,
       projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
     };
