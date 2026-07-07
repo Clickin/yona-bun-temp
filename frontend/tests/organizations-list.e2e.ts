@@ -91,7 +91,7 @@ const EXPECTED_ORGANIZATIONS_LIST = `
       <div id="search" class="pull-left">
         <form action="__BASE_PATH__/orgs" method="get">
           <div class="search-bar">
-            <input name="filter" class="textbox" type="text" placeholder="Find organization by name" value="weblabs" autofocus>
+            <input name="filter" class="textbox" type="text" placeholder="Find organization by name" value="weblabs">
             <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
           </div>
         </form>
@@ -131,9 +131,10 @@ test("organizations list matches legacy organization/list.scala.html DOM", async
   await mockAuthenticatedOrganizations(page);
 
   await page.goto(`${basePath}/orgs?filter=weblabs`);
+  const filterInput = page.locator('#search input[name="filter"]');
   await expect(page.locator(".all-projects .project")).toBeVisible();
-  await expect(page.locator('#search input[name="filter"]')).toHaveAttribute("autofocus", "");
-  await expect(page.locator('#search input[name="filter"]')).toBeFocused();
+  await expect.poll(() => filterInput.getAttribute("autofocus")).toBeNull();
+  await expect(filterInput).toBeFocused();
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -144,16 +145,30 @@ test("organizations list matches legacy organization/list.scala.html DOM", async
   expect(actual).toEqual(expected);
 });
 
-test("organization list filter input preserves legacy autofocus declaratively", async ({
+test("organization list filter input preserves legacy initial focus without React prop warnings", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleMessages: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" || message.type() === "warning") {
+      consoleMessages.push(message.text());
+    }
+  });
   await mockAuthenticatedOrganizations(page);
 
   await page.goto(`${basePath}/orgs?filter=weblabs`);
   const filterInput = page.locator('#search input[name="filter"]');
-  await expect(filterInput).toHaveAttribute("autofocus", "");
+  await expect.poll(() => filterInput.getAttribute("autofocus")).toBeNull();
   await expect(filterInput).toBeFocused();
+  expect(
+    consoleMessages.some(
+      (message) =>
+        message.includes("Invalid DOM property") &&
+        message.includes("autofocus") &&
+        message.includes("autoFocus"),
+    ),
+  ).toBe(false);
 });
 
 test("organization directory card links keep legacy hrefs and use SPA navigation", async ({
@@ -438,8 +453,8 @@ test("organization directory source uses Link for internal route anchors", () =>
   expect(source).not.toContain("href={organizationHref}");
   expect(source).not.toContain("prefixBasePath(basePath, `/organizations/${organizationName}`)");
   expect(source).not.toContain('setAttribute("autofocus"');
+  expect(source).not.toContain('autofocus: ""');
   expect(source).toContain("autoFocus");
-  expect(source).toContain('autofocus: ""');
   expect(source).toContain('to="/projects"');
   expect(source).toContain('to="/orgs"');
   expect(source).toContain('to="/organizations/$organizationName"');

@@ -105,7 +105,6 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <div className="search-bar">
                   <input
                     autoFocus
-                    {...{ autofocus: "" }}
                     name="filter"
                     className="textbox"
                     type="text"
