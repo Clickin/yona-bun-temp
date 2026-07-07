@@ -84,7 +84,6 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     if (deleteProject) {
       deleteMutation.mutate(deleteProject.id);
     }
-    closeDeletionModal();
   };
   const deleteMutation = useMutation({
     mutationFn: async (projectId: number) => {
@@ -119,6 +118,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       });
 
       void queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
+      closeDeletionModal();
 
       if (navigateToPreviousPage) {
         void router.navigate({

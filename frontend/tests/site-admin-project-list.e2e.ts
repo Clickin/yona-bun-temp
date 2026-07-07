@@ -480,6 +480,11 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain("setDeleteProject(selectedProject);");
   expect(modalSource).toContain("setDeleteModalClosed(false);");
   expect(modalSource).toContain("closeDeletionModal();");
+  expect(modalSource).toContain("useMutation({");
+  expect(modalSource).toContain("deleteSiteProjectRest(runtimeConfig, csrfToken, projectId)");
+  expect(modalSource).toContain("readSessionBootstrap(runtimeConfig)");
+  expect(modalSource).toContain("queryClient.setQueryData<SiteProjectListResponse>");
+  expect(modalSource).toContain("apiQueryKeys.siteAdmin.projectsBase()");
   expect(modalSource).toContain('data-toggle="delete-project"');
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
@@ -499,7 +504,7 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await auditSiteProjectDeleteNativeListeners(page);
   await mockSiteAdminSession(page);
-  const requests = await mockProjects(page);
+  const requests = await mockProjects(page, { deleteDelayMs: 150 });
   await mockUpdate(page, {
     currentVersion: "1.0.0",
     error: null,
@@ -521,12 +526,43 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
+  expect(await projectListDeleteModalStateMetrics(page)).toMatchObject({
+    deleteButtonAfterCreatedColumn: true,
+    deleteButtonVerticallyOverlapsRow: true,
+    modalInsideContentColumn: true,
+    searchInsideTitleArea: true,
+    searchDoesNotOverlapTitle: true,
+    deleteButtonDoesNotOverlapProjectName: true,
+  });
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
   await expect(deleteModal).toHaveClass("modal fade in");
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator("#alertDeletionWrap .modal-header")).toHaveText(
+    "×acme/roadmapDelete project",
+  );
+  await expect(page.locator("#alertDeletionWrap .modal-body p")).toHaveText(
+    "Do you really want to delete this project?",
+  );
+  await expect(page.locator("#alertDeletionWrap .modal-footer > button")).toHaveText(["Yes", "No"]);
+  await expect(page.locator("#alertDeletionWrap .modal-footer > button").first()).toHaveAttribute(
+    "id",
+    "projectDeleteBtn",
+  );
+  await expect(page.locator("#alertDeletionWrap .modal-footer > button").first()).toHaveClass(
+    "ybtn ybtn-danger",
+  );
+  await expect(page.locator("#alertDeletionWrap .modal-footer > button").nth(1)).toHaveClass(
+    "ybtn",
+  );
+  expect(await projectListDeleteModalStateMetrics(page)).toMatchObject({
+    openBackdropCoversContent: true,
+    openModalCentered: true,
+    openModalFooterButtonsAligned: true,
+    yesBeforeNo: true,
+  });
   await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
   await expect(noButton).toHaveAttribute("data-dismiss", "modal");
   await expect(page).toHaveURL(projectListUrl);
@@ -558,9 +594,18 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
       response.request().method() === "DELETE",
   );
   await page.locator("#projectDeleteBtn").click();
+  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
   await deleteResponsePromise;
 
   await expect.poll(() => requests.deletedProjectIds).toEqual(["77"]);
+  expect(requests.deleteRequests).toEqual([
+    {
+      hasCsrfHeader: true,
+      method: "DELETE",
+      pathname: `${basePath}/api/v1/site/projects/77`,
+    },
+  ]);
   await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(0);
   await expect(deleteModal).toHaveClass("modal fade hide");
   await expect(deleteModal).toHaveCSS("display", "none");
@@ -725,22 +770,109 @@ async function spaMarker(page: Page) {
   );
 }
 
+async function projectListDeleteModalStateMetrics(page: Page) {
+  return page.evaluate(() => {
+    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const title = requireElement(".title_area h2");
+    const titleArea = requireElement(".title_area");
+    const searchForm = requireElement(".title_area .form-search");
+    const firstRow = requireElement(".project-list-wrap .listitem");
+    const projectName = requireElement(".project-list-wrap .project-name");
+    const createdColumn = requireElement(".project-list-wrap .listitem .span2");
+    const deleteButton = requireElement('[data-toggle="delete-project"]');
+    const modal = requireElement("#alertDeletionWrap");
+    const modalFooter = requireElement("#alertDeletionWrap .modal-footer");
+    const yes = requireElement("#projectDeleteBtn");
+    const no = requireElement("#alertDeletionWrap .modal-footer .ybtn:not(#projectDeleteBtn)");
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop.fade.in");
+
+    const contentRect = content.getBoundingClientRect();
+    const titleRect = title.getBoundingClientRect();
+    const titleAreaRect = titleArea.getBoundingClientRect();
+    const searchFormRect = searchForm.getBoundingClientRect();
+    const firstRowRect = firstRow.getBoundingClientRect();
+    const projectNameRect = projectName.getBoundingClientRect();
+    const createdColumnRect = createdColumn.getBoundingClientRect();
+    const deleteButtonRect = deleteButton.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+    const modalFooterRect = modalFooter.getBoundingClientRect();
+    const yesRect = yes.getBoundingClientRect();
+    const noRect = no.getBoundingClientRect();
+    const backdropRect = backdrop?.getBoundingClientRect();
+    const modalStyle = getComputedStyle(modal);
+
+    return {
+      closedModalHidden: modalStyle.display === "none" || modal.classList.contains("hide"),
+      deleteButtonDoesNotOverlapProjectName: deleteButtonRect.left >= projectNameRect.right,
+      deleteButtonAfterCreatedColumn: deleteButtonRect.left >= createdColumnRect.right,
+      deleteButtonVerticallyOverlapsRow:
+        deleteButtonRect.top < firstRowRect.bottom && deleteButtonRect.bottom > firstRowRect.top,
+      deleteButtonInsideRow:
+        deleteButtonRect.top >= firstRowRect.top &&
+        deleteButtonRect.bottom <= firstRowRect.bottom &&
+        deleteButtonRect.right <= firstRowRect.right,
+      modalDoesNotOverlapProjectRow:
+        modalStyle.display === "none" || modalRect.top >= firstRowRect.bottom,
+      modalInsideContentColumn:
+        modalStyle.display === "none" ||
+        (modalRect.left >= contentRect.left &&
+          modalRect.right <= contentRect.right + modalRect.width),
+      openBackdropCoversContent:
+        Boolean(backdropRect) &&
+        backdropRect!.left <= contentRect.left &&
+        backdropRect!.right >= contentRect.right &&
+        backdropRect!.top <= contentRect.top,
+      openModalCentered:
+        modalStyle.display !== "none" &&
+        Math.abs(modalRect.left + modalRect.width / 2 - window.innerWidth / 2) <= 2,
+      openModalFooterButtonsAligned:
+        Math.abs(yesRect.top - noRect.top) <= 1 &&
+        Math.abs(yesRect.bottom - noRect.bottom) <= 1 &&
+        yesRect.top >= modalFooterRect.top &&
+        noRect.bottom <= modalFooterRect.bottom,
+      searchDoesNotOverlapTitle: searchFormRect.left >= titleRect.right,
+      searchInsideTitleArea:
+        searchFormRect.top >= titleAreaRect.top &&
+        searchFormRect.bottom <= titleAreaRect.bottom &&
+        searchFormRect.right <= titleAreaRect.right,
+      yesBeforeNo: yesRect.right <= noRect.left,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
 async function mockSiteAdminSession(page: Page) {
+  const sessionBody = {
+    actorId: "1",
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    defaultLandingPath: "/",
+    emailAddress: "siteboss@example.com",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "siteboss",
+    userLabel: "Site Boss",
+  };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({
-        actorId: "1",
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        defaultLandingPath: "/",
-        emailAddress: "siteboss@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isGuest: false,
-        isSiteAdmin: true,
-        loginId: "siteboss",
-        userLabel: "Site Boss",
-      }),
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify(sessionBody),
+    });
+  });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify(sessionBody),
     });
   });
 }
@@ -749,6 +881,7 @@ async function mockProjects(
   page: Page,
   overrides: Partial<{
     createdAt: string;
+    deleteDelayMs: number;
     ownerName: string;
     overview: string;
     projectLogoUrl: string;
@@ -757,6 +890,7 @@ async function mockProjects(
 ) {
   const requests = {
     deletedProjectIds: [] as string[],
+    deleteRequests: [] as Array<{ hasCsrfHeader: boolean; method: string; pathname: string }>,
   };
   const projects = [
     {
@@ -790,7 +924,13 @@ async function mockProjects(
   });
   await page.route("**/api/v1/site/projects/*", async (route) => {
     if (route.request().method() === "DELETE") {
+      const url = new URL(route.request().url());
       const deletedProjectId = new URL(route.request().url()).pathname.split("/").pop() ?? "";
+      requests.deleteRequests.push({
+        hasCsrfHeader: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        pathname: url.pathname,
+      });
       requests.deletedProjectIds.push(deletedProjectId);
       const deletedIndex = projects.findIndex((project) => String(project.id) === deletedProjectId);
       if (deletedIndex >= 0) {
@@ -798,6 +938,9 @@ async function mockProjects(
       }
       total = 0;
       totalPages = 0;
+    }
+    if (overrides.deleteDelayMs) {
+      await new Promise((resolve) => setTimeout(resolve, overrides.deleteDelayMs));
     }
     await route.fulfill({
       contentType: "application/json",
