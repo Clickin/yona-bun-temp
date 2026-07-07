@@ -8,5 +8,11 @@ export const Route = createFileRoute("/notification")({
 function NotificationRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
-  return <HomeRouteScreen routePath="/notification" runtimeConfig={runtimeConfig} />;
+  return (
+    <HomeRouteScreen
+      notificationFragmentOnly
+      routePath="/notification"
+      runtimeConfig={runtimeConfig}
+    />
+  );
 }

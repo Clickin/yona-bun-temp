@@ -95,10 +95,12 @@ function LegacyHrefAnchor({
 
 export function HomeRouteScreen({
   flashMessageKey = "",
+  notificationFragmentOnly = false,
   runtimeConfig,
   routePath = "/",
 }: {
   flashMessageKey?: string;
+  notificationFragmentOnly?: boolean;
   runtimeConfig: RuntimeConfig;
   routePath?: string;
 }) {
@@ -107,6 +109,7 @@ export function HomeRouteScreen({
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <HomeScreen
           flashMessageKey={flashMessageKey}
+          notificationFragmentOnly={notificationFragmentOnly}
           routePath={routePath}
           runtimeConfig={runtimeConfig}
         />
@@ -117,10 +120,12 @@ export function HomeRouteScreen({
 
 function HomeScreen({
   flashMessageKey,
+  notificationFragmentOnly,
   routePath,
   runtimeConfig,
 }: {
   flashMessageKey: string;
+  notificationFragmentOnly: boolean;
   routePath: string;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -221,6 +226,40 @@ function HomeScreen({
     } finally {
       setIsLoadingMoreNotifications(false);
     }
+  }
+
+  if (notificationFragmentOnly) {
+    return (
+      <>
+        {notificationItems.length === 0 ? (
+          <div className="warning-none">
+            <i className="yobicon-danger" /> {t("notification.none")}
+          </div>
+        ) : (
+          notificationItems.map((notification) => (
+            <NotificationStreamItem
+              key={notification.id}
+              notification={notification}
+              runtimeConfig={runtimeConfig}
+            />
+          ))
+        )}
+        {notificationHasMore ? (
+          <li>
+            <button
+              id="notification-more"
+              type="button"
+              className="ybtn"
+              onClick={() => {
+                void loadMoreNotifications();
+              }}
+            >
+              More
+            </button>
+          </li>
+        ) : null}
+      </>
+    );
   }
 
   if (

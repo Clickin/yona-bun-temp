@@ -1,147 +1,158 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
-const EXPECTED_NOTIFICATION_ROUTE_TABS = `
-<ul class="nav nav-tabs">
-  <li class="active"><a href="__BASE_PATH__/notifications">Notification</a></li>
-  <li><a href="__BASE_PATH__/user/issues">My Issues</a></li>
-  <li><a href="__BASE_PATH__/user/files">My Files</a></li>
-  <li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" data-url="notification" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
-</ul>
+const EXPECTED_AUTHENTICATED_NOTIFICATION_ITEM = `
+<li class="notification-stream">
+  <div class="stream-type comment2">
+    <i class="yobicon-comment2"></i>
+  </div>
+  <div class="stream-desc" data-target="message-notification-1" data-toggle="learnmore">
+    <div class="stream-info">
+      <div class="title">
+        <a href="__BASE_PATH__/admin/sample/post/1#comment-1">Re: [sample] Seed notes (1)</a>
+      </div>
+      <div class="message-wrap nowrap" id="message-notification-1">
+        <div class="message">Board seed confirmed from the fork contributor side.</div>
+      </div>
+      <div class="meta">
+        <a class="avatar-wrap smaller" href="__BASE_PATH__/alice">
+          <img src="/assets/images/default-avatar-128.png">
+        </a>
+        <a href="__BASE_PATH__/alice" class="author">Alice Kim</a>@alice
+        <span class="ago pull-right" title="2026-07-07 11:25:34 AM">12 minutes ago</span>
+      </div>
+    </div>
+  </div>
+</li>
 `;
 
-const EXPECTED_NOTIFICATION_ROUTE_EMPTY_STREAM = `
-<ul class="activity-streams notification-wrap unstyled">
-  <div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>
-</ul>
+const EXPECTED_ANONYMOUS_NOTIFICATION_FRAGMENT = `
+<div class="warning-none">
+  <i class="yobicon-danger"></i>No notification has been received.
+</div>
 `;
 
-const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
-  activityStreamsMarginTop: "0px",
-  gnbInnerHeight: "40px",
-  gnbInnerWidth: 1235,
-  gnbOuterBackground: "rgb(27, 27, 27)",
-  gnbOuterHeight: "40px",
-  guideToggleButtonBorderBottomLeftRadius: "6px",
-  guideToggleButtonBorderBottomRightRadius: "6px",
-  guideToggleButtonPaddingLeft: "25px",
-  logoBackground: "rgb(255, 87, 34)",
-  logoLineHeight: "40px",
-  logoPadding: "6px 10px",
-  mainStreamMarginBottom: "15px",
-  navLinkColor: "rgb(85, 85, 85)",
-  navLinkFontWeight: "700",
-  navLinkPaddingLeft: "30px",
-  pageFooterLineHeight: "34px",
-  pageFooterOuterPadding: "10px 0px",
-  pageWrapOuterMarginTop: "10px",
-  pageWrapOuterMinHeight: "450px",
-  providerColor: "rgb(51, 51, 51)",
-  providerFontSize: "9px",
-  providerMarginLeft: "4px",
-  warningBackground: "rgb(139, 139, 139)",
-  warningBorderRadius: "6px",
-  warningColor: "rgb(255, 255, 255)",
-  warningFontSize: "16px",
-  warningPaddingTop: "15px",
-};
-
-test("legacy singular notification browser route renders the shared notification shell", async ({
+test("legacy singular notification browser route renders the raw notification fragment", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  let defaultLoginPageRequestPath: string | null = null;
-  await mockAuthenticatedNotifications(page, []);
-  await page.route("**/user/defultLoginPage?*", async (route) => {
-    defaultLoginPageRequestPath = new URL(route.request().url()).searchParams.get("path");
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        defaultLoginPage: "/notification",
-      }),
-    });
-  });
+  await mockAuthenticatedNotifications(
+    page,
+    [
+      {
+        actor: {
+          avatarUrl: "/assets/images/default-avatar-128.png",
+          displayName: "Alice Kim",
+          loginId: "alice",
+        },
+        createdAt: "2026-07-07 11:25:34 AM",
+        createdLabel: "12 minutes ago",
+        eventType: "NEW_COMMENT",
+        id: "notification-1",
+        message: "Board seed confirmed from the fork contributor side.",
+        targetHref: "/admin/sample/post/1#comment-1",
+        targetTitle: "Re: [sample] Seed notes (1)",
+        typeIcon: "comment2",
+      },
+    ],
+    { hasMore: true },
+  );
 
   await page.goto(`${basePath}/notification?from=0&limit=20`);
 
   await expect(page).toHaveURL(`${basePath}/notification?from=0&limit=20`);
-  await expect(page.locator(".page-wrap-outer")).toBeVisible();
-  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
-  await expect(page.locator(".warning-none")).toContainText("No notification has been received.");
-  await expect(page.locator("#setDefaultLoginPage")).toHaveAttribute("data-url", "notification");
+  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  await expect(page.locator("#notification-more")).toBeVisible();
   await expect(
-    page.locator(
-      ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
-    ),
-  ).toHaveCount(4);
+    page.locator(".gnb-outer, .page-wrap-outer, .main-stream > .nav-tabs, #setDefaultLoginPage"),
+  ).toHaveCount(0);
 
-  expect(await canonicalizeSelector(page, ".main-stream > .nav-tabs")).toEqual(
+  expect(await canonicalizeSelector(page, ".notification-stream")).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_NOTIFICATION_ROUTE_TABS.replaceAll("__BASE_PATH__", basePath),
+      EXPECTED_AUTHENTICATED_NOTIFICATION_ITEM.replaceAll("__BASE_PATH__", basePath),
     ),
   );
-  expect(await canonicalizeSelector(page, ".activity-streams.notification-wrap")).toEqual(
+  expect(await canonicalizeSelector(page, "#notification-more")).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_NOTIFICATION_ROUTE_EMPTY_STREAM.replaceAll("__BASE_PATH__", basePath),
+      '<button id="notification-more" class="ybtn" type="button">More</button>',
     ),
   );
-  expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
-    EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
-  );
-  const defaultLoginPageResponsePromise = page.waitForResponse(
-    (response) =>
-      response.request().method() === "POST" && response.url().includes("/user/defultLoginPage"),
-  );
-  await page.locator("#setDefaultLoginPage").click();
-  await defaultLoginPageResponsePromise;
-  await expect.poll(() => defaultLoginPageRequestPath).toBe("/notification");
-  await expect(page.locator("#yobiToasts .msg")).toHaveText("Set to default: notification");
-  await expect(page.locator("#setDefaultLoginPage")).toBeHidden();
 
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(await readMobileAuthenticatedHomeMetrics(page)).toEqual({
-    defaultLandingButtonDisplay: "none",
-    mainStreamWidth: 390,
-    pageWrapOuterWidth: 390,
-    siteGuideOuterMargin: "40px 0px 0px",
-  });
+  const metrics = await readFragmentMetrics(page);
+  expect(metrics.hasShell).toBe(false);
+  expect(metrics.firstTag).toBe("LI");
+  expect(metrics.firstTop).toBeLessThan(32);
+  expect(metrics.firstLeft).toBeLessThan(32);
+  expect(metrics.childTags.slice(0, 2)).toEqual(["LI", "LI"]);
 
   const routeSource = readFileSync("src/routes/notification.tsx", "utf8");
   expect(routeSource).toContain('createFileRoute("/notification")');
-  expect(routeSource).toContain('routePath="/notification"');
+  expect(routeSource).toContain("notificationFragmentOnly");
 });
 
-test("root default landing redirects to the singular notification route", async ({ page }) => {
+test("legacy singular notification browser route keeps the anonymous warning fragment", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockAuthenticatedNotifications(page, [], { defaultLandingPath: "/notification" });
+  await mockAnonymousSession(page);
 
-  await page.goto(`${basePath}/`);
+  await page.goto(`${basePath}/notification?from=0&limit=20`);
 
-  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/notification`);
-  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
-  await expect(page.locator("#setDefaultLoginPage")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/notification?from=0&limit=20`);
+  await expect(page.locator(".warning-none")).toContainText("No notification has been received.");
+  await expect(page.locator(".notification-stream, #notification-more")).toHaveCount(0);
+  await expect(
+    page.locator(".gnb-outer, .page-wrap-outer, .siteintro-bg, #setDefaultLoginPage"),
+  ).toHaveCount(0);
+  expect(await canonicalizeSelector(page, ".warning-none")).toEqual(
+    await canonicalizeHtml(page, EXPECTED_ANONYMOUS_NOTIFICATION_FRAGMENT),
+  );
+
+  const metrics = await readFragmentMetrics(page);
+  expect(metrics.hasShell).toBe(false);
+  expect(metrics.firstTag).toBe("DIV");
+  expect(metrics.firstTop).toBeLessThan(32);
+  expect(metrics.firstLeft).toBeLessThan(32);
+  expect(metrics.childTags[0]).toBe("DIV");
 });
+
+async function mockAnonymousSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: null,
+        defaultLandingPath: "/",
+        emailAddress: "",
+        isAnonymous: true,
+        isConfirmed: false,
+        isSiteAdmin: false,
+        loginId: "",
+        userLabel: "",
+      }),
+    });
+  });
+}
 
 async function mockAuthenticatedNotifications(
   page: Page,
   items: unknown[],
-  sessionOverrides: Record<string, unknown> = {},
+  options: { defaultLandingPath?: string; hasMore?: boolean } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         actorId: 1,
-        defaultLandingPath: "/",
+        defaultLandingPath: options.defaultLandingPath ?? "/",
         emailAddress: "admin@example.com",
         isAnonymous: false,
         isConfirmed: true,
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
-        ...sessionOverrides,
       }),
     });
   });
@@ -149,106 +160,54 @@ async function mockAuthenticatedNotifications(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        hasMore: false,
+        hasMore: options.hasMore ?? false,
         items,
         total: items.length,
       }),
     });
   });
-}
-
-async function readDesktopAuthenticatedHomeMetrics(page: Page) {
-  return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const mainStream = document.querySelector<HTMLElement>(".main-stream");
-    const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
-    const warning = document.querySelector<HTMLElement>(".warning-none");
-    const guideToggleButton = document.querySelector<HTMLElement>(".guide-toggle button");
-    const navLink = document.querySelector<HTMLElement>(".nav-tabs > li > a");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
-    if (
-      !gnbOuter ||
-      !gnbInner ||
-      !logo ||
-      !pageWrapOuter ||
-      !mainStream ||
-      !activityStreams ||
-      !warning ||
-      !guideToggleButton ||
-      !navLink ||
-      !pageFooter ||
-      !pageFooterOuter ||
-      !provider
-    ) {
-      throw new Error("Expected authenticated home metric targets are missing.");
-    }
-
-    const gnbOuterStyle = getComputedStyle(gnbOuter);
-    const gnbInnerStyle = getComputedStyle(gnbInner);
-    const logoStyle = getComputedStyle(logo);
-    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
-    const mainStreamStyle = getComputedStyle(mainStream);
-    const activityStreamsStyle = getComputedStyle(activityStreams);
-    const warningStyle = getComputedStyle(warning);
-    const guideToggleButtonStyle = getComputedStyle(guideToggleButton);
-    const navLinkStyle = getComputedStyle(navLink);
-    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
-    const providerStyle = getComputedStyle(provider);
-
-    return {
-      activityStreamsMarginTop: activityStreamsStyle.marginTop,
-      gnbInnerHeight: gnbInnerStyle.height,
-      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
-      gnbOuterBackground: gnbOuterStyle.backgroundColor,
-      gnbOuterHeight: gnbOuterStyle.height,
-      guideToggleButtonBorderBottomLeftRadius: guideToggleButtonStyle.borderBottomLeftRadius,
-      guideToggleButtonBorderBottomRightRadius: guideToggleButtonStyle.borderBottomRightRadius,
-      guideToggleButtonPaddingLeft: guideToggleButtonStyle.paddingLeft,
-      logoBackground: logoStyle.backgroundColor,
-      logoLineHeight: logoStyle.lineHeight,
-      logoPadding: logoStyle.padding,
-      mainStreamMarginBottom: mainStreamStyle.marginBottom,
-      navLinkColor: navLinkStyle.color,
-      navLinkFontWeight: navLinkStyle.fontWeight,
-      navLinkPaddingLeft: navLinkStyle.paddingLeft,
-      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
-      pageFooterOuterPadding: pageFooterOuterStyle.padding,
-      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
-      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
-      providerColor: providerStyle.color,
-      providerFontSize: providerStyle.fontSize,
-      providerMarginLeft: providerStyle.marginLeft,
-      warningBackground: warningStyle.backgroundColor,
-      warningBorderRadius: warningStyle.borderTopLeftRadius,
-      warningColor: warningStyle.color,
-      warningFontSize: warningStyle.fontSize,
-      warningPaddingTop: warningStyle.paddingTop,
-    };
+  await page.route("**/api/v1/workspace/overview", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        ownProjects: [],
+        recentProjects: [],
+        recentIssues: [],
+      }),
+    });
   });
 }
 
-async function readMobileAuthenticatedHomeMetrics(page: Page) {
+async function readFragmentMetrics(page: Page) {
   return page.evaluate(() => {
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const siteGuideOuter = document.querySelector<HTMLElement>(".site-guide-outer");
-    const mainStream = document.querySelector<HTMLElement>(".main-stream");
-    const defaultLandingButton = document.querySelector<HTMLElement>("#setDefaultLoginPage");
-    if (!pageWrapOuter || !siteGuideOuter || !mainStream) {
-      throw new Error("Expected mobile authenticated home metric targets are missing.");
+    const shell = document.querySelector(".gnb-outer, .page-wrap-outer, .siteintro-bg");
+    const main = document.querySelector<HTMLElement>("#main");
+    const outletHost = main?.querySelector<HTMLElement>(":scope > div") ?? main;
+    const firstFragmentNode =
+      outletHost?.querySelector<HTMLElement>(
+        ":scope > .notification-stream, :scope > .warning-none",
+      ) ?? null;
+    if (!firstFragmentNode || !main || !outletHost) {
+      throw new Error("Expected singular notification fragment targets are missing.");
     }
 
+    const firstBox = firstFragmentNode.getBoundingClientRect();
+    const childTags = Array.from(outletHost.children)
+      .filter(
+        (element) =>
+          element.id !== "yobiToasts" &&
+          element.id !== "tplYobiToast" &&
+          !element.classList.contains("modal-backdrop"),
+      )
+      .map((element) => element.tagName);
+
     return {
-      defaultLandingButtonDisplay: defaultLandingButton
-        ? getComputedStyle(defaultLandingButton).display
-        : null,
-      mainStreamWidth: Math.round(mainStream.getBoundingClientRect().width),
-      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
-      siteGuideOuterMargin: getComputedStyle(siteGuideOuter).margin,
+      childTags,
+      firstLeft: Math.round(firstBox.left),
+      firstTag: firstFragmentNode.tagName,
+      firstTop: Math.round(firstBox.top),
+      hasShell: Boolean(shell),
     };
   });
 }
@@ -277,15 +236,11 @@ async function canonicalizeSelector(page: Page, selector: string) {
         "src",
         "target",
         "title",
-        "data-location",
-        "data-organization-id",
-        "data-project-id",
         "data-toggle",
         "data-placement",
         "data-trigger",
         "data-content",
         "data-target",
-        "data-url",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -310,19 +265,12 @@ async function canonicalizeSelector(page: Page, selector: string) {
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
+
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
-          .filter(
-            (value) =>
-              !(
-                value === "active" &&
-                current.tagName.toLowerCase() === "a" &&
-                current.closest(".main-stream > .nav-tabs")
-              ),
-          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -356,15 +304,11 @@ async function canonicalizeHtml(page: Page, html: string) {
           "src",
           "target",
           "title",
-          "data-location",
-          "data-organization-id",
-          "data-project-id",
           "data-toggle",
           "data-placement",
           "data-trigger",
           "data-content",
           "data-target",
-          "data-url",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
@@ -389,19 +333,12 @@ async function canonicalizeHtml(page: Page, html: string) {
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
+
       function normalizeAttribute(current: Element, name: string) {
         if (name === "class") {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/)
             .filter((value, index, values) => value && values.indexOf(value) === index)
-            .filter(
-              (value) =>
-                !(
-                  value === "active" &&
-                  current.tagName.toLowerCase() === "a" &&
-                  current.closest(".main-stream > .nav-tabs")
-                ),
-            )
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
         }
