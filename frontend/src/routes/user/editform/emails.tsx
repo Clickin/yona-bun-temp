@@ -60,6 +60,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     queryKey: ["workspace", "overview"],
   });
   const profile = workspaceQuery.data?.profile;
+  const loginId = stringValue(profile?.loginId);
   const rows = (workspaceQuery.data?.emails ?? []) as WorkspaceEmailRow[];
   const addMutation = useMutation({
     mutationFn: async (email: string) => {
@@ -100,6 +101,7 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
 
   return (
     <>
+      <UserEmailSettingsTitle loginId={loginId} />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{t("userinfo.accountSetting")}</h3>
@@ -224,6 +226,10 @@ function stringValue(value: unknown): string {
 
 function avatarSrc(value: unknown): string {
   return stringValue(value) || DEFAULT_EMAIL_AVATAR_SRC;
+}
+
+function UserEmailSettingsTitle({ loginId }: { loginId: string }) {
+  return loginId ? <title>{loginId}</title> : null;
 }
 
 function EditTabMenu({ active }: { active: string }) {

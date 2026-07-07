@@ -91,6 +91,13 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
 
   await page.goto(`${basePath}/user/editform/emails`);
   await expect(page.locator("form.form-inline.inner-bubble")).toBeAttached();
+  await expect(page).toHaveTitle("admin");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("admin");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -237,6 +244,17 @@ test("current-user email settings tab menu uses direct typed router links", () =
   expect(source).toContain('"data-status": undefined');
   expect(source).toContain("const requestHref = { href: requestUri };");
   expect(source).not.toContain("data-request-uri={requestUri}");
+});
+
+test("current-user email settings title follows legacy siteLayout user.loginId without DOM mutation", () => {
+  const source = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
+  expect(source).toContain("<UserEmailSettingsTitle loginId={loginId} />");
+  expect(source).toContain("function UserEmailSettingsTitle({ loginId }: { loginId: string })");
+  expect(source).toContain("return loginId ? <title>{loginId}</title> : null;");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/u);
+  expect(source).not.toMatch(/\bdocument\b[\s\S]{0,80}\btitle\b/u);
 });
 
 test("current-user email settings table keeps legacy avatar src shape when API rows omit avatars", async ({
