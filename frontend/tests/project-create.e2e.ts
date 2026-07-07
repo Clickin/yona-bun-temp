@@ -362,6 +362,8 @@ test("project create cancel link keeps legacy bare-base href and navigates throu
   const cancelLink = page.locator(".actions.mt20 .ybtn").last();
 
   await expect(cancelLink).toHaveAttribute("href", basePath);
+  await expect(cancelLink).not.toHaveAttribute("data-status", /.+/u);
+  await expect(cancelLink).not.toHaveAttribute("aria-current", /.+/u);
 
   const documentRequests: string[] = [];
   page.on("request", (request) => {
@@ -390,7 +392,7 @@ test("project create cancel link keeps legacy bare-base href and navigates throu
   expect(documentRequests).toEqual([]);
 });
 
-test("project create route source keeps cancel navigation on a local link-props legacy-href adapter", () => {
+test("project create route source keeps cancel navigation on a TanStack root link host", () => {
   const routeSource = readFileSync(
     fileURLToPath(new URL("../src/routes/projectform.tsx", import.meta.url)),
     "utf8",
@@ -398,14 +400,20 @@ test("project create route source keeps cancel navigation on a local link-props 
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
 
   expect(routeSource).toContain(
-    'import { Link, createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";',
+    'import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('to="/_import"');
-  expect(routeSource).toContain("const cancelLinkProps = useLinkProps({");
-  expect(routeSource).toContain("mounted bare base path");
-  expect(routeSource).toContain("href override narrow");
-  expect(routeSource).toContain("legacyHref={runtimeConfig.basePath}");
-  expect(routeSource).toContain("router.history.push(runtimeConfig.basePath);");
+  expect(routeSource).toContain("function ProjectCreateRootLinkAnchor({");
+  expect(routeSource).toContain("ref?: React.Ref<HTMLAnchorElement>;");
+  expect(routeSource).toContain("const ProjectCreateRootLink = createLink");
+  expect(routeSource).toContain("<ProjectCreateRootLink");
+  expect(routeSource).toContain("legacyRootHref={cancelHref}");
+  expect(routeSource).toContain("activeOptions={legacyProjectCreateRootLinkActiveOptions}");
+  expect(routeSource).toContain("router.history.push(cancelHref);");
+  expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("LegacyHrefAnchor");
+  expect(routeSource).not.toContain("React.createElement");
+  expect(routeSource).not.toContain("forwardRef");
   expect(routeSource).not.toContain('<Link to="/" className="ybtn">');
   expect(
     rawAnchorBlocks.filter((block) => /(?:_import|prefixBasePath\([^)]*"\/")/u.test(block)),
