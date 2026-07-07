@@ -197,6 +197,66 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   });
 });
 
+test("project change-VCS protected project shell exposes legacy group search scope", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const changeVcsUrl = `${basePath}/admin/sample/changeVCS`;
+  await mockProjectAdmin(page, {
+    project: { isProtected: true, organizationName: "", projectScope: "protected" },
+  });
+
+  await page.goto(changeVcsUrl);
+  await expect(page).toHaveTitle("Repository Change - admin/sample");
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-setting li.active a .menu-name")).toHaveText(
+    "Project configuration",
+  );
+  await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass("active");
+  await expect(page.locator("#btnChangeVCS")).toBeVisible();
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/admin/search`,
+  );
+  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(changeVcsUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(2).click();
+  await expect(page).toHaveURL(changeVcsUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  const shellMetrics = await readProjectChangeVcsShellMetrics(page);
+  expect(shellMetrics.gnbClass).toBe("gnb-outer project-header");
+  expect(shellMetrics.searchScopeTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
+  expect(shellMetrics.searchScopeBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
+  expect(shellMetrics.searchBoxTop).toBeGreaterThanOrEqual(shellMetrics.navbarTop);
+  expect(shellMetrics.searchBoxBottom).toBeLessThanOrEqual(shellMetrics.navbarBottom);
+  expect(shellMetrics.searchBoxRight).toBeGreaterThan(shellMetrics.searchScopeRight);
+  expect(shellMetrics.projectMenuTop).toBeGreaterThan(shellMetrics.navbarBottom);
+});
+
 test("project change-VCS confirmation modal opens, closes, posts, and redirects through SPA", async ({
   page,
 }) => {
@@ -584,7 +644,14 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).not.toMatch(/<a\b/);
   expect(source).not.toMatch(/<a\s+href=\{(?:prefixBasePath|projectHref)/);
   expect(source).not.toContain("activeProps={{ className: undefined }}");
-  expect(source).toContain("projectSearchScope={{");
+  expect(source).toContain("projectSearchScope={projectSearchScope}");
+  expect(source).toContain(
+    "organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName)",
+  );
+  expect(source).toContain(
+    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
+  );
+  expect(source).toContain("return project.isProtected === true ? ownerName : undefined;");
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('const screenTitle = t("title.projectChangeVCS");');
   expect(source).toContain("document.title = `${screenTitle} - ${ownerName}/${projectName}`;");
@@ -828,7 +895,7 @@ async function mockProjectAdmin(
     changeVcsRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
-    project?: Partial<ReturnType<typeof projectChangeVcs>>;
+    project?: Partial<ReturnType<typeof projectChangeVcs>> & Record<string, unknown>;
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -894,7 +961,13 @@ async function mockProjectAdmin(
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(projectSettings()),
+      body: JSON.stringify({ ...projectSettings(), ...options.project }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...projectChangeVcs(), ...options.project }),
     });
   });
   await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {

@@ -46,15 +46,19 @@ function ProjectChangeVcsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeC
   const containerQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const organizationName = stringField(recordField(containerQuery.data).organizationName, "");
+  if (!containerQuery.data) {
+    return null;
+  }
+
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
 
   return (
     <SiteLayoutShell
-      projectSearchScope={{
-        organizationName: organizationName || undefined,
-        ownerName,
-        projectName,
-      }}
+      projectSearchScope={projectSearchScope}
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks
     >
@@ -652,6 +656,15 @@ function projectAdminMenuVisible(project: ProjectChangeVcsScreenData) {
   }
 
   return booleanField(record.viewerCanUpdate);
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }
 
 function mergeProjectChangeVcsData(
