@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useLinkProps, useRouter } from "@tanstack/react-router";
+import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { apiQueryKeys } from "../api/query-keys";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
@@ -24,13 +24,19 @@ const legacyAnchorActiveProps = {
   "data-status": undefined,
 };
 
-function LegacyHrefAnchor({
-  legacyHref,
+function ResetPasswordRootLinkAnchor({
+  legacyRootHref,
   href: _href,
+  ref,
   ...props
-}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyRootHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyRootHref });
 }
+
+const ResetPasswordRootLink = createLink(ResetPasswordRootLinkAnchor);
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
@@ -220,9 +226,7 @@ function FieldPopover({
   message?: string;
 }) {
   const popoverRef = React.useRef<HTMLDivElement>(null);
-  const [placement, setPlacement] = React.useState<{ left: number; top: number } | null>(
-    null,
-  );
+  const [placement, setPlacement] = React.useState<{ left: number; top: number } | null>(null);
 
   React.useLayoutEffect(() => {
     const anchor = anchorRef.current;
@@ -266,16 +270,13 @@ function BadRequestPage({
   const { t } = useLegacyMessages();
   const router = useRouter();
   const homeHref = prefixBasePath(runtimeConfig.basePath, "");
-  const homeButtonLinkProps = useLinkProps({
-    activeOptions: legacyAnchorActiveOptions,
-    activeProps: legacyAnchorActiveProps,
-    className: "ybtn ybtn-info",
-    onClick: (event) => {
+  const handleHomeClick = React.useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
       event.preventDefault();
       router.history.push(homeHref);
     },
-    to: "/",
-  });
+    [homeHref, router.history],
+  );
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <div className="page-wrap-outer">
@@ -283,9 +284,17 @@ function BadRequestPage({
           <div className="error-wrap">
             <i className="ico-404" />
             <p>{message}</p>
-            <LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>
+            <ResetPasswordRootLink
+              href={homeHref}
+              legacyRootHref={homeHref}
+              to="/"
+              activeOptions={legacyAnchorActiveOptions}
+              activeProps={legacyAnchorActiveProps}
+              className="ybtn ybtn-info"
+              onClick={handleHomeClick}
+            >
               {t("menu.home")}
-            </LegacyHrefAnchor>
+            </ResetPasswordRootLink>
           </div>
         </div>
       </div>

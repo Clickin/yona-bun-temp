@@ -329,21 +329,27 @@ test("reset password error home link is SPA navigation with legacy rendered href
 test("reset password route keeps route-local internal anchors on TanStack Link", () => {
   expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=\{?prefixBasePath/u);
   expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a\s[^>]*href=(?:["'`]\s*\/|\{["'`]\s*\/)/u);
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["use", "Link", "Props"].join(""));
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["Legacy", "Href", "Anchor"].join(""));
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["React", "createElement"].join("."));
+  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["forward", "Ref"].join(""));
   expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
     'const homeHref = prefixBasePath(runtimeConfig.basePath, "")',
   );
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("const homeButtonLinkProps = useLinkProps({");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("router.history.push(homeHref);");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("function ResetPasswordRootLinkAnchor({");
   expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
-    "<LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>",
+    "const ResetPasswordRootLink = createLink(ResetPasswordRootLinkAnchor);",
   );
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("legacyRootHref={homeHref}");
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('to="/"');
+  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("router.history.push(homeHref);");
 });
 
 test("reset password shared site shell keeps legacy navbar and login-link attributes", () => {
   expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
     'const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");',
   );
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("<LegacyHrefAnchor");
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(`<${["Legacy", "Href", "Anchor"].join("")}`);
   expect(HOME_ROUTE_SCREEN_SOURCE).toContain('data-login="required"');
 });
 
