@@ -72,7 +72,8 @@ function OrganizationHomeBody({
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
-    stringField(organization.logoUrl, "") || "/assets/images/organization_default_logo.png";
+    stringField(organization.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png");
   const viewerCanLeave = booleanField(organization.viewerCanLeave);
   const viewerCanLeaveAfterValidation = optionalBooleanField(
     organization.viewerCanLeaveAfterValidation,
@@ -269,8 +270,9 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
   const projectName = stringField(project.projectName, "");
   const originOwnerName = stringField(project.originOwnerName, "");
   const originProjectName = stringField(project.originProjectName, "");
-  const isPrivate = booleanField(project.isPrivate);
-  const isProtected = booleanField(project.isProtected);
+  const projectScope = stringField(project.projectScope, "").toLowerCase();
+  const isPrivate = booleanField(project.isPrivate) || projectScope === "private";
+  const isProtected = booleanField(project.isProtected) || projectScope === "protected";
   const createdLabel = stringField(project.createdLabel, "");
   const lastPushedLabel = stringField(project.lastPushedLabel, "");
   const projectLogoUrl = stringField(project.logoUrl, "").trim();
