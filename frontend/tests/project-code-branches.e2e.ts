@@ -336,6 +336,15 @@ test("project code branches route uses Link for internal anchors", () => {
   expect(ROUTE_SOURCE).not.toContain('data-request-method="delete"\\n              onClick');
 });
 
+test("project code branches route renders legacy title metadata without document mutation", () => {
+  expect(ROUTE_SOURCE).toContain(
+    '<title>{`${t("title.branches")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(ROUTE_SOURCE).toContain('<title>{t("error.badrequest.only.available.for.git")}</title>');
+  expect(ROUTE_SOURCE).not.toContain("useProjectBranchesDocumentTitle");
+  expect(ROUTE_SOURCE).not.toContain("document.title");
+});
+
 async function mockProjectBranches(
   page: Page,
   setDefaultRequests: unknown[],

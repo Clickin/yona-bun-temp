@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
@@ -47,13 +46,7 @@ function ProjectBranchesRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
   }
 
   if (project.vcs !== "GIT") {
-    return (
-      <ProjectBranchesBadRequestRouteShell
-        ownerName={ownerName}
-        projectName={projectName}
-        runtimeConfig={runtimeConfig}
-      />
-    );
+    return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }
 
   return (
@@ -70,52 +63,12 @@ function ProjectBranchesRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
   );
 }
 
-function useProjectBranchesDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-  isGitProject: boolean,
-) {
+function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const branchesTitle = t("title.branches");
-  const badRequestOnlyForGit = t("error.badrequest.only.available.for.git");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = isGitProject
-      ? `${branchesTitle} - ${ownerName}/${projectName}`
-      : badRequestOnlyForGit;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [
-    badRequestOnlyForGit,
-    branchesTitle,
-    isGitProject,
-    ownerName,
-    projectName,
-    runtimeConfig.siteName,
-  ]);
-}
-
-function ProjectBranchesBadRequestRouteShell({
-  ownerName,
-  projectName,
-  runtimeConfig,
-}: {
-  ownerName: string;
-  projectName: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  useProjectBranchesDocumentTitle(runtimeConfig, ownerName, projectName, false);
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
+      <title>{t("error.badrequest.only.available.for.git")}</title>
       <ProjectBranchesBadRequestBody runtimeConfig={runtimeConfig} />
     </SiteLayoutShell>
   );
@@ -140,7 +93,7 @@ function ProjectBranchesScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectBranchesDocumentTitle(runtimeConfig, ownerName, projectName, true);
+  const { t } = useLegacyMessages();
   const branchesQuery = useQuery(
     codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -151,6 +104,7 @@ function ProjectBranchesScreen({
 
   return (
     <>
+      <title>{`${t("title.branches")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectBranchesBody branches={branchesQuery.data} runtimeConfig={runtimeConfig} />
