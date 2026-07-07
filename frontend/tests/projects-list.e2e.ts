@@ -91,7 +91,7 @@ const EXPECTED_PROJECTS_LIST = `
       <div id="search" class="pull-left">
         <form action="__BASE_PATH__/projects" method="get">
           <div class="search-bar">
-            <input name="filter" class="textbox" type="text" placeholder="Search by keyword" value="sample" autofocus>
+            <input name="filter" class="textbox" type="text" placeholder="Search by keyword" value="sample">
             <button type="submit" class="search-btn"><i class="yobicon-search"></i></button>
           </div>
         </form>
@@ -147,7 +147,6 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
 
   await page.goto(`${basePath}/projects?filter=sample`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
-  await expect(page.locator('#search input[name="filter"]')).toHaveAttribute("autofocus", "");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -188,14 +187,23 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   });
 });
 
-test("projects list filter input preserves legacy autofocus declaratively", async ({ page }) => {
+test("projects list filter input keeps legacy initial focus without lowercase autofocus injection", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedProjects(page);
+  const autofocusWarnings: string[] = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (text.includes("Invalid DOM property") || text.includes("autofocus autoFocus")) {
+      autofocusWarnings.push(text);
+    }
+  });
 
   await page.goto(`${basePath}/projects?filter=sample`);
   const filterInput = page.locator('#search input[name="filter"]');
-  await expect(filterInput).toHaveAttribute("autofocus", "");
   await expect(filterInput).toBeFocused();
+  expect(autofocusWarnings).toEqual([]);
 });
 
 test("unreadable project rows match legacy private fallback", async ({ page }) => {
@@ -533,7 +541,7 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).toContain('"data-status": undefined');
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain("autoFocus");
-  expect(source).toContain('autofocus: ""');
+  expect(source).not.toContain('autofocus: ""');
   expect(source).not.toMatch(/setAttribute\(['"]autofocus['"]/);
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/orgs")}');

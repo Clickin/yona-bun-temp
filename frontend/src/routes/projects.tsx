@@ -121,7 +121,6 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     placeholder={t("site.project.filter")}
                     defaultValue={filter}
                     autoFocus
-                    {...{ autofocus: "" }}
                   />
                   <button type="submit" className="search-btn">
                     <i className="yobicon-search"></i>
