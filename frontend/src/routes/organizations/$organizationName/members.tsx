@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  useEffect,
   useRef,
   useState,
   type FocusEvent,
@@ -55,7 +54,6 @@ function OrganizationMembersRoute() {
 
 function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
-  const siteName = runtimeConfig.siteName ?? "Yona";
   const query = useQuery({
     queryFn: () => readOrganizationAdminRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "admin"],
@@ -65,24 +63,16 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     queryKey: apiQueryKeys.organization.base(organizationName),
   });
 
-  useEffect(() => {
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = organizationName;
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [organizationName, siteName]);
-
   if (query.error instanceof RestApiError && query.error.status === 403) {
     if (!detailQuery.data) {
-      return null;
+      return <title>{organizationName}</title>;
     }
     const logoUrl = stringField(detailQuery.data.logoUrl, "") || "/assets/images/group_default.png";
     const detailOrganizationName = stringField(detailQuery.data.organizationName, organizationName);
 
     return (
       <>
+        <title>{organizationName}</title>
         <OrganizationHeader logoUrl={logoUrl} organizationName={detailOrganizationName} />
         <OrganizationMenu
           basePath={runtimeConfig.basePath}
@@ -95,7 +85,7 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   }
 
   if (!query.data) {
-    return null;
+    return <title>{organizationName}</title>;
   }
 
   return <OrganizationMembersBody organization={query.data} runtimeConfig={runtimeConfig} />;
@@ -266,6 +256,7 @@ function OrganizationMembersBody({
 
   return (
     <>
+      <title>{organizationName}</title>
       <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
       <OrganizationMenu
         basePath={runtimeConfig.basePath}

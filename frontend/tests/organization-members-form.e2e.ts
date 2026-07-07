@@ -25,6 +25,14 @@ test("organization members matches legacy organization/members.scala.html DOM", 
 
   await page.goto(`${basePath}/organizations/weblabs/members`);
   await expect(page).toHaveTitle("weblabs");
+  await expect
+    .poll(() =>
+      page
+        .locator("head > title")
+        .first()
+        .evaluate((title) => title.text),
+    )
+    .toBe("weblabs");
   await expect(page.locator("#addNewMember")).toBeVisible();
   await expect(page.locator(".members.project .member")).toHaveCount(2);
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
@@ -441,6 +449,7 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('data-provider="typeahead"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("projectSearchScope={{ organizationName }}");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("<title>{organizationName}</title>");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('"/assets/images/group_default.png"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('to="/$user"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
@@ -456,6 +465,9 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("DOMParser");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("parseFromString");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("querySelector");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain('globalThis["document"]');
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("document.title");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("<a ");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("</a>");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("organizationHref(");
