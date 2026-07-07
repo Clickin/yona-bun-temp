@@ -22,6 +22,13 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
 
   await page.goto(`${basePath}/admin/sample/code/main`);
   await expect(page).toHaveTitle("Code - admin/sample");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.head.querySelectorAll("title"), (title) => title.textContent ?? ""),
+      ),
+    )
+    .toContain("Code - admin/sample");
   await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
@@ -229,12 +236,13 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).toContain(
     "import { Link, createFileRoute, Outlet, useRouter, useRouterState }",
   );
-  expect(ROUTE_SOURCE).toContain("useProjectCodeBranchDocumentTitle");
+  expect(ROUTE_SOURCE).toContain(
+    '<title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(ROUTE_SOURCE).not.toContain("useProjectCodeBranchDocumentTitle");
   expect(ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
   expect(ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}");
-  expect(ROUTE_SOURCE).toContain(
-    "document.title = `${codeMenuTitle} - ${ownerName}/${projectName}`",
-  );
+  expect(ROUTE_SOURCE).not.toContain("document.title");
   expect(ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
   expect(ROUTE_SOURCE).toContain("activeOptions={{");
   expect(ROUTE_SOURCE).toContain("activeProps={{");

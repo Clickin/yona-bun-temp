@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -36,7 +35,7 @@ function ProjectCodeBranchRoute() {
 
 function ProjectCodeBranchRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectCodeBranchDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -50,36 +49,17 @@ function ProjectCodeBranchRouteShell({ runtimeConfig }: { runtimeConfig: Runtime
   const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
 
   return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
-    >
-      <ProjectCodeBranchScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
-    </SiteLayoutShell>
+    <>
+      <title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell
+        projectSearchScope={projectSearchScope}
+        runtimeConfig={runtimeConfig}
+        showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+      >
+        <ProjectCodeBranchScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      </SiteLayoutShell>
+    </>
   );
-}
-
-function useProjectCodeBranchDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const codeMenuTitle = t("menu.code");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${codeMenuTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [codeMenuTitle, ownerName, projectName, runtimeConfig.siteName]);
 }
 
 function ProjectCodeBranchScreen({
