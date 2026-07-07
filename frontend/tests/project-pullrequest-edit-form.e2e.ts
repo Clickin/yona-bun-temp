@@ -52,8 +52,22 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
   const editFormUrl = page.url();
   expect(ROUTE_SOURCE).not.toContain("<SiteLayoutShell runtimeConfig={runtimeConfig}>");
+  expect(ROUTE_SOURCE).toContain(
+    '<title>{`${t("title.editPullRequest")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(ROUTE_SOURCE).not.toContain("document.title");
+  expect(ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(ROUTE_SOURCE).not.toContain("window.document");
+  expect(ROUTE_SOURCE).not.toMatch(/useEffect\s*\([\s\S]{0,300}title/iu);
   expect(PULL_REQUEST_PARENT_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
   expect(PULL_REQUEST_PARENT_ROUTE_SOURCE).toContain("function projectSearchScopeOrganizationName");
+  await expect(page).toHaveTitle("Edit pull request - admin/sample");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("Edit pull request - admin/sample");
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
   const shell = pullRequestEditScopedShell(page);
   await expect(shell).toBeVisible();

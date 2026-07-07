@@ -37,6 +37,7 @@ function ProjectPullRequestEditRoute() {
 
 function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
+  const { t } = useLegacyMessages();
   const prNumber = Number(pullRequestNumber) || 0;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -50,11 +51,12 @@ function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: Runtim
   );
 
   if (!projectQuery.data || !formOptionsQuery.data?.pullRequest) {
-    return null;
+    return <title>{`${t("title.editPullRequest")} - ${ownerName}/${projectName}`}</title>;
   }
 
   return (
     <>
+      <title>{`${t("title.editPullRequest")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="pullRequest"
