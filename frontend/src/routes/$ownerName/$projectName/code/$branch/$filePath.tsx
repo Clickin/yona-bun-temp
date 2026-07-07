@@ -58,6 +58,7 @@ function ProjectCodeFileRouteShell({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = routeParams;
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -71,17 +72,20 @@ function ProjectCodeFileRouteShell({
   const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
 
   return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
-    >
-      <ProjectCodeFileScreen
-        project={projectQuery.data}
-        routeParams={routeParams}
+    <>
+      <title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell
+        projectSearchScope={projectSearchScope}
         runtimeConfig={runtimeConfig}
-      />
-    </SiteLayoutShell>
+        showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+      >
+        <ProjectCodeFileScreen
+          project={projectQuery.data}
+          routeParams={routeParams}
+          runtimeConfig={runtimeConfig}
+        />
+      </SiteLayoutShell>
+    </>
   );
 }
 

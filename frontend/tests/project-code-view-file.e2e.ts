@@ -320,10 +320,14 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).toContain("<Link href={archiveHref} to={archivePath} reloadDocument");
   expect(routeSource).toContain("<Link href={rawHref} to={rawPath}");
   expect(routeSource).toContain("href={openHref}");
+  expect(routeSource).toContain(
+    '<title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(routeSource).toContain("code.looseFileSizeLimitForCodeBrowser");
   expect(routeSource).not.toMatch(
-    /\bdocument\.|addEventListener|classList|style\.display|dangerouslySetInnerHTML|jQuery|\$\(/u,
+    /\bdocument\.|globalThis\.document|addEventListener|classList|style\.display|dangerouslySetInnerHTML|jQuery|\$\(/u,
   );
+  expect(routeSource).not.toMatch(/\buse(?:Layout)?Effect\b[\s\S]{0,240}\btitle\b/u);
   expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
   expect(routeSource).toContain(
     "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
@@ -533,6 +537,10 @@ test("project code too-large text file matches legacy raw fallback branch", asyn
   });
 
   await page.goto(`${basePath}/admin/sample/code/main/logs/big.txt`);
+  await expect(page).toHaveTitle("Code - admin/sample");
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent))
+    .toBe("Code - admin/sample");
   await expect(page.locator(".file-wrap[data-type=file] > p")).toContainText(
     'Site Administrator can loosen the limit by modifying "application.codeBrowser.viewer.maxFileSize" in the configuration file.',
   );
