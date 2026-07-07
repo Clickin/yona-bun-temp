@@ -199,9 +199,14 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain('to="/$ownerName/$projectName/code"');
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain("toggleProjectWatchRest");
+  expect(source).toContain(
+    '<title>{`${t("title.projectWatchers")} - ${ownerName}/${projectName}`}</title>',
+  );
   expect(source).toContain("onClick={(event) =>");
   expect(source).toContain("event.preventDefault();");
   expect(source).toContain("event.stopPropagation();");
+  expect(source).not.toContain("document.");
+  expect(source).not.toContain("useProjectWatchersDocumentTitle");
   expect(source).not.toContain("onMouseDown=");
   expect(source).not.toContain("legacyUserSearch");
   expect(source).not.toContain("daysAgo: undefined");

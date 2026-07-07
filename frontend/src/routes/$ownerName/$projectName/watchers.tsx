@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
@@ -34,7 +34,7 @@ function ProjectWatchersRoute() {
 
 function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectWatchersDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -54,33 +54,12 @@ function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <title>{`${t("title.projectWatchers")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader project={projectQuery.data} />
       <ProjectMenu project={projectQuery.data} />
       <ProjectWatchersBody watchers={watchersQuery.data} />
     </SiteLayoutShell>
   );
-}
-
-function useProjectWatchersDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const watchersTitle = t("title.projectWatchers");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${watchersTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, watchersTitle]);
 }
 
 function ProjectWatchersBody({ watchers }: { watchers: ProjectWatchersResponse }) {
@@ -588,10 +567,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
 }
 
 function booleanField(value: unknown) {
