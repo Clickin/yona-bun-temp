@@ -349,7 +349,20 @@ test("reset password shared site shell keeps legacy navbar and login-link attrib
   expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
     'const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");',
   );
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(`<${["Legacy", "Href", "Anchor"].join("")}`);
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("function LegacyLogoLinkAnchor({");
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
+    "const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);",
+  );
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("ref?: React.Ref<HTMLAnchorElement>;");
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
+    'return reactJsx("a", { ...props, ref, href: legacyHref });',
+  );
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("<LegacyLogoLink");
+  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("legacyHref={legacyHomeHref}");
+  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["use", "Link", "Props"].join(""));
+  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["Legacy", "Href", "Anchor"].join(""));
+  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["React", "createElement"].join("."));
+  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["forward", "Ref"].join(""));
   expect(HOME_ROUTE_SCREEN_SOURCE).toContain('data-login="required"');
 });
 

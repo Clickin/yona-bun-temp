@@ -378,7 +378,7 @@ test("authenticated index redirects to the configured non-root default landing",
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/me`);
 });
 
-test("shared shell logo keeps legacy navbar link without route-local href adapter", async ({
+test("shared shell logo keeps legacy navbar link with createLink host ownership", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -393,8 +393,38 @@ test("shared shell logo keeps legacy navbar link without route-local href adapte
   await expect(logoLink).toHaveAttribute("class", "logo logo-letter");
   await expect(logoLink).not.toHaveAttribute("aria-current");
   await expect(logoLink).not.toHaveAttribute("data-status");
+
+  await page.goto(`${basePath}/notifications`);
+  await page.evaluate(() => {
+    (
+      window as Window & { __authenticatedHomeLogoSpaMarker?: string }
+    ).__authenticatedHomeLogoSpaMarker = "logo";
+  });
+  await page.locator(".gnb-nav a.logo.logo-letter").click();
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`, "u"));
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __authenticatedHomeLogoSpaMarker?: string })
+            .__authenticatedHomeLogoSpaMarker,
+      ),
+    )
+    .toBe("logo");
+
   expect(routeSource).not.toContain("LegacyHrefLink");
-  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).toContain("function LegacyLogoLinkAnchor({");
+  expect(routeSource).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
+  expect(routeSource).toContain("ref?: React.Ref<HTMLAnchorElement>;");
+  expect(routeSource).toContain('return reactJsx("a", { ...props, ref, href: legacyHref });');
+  expect(routeSource).toContain("<LegacyLogoLink");
+  expect(routeSource).toContain("legacyHref={legacyHomeHref}");
+  expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
+  expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
+  expect(routeSource).not.toContain(["React", "createElement"].join("."));
+  expect(routeSource).not.toContain(["forward", "Ref"].join(""));
   expect(routeSource).not.toContain("CreateLinkProps");
 });
 
@@ -421,7 +451,12 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("as unknown as");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
-  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).toContain("createLink");
+  expect(routeSource).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
+  expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
+  expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
+  expect(routeSource).not.toContain(["React", "createElement"].join("."));
+  expect(routeSource).not.toContain(["forward", "Ref"].join(""));
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
@@ -619,7 +654,7 @@ test("authenticated home empty notifications matches legacy index notifications 
       "gnb-site-admin";
   });
   await siteAdminLink.click();
-  await expect(page).toHaveURL(`${basePath}/sites/userList?pageNum=1&query=&state=ACTIVE`);
+  await expect(page).toHaveURL(`${basePath}/sites/userList`);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
   await expect
     .poll(() =>
@@ -2643,4 +2678,8 @@ async function canonicalizeHtml(page: Page, html: string) {
     },
     { markup: html },
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }

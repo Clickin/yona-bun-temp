@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate, useLinkProps } from "@tanstack/react-router";
+import { createLink, Link, Navigate } from "@tanstack/react-router";
 import { jsx as reactJsx } from "react/jsx-runtime";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
@@ -85,13 +85,19 @@ const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
   },
 };
 
-function LegacyHrefAnchor({
+function LegacyLogoLinkAnchor({
   legacyHref,
   href: _href,
+  ref,
   ...props
-}: React.ComponentPropsWithRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
+}: React.ComponentPropsWithoutRef<"a"> & {
+  legacyHref: string;
+  ref?: React.Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyHref });
 }
+
+const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -677,22 +683,6 @@ export function SiteLayoutShell({
       : selectedSearchScope === "group" && groupSearchAction
         ? groupSearchAction
         : allProjectsSearchAction;
-  const logoLinkProps = useLinkProps({
-    activeOptions: {
-      exact: true,
-      explicitUndefined: true,
-      includeHash: true,
-      includeSearch: true,
-    },
-    activeProps: {
-      "aria-current": undefined,
-      className: undefined,
-      "data-status": undefined,
-    },
-    className: "logo logo-letter",
-    search: LEGACY_LOGO_LINK_SEARCH,
-    to: "/",
-  });
   const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");
   const gnbSearchScopeTitle =
     selectedSearchScope === "project" && projectSearchAction
@@ -745,9 +735,25 @@ export function SiteLayoutShell({
           </div>
           <ul className="gnb-nav">
             <li>
-              <LegacyHrefAnchor {...logoLinkProps} legacyHref={legacyHomeHref}>
+              <LegacyLogoLink
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+                className="logo logo-letter"
+                legacyHref={legacyHomeHref}
+                search={LEGACY_LOGO_LINK_SEARCH}
+                to="/"
+              >
                 Y
-              </LegacyHrefAnchor>
+              </LegacyLogoLink>
             </li>
             {shouldRenderProjectListingLink &&
             (showLegacyProjectHeaderLinks || activeMenu === "projects") ? (
