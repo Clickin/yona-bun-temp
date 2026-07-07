@@ -115,6 +115,7 @@ function ProjectCodeBody({
 function ProjectCodeNoHead({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
+  const browserTitle = `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;
   const siteName = "Yona";
   const vcs = stringField(project.vcs, "").toUpperCase();
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
@@ -131,37 +132,39 @@ function ProjectCodeNoHead({ project }: { project: ProjectContainer }) {
     `/${ownerName}/${projectName}`;
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="row-fluid">
-          <div className="span12">
-            <NoHeadAlert message={t("code.nohead")} />
-            {booleanField(project.viewerCanUpdate) ? (
-              isSvn ? (
-                <>
-                  <h5>{t("code.nohead.svn.clone", { args: [siteName] })}</h5>
-                  <pre>
-                    <code>{`svn co ${codeUrl}${svnUsernameSuffix}
+    <>
+      <title>{browserTitle}</title>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="row-fluid">
+            <div className="span12">
+              <NoHeadAlert message={t("code.nohead")} />
+              {booleanField(project.viewerCanUpdate) ? (
+                isSvn ? (
+                  <>
+                    <h5>{t("code.nohead.svn.clone", { args: [siteName] })}</h5>
+                    <pre>
+                      <code>{`svn co ${codeUrl}${svnUsernameSuffix}
 cd ${projectName}/
 echo "# ${projectName}" > README.md
 svn add README.md
 svn commit -m "first commit"`}</code>
-                  </pre>
-                </>
-              ) : (
-                <>
-                  <h5>{t("code.nohead.clone", { args: [siteName] })}</h5>
-                  <pre>
-                    <code>{`git clone ${codeUrl} ${projectName}
+                    </pre>
+                  </>
+                ) : (
+                  <>
+                    <h5>{t("code.nohead.clone", { args: [siteName] })}</h5>
+                    <pre>
+                      <code>{`git clone ${codeUrl} ${projectName}
 cd ${projectName}/
 echo "# ${projectName}" > README.md
 git add README.md
 git commit -m "Hello ${siteName}"
 git push origin master`}</code>
-                  </pre>
-                  <h5>{t("code.nohead.init", { args: [siteName] })}</h5>
-                  <pre>
-                    <code>{`mkdir ${projectName}
+                    </pre>
+                    <h5>{t("code.nohead.init", { args: [siteName] })}</h5>
+                    <pre>
+                      <code>{`mkdir ${projectName}
 cd ${projectName}/
 echo "# ${projectName}" > README.md
 git init
@@ -169,24 +172,25 @@ git add README.md
 git commit -m "Hello ${siteName}"
 git remote add origin ${codeUrl}
 git push origin master`}</code>
-                  </pre>
-                  <h5>{t("code.nohead.remote", { args: [siteName] })}</h5>
-                  <pre>
-                    <code>{`git remote add origin ${codeUrl}
+                    </pre>
+                    <h5>{t("code.nohead.remote", { args: [siteName] })}</h5>
+                    <pre>
+                      <code>{`git remote add origin ${codeUrl}
 git push origin master`}</code>
-                  </pre>
-                  <h5>{t("code.nohead.pull.push", { args: [siteName] })}</h5>
-                  <pre>
-                    <code>{`git pull origin master
+                    </pre>
+                    <h5>{t("code.nohead.pull.push", { args: [siteName] })}</h5>
+                    <pre>
+                      <code>{`git pull origin master
 git push origin master`}</code>
-                  </pre>
-                </>
-              )
-            ) : null}
+                    </pre>
+                  </>
+                )
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

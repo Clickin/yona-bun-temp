@@ -1,4 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+const CODE_ROUTE_SOURCE = new URL(
+  "../src/routes/$ownerName/$projectName/code.tsx",
+  import.meta.url,
+);
+const EXPECTED_BROWSER_TITLE = "sample - Code - admin/sample";
 
 const EXPECTED_NO_HEAD_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid"><div class="span12"><div class="alert alert-block"><h4>The repository is empty!</h4></div><h5>Create a new local repository by cloning the repository created on Yona, and push README.md file.</h5><pre><code>git clone http://admin@example.com/admin/sample sample
@@ -23,6 +30,10 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
   await mockProjectCodeNoHead(page);
 
   await page.goto(`${basePath}/admin/sample/code`);
+  await expect(page).toHaveTitle(EXPECTED_BROWSER_TITLE);
+  await expect
+    .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
+    .toBe(EXPECTED_BROWSER_TITLE);
   await assertProjectSearchShell(page, basePath);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".alert.alert-block h4")).toHaveText("The repository is empty!");
@@ -53,6 +64,21 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
     spanMinHeight: "30px",
     spanWidthPercent: 100,
   });
+});
+
+test("project empty git repository title is rendered by the nohead route", () => {
+  const source = readFileSync(CODE_ROUTE_SOURCE, "utf8");
+
+  expect(source).toContain(
+    'const browserTitle = `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;',
+  );
+  expect(source).toContain("<title>{browserTitle}</title>");
+  expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/u);
+  expect(source).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
+  expect(source).not.toMatch(/\bwindow\s*\.\s*document\b/u);
+  expect(source).not.toMatch(
+    /useEffect\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|title\s*=)/u,
+  );
 });
 
 async function mockProjectCodeNoHead(page: Page) {
