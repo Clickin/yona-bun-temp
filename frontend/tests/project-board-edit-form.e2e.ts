@@ -55,12 +55,28 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   expect(EDITFORM_ROUTE_SOURCE).toContain("tabIndex={4}");
   expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(EDITFORM_ROUTE_SOURCE).toContain("router.history.back()");
+  expect(EDITFORM_ROUTE_SOURCE).toContain(
+    '<title>{`${t("post.modify")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("document.title");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("window.document");
+  expect(EDITFORM_ROUTE_SOURCE).not.toMatch(
+    /useEffect\s*\([\s\S]{0,300}(?:document|globalThis\.document|window\.document)\.title/u,
+  );
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const patchRequests: unknown[] = [];
   await mockProjectBoardEditForm(page, patchRequests);
 
   await page.goto(`${basePath}/admin/sample/post/3/editform`);
+  await expect(page).toHaveTitle("Edit post - admin/sample");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("Edit post - admin/sample");
   await expect(page.locator("form.nm")).toBeVisible();
   await expect(page.locator("#title")).toBeFocused();
   await page.locator("#title").press("Enter");

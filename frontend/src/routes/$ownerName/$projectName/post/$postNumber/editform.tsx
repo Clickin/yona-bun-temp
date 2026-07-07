@@ -85,102 +85,105 @@ function ProjectBoardEditFormBody({
   });
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <form
-          action={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${ownerName}/${projectName}/post/${postNumber}`,
-          )}
-          method="post"
-          encType="multipart/form-data"
-          className="nm"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            if (stringFormValue(formData, "title").trim() === "") {
-              window.alert(t("post.error.emptyTitle"));
-              setTitleFocusRequest((current) => current + 1);
-              return;
-            }
-            mutation.mutate(event.currentTarget);
-          }}
-        >
-          <div className="content-wrap frm-wrap">
-            <dl>
-              <dt>
-                <label htmlFor="title">{t("title")}</label>
-              </dt>
-              <dd>
-                <input
-                  ref={titleRef}
-                  tabIndex={1}
-                  type="text"
-                  id="title"
-                  name="title"
-                  defaultValue={post.title}
-                  className="zen-mode text title "
-                  maxLength={250}
-                  autoComplete="off"
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      setBodyFocusRequest((current) => current + 1);
-                    }
-                  }}
-                />
-              </dd>
-              <dd style={{ position: "relative" }}>
-                <BoardPostMarkdownEditor
-                  focusRequest={bodyFocusRequest}
-                  value={post.bodyMarkdown}
-                />
-              </dd>
-            </dl>
+    <>
+      <title>{`${t("post.modify")} - ${ownerName}/${projectName}`}</title>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <form
+            action={prefixBasePath(
+              runtimeConfig.basePath,
+              `/${ownerName}/${projectName}/post/${postNumber}`,
+            )}
+            method="post"
+            encType="multipart/form-data"
+            className="nm"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              if (stringFormValue(formData, "title").trim() === "") {
+                window.alert(t("post.error.emptyTitle"));
+                setTitleFocusRequest((current) => current + 1);
+                return;
+              }
+              mutation.mutate(event.currentTarget);
+            }}
+          >
+            <div className="content-wrap frm-wrap">
+              <dl>
+                <dt>
+                  <label htmlFor="title">{t("title")}</label>
+                </dt>
+                <dd>
+                  <input
+                    ref={titleRef}
+                    tabIndex={1}
+                    type="text"
+                    id="title"
+                    name="title"
+                    defaultValue={post.title}
+                    className="zen-mode text title "
+                    maxLength={250}
+                    autoComplete="off"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        setBodyFocusRequest((current) => current + 1);
+                      }
+                    }}
+                  />
+                </dd>
+                <dd style={{ position: "relative" }}>
+                  <BoardPostMarkdownEditor
+                    focusRequest={bodyFocusRequest}
+                    value={post.bodyMarkdown}
+                  />
+                </dd>
+              </dl>
 
-            <BoardPostFileUploader resourceId={String(post.id)} />
+              <BoardPostFileUploader resourceId={String(post.id)} />
 
-            <div className="right-txt mt10 mb10">
-              {canSetNotice ? (
-                <label className="checkbox">
-                  <input type="checkbox" id="notice" name="notice" defaultChecked={post.notice} />
-                  {t("post.notice.label")}
-                </label>
-              ) : null}
-              {canShowReadme ? (
-                <label className="checkbox">
-                  <input type="checkbox" id="readme" name="readme" defaultChecked={post.readme} />
-                  {t("post.readmefy")}
-                </label>
-              ) : null}
-            </div>
-
-            <div className="actions">
-              {canSendNotification ? (
-                <span className="send-notification-check">
-                  <label className="checkbox inline">
-                    <input
-                      type="checkbox"
-                      name="notificationMail"
-                      id="notificationMail"
-                      value="yes"
-                      defaultChecked={true}
-                    />
-                    <strong>{t("notification.send.mail")}</strong>
+              <div className="right-txt mt10 mb10">
+                {canSetNotice ? (
+                  <label className="checkbox">
+                    <input type="checkbox" id="notice" name="notice" defaultChecked={post.notice} />
+                    {t("post.notice.label")}
                   </label>
-                </span>
-              ) : null}
-              {canUpdate ? (
-                <button tabIndex={3} className="ybtn ybtn-info">
-                  {t("button.save")}
-                </button>
-              ) : null}
-              <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
+                ) : null}
+                {canShowReadme ? (
+                  <label className="checkbox">
+                    <input type="checkbox" id="readme" name="readme" defaultChecked={post.readme} />
+                    {t("post.readmefy")}
+                  </label>
+                ) : null}
+              </div>
+
+              <div className="actions">
+                {canSendNotification ? (
+                  <span className="send-notification-check">
+                    <label className="checkbox inline">
+                      <input
+                        type="checkbox"
+                        name="notificationMail"
+                        id="notificationMail"
+                        value="yes"
+                        defaultChecked={true}
+                      />
+                      <strong>{t("notification.send.mail")}</strong>
+                    </label>
+                  </span>
+                ) : null}
+                {canUpdate ? (
+                  <button tabIndex={3} className="ybtn ybtn-info">
+                    {t("button.save")}
+                  </button>
+                ) : null}
+                <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
