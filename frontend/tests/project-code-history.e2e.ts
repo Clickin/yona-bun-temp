@@ -253,6 +253,46 @@ test("project bare code history renders default branch on the legacy commits URL
   expect(boxes!.olderTop).toBeGreaterThan(boxes!.historyTop);
 });
 
+test("project bare code history uses legacy project-scoped GNB search shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyPageUrl = `${basePath}/admin/sample/commits`;
+  await mockProjectCodeHistory(page, {
+    project: { isProtected: true, organizationName: "admin" },
+  });
+
+  await page.goto(historyPageUrl);
+  await expect(page).toHaveURL(historyPageUrl);
+  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
+  await assertProjectCodeHistorySearchShell(page, {
+    basePath,
+    expectedPath: historyPageUrl,
+    groupName: "admin",
+    ownerName: "admin",
+    projectName: "sample",
+  });
+});
+
+test("org-owned project bare code history uses legacy group search scope", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyPageUrl = `${basePath}/weblabs/portal/commits`;
+  await mockProjectCodeHistory(page, {
+    ownerName: "weblabs",
+    project: { isProtected: true, organizationName: "weblabs" },
+    projectName: "portal",
+  });
+
+  await page.goto(historyPageUrl);
+  await expect(page).toHaveURL(historyPageUrl);
+  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
+  await assertProjectCodeHistorySearchShell(page, {
+    basePath,
+    expectedPath: historyPageUrl,
+    groupName: "weblabs",
+    ownerName: "weblabs",
+    projectName: "portal",
+  });
+});
+
 test("project code history multiline commit message disclosure toggles per row", async ({
   page,
 }) => {
@@ -373,6 +413,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).toContain('createFileRoute("/$ownerName/$projectName/commits")');
   expect(bareSource).toContain("const isProjectCodeHistoryRoot =");
   expect(bareSource).toContain("return <Outlet />;");
+  expect(bareSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(bareSource).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
+  expect(bareSource).toContain("<ProjectCodeHistoryScreen project={projectQuery.data}");
   expect(bareSource).toContain(
     'codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName })',
   );
@@ -399,6 +442,87 @@ async function expectNoTanStackActiveMarkers(locator: Locator) {
 
 async function expectHistoryRoutePath(page: Page, expectedPath: string) {
   await expect.poll(() => new URL(page.url()).pathname).toBe(expectedPath);
+}
+
+async function assertProjectCodeHistorySearchShell(
+  page: Page,
+  input: {
+    basePath: string;
+    expectedPath: string;
+    groupName: string;
+    ownerName: string;
+    projectName: string;
+  },
+) {
+  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${input.basePath}/${input.ownerName}/${input.projectName}/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect
+    .poll(() =>
+      scopeButtons.evaluateAll((elements) =>
+        elements.map((element) => ({
+          action: element.getAttribute("data-action") ?? "",
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
+    )
+    .toEqual([
+      {
+        action: `${input.basePath}/${input.ownerName}/${input.projectName}/search`,
+        text: "This Project",
+      },
+      { action: `${input.basePath}/organizations/${input.groupName}/search`, text: "This Group" },
+      { action: `${input.basePath}/search`, text: "All Projects" },
+    ]);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expectHistoryRoutePath(page, input.expectedPath);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${input.basePath}/organizations/${input.groupName}/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(2).click();
+  await expectHistoryRoutePath(page, input.expectedPath);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${input.basePath}/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  await expectHistoryRoutePath(page, input.expectedPath);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${input.basePath}/${input.ownerName}/${input.projectName}/search`,
+  );
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
+
+  const metrics = await historyNavbarMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.form.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.form.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.form.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.scope.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.scope.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.searchBox.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.input.left).toBeGreaterThanOrEqual(metrics!.searchBox.left);
+  expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
+  expect(metrics!.menu.top).toBeGreaterThanOrEqual(metrics!.projectHeader.bottom - 1);
 }
 
 async function historyLayoutMetrics(page: Page) {
@@ -522,10 +646,14 @@ async function mockProjectCodeHistory(
   page: Page,
   options: {
     onHistoryRequest?: (requestUrl: URL) => void;
+    ownerName?: string;
     project?: Record<string, unknown>;
+    projectName?: string;
     secondMessage?: string;
   } = {},
 ) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -542,35 +670,38 @@ async function mockProjectCodeHistory(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
-        ...options.project,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/commits**", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
+          },
+          ownerName,
+          projectName,
+          vcs: "GIT",
+          viewerCanUpdate: true,
+          ...options.project,
+        }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/commits**`, async (route) => {
     const requestUrl = new URL(route.request().url());
     options.onHistoryRequest?.(requestUrl);
     const selectedBranch = requestUrl.searchParams.get("branch") || "main";
@@ -608,10 +739,10 @@ async function mockProjectCodeHistory(
         hasNewer: false,
         hasOlder: true,
         noHead: false,
-        ownerName: "admin",
+        ownerName,
         page: 1,
         path: "",
-        projectName: "sample",
+        projectName,
         selectedBranch,
       }),
     });
