@@ -488,6 +488,15 @@ test("organization delete breadcrumb source uses direct Link", () => {
   expect(source).toContain('"data-status": undefined');
 });
 
+test("organization delete source renders legacy title without route-local document mutation", () => {
+  const source = readFileSync(ORGANIZATION_DELETE_FORM_ROUTE_SOURCE, "utf8");
+  expect(source).toContain("<title>{organizationName}</title>");
+  expect(source).not.toContain("useEffect");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain('globalThis["document"]');
+});
+
 async function mockOrganizationAdmin(
   page: Page,
   options: {

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -43,10 +43,15 @@ function OrganizationDeleteFormScreen({ runtimeConfig }: { runtimeConfig: Runtim
   const query = useQuery(organizationDetailQueryOptions(runtimeConfig, organizationName));
 
   if (!query.data) {
-    return null;
+    return <title>{organizationName}</title>;
   }
 
-  return <OrganizationDeleteFormBody organization={query.data} runtimeConfig={runtimeConfig} />;
+  return (
+    <>
+      <title>{organizationName}</title>
+      <OrganizationDeleteFormBody organization={query.data} runtimeConfig={runtimeConfig} />
+    </>
+  );
 }
 
 function OrganizationDeleteFormBody({
@@ -61,7 +66,6 @@ function OrganizationDeleteFormBody({
   const queryClient = useQueryClient();
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-  const siteName = runtimeConfig.siteName ?? "Yona";
   const [deletionModalOpen, setDeletionModalOpen] = useState(false);
   const closeDeletionModal = () => setDeletionModalOpen(false);
   const openDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
@@ -89,15 +93,6 @@ function OrganizationDeleteFormBody({
       window.alert(t(organizationDeleteErrorKey(error)));
     },
   });
-
-  useEffect(() => {
-    const htmlDocument = globalThis.document;
-    htmlDocument.title = organizationName;
-
-    return () => {
-      htmlDocument.title = siteName;
-    };
-  }, [organizationName, siteName]);
 
   return (
     <>
