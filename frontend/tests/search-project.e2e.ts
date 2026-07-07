@@ -499,6 +499,124 @@ test("project search category and form navigation stay inside the React SPA", as
   await expectSearchSpaSession(page);
 });
 
+test("org-owned project search exposes legacy project group search scope", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page, {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: true,
+      organizationName: "weblabs",
+      ownerName: "weblabs",
+      projectName: "portal",
+    },
+  });
+
+  await page.goto(`${basePath}/weblabs/portal/search?keyword=missing&searchType=review`);
+
+  await expect(page).toHaveURL(
+    `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
+  );
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".project-breadcrumb .project-author a")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("weblabs");
+  await expect(page.locator(".project-breadcrumb .project-name a")).toHaveAttribute(
+    "href",
+    `${basePath}/weblabs/portal`,
+  );
+  await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("portal");
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-menu-outer .project-menu-nav li.active")).toHaveCount(0);
+  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator('button[data-toggle="search-scope"]')).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/weblabs/portal/search`,
+  );
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page.locator('button[data-toggle="search-scope"]').nth(2)).toHaveAttribute(
+    "data-action",
+    `${basePath}/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('button[data-toggle="search-scope"]', { hasText: "This Group" }).click();
+  await expect(page).toHaveURL(
+    `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await page.locator('button[data-toggle="search-scope"]', { hasText: "All Projects" }).click();
+  await expect(page).toHaveURL(
+    `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/search`,
+  );
+
+  const layout = await page.evaluate(() => {
+    const navbar = document.querySelector(".gnb-outer");
+    const form = document.querySelector(".gnb-search-form");
+    const scope = document.querySelector("#gnb-search-scope-title");
+    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchInput = document.querySelector(".gnb-search-form input[name='keyword']");
+    const projectHeader = document.querySelector(".project-header-outer");
+    const projectMenu = document.querySelector(".project-menu-outer");
+    if (
+      !navbar ||
+      !form ||
+      !scope ||
+      !searchBox ||
+      !searchInput ||
+      !projectHeader ||
+      !projectMenu
+    ) {
+      return null;
+    }
+    return {
+      form: form.getBoundingClientRect(),
+      navbar: navbar.getBoundingClientRect(),
+      projectHeader: projectHeader.getBoundingClientRect(),
+      projectMenu: projectMenu.getBoundingClientRect(),
+      scope: scope.getBoundingClientRect(),
+      searchBox: searchBox.getBoundingClientRect(),
+      searchInput: searchInput.getBoundingClientRect(),
+    };
+  });
+  expect(layout).not.toBeNull();
+  expect(layout!.form.top).toBeGreaterThanOrEqual(layout!.navbar.top);
+  expect(layout!.form.bottom).toBeLessThanOrEqual(layout!.navbar.bottom + 1);
+  expect(layout!.scope.top).toBeGreaterThanOrEqual(layout!.navbar.top);
+  expect(layout!.scope.bottom).toBeLessThanOrEqual(layout!.navbar.bottom + 1);
+  expect(layout!.searchInput.top).toBeGreaterThanOrEqual(layout!.navbar.top);
+  expect(layout!.searchInput.bottom).toBeLessThanOrEqual(layout!.navbar.bottom + 1);
+  expect(layout!.scope.right).toBeLessThanOrEqual(layout!.searchBox.left + 1);
+  expect(layout!.projectMenu.top).toBeGreaterThan(layout!.projectHeader.top);
+});
+
 async function expectProjectSearchShell(page: Page) {
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".project-header-outer")).toBeVisible();
@@ -544,10 +662,14 @@ async function mockProjectSearch(
   options: {
     anonymousViewer?: boolean;
     localhostIssueCommentZeroResult?: boolean;
+    ownerName?: string;
     project?: Record<string, unknown>;
+    projectName?: string;
   } = {},
 ) {
   const anonymousViewer = options.anonymousViewer ?? false;
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
   const apiCalls: { count: number; keywords: string[]; pageNums: number[] } = {
     count: 0,
     keywords: [],
@@ -570,13 +692,16 @@ async function mockProjectSearch(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify(projectContainer(options.project)),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/search?**", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(projectContainer({ ownerName, projectName, ...options.project })),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/search?**`, async (route) => {
     apiCalls.count += 1;
     const url = new URL(route.request().url());
     const keyword = url.searchParams.get("keyword") ?? "";
@@ -622,9 +747,12 @@ async function mockProjectSearch(
       contentType: "application/json",
       body: JSON.stringify({
         context: {
-          organizationName: "",
-          ownerName: "admin",
-          projectName: "sample",
+          organizationName:
+            typeof options.project?.organizationName === "string"
+              ? options.project.organizationName
+              : "",
+          ownerName,
+          projectName,
         },
         counts: {
           issueComments: hasIssueCommentResult ? 1 : 0,
@@ -644,8 +772,8 @@ async function mockProjectSearch(
                   authorLoginId: "dev",
                   createdLabel: "Jul 1, 2026",
                   href: hasIssueCommentResult
-                    ? `${basePathFromRequest(route.request().url())}/admin/sample/issue/11#comment-77`
-                    : `${basePathFromRequest(route.request().url())}/admin/sample/issue/${
+                    ? `${basePathFromRequest(route.request().url())}/${ownerName}/${projectName}/issue/11#comment-77`
+                    : `${basePathFromRequest(route.request().url())}/${ownerName}/${projectName}/issue/${
                         hasPagedIssueResult ? 40 + pageNum : 11
                       }`,
                   id: hasIssueCommentResult
@@ -658,8 +786,8 @@ async function mockProjectSearch(
                     : hasPagedIssueResult
                       ? String(40 + pageNum)
                       : "11",
-                  ownerName: "admin",
-                  projectName: "sample",
+                  ownerName,
+                  projectName,
                   snippets: [
                     {
                       highlights: [],

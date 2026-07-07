@@ -97,20 +97,11 @@ export const Route = createFileRoute("/$ownerName/$projectName/search")({
 
 function ProjectSearchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
-  const search = Route.useSearch();
-  const projectSearchScope = search.routeInvalid ? undefined : { ownerName, projectName };
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          runtimeConfig={runtimeConfig}
-          projectSearchScope={projectSearchScope}
-          showLegacyProjectHeaderLinks={Boolean(projectSearchScope)}
-        >
-          <ProjectSearchScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectSearchScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -158,27 +149,47 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   }, [ownerName, projectName, runtimeConfig.siteName, search.routeInvalid, t]);
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
-    return <RequestTextTooLargeErrorBody />;
-  }
-
-  if (search.routeInvalid) {
-    return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.badrequest"
-        runtimeConfig={runtimeConfig}
-        ybtnClassName="ybtn ybtn-info"
-      />
-    );
-  }
-
-  if (isDefaultForbiddenError(searchQuery.error)) {
     if (!projectQuery.data) {
       return null;
     }
 
     return (
-      <>
+      <ProjectSearchRouteShell
+        ownerName={ownerName}
+        project={projectQuery.data}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      >
+        <RequestTextTooLargeErrorBody />
+      </ProjectSearchRouteShell>
+    );
+  }
+
+  if (search.routeInvalid) {
+    return (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.badrequest"
+          runtimeConfig={runtimeConfig}
+          ybtnClassName="ybtn ybtn-info"
+        />
+      </SiteLayoutShell>
+    );
+  }
+
+  if (!projectQuery.data) {
+    return null;
+  }
+
+  if (isDefaultForbiddenError(searchQuery.error)) {
+    return (
+      <ProjectSearchRouteShell
+        ownerName={ownerName}
+        project={projectQuery.data}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      >
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectMenu
           active="home"
@@ -195,26 +206,34 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
             search,
           )}
         />
-      </>
+      </ProjectSearchRouteShell>
     );
   }
 
   if (isDefaultInternalServerError(searchQuery.error)) {
     return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.internalServerError"
+      <ProjectSearchRouteShell
+        ownerName={ownerName}
+        project={projectQuery.data}
+        projectName={projectName}
         runtimeConfig={runtimeConfig}
-      />
+      >
+        <DefaultSearchErrorBody
+          iconClassName="ico-404"
+          messageKey="error.internalServerError"
+          runtimeConfig={runtimeConfig}
+        />
+      </ProjectSearchRouteShell>
     );
   }
 
-  if (!projectQuery.data) {
-    return null;
-  }
-
   return (
-    <>
+    <ProjectSearchRouteShell
+      ownerName={ownerName}
+      project={projectQuery.data}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+    >
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         basePath={runtimeConfig.basePath}
@@ -227,7 +246,35 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         result={result}
         runtimeConfig={runtimeConfig}
       />
-    </>
+    </ProjectSearchRouteShell>
+  );
+}
+
+function ProjectSearchRouteShell({
+  children,
+  ownerName,
+  project,
+  projectName,
+  runtimeConfig,
+}: {
+  children: ReactNode;
+  ownerName: string;
+  project: ProjectContainer;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <SiteLayoutShell
+      projectSearchScope={{
+        organizationName: projectSearchScopeOrganizationName(project, ownerName),
+        ownerName,
+        projectName,
+      }}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
+      {children}
+    </SiteLayoutShell>
   );
 }
 
@@ -868,4 +915,13 @@ function projectSearchNumberField(value: ProjectContainer, field: string, fallba
   }
   const fallback = record[fallbackField];
   return typeof fallback === "number" && Number.isFinite(fallback) ? fallback : 0;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName =
+    typeof project.organizationName === "string" ? project.organizationName : "";
+  if (organizationName) {
+    return organizationName;
+  }
+  return project.isProtected === true ? ownerName : undefined;
 }
