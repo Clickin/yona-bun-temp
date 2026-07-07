@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, useEffect, useState, type FormEvent } from "react";
+import {
+  Fragment,
+  useEffect,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import {
   createProjectWebhookRest,
   deleteProjectWebhookRest,
@@ -397,7 +404,8 @@ function ProjectWebhooksList({
             <input
               type="checkbox"
               checked={booleanField(webhook.gitPush)}
-              onClick={(event) => event.preventDefault()}
+              onClick={preventReadOnlyCheckboxClick}
+              onKeyDown={preventReadOnlyCheckboxKeyDown}
               onChange={() => {}}
             />
           </div>
@@ -419,6 +427,16 @@ function ProjectWebhooksList({
       ))}
     </>
   );
+}
+
+function preventReadOnlyCheckboxClick(event: MouseEvent<HTMLInputElement>) {
+  event.preventDefault();
+}
+
+function preventReadOnlyCheckboxKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  if (event.key === " ") {
+    event.preventDefault();
+  }
 }
 
 function ProjectHeader({ project }: { project: ProjectContainer }) {

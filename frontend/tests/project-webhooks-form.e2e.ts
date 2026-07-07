@@ -113,6 +113,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     activeTabHeight: "38px",
     emptyPadding: "100px 0px",
     formActionsMarginTop: "20px",
+    formFirstRowContainsSubmit: true,
     formMarginBottom: "30px",
     formWidth: 1260,
     gitPushDisplay: "inline-block",
@@ -128,6 +129,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     projectPageWidth: 1260,
     radioDisplay: "inline-block",
     secretWidth: "214px",
+    submitAfterSecret: true,
     submitHeight: "30px",
     submitPadding: "4px 12px",
     tabsMarginBottom: "15px",
@@ -195,6 +197,11 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
   await expect(firstGitPushCheckbox).toBeChecked();
   await firstGitPushCheckbox.click();
   await expect(firstGitPushCheckbox).toBeChecked();
+  const secondGitPushCheckbox = page.locator('#webhooksList [data-webhook-id="12"] input');
+  await expect(secondGitPushCheckbox).not.toBeChecked();
+  await secondGitPushCheckbox.focus();
+  await page.keyboard.press("Space");
+  await expect(secondGitPushCheckbox).not.toBeChecked();
 
   const expected = EXPECTED_PROJECT_WEBHOOKS.replaceAll("__BASE_PATH__", basePath).replace(
     EMPTY_WEBHOOKS_LIST,
@@ -802,6 +809,7 @@ async function webhookFormMetrics(page: Page) {
     const form = requireElement("#formNewWebhook");
     const legend = requireElement("#formNewWebhook .form-legend");
     const formActions = requireElement("#formNewWebhook .form-actions");
+    const formFirstRow = requireElement("#formNewWebhook .form-actions > div:first-child");
     const payload = requireElement(".input-webhook-payload");
     const secret = requireElement(".input-webhook-secret");
     const submit = requireElement("#formNewWebhook .btn-submit");
@@ -825,11 +833,19 @@ async function webhookFormMetrics(page: Page) {
     const helpStyle = getComputedStyle(help);
     const listStyle = getComputedStyle(list);
     const emptyStyle = getComputedStyle(empty);
+    const firstRowBox = formFirstRow.getBoundingClientRect();
+    const payloadBox = payload.getBoundingClientRect();
+    const secretBox = secret.getBoundingClientRect();
+    const submitBox = submit.getBoundingClientRect();
     return {
       activeTabClass: activeTab.className,
       activeTabHeight: activeTabStyle.height,
       emptyPadding: emptyStyle.padding,
       formActionsMarginTop: formActionsStyle.marginTop,
+      formFirstRowContainsSubmit:
+        submitBox.top >= firstRowBox.top &&
+        submitBox.bottom <= firstRowBox.bottom &&
+        submitBox.right <= firstRowBox.right,
       formMarginBottom: formStyle.marginBottom,
       formWidth: Math.round(form.getBoundingClientRect().width),
       gitPushDisplay: gitPushStyle.display,
@@ -845,6 +861,7 @@ async function webhookFormMetrics(page: Page) {
       projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
       radioDisplay: radioStyle.display,
       secretWidth: secretStyle.width,
+      submitAfterSecret: submitBox.left >= secretBox.right && secretBox.left >= payloadBox.right,
       submitHeight: submitStyle.height,
       submitPadding: submitStyle.padding,
       tabsMarginBottom: tabsStyle.marginBottom,
