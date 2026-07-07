@@ -35,7 +35,7 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
       <li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li>
     </ul>
     <div class="bubble-wrap gray wp">
-      <div class="row-fluid"><div class="cu-label">new owner or group</div><div class="cu-desc"><p><input type="text" id="owner" name="owner"></p></div></div>
+      <div class="row-fluid"><div class="cu-label">new owner or group</div><div class="cu-desc"><p><input type="text" id="owner" name="owner" value=""></p></div></div>
       <div class="row-fluid"><div class="cu-label">Transfer</div><div class="cu-desc"><ul><li class="notice"><strong>This transfer will be done when the new owner or the group's admin accepts the request.</strong></li><li class="notice"><strong>This project will be owned by the new owner or group.</strong></li><li class="notice"><strong>When it's done, the project's current owner will be changed to a member of this project.</strong></li><li class="notice"><strong>The URL of all resources of this project will be changed including issues, postings and others.</strong></li><li class="notice"><strong>The URL of the repository of this project will be changed.</strong></li></ul><p><input type="checkbox" class="checkbox" autocomplete="off" id="accept"><label for="accept" class="bg-checkbox label-agreement">I agree with the transfer of this project.</label></p></div></div>
     </div>
     <div class="box-wrap bottom"><button id="btnTransfer" type="button" class="ybtn ybtn-danger"><i class="yobicon-database"></i> Transfer this project</button></div>
@@ -364,6 +364,9 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
     new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url),
     "utf8",
   );
+  const transferStateSlice = source.match(
+    /function ProjectTransferBody[\s\S]+?\nfunction ProjectHeader/u,
+  )?.[0];
 
   expect(source).not.toContain("createLink");
   expect(source).not.toMatch(/<a\b/u);
@@ -382,6 +385,10 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("classList");
   expect(source).not.toContain('style={isTransferModalOpen ? { display: "block" } : undefined}');
   expect(source).not.toContain("style.display");
+  expect(source).not.toContain("destinationInputRef.current?.value");
+  expect(source).not.toContain("acceptInputRef.current?.checked");
+  expect(source).not.toContain("destinationInputRef");
+  expect(source).not.toContain("acceptInputRef");
   expect(source).not.toContain("useProjectTransferDocumentTitle");
   expect(source).not.toContain("const screenTitle");
   expect(source).not.toContain("<a href={prefixBasePath");
@@ -422,6 +429,19 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toMatch(
     /const dismissTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?closeTransferModal\(\);/u,
   );
+  expect(transferStateSlice).not.toBeUndefined();
+  expect(transferStateSlice).not.toContain(".current?.value");
+  expect(transferStateSlice).not.toContain(".current?.checked");
+  expect(transferStateSlice).not.toContain("document.");
+  expect(transferStateSlice).not.toContain("querySelector");
+  expect(transferStateSlice).not.toContain("getElementById");
+  expect(transferStateSlice).not.toContain("addEventListener");
+  expect(transferStateSlice).not.toContain("classList");
+  expect(transferStateSlice).not.toContain("style.display");
+  expect(transferStateSlice).toContain("value={destination}");
+  expect(transferStateSlice).toContain("checked={isTransferAccepted}");
+  expect(transferStateSlice).toContain("setDestination(event.target.value)");
+  expect(transferStateSlice).toContain("setIsTransferAccepted(event.target.checked)");
 });
 
 test("project transfer confirmation follows legacy accept gate and REST redirect flow", async ({
@@ -472,6 +492,9 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
     .toBe("kept");
 
   await page.locator("#accept").check();
+  await page.locator("#accept").evaluate((input) => {
+    (input as HTMLInputElement).checked = false;
+  });
   await armRootTransferModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
   await expect(alertTransfer).toHaveClass("modal in");
@@ -524,7 +547,10 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
     )
     .toBe("kept");
 
-  await page.locator("#owner").fill("target-owner");
+  await page.locator("#owner").fill("controlled-owner");
+  await page.locator("#owner").evaluate((input) => {
+    (input as HTMLInputElement).value = "dom-only-owner";
+  });
   await armRootTransferModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
   await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
@@ -538,7 +564,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
 
   expect(transferRequests).toEqual([
     {
-      body: { destination: "target-owner" },
+      body: { destination: "controlled-owner" },
       hasCsrfToken: true,
       method: "POST",
       url: `${basePath}/api/v1/owners/admin/projects/sample/transfer`,

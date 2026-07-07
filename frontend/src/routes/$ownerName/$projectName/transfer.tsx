@@ -1,4 +1,4 @@
-import { useRef, useState, type MouseEvent } from "react";
+import { useState, type ChangeEvent, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -108,15 +108,15 @@ function ProjectTransferBody({
   const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const destinationInputRef = useRef<HTMLInputElement>(null);
-  const acceptInputRef = useRef<HTMLInputElement>(null);
+  const [destination, setDestination] = useState("");
+  const [isTransferAccepted, setIsTransferAccepted] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [hasTransferRequestStarted, setHasTransferRequestStarted] = useState(false);
   const transferMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return requestProjectTransferRest(runtimeConfig, csrfToken, {
-        destination: destinationInputRef.current?.value ?? stringField(project.destination, ""),
+        destination,
         ownerName,
         projectName,
       });
@@ -146,7 +146,7 @@ function ProjectTransferBody({
   };
   const openTransferModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateTransferModalButtonClick(event);
-    if (!acceptInputRef.current?.checked) {
+    if (!isTransferAccepted) {
       // oxlint-disable-next-line no-alert -- legacy project.Transfer.js uses $yobi.alert before opening the modal.
       window.alert(t("project.transfer.alert"));
       return;
@@ -173,7 +173,15 @@ function ProjectTransferBody({
               <div className="cu-label">{t("project.transfer.new.owner")}</div>
               <div className="cu-desc">
                 <p>
-                  <input type="text" id="owner" name="owner" ref={destinationInputRef} />
+                  <input
+                    type="text"
+                    id="owner"
+                    name="owner"
+                    value={destination}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      setDestination(event.target.value);
+                    }}
+                  />
                 </p>
               </div>
             </div>
@@ -203,7 +211,10 @@ function ProjectTransferBody({
                     className="checkbox"
                     autoComplete="off"
                     id="accept"
-                    ref={acceptInputRef}
+                    checked={isTransferAccepted}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      setIsTransferAccepted(event.target.checked);
+                    }}
                   />
                   <label htmlFor="accept" className="bg-checkbox label-agreement">
                     {t("project.transfer.accept")}
