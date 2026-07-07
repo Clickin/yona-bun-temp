@@ -45,26 +45,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milest
   },
 });
 
-function useProjectMilestoneDetailDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-  milestoneTitle: string,
-) {
-  useEffect(() => {
-    if (typeof document === "undefined" || !milestoneTitle) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${milestoneTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [milestoneTitle, ownerName, projectName, runtimeConfig.siteName]);
-}
-
 function restApiErrorStatus(error: unknown) {
   if (typeof error !== "object" || error === null || !("status" in error)) {
     return undefined;
@@ -104,8 +84,6 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
     queryKey: ["project", ownerName, projectName, "milestones", numericMilestoneId],
   });
-  const milestoneTitle = stringField(milestoneQuery.data?.milestone?.title);
-  useProjectMilestoneDetailDocumentTitle(runtimeConfig, ownerName, projectName, milestoneTitle);
 
   if (isEditChildRoute) {
     return <Outlet />;
@@ -143,7 +121,8 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
         showLegacyProjectHeaderLinks
       >
         {projectShell}
-        <ProjectMilestoneNotFoundBody runtimeConfig={runtimeConfig} />
+        <ProjectMilestoneNotFoundTitle ownerName={ownerName} projectName={projectName} />
+        <ProjectMilestoneNotFoundBody />
       </SiteLayoutShell>
     );
   }
@@ -180,6 +159,11 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks
     >
+      <ProjectMilestoneDetailTitle
+        milestoneTitle={stringField(milestoneQuery.data.milestone.title)}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       {projectShell}
       <MilestoneDetailAssets
         basePath={runtimeConfig.basePath}
@@ -204,22 +188,33 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
   return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
-function ProjectMilestoneNotFoundBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
+function ProjectMilestoneDetailTitle({
+  milestoneTitle,
+  ownerName,
+  projectName,
+}: {
+  milestoneTitle: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  return milestoneTitle ? <title>{`${milestoneTitle} - ${ownerName}/${projectName}`}</title> : null;
+}
+
+function ProjectMilestoneNotFoundTitle({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
   const { t } = useLegacyMessages();
 
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
+  return <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>;
+}
 
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${t("error.notfound")} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, t]);
+function ProjectMilestoneNotFoundBody() {
+  const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
 
   return (
     <div className="page-wrap-outer">

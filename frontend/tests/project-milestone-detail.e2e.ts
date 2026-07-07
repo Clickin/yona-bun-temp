@@ -195,6 +195,7 @@ test("project milestone detail keeps the legacy project shell and title for /adm
   await page.goto(`${basePath}/admin/sample/milestone/1?state=open`);
 
   await expect(page).toHaveTitle("Parity launch - admin/sample");
+  await expectHeadTitle(page, "Parity launch - admin/sample");
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
@@ -233,6 +234,7 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   await page.goto(`${basePath}/weblabs/portal/milestone/5?state=open`);
 
   await expect(page).toHaveTitle("v1.0 - weblabs/portal");
+  await expectHeadTitle(page, "v1.0 - weblabs/portal");
   await expect(page).toHaveURL(`${basePath}/weblabs/portal/milestone/5?state=open`);
   await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -799,6 +801,7 @@ test("project milestone detail 404 milestone API preserves the legacy project-sc
   await page.goto(`${basePath}/admin/sample/milestone/5?state=open#issues`);
 
   await expect(page).toHaveTitle("Page not found - admin/sample");
+  await expectHeadTitle(page, "Page not found - admin/sample");
   await expect(page.locator(".page-wrap-outer > .project-page-wrap > .error-wrap")).toBeVisible();
   await expect(page.locator(".milesion-wrap")).toHaveCount(0);
   await expect(page.locator(".gnb-nav a[href$='/projects']")).toHaveText("List All");
@@ -1102,12 +1105,15 @@ test("project milestone detail route uses direct Links", () => {
     "return booleanField(project.isProtected) ? ownerName : undefined;",
   );
   expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
+  expect(routeSource).not.toContain("document.title");
   expect(routeSource).toContain(
     "type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
-  expect(routeSource).toContain("function useProjectMilestoneDetailDocumentTitle(");
   expect(routeSource).toContain(
-    "document.title = `${milestoneTitle} - ${ownerName}/${projectName}`;",
+    "return milestoneTitle ? <title>{`${milestoneTitle} - ${ownerName}/${projectName}`}</title> : null;",
+  );
+  expect(routeSource).toContain(
+    '<title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>',
   );
   expect(routeSource).toContain("type LegacyIssueItemRowAttrs = {");
   expect(routeSource).toContain("const issueListItemAttrs = {");
@@ -1253,6 +1259,16 @@ async function expectMilestoneDetailAssets(page: Page, basePath: string) {
       );
   });
   expect(legacyInlineScript).toBeUndefined();
+}
+
+async function expectHeadTitle(page: Page, expectedTitle: string) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        return document.head.querySelector("title")?.textContent ?? "";
+      }),
+    )
+    .toBe(expectedTitle);
 }
 
 async function mockProjectMilestoneDetail(
