@@ -134,6 +134,7 @@ function ProjectPullRequestChangesScreen({
 
   return (
     <>
+      <ProjectPullRequestChangesTitle ownerName={ownerName} projectName={projectName} />
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
       <ProjectPullRequestChangesBody
@@ -155,6 +156,18 @@ function ProjectPullRequestChangesScreen({
       />
     </>
   );
+}
+
+function ProjectPullRequestChangesTitle({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return <title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>;
 }
 
 function ProjectPullRequestChangesBody({

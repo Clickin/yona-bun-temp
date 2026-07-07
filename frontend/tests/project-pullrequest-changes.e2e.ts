@@ -228,6 +228,13 @@ test("project pull request changes matches legacy git/viewChanges.scala.html emp
   await mockPullRequestChanges(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+  await expect(page).toHaveTitle("Pull request - admin/sample");
+  expect(
+    await page
+      .locator("head > title")
+      .first()
+      .evaluate((title) => title.textContent),
+  ).toBe("Pull request - admin/sample");
   await expect(page.locator(".code-browse-wrap > .nav-tabs.nm li.active a")).toHaveText("Changes");
   await expect(page.locator(".codediff-wrap")).toHaveClass(/diffs-only/u);
   await expect(page.locator("#commits .d-label")).toHaveText("All commit changes");
@@ -825,9 +832,19 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain(
     '"/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"',
   );
+  expect(routeSource).toContain(
+    "<ProjectPullRequestChangesTitle ownerName={ownerName} projectName={projectName} />",
+  );
+  expect(routeSource).toContain("function ProjectPullRequestChangesTitle");
+  expect(routeSource).toContain(
+    'return <title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>;',
+  );
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("document.");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain("window.document");
   expect(routeSource).not.toContain("querySelector");
   expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("classList");
@@ -838,6 +855,8 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).not.toContain("click.dropdown");
   expect(routeSource).not.toContain("dropdown.data-api");
   expect(routeSource).not.toContain("$(document)");
+  expect(routeSource).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/u);
+  expect(routeSource).not.toMatch(/\bdocument\b[\s\S]{0,80}\btitle\b/u);
   expect(routeSource).not.toContain('role="button"');
   expect(routeSource).not.toContain("onKeyDown");
   expect(routeSource).not.toContain("tabIndex");
