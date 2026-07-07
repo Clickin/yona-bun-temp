@@ -58,6 +58,8 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const queryClient = useQueryClient();
   const router = useRouter();
   const formRef = React.useRef<HTMLFormElement>(null);
+  const passwordInputRef = React.useRef<HTMLInputElement>(null);
+  const retypedPasswordInputRef = React.useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = React.useState<
     Partial<Record<"password" | "retypedPassword", string>>
   >({});
@@ -118,6 +120,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
             <dl>
               <dd>
                 <input
+                  ref={passwordInputRef}
                   id="password"
                   type="password"
                   name="password"
@@ -126,10 +129,11 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   autoComplete="off"
                   onBlur={validateCurrentForm}
                 />
-                <FieldPopover message={fieldErrors.password} />
+                <FieldPopover anchorRef={passwordInputRef} message={fieldErrors.password} />
               </dd>
               <dd>
                 <input
+                  ref={retypedPasswordInputRef}
                   id="retypedPassword"
                   type="password"
                   name="retypedPassword"
@@ -138,7 +142,10 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   autoComplete="off"
                   onBlur={validateCurrentForm}
                 />
-                <FieldPopover message={fieldErrors.retypedPassword} />
+                <FieldPopover
+                  anchorRef={retypedPasswordInputRef}
+                  message={fieldErrors.retypedPassword}
+                />
               </dd>
             </dl>
 
@@ -205,10 +212,44 @@ function validateResetPasswordForm(
   return nextErrors;
 }
 
-function FieldPopover({ message }: { message?: string }) {
+function FieldPopover({
+  anchorRef,
+  message,
+}: {
+  anchorRef: React.RefObject<HTMLInputElement | null>;
+  message?: string;
+}) {
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = React.useState<{ left: number; top: number } | null>(
+    null,
+  );
+
+  React.useLayoutEffect(() => {
+    const anchor = anchorRef.current;
+    const popover = popoverRef.current;
+    if (!message || !anchor || !popover) {
+      setPlacement(null);
+      return;
+    }
+
+    const left = anchor.offsetLeft - popover.offsetWidth - 10;
+    const top = anchor.offsetTop + (anchor.offsetHeight - popover.offsetHeight) / 2;
+    setPlacement({ left, top });
+  }, [anchorRef, message]);
+
   if (!message) return null;
   return (
-    <div className="popover left in">
+    <div
+      ref={popoverRef}
+      className="popover left in"
+      style={{
+        display: "block",
+        left: placement ? `${placement.left}px` : "-154px",
+        maxWidth: "144px",
+        position: "absolute",
+        top: placement ? `${placement.top}px` : "0",
+      }}
+    >
       <div className="arrow"></div>
       <div className="popover-content">{message}</div>
     </div>

@@ -276,6 +276,7 @@ test("reset password form blocks invalid passwords with legacy left popovers", a
   await page.locator("#password").focus();
   await page.locator("#password").blur();
   await expectResetPasswordValidationPopovers(page, ["Required field!", "Required field!"]);
+  await expectResetPasswordPopoverPlacement(page, "password");
 
   await page.locator("#password").fill("abc");
   await page.locator("#password").blur();
@@ -681,4 +682,31 @@ function escapeRegExp(value: string) {
 async function expectResetPasswordValidationPopovers(page: Page, messages: string[]) {
   const popovers = page.locator('form[name="passwordReset"] .popover.left.in .popover-content');
   await expect(popovers).toHaveText(messages);
+}
+
+async function expectResetPasswordPopoverPlacement(
+  page: Page,
+  fieldName: "password" | "retypedPassword",
+) {
+  const boxes = await page.evaluate((name) => {
+    const input = document.querySelector<HTMLInputElement>(`input[name="${name}"]`);
+    const popover = input?.parentElement?.querySelector<HTMLElement>(".popover.left.in");
+    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
+    if (!input || !popover || !formWrap) return null;
+    const inputBox = input.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    const formBox = formWrap.getBoundingClientRect();
+    return {
+      formLeft: formBox.left,
+      inputLeft: inputBox.left,
+      inputMiddle: inputBox.top + inputBox.height / 2,
+      popoverMiddle: popoverBox.top + popoverBox.height / 2,
+      popoverRight: popoverBox.right,
+    };
+  }, fieldName);
+
+  expect(boxes).not.toBeNull();
+  expect(boxes!.popoverRight).toBeLessThanOrEqual(boxes!.inputLeft - 8);
+  expect(boxes!.popoverMiddle).toBeCloseTo(boxes!.inputMiddle, 0);
+  expect(boxes!.popoverRight).toBeLessThan(boxes!.formLeft + 10);
 }
