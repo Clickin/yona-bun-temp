@@ -299,6 +299,20 @@ test("project milestone create form route keeps legacy write behavior in React e
   expect(routeSource).not.toContain("style.display");
 });
 
+test("project milestone create form route renders legacy projectLayout title without document mutation", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
+    "utf8",
+  );
+
+  expect(routeSource).toContain(
+    '<title>{`${t("title.newMilestone")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(routeSource).not.toContain("useProjectMilestoneCreateFormDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain('globalThis["document"]');
+});
+
 test("project milestone create form renders markdown help as JSX without route-local raw HTML", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",

@@ -30,7 +30,7 @@ function ProjectMilestoneCreateFormRoute() {
 
 function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectMilestoneCreateFormDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -47,6 +47,7 @@ function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: Ru
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <title>{`${t("title.newMilestone")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="milestone"
@@ -56,29 +57,6 @@ function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: Ru
       <ProjectMilestoneCreateFormBody runtimeConfig={runtimeConfig} />
     </SiteLayoutShell>
   );
-}
-
-function useProjectMilestoneCreateFormDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const newMilestoneTitle = t("title.newMilestone");
-
-  useEffect(() => {
-    const doc = globalThis["document"];
-    if (!doc) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    doc.title = `${newMilestoneTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      doc.title = siteName;
-    };
-  }, [newMilestoneTitle, ownerName, projectName, runtimeConfig.siteName]);
 }
 
 function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
