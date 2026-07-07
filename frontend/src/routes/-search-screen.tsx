@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, Link as RouterLink, useLinkProps, useRouter } from "@tanstack/react-router";
+import { Link, Link as RouterLink, createLink, useRouter } from "@tanstack/react-router";
 import {
   type ComponentPropsWithoutRef,
   Fragment,
+  type Ref,
   useEffect,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -43,6 +44,20 @@ const legacySearchPaginationLinkActiveProps = {
   "data-status": undefined,
 } as const;
 
+function SearchMountedRootLinkAnchor({
+  legacyRootHref,
+  href: _href,
+  ref,
+  ...props
+}: ComponentPropsWithoutRef<"a"> & {
+  legacyRootHref: string;
+  ref?: Ref<HTMLAnchorElement>;
+}) {
+  return reactJsx("a", { ...props, ref, href: legacyRootHref });
+}
+
+const SearchMountedRootLink = createLink(SearchMountedRootLinkAnchor);
+
 export type SearchBodyInput = {
   includeProjectCategory: boolean;
   result: SearchResponse;
@@ -75,17 +90,7 @@ export function DefaultSearchErrorBody({
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  const homeHref =
-    runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath.replace(/\/$/u, "");
-  const homeButtonLinkProps = useLinkProps({
-    className: ybtnClassName,
-    href: homeHref,
-    onClick: (event) => {
-      event.preventDefault();
-      router.history.push(homeHref);
-    },
-    to: "/" as const,
-  });
+  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
 
   return (
     <div className="page-wrap-outer">
@@ -93,9 +98,19 @@ export function DefaultSearchErrorBody({
         <div className="error-wrap">
           <i className={iconClassName}></i>
           <p>{t(messageKey)}</p>
-          <LegacyHrefAnchor {...homeButtonLinkProps} legacyHref={homeHref}>
+          <SearchMountedRootLink
+            activeOptions={legacySearchPaginationLinkActiveOptions}
+            activeProps={legacySearchPaginationLinkActiveProps}
+            className={ybtnClassName}
+            legacyRootHref={homeHref}
+            to="/"
+            onClick={(event) => {
+              event.preventDefault();
+              router.history.push(homeHref);
+            }}
+          >
             {t("menu.home")}
-          </LegacyHrefAnchor>
+          </SearchMountedRootLink>
         </div>
       </div>
     </div>
@@ -671,14 +686,6 @@ function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {
       : hrefWithoutHash || "/";
 
   return { hash, to };
-}
-
-function LegacyHrefAnchor({
-  legacyHref,
-  href: _href,
-  ...props
-}: ComponentPropsWithoutRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
 }
 
 function LegacyProjectLogoImage({ src }: { src: string }) {

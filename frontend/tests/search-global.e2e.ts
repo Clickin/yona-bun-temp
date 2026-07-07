@@ -618,6 +618,32 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
+
+  const searchScreenSource = readFileSync(
+    new URL("../src/routes/-search-screen.tsx", import.meta.url),
+    "utf8",
+  );
+  const defaultErrorBodySource = searchScreenSource.slice(
+    searchScreenSource.indexOf("export function DefaultSearchErrorBody"),
+    searchScreenSource.indexOf("export function RequestTextTooLargeErrorBody"),
+  );
+  expect(searchScreenSource).toContain("createLink");
+  expect(searchScreenSource).toContain("function SearchMountedRootLinkAnchor");
+  expect(searchScreenSource).toContain("ref?: Ref<HTMLAnchorElement>");
+  expect(searchScreenSource).toContain("const SearchMountedRootLink = createLink");
+  expect(searchScreenSource).not.toContain("useLinkProps");
+  expect(searchScreenSource).not.toContain("LegacyHrefAnchor");
+  expect(searchScreenSource).not.toContain("React.createElement");
+  expect(searchScreenSource).not.toContain("forwardRef");
+  expect(defaultErrorBodySource).not.toMatch(/<a[\s>]/u);
+  expect(defaultErrorBodySource).toContain("<SearchMountedRootLink");
+  expect(defaultErrorBodySource).toContain("legacyRootHref={homeHref}");
+  expect(defaultErrorBodySource).toContain('to="/"');
+  expect(defaultErrorBodySource).toContain(
+    "activeOptions={legacySearchPaginationLinkActiveOptions}",
+  );
+  expect(defaultErrorBodySource).toContain("activeProps={legacySearchPaginationLinkActiveProps}");
+  expect(defaultErrorBodySource).toContain("router.history.push(homeHref);");
 });
 
 test("global search category Link keeps legacy SPA navigation without query noise", async ({
@@ -679,7 +705,11 @@ test("global search without required query renders legacy badrequest_default.sca
   await expect(page.locator(".error-wrap p")).toHaveText(
     "The request cannot be fulfilled due to bad syntax",
   );
-  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", homeHref);
+  const homeButton = page.locator(".error-wrap .ybtn.ybtn-info");
+  await expect(homeButton).toHaveAttribute("href", homeHref);
+  await expect(homeButton).not.toHaveAttribute("aria-current");
+  await expect(homeButton).not.toHaveAttribute("data-status");
+  await expect(homeButton).toHaveClass("ybtn ybtn-info");
   await expect(page.locator("#searchInnerForm")).toHaveCount(0);
   expect(searchApi.count).toBe(0);
 
@@ -694,6 +724,9 @@ test("global search without required query renders legacy badrequest_default.sca
       }),
     ),
   );
+  await rememberSpaMarker(page, "badrequest-default-home");
+  await homeButton.click();
+  await expectExactSpaPath(page, homeHref, "badrequest-default-home");
 });
 
 test("global search preserves whitespace-only raw keyword and calls search API", async ({
