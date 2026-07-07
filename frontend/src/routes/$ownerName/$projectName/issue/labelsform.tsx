@@ -77,34 +77,55 @@ function ProjectLabelsRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <ProjectLabelsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
+        <ProjectLabelsRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectLabelsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectLabelsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const projectSearchScope = projectQuery.data
+    ? {
+        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        ownerName,
+        projectName,
+      }
+    : { ownerName, projectName };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectLabelsScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectLabelsScreen({
+  project,
+  runtimeConfig,
+}: {
+  project?: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
 
-  if (!projectQuery.data || !labelsQuery.data) {
+  if (!project || !labelsQuery.data) {
     return null;
   }
 
   return (
     <>
-      <ProjectHeader project={projectQuery.data} />
-      <ProjectMenu project={projectQuery.data} />
+      <ProjectHeader project={project} />
+      <ProjectMenu project={project} />
       <ProjectLabelsBody
         labels={labelsQuery.data.labels}
-        project={projectQuery.data}
+        project={project}
         runtimeConfig={runtimeConfig}
       />
     </>
@@ -1606,6 +1627,14 @@ function CountBadge({
 function enrolledUserCount(project: ProjectContainer) {
   const enrolledUsers = recordField(project).enrolledUsers;
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function projectMenuSetting(project: ProjectContainer) {

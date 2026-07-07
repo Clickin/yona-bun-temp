@@ -55,12 +55,12 @@ const POPULATED_LABELS_LIST = `
 
 const EXPECTED_PROJECT_LABELS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer">
+<header class="gnb-outer project-header">
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
+      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" id="gnb-search-scope-title" type="button">This Project</button><ul class="dropdown-menu flat right"><li><button data-action="__BASE_PATH__/admin/sample/search" data-toggle="search-scope" type="button">This Project</button></li><li><button data-action="__BASE_PATH__/search" data-toggle="search-scope" type="button">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
     <ul class="gnb-usermenu">
@@ -120,6 +120,79 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     projectPageWidth: 1260,
     tabsMarginBottom: "15px",
   });
+});
+
+test("project labels uses legacy project-scoped GNB search shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  await mockProjectLabels(page);
+
+  await page.goto(labelsPageUrl);
+  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator("#subMenuIssueLabel.active > a")).toBeVisible();
+
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(scopeButtons.nth(0)).toHaveAttribute(
+    "data-action",
+    `${basePath}/admin/sample/search`,
+  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(labelsPageUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(0).click();
+  await expect(page).toHaveURL(labelsPageUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/admin/sample/search`,
+  );
+
+  const metrics = await navbarSearchMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.form.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.form.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.form.right).toBeLessThanOrEqual(metrics!.navbar.right);
+  expect(metrics!.scope.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.scope.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.searchBox.top).toBeGreaterThanOrEqual(metrics!.navbar.top);
+  expect(metrics!.searchBox.bottom).toBeLessThanOrEqual(metrics!.navbar.bottom);
+  expect(metrics!.input.left).toBeGreaterThanOrEqual(metrics!.searchBox.left);
+  expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
+});
+
+test("project labels exposes group search scope when project org data exists", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const labelsPageUrl = `${basePath}/admin/sample/issue/labelsform`;
+  await mockProjectLabels(page, [], { project: { isProtected: true, organizationName: "admin" } });
+
+  await page.goto(labelsPageUrl);
+  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.nth(1)).toHaveAttribute(
+    "data-action",
+    `${basePath}/organizations/admin/search`,
+  );
+
+  await page.locator("#gnb-search-scope-title").click();
+  await scopeButtons.nth(1).click();
+  await expect(page).toHaveURL(labelsPageUrl);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/admin/search`,
+  );
 });
 
 test("project labels route TSX has no route-local raw anchor elements", () => {
@@ -1081,6 +1154,36 @@ async function categoryTypeaheadMetrics(page: Page) {
       input: input.getBoundingClientRect(),
       menu: menu.getBoundingClientRect(),
     };
+  });
+}
+
+async function navbarSearchMetrics(page: Page) {
+  return page.evaluate(() => {
+    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const form = document.querySelector<HTMLElement>(".gnb-search-form");
+    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
+    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    if (!navbar || !form || !scope || !searchBox || !input) {
+      return null;
+    }
+    return {
+      form: rect(form),
+      input: rect(input),
+      navbar: rect(navbar),
+      scope: rect(scope),
+      searchBox: rect(searchBox),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
   });
 }
 
