@@ -117,6 +117,7 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   });
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
+  await expect(page).toHaveTitle("My Files");
   await expect(page.locator(".attachment-files")).toBeVisible();
   await expect(page.locator(".attachment-file-detail")).toHaveCount(1);
   const fileRow = page.locator(".attachment-file-detail").first();
@@ -356,6 +357,19 @@ test("current-user files leaves location cell empty when source URL is missing",
 test("current-user files route uses direct typed links for tabs and pagination", () => {
   const routeSource = readFileSync("src/routes/user/files.tsx", "utf8");
   expect(routeSource).not.toContain("LegacyInternalLink");
+});
+
+test("current-user files route renders legacy browser title without DOM mutation", () => {
+  const routeSource = readFileSync("src/routes/user/files.tsx", "utf8");
+  const screenSource = routeSource.match(
+    /function UserFilesScreen[\s\S]*?\n}\n\nfunction UserFileRow/,
+  )?.[0];
+  expect(screenSource).toBeTruthy();
+  expect(screenSource).toContain('<title>{t("user.files")}</title>');
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain('globalThis["document"]');
+  expect(routeSource).not.toMatch(/\buseEffect\b[\s\S]*?\btitle\b/u);
 });
 
 test("current-user files row uses href semantics for backend file URLs", () => {

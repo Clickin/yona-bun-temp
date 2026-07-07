@@ -98,69 +98,72 @@ function UserFilesScreen({
   });
 
   return (
-    <div className="page-wrap-outer">
-      <div className="page-wrap">
-        <ul className="nav nav-tabs">
-          <li>
-            <Link activeProps={legacyRouteLocalActiveProps} to="/notifications">
-              {t("notification")}
-            </Link>
-          </li>
-          <li>
-            <Link activeProps={legacyRouteLocalActiveProps} to="/user/issues">
-              {t("issue.myIssue")}
-            </Link>
-          </li>
-          <li className="active">
-            <Link
-              activeOptions={legacyRouteLocalActiveOptions}
-              activeProps={legacyRouteLocalActiveProps}
-              search={legacyEmptyUserFilesSearch}
-              to="/user/files"
-            >
-              {t("user.files")}
-            </Link>
-          </li>
-          <li></li>
-        </ul>
-        <form
-          action={prefixBasePath(basePath, "/user/files")}
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
-          }}
-        >
-          <div className="user-file-search search search-bar">
-            <input
-              key={`${filter}:${pageNum}`}
-              name="filter"
-              className="textbox"
-              type="text"
-              placeholder={t("search.title")}
-              defaultValue=""
-            />
-            <button type="submit" className="search-btn">
-              <i className="yobicon-search"></i>
-            </button>
+    <>
+      <title>{t("user.files")}</title>
+      <div className="page-wrap-outer">
+        <div className="page-wrap">
+          <ul className="nav nav-tabs">
+            <li>
+              <Link activeProps={legacyRouteLocalActiveProps} to="/notifications">
+                {t("notification")}
+              </Link>
+            </li>
+            <li>
+              <Link activeProps={legacyRouteLocalActiveProps} to="/user/issues">
+                {t("issue.myIssue")}
+              </Link>
+            </li>
+            <li className="active">
+              <Link
+                activeOptions={legacyRouteLocalActiveOptions}
+                activeProps={legacyRouteLocalActiveProps}
+                search={legacyEmptyUserFilesSearch}
+                to="/user/files"
+              >
+                {t("user.files")}
+              </Link>
+            </li>
+            <li></li>
+          </ul>
+          <form
+            action={prefixBasePath(basePath, "/user/files")}
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
+            }}
+          >
+            <div className="user-file-search search search-bar">
+              <input
+                key={`${filter}:${pageNum}`}
+                name="filter"
+                className="textbox"
+                type="text"
+                placeholder={t("search.title")}
+                defaultValue=""
+              />
+              <button type="submit" className="search-btn">
+                <i className="yobicon-search"></i>
+              </button>
+            </div>
+          </form>
+          <div className="attachment-files">
+            <div className="attachment-files-header row">
+              <div className="span1 header-preview">Preview</div>
+              <div className="span5 header-file-name">Filename</div>
+              <div className="span1 header-size">Size</div>
+              <div className="span1">Download</div>
+              <div className="span2 file-date">Date</div>
+              <div className="span4 header-location">Location</div>
+            </div>
+            {files.files.map((attachment) => (
+              <UserFileRow key={attachment.id} attachment={attachment} basePath={basePath} />
+            ))}
           </div>
-        </form>
-        <div className="attachment-files">
-          <div className="attachment-files-header row">
-            <div className="span1 header-preview">Preview</div>
-            <div className="span5 header-file-name">Filename</div>
-            <div className="span1 header-size">Size</div>
-            <div className="span1">Download</div>
-            <div className="span2 file-date">Date</div>
-            <div className="span4 header-location">Location</div>
-          </div>
-          {files.files.map((attachment) => (
-            <UserFileRow key={attachment.id} attachment={attachment} basePath={basePath} />
-          ))}
         </div>
+        <Pagination files={files} />
       </div>
-      <Pagination files={files} />
-    </div>
+    </>
   );
 }
 
