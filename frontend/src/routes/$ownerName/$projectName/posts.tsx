@@ -156,7 +156,7 @@ function ProjectPostsBody({
                 name="filter"
                 className="textbox"
                 type="text"
-                placeholder={t("title.search")}
+                placeholder={t("project.searchPlaceholder")}
                 defaultValue={search.filter}
               />
               <button type="submit" className="search-btn">
