@@ -403,7 +403,7 @@ function ProjectMembersBody({
           />
 
           {booleanField(members.viewerCanUpdate) ? (
-            <div className="inner-bubble">
+            <div className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}>
               <form
                 className="nm"
                 action={prefixBasePath(
@@ -447,7 +447,7 @@ function ProjectMembersBody({
                 </button>
               </form>
               {showTypeaheadSuggestions ? (
-                <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+                <ul className="typeahead dropdown-menu">
                   {memberSuggestions.map((suggestion, index) => (
                     <li
                       className={index === activeSuggestionIndex ? "active" : undefined}
@@ -520,7 +520,6 @@ function ProjectMembersBody({
                 tabIndex={-1}
                 role="dialog"
                 aria-hidden={false}
-                style={{ display: "block" }}
               >
                 <div className="btn-dismiss">
                   <button

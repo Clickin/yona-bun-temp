@@ -112,6 +112,8 @@ test("project members add-member input performs legacy typeahead lookup, render,
   await expect.poll(() => requests.userSearchQueries.at(-1) ?? "").toBe("car");
   const typeaheadMenu = page.locator(".inner-bubble .typeahead.dropdown-menu");
   await expect(typeaheadMenu).toBeVisible();
+  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble open");
+  await expect(typeaheadMenu).not.toHaveAttribute("style", /.+/);
   await expect(typeaheadMenu.locator("li")).toHaveCount(2);
   await expect(typeaheadMenu.locator("li").nth(0)).toHaveClass("active");
   await expect(typeaheadMenu.locator("li").nth(0).locator(".mention_image")).toHaveAttribute(
@@ -146,14 +148,21 @@ test("project members add-member input performs legacy typeahead lookup, render,
     return {
       inputBottom: Math.round(inputRect.bottom),
       inputLeft: Math.round(inputRect.left),
+      inputRight: Math.round(inputRect.right),
+      inputWidth: Math.round(inputRect.width),
       menuLeft: Math.round(menuRect.left),
+      menuRight: Math.round(menuRect.right),
       menuTop: Math.round(menuRect.top),
+      menuWidth: Math.round(menuRect.width),
     };
   });
   expect(typeaheadMetrics).not.toBeNull();
   expect(typeaheadMetrics!.menuLeft).toBeGreaterThanOrEqual(typeaheadMetrics!.inputLeft - 2);
   expect(typeaheadMetrics!.menuLeft).toBeLessThanOrEqual(typeaheadMetrics!.inputLeft + 2);
   expect(typeaheadMetrics!.menuTop).toBeGreaterThanOrEqual(typeaheadMetrics!.inputBottom - 1);
+  expect(typeaheadMetrics!.menuTop).toBeLessThanOrEqual(typeaheadMetrics!.inputBottom + 6);
+  expect(typeaheadMetrics!.menuWidth).toBeLessThanOrEqual(typeaheadMetrics!.inputWidth);
+  expect(typeaheadMetrics!.menuRight).toBeLessThanOrEqual(typeaheadMetrics!.inputRight + 2);
 
   await addInput.press("ArrowDown");
   await expect(typeaheadMenu.locator("li").nth(1)).toHaveClass("active");
@@ -161,6 +170,7 @@ test("project members add-member input performs legacy typeahead lookup, render,
 
   await expect(addInput).toHaveValue("carmine");
   await expect(typeaheadMenu).toHaveCount(0);
+  await expect(page.locator(".inner-bubble")).toHaveClass("inner-bubble");
   await expect.poll(() => requests.addedLoginIds).toEqual([]);
 
   await page.locator("#addNewMember .ybtn.ybtn-success").click();
@@ -493,6 +503,7 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).not.toMatch(/(?<!data-)\bhref=\{projectHref/);
   expect(source).not.toContain('href="javascript:void(0)"');
   expect(source).not.toContain('href="#"');
+  expect(source).not.toContain('style={{ display: "block" }}');
   expect(source).not.toContain("window.confirm");
   expect(source).not.toContain('data-toggle="modal"');
   expect(source).not.toContain('data-dismiss="modal"');
