@@ -1,13 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Fragment,
-  useEffect,
-  useState,
-  type FormEvent,
-  type KeyboardEvent,
-  type MouseEvent,
-} from "react";
+import { Fragment, useState, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
 import {
   createProjectWebhookRest,
   deleteProjectWebhookRest,
@@ -75,7 +68,8 @@ function ProjectWebhooksRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
 function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectWebhooksDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
+  const legacyTitle = `${t("project.webhook")} - ${ownerName}/${projectName}`;
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -84,11 +78,12 @@ function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   );
 
   if (!projectQuery.data || !webhooksQuery.data) {
-    return null;
+    return <title>{legacyTitle}</title>;
   }
 
   return (
     <>
+      <title>{legacyTitle}</title>
       <ProjectHeader project={projectQuery.data} />
       <ProjectMenu project={projectQuery.data} />
       <ProjectWebhooksBody
@@ -98,28 +93,6 @@ function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       />
     </>
   );
-}
-
-function useProjectWebhooksDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const screenTitle = t("project.webhook");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${screenTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, screenTitle]);
 }
 
 function ProjectWebhooksBody({

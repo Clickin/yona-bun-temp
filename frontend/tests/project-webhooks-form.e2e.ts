@@ -66,7 +66,14 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
   );
   expect(source).toContain("projectSearchScope={projectSearchScope}");
   expect(source).toContain("showLegacyProjectHeaderLinks");
-  expect(source).toContain('const screenTitle = t("project.webhook");');
+  expect(source).toContain(
+    'const legacyTitle = `${t("project.webhook")} - ${ownerName}/${projectName}`;',
+  );
+  expect(source).toContain("<title>{legacyTitle}</title>");
+  expect(source).not.toContain("useProjectWebhooksDocumentTitle");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toContain("globalThis.document");
+  expect(source).not.toContain('globalThis["document"]');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).not.toContain("ProjectForbiddenBody");
   expect(source).not.toContain("SiteForbiddenBody");
