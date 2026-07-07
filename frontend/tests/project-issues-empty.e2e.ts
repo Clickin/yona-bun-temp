@@ -355,6 +355,11 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const massUpdateOptionButtonStyle");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("style={massUpdateOptionButtonStyle}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('className="usf-group"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    '<title>{`${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("document.title");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("globalThis.document");
 });
 
 test("project issue list mass update option buttons keep click ownership route-local", async () => {
@@ -445,6 +450,7 @@ test("project issue list anchors do not leak TanStack active markers", async ({ 
   await mockProjectIssues(page);
 
   await page.goto(`${basePath}/admin/sample/issues?filter=empty`);
+  await expect(page).toHaveTitle("sample - Issue - admin/sample");
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator(".issue-list-wrap a[aria-current]")).toHaveCount(0);
   await expect(page.locator(".issue-list-wrap a[data-status]")).toHaveCount(0);

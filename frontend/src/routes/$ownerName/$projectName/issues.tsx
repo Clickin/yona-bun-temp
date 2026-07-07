@@ -131,7 +131,7 @@ function ProjectIssuesRoute() {
 
 function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectIssuesDocumentTitle(runtimeConfig, ownerName, projectName);
+  const { t } = useLegacyMessages();
   const search = Route.useSearch();
   const location = useLocation();
   const projectQuery = useQuery(
@@ -257,6 +257,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
     >
+      <title>{`${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="issue"
@@ -298,28 +299,6 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       />
     </SiteLayoutShell>
   );
-}
-
-function useProjectIssuesDocumentTitle(
-  runtimeConfig: RuntimeConfig,
-  ownerName: string,
-  projectName: string,
-) {
-  const { t } = useLegacyMessages();
-  const issueMenuTitle = t("menu.issue");
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${projectName} - ${issueMenuTitle} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [issueMenuTitle, ownerName, projectName, runtimeConfig.siteName]);
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
