@@ -279,6 +279,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
     "button",
   );
   await page.keyboard.press("Enter");
+  await expect(page.locator("#input-project")).toHaveValue("");
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
   await expect(page.locator(".typeahead.dropdown-menu")).toHaveCount(0);
   await expect(page.locator("#selected-projects .label a[href]")).toHaveCount(0);
@@ -304,16 +305,19 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await expect(page.locator("#selected-projects .label")).toHaveCount(0);
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
+  await expect(page.locator("#input-project")).toHaveValue("");
   await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
 
   await page.locator("#input-project").fill("yona/docs");
   await page.keyboard.press("Enter");
+  await expect(page.locator("#input-project")).toHaveValue("");
   await expect(page.locator("#selected-projects .label")).toHaveText([
     "admin/projectYobi x",
     "yona/docs x",
   ]);
 
   await page.locator("#selected-projects .label .selected-project-remove").first().click();
+  await expect(page.locator("#input-project")).toHaveValue("");
   await expect(page.locator("#selected-projects .label")).toHaveText("yona/docs x");
 
   await page.locator("#write-email").click();
@@ -326,8 +330,10 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await expect(page.locator("#write-email")).toBeEnabled();
   await expect(page.locator("#write-email strong")).toHaveText("Write");
 
+  await page.locator("#input-project").fill("leftover/project");
   await page.locator("#mailtoAll").click();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+  await expect(page.locator("#input-project")).toHaveValue("");
   await expect(page.locator("#selected-projects .label")).toHaveCount(0);
 
   await page.locator("#write-email").click();
@@ -352,6 +358,11 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   expect(routeSource).not.toContain("document.createElement");
   expect(routeSource).not.toContain("document.getElementById");
   expect(routeSource).not.toContain("addEventListener");
+  expect(routeSource).not.toContain("classList");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(routeSource).not.toContain("innerHTML");
+  expect(routeSource).not.toContain("projectInputRef.current.value");
+  expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
 });
@@ -603,7 +614,7 @@ async function canonicalizeScreenRoots(page: Page) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter((name) => shouldKeepStableAttribute(current, name))
         .map((name) => {
           const value = name === "checked" ? "checked" : (current.getAttribute(name) ?? "");
           return `${name}=${JSON.stringify(value)}`;
@@ -626,6 +637,17 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function shouldKeepStableAttribute(current: Element, name: string): boolean {
+      if (!current.hasAttribute(name)) {
+        return false;
+      }
+      return !(
+        name === "value" &&
+        current.id === "input-project" &&
+        current.getAttribute("value") === ""
+      );
     }
   });
 }
@@ -665,7 +687,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter((name) => shouldKeepStableAttribute(current, name))
         .map((name) => {
           const value = name === "checked" ? "checked" : (current.getAttribute(name) ?? "");
           return `${name}=${JSON.stringify(value)}`;
@@ -688,6 +710,17 @@ async function canonicalizeHtml(page: Page, html: string) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function shouldKeepStableAttribute(current: Element, name: string): boolean {
+      if (!current.hasAttribute(name)) {
+        return false;
+      }
+      return !(
+        name === "value" &&
+        current.id === "input-project" &&
+        current.getAttribute("value") === ""
+      );
     }
   }, html);
 }

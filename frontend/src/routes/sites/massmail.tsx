@@ -180,16 +180,13 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     },
   });
 
-  function addProject(projectName = projectInputRef.current?.value ?? "") {
+  function addProject(projectName = projectQuery) {
     setSelectedProjects((current) => [
       ...current,
       { id: nextProjectId.current++, name: projectName },
     ]);
     setProjectQuery("");
     setActiveSuggestionIndex(0);
-    if (projectInputRef.current) {
-      projectInputRef.current.value = "";
-    }
   }
 
   function selectMailingType(nextMailingType: "all" | "projects") {
@@ -197,9 +194,6 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     setSelectedProjects([]);
     setProjectQuery("");
     setActiveSuggestionIndex(0);
-    if (projectInputRef.current) {
-      projectInputRef.current.value = "";
-    }
   }
 
   function selectProjectSuggestion(projectName: string) {
@@ -251,6 +245,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             autoComplete="off"
             placeholder={t("project.name")}
             ref={projectInputRef}
+            value={projectQuery}
             onChange={(event) => {
               setProjectQuery(event.currentTarget.value);
               setActiveSuggestionIndex(0);
