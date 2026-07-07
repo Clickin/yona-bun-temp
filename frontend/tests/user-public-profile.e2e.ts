@@ -128,20 +128,23 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain(
     'const legacyMissingUserHomeHref = prefixBasePath(runtimeConfig.basePath, "/");',
   );
-  expect(source).toContain("function LegacyHrefAnchor({");
+  expect(source).not.toContain("reactJsx");
+  expect(source).toContain("function MountedRootHrefLink({");
+  expect(source).toContain('import { jsx as runtimeJsx } from "react/jsx-runtime";');
+  expect(source).toContain('return runtimeJsx("a", { ...props, href: legacyHref });');
   expect(source).toContain("const legacyMissingUserLogoLinkProps = useLinkProps({");
   expect(source).toContain("const legacyMissingUserHomeButtonLinkProps = useLinkProps({");
   expect(source).toContain("router.history.push(legacyMissingUserHomeHref);");
+  expect(source).not.toContain("function LegacyHrefAnchor({");
+  expect(source).not.toContain("<LegacyHrefAnchor");
+  expect(source).toContain("<MountedRootHrefLink");
   expect(source).toContain("legacyHref={legacyMissingUserHomeHref}");
-  expect(source).toContain(
-    "<LegacyHrefAnchor {...legacyMissingUserLogoLinkProps} legacyHref={legacyMissingUserHomeHref}>",
-  );
-  expect(source).toContain("<LegacyHrefAnchor");
   expect(source).not.toContain('<Link {...LEGACY_LINK_PROPS} to="/" className="logo">');
   expect(source).not.toContain('<Link {...LEGACY_LINK_PROPS} to="/" className="ybtn ybtn-info">');
   expect(source).toContain("} satisfies LegacyIssueRowAttributes;");
   expect(source).toContain("<li {...legacyIssueRowAttrs}>");
-  expect(source).toContain("Link, Navigate");
+  expect(source).toContain("Link,");
+  expect(source).toContain("Navigate,");
   expect(source).toContain('hash="comments"');
   expect(source).toContain('hash="vote"');
 });
@@ -365,6 +368,11 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
   );
   await expect(page.locator(".gnb-inner > .logo")).toHaveAttribute("href", basePath);
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  expect(await readMissingUserLinkMetrics(page)).toEqual({
+    homeInsideErrorWrap: true,
+    homeVisibleBelowMessage: true,
+    logoInsideHeader: true,
+  });
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -621,6 +629,37 @@ async function readProfileMetrics(page: Page) {
       userBoxDisplay: getComputedStyle(userBox).display,
       userInfoWidth: Math.round(userInfo.getBoundingClientRect().width),
       userStreamWidth: Math.round(userStream.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function readMissingUserLinkMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const logo = document.querySelector<HTMLElement>(".gnb-inner > .logo");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const message = document.querySelector<HTMLElement>(".error-wrap p");
+    const home = document.querySelector<HTMLElement>(".error-wrap .ybtn.ybtn-info");
+    if (!header || !logo || !errorWrap || !message || !home) {
+      throw new Error("Expected missing-user metric targets are missing.");
+    }
+    const headerBox = header.getBoundingClientRect();
+    const logoBox = logo.getBoundingClientRect();
+    const errorBox = errorWrap.getBoundingClientRect();
+    const messageBox = message.getBoundingClientRect();
+    const homeBox = home.getBoundingClientRect();
+    return {
+      homeInsideErrorWrap:
+        homeBox.left >= errorBox.left &&
+        homeBox.right <= errorBox.right &&
+        homeBox.top >= errorBox.top &&
+        homeBox.bottom <= errorBox.bottom,
+      homeVisibleBelowMessage: homeBox.top >= messageBox.bottom,
+      logoInsideHeader:
+        logoBox.left >= headerBox.left &&
+        logoBox.right <= headerBox.right &&
+        logoBox.top >= headerBox.top &&
+        logoBox.bottom <= headerBox.bottom,
     };
   });
 }

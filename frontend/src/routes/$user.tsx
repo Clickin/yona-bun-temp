@@ -8,7 +8,7 @@ import {
   useLinkProps,
   useRouter,
 } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { jsx as runtimeJsx } from "react/jsx-runtime";
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
@@ -39,12 +39,12 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
-function LegacyHrefAnchor({
+function MountedRootHrefLink({
   legacyHref,
   href: _href,
   ...props
 }: ComponentPropsWithRef<"a"> & { legacyHref: string }) {
-  return reactJsx("a", { ...props, href: legacyHref });
+  return runtimeJsx("a", { ...props, href: legacyHref });
 }
 
 export const Route = createFileRoute("/$user")({
@@ -150,12 +150,12 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <LegacyHrefAnchor
+          <MountedRootHrefLink
             {...legacyMissingUserLogoLinkProps}
             legacyHref={legacyMissingUserHomeHref}
           >
             <h1 className="blind">{siteName}</h1>
-          </LegacyHrefAnchor>
+          </MountedRootHrefLink>
           <ul className="gnb-nav">
             <li>
               <Link {...LEGACY_LINK_PROPS} to="/projects">
@@ -231,12 +231,12 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           <div className="error-wrap">
             <i className="ico ico-err2"></i>
             <p>{t("user.notExists.name")}</p>
-            <LegacyHrefAnchor
+            <MountedRootHrefLink
               {...legacyMissingUserHomeButtonLinkProps}
               legacyHref={legacyMissingUserHomeHref}
             >
               {t("menu.home")}
-            </LegacyHrefAnchor>
+            </MountedRootHrefLink>
           </div>
         </div>
       </div>
