@@ -108,7 +108,6 @@ function ProjectSearchRoute() {
 }
 
 function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
   const projectQuery = useQuery({
@@ -134,19 +133,6 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       pageNum,
       scope: "project",
     });
-
-  useEffect(() => {
-    if (typeof document === "undefined" || search.routeInvalid) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${t("title.search")} - ${ownerName}/${projectName}`;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [ownerName, projectName, runtimeConfig.siteName, search.routeInvalid, t]);
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     if (!projectQuery.data) {
@@ -263,18 +249,23 @@ function ProjectSearchRouteShell({
   projectName: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t } = useLegacyMessages();
+
   return (
-    <SiteLayoutShell
-      projectSearchScope={{
-        organizationName: projectSearchScopeOrganizationName(project, ownerName),
-        ownerName,
-        projectName,
-      }}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
-      {children}
-    </SiteLayoutShell>
+    <>
+      <title>{`${t("title.search")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell
+        projectSearchScope={{
+          organizationName: projectSearchScopeOrganizationName(project, ownerName),
+          ownerName,
+          projectName,
+        }}
+        runtimeConfig={runtimeConfig}
+        showLegacyProjectHeaderLinks
+      >
+        {children}
+      </SiteLayoutShell>
+    </>
   );
 }
 

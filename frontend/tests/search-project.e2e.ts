@@ -1,4 +1,10 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+
+const PROJECT_SEARCH_ROUTE_SOURCE = readFileSync(
+  "src/routes/$ownerName/$projectName/search.tsx",
+  "utf8",
+);
 
 const EXPECTED_PROJECT_SEARCH = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -57,6 +63,10 @@ test("project search matches legacy search/result.scala.html project empty revie
   await mockProjectSearch(page);
 
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
+  await expect(page).toHaveTitle("Search - admin/sample");
+  await expect
+    .poll(() => page.locator("head > title").allTextContents())
+    .toContain("Search - admin/sample");
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   expect(
     await page
@@ -83,6 +93,14 @@ test("project search matches legacy search/result.scala.html project empty revie
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedProjectSearchShellScreen(basePath)),
   );
+});
+
+test("project search route source renders legacy projectLayout title without direct document mutation", () => {
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
+    '<title>{`${t("title.search")} - ${ownerName}/${projectName}`}</title>',
+  );
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("document.title");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("globalThis.document");
 });
 
 test("project issue search renders legacy partial_issues.scala.html scoped result row", async ({
