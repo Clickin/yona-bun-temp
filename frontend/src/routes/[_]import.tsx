@@ -204,6 +204,7 @@ function ProjectImportScreen({
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <title>{t("title.newProject")}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="form-wrap new-project">

@@ -179,6 +179,10 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   await mockProjectImport(page);
 
   await page.goto(`${basePath}/_import?owner=admin`);
+  await expect(page).toHaveTitle("Create new project");
+  expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
+    "Create new project",
+  );
   await expect(page.locator("#importGit")).toBeVisible();
   await expect(page.locator("#repoAuth .span6")).toHaveCount(2);
   await expect(page.locator("#project-owner")).toHaveValue("admin");
@@ -448,6 +452,7 @@ test("project import form navigation links use TanStack Router Link in route sou
   const routeSource = readFileSync(PROJECT_IMPORT_ROUTE_SOURCE, "utf8");
 
   expect(routeSource).toContain("import { Link, createFileRoute, createLink, useRouter }");
+  expect(routeSource).toContain('<title>{t("title.newProject")}</title>');
   expect(routeSource).toContain("const LegacyRootLink = createLink");
   expect(routeSource).toContain("legacyRootHref={cancelHref}");
   expect(routeSource).toContain("const legacyImportActionLinkActiveOptions =");
@@ -468,6 +473,11 @@ test("project import form navigation links use TanStack Router Link in route sou
   expect(routeSource).not.toContain("LegacyHrefLink");
   expect(routeSource).not.toContain("React.createElement");
   expect(routeSource).not.toMatch(/<a\b/);
+  expect(routeSource).not.toContain("document.title");
+  expect(routeSource).not.toContain("globalThis.document");
+  expect(routeSource).not.toContain("window.document");
+  expect(routeSource).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/iu);
+  expect(routeSource).not.toMatch(/title\s*=\s*["'`]Create new project/iu);
   expect(routeSource).not.toContain("setAttribute");
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
