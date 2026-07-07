@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -53,7 +53,7 @@ function OrganizationSettingsBody({
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logoInputKey, setLogoInputKey] = useState(0);
   const [wrongNameMessage, setWrongNameMessage] = useState("");
   const [serverNameError, setServerNameError] = useState("");
   const organizationName = stringField(organization.organizationName, "organization");
@@ -82,9 +82,7 @@ function OrganizationSettingsBody({
       setServerNameError("");
     },
     onSuccess(updatedOrganization) {
-      if (logoInputRef.current) {
-        logoInputRef.current.value = "";
-      }
+      setLogoInputKey((key) => key + 1);
       const updatedName = stringField(updatedOrganization.organizationName, organizationName);
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(organizationName) });
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.organization.base(updatedName) });
@@ -107,7 +105,7 @@ function OrganizationSettingsBody({
   function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
     if (!isImageFileInput(event.currentTarget)) {
       window.alert(t("project.logo.alert"));
-      event.currentTarget.value = "";
+      setLogoInputKey((key) => key + 1);
       return;
     }
 
@@ -160,7 +158,7 @@ function OrganizationSettingsBody({
                             <i className="yobicon-upload"></i> {t("button.upload")}
                             <input
                               id="logoPath"
-                              ref={logoInputRef}
+                              key={logoInputKey}
                               type="file"
                               className="file"
                               name="logoPath"

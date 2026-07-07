@@ -292,6 +292,7 @@ test("organization settings logo input validates image files and auto-submits li
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
   await expect(page.locator("#saveSetting")).toBeVisible();
 
+  await markLogoInputNode(page, "invalid-selection");
   const dialogPromise = new Promise<string>((resolve) => {
     page.once("dialog", async (dialog) => {
       resolve(dialog.message());
@@ -305,9 +306,11 @@ test("organization settings logo input validates image files and auto-submits li
   });
   await expect(dialogPromise).resolves.toBe("This is not an image file.");
   await expect(page.locator("#logoPath")).toHaveValue("");
+  await expectLogoInputNodeMarker(page, undefined);
   expect(uploadRequests).toEqual([]);
   expect(updateRequests).toEqual([]);
 
+  await markLogoInputNode(page, "successful-submit");
   const updateResponsePromise = page.waitForResponse(
     (response) =>
       response.url().endsWith("/api/v1/organizations/weblabs") &&
@@ -333,6 +336,27 @@ test("organization settings logo input validates image files and auto-submits li
     },
   ]);
   await expect(page.locator("#logoPath")).toHaveValue("");
+  await expectLogoInputNodeMarker(page, undefined);
+});
+
+test("organization settings logo input reset source is React-owned", () => {
+  const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
+  const logoInputSlice =
+    source.match(/function OrganizationSettingsBody[\s\S]*?function OrganizationHeader/u)?.[0] ??
+    source;
+
+  expect(logoInputSlice).toContain("const [logoInputKey, setLogoInputKey] = useState(0)");
+  expect(logoInputSlice).toContain("key={logoInputKey}");
+  expect(logoInputSlice).toContain("setLogoInputKey((key) => key + 1)");
+  expect(logoInputSlice).not.toContain("logoInputRef.current.value");
+  expect(logoInputSlice).not.toContain(".current.value");
+  expect(logoInputSlice).not.toContain("event.currentTarget.value");
+  expect(logoInputSlice).not.toContain("document.querySelector");
+  expect(logoInputSlice).not.toContain("document.getElementById");
+  expect(logoInputSlice).not.toContain("addEventListener");
+  expect(logoInputSlice).not.toContain("classList");
+  expect(logoInputSlice).not.toContain("style.display");
+  expect(logoInputSlice).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("organization settings name submit shows legacy validation warning", async ({ page }) => {
@@ -639,6 +663,24 @@ async function readOrganizationSettingsNativeLinkAudit(page: Page) {
           typeof globalThis & { __organizationSettingsNativeLinkListeners?: string[] }
       ).__organizationSettingsNativeLinkListeners ?? [],
   );
+}
+
+async function markLogoInputNode(page: Page, marker: string) {
+  await page.locator("#logoPath").evaluate((element, value) => {
+    (element as HTMLInputElement & { __yonaLogoInputMarker?: string }).__yonaLogoInputMarker =
+      value;
+  }, marker);
+}
+
+async function expectLogoInputNodeMarker(page: Page, marker: string | undefined) {
+  await expect
+    .poll(() =>
+      page.locator("#logoPath").evaluate((element) => {
+        return (element as HTMLInputElement & { __yonaLogoInputMarker?: string })
+          .__yonaLogoInputMarker;
+      }),
+    )
+    .toBe(marker);
 }
 
 async function organizationSettingsMetrics(page: Page) {
