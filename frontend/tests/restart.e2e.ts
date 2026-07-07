@@ -85,7 +85,7 @@ test("restart failed secret state adds the legacy manual update notice", async (
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
 
   await expect(page.locator(".secret-box")).toHaveText(
-    "Server needs to be restarted. Please update application.secret with random text.",
+    "Server needs to be restarted.Please update application.secret with random text.",
   );
 
   const actual = await canonicalizeScreenRoots(page);
@@ -95,6 +95,13 @@ test("restart failed secret state adds the legacy manual update notice", async (
   );
 
   expect(actual).toEqual(expected);
+  expect(await readRestartContainmentMetrics(page)).toEqual({
+    footerBelowPage: true,
+    logoInsideSecretWrap: true,
+    secretBoxInsidePage: true,
+    secretBoxInsideSecretWrap: true,
+    secretBoxTopBelowHeading: true,
+  });
 });
 
 test("restart logo uses TanStack navigation for the internal home href", async ({ page }) => {
@@ -248,6 +255,47 @@ async function readMobileRestartMetrics(page: Page) {
       secretBoxWidth: Math.round(secretBox.getBoundingClientRect().width),
       secretWrapPaddingBottom: secretWrapStyle.paddingBottom,
       secretWrapPaddingTop: secretWrapStyle.paddingTop,
+    };
+  });
+}
+
+async function readRestartContainmentMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageRoot = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const secretWrap = document.querySelector<HTMLElement>(".secret-wrap");
+    const logo = document.querySelector<HTMLElement>(".secret-wrap .logo");
+    const heading = document.querySelector<HTMLElement>(".secret-wrap h3");
+    const secretBox = document.querySelector<HTMLElement>(".secret-box");
+    const footer = document.querySelector<HTMLElement>(".page-footer-outer");
+    if (!pageRoot || !secretWrap || !logo || !heading || !secretBox || !footer) {
+      throw new Error("Expected restart containment targets are missing.");
+    }
+
+    const pageBox = pageRoot.getBoundingClientRect();
+    const wrapBox = secretWrap.getBoundingClientRect();
+    const logoBox = logo.getBoundingClientRect();
+    const headingBox = heading.getBoundingClientRect();
+    const secretBoxRect = secretBox.getBoundingClientRect();
+    const footerBox = footer.getBoundingClientRect();
+
+    return {
+      footerBelowPage: footerBox.top >= pageBox.bottom,
+      logoInsideSecretWrap:
+        logoBox.top >= wrapBox.top &&
+        logoBox.left >= wrapBox.left &&
+        logoBox.right <= wrapBox.right &&
+        logoBox.bottom <= wrapBox.bottom,
+      secretBoxInsidePage:
+        secretBoxRect.top >= pageBox.top &&
+        secretBoxRect.left >= pageBox.left &&
+        secretBoxRect.right <= pageBox.right &&
+        secretBoxRect.bottom <= pageBox.bottom,
+      secretBoxInsideSecretWrap:
+        secretBoxRect.top >= wrapBox.top &&
+        secretBoxRect.left >= wrapBox.left &&
+        secretBoxRect.right <= wrapBox.right &&
+        secretBoxRect.bottom <= wrapBox.bottom,
+      secretBoxTopBelowHeading: secretBoxRect.top >= headingBox.bottom,
     };
   });
 }

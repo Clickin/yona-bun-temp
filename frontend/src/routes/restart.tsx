@@ -56,7 +56,7 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
               <h3>{t("app.restart.welcome")}</h3>
               <p className="secret-box txt-center">
                 {t("app.restart.notice")}
-                {hasFailedToUpdateSecret ? <> {t("app.restart.updateSecretYourself")}</> : null}
+                {hasFailedToUpdateSecret ? t("app.restart.updateSecretYourself") : null}
               </p>
             </div>
           </div>
