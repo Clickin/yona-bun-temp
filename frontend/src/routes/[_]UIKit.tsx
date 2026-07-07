@@ -10,6 +10,7 @@ function UIKitRoute() {
 
   return (
     <>
+      <title>Yobi UI</title>
       <style>{`body { color:#ccc; }
 dl { display:inline-block; margin:18px; }
 dd { margin-left:0; }
@@ -281,7 +282,6 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
       <dd>
         <div className={`btn-group${isOpen ? " open" : ""}`} data-name="assigneeId">
           <button
-            type="button"
             className={`btn dropdown-toggle ${size}`}
             data-toggle="dropdown"
             onClick={(event) => {
@@ -309,7 +309,7 @@ function DropdownDemo({ size }: { size: "small" | "medium" | "large" }) {
                 전체
               </button>
             </li>
-            <li data-value="0" className={selectedValue === "0" ? "active" : ""}>
+            <li data-value="0" className={selectedValue === "0" ? "active" : undefined}>
               <button
                 type="button"
                 onClick={(event) => {

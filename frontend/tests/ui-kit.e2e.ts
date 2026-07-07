@@ -20,6 +20,7 @@ const ROOT_ROUTE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/__root.tsx", import.meta.url)),
   "utf8",
 );
+const EXPECTED_UIKIT_TITLE = extractBetween(LEGACY_UIKIT_TEMPLATE, "<title>", "</title>");
 const EXPECTED_UIKIT_BODY = extractBetween(LEGACY_UIKIT_TEMPLATE, "<body>", "</body>");
 const SELECT2_TEMPLATE_IDS = [
   "tplSelect2FormatUser",
@@ -74,7 +75,28 @@ test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({
   });
 });
 
+test("standalone UI kit renders legacy browser title metadata", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  await page.goto(`${basePath}/_UIKit`);
+  await expect(page).toHaveTitle(EXPECTED_UIKIT_TITLE);
+  await expect
+    .poll(async () =>
+      page
+        .locator("head")
+        .evaluate((head) =>
+          Array.from(head.querySelectorAll("title"), (title) => title.textContent ?? ""),
+        ),
+    )
+    .toContain(EXPECTED_UIKIT_TITLE);
+});
+
 test("standalone UI kit route renders JSX without raw legacy body injection", async () => {
+  expect(UIKIT_ROUTE_SOURCE).toContain("<title>Yobi UI</title>");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("document.title");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("window.document");
+  expect(UIKIT_ROUTE_SOURCE).not.toMatch(/useEffect\([\s\S]*title/);
   expect(UIKIT_ROUTE_SOURCE).not.toContain("UIKit.scala.html?raw");
   expect(UIKIT_ROUTE_SOURCE).not.toContain("legacyUiKitTemplate");
   expect(UIKIT_ROUTE_SOURCE).not.toContain("extractBetween");
