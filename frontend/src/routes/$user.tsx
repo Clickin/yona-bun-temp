@@ -310,6 +310,7 @@ function PublicProfileBody({
 
   return (
     <>
+      <title>{profile.loginId}</title>
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{profile.displayName}</h3>

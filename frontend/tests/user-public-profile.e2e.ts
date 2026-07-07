@@ -153,6 +153,9 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain("Navigate,");
   expect(source).toContain('hash="comments"');
   expect(source).toContain('hash="vote"');
+  expect(source).toContain("<title>{profile.loginId}</title>");
+  expect(source).not.toContain("document.title");
+  expect(source).not.toMatch(/\b(?:document|window\.document|globalThis\.document)\s*\./u);
 });
 
 test("public user profile matches legacy user/view.scala.html issues screen", async ({ page }) => {
@@ -161,6 +164,7 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
 
   await page.goto(`${basePath}/door`);
   await expect(page.locator(".user-box")).toBeVisible();
+  await expect(page).toHaveTitle("door");
   await expect(page.locator("#openIssues .post-item")).toHaveCount(1);
   await expect(page.locator('.user-stream-box > .nav-tabs a[href^="#"]')).toHaveCount(0);
   await expect(page.locator('#issues > .nav-tabs.nm a[href^="#"]')).toHaveCount(0);
