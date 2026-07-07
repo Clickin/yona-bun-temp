@@ -952,6 +952,13 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
 
   await page.goto(`${basePath}/admin/sample/post/3`);
   await expect(page).toHaveTitle("Release note");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.head.querySelectorAll("title")).map((title) => title.outerHTML),
+      ),
+    )
+    .toContain("<title>Release note</title>");
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -995,8 +1002,10 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   expect(routeSource).toContain(
     "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
   );
-  expect(routeSource).toContain("function useLegacyPostDetailDocumentTitle");
-  expect(routeSource).toContain("document.title = postTitle;");
+  expect(routeSource).toContain("function ProjectPostDetailTitle");
+  expect(routeSource).toContain("<title>{postTitle}</title>");
+  expect(routeSource).not.toContain("useLegacyPostDetailDocumentTitle");
+  expect(routeSource).not.toContain("document.title");
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, type FormEvent, useEffect, useState } from "react";
+import { Fragment, type FormEvent, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -85,21 +85,6 @@ function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   );
 }
 
-function useLegacyPostDetailDocumentTitle(runtimeConfig: RuntimeConfig, postTitle: string | null) {
-  useEffect(() => {
-    if (typeof document === "undefined" || !postTitle) {
-      return;
-    }
-
-    const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = postTitle;
-
-    return () => {
-      document.title = siteName;
-    };
-  }, [postTitle, runtimeConfig.siteName]);
-}
-
 function ProjectPostDetailScreen({
   project,
   runtimeConfig,
@@ -113,10 +98,6 @@ function ProjectPostDetailScreen({
   const postQuery = useQuery(
     readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
   );
-  useLegacyPostDetailDocumentTitle(
-    runtimeConfig,
-    !isEditChildRoute && postQuery.data ? stringField(postQuery.data.title) : null,
-  );
 
   if (!postQuery.data) {
     return null;
@@ -124,6 +105,9 @@ function ProjectPostDetailScreen({
 
   return (
     <>
+      {!isEditChildRoute ? (
+        <ProjectPostDetailTitle postTitle={stringField(postQuery.data.title)} />
+      ) : null}
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
       {isEditChildRoute ? (
@@ -137,6 +121,10 @@ function ProjectPostDetailScreen({
       )}
     </>
   );
+}
+
+function ProjectPostDetailTitle({ postTitle }: { postTitle: string }) {
+  return postTitle ? <title>{postTitle}</title> : null;
 }
 
 function ProjectPostDetailBody({
