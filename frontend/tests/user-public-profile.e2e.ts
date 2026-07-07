@@ -128,17 +128,23 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain(
     'const legacyMissingUserHomeHref = prefixBasePath(runtimeConfig.basePath, "/");',
   );
-  expect(source).not.toContain("reactJsx");
-  expect(source).toContain("function MountedRootHrefLink({");
+  expect(source).toContain("createLink,");
+  expect(source).toContain("function MountedRootLinkAnchor({");
+  expect(source).toContain("const MountedRootLink = createLink(MountedRootLinkAnchor);");
+  expect(source).toContain("ref?: React.Ref<HTMLAnchorElement>;");
+  expect(source).toContain('return runtimeJsx("a", { ...props, ref, href: legacyRootHref });');
+  expect(source).toContain("legacyRootHref={legacyMissingUserHomeHref}");
   expect(source).toContain('import { jsx as runtimeJsx } from "react/jsx-runtime";');
-  expect(source).toContain('return runtimeJsx("a", { ...props, href: legacyHref });');
-  expect(source).toContain("const legacyMissingUserLogoLinkProps = useLinkProps({");
-  expect(source).toContain("const legacyMissingUserHomeButtonLinkProps = useLinkProps({");
+  expect(source).not.toContain("useLinkProps");
+  expect(source).not.toContain("MountedRootHrefLink");
+  expect(source).not.toContain("legacyMissingUserLogoLinkProps");
+  expect(source).not.toContain("legacyMissingUserHomeButtonLinkProps");
+  expect(source).not.toContain("React.createElement");
+  expect(source).not.toContain("forwardRef");
   expect(source).toContain("router.history.push(legacyMissingUserHomeHref);");
   expect(source).not.toContain("function LegacyHrefAnchor({");
   expect(source).not.toContain("<LegacyHrefAnchor");
-  expect(source).toContain("<MountedRootHrefLink");
-  expect(source).toContain("legacyHref={legacyMissingUserHomeHref}");
+  expect(source).toContain("<MountedRootLink");
   expect(source).not.toContain('<Link {...LEGACY_LINK_PROPS} to="/" className="logo">');
   expect(source).not.toContain('<Link {...LEGACY_LINK_PROPS} to="/" className="ybtn ybtn-info">');
   expect(source).toContain("} satisfies LegacyIssueRowAttributes;");
@@ -368,6 +374,21 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
   );
   await expect(page.locator(".gnb-inner > .logo")).toHaveAttribute("href", basePath);
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".gnb-inner > .logo")).not.toHaveAttribute("aria-current", /.+/u);
+  await expect(page.locator(".gnb-inner > .logo")).not.toHaveAttribute("data-status", /.+/u);
+  await expect(page.locator(".gnb-inner > .logo")).toHaveAttribute("class", "logo");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).not.toHaveAttribute(
+    "aria-current",
+    /.+/u,
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).not.toHaveAttribute(
+    "data-status",
+    /.+/u,
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute(
+    "class",
+    "ybtn ybtn-info",
+  );
   expect(await readMissingUserLinkMetrics(page)).toEqual({
     homeInsideErrorWrap: true,
     homeVisibleBelowMessage: true,
