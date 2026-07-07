@@ -12,13 +12,16 @@ function MigrationRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <MigrationScreen />
-        </SiteLayoutShell>
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <>
+      <title>{runtimeConfig.siteName ?? "Yona"}</title>
+      <YonaQueryProvider>
+        <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+          <SiteLayoutShell runtimeConfig={runtimeConfig}>
+            <MigrationScreen />
+          </SiteLayoutShell>
+        </LegacyI18nProvider>
+      </YonaQueryProvider>
+    </>
   );
 }
 

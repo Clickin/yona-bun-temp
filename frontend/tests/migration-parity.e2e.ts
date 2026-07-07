@@ -38,9 +38,9 @@ const EXPECTED_MIGRATION_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li>
-          <li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li>
-          <li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li>
+          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
+          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
+          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -139,7 +139,17 @@ const EXPECTED_MIGRATION_SCREEN = `
 </footer>
 `;
 
-test("migration route source keeps tabindex and progress width declarative", () => {
+test("migration route source keeps tabindex, progress width, and title declarative", () => {
+  expect(MIGRATION_ROUTE_SOURCE).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain("document.title");
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain("globalThis.document");
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain("window.document");
+  expect(MIGRATION_ROUTE_SOURCE).not.toMatch(
+    /use(?:Layout)?Effect\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|title\s*=)/u,
+  );
+  expect(MIGRATION_ROUTE_SOURCE).not.toMatch(
+    /(?:document|globalThis\.document|window\.document)\s*\.\s*querySelector\s*\(\s*["']title["']/su,
+  );
   expect(MIGRATION_ROUTE_SOURCE).not.toMatch(/setAttribute\(["'](?:style|tabindex)["']/u);
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={1}");
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={2}");
@@ -151,6 +161,12 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/migration`);
+  await expect(page).toHaveTitle("Yona");
+  const headTitles = await page
+    .locator("head > title")
+    .evaluateAll((titles) => titles.map((title) => title.textContent ?? ""));
+  expect(headTitles).toContain("Yona");
+  expect(new Set(headTitles)).toEqual(new Set(["Yona"]));
   await expect(page.locator(".yobi-migration")).toBeVisible();
   await expect(page.locator("form.gnb-search-form")).toHaveCount(1);
   await expect(page.locator(".yobi-migration form")).toHaveCount(0);
