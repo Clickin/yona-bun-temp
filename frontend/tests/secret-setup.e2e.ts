@@ -491,16 +491,20 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
 
 test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
-  expect(SECRET_ROUTE_SOURCE).toContain("useLinkProps");
-  expect(SECRET_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
-  expect(SECRET_ROUTE_SOURCE).toContain("legacyHref={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).toContain("href={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).toContain("const LegacyRootLink = createLink");
+  expect(SECRET_ROUTE_SOURCE).toContain("legacyRootHref={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).toContain('to="/"');
   expect(SECRET_ROUTE_SOURCE).toContain('"loginId"');
   expect(SECRET_ROUTE_SOURCE).toContain('error.message === "user.wrongloginId.alert"');
   expect(SECRET_ROUTE_SOURCE).toContain("errors={fieldErrors.loginId}");
-  expect(SECRET_ROUTE_SOURCE).toContain('className: "logo"');
-  expect(SECRET_ROUTE_SOURCE).toContain('className: "ybtn ybtn-info"');
+  expect(SECRET_ROUTE_SOURCE).toContain('className="logo"');
+  expect(SECRET_ROUTE_SOURCE).toContain('className="ybtn ybtn-info"');
   expect(SECRET_ROUTE_SOURCE).toContain('"aria-current": undefined');
   expect(SECRET_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(SECRET_ROUTE_SOURCE).not.toContain("useLinkProps");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(
