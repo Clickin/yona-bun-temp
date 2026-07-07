@@ -180,7 +180,8 @@ function ProjectPullRequestChangesBody({
             <div className="board-body mb20">
               <div className="author-info right-txt" style={{ marginTop: "20px" }}>
                 <Link
-                  to={`/${pullRequest.contributor.loginId}`}
+                  to="/$user"
+                  params={{ user: pullRequest.contributor.loginId }}
                   search={legacyLinkInactiveSearch}
                   activeOptions={legacyLinkActiveOptions}
                   activeProps={legacyLinkActiveProps}
@@ -320,7 +321,8 @@ function NonRangedThread({
           <div className="author-info-wrap pull-left hide-in-mobile">
             <div className="author-info">
               <Link
-                to={`/${currentUser.loginId}`}
+                to="/$user"
+                params={{ user: currentUser.loginId }}
                 search={legacyLinkInactiveSearch}
                 activeOptions={legacyLinkActiveOptions}
                 activeProps={legacyLinkActiveProps}
@@ -383,7 +385,8 @@ function NonRangedThreadComment({
     <li id={`comment-${comment.id}`} className="comment">
       <div className="comment-avatar">
         <Link
-          to={`/${comment.authorLoginId}`}
+          to="/$user"
+          params={{ user: comment.authorLoginId }}
           search={legacyLinkInactiveSearch}
           activeOptions={legacyLinkActiveOptions}
           activeProps={legacyLinkActiveProps}
@@ -404,7 +407,8 @@ function NonRangedThreadComment({
         <div className="meta-info">
           <span className="comment_author pull-left">
             <Link
-              to={`/${comment.authorLoginId}`}
+              to="/$user"
+              params={{ user: comment.authorLoginId }}
               search={legacyLinkInactiveSearch}
               activeOptions={legacyLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
@@ -815,7 +819,8 @@ function ReviewForm({ action, currentUser }: { action: string; currentUser: Curr
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
             <Link
-              to={`/${currentUser.loginId}`}
+              to="/$user"
+              params={{ user: currentUser.loginId }}
               search={legacyLinkInactiveSearch}
               activeOptions={legacyLinkActiveOptions}
               activeProps={legacyLinkActiveProps}

@@ -685,7 +685,10 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).not.toContain("help/markdown.scala.html?raw");
   expect(routeSource).not.toContain("legacyMarkdownHelpHtml");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(routeSource).toContain("to={`/${pullRequest.contributor.loginId}`}");
+  expect(routeSource).toContain('to="/$user"');
+  expect(routeSource).toContain("params={{ user: pullRequest.contributor.loginId }}");
+  expect(routeSource).toContain("params={{ user: currentUser.loginId }}");
+  expect(routeSource).toContain("params={{ user: comment.authorLoginId }}");
   expect(routeSource).toContain('to="."');
   expect(routeSource).toContain("hash={`comment-${comment.id}`}");
   expect(routeSource).toContain("hash={`thread-${thread.id}`}");
