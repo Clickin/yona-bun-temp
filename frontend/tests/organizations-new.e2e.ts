@@ -113,6 +113,12 @@ test("organization create form matches legacy organization/create.scala.html DOM
   await mockAuthenticatedSession(page);
 
   await page.goto(`${basePath}/organizations/new`);
+  await expect(page).toHaveTitle("Yona");
+  expect(
+    await page.evaluate(() =>
+      Array.from(document.head.querySelectorAll("title"), (title) => title.textContent ?? ""),
+    ),
+  ).toContain("Yona");
   await expect(page.locator('form[name="new-org"]')).toBeVisible();
   await expect(page.locator("#name")).toBeFocused();
   await expect(page.locator(".n-alert")).toHaveAttribute("data-errType", "name");
@@ -279,12 +285,15 @@ test("organization create route source keeps cancel navigation out of raw anchor
     "utf8",
   );
   const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
+  const effectBlocks =
+    routeSource.match(/(?:React\.)?use(?:Layout)?Effect\s*\([\s\S]*?\)\s*;/gu) ?? [];
 
   expect(routeSource).toContain(
     'import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('data-errtype="name"');
   expect(routeSource).toContain("const MountedRootLink = createLink(MountedRootLinkAnchor);");
+  expect(routeSource).toContain('<title>{t("app.name")}</title>');
   expect(routeSource).toContain('const cancelHref = prefixBasePath(runtimeConfig.basePath, "");');
   expect(routeSource).toContain("router.history.push(cancelHref);");
   expect(routeSource).toContain("<MountedRootLink");
@@ -302,6 +311,10 @@ test("organization create route source keeps cancel navigation out of raw anchor
   );
   expect(routeSource).not.toContain("href={runtimeConfig.basePath}");
   expect(routeSource).not.toContain("<Link {...cancelLinkProps}>");
+  expect(routeSource).not.toMatch(/\bdocument\s*\.\s*title\b/u);
+  expect(routeSource).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
+  expect(routeSource).not.toMatch(/\bwindow\s*\.\s*document\b/u);
+  expect(effectBlocks.filter((block) => /\btitle\b/u.test(block))).toEqual([]);
   expect(routeSource).not.toMatch(
     /dangerouslySetInnerHTML|document\.|addEventListener|classList|\.style\.display/u,
   );

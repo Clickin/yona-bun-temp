@@ -112,85 +112,88 @@ function OrganizationNewScreen({
   }
 
   return (
-    <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="form-wrap new-project">
-            <form
-              action={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}
-              method="post"
-              name="new-org"
-              className="frm-wrap"
-              onSubmit={handleSubmit}
-            >
-              <legend>{t("title.newOrganization")}</legend>
-              <dl>
-                <dt>
-                  <div className="n-alert" data-errtype="name">
-                    <div className="orange-txt">
-                      {warning ? (
+    <>
+      <title>{t("app.name")}</title>
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <div className="page-wrap-outer">
+          <div className="project-page-wrap">
+            <div className="form-wrap new-project">
+              <form
+                action={prefixBasePath(runtimeConfig.basePath, "/organizations/new")}
+                method="post"
+                name="new-org"
+                className="frm-wrap"
+                onSubmit={handleSubmit}
+              >
+                <legend>{t("title.newOrganization")}</legend>
+                <dl>
+                  <dt>
+                    <div className="n-alert" data-errtype="name">
+                      <div className="orange-txt">
+                        {warning ? (
+                          <span
+                            className="warning"
+                            style={nameError ? { display: "none" } : undefined}
+                          >
+                            {t(warning)}
+                          </span>
+                        ) : null}
                         <span
-                          className="warning"
-                          style={nameError ? { display: "none" } : undefined}
+                          className="msg wrongName"
+                          style={nameError ? undefined : { display: "none" }}
                         >
-                          {t(warning)}
+                          {nameError}
                         </span>
-                      ) : null}
-                      <span
-                        className="msg wrongName"
-                        style={nameError ? undefined : { display: "none" }}
-                      >
-                        {nameError}
-                      </span>
+                      </div>
                     </div>
-                  </div>
-                  <label htmlFor="name">{t("organization.name.placeholder")}</label>
-                </dt>
-                <dd>
-                  <input
-                    ref={nameInputRef}
-                    id="name"
-                    type="text"
-                    name="name"
-                    className="text"
-                    placeholder=""
-                    maxLength={250}
-                    defaultValue=""
-                  />
-                </dd>
+                    <label htmlFor="name">{t("organization.name.placeholder")}</label>
+                  </dt>
+                  <dd>
+                    <input
+                      ref={nameInputRef}
+                      id="name"
+                      type="text"
+                      name="name"
+                      className="text"
+                      placeholder=""
+                      maxLength={250}
+                      defaultValue=""
+                    />
+                  </dd>
 
-                <dt>
-                  <label htmlFor="descr">{t("organization.description.placeholder")}</label>
-                </dt>
-                <dd>
-                  <textarea
-                    id="descr"
-                    name="descr"
-                    className="text textarea.span4"
-                    style={{ resize: "vertical" }}
-                    defaultValue=""
-                  />
-                </dd>
-              </dl>
-              <div className="actions">
-                <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
-                  <i className="yobicon-friends" /> {t("organization.create")}
-                </button>
-                <MountedRootLink
-                  activeOptions={{ exact: true }}
-                  activeProps={legacyAnchorActiveProps}
-                  className="ybtn"
-                  legacyHref={cancelHref}
-                  onClick={handleCancelClick}
-                  to="/"
-                >
-                  {t("button.cancel")}
-                </MountedRootLink>
-              </div>
-            </form>
+                  <dt>
+                    <label htmlFor="descr">{t("organization.description.placeholder")}</label>
+                  </dt>
+                  <dd>
+                    <textarea
+                      id="descr"
+                      name="descr"
+                      className="text textarea.span4"
+                      style={{ resize: "vertical" }}
+                      defaultValue=""
+                    />
+                  </dd>
+                </dl>
+                <div className="actions">
+                  <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
+                    <i className="yobicon-friends" /> {t("organization.create")}
+                  </button>
+                  <MountedRootLink
+                    activeOptions={{ exact: true }}
+                    activeProps={legacyAnchorActiveProps}
+                    className="ybtn"
+                    legacyHref={cancelHref}
+                    onClick={handleCancelClick}
+                    to="/"
+                  >
+                    {t("button.cancel")}
+                  </MountedRootLink>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-    </SiteLayoutShell>
+      </SiteLayoutShell>
+    </>
   );
 }
