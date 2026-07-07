@@ -5,14 +5,19 @@ const EXPECTED_BRANCHES_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><table class="table branch-list-wrap"><thead class="thead"><tr><th>Branches</th><th>Latest commit</th><th>Latest pull request</th><th></th></tr></thead><tbody><tr class="head"><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/main">main</a><span class="headBranch ml10">Default branch</span></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/main" class="commitId" title="abcdef1234567890">abcdef1</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 1, 2026">Jul 1, 2026</span></td><td class="pullRequest"><span class="disabled">No pull request has been sent</span></td><td class="actions"></td></tr><tr><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/feature%2Frelease">release</a></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/feature%2Frelease" class="commitId" title="1234567890abcdef">1234567</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 2, 2026">Jul 2, 2026</span></td><td class="pullRequest"><a href="__BASE_PATH__/admin/sample/pullRequest/3" class="blue-txt pullrequest-state open" data-toggle="tooltip" data-placement="top" title="Open">pullRequest-3</a></td><td class="actions"><button type="button" class="ybtn ybtn-default ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/setAsDefault">Set as default branch</button><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/">Delete</button></td></tr></tbody></table></div></div></div></div>
 `;
 
-const EXPECTED_NON_GIT_BRANCHES_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
-`;
-
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/branches.tsx", import.meta.url),
   "utf8",
 );
+
+function expectedSvnBranchesBadRequest(basePath: string) {
+  return `
+<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
+<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
+<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
+`.replaceAll("__BASE_PATH__", basePath);
+}
 
 test("project code branches matches legacy code/branches.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -241,32 +246,59 @@ test("project code branch links navigate through the SPA router", async ({ page 
     .toBe("kept");
 });
 
-test("project non-git branches renders the legacy git-only bad-request shell", async ({ page }) => {
+test("svn project branches route matches legacy badrequest_default site shell", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const unexpectedBranchRequests: string[] = [];
   await mockProjectBranches(page, [], [], {
     branchRequestMethods: unexpectedBranchRequests,
     branchRouteStatus: 500,
+    ownerName: "admin",
+    projectName: "svnplayground",
     projectVcs: "SVN",
   });
 
-  await page.goto(`${basePath}/admin/sample/branches`);
+  await page.goto(`${basePath}/admin/svnplayground/branches`);
 
+  await expect(page).toHaveTitle("This request is only supported in a git project.");
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator(".gnb-nav a.show-progress-bar")).toHaveText("List All");
+  await expect(page.locator(".gnb-nav a.show-progress-bar")).toHaveAttribute(
+    "href",
+    `${basePath}/projects`,
+  );
+  await expect(
+    page.locator('.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]'),
+  ).toHaveText("Feedback");
+  await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
+  await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
   await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText(
     "This request is only supported in a git project.",
   );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveText("Home");
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", basePath);
-  await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
+  await expect(page.locator("#search")).toHaveCount(0);
   await expect(page.locator(".code-browse-wrap")).toHaveCount(0);
   await expect(page.locator(".branch-list-wrap")).toHaveCount(0);
   expect(unexpectedBranchRequests).toEqual([]);
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(
-      page,
-      EXPECTED_NON_GIT_BRANCHES_BODY.replaceAll("__BASE_PATH__", basePath),
-    ),
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(page, expectedSvnBranchesBadRequest(basePath)),
   );
+  expect(await readBranchesBadRequestMetrics(page)).toEqual({
+    errorTextAlign: "center",
+    gnbBackground: "rgb(27, 27, 27)",
+    gnbClassName: "gnb-outer",
+    homeButtonClassName: "ybtn ybtn-info",
+    messageColor: "rgb(137, 137, 137)",
+    messageFontSize: "16px",
+    pageWrapMarginTop: "10px",
+    pageWrapMinHeight: "450px",
+  });
 });
 
 test("project code branches route uses Link for internal anchors", () => {
@@ -586,6 +618,125 @@ async function readProjectBranchesShellMetrics(page: Page) {
         throw new Error(`Missing ${selector}`);
       }
       return element;
+    }
+  });
+}
+
+async function readBranchesBadRequestMetrics(page: Page) {
+  return page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
+    const message = errorWrap?.querySelector<HTMLElement>("p");
+    const homeButton = errorWrap?.querySelector<HTMLElement>("a.ybtn.ybtn-info");
+    const missing = Object.entries({ errorWrap, header, homeButton, message, pageWrap })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected branches bad-request metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    return {
+      errorTextAlign: window.getComputedStyle(errorWrap).textAlign,
+      gnbBackground: window.getComputedStyle(header).backgroundColor,
+      gnbClassName: header.className,
+      homeButtonClassName: homeButton.className,
+      messageColor: window.getComputedStyle(message).color,
+      messageFontSize: window.getComputedStyle(message).fontSize,
+      pageWrapMarginTop: window.getComputedStyle(pageWrap).marginTop,
+      pageWrapMinHeight: window.getComputedStyle(pageWrap).minHeight,
+    };
+  });
+}
+
+async function canonicalizeScreenRoots(page: Page) {
+  return page.evaluate(() => {
+    const roots = Array.from(
+      document.querySelectorAll(
+        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+      ),
+    );
+    return roots.map((root) => visit(root)).join("");
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter(
+          (attr) =>
+            !isModernizedTanStackRouterAttr(attr) &&
+            !isEmptyModernizedTanStackRouterActiveClass(attr) &&
+            attr.name !== "alt",
+        )
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      if (isModernizedSiteLogoHref(attr)) {
+        return attr.value.replace(/\/$/u, "");
+      }
+      if (isModernizedTanStackRouterActiveClass(attr)) {
+        return modernizedTanStackRouterActiveClass(attr);
+      }
+      return attr.name === "style"
+        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+        : attr.value;
+    }
+
+    function isModernizedTanStackRouterAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "aria-current" ||
+        attr.name === "data-status"
+      );
+    }
+
+    function isModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        attr.name === "class" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.hasAttribute("data-status")
+      );
+    }
+
+    function isEmptyModernizedTanStackRouterActiveClass(attr: Attr) {
+      return (
+        isModernizedTanStackRouterActiveClass(attr) &&
+        modernizedTanStackRouterActiveClass(attr) === ""
+      );
+    }
+
+    function modernizedTanStackRouterActiveClass(attr: Attr) {
+      return attr.value
+        .split(/\s+/u)
+        .filter((token) => token && token !== "active")
+        .join(" ");
+    }
+
+    function isModernizedSiteLogoHref(attr: Attr) {
+      return (
+        attr.name === "href" &&
+        attr.ownerElement instanceof HTMLAnchorElement &&
+        attr.ownerElement.classList.contains("logo-letter")
+      );
     }
   });
 }

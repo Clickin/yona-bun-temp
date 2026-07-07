@@ -37,21 +37,35 @@ function ProjectBranchesRoute() {
 
 function ProjectBranchesRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  useProjectBranchesDocumentTitle(runtimeConfig, ownerName, projectName);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
+  const project = projectQuery.data;
+
+  if (!project) {
+    return null;
+  }
+
+  if (project.vcs !== "GIT") {
+    return (
+      <ProjectBranchesBadRequestRouteShell
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectBranchesScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+    <SiteLayoutShell
+      projectSearchScope={{
+        organizationName: projectSearchScopeOrganizationName(project, ownerName),
+        ownerName,
+        projectName,
+      }}
+      runtimeConfig={runtimeConfig}
+    >
+      <ProjectBranchesScreen project={project} runtimeConfig={runtimeConfig} />
     </SiteLayoutShell>
   );
 }
@@ -60,9 +74,11 @@ function useProjectBranchesDocumentTitle(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
+  isGitProject: boolean,
 ) {
   const { t } = useLegacyMessages();
   const branchesTitle = t("title.branches");
+  const badRequestOnlyForGit = t("error.badrequest.only.available.for.git");
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -70,42 +86,64 @@ function useProjectBranchesDocumentTitle(
     }
 
     const siteName = runtimeConfig.siteName ?? "Yona";
-    document.title = `${branchesTitle} - ${ownerName}/${projectName}`;
+    document.title = isGitProject
+      ? `${branchesTitle} - ${ownerName}/${projectName}`
+      : badRequestOnlyForGit;
 
     return () => {
       document.title = siteName;
     };
-  }, [branchesTitle, ownerName, projectName, runtimeConfig.siteName]);
+  }, [
+    badRequestOnlyForGit,
+    branchesTitle,
+    isGitProject,
+    ownerName,
+    projectName,
+    runtimeConfig.siteName,
+  ]);
+}
+
+function ProjectBranchesBadRequestRouteShell({
+  ownerName,
+  projectName,
+  runtimeConfig,
+}: {
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  useProjectBranchesDocumentTitle(runtimeConfig, ownerName, projectName, false);
+
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
+      <ProjectBranchesBadRequestBody runtimeConfig={runtimeConfig} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectBranchesBadRequestBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <DefaultSearchErrorBody
+      iconClassName="ico-404"
+      messageKey="error.badrequest.only.available.for.git"
+      runtimeConfig={runtimeConfig}
+      ybtnClassName="ybtn ybtn-info"
+    />
+  );
 }
 
 function ProjectBranchesScreen({
   project,
   runtimeConfig,
 }: {
-  project: ProjectContainer | undefined;
+  project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
-  const isGitProject = project?.vcs === "GIT";
-  const branchesQuery = useQuery({
-    ...codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
-    enabled: isGitProject,
-  });
-
-  if (!project) {
-    return null;
-  }
-
-  if (!isGitProject) {
-    return (
-      <DefaultSearchErrorBody
-        iconClassName="ico-404"
-        messageKey="error.badrequest.only.available.for.git"
-        runtimeConfig={runtimeConfig}
-        ybtnClassName="ybtn ybtn-info"
-      />
-    );
-  }
+  useProjectBranchesDocumentTitle(runtimeConfig, ownerName, projectName, true);
+  const branchesQuery = useQuery(
+    codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
 
   if (!branchesQuery.data) {
     return null;
