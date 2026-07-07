@@ -143,7 +143,11 @@ function IssueListPagination({
 
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
-  const pageSearch = (pageNum: number) => ({ ...search, state, pageNum });
+  const pageSearch = (targetPageNum: number): IssueListSearch => ({
+    ...search,
+    pageNum: targetPageNum,
+    state,
+  });
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
       return;

@@ -416,6 +416,149 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(routeSource).toContain('pjax-page=""');
 });
 
+test("site admin issue list renders legacy closed issue rows with closed pagination state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const issueRequests = await mockIssues(page, {
+    authorAvatarUrl: "/avatars/closed-author.png",
+    authorLabel: "Bob Display",
+    authorLoginId: "bob",
+    authorName: "Bob Legal Name",
+    commentCount: 8,
+    createdLabel: "2 days ago",
+    createdTitle: "2026-06-28 09:15",
+    issueNumber: "77",
+    ownerName: "beta",
+    projectLogoUrl: "/logos/closed-roadmap.png",
+    projectName: "archive",
+    state: "closed",
+    title: "Close archived task",
+    totalPages: 3,
+  });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=closed&pageNum=1`);
+
+  await expect.poll(() => issueRequests).toEqual([{ page: "1", state: "closed" }]);
+  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Closed");
+  await expect(page.locator(".span10 > .nav.nav-tabs li").first()).toHaveClass("");
+  await expect(page.locator(".span10 > .nav.nav-tabs li").nth(1)).toHaveClass("active");
+  expect(await legacyLinkSnapshot(page, ".span10 > .nav.nav-tabs a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=open`,
+      pjaxPage: null,
+      text: "Open",
+      title: null,
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=closed`,
+      pjaxPage: null,
+      text: "Closed",
+      title: null,
+    },
+  ]);
+
+  const row = page.locator(".post-list-wrap .listitem");
+  await expect(row).toHaveCount(1);
+  await expect(row.locator(".list-avatar")).toHaveAttribute("href", `${basePath}/beta/archive`);
+  await expect(row.locator(".list-avatar img")).toHaveAttribute("src", "/logos/closed-roadmap.png");
+  await expect(row.locator(".list-avatar img")).toHaveAttribute("alt", "archive");
+  await expect(row.locator(".post-project")).toHaveAttribute("href", `${basePath}/beta/archive`);
+  await expect(row.locator(".post-project")).toHaveText("beta/archive");
+  await expect(row.locator(".post-title")).toHaveAttribute(
+    "href",
+    `${basePath}/beta/archive/issue/77`,
+  );
+  await expect(row.locator(".post-title")).toHaveText("Close archived task");
+  await expect(row.locator(".post-meta-wrap > .avatar-wrap")).toHaveAttribute(
+    "href",
+    `${basePath}/bob`,
+  );
+  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute(
+    "src",
+    "/avatars/closed-author.png",
+  );
+  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute(
+    "alt",
+    "Bob Legal Name",
+  );
+  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute("width", "16");
+  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute("height", "16");
+  await expect(row.locator(".post-meta-wrap > .post-meta-item").first()).toHaveAttribute(
+    "href",
+    `${basePath}/bob`,
+  );
+  await expect(row.locator(".post-meta-wrap > .post-meta-item").first()).toHaveText("Bob Display");
+  await expect(row.locator(".post-meta-wrap > .post-meta-item").nth(1)).toHaveAttribute(
+    "title",
+    "2026-06-28 09:15",
+  );
+  await expect(row.locator(".post-meta-wrap > .post-meta-item").nth(1)).toHaveText("2 days ago");
+  await expect(row.locator(".post-comments a")).toHaveAttribute(
+    "href",
+    `${basePath}/beta/archive/issue/77#comments`,
+  );
+  await expect(row.locator(".post-comments a")).toHaveText("8");
+  await expect(row.locator(".post-comments .yobicon-comments")).toHaveCount(1);
+
+  await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
+  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  const nextHref = await nextPageLink.getAttribute("href");
+  expect(new URL(nextHref ?? "", "http://yona.test").pathname).toBe(`${basePath}/sites/issueList`);
+  expect(new URL(nextHref ?? "", "http://yona.test").searchParams.get("pageNum")).toBe("2");
+  expect(new URL(nextHref ?? "", "http://yona.test").searchParams.get("state")).toBe("closed");
+
+  await page.evaluate(() => {
+    (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "site-issues-closed-pagination";
+  });
+  await nextPageLink.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
+  await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
+  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Closed");
+  const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
+  const previousHref = await previousPageLink.getAttribute("href");
+  expect(new URL(previousHref ?? "", "http://yona.test").searchParams.get("pageNum")).toBe("1");
+  expect(new URL(previousHref ?? "", "http://yona.test").searchParams.get("state")).toBe("closed");
+  expect(
+    await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
+  ).toBe("site-issues-closed-pagination");
+
+  expect(await closedIssueListLayoutMetrics(page)).toEqual({
+    contentContainsPagination: true,
+    contentContainsRow: true,
+    metaStaysInsideRow: true,
+    paginationBelowRow: true,
+    rowInsideContent: true,
+    rowLinkOrder: [
+      "list-avatar",
+      "post-project",
+      "post-title",
+      "avatar-wrap",
+      "post-meta-item",
+      "",
+    ],
+    tabsBelowTitle: true,
+    titleTabsNoOverlap: true,
+  });
+});
+
 test("site admin issue list renders legacy update notification badge", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
@@ -577,7 +720,26 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockIssues(page: Page, overrides: { projectLogoUrl?: string } = {}) {
+type MockIssueOverrides = {
+  authorAvatarUrl?: string;
+  authorLabel?: string;
+  authorLoginId?: string;
+  authorName?: string;
+  commentCount?: number;
+  createdLabel?: string;
+  createdTitle?: string;
+  issueNumber?: string;
+  ownerName?: string;
+  projectLogoUrl?: string;
+  projectName?: string;
+  state?: "open" | "closed";
+  title?: string;
+  totalPages?: number;
+};
+
+async function mockIssues(page: Page, overrides: MockIssueOverrides = {}) {
+  const requests: Array<{ page: string; state: string | null }> = [];
+
   await page.route("https://www.gravatar.com/avatar/alice-default?s=16", async (route) => {
     await route.fulfill({
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
@@ -589,26 +751,34 @@ async function mockIssues(page: Page, overrides: { projectLogoUrl?: string } = {
     const url = new URL(route.request().url());
     const pageNum =
       Number(url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1") || 1;
+    const state =
+      overrides.state ?? (url.searchParams.get("state") === "closed" ? "closed" : "open");
+    requests.push({
+      page: String(pageNum),
+      state: url.searchParams.get("state"),
+    });
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         issues: [
           {
             assigneeLabel: "",
-            authorAvatarUrl: "https://www.gravatar.com/avatar/alice-default?s=16",
-            authorLabel: "Alice",
-            authorLoginId: "alice",
-            commentCount: 5,
-            createdLabel: "1 day ago",
-            createdTitle: "2026-06-29 13:00",
-            issueNumber: "42",
+            authorAvatarUrl:
+              overrides.authorAvatarUrl ?? "https://www.gravatar.com/avatar/alice-default?s=16",
+            authorLabel: overrides.authorLabel ?? "Alice",
+            authorLoginId: overrides.authorLoginId ?? "alice",
+            authorName: overrides.authorName,
+            commentCount: overrides.commentCount ?? 5,
+            createdLabel: overrides.createdLabel ?? "1 day ago",
+            createdTitle: overrides.createdTitle ?? "2026-06-29 13:00",
+            issueNumber: overrides.issueNumber ?? "42",
             labels: [],
             milestoneTitle: "",
-            ownerName: "acme",
+            ownerName: overrides.ownerName ?? "acme",
             projectLogoUrl: overrides.projectLogoUrl ?? "/assets/images/default-project-logo.png",
-            projectName: "roadmap",
-            state: "open",
-            title: "Fix release blocker",
+            projectName: overrides.projectName ?? "roadmap",
+            state,
+            title: overrides.title ?? "Fix release blocker",
             updatedLabel: "1 day ago",
             voterCount: 0,
             watcherCount: 0,
@@ -616,12 +786,14 @@ async function mockIssues(page: Page, overrides: { projectLogoUrl?: string } = {
         ],
         page: pageNum,
         pageSize: 20,
-        state: "open",
-        total: 2,
-        totalPages: 2,
+        state,
+        total: overrides.totalPages ?? 2,
+        totalPages: overrides.totalPages ?? 2,
       }),
     });
   });
+
+  return requests;
 }
 
 async function mockIssuesWithCustomAuthorAvatar(page: Page) {
@@ -736,6 +908,50 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
       title: link.getAttribute("title"),
     })),
   );
+}
+
+async function closedIssueListLayoutMetrics(page: Page) {
+  return page.evaluate(() => {
+    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const titleArea = requireElement(".title_area");
+    const tabs = requireElement(".span10 > .nav.nav-tabs");
+    const row = requireElement(".post-list-wrap .listitem");
+    const meta = requireElement(".post-meta-wrap");
+    const pagination = requireElement("#pagination");
+    const contentRect = content.getBoundingClientRect();
+    const titleAreaRect = titleArea.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const metaRect = meta.getBoundingClientRect();
+    const paginationRect = pagination.getBoundingClientRect();
+
+    return {
+      contentContainsPagination:
+        paginationRect.left >= contentRect.left &&
+        paginationRect.right <= contentRect.right &&
+        paginationRect.bottom <= contentRect.bottom,
+      contentContainsRow: rowRect.left >= contentRect.left && rowRect.right <= contentRect.right,
+      metaStaysInsideRow: metaRect.left >= rowRect.left && metaRect.right <= rowRect.right,
+      paginationBelowRow: paginationRect.top >= rowRect.bottom,
+      rowInsideContent: rowRect.top >= contentRect.top && rowRect.bottom <= contentRect.bottom,
+      rowLinkOrder: Array.from(row.querySelectorAll("a")).map((link) => {
+        if (link.classList.contains("list-avatar")) {
+          return "list-avatar";
+        }
+        return link.getAttribute("class") ?? "";
+      }),
+      tabsBelowTitle: tabsRect.top >= titleAreaRect.bottom,
+      titleTabsNoOverlap: titleAreaRect.bottom <= tabsRect.top,
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
 }
 
 async function issueListMetrics(page: Page) {
