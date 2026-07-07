@@ -63,6 +63,8 @@ test("current-user notification settings page matches legacy user/edit_notificat
 
   await page.goto(`${basePath}/user/editform/notifications#7`);
   await expect(page.locator("#notification-projects")).toBeAttached();
+  await expect(page).toHaveTitle("admin");
+  expect(await page.locator("head > title").first().textContent()).toBe("admin");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(page, expectedScreen(basePath, "7"));
@@ -212,7 +214,9 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
   expect(source).not.toContain("window.location");
+  expect(source).not.toContain("document.title");
   expect(source).not.toContain("document.location");
+  expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("globalThis.location");
   expect(source).not.toContain("location.hash");
   expect(source).not.toContain("location.href");
@@ -223,9 +227,14 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).toContain("useLocation");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
+  expect(source).toContain("<UserNotificationSettingsTitle loginId={loginId} />");
+  expect(source).toContain("return loginId ? <title>{loginId}</title> : null;");
   expect(source.match(/activeProps={legacyEditTabLinkActiveProps}/g)).toHaveLength(6);
   expect(source.match(/activeOptions={legacyEditTabLinkActiveOptions}/g)).toHaveLength(6);
   expect(source.match(/search={legacyEditTabLinkInactiveSearch}/g)).toHaveLength(6);
+  expect(source.match(/<title>/g)).toHaveLength(1);
+  expect(source).not.toMatch(/useEffect\s*\([^)]*title/s);
+  expect(source).not.toMatch(/\.(?:title|textContent|innerText)\s*=\s*loginId/);
 });
 
 async function mockAuthenticatedSession(page: Page) {

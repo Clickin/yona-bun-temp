@@ -89,6 +89,10 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
     queryKey: ["workspace", "overview"],
   });
+  const loginId =
+    typeof workspaceQuery.data?.profile?.loginId === "string"
+      ? workspaceQuery.data.profile.loginId
+      : "";
   const watchedProjects = (workspaceQuery.data?.watchedProjects ?? []) as WatchedProjectRow[];
   const routeHashProjectId = normalizeProjectHash(routeLocation.hash);
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -117,6 +121,7 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
 
   return (
     <>
+      <UserNotificationSettingsTitle loginId={loginId} />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
           <h3>{t("userinfo.accountSetting")}</h3>
@@ -203,6 +208,10 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
       </div>
     </>
   );
+}
+
+function UserNotificationSettingsTitle({ loginId }: { loginId: string }) {
+  return loginId ? <title>{loginId}</title> : null;
 }
 
 function activeProjectIdFromHash(watchedProjects: WatchedProjectRow[], hashProjectId: string) {
