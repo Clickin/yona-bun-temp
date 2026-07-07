@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type MouseEvent } from "react";
 import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, YonaRecord } from "../../../../../api/types";
@@ -158,6 +158,18 @@ function ProjectIssueEditFormBody({
   const authorId = stringField(issueRecord.authorId, "");
   const viewerUserId = stringField(issueRecord.viewerUserId, "");
   const showNotification = !isDraft && authorId !== "" && authorId === viewerUserId;
+  const draftPublishDescription = t("button.draft.publish.description");
+  const draftSaveDescription = t("button.draft.save.description");
+
+  function handleDraftPublishClick(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    submitIntentRef.current = "save";
+    if (!confirm(draftPublishDescription)) {
+      return;
+    }
+    submitIntentRef.current = "publish";
+    event.currentTarget.form?.requestSubmit();
+  }
 
   return (
     <div className="page-wrap-outer">
@@ -272,9 +284,8 @@ function ProjectIssueEditFormBody({
                           type="submit"
                           id="button-draft-publish"
                           className="ybtn ybtn-info"
-                          onClick={() => {
-                            submitIntentRef.current = "publish";
-                          }}
+                          title={draftPublishDescription}
+                          onClick={handleDraftPublishClick}
                         >
                           {t("button.draft.publish")}
                         </button>
@@ -282,6 +293,7 @@ function ProjectIssueEditFormBody({
                           type="button"
                           id="draft-save-btn"
                           className="ybtn ybtn-watching draft-save-btn"
+                          title={draftSaveDescription}
                           onClick={(event) => {
                             submitIntentRef.current = "draft";
                             event.currentTarget.form?.requestSubmit();

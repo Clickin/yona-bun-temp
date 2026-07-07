@@ -392,7 +392,16 @@ test("project issue draft edit form submits legacy draft save and publish flags"
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let updateRequests = 0;
   await mockProjectIssueEditForm(page, { issue: { isDraft: true, title: "Editable draft issue" } });
+  page.on("request", (request) => {
+    if (
+      request.method() === "PUT" &&
+      request.url().includes("/api/v1/projects/admin/sample/issues/1")
+    ) {
+      updateRequests += 1;
+    }
+  });
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
   await expect(page.locator("#issue-form")).toBeVisible();
@@ -401,8 +410,16 @@ test("project issue draft edit form submits legacy draft save and publish flags"
   await expect(page.locator("#isPublish")).toHaveValue("false");
   await expect(page.locator("#button-draft-publish")).toHaveClass("ybtn ybtn-info");
   await expect(page.locator("#button-draft-publish")).toHaveText("Publish");
+  await expect(page.locator("#button-draft-publish")).toHaveAttribute(
+    "title",
+    "Publish issue. Notification will be sent.",
+  );
   await expect(page.locator("#draft-save-btn")).toHaveClass("ybtn ybtn-watching draft-save-btn");
   await expect(page.locator("#draft-save-btn")).toHaveText("Draft Save");
+  await expect(page.locator("#draft-save-btn")).toHaveAttribute(
+    "title",
+    "Only you can see it until you publish",
+  );
   await expect(page.locator("#button-save")).toHaveCount(0);
   await expect(page.locator(".send-notification-check")).toHaveCount(0);
 
@@ -415,8 +432,24 @@ test("project issue draft edit form submits legacy draft save and publish flags"
   const draftSaveBody = (await draftSaveRequest).postDataJSON() as Record<string, unknown>;
   expect(draftSaveBody.isDraft).toBe(true);
   expect(draftSaveBody.isPublish).toBe(false);
+  await expect.poll(() => updateRequests).toBe(1);
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  let cancelConfirmMessage = "";
+  page.once("dialog", async (dialog) => {
+    cancelConfirmMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#button-draft-publish").click();
+  expect(cancelConfirmMessage).toBe("Publish issue. Notification will be sent.");
+  await page.waitForTimeout(250);
+  expect(updateRequests).toBe(1);
+
+  let acceptConfirmMessage = "";
+  page.once("dialog", async (dialog) => {
+    acceptConfirmMessage = dialog.message();
+    await dialog.accept();
+  });
   const publishRequest = page.waitForRequest(
     (request) =>
       request.method() === "PUT" &&
@@ -424,12 +457,25 @@ test("project issue draft edit form submits legacy draft save and publish flags"
   );
   await page.locator("#button-draft-publish").click();
   const publishBody = (await publishRequest).postDataJSON() as Record<string, unknown>;
+  expect(acceptConfirmMessage).toBe("Publish issue. Notification will be sent.");
   expect(publishBody.isDraft).toBe(false);
   expect(publishBody.isPublish).toBe(true);
+  await expect.poll(() => updateRequests).toBe(2);
 
   expect(ROUTE_SOURCE).not.toMatch(/querySelector<HTMLInputElement>\("#isDraft"\)/u);
+  expect(ROUTE_SOURCE).not.toMatch(/querySelector<HTMLInputElement>\("#isPublish"\)/u);
   expect(ROUTE_SOURCE).not.toMatch(/setAttribute\("value", "true"\)/u);
+  expect(ROUTE_SOURCE).not.toMatch(
+    /\$\("#is(?:Draft|Publish)"\)|document\.|classList|style\.display/u,
+  );
   expect(ROUTE_SOURCE).toContain('id="draft-save-btn"');
+  expect(ROUTE_SOURCE).toContain(
+    'const draftPublishDescription = t("button.draft.publish.description")',
+  );
+  expect(ROUTE_SOURCE).toContain('const draftSaveDescription = t("button.draft.save.description")');
+  expect(ROUTE_SOURCE).toContain("function handleDraftPublishClick");
+  expect(ROUTE_SOURCE).toContain("confirm(draftPublishDescription)");
+  expect(ROUTE_SOURCE).not.toContain("window.confirm(");
   expect(ROUTE_SOURCE).toContain("requestSubmit()");
 });
 
