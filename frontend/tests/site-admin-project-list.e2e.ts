@@ -583,6 +583,41 @@ test("site admin project list renders legacy update notification badge", async (
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
 });
 
+test("site admin project list falls back to the legacy default project logo for blank logo URLs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+    }
+  });
+  await mockSiteAdminSession(page);
+  await mockProjects(page, {
+    projectLogoUrl: "",
+  });
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/projectList?filter=road`);
+
+  await expect(page.locator(".project-list-wrap .list-avatar img")).toHaveAttribute(
+    "src",
+    "/assets/images/project_default_logo.png",
+  );
+  expect(
+    consoleErrors.filter((entry) =>
+      entry.includes('An empty string ("") was passed to the %s attribute.'),
+    ),
+  ).toEqual([]);
+});
+
 test("site admin project list uses direct typed links", () => {
   const routeSource = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
 
@@ -698,18 +733,27 @@ async function mockSiteAdminSession(page: Page) {
   });
 }
 
-async function mockProjects(page: Page) {
+async function mockProjects(
+  page: Page,
+  overrides: Partial<{
+    createdAt: string;
+    ownerName: string;
+    overview: string;
+    projectLogoUrl: string;
+    projectName: string;
+  }> = {},
+) {
   const requests = {
     deletedProjectIds: [] as string[],
   };
   const projects = [
     {
-      createdAt: "2026-06-29",
+      createdAt: overrides.createdAt ?? "2026-06-29",
       id: 77,
-      ownerName: "acme",
-      overview: "Release planning",
-      projectLogoUrl: "/assets/images/default-project-logo.png",
-      projectName: "roadmap",
+      ownerName: overrides.ownerName ?? "acme",
+      overview: overrides.overview ?? "Release planning",
+      projectLogoUrl: overrides.projectLogoUrl ?? "/assets/images/default-project-logo.png",
+      projectName: overrides.projectName ?? "roadmap",
     },
   ];
   let total = 2;

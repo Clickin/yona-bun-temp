@@ -446,6 +446,8 @@ function ProjectListItem({
   project: SiteProject;
   runtimeConfig: RuntimeConfig;
 }) {
+  const projectLogoUrl = project.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
+
   return (
     <li className="row-fluid listitem">
       <div className="span5 listitem-col">
@@ -454,7 +456,7 @@ function ProjectListItem({
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
           className="avatar-wrap list-avatar"
         >
-          <img src={project.projectLogoUrl} alt={project.projectName} /> {project.ownerName}/
+          <img src={projectLogoUrl} alt={project.projectName} /> {project.ownerName}/
           {project.projectName}
         </Link>
         <Link
