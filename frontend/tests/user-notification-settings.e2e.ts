@@ -211,8 +211,16 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("<a");
   expect(source).not.toContain("setAttribute");
   expect(source).not.toContain("removeAttribute");
+  expect(source).not.toContain("window.location");
+  expect(source).not.toContain("document.location");
+  expect(source).not.toContain("globalThis.location");
+  expect(source).not.toContain("location.hash");
+  expect(source).not.toContain("location.href");
+  expect(source).not.toContain("location.pathname");
+  expect(source).not.toContain("location.search");
   expect(source).not.toContain("to={href}");
   expect(source).not.toContain("activeProps={{ className: undefined }}");
+  expect(source).toContain("useLocation");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
   expect(source.match(/activeProps={legacyEditTabLinkActiveProps}/g)).toHaveLength(6);
@@ -286,7 +294,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="${basePath}/" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
       <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">

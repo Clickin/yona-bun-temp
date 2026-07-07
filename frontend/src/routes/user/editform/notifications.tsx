@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readWorkspaceOverviewRest, toggleWorkspaceNotificationRest } from "../../../api/workspace";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -83,14 +83,22 @@ function UserNotificationSettingsRoute() {
 
 function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const routeLocation = useLocation();
   const queryClient = useQueryClient();
   const workspaceQuery = useQuery({
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
     queryKey: ["workspace", "overview"],
   });
   const watchedProjects = (workspaceQuery.data?.watchedProjects ?? []) as WatchedProjectRow[];
+  const routeHashProjectId = normalizeProjectHash(routeLocation.hash);
   const [selectedProjectId, setSelectedProjectId] = useState("");
-  const activeProjectId = selectedProjectId || activeProjectIdFromHash(watchedProjects);
+  useEffect(() => {
+    setSelectedProjectId("");
+  }, [routeHashProjectId]);
+  const activeProjectId = activeProjectIdFromHash(
+    watchedProjects,
+    selectedProjectId || routeHashProjectId,
+  );
   const toggleMutation = useMutation({
     mutationFn: async (input: { checked: boolean; eventType: string; projectId: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -197,12 +205,15 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
   );
 }
 
-function activeProjectIdFromHash(watchedProjects: WatchedProjectRow[]) {
+function activeProjectIdFromHash(watchedProjects: WatchedProjectRow[], hashProjectId: string) {
   const firstProjectId = stringValue(watchedProjects[0]?.projectId);
-  const hashProjectId = typeof window === "undefined" ? "" : window.location.hash.replace(/^#/, "");
   return watchedProjects.some((project) => stringValue(project.projectId) === hashProjectId)
     ? hashProjectId
     : firstProjectId;
+}
+
+function normalizeProjectHash(hash: string) {
+  return hash.replace(/^#/, "");
 }
 
 function isNotificationEnabled(notifications: NotificationRow[], eventType: string) {
