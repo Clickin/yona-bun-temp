@@ -12,7 +12,7 @@ const ROUTE_SOURCE = readFileSync(
 function withLegacyEditor(html: string, markdownHelpHtml: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -45,11 +45,8 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   const issueEditFormUrl = page.url();
   const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
-  await expect(scopeButtons.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/admin/sample/search`,
-  );
-  await expect(scopeButtons.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+  await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.nth(1).click();
   await expect(page).toHaveURL(issueEditFormUrl);
@@ -104,6 +101,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   expect(ROUTE_SOURCE).not.toMatch(
     /document\.|globalThis\["document"\]|window\.parent\.document|addEventListener|classList|style\.display|href="javascript:/u,
   );
+  expect(ROUTE_SOURCE).not.toMatch(/data-toggle="tab"/u);
   expect(ROUTE_SOURCE).toContain(
     '<title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>',
   );
@@ -130,17 +128,34 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(
     page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
   ).toHaveCount(0);
+  await expect(
+    page.locator('[data-toggle="markdown-editor"] .nav-tabs [data-toggle="tab"]'),
+  ).toHaveCount(0);
   const editTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-toggle="tab"][data-mode="edit"]',
+    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
   );
   const previewTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-toggle="tab"][data-mode="preview"]',
+    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
   );
+  await expect(page.locator('[data-toggle="markdown-editor"] .nav-tabs > li > button')).toHaveText([
+    "Edit",
+    "Preview",
+  ]);
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
+  const editorMetrics = await issueEditorMetrics(page);
+  expect(editorMetrics).not.toBeNull();
+  expect(editorMetrics!.tabs.top).toBeGreaterThanOrEqual(editorMetrics!.editor.top);
+  expect(editorMetrics!.tabs.left).toBeGreaterThanOrEqual(editorMetrics!.editor.left);
+  expect(editorMetrics!.tabs.right).toBeLessThanOrEqual(editorMetrics!.editor.right);
+  expect(editorMetrics!.tabContent.top).toBeGreaterThanOrEqual(editorMetrics!.tabs.bottom - 1);
+  expect(editorMetrics!.editPane.left).toBeCloseTo(editorMetrics!.tabContent.left, 0);
+  expect(editorMetrics!.editPane.right).toBeCloseTo(editorMetrics!.tabContent.right, 0);
+  expect(editorMetrics!.textarea.left).toBeGreaterThanOrEqual(editorMetrics!.editPane.left);
+  expect(editorMetrics!.textarea.right).toBeLessThanOrEqual(editorMetrics!.editPane.right);
   const markdownHelp = page.locator(
     '[data-toggle="markdown-editor"] > .tab-content > .markdown-help',
   );
@@ -186,6 +201,12 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
+  const previewMetrics = await issueEditorMetrics(page);
+  expect(previewMetrics).not.toBeNull();
+  expect(previewMetrics!.previewPane.left).toBeGreaterThanOrEqual(previewMetrics!.tabContent.left);
+  expect(previewMetrics!.previewPane.right).toBeLessThanOrEqual(previewMetrics!.tabContent.right);
+  expect(previewMetrics!.previewPane.top).toBeGreaterThanOrEqual(previewMetrics!.tabContent.top);
+  expect(previewMetrics!.previewPane.bottom).toBeLessThanOrEqual(previewMetrics!.tabContent.bottom);
   await expect
     .poll(() =>
       page.evaluate(
@@ -666,6 +687,37 @@ async function expectModernCancelControl(page: Page) {
   await expect(cancel).toHaveCount(1);
   await expect(cancel).toHaveText("Cancel");
   return cancel;
+}
+
+async function issueEditorMetrics(page: Page) {
+  return page.locator('[data-toggle="markdown-editor"]').evaluate((editor) => {
+    const tabs = editor.querySelector<HTMLElement>(".nav.nav-tabs");
+    const tabContent = editor.querySelector<HTMLElement>(":scope > .tab-content");
+    const editPane = editor.querySelector<HTMLElement>("#edit-body");
+    const previewPane = editor.querySelector<HTMLElement>("#preview-body");
+    const textarea = editor.querySelector<HTMLElement>("#editor-body-body");
+    if (!tabs || !tabContent || !editPane || !previewPane || !textarea) {
+      return null;
+    }
+    return {
+      editPane: rect(editPane),
+      editor: rect(editor),
+      previewPane: rect(previewPane),
+      tabContent: rect(tabContent),
+      tabs: rect(tabs),
+      textarea: rect(textarea),
+    };
+
+    function rect(element: Element) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
+  });
 }
 
 async function canonicalize(page: Page, selector: string) {
