@@ -67,9 +67,11 @@ function OrganizationDeleteFormBody({
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const [deletionModalOpen, setDeletionModalOpen] = useState(false);
+  const [deletionModalWasOpened, setDeletionModalWasOpened] = useState(false);
   const closeDeletionModal = () => setDeletionModalOpen(false);
   const openDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateOrganizationDeleteModalButtonClick(event);
+    setDeletionModalWasOpened(true);
     setDeletionModalOpen(true);
   };
   const dismissDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
@@ -148,7 +150,10 @@ function OrganizationDeleteFormBody({
           <div
             id="alertDeletion"
             className={`modal hide${deletionModalOpen ? " in" : ""}`}
-            style={deletionModalOpen ? { display: "block" } : undefined}
+            style={
+              deletionModalWasOpened ? { display: deletionModalOpen ? "block" : "none" } : undefined
+            }
+            aria-hidden={deletionModalWasOpened ? !deletionModalOpen : undefined}
           >
             <div className="modal-header">
               <button

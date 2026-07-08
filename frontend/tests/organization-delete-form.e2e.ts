@@ -221,6 +221,8 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   await expect(deleteButton).toHaveClass("ybtn ybtn-danger");
   await expect(deleteModal).toHaveClass("modal hide");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).not.toHaveAttribute("aria-hidden");
+  await expect(deleteModal).not.toHaveAttribute("style");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await spaMarker(page)).toBe("organization-delete-modal");
@@ -228,6 +230,8 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal hide in");
   await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
+  await expect(deleteModal).toHaveAttribute("style", "display: block;");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
   await expect(noButton).toHaveAttribute("data-dismiss", "modal");
@@ -240,6 +244,8 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   expect(await dispatchCancelableClick(noButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal hide");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
+  await expect(deleteModal).toHaveAttribute("style", "display: none;");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await spaMarker(page)).toBe("organization-delete-modal");
@@ -249,8 +255,12 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal hide in");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
+  await expect(deleteModal).toHaveAttribute("style", "display: block;");
   expect(await dispatchCancelableClick(closeButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal hide");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
+  await expect(deleteModal).toHaveAttribute("style", "display: none;");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await spaMarker(page)).toBe("organization-delete-modal");
@@ -300,6 +310,8 @@ test("organization delete failure closes modal and shows legacy alert", async ({
   await expect.poll(() => alerts).toEqual(["You cannot delete a group that has projects)."]);
   await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator("#alertDeletion")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#alertDeletion")).toHaveAttribute("style", "display: none;");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs/deleteForm`);
 });
@@ -322,8 +334,16 @@ test("organization delete modal source insulates delegated modal bridge", () => 
   expect(modalSource).toContain(
     "const dismissDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {",
   );
+  expect(modalSource).toContain(
+    "const [deletionModalWasOpened, setDeletionModalWasOpened] = useState(false);",
+  );
+  expect(modalSource).toContain("setDeletionModalWasOpened(true);");
   expect(modalSource).toContain("setDeletionModalOpen(true);");
   expect(modalSource).toContain("closeDeletionModal();");
+  expect(modalSource).toContain(
+    "aria-hidden={deletionModalWasOpened ? !deletionModalOpen : undefined}",
+  );
+  expect(modalSource).toContain('display: deletionModalOpen ? "block" : "none"');
   expect(modalSource).toContain('data-toggle="modal"');
   expect(modalSource).toContain('data-target="#alertDeletion"');
   expect(modalSource).toContain('data-dismiss="modal"');
