@@ -19,9 +19,16 @@ const legacyPaginationLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-const legacySitePostListSidebarSearch = {
-  __legacySitePostListSidebarActiveMarker: "inactive",
+const legacyUserLinkSearch = {
+  daysAgo: undefined!,
+  selected: undefined!,
+} satisfies {
+  daysAgo: number;
+  selected: "issues" | "projects" | "pullRequests";
 };
+const legacyCurrentSitePostListSidebarSearch = {
+  pageNum: -1,
+} satisfies PostListRouteSearch;
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -118,7 +125,6 @@ function PostListPagination({
           {hasPrev ? (
             <Link
               {...legacyPaginationLinkProps}
-              pjax-page=""
               search={{ pageNum: currentPage - 1 }}
               to="/sites/postList"
             >
@@ -170,7 +176,6 @@ function PostListPagination({
           {hasNext ? (
             <Link
               {...legacyPaginationLinkProps}
-              pjax-page=""
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
             >
@@ -200,10 +205,8 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
       <li className="active">
         <Link
           {...legacySiteSidebarLinkProps}
-          activeProps={{}}
-          data-status={undefined}
           mask={{ to: "/sites/postList" }}
-          search={legacySitePostListSidebarSearch}
+          search={legacyCurrentSitePostListSidebarSearch}
           to="/sites/postList"
         >
           <LegacyMessage messageKey="site.sidebar.postList" />
@@ -279,7 +282,12 @@ function PostListItem({ post }: { post: SitePost }) {
         </Link>
       </div>
       <div className="post-meta-wrap">
-        <Link className="avatar-wrap" params={{ user: post.authorLoginId }} to="/$user">
+        <Link
+          className="avatar-wrap"
+          params={{ user: post.authorLoginId }}
+          search={legacyUserLinkSearch}
+          to="/$user"
+        >
           {isDefaultAuthorAvatar(post.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
             <img src={post.authorAvatarUrl} />
@@ -287,7 +295,12 @@ function PostListItem({ post }: { post: SitePost }) {
             <img src={post.authorAvatarUrl} alt={post.authorLabel} width="16" height="16" />
           )}
         </Link>
-        <Link className="post-meta-item" params={{ user: post.authorLoginId }} to="/$user">
+        <Link
+          className="post-meta-item"
+          params={{ user: post.authorLoginId }}
+          search={legacyUserLinkSearch}
+          to="/$user"
+        >
           {post.authorLabel}
         </Link>
         <span className="post-meta-item" title={createdTitle}>

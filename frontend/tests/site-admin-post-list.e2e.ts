@@ -120,7 +120,7 @@ const EXPECTED_POST_LIST_SCREEN = `
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/postList?pageNum=2" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/postList?pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -295,12 +295,11 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=2`);
   await expect(nextPageLink).toHaveText("Next page");
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(page.locator("#pagination a[pjax-page]")).toHaveCount(0);
   expect(await paginationAnchorAttrs(nextPageLink)).toEqual({
     ariaCurrent: null,
     className: null,
     dataStatus: null,
-    pjaxPage: "",
     text: "Next page",
     title: null,
   });
@@ -352,12 +351,10 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
   await expect(previousPageLink).toHaveText("Previous page");
-  await expect(previousPageLink).toHaveAttribute("pjax-page", "");
   expect(await paginationAnchorAttrs(previousPageLink)).toEqual({
     ariaCurrent: null,
     className: null,
     dataStatus: null,
-    pjaxPage: "",
     text: "Previous page",
     title: null,
   });
@@ -699,7 +696,12 @@ test("site admin post list route source keeps direct typed links", async () => {
   expect(source).toContain("className: undefined");
   expect(source).toContain('"data-status": undefined');
   expect(source).toContain("{...legacyPaginationLinkProps}");
-  expect(source).toContain('pjax-page=""');
+  expect(source).not.toContain("pjax-page");
+  expect(source).not.toContain("pjaxPage");
+  expect(source).not.toContain("data-request");
+  expect(source).not.toContain("dangerouslySetInnerHTML");
+  expect(source).not.toContain("classList");
+  expect(source).not.toContain("style.display");
   expect(source).toContain('to="/sites/postList"');
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/post/$postNumber"');
@@ -743,7 +745,6 @@ async function paginationAnchorAttrs(anchor: ReturnType<Page["locator"]>) {
     ariaCurrent: link.getAttribute("aria-current"),
     className: link.getAttribute("class"),
     dataStatus: link.getAttribute("data-status"),
-    pjaxPage: link.getAttribute("pjax-page"),
     text: link.textContent?.trim() ?? "",
     title: link.getAttribute("title"),
   }));
@@ -1119,7 +1120,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "data-toggle",
         "data-placement",
-        "pjax-page",
         "role",
       ];
       const attrs = stableAttributes
@@ -1175,7 +1175,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         "title",
         "data-toggle",
         "data-placement",
-        "pjax-page",
         "role",
       ];
       const attrs = stableAttributes
