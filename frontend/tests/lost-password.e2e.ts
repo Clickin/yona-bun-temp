@@ -88,14 +88,14 @@ const EXPECTED_LOST_PASSWORD_SCREEN = `
 
 const SUCCESS_ALERT = `
 <div class="alert alert-success">
-  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <button type="button" class="close">&times;</button>
   <h4>Mail has been sent.</h4>
 </div>
 `;
 
 const ERROR_ALERT = `
 <div class="alert alert-error">
-  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <button type="button" class="close">&times;</button>
   <h4>Failed to send mail.</h4>
   Invalid password reset request
 </div>
@@ -202,6 +202,15 @@ test("lost-password route renders title from legacy key without imperative title
   }
 });
 
+test("lost-password route owns alert dismissal without Bootstrap data-dismiss markers", () => {
+  const routeSource = readFileSync(resolve("src/routes/lostPassword.tsx"), "utf8");
+
+  expect(routeSource).not.toContain('data-dismiss="alert"');
+  expect(routeSource).not.toContain("data-dismiss");
+  expect(routeSource).toContain("setIsSuccessAlertDismissed(true)");
+  expect(routeSource).toContain("setIsErrorAlertDismissed(true)");
+});
+
 test("lost-password requested alert matches legacy site/lostPassword.scala.html screen DOM", async ({
   page,
 }) => {
@@ -249,7 +258,7 @@ test("lost-password requested alert matches legacy site/lostPassword.scala.html 
   });
 });
 
-test("lost-password requested alert close follows legacy Bootstrap data-dismiss behavior", async ({
+test("lost-password requested alert close is React-owned without Bootstrap dismiss markers", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -257,11 +266,29 @@ test("lost-password requested alert close follows legacy Bootstrap data-dismiss 
 
   const alert = page.locator(".login-form-wrap .alert.alert-success");
   await expect(alert).toBeVisible();
-  await expect(alert.locator('[data-dismiss="alert"]')).toHaveCount(1);
+  await expect(alert.locator('[data-dismiss="alert"]')).toHaveCount(0);
+  await expect(alert.locator(".close")).toHaveCount(1);
 
-  await alert.locator('[data-dismiss="alert"]').click();
+  await alert.locator(".close").click();
 
   await expect(page.locator(".login-form-wrap .alert.alert-success")).toHaveCount(0);
+  await expect(page.locator(".login-form-wrap form")).toBeVisible();
+});
+
+test("lost-password invalid-request alert close is React-owned without Bootstrap dismiss markers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/lostPassword?error=site.resetPasswordEmail.invalidRequest`);
+
+  const alert = page.locator(".login-form-wrap .alert.alert-error");
+  await expect(alert).toBeVisible();
+  await expect(alert.locator('[data-dismiss="alert"]')).toHaveCount(0);
+  await expect(alert.locator(".close")).toHaveCount(1);
+
+  await alert.locator(".close").click();
+
+  await expect(page.locator(".login-form-wrap .alert.alert-error")).toHaveCount(0);
   await expect(page.locator(".login-form-wrap form")).toBeVisible();
 });
 

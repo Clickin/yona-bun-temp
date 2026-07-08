@@ -102,7 +102,6 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <button
                 type="button"
                 className="close"
-                data-dismiss="alert"
                 onClick={() => setIsSuccessAlertDismissed(true)}
               >
                 &times;
@@ -116,7 +115,6 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <button
                 type="button"
                 className="close"
-                data-dismiss="alert"
                 onClick={() => setIsErrorAlertDismissed(true)}
               >
                 &times;
