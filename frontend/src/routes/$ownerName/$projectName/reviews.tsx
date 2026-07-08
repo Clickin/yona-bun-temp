@@ -354,7 +354,6 @@ function ProjectReviewRow({
       <Link
         to={authorRoute}
         className="avatar-wrap mlarge hide-in-mobile"
-        data-toggle="tooltip"
         data-placement="top"
         title={authorLoginId}
       >
@@ -380,7 +379,6 @@ function ProjectReviewRow({
           <Link
             to={authorRoute}
             className="infos-item infos-link-item"
-            data-toggle="tooltip"
             data-placement="top"
             title={authorLoginId}
           >
