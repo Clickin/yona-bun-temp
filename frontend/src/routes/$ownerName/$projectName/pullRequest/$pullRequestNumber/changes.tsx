@@ -686,6 +686,12 @@ function CommentDeleteModal({
 }) {
   const { t } = useLegacyMessages();
   const isOpen = requestUri !== null;
+  const closeModal = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose();
+  };
+
   return (
     <>
       <div
@@ -694,7 +700,7 @@ function CommentDeleteModal({
         style={isOpen ? { display: "block" } : undefined}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={onClose}>
+          <button type="button" className="close" onClick={closeModal}>
             ×
           </button>
           <h3>{t("common.comment.delete")}</h3>
@@ -706,7 +712,7 @@ function CommentDeleteModal({
           <button id="comment-delete-confirm" type="button" className="ybtn ybtn-danger">
             {t("button.yes")}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal" onClick={onClose}>
+          <button type="button" className="ybtn" onClick={closeModal}>
             {t("button.no")}
           </button>
         </div>

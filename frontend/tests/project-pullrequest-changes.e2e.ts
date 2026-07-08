@@ -845,6 +845,14 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
   await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade in");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator('#comment-delete-modal [data-dismiss="modal"]')).toHaveCount(0);
+  await expect(page.locator("#comment-delete-modal .modal-header .close")).not.toHaveAttribute(
+    "data-dismiss",
+    /.*/u,
+  );
+  await expect(
+    page.locator("#comment-delete-modal .modal-footer .ybtn").last(),
+  ).not.toHaveAttribute("data-dismiss", /.*/u);
   await expect(page.locator("#comment-delete-confirm")).not.toHaveAttribute(
     "data-request-method",
     /.*/u,
@@ -862,16 +870,20 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
   ).toBe(0);
   expect(new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/pullRequest/9/changes`);
 
+  await armRootModalBridgeTrap(page);
   await page.locator("#comment-delete-modal .modal-header .close").click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
   await deleteButton.click();
+  await armRootModalBridgeTrap(page);
   await page.locator("#comment-delete-modal .modal-footer .ybtn").last().click();
   await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
   const closeThreadButton = page.locator("#thread-92 .write-comment-form .right-txt .ybtn-default");
   await expect(closeThreadButton).toHaveText("Close");
@@ -1118,6 +1130,9 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain('type="button"');
   expect(routeSource).not.toContain("data-request-method");
   expect(routeSource).not.toContain("data-request-uri");
+  expect(routeSource).not.toContain('data-dismiss="modal"');
+  expect(routeSource).toContain("const closeModal = (event: MouseEvent<HTMLButtonElement>) => {");
+  expect(routeSource).toContain("onClick={closeModal}");
   expect(routeSource).toContain("const [deleteRequestUri, setDeleteRequestUri] = useState");
   expect(routeSource).toContain("const [isOpen, setIsOpen] = useState(false)");
   expect(routeSource).toContain("const closeDropdown = () => setIsOpen(false)");
@@ -1126,6 +1141,40 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(routeSource).toContain("event.stopPropagation()");
 });
+
+async function armRootModalBridgeTrap(page: Page) {
+  await page.evaluate(() => {
+    const win = window as Window &
+      typeof globalThis & {
+        __pullRequestChangesRootModalBridgeHits?: string[];
+        __pullRequestChangesRootModalBridgeTrapArmed?: boolean;
+      };
+    win.__pullRequestChangesRootModalBridgeHits = [];
+    if (win.__pullRequestChangesRootModalBridgeTrapArmed) {
+      return;
+    }
+    win.__pullRequestChangesRootModalBridgeTrapArmed = true;
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const bridged = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      if (bridged) {
+        win.__pullRequestChangesRootModalBridgeHits?.push(
+          `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
+        );
+      }
+    });
+  });
+}
+
+async function rootModalBridgeHits(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window &
+          typeof globalThis & { __pullRequestChangesRootModalBridgeHits?: string[] }
+      ).__pullRequestChangesRootModalBridgeHits ?? [],
+  );
+}
 
 test("project pull request changes renders review cards for non-ranged-only threads", async ({
   page,
