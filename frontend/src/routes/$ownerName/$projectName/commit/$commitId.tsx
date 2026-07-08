@@ -121,7 +121,6 @@ function ProjectCommitDetailScreen({
     }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
-  const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
 
   if (!projectQuery.data || !detailQuery.data || !sessionQuery.data) {
     return null;
@@ -153,11 +152,6 @@ function ProjectCommitDetailScreen({
         detail={detailQuery.data}
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
-        openCommentDeleteModal={setCommentDeleteRequestUri}
-      />
-      <CommentDeleteModal
-        onClose={() => setCommentDeleteRequestUri(null)}
-        requestUri={commentDeleteRequestUri}
       />
     </SiteLayoutShell>
   );
@@ -175,11 +169,9 @@ function ProjectCommitDetailBody({
   detail,
   project,
   runtimeConfig,
-  openCommentDeleteModal,
 }: {
   currentUser: CurrentUserSummary;
   detail: CodeCommitDetailResponse;
-  openCommentDeleteModal: (requestUri: string) => void;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -196,6 +188,7 @@ function ProjectCommitDetailBody({
   const [reviewCardsCollapsed, setReviewCardsCollapsed] = useState(false);
   const [blockReviewFormOpen, setBlockReviewFormOpen] = useState(false);
   const [blockReviewButtonVisible, setBlockReviewButtonVisible] = useState(false);
+  const [commentDeleteCommentId, setCommentDeleteCommentId] = useState<number | null>(null);
   const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
   const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
@@ -287,120 +280,80 @@ function ProjectCommitDetailBody({
   }
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div id="code-browse-wrap" className="code-browse-wrap">
-          <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
-            <li>
-              <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
-            </li>
-            <li className="active">
-              <Link to={projectTo(ownerName, projectName, "commits")}>{t("code.commits")}</Link>
-            </li>
-            {project.vcs === "GIT" ? (
+    <>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div id="code-browse-wrap" className="code-browse-wrap">
+            <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
               <li>
-                <Link to={projectTo(ownerName, projectName, "branches")}>
-                  {t("title.branches")}
-                </Link>
+                <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
               </li>
-            ) : null}
-          </ul>
+              <li className="active">
+                <Link to={projectTo(ownerName, projectName, "commits")}>{t("code.commits")}</Link>
+              </li>
+              {project.vcs === "GIT" ? (
+                <li>
+                  <Link to={projectTo(ownerName, projectName, "branches")}>
+                    {t("title.branches")}
+                  </Link>
+                </li>
+              ) : null}
+            </ul>
 
-          <div className={`codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}>
-            <button
-              type="button"
-              className="ybtn ybtn-default btn-show-reviewcards"
-              onClick={() => setReviewCardsCollapsed(false)}
-            >
-              <i className="yobicon-restore"></i>
-            </button>
-            <div className="diffs-wrap">
-              <div className="commitInfo">
-                <div className="commitAuthor">
-                  <CommitAuthor detail={detail} />
-                  <span className="ago" title={commit?.authorDate ?? ""}>
-                    {commit?.authorDate ?? ""}
-                  </span>
-                </div>
-                <div className="commitMsg-wrap">
-                  <CommitMessage
-                    message={commit?.message ?? ""}
-                    shortMessage={commit?.shortMessage ?? ""}
-                  />
-                </div>
-                <div className="commitId-wrap">
-                  <strong className="commitId">@{commit?.commitId ?? commitId}</strong>
-                </div>
-              </div>
-
-              {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
-              <div
-                className="diff-body"
-                onMouseUp={() => {
-                  const selection = globalThis.getSelection?.();
-                  const selectedText = selection?.toString() ?? "";
-                  if (selectedText.length > 0) {
-                    setBlockReviewButtonVisible(true);
-                  }
-                }}
+            <div className={`codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}>
+              <button
+                type="button"
+                className="ybtn ybtn-default btn-show-reviewcards"
+                onClick={() => setReviewCardsCollapsed(false)}
               >
-                {detail.files.map((file) => (
-                  <FileDiffView
-                    commitA={detail.parentCommit?.commitId ?? ""}
-                    commitB={commit?.commitId ?? commitId}
-                    file={file}
-                    key={file.path}
-                    currentUser={currentUser}
-                    deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
-                    openCommentDeleteModal={openCommentDeleteModal}
-                    ownerName={ownerName}
-                    projectName={projectName}
-                    runtimeConfig={runtimeConfig}
-                    submitReply={(threadId, contentsMarkdown) =>
-                      createCommentMutation.mutate({ contentsMarkdown, threadId })
-                    }
-                    threads={detail.threads}
-                    toggleThreadState={(threadId, state) =>
-                      threadStateMutation.mutate({ state, threadId })
-                    }
-                    updateComment={(commentId, contentsMarkdown) =>
-                      updateCommentMutation.mutate({ commentId, contentsMarkdown })
-                    }
-                  />
-                ))}
-                <div
-                  className="btnPop"
-                  style={blockReviewButtonVisible ? { display: "block" } : undefined}
-                >
-                  <button
-                    type="button"
-                    className="ybtn ybtn-info ybtn-small"
-                    onClick={() => {
-                      setBlockReviewFormOpen(true);
-                      setBlockReviewButtonVisible(false);
-                    }}
-                  >
-                    <i className="yobicon-post2"></i>
-                  </button>
+                <i className="yobicon-restore"></i>
+              </button>
+              <div className="diffs-wrap">
+                <div className="commitInfo">
+                  <div className="commitAuthor">
+                    <CommitAuthor detail={detail} />
+                    <span className="ago" title={commit?.authorDate ?? ""}>
+                      {commit?.authorDate ?? ""}
+                    </span>
+                  </div>
+                  <div className="commitMsg-wrap">
+                    <CommitMessage
+                      message={commit?.message ?? ""}
+                      shortMessage={commit?.shortMessage ?? ""}
+                    />
+                  </div>
+                  <div className="commitId-wrap">
+                    <strong className="commitId">@{commit?.commitId ?? commitId}</strong>
+                  </div>
                 </div>
-              </div>
 
-              <div className="board-comment-wrap">
-                <div className="non-ranged-threads-wrap">
-                  {nonRangedThreads.map((thread) => (
-                    <CodeCommentThreadView
-                      isNonRanged
+                {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
+                <div
+                  className="diff-body"
+                  onMouseUp={() => {
+                    const selection = globalThis.getSelection?.();
+                    const selectedText = selection?.toString() ?? "";
+                    if (selectedText.length > 0) {
+                      setBlockReviewButtonVisible(true);
+                    }
+                  }}
+                >
+                  {detail.files.map((file) => (
+                    <FileDiffView
+                      commitA={detail.parentCommit?.commitId ?? ""}
+                      commitB={commit?.commitId ?? commitId}
+                      file={file}
+                      key={file.path}
                       currentUser={currentUser}
                       deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
-                      openCommentDeleteModal={openCommentDeleteModal}
-                      key={thread.id}
+                      openCommentDeleteModal={setCommentDeleteCommentId}
                       ownerName={ownerName}
                       projectName={projectName}
                       runtimeConfig={runtimeConfig}
-                      thread={thread}
                       submitReply={(threadId, contentsMarkdown) =>
                         createCommentMutation.mutate({ contentsMarkdown, threadId })
                       }
+                      threads={detail.threads}
                       toggleThreadState={(threadId, state) =>
                         threadStateMutation.mutate({ state, threadId })
                       }
@@ -409,101 +362,153 @@ function ProjectCommitDetailBody({
                       }
                     />
                   ))}
+                  <div
+                    className="btnPop"
+                    style={blockReviewButtonVisible ? { display: "block" } : undefined}
+                  >
+                    <button
+                      type="button"
+                      className="ybtn ybtn-info ybtn-small"
+                      onClick={() => {
+                        setBlockReviewFormOpen(true);
+                        setBlockReviewButtonVisible(false);
+                      }}
+                    >
+                      <i className="yobicon-post2"></i>
+                    </button>
+                  </div>
                 </div>
+
+                <div className="board-comment-wrap">
+                  <div className="non-ranged-threads-wrap">
+                    {nonRangedThreads.map((thread) => (
+                      <CodeCommentThreadView
+                        isNonRanged
+                        currentUser={currentUser}
+                        deleteComment={(commentId) => deleteCommentMutation.mutate(commentId)}
+                        openCommentDeleteModal={setCommentDeleteCommentId}
+                        key={thread.id}
+                        ownerName={ownerName}
+                        projectName={projectName}
+                        runtimeConfig={runtimeConfig}
+                        thread={thread}
+                        submitReply={(threadId, contentsMarkdown) =>
+                          createCommentMutation.mutate({ contentsMarkdown, threadId })
+                        }
+                        toggleThreadState={(threadId, state) =>
+                          threadStateMutation.mutate({ state, threadId })
+                        }
+                        updateComment={(commentId, contentsMarkdown) =>
+                          updateCommentMutation.mutate({ commentId, contentsMarkdown })
+                        }
+                      />
+                    ))}
+                  </div>
+                  {detail.permissions.canComment ? (
+                    <CommentForm
+                      action={commitCommentsHref(
+                        runtimeConfig.basePath,
+                        ownerName,
+                        projectName,
+                        commitId,
+                      )}
+                      onSubmit={(contentsMarkdown) =>
+                        createCommentMutation.mutate({ contentsMarkdown })
+                      }
+                    />
+                  ) : null}
+                </div>
+
                 {detail.permissions.canComment ? (
-                  <CommentForm
+                  <ReviewForm
                     action={commitCommentsHref(
                       runtimeConfig.basePath,
                       ownerName,
                       projectName,
                       commitId,
                     )}
-                    onSubmit={(contentsMarkdown) =>
-                      createCommentMutation.mutate({ contentsMarkdown })
-                    }
+                    currentUser={currentUser}
+                    isOpen={blockReviewFormOpen}
+                    onClose={() => setBlockReviewFormOpen(false)}
                   />
                 ) : null}
               </div>
 
-              {detail.permissions.canComment ? (
-                <ReviewForm
-                  action={commitCommentsHref(
-                    runtimeConfig.basePath,
-                    ownerName,
-                    projectName,
-                    commitId,
-                  )}
-                  currentUser={currentUser}
-                  isOpen={blockReviewFormOpen}
-                  onClose={() => setBlockReviewFormOpen(false)}
-                />
-              ) : null}
-            </div>
-
-            <div className="review-wrap span-hard-wrap">
-              <div className="review-container">
-                <button
-                  type="button"
-                  className="ybtn ybtn-default btn-hide-reviewcards"
-                  onClick={() => setReviewCardsCollapsed(true)}
-                >
-                  <i className="yobicon-maximize"></i>
-                </button>
-                <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
-                  <li className={reviewCardTab === "open" ? "active" : undefined}>
-                    <button
-                      type="button"
-                      data-toggle="tab"
-                      onClick={() => setReviewCardTab("open")}
-                    >
-                      {`${t("issue.state.open")} ${openThreads.length}`}
-                    </button>
-                  </li>
-                  <li className={reviewCardTab === "closed" ? "active" : undefined}>
-                    <button
-                      type="button"
-                      data-toggle="tab"
-                      onClick={() => setReviewCardTab("closed")}
-                    >
-                      {`${t("issue.state.closed")} ${closedThreads.length}`}
-                    </button>
-                  </li>
-                </ul>
-                <div className="tab-content review-list">
-                  <ReviewCards
-                    id="reviewcards-open"
-                    isActive={reviewCardTab === "open"}
-                    threads={openThreads}
-                  />
-                  <ReviewCards
-                    id="reviewcards-closed"
-                    isActive={reviewCardTab === "closed"}
-                    threads={closedThreads}
-                  />
+              <div className="review-wrap span-hard-wrap">
+                <div className="review-container">
+                  <button
+                    type="button"
+                    className="ybtn ybtn-default btn-hide-reviewcards"
+                    onClick={() => setReviewCardsCollapsed(true)}
+                  >
+                    <i className="yobicon-maximize"></i>
+                  </button>
+                  <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
+                    <li className={reviewCardTab === "open" ? "active" : undefined}>
+                      <button
+                        type="button"
+                        data-toggle="tab"
+                        onClick={() => setReviewCardTab("open")}
+                      >
+                        {`${t("issue.state.open")} ${openThreads.length}`}
+                      </button>
+                    </li>
+                    <li className={reviewCardTab === "closed" ? "active" : undefined}>
+                      <button
+                        type="button"
+                        data-toggle="tab"
+                        onClick={() => setReviewCardTab("closed")}
+                      >
+                        {`${t("issue.state.closed")} ${closedThreads.length}`}
+                      </button>
+                    </li>
+                  </ul>
+                  <div className="tab-content review-list">
+                    <ReviewCards
+                      id="reviewcards-open"
+                      isActive={reviewCardTab === "open"}
+                      threads={openThreads}
+                    />
+                    <ReviewCards
+                      id="reviewcards-closed"
+                      isActive={reviewCardTab === "closed"}
+                      threads={closedThreads}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <button
+            id="watch-button"
+            type="button"
+            className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
+            data-toggle="button"
+            onClick={() => watchMutation.mutate(!detail.isWatching)}
+          >
+            {t("notification.watch")}
+          </button>
+
+          <Link
+            to={projectTo(ownerName, projectName, "commits", encodedBranch, path)}
+            className="ybtn pull-right"
+          >
+            {t("button.list")}
+          </Link>
         </div>
-
-        <button
-          id="watch-button"
-          type="button"
-          className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
-          data-toggle="button"
-          onClick={() => watchMutation.mutate(!detail.isWatching)}
-        >
-          {t("notification.watch")}
-        </button>
-
-        <Link
-          to={projectTo(ownerName, projectName, "commits", encodedBranch, path)}
-          className="ybtn pull-right"
-        >
-          {t("button.list")}
-        </Link>
       </div>
-    </div>
+      <CommentDeleteModal
+        isOpen={commentDeleteCommentId !== null}
+        onClose={() => setCommentDeleteCommentId(null)}
+        onConfirm={() => {
+          if (commentDeleteCommentId !== null) {
+            deleteCommentMutation.mutate(commentDeleteCommentId);
+          }
+          setCommentDeleteCommentId(null);
+        }}
+      />
+    </>
   );
 }
 
@@ -667,7 +672,7 @@ function FileDiffView({
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
   file: CommitFileDiff;
-  openCommentDeleteModal: (requestUri: string) => void;
+  openCommentDeleteModal: (commentId: number) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -873,7 +878,7 @@ function FragmentWithInlineComments({
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
   line: Extract<ParsedDiffLine, { kind: "line" }>;
-  openCommentDeleteModal: (requestUri: string) => void;
+  openCommentDeleteModal: (commentId: number) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -966,7 +971,7 @@ function InlineCommentRow({
   commitId: string;
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
-  openCommentDeleteModal: (requestUri: string) => void;
+  openCommentDeleteModal: (commentId: number) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -1018,7 +1023,7 @@ function CodeCommentThreadView({
   currentUser: CurrentUserSummary;
   deleteComment: (commentId: number) => void;
   isNonRanged?: boolean;
-  openCommentDeleteModal: (requestUri: string) => void;
+  openCommentDeleteModal: (commentId: number) => void;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -1086,8 +1091,6 @@ function CodeCommentThreadView({
       <ul className="comments">
         {thread.comments.map((comment) => {
           const isEditing = editingCommentIds.has(comment.id);
-          const deleteUri = prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`);
-
           return (
             <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
               <div className="comment-avatar">
@@ -1160,16 +1163,14 @@ function CodeCommentThreadView({
                     <span className="edit pull-right">
                       <button
                         className="btn-transparent pull-right close"
-                        data-request-method={isNonRanged ? "delete" : undefined}
                         data-toggle={isNonRanged ? undefined : "comment-delete"}
-                        data-request-uri={deleteUri}
                         onClick={(event) => {
                           if (isNonRanged) {
                             deleteComment(comment.id);
                           } else {
                             event.preventDefault();
                             event.stopPropagation();
-                            openCommentDeleteModal(deleteUri);
+                            openCommentDeleteModal(comment.id);
                           }
                         }}
                         title={isNonRanged ? undefined : t("common.comment.delete")}
@@ -1255,11 +1256,6 @@ function CodeCommentThreadView({
               <div className="right-txt">
                 <button
                   type="button"
-                  data-request-method="post"
-                  data-request-uri={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/threads/${thread.id}/${state === "open" ? "close" : "open"}`,
-                  )}
                   className="ybtn ybtn-default ybtn-small"
                   onClick={() => toggleThreadState(thread.id, state)}
                 >
@@ -1822,14 +1818,15 @@ function ReviewCards({
 }
 
 function CommentDeleteModal({
+  isOpen,
   onClose,
-  requestUri,
+  onConfirm,
 }: {
+  isOpen: boolean;
   onClose: () => void;
-  requestUri: string | null;
+  onConfirm: () => void;
 }) {
   const { t } = useLegacyMessages();
-  const isOpen = requestUri !== null;
   return (
     <>
       <div
@@ -1851,8 +1848,7 @@ function CommentDeleteModal({
             id="comment-delete-confirm"
             type="button"
             className="ybtn ybtn-danger"
-            data-request-method={isOpen ? "delete" : undefined}
-            data-request-uri={requestUri ?? undefined}
+            onClick={onConfirm}
           >
             {t("button.yes")}
           </button>
