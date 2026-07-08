@@ -1437,16 +1437,49 @@ function AttachmentFileMarker({
 }
 
 function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
-  const commit = detail.commit;
+  const commit = detail.commit as
+    | (NonNullable<CodeCommitDetailResponse["commit"]> & {
+        authorAvatarUrl?: string;
+        authorLoginId?: string;
+      })
+    | null;
   if (!commit) {
     return <strong>Anonymous</strong>;
   }
+  const authorName = commit.authorName || commit.authorEmail || "Anonymous";
+
+  if (commit.authorLoginId) {
+    return (
+      <>
+        <Link
+          to="/$user"
+          params={{ user: commit.authorLoginId }}
+          activeOptions={{ exact: true }}
+          className="avatar-wrap smaller"
+        >
+          <img
+            src={commit.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+            alt={authorName}
+            width="32"
+            height="32"
+          />
+        </Link>
+        <strong>{authorName}</strong>
+      </>
+    );
+  }
+
   return (
     <>
       <span className="avatar-wrap smaller">
-        <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+        <img
+          src={commit.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+          width="32"
+          height="32"
+          alt=""
+        />
       </span>
-      <strong>{commit.authorName || commit.authorEmail || "Anonymous"}</strong>
+      <strong>{authorName}</strong>
     </>
   );
 }

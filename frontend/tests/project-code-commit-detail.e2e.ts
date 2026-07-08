@@ -687,6 +687,38 @@ test("project commit detail toggles legacy review-card rail collapse without nav
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
+test("project commit detail links known commit author avatar like legacy diff.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    commit: {
+      authorAvatarUrl: "/avatars/dev.png",
+      authorDate: "Jul 1, 2026",
+      authorEmail: "dev@example.com",
+      authorLoginId: "dev",
+      authorName: "Dev Author",
+      commentCount: 0,
+      commitId: "abcdef1234567890",
+      commitShortId: "abcdef1",
+      message: "Initial commit\nAdd README",
+      shortMessage: "Initial commit",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  const authorAvatar = page.locator(".commitAuthor > .avatar-wrap.smaller");
+  await expect(authorAvatar).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(authorAvatar.locator("img")).toHaveAttribute("src", "/avatars/dev.png");
+  await expect(authorAvatar.locator("img")).toHaveAttribute("alt", "Dev Author");
+  await expect(authorAvatar.locator("img")).toHaveAttribute("width", "32");
+  await expect(authorAvatar.locator("img")).toHaveAttribute("height", "32");
+  await expect(page.locator(".commitAuthor > strong")).toHaveText("Dev Author");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 test("project commit detail submits watch and comment mutations through legacy controls", async ({
   page,
 }) => {
