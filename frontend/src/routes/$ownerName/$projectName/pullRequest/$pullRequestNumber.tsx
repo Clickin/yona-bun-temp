@@ -471,7 +471,6 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         to="/$user"
         params={{ user: event.senderLoginId }}
         className="usf-group"
-        data-toggle="tooltip"
         data-placement="top"
         title={event.senderLoginId}
         {...LEGACY_LINK_PROPS}
@@ -482,7 +481,6 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         to="/$user"
         params={{ user: event.senderLoginId }}
         className="usf-group"
-        data-toggle="tooltip"
         data-placement="top"
         title={event.senderLoginId}
         {...LEGACY_LINK_PROPS}
@@ -689,7 +687,6 @@ export function PullRequestHeader({
                   to="/$user"
                   params={{ user: reviewer.loginId }}
                   className="usf-group"
-                  data-toggle="tooltip"
                   data-placement="top"
                   title={reviewer.userLabel}
                   {...LEGACY_LINK_PROPS}
@@ -733,7 +730,6 @@ export function PullRequestHeader({
             <button
               type="button"
               className="ybtn ybtn-disabled"
-              data-toggle="tooltip"
               data-placement="top"
               title={disabledAcceptButtonTitle(pullRequest, t)}
             >
@@ -789,7 +785,7 @@ export function PullRequestBranchInfo({
   return (
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
-      <code className="from" data-toggle="tooltip" data-original-title={t("pullRequest.from")}>
+      <code className="from" data-original-title={t("pullRequest.from")}>
         <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.fromOwnerName}
         </Link>
@@ -819,7 +815,7 @@ export function PullRequestBranchInfo({
         </Link>
       </code>
       <i className="yobicon-right-2 ml10"></i>
-      <code className="to" data-toggle="tooltip" data-original-title={t("pullRequest.to")}>
+      <code className="to" data-original-title={t("pullRequest.to")}>
         <Link to="/$user" params={{ user: pullRequest.ownerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.ownerName}
         </Link>
