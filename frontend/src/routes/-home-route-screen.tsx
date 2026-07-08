@@ -595,12 +595,7 @@ function NotificationStreamItem({
       </div>
       {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
-      <div
-        className="stream-desc"
-        data-target={`message-${notification.id}`}
-        data-toggle="learnmore"
-        onClick={handleLearnMoreClick}
-      >
+      <div className="stream-desc" onClick={handleLearnMoreClick}>
         <div className="stream-info">
           <div className="title">
             {notification.targetHref ? (

@@ -139,7 +139,7 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
   `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
   `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc" data-target="message-42" data-toggle="learnmore">
+    <div class="stream-desc">
       <div class="stream-info">
         <div class="title"><a href="__BASE_PATH__/admin/sample/issue/1">Issue #1 updated</a></div>
         <div class="message-wrap nowrap" id="message-42">
@@ -1562,7 +1562,7 @@ test("direct notifications route matches legacy populated notification row DOM",
   });
 });
 
-test("direct notifications route preserves legacy notification row expand targets", async ({
+test("direct notifications route keeps React-owned learn-more behavior without legacy JS hooks", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1589,7 +1589,7 @@ test("direct notifications route preserves legacy notification row expand target
             typeof globalThis & {
               __streamDescClickListenerTargets: string[];
             }
-        ).__streamDescClickListenerTargets.push(this.getAttribute("data-target") ?? "");
+        ).__streamDescClickListenerTargets.push(this.id || this.className);
       }
       return originalAddEventListener.call(this, type, listener, options);
     };
@@ -1618,8 +1618,8 @@ test("direct notifications route preserves legacy notification row expand target
   const streamDesc = page.locator(".notification-stream .stream-desc");
   const messageWrap = page.locator("#message-42");
 
-  await expect(streamDesc).toHaveAttribute("data-target", "message-42");
-  await expect(streamDesc).toHaveAttribute("data-toggle", "learnmore");
+  await expect(streamDesc).not.toHaveAttribute("data-target");
+  await expect(streamDesc).not.toHaveAttribute("data-toggle");
   await expect(streamDesc).not.toHaveAttribute("role");
   await expect(streamDesc).not.toHaveAttribute("tabindex");
   await expect(messageWrap).toHaveClass(/nowrap/);
@@ -1665,6 +1665,8 @@ test("direct notifications route preserves legacy notification row expand target
     routeSource.indexOf("function NotificationStreamItem"),
     routeSource.indexOf("export function SiteLayoutShell"),
   );
+  expect(notificationStreamItemSource).not.toContain("data-target");
+  expect(notificationStreamItemSource).not.toContain("data-toggle");
   expect(notificationStreamItemSource).not.toContain("addEventListener");
   expect(notificationStreamItemSource).not.toContain("removeEventListener");
   expect(notificationStreamItemSource).not.toContain("document.getElementById");
@@ -1786,7 +1788,7 @@ function expectedNotificationRows(
     .map(
       (item) => `<li class="notification-stream">
     <div class="stream-type comment2"><i class="yobicon-comment2"></i></div>
-    <div class="stream-desc" data-target="message-${item.id}" data-toggle="learnmore">
+    <div class="stream-desc">
       <div class="stream-info">
         <div class="title"><a href="${basePath}/admin/sample/issue/1">${item.targetTitle}</a></div>
         <div class="message-wrap nowrap" id="message-${item.id}">
