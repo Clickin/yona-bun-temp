@@ -291,7 +291,7 @@ const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
-  '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
+  '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
 const POSTING_HISTORY =
   '<div class="posting-history"><button type="button">Change history</button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small">Confirm</button></div></div></div>';
 const EXPECTED_PROJECT_POST_DETAIL = `
@@ -2142,16 +2142,36 @@ test("project board detail renders legacy editable label selector", async ({ pag
   expect(await canonicalize(page, ".issue-info.board-labels dl:has(#labelIds)")).toEqual(
     await canonicalizeHtml(page, expected),
   );
-  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveValues(["8"]);
-  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveAttribute(
-    "data-toggle",
-    "select2",
+  const labelSelect = page.locator(".issue-info.board-labels #labelIds");
+  await expect(labelSelect).toHaveValues(["8"]);
+  await expect(labelSelect).not.toHaveAttribute("data-toggle", "select2");
+  await expect(labelSelect).toHaveAttribute("id", "labelIds");
+  await expect(labelSelect).toHaveAttribute("name", "labelIds");
+  await expect(labelSelect).toHaveAttribute("multiple", "");
+  await expect(labelSelect).toHaveAttribute("data-search", "labelIds");
+  await expect(labelSelect).toHaveAttribute("data-format", "issuelabel");
+  await expect(labelSelect).toHaveAttribute("data-allow-clear", "true");
+  await expect(labelSelect).toHaveAttribute("data-dropdown-css-class", "issue-labels");
+  await expect(labelSelect).toHaveAttribute(
+    "data-container-css-class",
+    "issue-labels bordered fullsize",
   );
-  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveAttribute(
-    "data-format",
-    "issuelabel",
+  await expect(labelSelect).toHaveAttribute("data-placeholder", "Select label");
+  await expect(labelSelect).toHaveClass("hide");
+  await expect(labelSelect.locator("option")).toHaveText(["", "bug", "enhancement", "high", "low"]);
+  await expect(labelSelect.locator('optgroup[label="type"]')).toHaveAttribute(
+    "data-category-id",
+    "3",
   );
-  await expect(page.locator('.issue-info.board-labels optgroup[label="priority"]')).toHaveAttribute(
+  await expect(labelSelect.locator('optgroup[label="type"]')).toHaveAttribute(
+    "data-category-is-exclusive",
+    "false",
+  );
+  await expect(labelSelect.locator('optgroup[label="priority"]')).toHaveAttribute(
+    "data-category-id",
+    "4",
+  );
+  await expect(labelSelect.locator('optgroup[label="priority"]')).toHaveAttribute(
     "data-category-is-exclusive",
     "true",
   );
@@ -2213,7 +2233,16 @@ test("project board detail renders legacy editable label selector", async ({ pag
   expect(editableLabelsSource).toContain("nextPostLabelIds(labels, selectedLabelIds, select)");
   expect(editableLabelsSource).toContain("option.selected");
   expect(editableLabelsSource).toContain("categoryIsExclusive");
+  expect(editableLabelsSource).toContain('data-search="labelIds"');
+  expect(editableLabelsSource).toContain('data-format="issuelabel"');
+  expect(editableLabelsSource).toContain(
+    'data-container-css-class="issue-labels bordered fullsize"',
+  );
   expect(editableLabelsSource).not.toContain("selectedOptions");
+  expect(editableLabelsSource).not.toContain('data-toggle="select2"');
+  expect(editableLabelsSource).not.toContain("document.");
+  expect(editableLabelsSource).not.toContain("classList");
+  expect(editableLabelsSource).not.toContain("dangerouslySetInnerHTML");
 });
 
 test("project board detail internal links are router-owned", async ({ page }) => {

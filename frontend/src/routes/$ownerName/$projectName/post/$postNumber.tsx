@@ -719,7 +719,6 @@ function PostEditableLabels({
           name="labelIds"
           multiple
           data-search="labelIds"
-          data-toggle="select2"
           data-format="issuelabel"
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
