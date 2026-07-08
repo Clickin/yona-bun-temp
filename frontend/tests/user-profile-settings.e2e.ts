@@ -70,7 +70,7 @@ const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
     <div id="avatarCropWrap" class="modal hide" role="dialog" data-backdrop="static">
       <div class="modal-header center-txt"><div class="avatar-wrap xlarge"><img></div></div>
       <div class="modal-body"><img><canvas width="128" height="128" class="hide"></canvas></div>
-      <div class="modal-footer"><button type="button" class="ybtn ybtn-default" data-dismiss="modal">Cancel</button><button type="button" class="ybtn ybtn-success btnSubmitCrop">Save</button></div>
+      <div class="modal-footer"><button type="button" class="ybtn ybtn-default">Cancel</button><button type="button" class="ybtn ybtn-success btnSubmitCrop">Save</button></div>
     </div>
   </div>
 </div>
@@ -320,7 +320,7 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
   await rememberSpaMarker(page, "user-profile-avatar-crop");
   const editFormUrl = page.url();
   const avatarCropModal = page.locator("#avatarCropWrap");
-  const cancelButton = '#avatarCropWrap [data-dismiss="modal"]';
+  const cancelButton = "#avatarCropWrap .modal-footer .ybtn-default";
   const saveButton = "#avatarCropWrap .btnSubmitCrop";
   const avatarPng = {
     buffer: Buffer.from(
@@ -353,7 +353,7 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
     directBodyChild: false,
     routeTreeChild: true,
   });
-  await expect(page.locator(cancelButton)).toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator(cancelButton)).not.toHaveAttribute("data-dismiss", /.*/);
   await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).not.toHaveAttribute(
     "alt",
     /.*/,
@@ -469,7 +469,8 @@ test("user profile avatar crop modal source stays route-owned", () => {
   expect(modalSource).toContain("setAvatarCropModalOpen(false);");
   expect(modalSource).toContain("setAvatarCropModalOpen(nextFile !== null);");
   expect(modalSource).toContain('id="avatarCropWrap"');
-  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain("data-dismiss");
   expect(modalSource).toContain("aria-hidden=");
   expect(modalSource).toContain('className={avatarCropModalOpen ? "modal hide in" : "modal hide"}');
   expect(modalSource).toContain("key={avatarFileInputKey}");

@@ -297,12 +297,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               <canvas width="128" height="128" className="hide"></canvas>
             </div>
             <div className="modal-footer">
-              <button
-                type="button"
-                className="ybtn ybtn-default"
-                data-dismiss="modal"
-                onClick={dismissAvatarCropModal}
-              >
+              <button type="button" className="ybtn ybtn-default" onClick={dismissAvatarCropModal}>
                 {t("button.cancel")}
               </button>
               <button
