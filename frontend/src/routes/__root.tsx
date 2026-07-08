@@ -458,9 +458,11 @@ function RootLoginDialog({
   return (
     <div
       id="loginDialog"
-      className={visible ? "modal loginDialog in" : "modal hide loginDialog"}
+      className={visible ? "modal hide loginDialog in" : "modal hide loginDialog"}
+      style={visible ? { display: "block" } : undefined}
       tabIndex={-1}
       role="dialog"
+      aria-hidden={visible ? false : true}
     >
       <div className="modal-body">
         <div className="pull-right">

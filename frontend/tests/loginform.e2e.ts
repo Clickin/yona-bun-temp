@@ -405,6 +405,8 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   await page.locator('[data-login="required"]').first().click();
 
   await expect(page.locator("#loginDialog")).toBeVisible();
+  await expect(page.locator("#loginDialog")).toHaveClass("modal hide loginDialog in");
+  await expect(page.locator("#loginDialog")).toHaveAttribute("aria-hidden", "false");
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
   await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
   await expect(page.locator("#loginDialog .error")).toBeHidden();
@@ -470,6 +472,10 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   );
   expect(legacyLoginDialog).toContain('id="loginDialog" class="modal hide loginDialog"');
   expect(legacyLoginDialog).toContain('tabindex="-1" role="dialog"');
+  const bootstrapModal = readFileSync("../yona-original/public/bootstrap/js/bootstrap.js", "utf8");
+  expect(bootstrapModal).toContain("that.$element.show()");
+  expect(bootstrapModal).toContain(".addClass('in')");
+  expect(bootstrapModal).toContain(".attr('aria-hidden', false)");
   expect(legacyLoginDialog).toContain('class="frm-wrap login-form-wrap"');
   expect(legacyLoginDialog).toContain('id="loginIdOrEmailD"');
   expect(legacyLoginDialog).toContain('id="passwordD"');
@@ -480,13 +486,13 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     source.indexOf("function RootOAuthProviderLink"),
   );
   expect(rootLoginDialogSource).toContain(
-    'className={visible ? "modal loginDialog in" : "modal hide loginDialog"}',
+    'className={visible ? "modal hide loginDialog in" : "modal hide loginDialog"}',
   );
+  expect(rootLoginDialogSource).toContain('style={visible ? { display: "block" } : undefined}');
   expect(rootLoginDialogSource).toContain("tabIndex={-1}");
   expect(rootLoginDialogSource).toContain('role="dialog"');
-  expect(rootLoginDialogSource).toContain('aria-hidden="true"');
+  expect(rootLoginDialogSource).toContain("aria-hidden={visible ? false : true}");
   expect(rootLoginDialogSource).not.toContain("dangerouslySetInnerHTML");
-  expect(rootLoginDialogSource).not.toMatch(/\bstyle=\{\{?\s*display/u);
   expect(rootLoginDialogSource).not.toMatch(/\bdocument\s*\./u);
   expect(rootLoginDialogSource).not.toContain("addEventListener");
   expect(rootLoginDialogSource).not.toContain("classList");
@@ -723,7 +729,7 @@ function expectedLoginScreen(
 
 function expectedRootLoginDialog(basePath: string, formBody: string) {
   return `
-<div id="loginDialog" class="modal loginDialog in" tabindex="-1" role="dialog">
+<div id="loginDialog" class="modal hide loginDialog in" style="display: block;" tabindex="-1" role="dialog" aria-hidden="false">
   <div class="modal-body">
     <div class="pull-right">
       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
