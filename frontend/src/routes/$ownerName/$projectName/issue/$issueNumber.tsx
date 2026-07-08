@@ -1,7 +1,17 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable -- legacy issue detail Bootstrap modal and index-comment DOM parity keeps plain modal divs/backdrops and aria-hidden close controls while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
@@ -36,6 +46,59 @@ const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+
+type LegacyPopoverTriggerProps = {
+  onBlur?: (event: FocusEvent<HTMLElement>) => void;
+  onFocus?: (event: FocusEvent<HTMLElement>) => void;
+  onMouseEnter: (event: MouseEvent<HTMLElement>) => void;
+  onMouseLeave: (event: MouseEvent<HTMLElement>) => void;
+};
+
+function LegacyHoverPopover({
+  children,
+  content,
+  focusable = false,
+}: {
+  children: (triggerProps: LegacyPopoverTriggerProps) => ReactNode;
+  content: string;
+  focusable?: boolean;
+}) {
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const show = (event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPosition({
+      left: rect.left + rect.width / 2,
+      top: rect.top,
+    });
+  };
+  const hide = () => setPosition(null);
+  const triggerProps: LegacyPopoverTriggerProps = {
+    onMouseEnter: show,
+    onMouseLeave: hide,
+    ...(focusable ? { onBlur: hide, onFocus: show } : {}),
+  };
+  const popoverStyle: CSSProperties | undefined = position
+    ? {
+        display: "block",
+        left: position.left,
+        position: "fixed",
+        top: position.top - 10,
+        transform: "translate(-50%, -100%)",
+      }
+    : undefined;
+
+  return (
+    <>
+      {children(triggerProps)}
+      {position ? (
+        <div className="popover top in" style={popoverStyle}>
+          <div className="arrow"></div>
+          <div className="popover-content">{content}</div>
+        </div>
+      ) : null}
+    </>
+  );
+}
 
 function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
@@ -778,18 +841,22 @@ function IssueDetailBody({
                     </button>
                   ) : null}
                   {canUpdate ? (
-                    <button
-                      id="issue-share-button"
-                      type="button"
-                      className="ybtn"
-                      data-toggle="popover"
-                      data-trigger="hover"
-                      data-placement="top"
-                      data-content="You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks."
-                      onClick={() => setSharerListOpen(true)}
+                    <LegacyHoverPopover
+                      content="You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks."
+                      focusable
                     >
-                      Issue Sharing
-                    </button>
+                      {(popoverProps) => (
+                        <button
+                          id="issue-share-button"
+                          type="button"
+                          className="ybtn"
+                          onClick={() => setSharerListOpen(true)}
+                          {...popoverProps}
+                        >
+                          Issue Sharing
+                        </button>
+                      )}
+                    </LegacyHoverPopover>
                   ) : null}
                   <span className="project-btn-item hide show-in-mobile-inline ml4">
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
@@ -1432,15 +1499,13 @@ function IssueWeight({
       >
         <i className="yobicon-arrow-down-alt"></i>
       </button>
-      <span
-        className="weight-number"
-        data-toggle="popover"
-        data-trigger="hover"
-        data-placement="top"
-        data-content="Issue weight description"
-      >
-        {currentWeight}
-      </span>
+      <LegacyHoverPopover content="Issue weight description">
+        {(popoverProps) => (
+          <span className="weight-number" {...popoverProps}>
+            {currentWeight}
+          </span>
+        )}
+      </LegacyHoverPopover>
     </span>
   );
 }
@@ -2002,16 +2067,17 @@ function IssueActionButtons({
         </button>
       ) : null}
       {!canBeDeleted ? (
-        <button
-          type="button"
-          className="icon disabled btn-transparent-with-fontsize-lineheight ml6"
-          data-toggle="popover"
-          data-trigger="hover"
-          data-placement="top"
-          data-content="Can't be deleted because of other users' comments"
-        >
-          <i className="yobicon-trash"></i>
-        </button>
+        <LegacyHoverPopover content="Can't be deleted because of other users' comments" focusable>
+          {(popoverProps) => (
+            <button
+              type="button"
+              className="icon disabled btn-transparent-with-fontsize-lineheight ml6"
+              {...popoverProps}
+            >
+              <i className="yobicon-trash"></i>
+            </button>
+          )}
+        </LegacyHoverPopover>
       ) : null}
     </span>
   );
@@ -3055,18 +3121,19 @@ function CommentUpdateForm({
                 />
               </span>
               {showNotification ? (
-                <span
-                  className="send-notification-check"
-                  data-toggle="popover"
-                  data-trigger="hover"
-                  data-placement="top"
-                  data-content="If you are not the original author, this option will be ignored. Notification mail will be sent."
+                <LegacyHoverPopover
+                  content="If you are not the original author, this option will be ignored. Notification mail will be sent."
+                  focusable
                 >
-                  <label className="checkbox inline">
-                    <input type="checkbox" name="notificationMail" value="yes" defaultChecked />
-                    <strong>Send notification mail</strong>
-                  </label>
-                </span>
+                  {(popoverProps) => (
+                    <span className="send-notification-check" {...popoverProps}>
+                      <label className="checkbox inline">
+                        <input type="checkbox" name="notificationMail" value="yes" defaultChecked />
+                        <strong>Send notification mail</strong>
+                      </label>
+                    </span>
+                  )}
+                </LegacyHoverPopover>
               ) : null}
               <button
                 type="button"

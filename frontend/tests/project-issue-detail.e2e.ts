@@ -14,7 +14,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 const ISSUE_DETAIL_KEYMAP = `<div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" data-toggle="modal" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button><div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue details</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">L</span><span class="help-inline">List</span><br><span class="ybtn ybtn-small">E</span><span class="help-inline">Edit</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"><h5>Issue Comments</h5><span class="ybtn ybtn-small">SHIFT</span> + <span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Comment &amp; Close issue</span><br></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div></div>`;
 
 const EXPECTED_ISSUE_DETAIL = `
-<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id">11</strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="issue-11" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/issues/11/content"><textarea>Body **markdown**</textarea></form></div><div id="issue-body-11"><div class="content markdown-wrap" data-allowed-update="true"><p>Body <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="Watch this issue" data-watching="false">Subscribe</button><button id="issue-share-button" type="button" class="ybtn" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks.">Issue Sharing</button><span class="project-btn-item hide show-in-mobile-inline ml4"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></span><span class="issue-weight"><span class="divider">|</span><button id="upvote-issue-weight" class="ybtn ybtn-small" data-toggle="tooltip" title="Issue weight: Upvote"><i class="yobicon-arrow-up-alt"></i></button><button class="ybtn ybtn-small" id="down-vote-issue-weight" data-toggle="tooltip" title="Issue weight: Down vote"><i class="yobicon-arrow-down-alt"></i></button><span class="weight-number" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Issue weight description">2</span></span></div></div><div id="vote" class="vote-wrap voter-exists"><button type="button" class="" title="Vote this issue" data-toggle="tooltip"><span class="heart"><i class="yobicon-hearts"></i></span></button><div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div></div><div id="voters" class="modal hide voters-dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Issue Voters</h5></div><div class="modal-body"><ul class="unstyled"><li><a href="__BASE_PATH__/admin" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li><a href="__BASE_PATH__/dev" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div class="modal-footer"><button id="copyEmailBtn" class="ybtn ybtn-info ybtn-small" data-clipboard-text="Site Admin <admin@example.com>;Dev Member <dev@example.com>;">Copy email</button><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Close</button></div></div><span class="act-row"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span></div><dl class="sharer-list hideFromDisplayOnly"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="hideFromDisplayOnly"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value="" title=""></dd></dl><div class="watcher-list"></div><div class="subtasks"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info"><form id="issueUpdateForm" action="__BASE_PATH__/admin/sample/issues" method="post"><input type="hidden" name="issues[0].id" value="42"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></dd><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="admin" style="width:100%" title=""></dd></dl><dl><dt>Milestone</dt><dd><select id="milestone" name="milestone.id" data-toggle="select2" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd></dl><dl><dt>Due date<span class="duedate-status "></span></dt><dd><div class="search search-bar"><input type="text" name="dueDate" value="Jul 5, 2026" class="textbox full" autocomplete="off" data-toggle="calendar"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select></dd></dl><div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div></form><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div></div></div><div><input type="hidden" id="issueBodyChecksum" value="body-sha1"><input type="hidden" id="numOfComments" value="0"><input type="hidden" id="issueUpdateDate" value="1782892800000"></div><div class="board-footer">${ISSUE_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Are you sure you want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 1, 2026">Jul 1, 2026</div><span class="badge badge-issue-open">Open</span></div><div class="title"><strong class="board-id">11</strong>Fix flaky issue<span class="favorite-issue" data-issue-id="42"><i class="star material-icons va-text-top">star</i></span><div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 1, 2026">Jul 1, 2026</span><span class="badge badge-small badge-issue-open">Open</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></div><div id="issue-11" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/issues/11/content"><textarea>Body **markdown**</textarea></form></div><div id="issue-body-11"><div class="content markdown-wrap" data-allowed-update="true"><p>Body <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-toggle="tooltip" data-placement="top" title="Watch this issue" data-watching="false">Subscribe</button><button id="issue-share-button" type="button" class="ybtn">Issue Sharing</button><span class="project-btn-item hide show-in-mobile-inline ml4"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></span><span class="issue-weight"><span class="divider">|</span><button id="upvote-issue-weight" class="ybtn ybtn-small" data-toggle="tooltip" title="Issue weight: Upvote"><i class="yobicon-arrow-up-alt"></i></button><button class="ybtn ybtn-small" id="down-vote-issue-weight" data-toggle="tooltip" title="Issue weight: Down vote"><i class="yobicon-arrow-down-alt"></i></button><span class="weight-number">2</span></span></div></div><div id="vote" class="vote-wrap voter-exists"><button type="button" class="" title="Vote this issue" data-toggle="tooltip"><span class="heart"><i class="yobicon-hearts"></i></span></button><div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div></div><div id="voters" class="modal hide voters-dialog"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Issue Voters</h5></div><div class="modal-body"><ul class="unstyled"><li><a href="__BASE_PATH__/admin" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a></li><li><a href="__BASE_PATH__/dev" class="usf-group" target="_blank"><span class="avatar-wrap mlarge"><img src="/assets/images/default-avatar-32.png" width="40" height="40"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a></li></ul></div><div class="modal-footer"><button id="copyEmailBtn" class="ybtn ybtn-info ybtn-small" data-clipboard-text="Site Admin <admin@example.com>;Dev Member <dev@example.com>;">Copy email</button><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Close</button></div></div><span class="act-row"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></span></div><dl class="sharer-list hideFromDisplayOnly"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="hideFromDisplayOnly"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value="" title=""></dd></dl><div class="watcher-list"></div><div class="subtasks"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div><div class="span3 span-right-pane mb20"><div class="issue-info"><form id="issueUpdateForm" action="__BASE_PATH__/admin/sample/issues" method="post"><input type="hidden" name="issues[0].id" value="42"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/issueform?parentIssueId=42" class="ybtn ybtn-success">New subtask</a></dd><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="admin" style="width:100%" title=""></dd></dl><dl><dt>Milestone</dt><dd><select id="milestone" name="milestone.id" data-toggle="select2" data-format="milestone" data-container-css-class="fullsize"><option value="-1">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option><option value="9" data-state="open">v2.0</option></optgroup><optgroup label="Closed"><option value="7" data-state="closed">v0.9</option></optgroup></select></dd></dl><dl><dt>Due date<span class="duedate-status "></span></dt><dd><div class="search search-bar"><input type="text" name="dueDate" value="Jul 5, 2026" class="textbox full" autocomplete="off" data-toggle="calendar"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select></dd></dl><div class="act-row right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" data-toggle="tooltip" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" data-toggle="modal" data-target="#deleteConfirm" title="Delete"><i class="yobicon-trash"></i></button></div></form><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div></div></div></div><div><input type="hidden" id="issueBodyChecksum" value="body-sha1"><input type="hidden" id="numOfComments" value="0"><input type="hidden" id="issueUpdateDate" value="1782892800000"></div><div class="board-footer">${ISSUE_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Are you sure you want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div></div>
 `;
 
 const TASKLIST = `<div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div>`;
@@ -514,6 +514,53 @@ async function expectIssueDetailAssets(page: Page, basePath: string) {
     0,
   );
   await expect(page.locator("script", { hasText: '$(".weight-number").html' })).toHaveCount(0);
+  await expect(page.locator("#issue-share-button")).not.toHaveAttribute("data-toggle", "popover");
+  await expect(page.locator("#issue-share-button")).not.toHaveAttribute("data-trigger", "hover");
+  await expect(page.locator("#issue-share-button")).not.toHaveAttribute("data-placement", "top");
+  await expect(page.locator("#issue-share-button")).not.toHaveAttribute("data-content", /./u);
+  await expect(page.locator(".weight-number")).not.toHaveAttribute("data-toggle", "popover");
+  await expect(page.locator(".weight-number")).not.toHaveAttribute("data-trigger", "hover");
+  await expect(page.locator(".weight-number")).not.toHaveAttribute("data-placement", "top");
+  await expect(page.locator(".weight-number")).not.toHaveAttribute("data-content", /./u);
+}
+
+async function expectLegacyTopHoverPopover(page: Page, targetSelector: string, content: string) {
+  await expect(page.locator(".popover.top.in")).toHaveCount(0);
+  await page.locator(targetSelector).first().hover();
+
+  const popover = page.locator(".popover.top.in", { hasText: content });
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".arrow")).toHaveCount(1);
+  await expect(popover.locator(".popover-content")).toHaveText(content);
+
+  const metrics = await page.evaluate(
+    ({ content, targetSelector }) => {
+      const target = document.querySelector(targetSelector);
+      const popover = Array.from(document.querySelectorAll(".popover.top.in")).find((node) =>
+        (node.textContent ?? "").includes(content),
+      );
+      if (!target || !popover) {
+        return null;
+      }
+      const targetBox = target.getBoundingClientRect();
+      const popoverBox = popover.getBoundingClientRect();
+      return {
+        arrowCount: popover.querySelectorAll(".arrow").length,
+        popoverBottom: Math.round(popoverBox.bottom),
+        popoverCenter: Math.round(popoverBox.left + popoverBox.width / 2),
+        targetCenter: Math.round(targetBox.left + targetBox.width / 2),
+        targetTop: Math.round(targetBox.top),
+      };
+    },
+    { content, targetSelector },
+  );
+  expect(metrics).not.toBeNull();
+  expect(metrics!.arrowCount).toBe(1);
+  expect(metrics!.popoverBottom).toBeLessThanOrEqual(metrics!.targetTop);
+  expect(Math.abs(metrics!.popoverCenter - metrics!.targetCenter)).toBeLessThanOrEqual(10);
+
+  await page.mouse.move(1, 1);
+  await expect(page.locator(".popover.top.in")).toHaveCount(0);
 }
 
 async function expectIssueDetailSelect2Partial(page: Page, basePath: string) {
@@ -1202,10 +1249,10 @@ test("project issue detail matches authored comment edit branch from legacy part
   await expect(updateForm).toBeVisible();
   await expect(comment.locator("#comment-body-77")).toBeHidden();
   await expect(notification).toBeVisible();
-  await expect(notification).toHaveAttribute(
-    "data-content",
-    "If you are not the original author, this option will be ignored. Notification mail will be sent.",
-  );
+  await expect(notification).not.toHaveAttribute("data-toggle", "popover");
+  await expect(notification).not.toHaveAttribute("data-trigger", "hover");
+  await expect(notification).not.toHaveAttribute("data-placement", "top");
+  await expect(notification).not.toHaveAttribute("data-content", /./u);
   await expect(notification.locator("input[name='notificationMail']")).toBeChecked();
   await expect(notification.locator("strong")).toHaveText("Send notification mail");
   await expect(updateForm.locator("button[type='submit']")).toHaveText("Save");
@@ -1470,6 +1517,61 @@ test("project issue detail reveals legacy sharer list from share button", async 
   const expected = `<dl class="sharer-list hideFromDisplayOnly sharer-list-border" style="display:block"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="" style="display:block"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value="" title=""></dd></dl>`;
   expect(await canonicalize(page, ".span-left-pane > .sharer-list")).toEqual(
     await canonicalizeHtml(page, expected),
+  );
+});
+
+test("project issue detail renders React-owned top hover popovers for issue action markers", async ({
+  page,
+}) => {
+  await mockProjectIssueDetail(page, { canBeDeleted: false, viewerCanDelete: false });
+
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  await expectLegacyTopHoverPopover(
+    page,
+    "#issue-share-button",
+    "You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks.",
+  );
+  await expectLegacyTopHoverPopover(page, ".weight-number", "Issue weight description");
+  await expectLegacyTopHoverPopover(
+    page,
+    ".span-left-pane > .board-actrow .act-row > button.disabled",
+    "Can't be deleted because of other users' comments",
+  );
+});
+
+test("project issue detail renders React-owned top hover popover for notification mail warning", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Site Admin",
+        authorLoginId: "admin",
+        childComments: [],
+        contentsHtml: "<p>Server HTML should not render</p>",
+        contentsMarkdown: "Comment **markdown**",
+        createdLabel: "Jul 2, 2026",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await page.locator("#comment-77 [data-toggle='comment-edit'][data-comment-id='77']").click();
+
+  await expectLegacyTopHoverPopover(
+    page,
+    "#comment-editform-77 .send-notification-check",
+    "If you are not the original author, this option will be ignored. Notification mail will be sent.",
   );
 });
 
@@ -2134,13 +2236,25 @@ test("project issue detail renders legacy unavailable delete action", async ({ p
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
-  const expected = `<button type="button" class="icon disabled btn-transparent-with-fontsize-lineheight ml6" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Can't be deleted because of other users' comments"><i class="yobicon-trash"></i></button>`;
+  const expected = `<button type="button" class="icon disabled btn-transparent-with-fontsize-lineheight ml6"><i class="yobicon-trash"></i></button>`;
   expect(
     await canonicalize(page, ".span-left-pane > .board-actrow .act-row > button.disabled"),
   ).toEqual(await canonicalizeHtml(page, expected));
   expect(await canonicalize(page, ".issue-info .right-menu-icons > button.disabled")).toEqual(
     await canonicalizeHtml(page, expected),
   );
+  await expect(
+    page.locator(".span-left-pane > .board-actrow .act-row > button.disabled"),
+  ).not.toHaveAttribute("data-toggle", "popover");
+  await expect(
+    page.locator(".span-left-pane > .board-actrow .act-row > button.disabled"),
+  ).not.toHaveAttribute("data-trigger", "hover");
+  await expect(
+    page.locator(".span-left-pane > .board-actrow .act-row > button.disabled"),
+  ).not.toHaveAttribute("data-placement", "top");
+  await expect(
+    page.locator(".span-left-pane > .board-actrow .act-row > button.disabled"),
+  ).not.toHaveAttribute("data-content", /./u);
 });
 
 test("project issue detail hides unauthorized delete when issue itself can be deleted", async ({
