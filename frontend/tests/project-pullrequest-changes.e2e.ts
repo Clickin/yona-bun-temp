@@ -698,7 +698,7 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
     );
   });
   await deleteButton.click();
-  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal fade in");
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade in");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
@@ -716,6 +716,18 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
           .__commentDeleteBubbles,
     ),
   ).toBe(0);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/pullRequest/9/changes`);
+
+  await page.locator("#comment-delete-modal .modal-header .close").click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+
+  await deleteButton.click();
+  await page.locator("#comment-delete-modal .modal-footer .ybtn").last().click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
 });
 
 test("project pull request changes folds original message content in via-email review comments", async ({
@@ -962,6 +974,7 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain("const [isOpen, setIsOpen] = useState(false)");
   expect(routeSource).toContain("const closeDropdown = () => setIsOpen(false)");
   expect(routeSource).toContain("onClick={closeDropdown}");
+  expect(routeSource).toContain('className={isOpen ? "modal hide fade in" : "modal hide fade"}');
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
   expect(routeSource).toContain("event.stopPropagation()");
 });

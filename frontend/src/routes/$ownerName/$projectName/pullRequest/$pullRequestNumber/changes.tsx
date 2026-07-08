@@ -581,7 +581,7 @@ function CommentDeleteModal({
     <>
       <div
         id="comment-delete-modal"
-        className={isOpen ? "modal fade in" : "modal hide fade"}
+        className={isOpen ? "modal hide fade in" : "modal hide fade"}
         style={isOpen ? { display: "block" } : undefined}
       >
         <div className="modal-header">
