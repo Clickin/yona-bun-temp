@@ -366,6 +366,23 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
           "",
       ];
     });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const titlePrefix = target.closest(".title-prefix");
+      if (!titlePrefix) {
+        return;
+      }
+      const auditWindow = window as unknown as {
+        __milestoneTitlePrefixDelegatedClicks?: string[];
+      };
+      auditWindow.__milestoneTitlePrefixDelegatedClicks = [
+        ...(auditWindow.__milestoneTitlePrefixDelegatedClicks ?? []),
+        titlePrefix.textContent?.trim() ?? "",
+      ];
+    });
   });
   await mockProjectMilestoneDetail(page, stateRequests, deleteRequests);
 
@@ -739,7 +756,19 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
 
   await page.click("#issue-item-41 .title-prefix");
   await expect(page.locator('.search-bar input[name="filter"]')).toHaveValue("[UI]");
+  await expect(page.locator('.search-bar input[name="filter"]')).toBeFocused();
   await expect(page.locator("#issue-item-41")).toBeVisible();
+  await expect(
+    page.evaluate(() => {
+      return (
+        (
+          window as unknown as {
+            __milestoneTitlePrefixDelegatedClicks?: string[];
+          }
+        ).__milestoneTitlePrefixDelegatedClicks ?? []
+      );
+    }),
+  ).resolves.toEqual([]);
   await page.fill('.search-bar input[name="filter"]', "bug");
   await expect(page.locator("#issue-item-41")).toBeHidden();
   await page.fill('.search-bar input[name="filter"]', "Dev Member");

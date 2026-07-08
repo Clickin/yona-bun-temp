@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { HTMLAttributes } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
@@ -287,6 +287,7 @@ function ProjectMilestoneDetailBody({
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const search = Route.useSearch();
   const [filter, setFilter] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmWasShown, setDeleteConfirmWasShown] = useState(false);
   const projectPath = `/${ownerName}/${projectName}`;
@@ -305,6 +306,10 @@ function ProjectMilestoneDetailBody({
     href: "#deleteConfirm",
     "data-toggle": "modal",
   } satisfies LegacyModalTriggerButtonAttrs;
+  const applyTitlePrefixFilter = (prefix: string) => {
+    setFilter(prefix);
+    searchInputRef.current?.focus();
+  };
 
   const stateMutation = useMutation({
     mutationFn: async (state: "closed" | "open") => {
@@ -491,6 +496,7 @@ function ProjectMilestoneDetailBody({
                 />
                 <div className="pull-right search search-bar">
                   <input
+                    ref={searchInputRef}
                     name="filter"
                     className="textbox"
                     type="text"
@@ -524,7 +530,7 @@ function ProjectMilestoneDetailBody({
                           : currentIds.filter((currentId) => currentId !== issueId),
                       );
                     }}
-                    onTitlePrefixSearch={setFilter}
+                    onTitlePrefixSearch={applyTitlePrefixFilter}
                     milestoneId={milestoneId}
                     ownerName={ownerName}
                     projectName={projectName}
@@ -1155,7 +1161,9 @@ function MilestoneIssueRow({
                 type="button"
                 className="title-prefix"
                 key={`${issueId}-${prefix}`}
-                onClick={() => {
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
                   onTitlePrefixSearch(prefix);
                 }}
               >

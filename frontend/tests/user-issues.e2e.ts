@@ -16,12 +16,12 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
-            <li class="active"><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span>(2)</button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span>(1)</button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span>(1)</button></li>
+            <li class="active"><button type="button"><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></button></li>
+            <li class=""><button type="button"><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></button></li>
+            <li class=""><button type="button"><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></button></li>
+            <li class=""><button type="button"><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span>(2)</button></li>
+            <li class=""><button type="button"><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span>(1)</button></li>
+            <li class=""><button type="button"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span>(1)</button></li>
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open">
@@ -68,12 +68,12 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="1" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="1" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="1" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id=""><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="1" data-sharer-id="" data-favorite-id=""><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span></button></li>
-            <li class=""><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="1" data-favorite-id=""><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span></button></li>
-            <li class="active"><button pjax-filter="" type="button" data-author-id="" data-assignee-id="" data-commenter-id="" data-milestone-id="" data-mention-id="" data-sharer-id="" data-favorite-id="1"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span></button></li>
+            <li class=""><button type="button"><span class="assigned-to-me"><i class="yobicon-user"></i>Assigned</span></button></li>
+            <li class=""><button type="button"><span class="authored-by-me"><i class="yobicon-pencil"></i>Created</span></button></li>
+            <li class=""><button type="button"><span class="commented-by-me"><i class="yobicon-comments"></i>Commented</span></button></li>
+            <li class=""><button type="button"><span class="mentioned-of-me"><i class="yobicon-at"></i>Mentioned</span></button></li>
+            <li class=""><button type="button"><span class="shared-with-me"><i class="yobicon-share"></i>Shared</span></button></li>
+            <li class="active"><button type="button"><span class="favorite-issue"><i class="yobicon-favorite"></i>Favorite</span></button></li>
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="asc"><input type="hidden" name="state" value="closed">

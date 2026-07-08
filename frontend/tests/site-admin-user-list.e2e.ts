@@ -379,13 +379,15 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     /<a[\s\S]*?(?:accountToggleBtn|data-request-method|data-request-uri)/u,
   );
   expect(routeSource).toMatch(/<button\s+type="button"\s+id="accountToggleBtn"/u);
-  expect(routeSource).toMatch(/<button\s+type="button"[\s\S]*?data-request-method="post"/u);
-  expect(routeSource).toMatch(
-    /<button\s+type="button"\s+id=\{user\.loginId\}[\s\S]*?data-toggle="reset-password"/u,
-  );
-  expect(routeSource).toMatch(
-    /<button\s+type="button"\s+className="ybtn ybtn-small ybtn-danger"[\s\S]*?data-toggle="account-delete"/u,
-  );
+  expect(routeSource).not.toContain("data-request-method");
+  expect(routeSource).not.toContain("data-request-uri");
+  expect(routeSource).not.toContain('data-toggle="reset-password"');
+  expect(routeSource).not.toContain('data-toggle="account-delete"');
+  expect(routeSource).not.toContain("data-href");
+  expect(routeSource).not.toContain("data-user-id");
+  expect(routeSource).not.toContain("data-user-name");
+  expect(routeSource).toMatch(/<button\s+type="button"\s+id=\{user\.loginId\}/u);
+  expect(routeSource).toMatch(/className="ybtn ybtn-small ybtn-danger"/u);
   expect(routeSource).toMatch(
     /<Link\s+\{\.\.\.LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS\}\s+className="avatar-wrap list-avatar"\s+params=\{\{ user: user\.loginId \}\}\s+to="\/\$user"/u,
   );
