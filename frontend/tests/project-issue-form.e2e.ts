@@ -51,7 +51,7 @@ const EXPECTED_MARKDOWN_TABLE_SAMPLE = `
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -115,17 +115,39 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(
     page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
   ).toHaveCount(0);
+  await expect(
+    page.locator('[data-toggle="markdown-editor"] .nav-tabs [data-toggle="tab"]'),
+  ).toHaveCount(0);
   const editTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-toggle="tab"][data-mode="edit"]',
+    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
   );
   const previewTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-toggle="tab"][data-mode="preview"]',
+    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
   );
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-toggle="markdown-editor"] .nav-tabs > li')
+        .evaluateAll((items) =>
+          items.map((item) => item.textContent?.replace(/\s+/g, " ").trim() ?? ""),
+        ),
+    )
+    .toEqual(["Edit", "Preview", "Add checklist", "Clear Temporary", ""]);
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
+  await expect(page.locator("#edit-body")).toBeVisible();
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
+  await expect(page.locator("#preview-body")).not.toBeVisible();
+  const initialEditorMetrics = await issueEditorTabMetrics(page);
+  expect(initialEditorMetrics.tabCount).toBe(5);
+  expect(initialEditorMetrics.editBeforePreview).toBe(true);
+  expect(initialEditorMetrics.tabsContainedByWrap).toBe(true);
+  expect(initialEditorMetrics.panesContainedByWrap).toBe(true);
+  expect(initialEditorMetrics.textareaContainedByEditPane).toBe(true);
+  expect(initialEditorMetrics.previewContainedByPreviewPane).toBe(true);
+  expect(initialEditorMetrics.contentStartsBelowTabs).toBe(true);
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator(".markdown-help-wrap > li")).toHaveCount(10);
   await expectMarkdownHelpPreText(page, ".markdownHeaders", EXPECTED_MARKDOWN_HEADER_SAMPLE);
@@ -190,7 +212,13 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(page).toHaveURL(issueFormUrl);
   await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
+  await expect(page.locator("#preview-body")).toBeVisible();
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
+  await expect(page.locator("#edit-body")).not.toBeVisible();
+  const previewEditorMetrics = await issueEditorTabMetrics(page);
+  expect(previewEditorMetrics.tabsContainedByWrap).toBe(true);
+  expect(previewEditorMetrics.panesContainedByWrap).toBe(true);
+  expect(previewEditorMetrics.previewContainedByPreviewPane).toBe(true);
   await expect
     .poll(() =>
       page.evaluate(
@@ -202,7 +230,9 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(page).toHaveURL(issueFormUrl);
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
+  await expect(page.locator("#edit-body")).toBeVisible();
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
+  await expect(page.locator("#preview-body")).not.toBeVisible();
 
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(
@@ -488,6 +518,8 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).not.toMatch(/setAttribute\(["']tabindex["']/u);
   expect(source).toContain("tabIndex={1}");
   expect(source).toContain("tabIndex={2}");
+  expect(source).toContain('data-toggle="markdown-editor"');
+  expect(source).not.toContain('data-toggle="tab"');
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain("legacyMarkdownHelpHtml");
@@ -658,6 +690,69 @@ async function protectedIssueFormHeaderSearchScopeMetrics(page: Page) {
       searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
       searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),
       searchTopWithinNavbar: Math.round(searchRect.top) >= Math.round(navbarRect.top),
+    };
+  });
+}
+
+async function issueEditorTabMetrics(page: Page) {
+  return page.evaluate(() => {
+    const wrap = document.querySelector<HTMLElement>('[data-toggle="markdown-editor"]');
+    const tabs = document.querySelector<HTMLElement>('[data-toggle="markdown-editor"] .nav-tabs');
+    const tabItems = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-toggle="markdown-editor"] .nav-tabs > li'),
+    );
+    const editButton = document.querySelector<HTMLElement>(
+      '[data-toggle="markdown-editor"] .nav-tabs button[data-mode="edit"]',
+    );
+    const previewButton = document.querySelector<HTMLElement>(
+      '[data-toggle="markdown-editor"] .nav-tabs button[data-mode="preview"]',
+    );
+    const tabContent = document.querySelector<HTMLElement>(
+      '[data-toggle="markdown-editor"] .tab-content',
+    );
+    const editPane = document.querySelector<HTMLElement>("#edit-body");
+    const previewPane = document.querySelector<HTMLElement>("#preview-body");
+    const textarea = document.querySelector<HTMLElement>("#editor-body-body");
+    const preview = document.querySelector<HTMLElement>("#preview-body .markdown-preview");
+    if (
+      !wrap ||
+      !tabs ||
+      !editButton ||
+      !previewButton ||
+      !tabContent ||
+      !editPane ||
+      !previewPane ||
+      !textarea ||
+      !preview
+    ) {
+      throw new Error("Missing issue form editor elements");
+    }
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const tabsRect = tabs.getBoundingClientRect();
+    const editButtonRect = editButton.getBoundingClientRect();
+    const previewButtonRect = previewButton.getBoundingClientRect();
+    const tabContentRect = tabContent.getBoundingClientRect();
+    const editPaneRect = editPane.getBoundingClientRect();
+    const previewPaneRect = previewPane.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    const previewRect = preview.getBoundingClientRect();
+    return {
+      contentStartsBelowTabs: Math.round(tabContentRect.top) >= Math.round(tabsRect.bottom),
+      editBeforePreview: Math.round(editButtonRect.right) <= Math.round(previewButtonRect.left),
+      panesContainedByWrap:
+        Math.round(tabContentRect.left) >= Math.round(wrapRect.left) &&
+        Math.round(tabContentRect.right) <= Math.round(wrapRect.right),
+      previewContainedByPreviewPane:
+        Math.round(previewRect.left) >= Math.round(previewPaneRect.left) &&
+        Math.round(previewRect.right) <= Math.round(previewPaneRect.right),
+      tabCount: tabItems.length,
+      tabsContainedByWrap:
+        Math.round(tabsRect.left) >= Math.round(wrapRect.left) &&
+        Math.round(tabsRect.right) <= Math.round(wrapRect.right),
+      textareaContainedByEditPane:
+        Math.round(textareaRect.left) >= Math.round(editPaneRect.left) &&
+        Math.round(textareaRect.right) <= Math.round(editPaneRect.right),
     };
   });
 }
