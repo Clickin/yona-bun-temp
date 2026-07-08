@@ -52,7 +52,7 @@ const EXPECTED_MARKDOWN_TABLE_SAMPLE = `
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -135,12 +135,16 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expect(
     page.locator('.mt10:has(#editor-body-body) .nav-tabs [data-toggle="tab"]'),
   ).toHaveCount(0);
-  const editTab = page.locator(
-    '.mt10:has(#editor-body-body) .nav-tabs button[type="button"][data-mode="edit"]',
-  );
-  const previewTab = page.locator(
-    '.mt10:has(#editor-body-body) .nav-tabs button[type="button"][data-mode="preview"]',
-  );
+  await expect(page.locator(".mt10:has(#editor-body-body) .nav-tabs [data-mode]")).toHaveCount(0);
+  const editorTabs = page.locator(".mt10:has(#editor-body-body) .nav-tabs > li");
+  const editTab = editorTabs
+    .nth(0)
+    .locator('button[type="button"]')
+    .filter({ hasText: /^Edit$/u });
+  const previewTab = editorTabs
+    .nth(1)
+    .locator('button[type="button"]')
+    .filter({ hasText: /^Preview$/u });
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect
@@ -152,7 +156,7 @@ test("project issue create form matches legacy issue/create.scala.html core form
         ),
     )
     .toEqual(["Edit", "Preview", "Add checklist", "Clear Temporary", ""]);
-  await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(editorTabs.nth(0)).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toBeVisible();
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
@@ -227,7 +231,7 @@ test("project issue create form matches legacy issue/create.scala.html core form
   });
   await previewTab.click();
   await expect(page).toHaveURL(issueFormUrl);
-  await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(editorTabs.nth(1)).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toBeVisible();
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
@@ -245,7 +249,7 @@ test("project issue create form matches legacy issue/create.scala.html core form
     .toBe("tab-kept");
   await editTab.click();
   await expect(page).toHaveURL(issueFormUrl);
-  await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(editorTabs.nth(0)).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toBeVisible();
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
@@ -802,10 +806,8 @@ async function issueEditorTabMetrics(page: Page) {
     const wrap = textarea?.closest<HTMLElement>(".mt10") ?? null;
     const tabs = wrap?.querySelector<HTMLElement>(".nav-tabs") ?? null;
     const tabItems = Array.from(wrap?.querySelectorAll<HTMLElement>(".nav-tabs > li") ?? []);
-    const editButton =
-      wrap?.querySelector<HTMLElement>('.nav-tabs button[data-mode="edit"]') ?? null;
-    const previewButton =
-      wrap?.querySelector<HTMLElement>('.nav-tabs button[data-mode="preview"]') ?? null;
+    const editButton = tabItems[0]?.querySelector<HTMLElement>('button[type="button"]') ?? null;
+    const previewButton = tabItems[1]?.querySelector<HTMLElement>('button[type="button"]') ?? null;
     const tabContent = wrap?.querySelector<HTMLElement>(".tab-content") ?? null;
     const editPane = document.querySelector<HTMLElement>("#edit-body");
     const previewPane = document.querySelector<HTMLElement>("#preview-body");
