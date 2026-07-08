@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
 import { useState } from "react";
@@ -6,6 +6,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import {
+  closePullRequestThreadRest,
+  openPullRequestThreadRest,
   pullRequestChangesQueryOptions,
   type PullRequestChangesResponse,
   type PullRequestCommit,
@@ -13,9 +15,11 @@ import {
   type ReviewComment,
   type ReviewThread,
 } from "../../../../../api/pull-requests";
+import { apiQueryKeys } from "../../../../../api/query-keys";
 import { currentSessionQueryOptions } from "../../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
+import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
@@ -220,6 +224,21 @@ function ProjectPullRequestChangesTitle({
   return <title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>;
 }
 
+function replaceThreadInChanges(
+  changes: PullRequestChangesResponse,
+  nextThread: ReviewThread,
+): PullRequestChangesResponse {
+  const replace = (thread: ReviewThread) => (thread.id === nextThread.id ? nextThread : thread);
+
+  return {
+    ...changes,
+    cardThreads: changes.cardThreads.map(replace),
+    inlineThreads: changes.inlineThreads.map(replace),
+    nonRangedThreads: changes.nonRangedThreads.map(replace),
+    threads: changes.threads.map(replace),
+  };
+}
+
 function ProjectPullRequestChangesBody({
   changes,
   commitId,
@@ -241,6 +260,34 @@ function ProjectPullRequestChangesBody({
   const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
   const [deleteRequestUri, setDeleteRequestUri] = useState<string | null>(null);
   const [activeInlineReview, setActiveInlineReview] = useState<ActiveInlineReview | null>(null);
+  const queryClient = useQueryClient();
+  const changesQueryKey = apiQueryKeys.project.pullRequestChanges(
+    pullRequest.ownerName,
+    pullRequest.projectName,
+    pullRequest.pullRequestNumber,
+    { commitId },
+  );
+  const threadStateMutation = useMutation({
+    mutationFn: async (input: { state: string; threadId: number }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      const scope = {
+        ownerName: pullRequest.ownerName,
+        projectName: pullRequest.projectName,
+        pullRequestNumber: pullRequest.pullRequestNumber,
+        threadId: input.threadId,
+      };
+      return input.state === "open"
+        ? closePullRequestThreadRest(runtimeConfig, csrfToken, scope)
+        : openPullRequestThreadRest(runtimeConfig, csrfToken, scope);
+    },
+    onSuccess(nextThread) {
+      queryClient.setQueryData<PullRequestChangesResponse>(changesQueryKey, (previous) =>
+        previous ? replaceThreadInChanges(previous, nextThread) : previous,
+      );
+    },
+  });
+  const toggleThreadState = (threadId: number, state: string) =>
+    threadStateMutation.mutate({ state, threadId });
 
   return (
     <>
@@ -308,6 +355,7 @@ function ProjectPullRequestChangesBody({
                       inlineThreads={changes.inlineThreads}
                       key={file.path}
                       onCommentDelete={setDeleteRequestUri}
+                      onThreadStateToggle={toggleThreadState}
                       onInlineReviewChange={setActiveInlineReview}
                       pullRequest={pullRequest}
                       runtimeConfig={runtimeConfig}
@@ -327,6 +375,7 @@ function ProjectPullRequestChangesBody({
                         currentUser={currentUser}
                         key={thread.id}
                         onCommentDelete={setDeleteRequestUri}
+                        onThreadStateToggle={toggleThreadState}
                         pullRequest={pullRequest}
                         runtimeConfig={runtimeConfig}
                         thread={thread}
@@ -364,12 +413,14 @@ function ProjectPullRequestChangesBody({
 function NonRangedThread({
   currentUser,
   onCommentDelete,
+  onThreadStateToggle,
   pullRequest,
   runtimeConfig,
   thread,
 }: {
   currentUser: CurrentUserSummary;
   onCommentDelete: (requestUri: string) => void;
+  onThreadStateToggle: (threadId: number, state: string) => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   thread: ReviewThread;
@@ -405,7 +456,7 @@ function NonRangedThread({
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
             currentUser={currentUser}
-            runtimeConfig={runtimeConfig}
+            onThreadStateToggle={onThreadStateToggle}
             state={state}
             threadId={thread.id}
             wrapId={`thread-${thread.id}`}
@@ -418,13 +469,13 @@ function NonRangedThread({
 
 function ThreadReplyFormBody({
   currentUser,
-  runtimeConfig,
+  onThreadStateToggle,
   state,
   threadId,
   wrapId,
 }: {
   currentUser: CurrentUserSummary;
-  runtimeConfig: RuntimeConfig;
+  onThreadStateToggle: (threadId: number, state: string) => void;
   state: string;
   threadId: number;
   wrapId: string;
@@ -459,12 +510,8 @@ function ThreadReplyFormBody({
           <div className="right-txt">
             <button
               type="button"
-              data-request-method="post"
-              data-request-uri={prefixBasePath(
-                runtimeConfig.basePath,
-                `/threads/${threadId}/${state === "open" ? "close" : "open"}`,
-              )}
               className="ybtn ybtn-default ybtn-small"
+              onClick={() => onThreadStateToggle(threadId, state)}
             >
               {t(state === "open" ? "commentThread.close" : "commentThread.open")}
             </button>
@@ -546,7 +593,6 @@ function NonRangedThreadComment({
               <button
                 className="btn-transparent pull-right close"
                 data-toggle="comment-delete"
-                data-request-uri={deleteUri}
                 onClick={(event: MouseEvent<HTMLButtonElement>) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -657,13 +703,7 @@ function CommentDeleteModal({
           <p>{t("common.comment.delete.confirm")}</p>
         </div>
         <div className="modal-footer">
-          <button
-            id="comment-delete-confirm"
-            type="button"
-            className="ybtn ybtn-danger"
-            data-request-uri={requestUri ?? undefined}
-            data-request-method={isOpen ? "delete" : undefined}
-          >
+          <button id="comment-delete-confirm" type="button" className="ybtn ybtn-danger">
             {t("button.yes")}
           </button>
           <button type="button" className="ybtn" data-dismiss="modal" onClick={onClose}>
@@ -794,6 +834,7 @@ function PullRequestFileDiff({
   file,
   inlineThreads,
   onCommentDelete,
+  onThreadStateToggle,
   onInlineReviewChange,
   pullRequest,
   runtimeConfig,
@@ -803,6 +844,7 @@ function PullRequestFileDiff({
   file: PullRequestChangedFileWithError;
   inlineThreads: ReviewThread[];
   onCommentDelete: (requestUri: string) => void;
+  onThreadStateToggle: (threadId: number, state: string) => void;
   onInlineReviewChange: (review: ActiveInlineReview | null) => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
@@ -913,6 +955,7 @@ function PullRequestFileDiff({
                       currentUser,
                       lineKey,
                       onCommentDelete,
+                      onThreadStateToggle,
                       pullRequest,
                       runtimeConfig,
                       threads: threadsOnLine,
@@ -965,6 +1008,7 @@ function renderInlineRows({
   currentUser,
   lineKey,
   onCommentDelete,
+  onThreadStateToggle,
   pullRequest,
   runtimeConfig,
   threads,
@@ -973,6 +1017,7 @@ function renderInlineRows({
   currentUser: CurrentUserSummary;
   lineKey: string;
   onCommentDelete: (requestUri: string) => void;
+  onThreadStateToggle: (threadId: number, state: string) => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   threads: ReviewThread[];
@@ -1020,6 +1065,7 @@ function renderInlineRows({
               currentUser={currentUser}
               key={thread.id}
               onCommentDelete={onCommentDelete}
+              onThreadStateToggle={onThreadStateToggle}
               pullRequest={pullRequest}
               runtimeConfig={runtimeConfig}
               thread={thread}
@@ -1036,12 +1082,14 @@ function renderInlineRows({
 function InlineThread({
   currentUser,
   onCommentDelete,
+  onThreadStateToggle,
   pullRequest,
   runtimeConfig,
   thread,
 }: {
   currentUser: CurrentUserSummary;
   onCommentDelete: (requestUri: string) => void;
+  onThreadStateToggle: (threadId: number, state: string) => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   thread: ReviewThread;
@@ -1096,7 +1144,7 @@ function InlineThread({
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
             currentUser={currentUser}
-            runtimeConfig={runtimeConfig}
+            onThreadStateToggle={onThreadStateToggle}
             state={state}
             threadId={thread.id}
             wrapId={`thread-${thread.id}`}
