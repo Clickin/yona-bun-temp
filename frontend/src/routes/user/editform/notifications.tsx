@@ -178,7 +178,6 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                                 <input
                                   className="notiUpdate"
                                   type="checkbox"
-                                  data-toggle="switch"
                                   checked={isNotificationEnabled(notifications, eventType)}
                                   onChange={(event) =>
                                     toggleMutation.mutate({

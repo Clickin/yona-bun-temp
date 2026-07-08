@@ -192,6 +192,12 @@ test("current-user notification settings page matches legacy user/edit_notificat
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("notifications-project-tab");
   await expect(page.locator("input.notiUpdate[data-href]")).toHaveCount(0);
+  await expect(page.locator('input.notiUpdate[data-toggle="switch"]')).toHaveCount(0);
+  await expect(
+    page.locator(
+      '.tab-content > .tab-pane[id="2"] .switch[data-on-label="On"][data-off-label="Off"]',
+    ),
+  ).toHaveCount(NOTIFICATION_TYPES.length);
   const newCommentSwitch = page
     .locator('.tab-content > .tab-pane[id="2"] tr', {
       hasText: "New comment on post or issue added",
@@ -223,6 +229,7 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("globalThis.location");
   expect(source).not.toContain("data-href");
+  expect(source).not.toContain('data-toggle="switch"');
   expect(source).not.toContain("location.hash");
   expect(source).not.toContain("location.href");
   expect(source).not.toContain("location.pathname");
@@ -314,7 +321,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
     <div id="mySidenav" class="sidenav">
       <div class="span5 right-menu span-hard-wrap">
         <div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="${basePath}/admin">Profile</a></span><span class="user-menu"><a href="${basePath}/user/editform">Account</a></span><a href="${basePath}/users/logout"><span class="user-menu logout label">Log out</span></a></div>
-        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul>
+        <ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button">Favorite</button></li><li class="myProjectList"><button type="button">Project</button></li><li class="myRecentIssueList"><button type="button">Recent History</button></li></ul>
         <div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div>
       </div>
     </div>
@@ -377,7 +384,7 @@ function expectedProjectPane(basePath: string, projectId: string, activeProjectI
 
 function expectedNotificationRow(projectId: string, eventType: string, label: string) {
   const checked = CHECKED_BY_PROJECT.get(projectId)?.has(eventType) ?? false;
-  return `<tr><th>${label}</th><td><div class="switch" data-on-label="On" data-off-label="Off"><input class="notiUpdate" type="checkbox" data-toggle="switch"${checked ? ' checked="checked"' : ""}></div></td></tr>`;
+  return `<tr><th>${label}</th><td><div class="switch" data-on-label="On" data-off-label="Off"><input class="notiUpdate" type="checkbox"${checked ? ' checked="checked"' : ""}></div></td></tr>`;
 }
 
 async function readNotificationSettingsMetrics(page: Page) {
