@@ -952,7 +952,8 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
   await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   const waitingAlert = page.locator(".action-buttons .alert-fail");
   await expect(waitingAlert).toHaveText("×sending requestHeader...");
-  await expect(waitingAlert.locator(".close")).toHaveAttribute("data-dismiss", "alert");
+  await expect(waitingAlert.locator(".close")).not.toHaveAttribute("data-dismiss", /./u);
+  await expect(page.locator('.action-buttons .alert [data-dismiss="alert"]')).toHaveCount(0);
   expect(await dispatchCancelableClick(waitingAlert.locator(".close"))).toBe(false);
   await expect(waitingAlert).toHaveCount(0);
   await expect.poll(() => alertDismissBridgeAuditHits(page)).toBe(0);
@@ -963,7 +964,8 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
   );
   const successAlert = page.locator(".action-buttons .alert-success");
   await expect(successAlert).toHaveClass("alert alert-success");
-  await expect(successAlert.locator(".close")).toHaveAttribute("data-dismiss", "alert");
+  await expect(successAlert.locator(".close")).not.toHaveAttribute("data-dismiss", /./u);
+  await expect(page.locator('.action-buttons .alert [data-dismiss="alert"]')).toHaveCount(0);
   expect(await dispatchCancelableClick(successAlert.locator(".close"))).toBe(false);
   await expect(successAlert).toHaveCount(0);
   await expect.poll(() => alertDismissBridgeAuditHits(page)).toBe(0);
@@ -1058,7 +1060,7 @@ test("site admin user reset-password alert source is route-owned", () => {
   expect(alertSource).toContain("onDismissPasswordResetAlert={dismissPasswordResetAlert}");
   expect(alertSource).toContain("<RequestWaitingAlert");
   expect(alertSource).toContain("<PasswordResetAlert");
-  expect(alertSource).toContain('data-dismiss="alert"');
+  expect(alertSource).not.toContain('data-dismiss="alert"');
   expect(alertSource).toContain("onClick={onDismiss}");
   expect(alertSource).not.toContain("document.");
   expect(alertSource).not.toContain("addEventListener(");
@@ -1847,7 +1849,7 @@ async function installAlertDismissBridgeAudit(page: Page) {
     auditWindow.__siteUserAlertDismissBridgeAudit = 0;
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest('[data-dismiss="alert"]')) {
+      if (target?.closest(".alert .close")) {
         auditWindow.__siteUserAlertDismissBridgeAudit =
           (auditWindow.__siteUserAlertDismissBridgeAudit ?? 0) + 1;
       }

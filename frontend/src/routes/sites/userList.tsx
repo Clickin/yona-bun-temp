@@ -729,7 +729,7 @@ function PasswordResetAlert({
   const { t } = useLegacyMessages();
   return (
     <div className="alert alert-success">
-      <button type="button" className="close" data-dismiss="alert" onClick={onDismiss}>
+      <button type="button" className="close" onClick={onDismiss}>
         &times;
       </button>
       <h4>
@@ -746,7 +746,7 @@ function RequestWaitingAlert({
 }) {
   return (
     <div className="alert alert-fail">
-      <button type="button" className="close" data-dismiss="alert" onClick={onDismiss}>
+      <button type="button" className="close" onClick={onDismiss}>
         &times;
       </button>
       <h4>{"sending requestHeader" + "..."}</h4>
