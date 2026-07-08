@@ -405,7 +405,6 @@ function OrganizationPullRequestItem({
           params={{ user: pullRequest.contributorLoginId }}
           to="/$user"
           className="avatar-wrap mlarge"
-          data-toggle="tooltip"
           data-placement="top"
           title={pullRequest.contributorLoginId}
         >
@@ -437,7 +436,6 @@ function OrganizationPullRequestItem({
               params={{ user: pullRequest.contributorLoginId }}
               to="/$user"
               className="infos-item infos-link-item"
-              data-toggle="tooltip"
               data-placement="top"
               title={pullRequest.contributorLoginId}
             >
@@ -465,7 +463,6 @@ function OrganizationPullRequestItem({
               <Link
                 params={pullRequestParams}
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"
-                data-toggle="tooltip"
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
@@ -483,7 +480,6 @@ function OrganizationPullRequestItem({
               params={{ user: pullRequest.receiverLoginId }}
               to="/$user"
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
               data-placement="top"
               title=""
               data-original-title={pullRequest.receiverLabel}
