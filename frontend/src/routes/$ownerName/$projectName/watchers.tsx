@@ -368,7 +368,6 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                     <button
                       className="btn nofocus no-border down-arrow"
                       type="button"
-                      data-toggle="dropdown"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
