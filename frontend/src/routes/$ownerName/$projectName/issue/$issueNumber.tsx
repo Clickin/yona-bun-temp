@@ -2728,7 +2728,6 @@ function IssueCommentRow({
               <button
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight ml10"
-                data-toggle="comment-edit"
                 data-comment-id={commentId}
                 title="Edit comment"
                 onClick={(event) => {
@@ -2746,7 +2745,6 @@ function IssueCommentRow({
               <button
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight ml6"
-                data-toggle="comment-delete"
                 title="Delete comment"
                 onClick={(event) => {
                   insulateModalButtonClick(event);
@@ -3038,7 +3036,6 @@ function ChildComment({
             <button
               type="button"
               className="btn-transparent deleteButtonX"
-              data-toggle="comment-delete"
               title="Delete comment"
               onClick={(event) => {
                 insulateModalButtonClick(event);
