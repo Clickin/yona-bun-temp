@@ -1310,7 +1310,7 @@ function IssueVoterListDialog({
     <>
       <div
         id={id}
-        className={open ? "modal voters-dialog in" : "modal hide voters-dialog"}
+        className={open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}
         style={open ? { display: "block" } : undefined}
       >
         <div className="modal-header">
