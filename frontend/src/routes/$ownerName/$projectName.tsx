@@ -273,7 +273,6 @@ function ProjectHomeBody({
                 className={
                   descriptionEditing ? "project-description hidden" : "project-description"
                 }
-                data-toggle="project-description-tab"
               >
                 <h3>
                   <span id="project-description" className="markdown-wrap">
@@ -287,7 +286,6 @@ function ProjectHomeBody({
                     <button
                       type="button"
                       className="ybtn ybtn-minimum"
-                      data-toggle="description-edit"
                       onClick={openDescriptionEditor}
                     >
                       <i className="yobicon-edit"></i>
@@ -301,7 +299,6 @@ function ProjectHomeBody({
                     ? "project-description-edit"
                     : "project-description-edit hidden"
                 }
-                data-toggle="project-description-tab"
               >
                 <form
                   action={prefixBasePath(
@@ -327,12 +324,7 @@ function ProjectHomeBody({
                   >
                     {t("button.save")}
                   </button>{" "}
-                  <button
-                    type="button"
-                    className="ybtn"
-                    data-toggle="description-cancel"
-                    onClick={cancelDescriptionEditor}
-                  >
+                  <button type="button" className="ybtn" onClick={cancelDescriptionEditor}>
                     {t("button.cancel")}
                   </button>
                 </form>
