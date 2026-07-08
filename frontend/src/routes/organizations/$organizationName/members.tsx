@@ -378,12 +378,7 @@ function OrganizationMembersBody({
             style={deleteUserId === null ? undefined : { display: "block" }}
           >
             <div className="modal-header">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                onClick={dismissDeleteMemberModal}
-              >
+              <button type="button" className="close" onClick={dismissDeleteMemberModal}>
                 ×
               </button>
               <h3>{t("organization.member.delete")}</h3>
@@ -400,12 +395,7 @@ function OrganizationMembersBody({
               >
                 {t("button.yes")}
               </button>
-              <button
-                type="button"
-                className="ybtn ybtn-mini"
-                data-dismiss="modal"
-                onClick={dismissDeleteMemberModal}
-              >
+              <button type="button" className="ybtn ybtn-mini" onClick={dismissDeleteMemberModal}>
                 {t("button.no")}
               </button>
             </div>
