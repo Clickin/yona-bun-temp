@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type MouseEvent } from "react";
+import { useState, type CSSProperties, type MouseEvent } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -48,6 +48,7 @@ const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
 const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
   __legacySiteUserListSidebarActiveMarker: undefined,
 };
+const LEGACY_ACTION_ANCHOR_BUTTON_STYLE: CSSProperties = { margin: 2 };
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -646,6 +647,7 @@ function UserListItem({
               query,
             )}
             onClick={() => onToggleClick(user.loginId, "guest")}
+            style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
             {user.isGuest ? t("button.user.make.normal.mode") : t("button.user.make.guest.mode")}
           </button>
@@ -661,6 +663,7 @@ function UserListItem({
               query,
             )}
             onClick={() => onToggleClick(user.loginId, "account-lock")}
+            style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
             {t(`button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
           </button>
@@ -682,6 +685,7 @@ function UserListItem({
             data-request-method="post"
             data-request-uri={legacySiteAdminRoleMutationPath(runtimeConfig.basePath, user.loginId)}
             onClick={() => onToggleClick(user.loginId, "site-admin")}
+            style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
             {user.isSiteAdmin
               ? t("button.user.revoke.site.admin.role")

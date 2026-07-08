@@ -730,18 +730,21 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
   await expect(guestButton).toHaveText("Make Guest");
   await expect(guestButton).toHaveClass("ybtn ybtn-small");
   await expect(guestButton).toHaveAttribute("data-request-method", "post");
+  await expect(guestButton).toHaveCSS("margin", "2px");
   const accountLockButton = page.locator(
     '.action-buttons button[data-request-uri$="/sites/toggleAccountLock?loginId=siteboss&state=SITE_ADMIN&query=siteboss"]',
   );
   await expect(accountLockButton).toHaveText("Lock account");
   await expect(accountLockButton).toHaveClass("ybtn ybtn-small");
   await expect(accountLockButton).toHaveAttribute("data-request-method", "post");
+  await expect(accountLockButton).toHaveCSS("margin", "2px");
   const revokeButton = page.locator(
     '.action-buttons button[data-request-uri$="/sites/toggleSiteAdminRole/siteboss"]',
   );
   await expect(revokeButton).toHaveText("Revoke site admin role");
   await expect(revokeButton).toHaveClass("ybtn ybtn-small ybtn-info");
   await expect(revokeButton).toHaveAttribute("data-request-method", "post");
+  await expect(revokeButton).toHaveCSS("margin", "2px");
   await expect(page.locator(".action-buttons")).not.toContainText("Upgrade to Site admin");
   await expect(page.locator('[data-toggle="account-delete"]')).toHaveAttribute(
     "data-href",
@@ -776,6 +779,7 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
 
   const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
   expect(routeSource).toContain("legacySiteAdminRoleMutationPath");
+  expect(routeSource).toContain("LEGACY_ACTION_ANCHOR_BUTTON_STYLE");
   expect(routeSource).toContain('user.isSiteAdmin ? "ybtn ybtn-small ybtn-info"');
   expect(routeSource).toContain('t("button.user.revoke.site.admin.role")');
   expect(routeSource).toContain("state: search.state");
