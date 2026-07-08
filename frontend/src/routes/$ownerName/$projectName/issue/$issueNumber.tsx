@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, useEffect, useRef, useState, type MouseEvent } from "react";
+import { Fragment, useRef, useState, type MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
@@ -792,7 +792,6 @@ function IssueDetailBody({
                 currentUserLoginId={currentUserLoginId}
                 hasVoted={hasVotedIssue}
                 issue={issue}
-                issueHref={issueHref}
                 onIssueVote={() => voteIssueMutation.mutate()}
                 voters={voters}
               />
@@ -1045,7 +1044,6 @@ function IssueDetailBody({
         </div>
       </div>
       <DeleteConfirm
-        issueDeleteHref={`${issueHref}/delete`}
         open={deleteModalOpen}
         onCancel={() => setDeleteModalOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
@@ -1158,7 +1156,6 @@ function IssueVote({
   currentUserLoginId,
   hasVoted,
   issue,
-  issueHref,
   onIssueVote,
   voters,
 }: {
@@ -1166,7 +1163,6 @@ function IssueVote({
   currentUserLoginId: string;
   hasVoted: boolean;
   issue: RestIssueDetailResponse;
-  issueHref: string;
   onIssueVote: () => void;
   voters: VoterLike[];
 }) {
@@ -2624,11 +2620,6 @@ function IssueCommentRow({
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight"
                 title="Withdraw"
-                data-request-type="comment-vote"
-                data-request-uri={prefixBasePath(
-                  basePath,
-                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/unvote`,
-                )}
                 onClick={(event) => {
                   event.preventDefault();
                   onCommentVote(commentId, hasVoted);
@@ -2643,11 +2634,6 @@ function IssueCommentRow({
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight"
                 title="Agree"
-                data-request-type="comment-vote"
-                data-request-uri={prefixBasePath(
-                  basePath,
-                  `/${ownerName}/${projectName}/issue/${issueNumber}/comment/${commentId}/vote`,
-                )}
                 onClick={(event) => {
                   event.preventDefault();
                   onCommentVote(commentId, hasVoted);
@@ -2692,7 +2678,6 @@ function IssueCommentRow({
                 type="button"
                 className="btn-transparent-with-fontsize-lineheight ml6"
                 data-toggle="comment-delete"
-                data-request-uri={deleteUri}
                 title="Delete comment"
                 onClick={(event) => {
                   insulateModalButtonClick(event);
@@ -2985,7 +2970,6 @@ function ChildComment({
               type="button"
               className="btn-transparent deleteButtonX"
               data-toggle="comment-delete"
-              data-request-uri={deleteUri}
               title="Delete comment"
               onClick={(event) => {
                 insulateModalButtonClick(event);
@@ -3445,12 +3429,10 @@ function IssueIndexComment({
 }
 
 function DeleteConfirm({
-  issueDeleteHref,
   onCancel,
   onConfirm,
   open,
 }: {
-  issueDeleteHref: string;
   onCancel: () => void;
   onConfirm: () => void;
   open: boolean;
@@ -3477,13 +3459,7 @@ function DeleteConfirm({
           <p>Are you sure you want to delete this post?</p>
         </div>
         <div className="modal-footer">
-          <button
-            type="button"
-            className="ybtn ybtn-danger"
-            data-request-method="delete"
-            data-request-uri={issueDeleteHref}
-            onClick={confirmDelete}
-          >
+          <button type="button" className="ybtn ybtn-danger" onClick={confirmDelete}>
             Yes
           </button>
           <button type="button" className="ybtn" data-dismiss="modal" onClick={closeDialog}>
@@ -3547,8 +3523,6 @@ function CommentDeleteConfirm({
             id="comment-delete-confirm"
             type="button"
             className="ybtn ybtn-danger"
-            data-request-method={requestUri ? "delete" : undefined}
-            data-request-uri={requestUri ?? undefined}
             onClick={confirmDelete}
           >
             {confirmLabel}
