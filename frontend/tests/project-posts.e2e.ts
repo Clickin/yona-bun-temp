@@ -44,6 +44,18 @@ function modernizeBoardListExpected(html: string) {
     .replace(
       '<span class="user-project-list" data-project-id="7">',
       '<span class="user-project-list" data-project-id="7" role="button" tabindex="0">',
+    )
+    .replaceAll(
+      ' class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom"',
+      ' class="avatar-wrap mlarge hide-in-mobile" data-placement="bottom"',
+    )
+    .replaceAll(
+      ' class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom"',
+      ' class="infos-item infos-link-item" data-placement="bottom"',
+    )
+    .replaceAll(
+      ' class="infos-item" data-toggle="tooltip" data-placement="bottom"',
+      ' class="infos-item" data-placement="bottom"',
     );
 }
 
@@ -286,6 +298,65 @@ test("project board list label filter select2 marker is not React-owned DOM", as
   await expect(page).toHaveURL(
     `${basePath}/admin/sample/posts?orderBy=updatedDate&orderDir=desc&filter=release&labelIds=9`,
   );
+});
+
+test("project board list tooltip markers are not React-owned DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page);
+
+  await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+
+  await expect(
+    page.locator('.page-wrap-outer .post-list-wrap [data-toggle="tooltip"]'),
+  ).toHaveCount(0);
+  await expect(page.locator(".notice-wrap .avatar-wrap.mlarge")).toHaveAttribute("title", "admin");
+  await expect(page.locator(".notice-wrap .avatar-wrap.mlarge")).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(page.locator(".notice-wrap .infos-link-item")).toHaveAttribute("title", "admin");
+  await expect(page.locator(".notice-wrap .infos-link-item")).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(page.locator(".notice-wrap .infos > .infos-item").nth(1)).toHaveAttribute(
+    "title",
+    "Jul 1, 2026",
+  );
+  await expect(page.locator(".notice-wrap .infos > .infos-item").nth(1)).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(
+    page.locator(".post-list-wrap:not(.notice-wrap) .avatar-wrap.mlarge"),
+  ).toHaveAttribute("title", "dev");
+  await expect(
+    page.locator(".post-list-wrap:not(.notice-wrap) .avatar-wrap.mlarge"),
+  ).toHaveAttribute("data-placement", "bottom");
+  await expect(page.locator(".post-list-wrap:not(.notice-wrap) .infos-link-item")).toHaveAttribute(
+    "title",
+    "dev",
+  );
+  await expect(page.locator(".post-list-wrap:not(.notice-wrap) .infos-link-item")).toHaveAttribute(
+    "data-placement",
+    "bottom",
+  );
+  await expect(
+    page.locator(".post-list-wrap:not(.notice-wrap) .infos > .infos-item").nth(1),
+  ).toHaveAttribute("title", "Jul 2, 2026");
+  await expect(
+    page.locator(".post-list-wrap:not(.notice-wrap) .infos > .infos-item").nth(1),
+  ).toHaveAttribute("data-placement", "bottom");
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const projectBoardPostSource = routeSource.slice(
+    routeSource.indexOf("function ProjectBoardPost"),
+    routeSource.indexOf("function splitHeaderWordsInBrackets"),
+  );
+  expect(projectBoardPostSource).not.toContain('data-toggle="tooltip"');
+  expect(projectBoardPostSource).toContain('data-placement="bottom"');
+  expect(projectBoardPostSource).toContain("title={post.authorLoginId}");
+  expect(projectBoardPostSource).toContain("title={post.createdLabel}");
 });
 
 const EMPTY_CHILD_COMMENT_FORM =

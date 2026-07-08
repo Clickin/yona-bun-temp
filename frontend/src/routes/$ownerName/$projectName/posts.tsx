@@ -520,7 +520,6 @@ function ProjectBoardPost({
         to={authorRoutePath}
         activeProps={legacyRouteLocalActiveProps}
         className="avatar-wrap mlarge hide-in-mobile"
-        data-toggle="tooltip"
         data-placement="bottom"
         title={post.authorLoginId}
       >
@@ -559,7 +558,6 @@ function ProjectBoardPost({
             to={authorRoutePath}
             activeProps={legacyRouteLocalActiveProps}
             className="infos-item infos-link-item"
-            data-toggle="tooltip"
             data-placement="bottom"
             title={post.authorLoginId}
           >
@@ -568,12 +566,7 @@ function ProjectBoardPost({
         ) : (
           <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
-        <span
-          className="infos-item"
-          data-toggle="tooltip"
-          data-placement="bottom"
-          title={post.createdLabel}
-        >
+        <span className="infos-item" data-placement="bottom" title={post.createdLabel}>
           {post.createdLabel}
         </span>
         <span className="infos-item item-count-groups">
