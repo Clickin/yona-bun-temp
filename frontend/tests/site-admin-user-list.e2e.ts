@@ -814,7 +814,8 @@ test("site admin user delete modal stays route-owned across open dismiss and con
 
   await expect(deleteModal).toHaveClass("modal fade");
   await expect(deleteModal).not.toHaveAttribute("aria-hidden");
-  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).not.toHaveAttribute("style");
+  await expect(deleteModal).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
@@ -823,6 +824,7 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
   await expect(deleteModal).toHaveClass("modal fade in");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
+  await expect(deleteModal).toHaveAttribute("style", "display: block;");
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
@@ -853,6 +855,21 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).toHaveClass("modal fade");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(userListUrl);
+  expect(await spaMarker(page)).toBe("site-user-delete-modal");
+  await expect
+    .poll(() => siteUserDeleteModalBridgeAuditHits(page))
+    .toEqual({ documentClicks: [], getElementById: [] });
+
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.fade.in"))).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
+  await expect(deleteModal).toHaveAttribute("style", "display: none;");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
@@ -985,6 +1002,9 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
   expect(modalSource).toContain(
     "function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
   );
+  expect(modalSource).toContain(
+    "function insulateSiteUserDeleteModalBackdropClick(event: MouseEvent<HTMLDivElement>) {",
+  );
   expect(modalSource).toContain("event.preventDefault();");
   expect(modalSource).toContain("event.stopPropagation();");
   expect(modalSource).toContain(
@@ -992,6 +1012,9 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
   );
   expect(modalSource).toContain(
     "const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {",
+  );
+  expect(modalSource).toContain(
+    "const dismissDeleteModalBackdrop = (event: MouseEvent<HTMLDivElement>) => {",
   );
   expect(modalSource).toContain("const submitDelete = (event: MouseEvent<HTMLButtonElement>) => {");
   expect(modalSource).toContain(
@@ -1002,6 +1025,8 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onDeleteClick={openDeleteModal}");
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
+  expect(modalSource).toContain("onClick={dismissDeleteModalBackdrop}");
+  expect(modalSource).toContain("onKeyDown={dismissDeleteModalBackdrop}");
   expect(modalSource).toContain("onClick={submitDelete}");
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");

@@ -64,6 +64,11 @@ function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElem
   event.stopPropagation();
 }
 
+function insulateSiteUserDeleteModalBackdropClick(event: MouseEvent<HTMLDivElement>) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 function LegacySiteUserListTitle() {
   const { t } = useLegacyMessages();
 
@@ -119,6 +124,10 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   };
   const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateSiteUserDeleteModalButtonClick(event);
+    closeDeleteModal();
+  };
+  const dismissDeleteModalBackdrop = (event: MouseEvent<HTMLDivElement>) => {
+    insulateSiteUserDeleteModalBackdropClick(event);
     closeDeleteModal();
   };
   const submitDelete = (event: MouseEvent<HTMLButtonElement>) => {
@@ -309,7 +318,13 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 id="alertDeletionWrap"
                 className={deleteUser ? "modal fade in" : "modal fade"}
                 aria-hidden={deleteUser ? false : deleteModalClosed ? true : undefined}
-                style={deleteUser ? { display: "block" } : { display: "none" }}
+                style={
+                  deleteUser
+                    ? { display: "block" }
+                    : deleteModalClosed
+                      ? { display: "none" }
+                      : undefined
+                }
               >
                 <div className="modal-header">
                   <button
@@ -351,7 +366,15 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   </button>
                 </div>
               </div>
-              {deleteUser ? <div className="modal-backdrop fade in"></div> : null}
+              {deleteUser ? (
+                <div
+                  className="modal-backdrop fade in"
+                  onClick={dismissDeleteModalBackdrop}
+                  onKeyDown={dismissDeleteModalBackdrop}
+                  role="button"
+                  tabIndex={-1}
+                ></div>
+              ) : null}
             </div>
           </div>
         </div>
