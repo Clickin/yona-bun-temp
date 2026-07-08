@@ -1124,21 +1124,76 @@ function ProfileProjectRow({
 
 function TwoColumnModeCheckbox() {
   const { t } = useLegacyMessages();
+  const [isChecked, setIsChecked] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+  const popoverTimer = React.useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTitle = t("common.two.column.mode");
+  const popoverContent = t("common.two.column.mode.desc");
+
+  const clearPopoverTimer = React.useCallback(() => {
+    if (popoverTimer.current !== null) {
+      window.clearTimeout(popoverTimer.current);
+      popoverTimer.current = null;
+    }
+  }, []);
+
+  React.useEffect(() => clearPopoverTimer, [clearPopoverTimer]);
+
+  const showPopover = React.useCallback(() => {
+    clearPopoverTimer();
+    popoverTimer.current = window.setTimeout(() => {
+      setIsPopoverVisible(true);
+      popoverTimer.current = null;
+    }, 100);
+  }, [clearPopoverTimer]);
+
+  const hidePopover = React.useCallback(() => {
+    clearPopoverTimer();
+    popoverTimer.current = window.setTimeout(() => {
+      setIsPopoverVisible(false);
+      popoverTimer.current = null;
+    }, 100);
+  }, [clearPopoverTimer]);
+
+  const storeTwoColumnMode = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextChecked = event.currentTarget.checked;
+    setIsChecked(nextChecked);
+    globalThis.localStorage?.setItem("useTwoColumnMode", String(nextChecked));
+  }, []);
 
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
-      title={t("common.two.column.mode")}
-      data-content={t("common.two.column.mode.desc")}
+      title={popoverTitle}
+      style={{ position: "relative" }}
+      onBlur={hidePopover}
+      onFocus={showPopover}
+      onMouseEnter={showPopover}
+      onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper. */}
       <label className="checkbox">
         <div className="two-column-icon-border">
-          <input id="two-column-mode" type="checkbox" />
+          <input
+            id="two-column-mode"
+            type="checkbox"
+            checked={isChecked}
+            onChange={storeTwoColumnMode}
+          />
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
+      {isPopoverVisible ? (
+        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+          <div className="arrow" />
+          <h3 className="popover-title">{popoverTitle}</h3>
+          <div className="popover-content">{popoverContent}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

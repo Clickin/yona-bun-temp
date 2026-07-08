@@ -26,7 +26,7 @@ const EXPECTED_PROFILE_SCREEN = `
           <li class="active"><button type="button" data-toggle="tab">Issue <span class="num-badge">2</span></button></li>
           <li class=""><button type="button" data-toggle="tab">Pull request <span class="num-badge">1</span></button></li>
           <li class=""><button type="button" data-toggle="tab">projects <span class="num-badge">1</span></button></li>
-          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
+          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
         </ul>
         <div class="tab-content">
           <div id="issues" class="tab-pane active">
@@ -163,8 +163,15 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain("const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {");
   expect(source).toContain('className="popover top"');
   expect(source).toContain('role="tooltip"');
+  expect(source).toContain(
+    'typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true"',
+  );
+  expect(source).toContain(
+    'globalThis.localStorage?.setItem("useTwoColumnMode", String(nextChecked))',
+  );
   expect(source).not.toContain('data-toggle="popover"');
   expect(source).not.toContain('data-trigger="hover"');
+  expect(source).not.toContain('data-content={t("common.two.column.mode.desc")}');
   expect(source).not.toContain('data-content={t("common.show.subtasks.desc")}');
   expect(source).not.toContain("dangerouslySetInnerHTML");
 });
@@ -206,6 +213,11 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   await expect(showSubtasks).not.toHaveAttribute("data-trigger", /.+/u);
   await expect(showSubtasks).not.toHaveAttribute("data-placement", /.+/u);
   await expect(showSubtasks).not.toHaveAttribute("data-content", /.+/u);
+  const twoColumnMode = page.locator(".two-column-icon");
+  await expect(twoColumnMode).toHaveAttribute("id", "two-column-mode-checkbox");
+  await expect(twoColumnMode).toHaveAttribute("title", "Two Column Mode");
+  await expect(twoColumnMode).not.toHaveAttribute("data-content", /.+/u);
+  await expect(page.locator(".two-column-icon .popover.top")).toHaveCount(0);
   await expect(page.locator(".show-subtasks .popover.top")).toHaveCount(0);
 
   expect(await canonicalizeProfileRoots(page)).toEqual(
@@ -251,6 +263,55 @@ test("public user profile show-subtasks popover is React-owned", async ({ page }
   await expect(checkbox).toBeChecked();
   await checkbox.uncheck();
   await expect(checkbox).not.toBeChecked();
+});
+
+test("public user profile two-column popover and storage are React-owned", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    localStorage.setItem("useTwoColumnMode", "true");
+  });
+  await mockPublicProfile(page);
+
+  await page.goto(`${basePath}/door`);
+  await expect(page.locator(".user-box")).toBeVisible();
+
+  const twoColumnMode = page.locator(".two-column-icon");
+  const checkbox = page.locator("#two-column-mode");
+  const popover = twoColumnMode.locator(".popover.top");
+
+  await expect(twoColumnMode).toHaveAttribute("title", "Two Column Mode");
+  await expect(twoColumnMode).not.toHaveAttribute("data-content", /.+/u);
+  await expect(popover).toHaveCount(0);
+  await expect(checkbox).toBeChecked();
+  await expect.poll(() => readTwoColumnStorage(page)).toBe("true");
+
+  await twoColumnMode.hover();
+  await page.waitForTimeout(50);
+  await expect(popover).toHaveCount(0);
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".popover-title")).toHaveText("Two Column Mode");
+  await expect(popover.locator(".popover-content")).toHaveText(
+    "Splits list and body into columns respectively",
+  );
+  expect(await readTwoColumnPopoverMetrics(page)).toEqual({
+    centeredAboveControl: true,
+    popoverTopPlacement: true,
+  });
+
+  await page.mouse.move(0, 0);
+  await expect(popover).toHaveCount(0);
+
+  await checkbox.focus();
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".popover-title")).toHaveText("Two Column Mode");
+
+  await checkbox.uncheck();
+  await expect(checkbox).not.toBeChecked();
+  await expect.poll(() => readTwoColumnStorage(page)).toBe("false");
+
+  await checkbox.check();
+  await expect(checkbox).toBeChecked();
+  await expect.poll(() => readTwoColumnStorage(page)).toBe("true");
 });
 
 test("public user profile renders legacy connected social provider logos", async ({ page }) => {
@@ -767,6 +828,30 @@ async function readConnectedSocialProviderMetrics(page: Page) {
       githubMarginTop: githubStyle.marginTop,
       githubWidth: githubStyle.width,
       svgVerticalAlign: svgStyle.verticalAlign,
+    };
+  });
+}
+
+async function readTwoColumnStorage(page: Page) {
+  return page.evaluate(() => localStorage.getItem("useTwoColumnMode"));
+}
+
+async function readTwoColumnPopoverMetrics(page: Page) {
+  return page.evaluate(() => {
+    const control = document.querySelector<HTMLElement>(".two-column-icon");
+    const popover = document.querySelector<HTMLElement>(".two-column-icon .popover.top");
+    if (!control || !popover) {
+      throw new Error("Expected two-column popover metric targets are missing.");
+    }
+
+    const controlBox = control.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    const controlCenter = controlBox.left + controlBox.width / 2;
+    const popoverCenter = popoverBox.left + popoverBox.width / 2;
+
+    return {
+      centeredAboveControl: Math.abs(controlCenter - popoverCenter) <= 2,
+      popoverTopPlacement: popoverBox.bottom <= controlBox.top + 1,
     };
   });
 }
