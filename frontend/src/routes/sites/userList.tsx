@@ -325,12 +325,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 }
               >
                 <div className="modal-header">
-                  <button
-                    type="button"
-                    className="close"
-                    data-dismiss="modal"
-                    onClick={dismissDeleteModal}
-                  >
+                  <button type="button" className="close" onClick={dismissDeleteModal}>
                     ×
                   </button>
                   <span id="userInfo">
@@ -354,12 +349,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
-                  <button
-                    type="button"
-                    className="ybtn"
-                    data-dismiss="modal"
-                    onClick={dismissDeleteModal}
-                  >
+                  <button type="button" className="ybtn" onClick={dismissDeleteModal}>
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>

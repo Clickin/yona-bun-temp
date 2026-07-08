@@ -146,7 +146,7 @@ const EXPECTED_USER_LIST_SCREEN = `
         </div>
         <div id="alertDeletionWrap" class="modal fade">
           <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">×</button>
+            <button type="button" class="close">×</button>
             <span id="userInfo"></span>
             <span>Delete user</span>
           </div>
@@ -155,7 +155,7 @@ const EXPECTED_USER_LIST_SCREEN = `
           </div>
           <div class="modal-footer">
             <button type="button" id="accountToggleBtn" class="ybtn ybtn-danger">Yes</button>
-            <button type="button" class="ybtn" data-dismiss="modal">No</button>
+            <button type="button" class="ybtn">No</button>
           </div>
         </div>
       </div>
@@ -325,6 +325,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
   await expect(page.locator("#accountToggleBtn")).toHaveAttribute("type", "button");
   await expect(page.locator("#accountToggleBtn")).toHaveClass("ybtn ybtn-danger");
+  await expect(page.locator('#alertDeletionWrap [data-dismiss="modal"]')).toHaveCount(0);
   await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("alt", "Door TTS");
   await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("width", "32");
   await expect(page.locator(".user-list-wrap .list-avatar img")).toHaveAttribute("height", "32");
@@ -834,8 +835,9 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(deleteModal).toHaveAttribute("style", "display: block;");
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
-  await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
-  await expect(noButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(closeButton).not.toHaveAttribute("data-dismiss", "modal");
+  await expect(noButton).not.toHaveAttribute("data-dismiss", "modal");
+  await expect(deleteModal.locator('[data-dismiss="modal"]')).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -1029,7 +1031,7 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
   );
   expect(modalSource).toContain("closeDeleteModal();");
   expect(modalSource).not.toContain('data-toggle="account-delete"');
-  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onDeleteClick={openDeleteModal}");
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
   expect(modalSource).toContain("onClick={dismissDeleteModalBackdrop}");
