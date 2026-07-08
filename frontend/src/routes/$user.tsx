@@ -1,5 +1,5 @@
 import * as React from "react";
-import { type HTMLAttributes, useState } from "react";
+import { type CSSProperties, type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -38,6 +38,17 @@ type UsermenuTab = "myOrganizationList" | "myProjectList" | "myRecentIssueList";
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
+const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
+  bottom: "100%",
+  display: "block",
+  left: "50%",
+  marginBottom: "10px",
+  minWidth: "150px",
+  pointerEvents: "none",
+  position: "absolute",
+  transform: "translateX(-50%)",
 };
 
 function MountedRootLinkAnchor({
@@ -1134,24 +1145,61 @@ function TwoColumnModeCheckbox() {
 
 function ShowSubtasksCheckbox() {
   const { t } = useLegacyMessages();
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+  const popoverTimer = React.useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTitle = t("common.show.subtasks");
+  const popoverContent = t("common.show.subtasks.desc");
+
+  const clearPopoverTimer = React.useCallback(() => {
+    if (popoverTimer.current !== null) {
+      window.clearTimeout(popoverTimer.current);
+      popoverTimer.current = null;
+    }
+  }, []);
+
+  React.useEffect(() => clearPopoverTimer, [clearPopoverTimer]);
+
+  const showPopover = React.useCallback(() => {
+    clearPopoverTimer();
+    popoverTimer.current = window.setTimeout(() => {
+      setIsPopoverVisible(true);
+      popoverTimer.current = null;
+    }, 100);
+  }, [clearPopoverTimer]);
+
+  const hidePopover = React.useCallback(() => {
+    clearPopoverTimer();
+    popoverTimer.current = window.setTimeout(() => {
+      setIsPopoverVisible(false);
+      popoverTimer.current = null;
+    }, 100);
+  }, [clearPopoverTimer]);
 
   return (
     <div
       className="show-subtasks mr10"
       id="two-column-mode-checkbox"
-      data-toggle="popover"
-      data-trigger="hover"
-      data-placement="top"
-      title={t("common.show.subtasks")}
-      data-content={t("common.show.subtasks.desc")}
+      title={popoverTitle}
+      style={{ position: "relative" }}
+      onBlur={hidePopover}
+      onFocus={showPopover}
+      onMouseEnter={showPopover}
+      onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper. */}
       <label className="checkbox">
         <div className="show-subtasks-button-border">
           <input id="toggle-show-subtasks" type="checkbox" />
-          <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
+          <span className="show-subtasks-text">{popoverTitle}</span>
         </div>
       </label>
+      {isPopoverVisible ? (
+        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+          <div className="arrow" />
+          <h3 className="popover-title">{popoverTitle}</h3>
+          <div className="popover-content">{popoverContent}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

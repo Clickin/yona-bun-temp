@@ -33,7 +33,7 @@ const EXPECTED_PROFILE_SCREEN = `
             <ul class="nav nav-tabs nm">
               <li class="active"><button type="button" data-toggle="tab">Open<span class="num-badge">1</span></button></li>
               <li class=""><button type="button" data-toggle="tab">Closed<span class="num-badge">1</span></button></li>
-              <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
+              <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask" style="position:relative"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
             </ul>
             <div class="tab-content">
               <div id="openIssues" class="tab-pane active">
@@ -160,6 +160,12 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain('normalized === "github"');
   expect(source).toContain('normalized === "google"');
   expect(source).toContain("/assets/images/provider-logo/btn_google_light_normal_ios.svg");
+  expect(source).toContain("const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {");
+  expect(source).toContain('className="popover top"');
+  expect(source).toContain('role="tooltip"');
+  expect(source).not.toContain('data-toggle="popover"');
+  expect(source).not.toContain('data-trigger="hover"');
+  expect(source).not.toContain('data-content={t("common.show.subtasks.desc")}');
   expect(source).not.toContain("dangerouslySetInnerHTML");
 });
 
@@ -194,6 +200,13 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     3,
   );
   await expect(page.locator('#issues > .nav-tabs.nm button[data-toggle="tab"]')).toHaveCount(2);
+  const showSubtasks = page.locator(".show-subtasks");
+  await expect(showSubtasks).toHaveAttribute("title", "Show subtask");
+  await expect(showSubtasks).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(showSubtasks).not.toHaveAttribute("data-trigger", /.+/u);
+  await expect(showSubtasks).not.toHaveAttribute("data-placement", /.+/u);
+  await expect(showSubtasks).not.toHaveAttribute("data-content", /.+/u);
+  await expect(page.locator(".show-subtasks .popover.top")).toHaveCount(0);
 
   expect(await canonicalizeProfileRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROFILE_SCREEN.replaceAll("__BASE_PATH__", basePath)),
@@ -205,6 +218,39 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     userInfoWidth: 200,
     userStreamWidth: 1060,
   });
+});
+
+test("public user profile show-subtasks popover is React-owned", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPublicProfile(page);
+
+  await page.goto(`${basePath}/door`);
+  await expect(page.locator(".user-box")).toBeVisible();
+
+  const showSubtasks = page.locator(".show-subtasks");
+  const checkbox = page.locator("#toggle-show-subtasks");
+  const popover = showSubtasks.locator(".popover.top");
+
+  await expect(popover).toHaveCount(0);
+  await showSubtasks.hover();
+  await page.waitForTimeout(50);
+  await expect(popover).toHaveCount(0);
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".popover-title")).toHaveText("Show subtask");
+  await expect(popover.locator(".popover-content")).toHaveText("Show subtask always");
+
+  await page.mouse.move(0, 0);
+  await expect(popover).toHaveCount(0);
+
+  await checkbox.focus();
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".popover-title")).toHaveText("Show subtask");
+
+  await expect(checkbox).not.toBeChecked();
+  await checkbox.check();
+  await expect(checkbox).toBeChecked();
+  await checkbox.uncheck();
+  await expect(checkbox).not.toBeChecked();
 });
 
 test("public user profile renders legacy connected social provider logos", async ({ page }) => {
