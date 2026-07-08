@@ -517,10 +517,6 @@ function ProjectHomeBody({
                     type="button"
                     className="ybtn ybtn-minimum ybtn-danger pull-right"
                     id="projectLeaveBtn"
-                    data-href={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${ownerName}/${projectName}/member/${currentUserId}/delete`,
-                    )}
                     onClick={openLeaveModal}
                   >
                     {t("project.member.leave")}
