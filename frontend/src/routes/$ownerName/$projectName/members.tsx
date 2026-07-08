@@ -662,7 +662,6 @@ function ProjectMemberListItem({
                     >
                       <button
                         type="button"
-                        data-action="apply"
                         data-href={prefixBasePath(
                           basePath,
                           `/${ownerName}/${projectName}/member/${userId}/edit`,
@@ -679,7 +678,6 @@ function ProjectMemberListItem({
             </div>
             <button
               type="button"
-              data-action="delete"
               data-href={prefixBasePath(
                 basePath,
                 `/${ownerName}/${projectName}/member/${userId}/delete`,

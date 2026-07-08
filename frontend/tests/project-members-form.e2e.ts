@@ -26,7 +26,7 @@ const EXPECTED_PROJECT_MEMBERS = `
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span><span class="project-menu-count">1</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-action="apply" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Member</button></li></ul></div><button type="button" data-action="delete" data-href="__BASE_PATH__/admin/sample/member/2/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class="active"><a href="__BASE_PATH__/admin/sample/members">Member<span class="num-badge">1</span></a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><div class="inner-bubble"><form class="nm" action="__BASE_PATH__/admin/sample/members" method="post" id="addNewMember"><input type="text" class="text uname" id="loginId" name="loginId" required data-provider="typeahead" autocomplete="off" placeholder="Add new member ID." pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$" title="Enter Valid ID" value=""><button type="submit" class="ybtn ybtn-success"><i class="yobicon-addfriend"></i>Add</button></form></div><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><span class="label owner">Project owner</span></div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div><div class="member-setting"><div class="btn-group" data-name="roleof-alice"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-href="__BASE_PATH__/admin/sample/member/2/edit" data-loginid="alice">Member</button></li></ul></div><button type="button" data-href="__BASE_PATH__/admin/sample/member/2/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul><legend><h3>Sign-up request (1)</h3></legend><div class="row-fluid"><div class="span2"><div class="pull-left mr10"><a href="__BASE_PATH__/bob"><img src="/assets/images/default-avatar-32.png" height="65" width="65" class="img-circle"></a></div><div class="pull-left" style="width: 60px;"><span><a href="__BASE_PATH__/bob"><strong>Bob Smith</strong></a></span><span>(bob)</span><button type="button" class="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn" data-loginid="bob"><i class="yobicon-addfriend"></i>Add</button></div></div></div></div></div>
 <link rel="stylesheet" type="text/css" media="screen" href="__MENTION_STYLESHEET_HREF__">
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
@@ -452,7 +452,7 @@ test("project members pins the localhost protected org-owned weblabs/portal bran
   expect(await canonicalizeLocator(page, ".members.project")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="${basePath}/carol" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-128.png" width="64" height="64"></a><div class="member-name">Carol Lee</div><div class="member-id">@carol</div><div class="member-setting"><div class="btn-group" data-name="roleof-carol"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/35/edit" data-loginid="carol">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/35/edit" data-loginid="carol">Member</button></li></ul></div><button type="button" data-action="delete" data-href="${basePath}/weblabs/portal/member/35/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="${basePath}/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-128.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group" data-name="roleof-admin"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1" data-selected="true" class="active"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/1/edit" data-loginid="admin">Manager</button></li><li data-value="2"><button type="button" data-action="apply" data-href="${basePath}/weblabs/portal/member/1/edit" data-loginid="admin">Member</button></li></ul></div><button type="button" data-action="delete" data-href="${basePath}/weblabs/portal/member/1/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul>`,
+      `<ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="${basePath}/carol" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-128.png" width="64" height="64"></a><div class="member-name">Carol Lee</div><div class="member-id">@carol</div><div class="member-setting"><div class="btn-group" data-name="roleof-carol"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Member</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button" data-href="${basePath}/weblabs/portal/member/35/edit" data-loginid="carol">Manager</button></li><li data-value="2" data-selected="true" class="active"><button type="button" data-href="${basePath}/weblabs/portal/member/35/edit" data-loginid="carol">Member</button></li></ul></div><button type="button" data-href="${basePath}/weblabs/portal/member/35/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li><li class="member span6 span-hard-wrap"><a href="${basePath}/admin" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-128.png" width="64" height="64"></a><div class="member-name">Site Admin</div><div class="member-id">@admin</div><div class="member-setting"><div class="btn-group" data-name="roleof-admin"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">Manager</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1" data-selected="true" class="active"><button type="button" data-href="${basePath}/weblabs/portal/member/1/edit" data-loginid="admin">Manager</button></li><li data-value="2"><button type="button" data-href="${basePath}/weblabs/portal/member/1/edit" data-loginid="admin">Member</button></li></ul></div><button type="button" data-href="${basePath}/weblabs/portal/member/1/delete" class="ybtn ybtn-danger ybtn-small">Delete</button></div></li></ul>`,
     ),
   );
 
@@ -516,6 +516,8 @@ test("project members route source keeps navigation in Link, mutation URLs in da
   expect(source).not.toMatch(/(?<!data-)\bhref=\{projectHref/);
   expect(source).not.toContain('href="javascript:void(0)"');
   expect(source).not.toContain('href="#"');
+  expect(source).not.toContain('data-action="apply"');
+  expect(source).not.toContain('data-action="delete"');
   expect(source).not.toContain('style={{ display: "block" }}');
   expect(source).not.toContain("window.confirm");
   expect(source).not.toContain('data-toggle="modal"');
@@ -586,7 +588,7 @@ test("project members role dropdown and delete confirm stay route-owned", async 
   const roleGroup = page.locator('.members.project [data-name="roleof-alice"]');
   const roleToggle = roleGroup.locator(".dropdown-toggle");
   const roleApply = page
-    .locator('.members.project [data-name="roleof-alice"] [data-action="apply"]')
+    .locator('.members.project [data-name="roleof-alice"] [data-href$="/member/2/edit"]')
     .first();
   await expect(roleGroup).toHaveAttribute("class", "btn-group");
   await expect(roleGroup).toHaveAttribute("data-name", "roleof-alice");
@@ -604,10 +606,14 @@ test("project members role dropdown and delete confirm stay route-owned", async 
   await expect(roleApply).toHaveJSProperty("tagName", "BUTTON");
   await expect(roleApply).toHaveAttribute("type", "button");
   await expect(roleApply).not.toHaveAttribute("href", /.+/);
+  await expect(roleApply).not.toHaveAttribute("data-action", /.+/);
   await expect(roleApply).toHaveAttribute("data-href", `${basePath}/admin/sample/member/2/edit`);
   await expect(roleApply).toHaveAttribute("data-loginid", "alice");
   await expect(roleApply).toHaveText("Manager");
-  await expect(page.locator('[data-action="apply"][href="javascript:void(0)"]')).toHaveCount(0);
+  await expect(page.locator('.members.project [data-action="apply"]')).toHaveCount(0);
+  await expect(
+    page.locator('[data-href$="/member/2/edit"][href="javascript:void(0)"]'),
+  ).toHaveCount(0);
   await expect(roleGroup.locator('a[href="#"], a[href="javascript:void(0);"]')).toHaveCount(0);
   await roleToggle.click();
   await expect(roleGroup).toHaveClass("btn-group open");
@@ -640,10 +646,11 @@ test("project members role dropdown and delete confirm stay route-owned", async 
       width: 160,
     });
 
-  const deleteControl = page.locator('.members.project [data-action="delete"]');
+  const deleteControl = page.locator('.members.project [data-href$="/member/2/delete"]');
   await expect(deleteControl).toHaveJSProperty("tagName", "BUTTON");
   await expect(deleteControl).toHaveAttribute("type", "button");
   await expect(deleteControl).not.toHaveAttribute("href", /.+/);
+  await expect(deleteControl).not.toHaveAttribute("data-action", /.+/);
   await expect(deleteControl).toHaveAttribute(
     "data-href",
     `${basePath}/admin/sample/member/2/delete`,
@@ -651,7 +658,10 @@ test("project members role dropdown and delete confirm stay route-owned", async 
   await expect(deleteControl).toHaveAttribute("class", "ybtn ybtn-danger ybtn-small");
   await expect(deleteControl).toHaveText("Delete");
   await expect(deleteControl).not.toHaveAttribute("data-toggle", /.+/);
-  await expect(page.locator('[data-action="delete"][href="javascript:void(0)"]')).toHaveCount(0);
+  await expect(page.locator('.members.project [data-action="delete"]')).toHaveCount(0);
+  await expect(
+    page.locator('[data-href$="/member/2/delete"][href="javascript:void(0)"]'),
+  ).toHaveCount(0);
 
   const roleResponse = page.waitForResponse(
     (response) =>
@@ -781,7 +791,7 @@ test("project members delete errors keep legacy alert mapping after route-owned 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
-  const deleteControl = page.locator('.members.project [data-action="delete"]');
+  const deleteControl = page.locator('.members.project [data-href$="/member/2/delete"]');
   const dialogMessages: string[] = [];
   page.on("dialog", async (dialog) => {
     dialogMessages.push(dialog.message());
@@ -1241,7 +1251,7 @@ async function installDocumentDropdownBubbleAudit(page: Page) {
       if (
         event.target instanceof Element &&
         event.target.closest(
-          '.members.project [data-name="roleof-alice"] [data-toggle="dropdown"], .members.project [data-name="roleof-alice"] [data-action="apply"]',
+          '.members.project [data-name="roleof-alice"] [data-toggle="dropdown"], .members.project [data-name="roleof-alice"] [data-href$="/member/2/edit"]',
         )
       ) {
         dropdownClicks.push(
