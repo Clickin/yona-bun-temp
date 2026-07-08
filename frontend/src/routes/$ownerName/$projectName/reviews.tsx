@@ -179,7 +179,6 @@ function ProjectReviewsBody({
                   <button
                     type="button"
                     data-toggle="filter"
-                    data-type="participantId"
                     data-value={currentUserId}
                     onClick={() => filterClick({ participantId: currentUserId })}
                   >
@@ -191,7 +190,6 @@ function ProjectReviewsBody({
                   <button
                     type="button"
                     data-toggle="filter"
-                    data-type="authorId"
                     data-value={currentUserId}
                     onClick={() => filterClick({ authorId: currentUserId })}
                   >
@@ -256,7 +254,6 @@ function ProjectReviewsBody({
               <li className={activeState === "open" ? "active" : ""}>
                 <button
                   type="button"
-                  data-type="state"
                   data-value="open"
                   data-toggle="filter"
                   onClick={() => {
@@ -270,7 +267,6 @@ function ProjectReviewsBody({
               <li className={activeState === "closed" ? "active" : ""}>
                 <button
                   type="button"
-                  data-type="state"
                   data-value="closed"
                   data-toggle="filter"
                   onClick={() => {

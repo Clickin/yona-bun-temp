@@ -8,7 +8,7 @@ const PROJECT_REVIEWS_ROUTE = `${PROJECT_ROUTE}/reviews`;
 const PROJECT_GROUP_SEARCH_ROUTE = `/organizations/${PROJECT_OWNER_NAME}/search`;
 
 const EXPECTED_PROJECT_REVIEWS_PAGE_WRAP = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-toggle="filter">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="participantId" data-value="1">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="authorId" data-value="1">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" data-field="createdDate" data-value="asc" class="filter" data-toggle="order" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" data-type="state" data-value="open" data-toggle="filter">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" data-type="state" data-value="closed" data-toggle="filter">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-toggle="filter">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button" data-toggle="filter" data-value="1">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button" data-toggle="filter" data-value="1">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" data-field="createdDate" data-value="asc" class="filter" data-toggle="order" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" data-value="open" data-toggle="filter">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" data-value="closed" data-toggle="filter">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
 `;
 
 test("project reviews list matches legacy reviewthread/list.scala.html shell", async ({ page }) => {
@@ -124,20 +124,19 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   await expect(
     page.locator('.lst-stacked button[type="button"][data-toggle="filter"]'),
   ).toHaveCount(3);
-  await expect(
-    page.locator('.lst-stacked button[data-type="participantId"][data-value="1"]'),
-  ).toHaveText("Participated.1");
+  await expect(page.locator(".lst-stacked button").nth(1)).toHaveText("Participated.1");
+  await expect(page.locator(".lst-stacked button").nth(1)).toHaveAttribute("data-value", "1");
+  await expect(page.locator(".lst-stacked button").nth(2)).toHaveText("Created1");
+  await expect(page.locator(".lst-stacked button").nth(2)).toHaveAttribute("data-value", "1");
   await expect(page.locator('.filters button.filter[data-toggle="order"]')).toHaveText("Created");
   await expect(page.locator('.filters button.filter[data-field="createdDate"]')).toHaveAttribute(
     "data-value",
     "asc",
   );
-  await expect(page.locator('.nav-tabs button[data-type="state"][data-value="open"]')).toHaveText(
-    "Open2",
-  );
-  await expect(page.locator('.nav-tabs button[data-type="state"][data-value="closed"]')).toHaveText(
-    "Closed1",
-  );
+  await expect(page.locator('.nav-tabs button[data-value="open"]')).toHaveText("Open2");
+  await expect(page.locator('.nav-tabs button[data-value="closed"]')).toHaveText("Closed1");
+  await expect(page.locator(".lst-stacked button[data-type]")).toHaveCount(0);
+  await expect(page.locator(".nav-tabs button[data-type]")).toHaveCount(0);
   expect(
     await nativeClickListenerCount(page, ".lst-stacked button, .filters button, .nav-tabs button"),
   ).toBe(0);
@@ -224,7 +223,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   await page.evaluate((marker) => {
     (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker = marker;
   }, spaMarker);
-  await page.locator('.lst-stacked button[data-type="participantId"]').click();
+  await page.locator(".lst-stacked button").filter({ hasText: "Participated." }).click();
   await expect(page).toHaveURL(/participantId=1/u);
   await expect(page).toHaveURL(/orderBy=createdDate/u);
   await expect(page).toHaveURL(/orderDir=desc/u);
@@ -313,6 +312,14 @@ test("project reviews title source renders legacy projectLayout title", () => {
   );
   expect(source).not.toContain("useProjectReviewsDocumentTitle");
   expect(source).not.toContain("document.title");
+});
+
+test("project reviews filter source omits legacy data-type hooks", () => {
+  const source = readFileSync("src/routes/$ownerName/$projectName/reviews.tsx", "utf8");
+
+  expect(source).not.toContain('data-type="participantId"');
+  expect(source).not.toContain('data-type="authorId"');
+  expect(source).not.toContain('data-type="state"');
 });
 
 async function mockProjectReviews(page: Page) {
