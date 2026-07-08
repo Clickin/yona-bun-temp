@@ -342,8 +342,7 @@ function GlobalSearchResultList({
               {originProjectLink ? (
                 <div className="search-meta-info nm np">
                   <span>
-                    <i className="yobicon-split yobicon-white vmiddle"></i>
-                    {t("fork.original")}
+                    <i className="yobicon-split yobicon-white vmiddle"></i> {t("fork.original")}
                   </span>
                   <span>
                     <Link

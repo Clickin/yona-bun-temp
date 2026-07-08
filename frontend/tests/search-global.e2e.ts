@@ -518,6 +518,22 @@ test("global project search renders legacy partial_projects.scala.html populated
   const projectLogo = page.locator(".search-list-item.project .avatar-wrap img");
   await expect(projectLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
   await expect(projectLogo).not.toHaveAttribute("alt");
+  await expect
+    .poll(() =>
+      page
+        .locator(".search-meta-info.nm.np > span")
+        .first()
+        .evaluate((span) =>
+          Array.from(span.childNodes).map((node) =>
+            node.nodeType === Node.TEXT_NODE
+              ? node.textContent
+              : node instanceof HTMLElement
+                ? node.tagName.toLowerCase()
+                : "",
+          ),
+        ),
+    )
+    .toEqual(["i", " ", "Forked from"]);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
