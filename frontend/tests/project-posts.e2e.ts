@@ -1722,6 +1722,22 @@ test("project board detail opens legacy keymap modal through data-toggle modal",
     )
     .toBe("post-keymap-modal");
 
+  await keymapButton.click();
+  await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
+  await page.locator(".modal-backdrop.in").click({ position: { x: 1, y: 1 } });
+  await expectRootModalBridgeUnused(page);
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+
+  await keymapButton.click();
+  await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
+  await page.locator("#helpKeys").press("Escape");
+  await expectRootModalBridgeUnused(page);
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
+
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
     "utf8",
@@ -1736,9 +1752,13 @@ test("project board detail opens legacy keymap modal through data-toggle modal",
   );
   expect(bodySource).toContain('setOpenPostModal("helpKeys")');
   expect(bodySource).toContain('open={openPostModal === "helpKeys"}');
+  expect(bodySource).toContain("closeCurrentModal");
+  expect(bodySource).toContain('className="modal-backdrop fade in"');
+  expect(bodySource).toContain("onClick={closeCurrentModal}");
   expect(keymapSource).toContain("event.preventDefault();");
   expect(keymapSource).not.toContain("useState(false)");
   expect(keymapSource).toContain("event.stopPropagation();");
+  expect(keymapSource).toContain("closeModalOnEscape(event, onClose)");
   expect(keymapSource).not.toContain("document.");
   expect(keymapSource).not.toContain("classList");
   expect(keymapSource).not.toContain("style.display");

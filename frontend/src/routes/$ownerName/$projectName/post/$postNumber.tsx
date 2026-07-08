@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, type FormEvent, useState } from "react";
+import {
+  Fragment,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -258,6 +264,12 @@ function ProjectPostDetailBody({
       queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
     },
   });
+  const closeCurrentModal = (event: ReactMouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpenPostModal(null);
+    setCommentDeleteRequestUri(null);
+  };
 
   return (
     <div className="page-wrap-outer">
@@ -497,7 +509,13 @@ function ProjectPostDetailBody({
           </button>
         </div>
       </div>
-      {modalBackdropOpen ? <div className="modal-backdrop fade in"></div> : null}
+      {modalBackdropOpen ? (
+        <div
+          className="modal-backdrop fade in"
+          role="presentation"
+          onClick={closeCurrentModal}
+        ></div>
+      ) : null}
       <CommentDeleteConfirm
         cancelLabel={t("button.no")}
         confirmLabel={t("button.yes")}
@@ -1756,6 +1774,9 @@ function BoardDetailKeymap({
         tabIndex={-1}
         role="dialog"
         aria-hidden={open ? "false" : undefined}
+        onKeyUp={(event) => {
+          closeModalOnEscape(event, onClose);
+        }}
       >
         <div className="row-fluid">
           <div className="span3">
@@ -1822,6 +1843,15 @@ function KeymapEntry({ join = "", keys, label }: { join?: string; keys: string[]
       <br />
     </>
   );
+}
+
+function closeModalOnEscape(event: ReactKeyboardEvent<HTMLElement>, onClose: () => void) {
+  if (event.key !== "Escape") {
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  onClose();
 }
 
 function ctrlKey() {
