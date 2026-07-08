@@ -288,8 +288,8 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     listItemColumnFontSize: 12,
     listItemColumnLineHeight: 20,
     listItemColumnPaddingBlock: 20,
-    modalFooterButtonGap: 32,
-    modalWidth: 562,
+    modalFooterButtonGap: 0,
+    modalWidth: 0,
     paginationOffsetTop: 16,
     projectNameFontSize: 14,
     projectNameFontWeight: "700",
@@ -480,6 +480,11 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain("setDeleteProject(selectedProject);");
   expect(modalSource).toContain("setDeleteModalClosed(false);");
   expect(modalSource).toContain("closeDeletionModal();");
+  expect(modalSource).toContain('className={deleteProject ? "modal fade in" : "modal fade"}');
+  expect(modalSource).toContain('style={{ display: deleteProject ? "block" : "none" }}');
+  expect(modalSource).toContain(
+    'aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}',
+  );
   expect(modalSource).toContain("useMutation({");
   expect(modalSource).toContain("deleteSiteProjectRest(runtimeConfig, csrfToken, projectId)");
   expect(modalSource).toContain("readSessionBootstrap(runtimeConfig)");
@@ -523,10 +528,13 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
     hasText: "No",
   });
   await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).not.toHaveAttribute("aria-hidden", /.+/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
   expect(await projectListDeleteModalStateMetrics(page)).toMatchObject({
+    closedModalHasLegacyClass: true,
     deleteButtonAfterCreatedColumn: true,
     deleteButtonVerticallyOverlapsRow: true,
     modalInsideContentColumn: true,
@@ -539,6 +547,7 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
   await expect(deleteModal).toHaveClass("modal fade in");
   await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page.locator("#alertDeletionWrap .modal-header")).toHaveText(
     "×acme/roadmapDelete project",
@@ -570,8 +579,9 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   expect(requests.deletedProjectIds).toEqual([]);
 
   expect(await dispatchCancelableClick(noButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveClass("modal fade");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
@@ -579,9 +589,12 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   expect(await dispatchCancelableClick(closeButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveClass("modal fade");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
@@ -595,6 +608,8 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   );
   await page.locator("#projectDeleteBtn").click();
   await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
   await deleteResponsePromise;
 
@@ -607,8 +622,9 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
     },
   ]);
   await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(0);
-  await expect(deleteModal).toHaveClass("modal fade hide");
+  await expect(deleteModal).toHaveClass("modal fade");
   await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
@@ -802,7 +818,10 @@ async function projectListDeleteModalStateMetrics(page: Page) {
     const modalStyle = getComputedStyle(modal);
 
     return {
-      closedModalHidden: modalStyle.display === "none" || modal.classList.contains("hide"),
+      closedModalHasLegacyClass:
+        modalStyle.display === "none" &&
+        modal.className === "modal fade" &&
+        !modal.classList.contains("hide"),
       deleteButtonDoesNotOverlapProjectName: deleteButtonRect.left >= projectNameRect.right,
       deleteButtonAfterCreatedColumn: deleteButtonRect.left >= createdColumnRect.right,
       deleteButtonVerticallyOverlapsRow:

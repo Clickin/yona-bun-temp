@@ -220,14 +220,9 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
               <div
                 id="alertDeletionWrap"
-                className={
-                  deleteProject
-                    ? "modal fade in"
-                    : deleteModalClosed
-                      ? "modal fade hide"
-                      : "modal fade"
-                }
-                style={deleteProject ? { display: "block" } : undefined}
+                className={deleteProject ? "modal fade in" : "modal fade"}
+                style={{ display: deleteProject ? "block" : "none" }}
+                aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}
               >
                 <div className="modal-header">
                   <button
