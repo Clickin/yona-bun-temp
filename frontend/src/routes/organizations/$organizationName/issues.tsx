@@ -274,7 +274,6 @@ function OrganizationIssuesBody({
                     name="projectNames[]"
                     multiple
                     data-placeholder={t("organization.choose.projects")}
-                    data-toggle="select2"
                     data-container-css-class="fullsize"
                     defaultValue={search.projectNames}
                     onChange={handleProjectsChange}
