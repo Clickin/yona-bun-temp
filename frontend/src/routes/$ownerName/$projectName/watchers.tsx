@@ -285,7 +285,6 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                       params={{ ownerName, projectName }}
                       search={{ watchersLinkActive: undefined }}
                       className={`btn watcher-count no-border ${isWatchingProject ? "watch-on" : ""}`}
-                      data-toggle="tooltip"
                       title={t("project.watcher.number")}
                       activeOptions={{
                         exact: true,
