@@ -1,6 +1,7 @@
+/* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable -- legacy issue detail Bootstrap modal and index-comment DOM parity keeps plain modal divs/backdrops and aria-hidden close controls while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { Fragment, useRef, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
@@ -39,6 +40,24 @@ const LEGACY_LINK_PROPS = {
 function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
   event.stopPropagation();
+}
+
+function closeOnEscape(event: KeyboardEvent<HTMLElement>, close: () => void) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+  }
+}
+
+function useModalFocus(open: boolean) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (open) {
+      modalRef.current?.focus();
+    }
+  }, [open]);
+  return modalRef;
 }
 
 export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumber")({
@@ -454,7 +473,6 @@ function IssueDetailBody({
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
   const issueId = stringField(issue.issueId, issueNumber);
-  const issueHref = prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`);
   const editIssuePath = `/${ownerName}/${projectName}/issue/${issueNumber}/editform`;
   const issueState = stringField(issue.state, "open").toLowerCase();
   const stateLabel = issueState === "closed" ? "Closed" : "Open";
@@ -1082,6 +1100,7 @@ function IssuePostingHistory({
 }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
+  const modalRef = useModalFocus(open);
   const openHistory = (event: MouseEvent<HTMLButtonElement>) => {
     insulateModalButtonClick(event);
     setOpen(true);
@@ -1105,12 +1124,7 @@ function IssuePostingHistory({
 
   return (
     <div className="posting-history">
-      <button
-        type="button"
-        data-toggle="modal"
-        data-target="#-yona-posting-history"
-        onClick={openHistory}
-      >
+      <button type="button" onClick={openHistory}>
         {updatedByAuthorLabel || updatedLabel ? (
           <span className="lastUpdatedBy">
             <span>{updatedByAuthorLabel}</span>
@@ -1119,15 +1133,15 @@ function IssuePostingHistory({
         ) : null}
         <span>{t("change.edited")}</span>
       </button>
-      <div id="-yona-posting-history" className={open ? "modal in" : "modal hide"}>
+      <div
+        ref={modalRef}
+        id="-yona-posting-history"
+        className={open ? "modal in" : "modal hide"}
+        tabIndex={open ? -1 : undefined}
+        onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
+      >
         <div className="modal-header">
-          <button
-            type="button"
-            className="close"
-            data-dismiss="modal"
-            aria-hidden="true"
-            onClick={closeHistory}
-          >
+          <button type="button" className="close" aria-hidden="true" onClick={closeHistory}>
             ×
           </button>
           <h5 className="nm">{t("change.history")}</h5>
@@ -1136,17 +1150,12 @@ function IssuePostingHistory({
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
         </div>
         <div className="modal-footer">
-          <button
-            className="ybtn ybtn-info ybtn-small"
-            data-dismiss="modal"
-            aria-hidden="true"
-            onClick={closeHistory}
-          >
+          <button className="ybtn ybtn-info ybtn-small" aria-hidden="true" onClick={closeHistory}>
             {t("button.confirm")}
           </button>
         </div>
       </div>
-      {open ? <div className="modal-backdrop in"></div> : null}
+      {open ? <div className="modal-backdrop in" onClick={() => setOpen(false)}></div> : null}
     </div>
   );
 }
@@ -1174,8 +1183,7 @@ function IssueVote({
     insulateModalButtonClick(event);
     setVotersOpen(true);
   };
-  const closeVotersDialog = (event: MouseEvent<HTMLButtonElement>) => {
-    insulateModalButtonClick(event);
+  const closeVotersDialog = () => {
     setVotersOpen(false);
   };
 
@@ -1276,7 +1284,7 @@ function IssueVoterAvatars({
         ))}
         {overflowVoters.length ? (
           <li data-toggle="tooltip" data-html="true" title={overflowTitle}>
-            <button type="button" data-toggle="modal" data-target="#voters" onClick={onOpen}>
+            <button type="button" onClick={onOpen}>
               {`and ${overflowVoters.length} others`}
             </button>
           </li>
@@ -1294,21 +1302,25 @@ function IssueVoterListDialog({
 }: {
   id: string;
   issueNumber?: string;
-  onClose?: (event: MouseEvent<HTMLButtonElement>) => void;
+  onClose?: () => void;
   open?: boolean;
   ownerName?: string;
   projectName?: string;
   voters: VoterLike[];
 }) {
+  const modalRef = useModalFocus(open);
   return (
     <>
       <div
+        ref={modalRef}
         id={id}
         className={open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}
         style={open ? { display: "block" } : undefined}
+        tabIndex={open ? -1 : undefined}
+        onKeyDown={(event) => closeOnEscape(event, () => onClose?.())}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={onClose}>
+          <button type="button" className="close" onClick={onClose}>
             ×
           </button>
           <h5 className="nm">Issue Voters</h5>
@@ -1350,12 +1362,12 @@ function IssueVoterListDialog({
           >
             Copy email
           </button>
-          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" onClick={onClose}>
+          <button className="ybtn ybtn-info ybtn-small" onClick={onClose}>
             Close
           </button>
         </div>
       </div>
-      {open ? <div className="modal-backdrop in"></div> : null}
+      {open ? <div className="modal-backdrop in" onClick={() => onClose?.()}></div> : null}
     </>
   );
 }
@@ -1833,6 +1845,7 @@ function IssueChildCommentAndVotePair({
 function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const [open, setOpen] = useState(false);
+  const modalRef = useModalFocus(open);
   const isMac =
     typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("macintosh");
   const ctrlKey = isMac ? "⌘" : "CTRL";
@@ -1849,20 +1862,17 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
-      <button
-        type="button"
-        className="ybtn ybtn-inverse ybtn-mini"
-        data-toggle="modal"
-        onClick={openKeymap}
-      >
+      <button type="button" className="ybtn ybtn-inverse ybtn-mini" onClick={openKeymap}>
         {t("title.keymap")}
       </button>
       <div
+        ref={modalRef}
         id="helpKeys"
         className={open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
         tabIndex={-1}
         role="dialog"
         style={open ? { display: "block" } : undefined}
+        onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
       >
         <div className="row-fluid">
           <div className="span3">
@@ -1907,17 +1917,12 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
           </div>
         </div>
         <p className="actrow">
-          <button
-            type="button"
-            className="ybtn ybtn-info"
-            data-dismiss="modal"
-            onClick={closeKeymap}
-          >
+          <button type="button" className="ybtn ybtn-info" onClick={closeKeymap}>
             {t("button.confirm")}
           </button>
         </p>
       </div>
-      {open ? <div className="modal-backdrop fade in"></div> : null}
+      {open ? <div className="modal-backdrop fade in" onClick={() => setOpen(false)}></div> : null}
     </div>
   );
 }
@@ -1990,8 +1995,6 @@ function IssueActionButtons({
         <button
           type="button"
           className="icon btn-transparent-with-fontsize-lineheight ml6"
-          data-toggle="modal"
-          data-target="#deleteConfirm"
           title="Delete"
           onClick={onDeleteClick}
         >
@@ -3247,8 +3250,7 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
     insulateModalButtonClick(event);
     setOpen(true);
   };
-  const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
-    insulateModalButtonClick(event);
+  const closeDialog = () => {
     setOpen(false);
   };
 
@@ -3268,13 +3270,7 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
             .map((voter) => stringField(voter.userLabel))
             .join("\n")}\n…`}
         >
-          <button
-            type="button"
-            className="vote-description-people"
-            data-toggle="modal"
-            data-target={`#voters-${commentId}`}
-            onClick={openDialog}
-          >
+          <button type="button" className="vote-description-people" onClick={openDialog}>
             {voters.length} Agreements
           </button>
         </span>
@@ -3360,6 +3356,9 @@ function IssueIndexComment({
   const hasCurrentUserMentionInChild = childComments.some((childComment) =>
     hasLegacyMention(childComment.contentsMarkdown, currentUserLoginId),
   );
+  const navigateToComment = () => {
+    void router.navigate({ to: ".", hash: commentHash });
+  };
 
   return (
     <li
@@ -3374,7 +3373,13 @@ function IssueIndexComment({
         ) {
           return;
         }
-        void router.navigate({ to: ".", hash: commentHash });
+        navigateToComment();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigateToComment();
+        }
       }}
     >
       <div>
@@ -3445,12 +3450,19 @@ function DeleteConfirm({
     insulateModalButtonClick(event);
     onConfirm();
   };
+  const modalRef = useModalFocus(open);
 
   return (
     <>
-      <div id="deleteConfirm" className={open ? "modal fade in" : "modal hide fade"}>
+      <div
+        ref={modalRef}
+        id="deleteConfirm"
+        className={open ? "modal fade in" : "modal hide fade"}
+        tabIndex={open ? -1 : undefined}
+        onKeyDown={(event) => closeOnEscape(event, onCancel)}
+      >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={closeDialog}>
+          <button type="button" className="close" onClick={closeDialog}>
             ×
           </button>
           <h3>Delete issue</h3>
@@ -3462,12 +3474,12 @@ function DeleteConfirm({
           <button type="button" className="ybtn ybtn-danger" onClick={confirmDelete}>
             Yes
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal" onClick={closeDialog}>
+          <button type="button" className="ybtn" onClick={closeDialog}>
             No
           </button>
         </div>
       </div>
-      {open ? <div className="modal-backdrop fade in"></div> : null}
+      {open ? <div className="modal-backdrop fade in" onClick={onCancel}></div> : null}
     </>
   );
 }
@@ -3501,16 +3513,20 @@ function CommentDeleteConfirm({
       onConfirm(requestUri);
     }
   };
+  const modalRef = useModalFocus(open);
 
   return (
     <>
       <div
+        ref={modalRef}
         id="comment-delete-modal"
         className={`modal ${open ? "in " : "hide "}fade`}
         aria-hidden={open ? "false" : undefined}
+        tabIndex={open ? -1 : undefined}
+        onKeyDown={(event) => closeOnEscape(event, onCancel)}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={closeDialog}>
+          <button type="button" className="close" onClick={closeDialog}>
             ×
           </button>
           <h3>{title}</h3>
@@ -3527,12 +3543,12 @@ function CommentDeleteConfirm({
           >
             {confirmLabel}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal" onClick={closeDialog}>
+          <button type="button" className="ybtn" onClick={closeDialog}>
             {cancelLabel}
           </button>
         </div>
       </div>
-      {open ? <div className="modal-backdrop fade in"></div> : null}
+      {open ? <div className="modal-backdrop fade in" onClick={onCancel}></div> : null}
     </>
   );
 }

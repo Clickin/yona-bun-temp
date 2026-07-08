@@ -210,11 +210,9 @@ test("project issue detail uses route-owned timeline and comment hash links", as
     "href",
     `${issueHref}#event-88`,
   );
-  await expect(
-    page.locator(
-      '#comment-77 button.vote-description-people[data-target="#voters-77"][data-toggle="modal"]',
-    ),
-  ).toHaveText("6 Agreements");
+  await expect(page.locator("#comment-77 button.vote-description-people")).toHaveText(
+    "6 Agreements",
+  );
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "issue-hash-links";
@@ -386,6 +384,11 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   );
   expect(routeSource).not.toContain("useProjectIssueDetailDocumentTitle");
   expect(routeSource).toContain('data-toggle="comment-edit"');
+  expect(routeSource).not.toContain('data-toggle="modal"');
+  expect(routeSource).not.toContain('data-dismiss="modal"');
+  expect(routeSource).not.toMatch(
+    /data-target=(?:"#(?:-yona-posting-history|deleteConfirm|helpKeys|voters)"|\{`#voters-\$\{commentId\}`\})/u,
+  );
   expect(routeSource).toContain("setCommentEditOpen((current) => !current)");
   expect(routeSource).toContain("event.stopPropagation();");
   expect(routeSource).toContain(
@@ -847,8 +850,13 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await expect(
     page.locator('.posting-history a[href="#-yona-posting-history"][data-toggle="modal"]'),
   ).toHaveCount(0);
+  await expect(
+    page.locator(
+      '.posting-history [data-toggle="modal"], .posting-history [data-target="#-yona-posting-history"], .posting-history [data-dismiss="modal"]',
+    ),
+  ).toHaveCount(0);
   const trigger = page.locator(
-    '.posting-history button[type="button"][data-toggle="modal"][data-target="#-yona-posting-history"]',
+    '.posting-history button[type="button"]:has(span:has-text("edited"))',
   );
   await expect(trigger).toContainText("edited");
   await page.evaluate(() => {
@@ -866,7 +874,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   ).resolves.toBe("posting-history-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
-  await page.locator('#-yona-posting-history [data-dismiss="modal"]').last().click();
+  await page.locator('#-yona-posting-history .modal-footer button:has-text("Confirm")').click();
   await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
@@ -874,6 +882,16 @@ test("project issue detail renders legacy posting history modal", async ({ page 
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("posting-history-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await trigger.click();
+  await page.locator(".modal-backdrop.in").dispatchEvent("click");
+  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 test("project issue detail renders legacy anonymous posting history login link", async ({
@@ -932,7 +950,12 @@ test("project issue detail opens legacy keymap modal through route-owned React s
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  const trigger = page.locator('.board-footer button[data-toggle="modal"]');
+  await expect(
+    page.locator(
+      '.board-footer [data-toggle="modal"], .board-footer [data-target="#helpKeys"], .board-footer [data-dismiss="modal"]',
+    ),
+  ).toHaveCount(0);
+  const trigger = page.locator(".board-footer > .pull-left > button");
   await expect(trigger).toHaveClass("ybtn ybtn-inverse ybtn-mini");
   await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
   await page.evaluate(() => {
@@ -956,7 +979,7 @@ test("project issue detail opens legacy keymap modal through route-owned React s
     width: 682,
   });
 
-  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await page.locator('#helpKeys .actrow button:has-text("Confirm")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -965,6 +988,16 @@ test("project issue detail opens legacy keymap modal through route-owned React s
   ).resolves.toBe("issue-keymap-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(await keymapModalMetrics(page)).toMatchObject({ display: "none" });
+
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await trigger.click();
+  await page.locator(".modal-backdrop.fade.in").dispatchEvent("click");
+  await expect(page.locator("#helpKeys")).toHaveClass("modal hide fade keymap-help");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 test("project issue detail switches legacy comment editor tabs through data-toggle tab", async ({
@@ -1783,9 +1816,12 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
   await expect(page.locator('a[href="#deleteConfirm"][data-toggle="modal"]')).toHaveCount(0);
-  const trigger = page.locator(
-    'button[type="button"][data-toggle="modal"][data-target="#deleteConfirm"][title="Delete"]',
-  );
+  await expect(
+    page.locator(
+      '[data-toggle="modal"][data-target="#deleteConfirm"], #deleteConfirm [data-dismiss="modal"]',
+    ),
+  ).toHaveCount(0);
+  const trigger = page.locator('button[type="button"][title="Delete"]:has(i.yobicon-trash)');
   await expect(trigger.first().locator("i.yobicon-trash")).toHaveCount(1);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "delete-issue-modal";
@@ -1810,7 +1846,7 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(deleteRequests).toEqual([]);
 
-  await page.locator('#deleteConfirm [data-dismiss="modal"]').last().click();
+  await page.locator('#deleteConfirm .modal-footer button:has-text("No")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -1818,6 +1854,18 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("delete-issue-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+  expect(deleteRequests).toEqual([]);
+
+  await trigger.first().click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(deleteRequests).toEqual([]);
+
+  await trigger.first().click();
+  await page.locator(".modal-backdrop.fade.in").dispatchEvent("click");
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(deleteRequests).toEqual([]);
 
   await trigger.first().click();
@@ -1836,6 +1884,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+  await expect(page.locator('#comment-delete-modal [data-dismiss="modal"]')).toHaveCount(0);
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "comment-delete-modal";
@@ -1864,7 +1913,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
     confirmText: "Yes",
     confirmUri: null,
     display: "block",
-    dismissCount: 2,
+    dismissCount: 0,
     footerTextAlign: "right",
     headerDisplay: "block",
     left: 1,
@@ -1879,7 +1928,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
   expect(commentDeleteRequests).toEqual([]);
 
-  await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
+  await page.locator('#comment-delete-modal .modal-footer button:has-text("No")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -1918,7 +1967,15 @@ test("project issue detail deletes comments through legacy confirmation modal", 
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("comment-delete-modal-child");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
-  await page.locator('#comment-delete-modal [data-dismiss="modal"]').last().click();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(commentDeleteRequests).toEqual([]);
+
+  await childDeleteButton.dispatchEvent("click");
+  await expect(page.locator("#comment-delete-modal")).not.toHaveClass(/hide/);
+  await page.locator(".modal-backdrop.fade.in").dispatchEvent("click");
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#comment-delete-modal")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -2093,13 +2150,11 @@ test("project issue detail hides unauthorized delete when issue itself can be de
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
-  await expect(
-    page.locator('.span-left-pane > .board-actrow button[data-target="#deleteConfirm"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('.span-left-pane > .board-actrow button[title="Delete"]')).toHaveCount(
+    0,
+  );
   await expect(page.locator(".span-left-pane > .board-actrow button.disabled")).toHaveCount(0);
-  await expect(
-    page.locator('.issue-info .right-menu-icons button[data-target="#deleteConfirm"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('.issue-info .right-menu-icons button[title="Delete"]')).toHaveCount(0);
   await expect(page.locator(".issue-info .right-menu-icons button.disabled")).toHaveCount(0);
 });
 
@@ -2281,9 +2336,10 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
     await canonicalizeHtml(page, expected),
   );
   await expect(page.locator('#vote a[href="#voters"][data-toggle="modal"]')).toHaveCount(0);
-  const trigger = page.locator(
-    '#vote button[type="button"][data-toggle="modal"][data-target="#voters"]',
-  );
+  await expect(
+    page.locator('#vote [data-toggle="modal"], #vote [data-target="#voters"]'),
+  ).toHaveCount(0);
+  const trigger = page.locator('#vote button[type="button"]:has-text("and 3 others")');
   await expect(trigger).toHaveText("and 3 others");
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "issue-voters-modal";
@@ -2300,7 +2356,7 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   ).resolves.toBe("issue-voters-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
-  await page.locator('#voters [data-dismiss="modal"]').last().click();
+  await page.locator('#voters .modal-footer button:has-text("Close")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
@@ -2308,6 +2364,16 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("issue-voters-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await trigger.click();
+  await page.locator(".modal-backdrop.in").dispatchEvent("click");
+  await expect(page.locator("#voters")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 test("project issue detail renders legacy readonly attachment downloader lists", async ({
@@ -3223,9 +3289,12 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   });
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator("#comment-77 button.vote-description-people")).toHaveText(
+    "6 Agreements",
+  );
   await expect(
-    page.locator('#comment-77 button.vote-description-people[data-target="#voters-77"]'),
-  ).toHaveText("6 Agreements");
+    page.locator('#comment-77 [data-toggle="modal"], #comment-77 [data-target="#voters-77"]'),
+  ).toHaveCount(0);
   await expect(page.locator("#voters-77.voters-dialog")).toHaveCount(1);
   const commentUnvoteButton = page.locator('#comment-77 button[title="Withdraw"]');
   await expect(commentUnvoteButton).not.toHaveAttribute("data-request-type", /.+/);
@@ -3243,9 +3312,7 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
   await expect(page.locator('#comment-77 a[href="#voters-77"][data-toggle="modal"]')).toHaveCount(
     0,
   );
-  const trigger = page.locator(
-    '#comment-77 button[type="button"].vote-description-people[data-target="#voters-77"][data-toggle="modal"]',
-  );
+  const trigger = page.locator("#comment-77 button[type='button'].vote-description-people");
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "comment-voters-modal";
   });
@@ -3263,7 +3330,7 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
     avatarHeight: 40,
     avatarWidth: 40,
     bodyDisplay: "block",
-    closeHookCount: 2,
+    closeHookCount: 0,
     display: "block",
     footerDisplay: "block",
     headerDisplay: "block",
@@ -3273,7 +3340,7 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
     width: 562,
   });
 
-  await page.locator('#voters-77 [data-dismiss="modal"]').last().click();
+  await page.locator('#voters-77 .modal-footer button:has-text("Close")').click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters-77")).toBeHidden();
   await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
@@ -3282,6 +3349,16 @@ test("project issue detail renders legacy comment voter overflow", async ({ page
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("comment-voters-modal");
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await trigger.click();
+  await page.locator(".modal-backdrop.in").dispatchEvent("click");
+  await expect(page.locator("#voters-77")).toHaveClass("modal hide voters-dialog");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
 test("project issue detail renders legacy inline comment voter avatars", async ({ page }) => {
@@ -3307,9 +3384,7 @@ test("project issue detail renders legacy inline comment voter avatars", async (
   });
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  await expect(
-    page.locator('#comment-77 button.vote-description-people[data-target="#voters-77"]'),
-  ).toHaveCount(0);
+  await expect(page.locator("#comment-77 button.vote-description-people")).toHaveCount(0);
   await expect(page.locator("#voters-77")).toHaveCount(0);
 
   const expected =
@@ -4168,8 +4243,7 @@ async function commentDeleteModalMetrics(page: Page) {
       headerDisplay: header ? window.getComputedStyle(header).display : null,
       left: Math.round(rect.left - (viewportWidth - width) / 2),
       noText:
-        footer?.querySelector<HTMLButtonElement>('[data-dismiss="modal"]')?.textContent?.trim() ??
-        null,
+        footer?.querySelector<HTMLButtonElement>("button:last-child")?.textContent?.trim() ?? null,
       title: header?.querySelector("h3")?.textContent?.trim() ?? null,
       top: Math.round((rect.top / window.innerHeight) * 100),
       width,
@@ -4288,6 +4362,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
+            !isRemovedModalDataApi(attr) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -4307,6 +4382,15 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeAttr(attr: Attr) {
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+
+    function isRemovedModalDataApi(attr: Attr) {
+      return (
+        (attr.name === "data-toggle" && attr.value === "modal") ||
+        (attr.name === "data-dismiss" && attr.value === "modal") ||
+        (attr.name === "data-target" &&
+          /^#(?:-yona-posting-history|deleteConfirm|helpKeys|voters(?:-\d+)?)$/u.test(attr.value))
+      );
     }
   }, html);
 }
