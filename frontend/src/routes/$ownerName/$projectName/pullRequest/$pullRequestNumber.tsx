@@ -287,8 +287,6 @@ function PullRequestOverviewBody({
             <button
               type="button"
               className="ybtn ybtn-inverse ybtn-mini"
-              data-toggle="modal"
-              data-target="#helpMessage"
               onClick={(event) => {
                 insulateModalButtonClick(event);
                 setHelpMessageState("open");
@@ -1063,7 +1061,6 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
           <button
             type="button"
             className="ybtn ybtn-info ybtn-small"
-            data-dismiss="modal"
             onClick={(event) => {
               insulateModalButtonClick(event);
               onClose();
