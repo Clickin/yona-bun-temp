@@ -21,7 +21,7 @@ const EXPECTED_PROJECT_SETTINGS = `
 </header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/settingform"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class="active"><a href="__BASE_PATH__/admin/sample/settingform">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="saveSetting" method="post" action="__BASE_PATH__/admin/sample/setting" enctype="multipart/form-data" class="nm"><div class="bubble-wrap gray" style="overflow: visible"><input type="hidden" name="id" value="7"><input type="hidden" name="watchingCount" value="5"><div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;"><div class="setting-box left"><div class="logo-wrap" style="background-image:url('/assets/images/project_default_logo.png')"></div><div class="logo-desc"><ul class="unstyled descs"><li><strong>Project logo</strong></li><li>File type: bmp, jpg, gif, png <span class="point">bmp, jpg, gif, png</span></li><li>Maximum file size <span class="point">5MB</span></li><li><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i>File upload<input id="logoPath" type="file" class="file" name="logoPath" accept="image/*"></div></div></li></ul></div></div><dl class="setting-box right"><dt><label for="project-name">Enter project name in alphabetnumerical or symbol characters(_-.)</label></dt><dd><input id="project-name" type="text" name="name" data-trigger="focus" data-content="Also, previous links are available. After changing, during the first 24 hours, you can rename or transfer freely as many times as you want without breaking previous links. The previous URL will be fixed and preserved for 24 hours." data-placement="left" maxlength="250" value="sample"><br></dd><dt><label for="project-desc">Enter project description</label></dt><dd><textarea id="project-desc" name="overview" maxlength="250" class="textarea">Sample overview</textarea></dd></dl></div><div class="box-wrap middle"><div class="cu-label">Share Options</div><div class="cu-desc"><input name="projectScope" type="radio" class="radio-btn" id="public" value="PUBLIC" checked><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" class="radio-btn" id="private" value="PRIVATE"><label for="private" class="bg-radiobtn label-private">PRIVATE</label><span class="note">Project access must be granted explicitly for each user, but basic information (name, description, etc.) can be exposed to public.</span></div></div><div class="box-wrap middle"><div class="cu-label">Issue Template</div><div class="cu-desc"><a href="__BASE_PATH__/admin/sample/postform?issueTemplate=true" class="ybtn" target="_blank">Edit</a></div></div><div class="box-wrap middle"><div class="cu-label">Only project members can access code or related menus</div><div class="cu-desc"><input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleMemberOnly" class="radio-btn" value="true"><label for="codeAccessibleMemberOnly" class="bg-radiobtn label-public">Yes</label><input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleAnyone" class="radio-btn" value="false" checked><label for="codeAccessibleAnyone" class="bg-radiobtn label-private">No</label><span class="note"></span></div></div><div class="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel"><div class="cu-label vmiddle">Reviewer</div><div class="cu-desc"><input name="isUsingReviewerCount" data-toggle="reviewer-count" type="radio" class="radio-btn" id="reviewerCountEnable" value="true" checked><label for="reviewerCountEnable" class="bg-radiobtn label-public">Enable</label><input name="isUsingReviewerCount" data-toggle="reviewer-count" type="radio" class="radio-btn" id="reviewerCountDisable" value="false"><label for="reviewerCountDisable" class="bg-radiobtn label-private">Disable</label><div id="welReviewerCount" data-value="true" class="hide" style="display: block;"><input type="hidden" name="defaultReviewerCount" value="2"><div class="btn-group branches" data-id="project-reviewer-count" data-name="defaultReviewerCount"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">2</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button">1</button></li><li data-value="2"><button type="button">2</button></li><li data-value="3"><button type="button">3</button></li></ul></div><span class="note ml10">of reviewers is required to merge pull request.</span></div></div></div><div class="box-wrap middle" id="defaultBranceSettingPanel"><div class="cu-label vmiddle">Default branch</div><div class="cu-desc"><select id="project-default-branch" name="defaultBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" style="min-width: 220px;"><option value="main" selected>main</option><option value="develop">develop</option></select></div></div><div class="box-wrap middle"><div class="cu-label vmiddle">Menu Setting</div><div class="cu-desc"><label for="menuSettingCode" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingCode" name="code" value="true" checked>Code</label><label for="menuSettingIssue" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingIssue" name="issue" value="true" checked>Issue</label><label for="menuSettingPullRequest" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingPullRequest" name="pullRequest" value="true" checked>Pull request</label><label for="menuSettingReview" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingReview" name="review" value="true" checked>Review</label><label for="menuSettingMilestone" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingMilestone" name="milestone" value="true" checked>Milestone</label><label for="menuSettingBoard" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingBoard" name="board" value="true" checked>Board</label></div></div></div><div class="box-wrap bottom"><button id="save" type="submit" class="ybtn ybtn-success">Save</button></div></form></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class="active"><a href="__BASE_PATH__/admin/sample/settingform">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class=""><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="saveSetting" method="post" action="__BASE_PATH__/admin/sample/setting" enctype="multipart/form-data" class="nm"><div class="bubble-wrap gray" style="overflow: visible"><input type="hidden" name="id" value="7"><input type="hidden" name="watchingCount" value="5"><div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;"><div class="setting-box left"><div class="logo-wrap" style="background-image:url('/assets/images/project_default_logo.png')"></div><div class="logo-desc"><ul class="unstyled descs"><li><strong>Project logo</strong></li><li>File type: bmp, jpg, gif, png <span class="point">bmp, jpg, gif, png</span></li><li>Maximum file size <span class="point">5MB</span></li><li><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i>File upload<input id="logoPath" type="file" class="file" name="logoPath" accept="image/*"></div></div></li></ul></div></div><dl class="setting-box right"><dt><label for="project-name">Enter project name in alphabetnumerical or symbol characters(_-.)</label></dt><dd style="position:relative"><input id="project-name" type="text" name="name" maxlength="250" value="sample"><br></dd><dt><label for="project-desc">Enter project description</label></dt><dd><textarea id="project-desc" name="overview" maxlength="250" class="textarea">Sample overview</textarea></dd></dl></div><div class="box-wrap middle"><div class="cu-label">Share Options</div><div class="cu-desc"><input name="projectScope" type="radio" class="radio-btn" id="public" value="PUBLIC" checked><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" class="radio-btn" id="private" value="PRIVATE"><label for="private" class="bg-radiobtn label-private">PRIVATE</label><span class="note">Project access must be granted explicitly for each user, but basic information (name, description, etc.) can be exposed to public.</span></div></div><div class="box-wrap middle"><div class="cu-label">Issue Template</div><div class="cu-desc"><a href="__BASE_PATH__/admin/sample/postform?issueTemplate=true" class="ybtn" target="_blank">Edit</a></div></div><div class="box-wrap middle"><div class="cu-label">Only project members can access code or related menus</div><div class="cu-desc"><input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleMemberOnly" class="radio-btn" value="true"><label for="codeAccessibleMemberOnly" class="bg-radiobtn label-public">Yes</label><input name="isCodeAccessibleMemberOnly" type="radio" id="codeAccessibleAnyone" class="radio-btn" value="false" checked><label for="codeAccessibleAnyone" class="bg-radiobtn label-private">No</label><span class="note"></span></div></div><div class="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel"><div class="cu-label vmiddle">Reviewer</div><div class="cu-desc"><input name="isUsingReviewerCount" data-toggle="reviewer-count" type="radio" class="radio-btn" id="reviewerCountEnable" value="true" checked><label for="reviewerCountEnable" class="bg-radiobtn label-public">Enable</label><input name="isUsingReviewerCount" data-toggle="reviewer-count" id="reviewerCountDisable" type="radio" class="radio-btn" value="false"><label for="reviewerCountDisable" class="bg-radiobtn label-private">Disable</label><div id="welReviewerCount" data-value="true" class="hide" style="display: block;"><input type="hidden" name="defaultReviewerCount" value="2"><div class="btn-group branches" data-id="project-reviewer-count" data-name="defaultReviewerCount"><button class="btn dropdown-toggle large" data-toggle="dropdown"><span class="d-label">2</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="1"><button type="button">1</button></li><li data-value="2"><button type="button">2</button></li><li data-value="3"><button type="button">3</button></li></ul></div><span class="note ml10">of reviewers is required to merge pull request.</span></div></div></div><div class="box-wrap middle" id="defaultBranceSettingPanel"><div class="cu-label vmiddle">Default branch</div><div class="cu-desc"><select id="project-default-branch" name="defaultBranch" data-toggle="select2" data-format="branch" data-dropdown-css-class="branches" style="min-width: 220px;"><option value="main" selected>main</option><option value="develop">develop</option></select></div></div><div class="box-wrap middle"><div class="cu-label vmiddle">Menu Setting</div><div class="cu-desc"><label for="menuSettingCode" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingCode" name="code" value="true" checked>Code</label><label for="menuSettingIssue" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingIssue" name="issue" value="true" checked>Issue</label><label for="menuSettingPullRequest" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingPullRequest" name="pullRequest" value="true" checked>Pull request</label><label for="menuSettingReview" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingReview" name="review" value="true" checked>Review</label><label for="menuSettingMilestone" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingMilestone" name="milestone" value="true" checked>Milestone</label><label for="menuSettingBoard" class="bg-radiobtn label-public inline-list"><input type="checkbox" class="radio-btn" id="menuSettingBoard" name="board" value="true" checked>Board</label></div></div></div><div class="box-wrap bottom"><button id="save" type="submit" class="ybtn ybtn-success">Save</button></div></form></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -85,6 +85,66 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
     textareaHeight: 80,
     watchingCount: "5",
   });
+});
+
+test("project settings project name popover is React-owned on hover and focus", async ({
+  page,
+}) => {
+  test.info().annotations.push({
+    type: "gap",
+    description:
+      "Live legacy visual confirmation was unavailable in this worker run; assertions are Scala HTML, Bootstrap/Yobi LESS, and browser-metric derived.",
+  });
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const projectName = page.locator("#project-name");
+  await expect(projectName).toBeVisible();
+  await expect(projectName).toHaveAttribute("name", "name");
+  await expect(projectName).toHaveAttribute("maxlength", "250");
+  await expect(projectName).toHaveValue("sample");
+  await expect(projectName).not.toHaveAttribute("data-content");
+  await expect(projectName).not.toHaveAttribute("data-placement");
+  await expect(projectName).not.toHaveAttribute("data-trigger");
+  await expect(page.locator(".setting-box.right .popover")).toHaveCount(0);
+
+  await projectName.hover();
+  const hoverPopover = page.locator(".setting-box.right .popover.left");
+  await expect(hoverPopover).toBeVisible();
+  await expect(hoverPopover).toHaveClass(/(?:^|\s)left(?:\s|$)/);
+  await expect(hoverPopover).toHaveClass(/(?:^|\s)in(?:\s|$)/);
+  await expect(hoverPopover.locator(".popover-title")).toHaveText("");
+  await expect(hoverPopover.locator(".popover-content")).toHaveText(
+    "Also, previous links are available. After changing, during the first 24 hours, you can rename or transfer freely as many times as you want without breaking previous links. The previous URL will be fixed and preserved for 24 hours.",
+  );
+  expect(await projectNamePopoverMetrics(page)).toMatchObject({
+    arrowCenteredVertically: true,
+    inputKeptInsideRightColumn: true,
+    placement: "left",
+    popoverLeftOfInput: true,
+    popoverVisible: true,
+    titleHidden: true,
+  });
+
+  await page.mouse.move(0, 0);
+  await expect(hoverPopover).toHaveCount(0);
+
+  await projectName.focus();
+  const focusPopover = page.locator(".setting-box.right .popover.left");
+  await expect(focusPopover).toBeVisible();
+  await expect(focusPopover.locator(".popover-content")).toHaveText(
+    "Also, previous links are available. After changing, during the first 24 hours, you can rename or transfer freely as many times as you want without breaking previous links. The previous URL will be fixed and preserved for 24 hours.",
+  );
+  expect(await projectNamePopoverMetrics(page)).toMatchObject({
+    placement: "left",
+    popoverLeftOfInput: true,
+    popoverVisible: true,
+  });
+
+  await projectName.blur();
+  await expect(focusPopover).toHaveCount(0);
 });
 
 test("project SVN settings omit Git-only setting controls while preserving legacy shell", async ({
@@ -577,6 +637,12 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(source).not.toContain("style.display");
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain("innerHTML");
+  expect(source).not.toContain('data-content={t("project.transfer.description6")}');
+  expect(source).not.toContain('data-placement="left"');
+  expect(source).not.toContain('data-trigger="focus"');
+  expect(source).toContain("setProjectNamePopoverFocused");
+  expect(source).toContain("setProjectNamePopoverHovered");
+  expect(source).toContain('className="popover left in"');
   expect(source).not.toMatch(/href=["'](?:#|javascript:)/);
   expect(source).not.toContain("activeProps={{ className: undefined }}");
   expect(source).not.toContain("as never");
@@ -1398,6 +1464,45 @@ async function projectSettingMetrics(page: Page) {
       saveTextAlign: getComputedStyle(saveWrap).textAlign,
       textareaHeight: Math.round(textareaRect.height),
       watchingCount: form.querySelector<HTMLInputElement>('input[name="watchingCount"]')?.value,
+    };
+
+    function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {
+      const element = document.querySelector<T>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function projectNamePopoverMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rightColumn = requireElement(".setting-box.right");
+    const input = requireElement<HTMLInputElement>("#project-name");
+    const popover = requireElement(".setting-box.right .popover.left");
+    const title = requireElement(".setting-box.right .popover-title");
+    const content = requireElement(".setting-box.right .popover-content");
+    const arrow = requireElement(".setting-box.right .popover .arrow");
+    const rightColumnRect = rightColumn.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const arrowRect = arrow.getBoundingClientRect();
+    const titleStyle = getComputedStyle(title);
+
+    return {
+      arrowCenteredVertically:
+        Math.abs(
+          arrowRect.top + arrowRect.height / 2 - (popoverRect.top + popoverRect.height / 2),
+        ) <= 2,
+      contentWidth: Math.round(contentRect.width),
+      inputKeptInsideRightColumn:
+        inputRect.left >= rightColumnRect.left && inputRect.right <= rightColumnRect.right,
+      placement: popover.classList.contains("left") ? "left" : "",
+      popoverLeftOfInput: popoverRect.right <= inputRect.left,
+      popoverVisible: getComputedStyle(popover).display !== "none" && popoverRect.width > 0,
+      titleHidden: titleStyle.display === "none",
     };
 
     function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {

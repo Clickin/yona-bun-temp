@@ -206,6 +206,9 @@ function ProjectSettingBody({
   const [reviewerCountEnabled, setReviewerCountEnabled] = useState(() =>
     booleanField(recordField(project).isUsingReviewerCount),
   );
+  const [projectNamePopoverFocused, setProjectNamePopoverFocused] = useState(false);
+  const [projectNamePopoverHovered, setProjectNamePopoverHovered] = useState(false);
+  const isProjectNamePopoverVisible = projectNamePopoverFocused || projectNamePopoverHovered;
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -358,17 +361,33 @@ function ProjectSettingBody({
                 <dt>
                   <label htmlFor="project-name">{t("project.name.placeholder")}</label>
                 </dt>
-                <dd>
+                <dd style={{ position: "relative" }}>
                   <input
                     id="project-name"
                     type="text"
                     name="name"
-                    data-trigger="focus"
-                    data-content={t("project.transfer.description6")}
-                    data-placement="left"
                     maxLength={250}
                     defaultValue={projectName}
+                    onBlur={() => setProjectNamePopoverFocused(false)}
+                    onFocus={() => setProjectNamePopoverFocused(true)}
+                    onMouseEnter={() => setProjectNamePopoverHovered(true)}
+                    onMouseLeave={() => setProjectNamePopoverHovered(false)}
                   />
+                  {isProjectNamePopoverVisible ? (
+                    <div
+                      className="popover left in"
+                      style={{
+                        display: "block",
+                        left: "-296px",
+                        top: "-12px",
+                        width: "276px",
+                      }}
+                    >
+                      <div className="arrow"></div>
+                      <div className="popover-title" aria-hidden="true"></div>
+                      <div className="popover-content">{t("project.transfer.description6")}</div>
+                    </div>
+                  ) : null}
                   {oldPlace ? (
                     <div>
                       {t("project.previous.place", { args: [""] })}
