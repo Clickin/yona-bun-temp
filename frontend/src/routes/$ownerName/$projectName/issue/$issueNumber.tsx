@@ -3213,7 +3213,6 @@ function MarkdownEditor({
           <button
             type="button"
             data-mode="edit"
-            data-toggle="tab"
             data-target={`#edit-${wrapId}`}
             onClick={(event) => switchTab(event, "edit")}
           >
@@ -3224,7 +3223,6 @@ function MarkdownEditor({
           <button
             type="button"
             data-mode="preview"
-            data-toggle="tab"
             data-target={`#preview-${wrapId}`}
             onClick={(event) => switchTab(event, "preview")}
           >

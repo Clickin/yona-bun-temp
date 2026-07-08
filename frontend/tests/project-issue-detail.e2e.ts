@@ -386,6 +386,7 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain('data-toggle="comment-edit"');
   expect(routeSource).not.toContain('data-toggle="comment-delete"');
   expect(routeSource).not.toContain('data-toggle="modal"');
+  expect(routeSource).not.toContain('data-toggle="tab"');
   expect(routeSource).not.toContain('data-dismiss="modal"');
   expect(routeSource).not.toMatch(
     /data-target=(?:"#(?:-yona-posting-history|deleteConfirm|helpKeys|voters)"|\{`#voters-\$\{commentId\}`\})/u,
@@ -1040,22 +1041,22 @@ test("project issue detail opens legacy keymap modal through route-owned React s
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
-test("project issue detail switches legacy comment editor tabs through data-toggle tab", async ({
+test("project issue detail switches legacy comment editor tabs through React state controls", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  const editTab = page.locator(
-    '#comment-form button[data-target="#edit-contents"][data-toggle="tab"]',
-  );
-  const previewTab = page.locator(
-    '#comment-form button[data-target="#preview-contents"][data-toggle="tab"]',
-  );
+  const editTab = page.locator('#comment-form button[data-target="#edit-contents"]');
+  const previewTab = page.locator('#comment-form button[data-target="#preview-contents"]');
+  const initialUrl = page.url();
 
   await expect(editTab).toHaveAttribute("data-mode", "edit");
   await expect(previewTab).toHaveAttribute("data-mode", "preview");
+  await expect(editTab).not.toHaveAttribute("data-toggle", "tab");
+  await expect(previewTab).not.toHaveAttribute("data-toggle", "tab");
+  await expect(page.locator('#comment-form button[data-toggle="tab"]')).toHaveCount(0);
   await expect(
     page.locator('#comment-form li:has(> button[data-target="#edit-contents"])'),
   ).toHaveClass(/active/);
@@ -1068,7 +1069,25 @@ test("project issue detail switches legacy comment editor tabs through data-togg
   await expect(page.locator("#comment-form .markdown-help-wrap > .markdown-help-item")).toHaveCount(
     10,
   );
+  const editMetrics = await page.evaluate(() => {
+    const tabs = document.querySelector("#comment-form .nav-tabs");
+    const edit = document.querySelector("#edit-contents");
+    if (!tabs || !edit) return null;
+    const tabBox = tabs.getBoundingClientRect();
+    const editBox = edit.getBoundingClientRect();
+    return {
+      editTop: editBox.top,
+      editWidth: editBox.width,
+      tabBottom: tabBox.bottom,
+      tabHeight: tabBox.height,
+    };
+  });
+  expect(editMetrics).not.toBeNull();
+  expect(editMetrics!.editTop).toBeGreaterThanOrEqual(editMetrics!.tabBottom);
+  expect(editMetrics!.tabHeight).toBeGreaterThan(20);
+
   await previewTab.click();
+  expect(page.url()).toBe(initialUrl);
   await expect(
     page.locator('#comment-form li:has(> button[data-target="#preview-contents"])'),
   ).toHaveClass(/active/);
@@ -1077,8 +1096,26 @@ test("project issue detail switches legacy comment editor tabs through data-togg
   ).not.toHaveClass(/active/);
   await expect(page.locator("#preview-contents")).toHaveClass(/active/);
   await expect(page.locator("#edit-contents")).not.toHaveClass(/active/);
+  const previewMetrics = await page.evaluate(() => {
+    const tabs = document.querySelector("#comment-form .nav-tabs");
+    const preview = document.querySelector("#preview-contents");
+    if (!tabs || !preview) return null;
+    const tabBox = tabs.getBoundingClientRect();
+    const previewBox = preview.getBoundingClientRect();
+    return {
+      previewTop: previewBox.top,
+      previewWidth: previewBox.width,
+      tabBottom: tabBox.bottom,
+      tabHeight: tabBox.height,
+    };
+  });
+  expect(previewMetrics).not.toBeNull();
+  expect(previewMetrics!.previewTop).toBeGreaterThanOrEqual(previewMetrics!.tabBottom);
+  expect(previewMetrics!.previewWidth).toBeCloseTo(editMetrics!.editWidth, 0);
+  expect(previewMetrics!.tabHeight).toBeCloseTo(editMetrics!.tabHeight, 0);
 
   await editTab.click();
+  expect(page.url()).toBe(initialUrl);
   await expect(
     page.locator('#comment-form li:has(> button[data-target="#edit-contents"])'),
   ).toHaveClass(/active/);
@@ -4477,7 +4514,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
             attr.name !== "data-status" &&
-            !isRemovedModalDataApi(attr) &&
+            !isRemovedReactOwnedDataApi(attr) &&
             (node.tagName !== "A" || !attr.name.startsWith("data-")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -4499,8 +4536,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
 
-    function isRemovedModalDataApi(attr: Attr) {
+    function isRemovedReactOwnedDataApi(attr: Attr) {
       return (
+        (attr.name === "data-toggle" && attr.value === "tab") ||
         (attr.name === "data-toggle" && attr.value === "modal") ||
         (attr.name === "data-dismiss" && attr.value === "modal") ||
         (attr.name === "data-target" &&
