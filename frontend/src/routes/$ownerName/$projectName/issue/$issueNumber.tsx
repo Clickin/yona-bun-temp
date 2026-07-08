@@ -1573,7 +1573,6 @@ function IssueMilestoneSelect({
     <select
       id="milestone"
       name="milestone.id"
-      data-toggle="select2"
       data-format="milestone"
       data-container-css-class="fullsize"
       defaultValue={selectedMilestoneId || "-1"}
@@ -1661,7 +1660,6 @@ function IssueLabelSelect({
           name="labelIds"
           multiple
           data-search="labelIds"
-          data-toggle="select2"
           data-format="issuelabel"
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
