@@ -1045,7 +1045,7 @@ function IssueDetailBody({
         </div>
       </div>
       <DeleteConfirm
-        issueHref={issueHref}
+        issueDeleteHref={`${issueHref}/delete`}
         open={deleteModalOpen}
         onCancel={() => setDeleteModalOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
@@ -3447,12 +3447,12 @@ function IssueIndexComment({
 }
 
 function DeleteConfirm({
-  issueHref,
+  issueDeleteHref,
   onCancel,
   onConfirm,
   open,
 }: {
-  issueHref: string;
+  issueDeleteHref: string;
   onCancel: () => void;
   onConfirm: () => void;
   open: boolean;
@@ -3483,7 +3483,7 @@ function DeleteConfirm({
             type="button"
             className="ybtn ybtn-danger"
             data-request-method="delete"
-            data-request-uri={issueHref}
+            data-request-uri={issueDeleteHref}
             onClick={confirmDelete}
           >
             Yes
