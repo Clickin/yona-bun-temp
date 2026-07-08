@@ -33,7 +33,6 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
 type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyTooltipAttrs = {
   "data-placement": "bottom";
-  "data-toggle": "tooltip";
 };
 
 const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
@@ -871,7 +870,6 @@ function UserIssueItem({
   const [isHovered, setIsHovered] = useState(false);
   const legacyTooltipAttrs = {
     "data-placement": "bottom",
-    "data-toggle": "tooltip",
   } satisfies LegacyTooltipAttrs;
   const legacyIssueRowAttrs = {
     className: "post-item title",
@@ -920,7 +918,6 @@ function UserIssueItem({
             {issueWeight > 0 ? (
               <span
                 className="weight-up-arrow"
-                data-toggle="tooltip"
                 data-placement="right"
                 title={`${t("issue.weight")} ${issueWeight}`}
               >
@@ -930,7 +927,6 @@ function UserIssueItem({
             {issueWeight < 0 ? (
               <span
                 className="weight-down-arrow"
-                data-toggle="tooltip"
                 data-placement="right"
                 title={`${t("issue.weight")} ${issueWeight}`}
               >
@@ -995,12 +991,7 @@ function UserIssueItem({
                 <span className="infos-item">{t("issue.noAuthor")}</span>
               ) : null}
             </span>
-            <span
-              className="infos-item"
-              data-toggle="tooltip"
-              data-placement="bottom"
-              title={dateTooltipTitle}
-            >
+            <span className="infos-item" data-placement="bottom" title={dateTooltipTitle}>
               {dateLabel}
             </span>
             {issue.milestoneId ? (
@@ -1013,7 +1004,6 @@ function UserIssueItem({
             {issue.dueDateLabel ? (
               <span
                 className={`pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
-                data-toggle="tooltip"
                 data-placement="top"
                 title={`Due date: ${issue.dueDateLabel}`}
               >
@@ -1060,7 +1050,6 @@ function UserIssueAuthorLink({
 }) {
   const legacyTooltipAttrs = {
     "data-placement": "bottom",
-    "data-toggle": "tooltip",
   } satisfies LegacyTooltipAttrs;
 
   return (

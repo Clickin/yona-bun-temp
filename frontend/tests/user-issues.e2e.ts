@@ -40,13 +40,13 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
         <ul class="post-list-wrap my-issues">
           <li class="post-item title" id="issue-item-42" href="__BASE_PATH__/admin/sample/issue/11">
             <div class="span12 span-hard-wrap">
-              <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/admin/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#11</span></div>
+              <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/admin/sample" class="title project" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#11</span></div>
               <div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Assigned issue</a><span class="item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><span class="for-subtask-progressbar"></span><a href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" class="label issue-label list-label twoColumeModeTarget white" data-label-id="8">bug</a><div class="child-issue-list hide"></div></span></div>
-              <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></div>
-              <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Created at 2026-06-30">2026-06-30</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-toggle="tooltip" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right" data-toggle="tooltip" data-placement="top" title="Due date: 2026-07-05"><i class="yobicon-clock2"></i>5 days left</span></span></div>
+              <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-placement="bottom" title="alice">Alice</a></div>
+              <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-placement="bottom" title="Created at 2026-06-30">2026-06-30</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right" data-placement="top" title="Due date: 2026-07-05"><i class="yobicon-clock2"></i>5 days left</span></span></div>
             </div>
           </li>
-          <li class="post-item title" id="issue-item-43" href="__BASE_PATH__/admin/sample/issue/12"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/admin/sample" class="title project" data-toggle="tooltip" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#12</span></div><div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Second issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/bob" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="bob">Bob</a></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/bob" class="infos-item infos-link-item author-cell" data-toggle="tooltip" data-placement="bottom" title="bob">Bob</a></span><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Created at 2026-06-29">2026-06-29</span></span></div></div></li>
+          <li class="post-item title" id="issue-item-43" href="__BASE_PATH__/admin/sample/issue/12"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/admin/sample" class="title project" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#12</span></div><div class="title-wrap span6"><span class="title-cell"><a href="__BASE_PATH__/admin/sample/issue/12" class="title">Second issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/bob" class="infos-item infos-link-item author-cell" data-placement="bottom" title="bob">Bob</a></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/bob" class="infos-item infos-link-item author-cell" data-placement="bottom" title="bob">Bob</a></span><span class="infos-item" data-placement="bottom" title="Created at 2026-06-29">2026-06-29</span></span></div></div></li>
         </ul>
         <div id="pagination" class="page-navigation-wrap" data-total="1"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div>
       </div>
@@ -375,6 +375,7 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).toContain(
     "type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
+  expect(routeSource).not.toContain("data-toggle");
   expect(routeSource).not.toContain("LegacyPjaxContainerAttrs");
   expect(routeSource).not.toContain("LegacyPjaxListItemAttrs");
   expect(routeSource).not.toContain("legacyPjaxContainerAttrs");
@@ -796,13 +797,13 @@ test("current-user issues weight arrows follow legacy my_partial_list markup", a
   await page.goto(`${basePath}/user/issues`);
 
   const upWeight = page.locator("#issue-item-42 .title-cell .weight-up-arrow");
-  await expect(upWeight).toHaveAttribute("data-toggle", "tooltip");
+  await expect(upWeight).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(upWeight).toHaveAttribute("data-placement", "right");
   await expect(upWeight).toHaveAttribute("title", "Issue weight 2");
   await expect(upWeight.locator(".yobicon-angle-circled-up")).toBeVisible();
 
   const downWeight = page.locator("#issue-item-43 .title-cell .weight-down-arrow");
-  await expect(downWeight).toHaveAttribute("data-toggle", "tooltip");
+  await expect(downWeight).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(downWeight).toHaveAttribute("data-placement", "right");
   await expect(downWeight).toHaveAttribute("title", "Issue weight -1");
   await expect(downWeight.locator(".yobicon-angle-circled-down")).toBeVisible();
@@ -823,44 +824,54 @@ test("current-user issues row project and meta wrappers follow legacy my_partial
     `${basePath}/admin/sample`,
   );
   await expect(projectName.locator("> .infos-item.project-name > a.title.project")).toHaveAttribute(
-    "data-toggle",
-    "tooltip",
-  );
-  await expect(projectName.locator("> .infos-item.project-name > a.title.project")).toHaveAttribute(
     "data-placement",
     "bottom",
   );
+  await expect(projectName.locator("> .infos-item.project-name > a.title.project")).toHaveAttribute(
+    "title",
+    "Project name",
+  );
+  await expect(
+    projectName.locator("> .infos-item.project-name > a.title.project"),
+  ).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(projectName.locator("> .infos-item.post-id")).toHaveText("#11");
 
   const desktopAuthor = page.locator(
     "#issue-item-42 > .span12 > .author .infos-item.infos-link-item.author-cell",
   );
   await expect(desktopAuthor).toHaveAttribute("href", `${basePath}/alice`);
-  await expect(desktopAuthor).toHaveAttribute("data-toggle", "tooltip");
+  await expect(desktopAuthor).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(desktopAuthor).toHaveAttribute("data-placement", "bottom");
   await expect(desktopAuthor).toHaveAttribute("title", "alice");
 
   const metaCell = page.locator("#issue-item-42 .infos.meta > .meta-cell");
   await expect(metaCell.locator("> .hide.show-in-mobile .author-cell")).toHaveText("Alice");
   await expect(metaCell.locator("> .hide.show-in-mobile .author-cell")).toHaveAttribute(
-    "data-toggle",
-    "tooltip",
-  );
-  await expect(metaCell.locator("> .hide.show-in-mobile .author-cell")).toHaveAttribute(
     "data-placement",
     "bottom",
   );
-  await expect(metaCell.locator("> .infos-item")).toHaveAttribute("data-toggle", "tooltip");
+  await expect(metaCell.locator("> .hide.show-in-mobile .author-cell")).not.toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
+  await expect(metaCell.locator("> .infos-item")).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(metaCell.locator("> .infos-item")).toHaveAttribute("data-placement", "bottom");
   await expect(metaCell.locator("> .infos-item")).toHaveAttribute("title", "Created at 2026-06-30");
-  await expect(metaCell.locator("> .mileston-tag > a")).toHaveAttribute("data-toggle", "tooltip");
+  await expect(metaCell.locator("> .mileston-tag > a")).not.toHaveAttribute(
+    "data-toggle",
+    "tooltip",
+  );
   await expect(metaCell.locator("> .mileston-tag > a")).toHaveAttribute("data-placement", "bottom");
   await expect(metaCell.locator("> .mileston-tag > a")).toHaveAttribute("title", "Milestone");
+  await expect(metaCell.locator("> .pull-right")).not.toHaveAttribute("data-toggle", "tooltip");
+  await expect(metaCell.locator("> .pull-right")).toHaveAttribute("data-placement", "top");
   await expect(metaCell.locator("> .pull-right")).toHaveAttribute("title", "Due date: 2026-07-05");
   await expect(metaCell.locator("> .pull-right")).toHaveText("5 days left");
 
   const updatedMetaCell = page.locator("#issue-item-43 .infos.meta > .meta-cell > .infos-item");
   await expect(updatedMetaCell).toHaveText("2026-07-01");
+  await expect(updatedMetaCell).not.toHaveAttribute("data-toggle", "tooltip");
+  await expect(updatedMetaCell).toHaveAttribute("data-placement", "bottom");
   await expect(updatedMetaCell).toHaveAttribute("title", "Last Updated 2026-07-01");
 });
 
@@ -891,7 +902,7 @@ test("current-user issues assignee avatar column follows legacy authored-tab bra
 
   const assignee = page.locator("#issue-item-42 .avatar-wrap.assinee");
   await expect(assignee).toHaveAttribute("href", `${basePath}/admin`);
-  await expect(assignee).toHaveAttribute("data-toggle", "tooltip");
+  await expect(assignee).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(assignee).toHaveAttribute("data-placement", "bottom");
   await expect(assignee).toHaveAttribute("title", "Assignee: Admin");
   await expect(assignee.locator("img")).toHaveAttribute(
