@@ -124,7 +124,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
     </div>
     <div class="box-wrap bottom">
-      <button id="btnDelete" type="button" class="ybtn ybtn-danger" data-target="#alertDeletion" data-toggle="modal"><i class="yobicon-database-remove"></i> Delete this project</button>
+      <button id="btnDelete" type="button" class="ybtn ybtn-danger" data-toggle="modal"><i class="yobicon-database-remove"></i> Delete this project</button>
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
@@ -290,7 +290,7 @@ test("project delete confirmation modal source stays route-owned", async () => {
   expect(modalSource).toContain("event.preventDefault();");
   expect(modalSource).toContain("event.stopPropagation();");
   expect(modalSource).toContain('data-toggle="modal"');
-  expect(modalSource).toContain('data-target="#alertDeletion"');
+  expect(modalSource).not.toContain("data-target");
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain("setDeletionModalOpen(true);");
   expect(modalSource).toContain("setDeletionModalOpen(false);");
