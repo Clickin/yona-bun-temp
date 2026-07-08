@@ -238,8 +238,8 @@ function ProjectWebhooksBody({
                   />{" "}
                   Continuous Integration tool (Only push event)
                 </label>
-                {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this separator as a label. */}
-                <label className="radio inline">|</label>
+                {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this separator as a label with surrounding spaces. */}
+                <label className="radio inline"> | </label>
                 {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy project/webhooks.scala.html renders this empty spacer as a label. */}
                 <label className="radio inline"></label>
                 <label className="checkbox inline" htmlFor="gitPush">
