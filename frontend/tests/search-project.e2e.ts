@@ -108,12 +108,12 @@ test("project search route source renders legacy projectLayout title without dir
   expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
     '<title>{`${t("title.search")} - ${ownerName}/${projectName}`}</title>',
   );
-  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain("const ProjectSearchCategoryLink = createLink");
-  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain('"data-toggle": "search-category"');
-  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain('"data-type": searchCategoryType');
   expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
-    '<ProjectSearchCategoryLink\n                          from="/$ownerName/$projectName/search"',
+    '<Link\n                          from="/$ownerName/$projectName/search"',
   );
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("createLink");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('"data-toggle": "search-category"');
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('"data-type": searchCategoryType');
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("<a ");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("<Link\n                          data-");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('href="#"');
@@ -726,8 +726,8 @@ async function expectProjectSearchCategoryAttributes(
     categories.map(({ label, dataToggle, dataType }) => ({ dataToggle, dataType, label })),
   ).toEqual(
     EXPECTED_PROJECT_SEARCH_CATEGORIES.map((category) => ({
-      dataToggle: "search-category",
-      dataType: category.type,
+      dataToggle: null,
+      dataType: null,
       label: category.label,
     })),
   );

@@ -1,21 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
 import {
-  createFileRoute,
-  createLink,
-  Link,
-  Link as RouterLink,
-  useRouter,
-} from "@tanstack/react-router";
-import {
-  type ComponentPropsWithoutRef,
   Fragment,
-  type Ref,
   useEffect,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { jsx as reactJsx } from "react/jsx-runtime";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../api/session";
 import {
@@ -74,24 +65,6 @@ const projectSearchPaginationLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 } as const;
-
-function ProjectSearchCategoryLinkAnchor({
-  searchCategoryType,
-  ref,
-  ...props
-}: ComponentPropsWithoutRef<"a"> & {
-  searchCategoryType: ProjectSearchCategory["type"];
-  ref?: Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", {
-    ...props,
-    "data-toggle": "search-category",
-    "data-type": searchCategoryType,
-    ref,
-  });
-}
-
-const ProjectSearchCategoryLink = createLink(ProjectSearchCategoryLinkAnchor);
 
 export const Route = createFileRoute("/$ownerName/$projectName/search")({
   component: ProjectSearchRoute,
@@ -360,10 +333,9 @@ function ProjectSearchSuccessBody({
                     }`;
                     return (
                       <li className={className} key={category.type}>
-                        <ProjectSearchCategoryLink
+                        <Link
                           from="/$ownerName/$projectName/search"
                           params={{ ownerName, projectName }}
-                          searchCategoryType={category.type}
                           search={{
                             keyword: keywordValue,
                             searchType: category.type,
@@ -372,7 +344,7 @@ function ProjectSearchSuccessBody({
                         >
                           {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
-                        </ProjectSearchCategoryLink>
+                        </Link>
                       </li>
                     );
                   })}
@@ -408,6 +380,8 @@ function ProjectSearchSuccessBody({
                 </div>
                 <div className="search-result-wrap">
                   <ProjectSearchResultList
+                    ownerName={ownerName}
+                    projectName={projectName}
                     result={result}
                     runtimeConfig={runtimeConfig}
                     searchPath={searchPath}
@@ -423,10 +397,14 @@ function ProjectSearchSuccessBody({
 }
 
 function ProjectSearchResultList({
+  ownerName,
+  projectName,
   result,
   runtimeConfig,
   searchPath,
 }: {
+  ownerName: string;
+  projectName: string;
   result: SearchResponse;
   runtimeConfig: RuntimeConfig;
   searchPath: string;
@@ -483,7 +461,12 @@ function ProjectSearchResultList({
             );
           })}
         </ul>
-        <ProjectSearchPagination result={result} searchPath={searchPath} />
+        <ProjectSearchPagination
+          ownerName={ownerName}
+          projectName={projectName}
+          result={result}
+          searchPath={searchPath}
+        />
       </>
     );
   }
@@ -576,7 +559,12 @@ function ProjectSearchResultList({
             );
           })}
         </ul>
-        <ProjectSearchPagination result={result} searchPath={searchPath} />
+        <ProjectSearchPagination
+          ownerName={ownerName}
+          projectName={projectName}
+          result={result}
+          searchPath={searchPath}
+        />
       </>
     );
   }
@@ -617,7 +605,12 @@ function ProjectSearchResultList({
             );
           })}
         </ul>
-        <ProjectSearchPagination result={result} searchPath={searchPath} />
+        <ProjectSearchPagination
+          ownerName={ownerName}
+          projectName={projectName}
+          result={result}
+          searchPath={searchPath}
+        />
       </>
     );
   }
@@ -626,9 +619,13 @@ function ProjectSearchResultList({
 }
 
 function ProjectSearchPagination({
+  ownerName,
+  projectName,
   result,
   searchPath,
 }: {
+  ownerName: string;
+  projectName: string;
   result: SearchResponse;
   searchPath: string;
 }) {
@@ -680,9 +677,10 @@ function ProjectSearchPagination({
             <Link
               activeOptions={projectSearchPaginationLinkActiveOptions}
               activeProps={projectSearchPaginationLinkActiveProps}
-              from={searchPath}
+              from="/$ownerName/$projectName/search"
+              params={{ ownerName, projectName }}
               search={pageSearch(currentPage - 1)}
-              to={searchPath}
+              to="/$ownerName/$projectName/search"
             >
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
@@ -717,9 +715,10 @@ function ProjectSearchPagination({
             <Link
               activeOptions={projectSearchPaginationLinkActiveOptions}
               activeProps={projectSearchPaginationLinkActiveProps}
-              from={searchPath}
+              from="/$ownerName/$projectName/search"
+              params={{ ownerName, projectName }}
               search={pageSearch(currentPage + 1)}
-              to={searchPath}
+              to="/$ownerName/$projectName/search"
             >
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
@@ -879,7 +878,11 @@ function ProjectSearchForbiddenErrorBody({
           <i className="ico ico-err2"></i>
           <p>{t("error.forbidden")}</p>
           {isAnonymous ? (
-            <Link className="ybtn ybtn-primary" search={{ redirectUrl }} to="/users/loginform">
+            <Link
+              className="ybtn ybtn-primary"
+              search={{ redirectUrl } as never}
+              to="/users/loginform"
+            >
               {t("title.login")}
             </Link>
           ) : null}
