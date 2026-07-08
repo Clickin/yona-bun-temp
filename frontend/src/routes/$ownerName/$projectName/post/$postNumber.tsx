@@ -987,6 +987,8 @@ function PostCommentForm({
   postNumber: string;
   projectName: string;
 }) {
+  const [editorResetKey, setEditorResetKey] = useState(0);
+
   if (!canComment) {
     return (
       <div
@@ -1012,6 +1014,7 @@ function PostCommentForm({
     const contents = new FormData(form).get("contents");
     await onCreateComment(typeof contents === "string" ? contents : "");
     form.reset();
+    setEditorResetKey((current) => current + 1);
   }
 
   return (
@@ -1023,7 +1026,13 @@ function PostCommentForm({
       onSubmit={handleSubmit}
     >
       <div className="write-comment-box">
-        <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
+        <MarkdownEditor
+          editorMode="comment-body"
+          key={editorResetKey}
+          name="contents"
+          value=""
+          wrapId="contents"
+        />
         <div
           className="upload-wrap content-footer"
           data-resource-type="NONISSUE_COMMENT"
@@ -1558,26 +1567,27 @@ function MarkdownEditor({
   wrapId: string;
 }) {
   const [activeMode, setActiveMode] = useState<"edit" | "preview">("edit");
+  const [editorValue, setEditorValue] = useState(value);
+
+  const selectMode = (mode: "edit" | "preview", event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveMode(mode);
+  };
 
   return (
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeMode === "edit" ? "active" : undefined}>
-          <button
-            type="button"
-            data-toggle="tab"
-            data-mode="edit"
-            onClick={() => setActiveMode("edit")}
-          >
+          <button type="button" data-mode="edit" onClick={(event) => selectMode("edit", event)}>
             Edit
           </button>
         </li>
         <li className={activeMode === "preview" ? "active" : undefined}>
           <button
             type="button"
-            data-toggle="tab"
             data-mode="preview"
-            onClick={() => setActiveMode("preview")}
+            onClick={(event) => selectMode("preview", event)}
           >
             Preview
           </button>
@@ -1619,7 +1629,8 @@ function MarkdownEditor({
               data-editor-mode={editorMode}
               {...{ markdown: "true" }}
               id={`editor-${name}-${wrapId}`}
-              defaultValue={value}
+              value={editorValue}
+              onChange={(event) => setEditorValue(event.currentTarget.value)}
             ></textarea>
           </div>
         </div>
@@ -1627,10 +1638,11 @@ function MarkdownEditor({
           id={`preview-${wrapId}`}
           className={`tab-pane${activeMode === "preview" ? " active" : ""}`}
         >
-          <div
-            className={`markdown-preview markdown-wrap ${editorMode}`}
-            data-via-email="false"
-          ></div>
+          <div className={`markdown-preview markdown-wrap ${editorMode}`} data-via-email="false">
+            {activeMode === "preview" ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{editorValue}</ReactMarkdown>
+            ) : null}
+          </div>
         </div>
         <div className="notification-receiver">
           <span className="notification-receiver-title">Notification receivers </span>
