@@ -476,7 +476,6 @@ function ProjectMembersBody({
           <ul className="members project row-fluid">
             {members.members.map((member) => (
               <ProjectMemberListItem
-                basePath={runtimeConfig.basePath}
                 key={stringField(member.userId, member.loginId)}
                 member={member}
                 members={members}
@@ -558,7 +557,6 @@ function ProjectMembersBody({
 }
 
 function ProjectMemberListItem({
-  basePath,
   member,
   members,
   onDeleteRequest,
@@ -566,7 +564,6 @@ function ProjectMemberListItem({
   projectName,
   runtimeConfig,
 }: {
-  basePath: string;
   member: ProjectMemberEntry;
   members: ProjectMembersResponse;
   onDeleteRequest: (event: MouseEvent<HTMLButtonElement>, member: ProjectMemberEntry) => void;
@@ -662,10 +659,6 @@ function ProjectMemberListItem({
                     >
                       <button
                         type="button"
-                        data-href={prefixBasePath(
-                          basePath,
-                          `/${ownerName}/${projectName}/member/${userId}/edit`,
-                        )}
                         data-loginid={loginId}
                         onClick={(event) => onRoleItemClick(event, roleName)}
                       >
@@ -678,10 +671,6 @@ function ProjectMemberListItem({
             </div>
             <button
               type="button"
-              data-href={prefixBasePath(
-                basePath,
-                `/${ownerName}/${projectName}/member/${userId}/delete`,
-              )}
               className="ybtn ybtn-danger ybtn-small"
               onClick={(event) => onDeleteRequest(event, member)}
             >
