@@ -99,6 +99,16 @@ const legacyRouteLocalActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
+  bottom: "100%",
+  display: "block",
+  left: "50%",
+  marginBottom: "10px",
+  minWidth: "150px",
+  pointerEvents: "none",
+  position: "absolute",
+  transform: "translateX(-50%)",
+};
 
 export const Route = createFileRoute("/$ownerName/$projectName/issues")({
   component: ProjectIssuesRoute,
@@ -2984,16 +2994,43 @@ function ShowSubtasksCheckbox({
   onToggle: (checked: boolean) => void;
 }) {
   const { t } = useLegacyMessages();
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+  const popoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTitle = t("common.show.subtasks");
+  const popoverContent = t("common.show.subtasks.desc");
+  const clearPopoverTimer = () => {
+    if (popoverTimer.current !== null) {
+      window.clearTimeout(popoverTimer.current);
+      popoverTimer.current = null;
+    }
+  };
+  const showPopover = () => {
+    clearPopoverTimer();
+    popoverTimer.current = window.setTimeout(() => {
+      setIsPopoverVisible(true);
+      popoverTimer.current = null;
+    }, 100);
+  };
+  const hidePopover = () => {
+    clearPopoverTimer();
+    popoverTimer.current = window.setTimeout(() => {
+      setIsPopoverVisible(false);
+      popoverTimer.current = null;
+    }, 100);
+  };
+
+  useEffect(() => clearPopoverTimer, []);
 
   return (
     <div
       className="show-subtasks mr10"
       id="two-column-mode-checkbox"
-      data-toggle="popover"
-      data-trigger="hover"
-      data-placement="top"
-      title={t("common.show.subtasks")}
-      data-content={t("common.show.subtasks.desc")}
+      title={popoverTitle}
+      style={{ position: "relative" }}
+      onBlur={hidePopover}
+      onFocus={showPopover}
+      onMouseEnter={showPopover}
+      onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
@@ -3009,6 +3046,13 @@ function ShowSubtasksCheckbox({
           <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
         </div>
       </label>
+      {isPopoverVisible ? (
+        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+          <div className="arrow" />
+          <h3 className="popover-title">{popoverTitle}</h3>
+          <div className="popover-content">{popoverContent}</div>
+        </div>
+      ) : null}
     </div>
   );
 }
