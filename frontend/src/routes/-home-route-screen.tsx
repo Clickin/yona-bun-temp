@@ -372,7 +372,6 @@ function HomeScreen({
                           id="setDefaultLoginPage"
                           type="button"
                           className="ybtn hide-in-mobile"
-                          data-url={routePathWithoutSlash}
                           title={t("button.setDefaultLoginPage")}
                           data-trigger="hover"
                           data-placement="bottom"

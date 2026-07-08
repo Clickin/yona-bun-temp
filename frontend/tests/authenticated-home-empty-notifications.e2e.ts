@@ -131,7 +131,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 const EXPECTED_DIRECT_NOTIFICATIONS = EXPECTED_AUTHENTICATED_HOME.replace(
   `<li></li>
           </ul>`,
-  `<li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" data-url="notifications" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+  `<li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
           </ul>`,
 );
 
@@ -1221,7 +1221,16 @@ test("direct notifications route matches legacy Application.notifications empty 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const setDefaultLoginPageRequests: string[] = [];
   await mockAuthenticatedEmptyNotifications(page);
+  await page.route("**/user/defultLoginPage?**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    setDefaultLoginPageRequests.push(`${requestUrl.pathname}${requestUrl.search}`);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ defaultLoginPage: requestUrl.searchParams.get("path") ?? "" }),
+    });
+  });
 
   await page.goto(`${basePath}/notifications`);
   await expect(page).toHaveTitle("Yona");
@@ -1251,6 +1260,24 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(await readDesktopAuthenticatedHomeMetrics(page)).toEqual(
     EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS,
   );
+  const defaultLandingButton = page.locator("#setDefaultLoginPage");
+  await expect(defaultLandingButton).toHaveText("Set to default page");
+  await expect(defaultLandingButton).toHaveAttribute("class", "ybtn hide-in-mobile");
+  await expect(defaultLandingButton).toHaveAttribute("type", "button");
+  await expect(defaultLandingButton).not.toHaveAttribute("data-url");
+  await expect(defaultLandingButton).toHaveAttribute("title", "Set to default page");
+  await expect(defaultLandingButton).toHaveAttribute("data-trigger", "hover");
+  await expect(defaultLandingButton).toHaveAttribute("data-placement", "bottom");
+  await expect(defaultLandingButton).toHaveAttribute("data-toggle", "popover");
+  await expect(defaultLandingButton).toHaveAttribute(
+    "data-content",
+    "Make current page the index page when logged in",
+  );
+  await defaultLandingButton.click();
+  await expect(defaultLandingButton).toBeHidden();
+  expect(setDefaultLoginPageRequests).toEqual([
+    `${basePath}/user/defultLoginPage?path=%2Fnotifications`,
+  ]);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileAuthenticatedHomeMetrics(page)).toEqual({
     defaultLandingButtonDisplay: "none",
@@ -1299,6 +1326,8 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(mainStreamTabSource).toContain('to="/user/issues"');
   expect(mainStreamTabSource).toContain('to="/user/files"');
   expect(mainStreamTabSource).toContain("LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS");
+  expect(mainStreamTabSource).not.toContain("data-url=");
+  expect(mainStreamTabSource).not.toContain("data-url");
 
   const myIssuesTab = mainStreamTabs.locator('a:has-text("My Issues")');
   await expect(myIssuesTab).toHaveAttribute("href", `${basePath}/user/issues`);
