@@ -22,15 +22,20 @@ function withLegacyMarkdownHelp(html: string) {
   );
 }
 
-function withReactEditorTabButtons(html: string) {
+function withReactOwnedTabButtons(html: string) {
   return html
     .replaceAll(
       /<a href="#edit-[^"]+" data-toggle="tab" data-mode="edit">Edit<\/a>/g,
-      '<button type="button" data-toggle="tab" data-mode="edit">Edit</button>',
+      '<button type="button" data-mode="edit">Edit</button>',
     )
     .replaceAll(
       /<a href="#preview-[^"]+" data-toggle="tab" data-mode="preview">Preview<\/a>/g,
-      '<button type="button" data-toggle="tab" data-mode="preview">Preview</button>',
+      '<button type="button" data-mode="preview">Preview</button>',
+    )
+    .replaceAll(/<button type="button" data-toggle="tab">/g, '<button type="button">')
+    .replaceAll(
+      /<button type="button" data-toggle="tab" data-mode="([^"]+)">/g,
+      '<button type="button" data-mode="$1">',
     );
 }
 
@@ -237,6 +242,15 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project commit detail React tab controls do not carry Bootstrap tab triggers", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="tab"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-mode="edit"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-mode="preview"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-toggle="markdown-editor"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setReviewCardTab");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setActiveTab");
 });
 
 test("project commit detail browser title follows legacy project layout", async ({ page }) => {
@@ -550,12 +564,9 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   ).toHaveCount(1);
   const editorTabs = page.locator('[data-toggle="markdown-editor"]');
   await expect(editorTabs.locator('a[href^="#edit-"], a[href^="#preview-"]')).toHaveCount(0);
-  await expect(
-    editorTabs.locator('button[type="button"][data-toggle="tab"][data-mode="edit"]'),
-  ).toHaveCount(2);
-  await expect(
-    editorTabs.locator('button[type="button"][data-toggle="tab"][data-mode="preview"]'),
-  ).toHaveCount(2);
+  await expect(editorTabs.locator('button[type="button"][data-mode="edit"]')).toHaveCount(2);
+  await expect(editorTabs.locator('button[type="button"][data-mode="preview"]')).toHaveCount(2);
+  await expect(editorTabs.locator('[data-toggle="tab"]')).toHaveCount(0);
   const commentEditor = page.locator('#comment-form [data-toggle="markdown-editor"]');
   const reviewEditor = page.locator('#review-form [data-toggle="markdown-editor"]');
   await expect(commentEditor.locator(".tab-content > .markdown-help")).toHaveCount(1);
@@ -597,7 +608,8 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   const reviewTabs = page.locator(".review-container .nav-tabs");
   const urlBeforeReviewTabClick = page.url();
   await expect(reviewTabs.locator('a[href^="#"]')).toHaveCount(0);
-  await expect(reviewTabs.locator('button[type="button"][data-toggle="tab"]')).toHaveCount(2);
+  await expect(reviewTabs.locator('button[type="button"]')).toHaveCount(2);
+  await expect(reviewTabs.locator('[data-toggle="tab"]')).toHaveCount(0);
   await expect(reviewTabs.locator("button").nth(0)).toHaveText("Open 0");
   await expect(reviewTabs.locator("button").nth(1)).toHaveText("Closed 0");
   await reviewTabs.locator("button").nth(1).click();
@@ -1730,6 +1742,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
       '[data-toggle="markdown-editor"] a[href^="#edit-"], [data-toggle="markdown-editor"] a[href^="#preview-"]',
     ),
   ).toHaveCount(0);
+  await expect(page.locator('[data-toggle="markdown-editor"] [data-toggle="tab"]')).toHaveCount(0);
   const threadEditor = page.locator(
     '#thread-88 .write-comment-form [data-toggle="markdown-editor"]',
   );
@@ -2283,6 +2296,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           : attr.value;
       }
     },
-    withReactEditorTabButtons(withLegacyMarkdownHelp(html)),
+    withReactOwnedTabButtons(withLegacyMarkdownHelp(html)),
   );
 }

@@ -445,20 +445,12 @@ function ProjectCommitDetailBody({
                   </button>
                   <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
                     <li className={reviewCardTab === "open" ? "active" : undefined}>
-                      <button
-                        type="button"
-                        data-toggle="tab"
-                        onClick={() => setReviewCardTab("open")}
-                      >
+                      <button type="button" onClick={() => setReviewCardTab("open")}>
                         {`${t("issue.state.open")} ${openThreads.length}`}
                       </button>
                     </li>
                     <li className={reviewCardTab === "closed" ? "active" : undefined}>
-                      <button
-                        type="button"
-                        data-toggle="tab"
-                        onClick={() => setReviewCardTab("closed")}
-                      >
+                      <button type="button" onClick={() => setReviewCardTab("closed")}>
                         {`${t("issue.state.closed")} ${closedThreads.length}`}
                       </button>
                     </li>
@@ -1640,22 +1632,12 @@ function Editor({
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
-          <button
-            type="button"
-            data-toggle="tab"
-            data-mode="edit"
-            onClick={() => setActiveTab("edit")}
-          >
+          <button type="button" data-mode="edit" onClick={() => setActiveTab("edit")}>
             {t("common.editor.edit")}
           </button>
         </li>
         <li className={activeTab === "preview" ? "active" : undefined}>
-          <button
-            type="button"
-            data-toggle="tab"
-            data-mode="preview"
-            onClick={() => setActiveTab("preview")}
-          >
+          <button type="button" data-mode="preview" onClick={() => setActiveTab("preview")}>
             {t("common.editor.preview")}
           </button>
         </li>
