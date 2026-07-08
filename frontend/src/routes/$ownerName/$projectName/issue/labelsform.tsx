@@ -1033,7 +1033,6 @@ function IssueLabelConfirmModal({
           <button
             type="button"
             className="btn-transparent"
-            data-dismiss="modal"
             onClick={(event) => dismissIssueLabelModalButtonClick(event, onDismiss)}
           >
             ×
@@ -1089,7 +1088,6 @@ function EditCategoryModal({
           <button
             type="button"
             className="btn-transparent"
-            data-dismiss="modal"
             onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
           >
             ×
@@ -1135,7 +1133,6 @@ function EditCategoryModal({
             <button
               type="button"
               className="ybtn ybtn-default"
-              data-dismiss="modal"
               onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
             >
               {t("button.cancel")}
@@ -1184,7 +1181,6 @@ function EditLabelModal({
           <button
             type="button"
             className="btn-transparent"
-            data-dismiss="modal"
             onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
           >
             ×
@@ -1250,7 +1246,6 @@ function EditLabelModal({
             <button
               type="button"
               className="ybtn ybtn-default"
-              data-dismiss="modal"
               onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
             >
               {t("button.cancel")}
@@ -1346,7 +1341,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   {projectName}
                 </Link>
               </span>
-              {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- legacy project header favorite control is a span with button semantics. */}
+              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
               <span
                 className="user-project-list"
                 data-project-id={projectIdValue}
@@ -1371,6 +1366,7 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                   star
                 </i>
               </span>
+              {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
               {booleanField(recordField(project).isPrivate) ? (
                 <span className="project-private">
                   <i className="yobicon-lock"></i>

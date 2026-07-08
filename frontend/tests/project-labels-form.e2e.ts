@@ -74,8 +74,8 @@ const EXPECTED_PROJECT_LABELS = `
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/copyLabels" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'naver/yobi', then owner name is 'naver' and project name is 'yobi'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/issue/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" data-provider="typeahead" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
-<div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent" data-dismiss="modal">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default" data-dismiss="modal">Cancel</button></div></div></div>
-<div id="editLabel" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent" data-dismiss="modal">×</button></div><div class="message edit-label-form"><div class="center-txt"><select name="category.id" data-toggle="select2"></select><input type="text" name="name" class="text input-label-name" maxlength="250" placeholder="Name"><div class="label-preset-colors edit">__EDIT_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default" data-dismiss="modal">Cancel</button></div></div></div>
+<div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
+<div id="editLabel" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-form"><div class="center-txt"><select name="category.id" data-toggle="select2"></select><input type="text" name="name" class="text input-label-name" maxlength="250" placeholder="Name"><div class="label-preset-colors edit">__EDIT_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -522,7 +522,7 @@ test("project labels new-category confirm modal preserves legacy option semantic
   await armProjectLabelsModalBridgeTrap(page);
   expect(
     await dispatchCancelableClick(
-      page.locator('#newCategoryConfirm .btn-dismiss [data-dismiss="modal"]'),
+      page.locator("#newCategoryConfirm .btn-dismiss .btn-transparent"),
     ),
   ).toBe(false);
   await expect(page).toHaveURL(labelsPageUrl);
@@ -924,9 +924,7 @@ test("project labels edit modals open and dismiss through route state", async ({
 
   await armProjectLabelsModalBridgeTrap(page);
   expect(
-    await dispatchCancelableClick(
-      page.locator('#editCategory .btn-dismiss [data-dismiss="modal"]'),
-    ),
+    await dispatchCancelableClick(page.locator("#editCategory .btn-dismiss .btn-transparent")),
   ).toBe(false);
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
@@ -947,9 +945,9 @@ test("project labels edit modals open and dismiss through route state", async ({
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 
   await armProjectLabelsModalBridgeTrap(page);
-  expect(
-    await dispatchCancelableClick(page.locator('#editLabel .buttons [data-dismiss="modal"]')),
-  ).toBe(false);
+  expect(await dispatchCancelableClick(page.locator("#editLabel .buttons .ybtn-default"))).toBe(
+    false,
+  );
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "true");
@@ -972,7 +970,7 @@ test("project labels modal source insulates delegated modal bridge and removes n
   expect(routeSource).toContain('id="newCategoryConfirm"');
   expect(routeSource).toContain('id="deleteLabelConfirm"');
   expect(routeSource).toContain("confirm-button-vertical");
-  expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource).not.toContain('data-dismiss="modal"');
   expect(routeSource).not.toContain("window.confirm");
   expect(routeSource).not.toContain('data-toggle="modal"');
   expect(routeSource).not.toContain('data-target="#editCategory"');
@@ -1165,7 +1163,9 @@ async function armProjectLabelsModalBridgeTrap(page: Page) {
     win.__yonaProjectLabelsModalBridgeTrapArmed = true;
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      const bridged = target?.closest('[data-toggle="modal"], [data-dismiss="modal"]');
+      const bridged = target?.closest(
+        '[data-toggle="modal"], [data-dismiss="modal"], .modal .btn-dismiss .btn-transparent, .modal .buttons .ybtn',
+      );
       if (bridged) {
         win.__yonaProjectLabelsModalBridgeHits?.push(
           `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
