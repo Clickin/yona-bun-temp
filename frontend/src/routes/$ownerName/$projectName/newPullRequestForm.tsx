@@ -621,11 +621,11 @@ function PullRequestConflictConfirmModal({
     <>
       <div
         id="pullRequestConflictConfirm"
-        className={isOpen ? "modal in yobiDialog" : "modal hide yobiDialog"}
+        className={isOpen ? "modal hide yobiDialog in" : "modal hide yobiDialog"}
         tabIndex={-1}
         role="dialog"
         aria-hidden={isOpen ? "false" : "true"}
-        style={isOpen ? { display: "block" } : undefined}
+        style={{ display: isOpen ? "block" : "none" }}
       >
         <div className="btn-dismiss">
           <button

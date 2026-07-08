@@ -415,9 +415,9 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   expect(ROUTE_SOURCE).not.toContain("window.confirm(");
   expect(ROUTE_SOURCE).toContain("function PullRequestConflictConfirmModal(");
   expect(ROUTE_SOURCE).toContain(
-    'className={isOpen ? "modal in yobiDialog" : "modal hide yobiDialog"}',
+    'className={isOpen ? "modal hide yobiDialog in" : "modal hide yobiDialog"}',
   );
-  expect(ROUTE_SOURCE).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(ROUTE_SOURCE).toContain('style={{ display: isOpen ? "block" : "none" }}');
   expect(ROUTE_SOURCE).toContain('data-dismiss="modal"');
   expect(ROUTE_SOURCE).toContain('{isOpen ? <div className="modal-backdrop in"></div> : null}');
   expect(ROUTE_SOURCE).toContain("setForceSubmit(true)");
@@ -434,6 +434,9 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
     await dialog.dismiss();
   });
   await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal hide yobiDialog");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -443,8 +446,9 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await page.click('form.nm button[type="submit"]');
   await expect(page).toHaveURL(createFormUrl);
   await expect(page.locator("#pullRequestConflictConfirm")).toBeVisible();
-  await expect(page.locator("#pullRequestConflictConfirm")).not.toHaveClass(/hide/u);
-  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal in yobiDialog");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal hide yobiDialog in");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveCSS("display", "block");
   await expect(page.locator("#pullRequestConflictConfirm .message .msg")).toHaveText(
     "This code seems to have conflicts when merging. Do you really want to continue?",
   );
@@ -467,7 +471,9 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
     .filter({ hasText: /^Cancel$/u })
     .click();
   await expect(page).toHaveURL(createFormUrl);
-  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal hide yobiDialog");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(
     page.evaluate(
@@ -481,14 +487,18 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await page.fill("#title", "");
   await page.click('form.nm button[type="submit"]');
   await expect(page.locator("#pullRequestConflictConfirm")).toBeVisible();
-  await expect(page.locator("#pullRequestConflictConfirm")).not.toHaveClass(/hide/u);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal hide yobiDialog in");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   expect(postRequests).toEqual([]);
 
   await armRootModalBridgeTrap(page);
   await page.locator("#pullRequestConflictConfirm .ybtn.ybtn-primary").click();
   await expect.poll(() => conflictDialogMessages).toEqual(["Title is a required field."]);
-  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass(/hide/u);
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveClass("modal hide yobiDialog");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#pullRequestConflictConfirm")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(postRequests).toEqual([]);
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
