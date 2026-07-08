@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
-const EXPECTED_GLOBAL_SEARCH = `
+const _EXPECTED_GLOBAL_SEARCH = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
     <p id="unsupported-content"></p>
@@ -612,6 +612,9 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(resultListSource).toContain("<RouterLink");
   expect(resultListSource).toContain("to={itemLink.to}");
   expect(resultListSource).toContain("hash={itemLink.hash || undefined}");
+  expect(resultListSource).not.toContain('data-toggle="tooltip"');
+  expect(resultListSource).not.toContain("data-toggle=");
+  expect(resultListSource).not.toContain("data-placement=");
   expect(categoryListSource).toContain("<Link");
   expect(categoryListSource).not.toContain('<button\n                          type="button"');
   expect(categoryListSource).toContain("activeOptions={legacySearchPaginationLinkActiveOptions}");
@@ -622,6 +625,9 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(routeSource).not.toContain("removeAttribute");
   expect(routeSource).not.toContain("globalThis.document");
   expect(routeSource).not.toContain("document.title");
+  expect(routeSource).toContain("Link as RouterLink");
+  expect(routeSource).not.toContain("data-toggle=");
+  expect(routeSource).not.toContain("data-placement=");
   expect(routeSource).toContain('<title>{t("title.search")}</title>');
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).toContain("const legacySearchPaginationLinkActiveOptions =");
@@ -772,6 +778,11 @@ test("global user search renders legacy partial_users.scala.html populated row",
   await expect(customAvatar).toHaveAttribute("alt", "Alice");
   await expect(customAvatar).toHaveAttribute("width", "32");
   await expect(customAvatar).toHaveAttribute("height", "32");
+  const avatarLink = page.locator(".search-list-item.project .avatar-wrap");
+  await expect(avatarLink).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(avatarLink).toHaveAttribute("title", "alice");
+  await expect(avatarLink).not.toHaveAttribute("data-toggle");
+  await expect(avatarLink).not.toHaveAttribute("data-placement");
   await expect(page.locator("#pagination")).toHaveAttribute("id", "pagination");
   await expect(page.locator("#pagination")).not.toHaveClass(/page-navigation-wrap/u);
   await expect(page.locator("#pagination .page-nums")).toHaveCount(0);
@@ -811,6 +822,10 @@ test("global issue search renders legacy partial_issues.scala.html populated row
 
   await page.goto(`${basePath}/search?keyword=bug&searchType=issue`);
   await expect(page.locator(".search-list-wrap .search-list-item")).toBeVisible();
+  const authorLink = page.locator(".search-meta-info a.meta-item[title='alice']");
+  await expect(authorLink).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(authorLink).not.toHaveAttribute("data-toggle");
+  await expect(authorLink).not.toHaveAttribute("data-placement");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
