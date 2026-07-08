@@ -76,6 +76,7 @@ function OrganizationHomeBody({
   const queryClient = useQueryClient();
   const [projectFilter, setProjectFilter] = useState("");
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [leaveModalTouched, setLeaveModalTouched] = useState(false);
   const organizationName = stringField(organization.organizationName, "organization");
   const logoUrl =
     stringField(organization.logoUrl, "") ||
@@ -89,23 +90,24 @@ function OrganizationHomeBody({
   const showLeaveButton = viewerCanLeave && viewerCanLeaveAfterValidation;
   const shouldShowMemberPanels = viewerCanUpdate || viewerCanLeave;
 
-  function insulateLeaveModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+  function insulateLeaveModalClick(event: MouseEvent<HTMLElement>) {
     event.preventDefault();
     event.stopPropagation();
   }
 
   function openLeaveModal(event: MouseEvent<HTMLButtonElement>) {
-    insulateLeaveModalButtonClick(event);
+    insulateLeaveModalClick(event);
+    setLeaveModalTouched(true);
     setLeaveModalOpen(true);
   }
 
-  function dismissLeaveModal(event: MouseEvent<HTMLButtonElement>) {
-    insulateLeaveModalButtonClick(event);
+  function dismissLeaveModal(event: MouseEvent<HTMLElement>) {
+    insulateLeaveModalClick(event);
     setLeaveModalOpen(false);
   }
 
   function submitLeave(event: MouseEvent<HTMLButtonElement>) {
-    insulateLeaveModalButtonClick(event);
+    insulateLeaveModalClick(event);
     leaveMutation.mutate();
   }
 
@@ -245,7 +247,7 @@ function OrganizationHomeBody({
         id="alertLeave"
         className={leaveModalOpen ? "modal hide in" : "modal hide"}
         style={leaveModalOpen ? { display: "block" } : undefined}
-        aria-hidden={leaveModalOpen ? false : undefined}
+        aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}
       >
         <div className="modal-header">
           <button type="button" className="close" data-dismiss="modal" onClick={dismissLeaveModal}>
@@ -275,7 +277,15 @@ function OrganizationHomeBody({
           </button>
         </div>
       </div>
-      {leaveModalOpen ? <div className="modal-backdrop in"></div> : null}
+      {leaveModalOpen ? (
+        <div
+          className="modal-backdrop in"
+          onClick={dismissLeaveModal}
+          onKeyDown={dismissLeaveModal}
+          role="button"
+          tabIndex={-1}
+        ></div>
+      ) : null}
     </>
   );
 }
