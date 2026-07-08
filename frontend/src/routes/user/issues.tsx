@@ -23,7 +23,6 @@ type UserIssuesSearch = {
   state: "closed" | "open";
 };
 
-type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
 type LegacyStateButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
   state: UserIssuesSearch["state"];
 };
@@ -31,7 +30,6 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
   orderby: string;
   orderdir: string;
 };
-type LegacyPjaxListItemAttrs = HTMLAttributes<HTMLLIElement> & { "data-pjax": "" };
 type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyTooltipAttrs = {
   "data-placement": "bottom";
@@ -126,7 +124,6 @@ function UserIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const basePath = runtimeConfig.basePath;
-  const legacyPjaxContainerAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const activeFilterIds = quickFilterIds(search.filter, currentUserId);
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -256,7 +253,7 @@ function UserIssuesBody({
           hideDefaultLoginPageButton={isDefaultLoginPageSet}
           onSetDefaultLoginPage={(path) => setDefaultLoginPage.mutate(path)}
         />
-        <div {...legacyPjaxContainerAttrs} className="row-fluid issue-list-wrap">
+        <div className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
             <div className="inner advanced">
               <QuickSearch
@@ -705,10 +702,9 @@ function StateTab({
   state: "closed" | "open";
 }) {
   const legacyStateButtonAttrs = { state } satisfies LegacyStateButtonAttrs;
-  const pjaxItem = { "data-pjax": "" } satisfies LegacyPjaxListItemAttrs;
 
   return (
-    <li className={active ? "active" : ""} {...pjaxItem}>
+    <li className={active ? "active" : ""}>
       <button
         type="button"
         {...legacyStateButtonAttrs}

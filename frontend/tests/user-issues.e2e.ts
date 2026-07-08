@@ -12,7 +12,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <li><a href="__BASE_PATH__/user/files">My Files</a></li>
       <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" data-url="user/issues" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
     </ul>
-    <div pjax-container="" class="row-fluid issue-list-wrap">
+    <div class="row-fluid issue-list-wrap">
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
@@ -32,7 +32,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       </div>
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
-          <li class="active" data-pjax=""><button type="button" state="open">Open<span class="num-badge">2</span></button></li><li class="" data-pjax=""><button type="button" state="closed">Closed<span class="num-badge">1</span></button></li>
+          <li class="active"><button type="button" state="open">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
@@ -64,7 +64,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       <li><a href="__BASE_PATH__/user/files">My Files</a></li>
       <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" data-url="user/issues" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
     </ul>
-    <div pjax-container="" class="row-fluid issue-list-wrap">
+    <div class="row-fluid issue-list-wrap">
       <div class="left-menu span2 span-hard-wrap">
         <div class="inner advanced">
           <ul class="lst-stacked unstyled">
@@ -84,7 +84,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       </div>
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
-          <li class="" data-pjax=""><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li class="active" data-pjax=""><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li>
+          <li class=""><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li class="active"><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
@@ -373,9 +373,10 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).toContain(
     "type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
-  expect(routeSource).toContain("const legacyPjaxContainerAttrs");
+  expect(routeSource).not.toContain("LegacyPjaxContainerAttrs");
+  expect(routeSource).not.toContain("LegacyPjaxListItemAttrs");
+  expect(routeSource).not.toContain("legacyPjaxContainerAttrs");
   expect(routeSource).toContain("const legacyStateButtonAttrs");
-  expect(routeSource).toContain("satisfies LegacyPjaxContainerAttrs");
   expect(routeSource).toContain("satisfies LegacyStateButtonAttrs");
   expect(routeSource).toContain("satisfies LegacyOrderButtonAttrs");
   expect(routeSource).toContain("orderby: filter.field");
@@ -405,11 +406,13 @@ test("current-user issues state tab uses button side-effect control with SPA tra
   await mockUserIssuesForStateTabs(page);
 
   await page.goto(`${basePath}/user/issues`);
+  await expect(page.locator("[pjax-container]")).toHaveCount(0);
+  await expect(page.locator("#span10 .nav.nav-tabs li[data-pjax]")).toHaveCount(0);
   await expect(page.locator('#span10 .nav.nav-tabs a[href="#"]')).toHaveCount(0);
   const closedTab = page.locator('#span10 .nav.nav-tabs button[state="closed"]');
   await expect(closedTab).toHaveAttribute("type", "button");
   await expect(closedTab).toHaveAttribute("state", "closed");
-  await expect(closedTab.locator("..")).toHaveAttribute("data-pjax", "");
+  await expect(closedTab.locator("..")).not.toHaveAttribute("data-pjax", /.+/u);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
