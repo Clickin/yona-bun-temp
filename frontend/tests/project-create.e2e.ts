@@ -85,7 +85,7 @@ const EXPECTED_PROJECT_CREATE = `
         <dl>
           <dt><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
           <dd>
-            <select id="project-owner" name="owner" data-toggle="select2" data-format="user" class="mb10" style="min-width: 220px;">
+            <select id="project-owner" name="owner" data-format="user" class="mb10" style="min-width: 220px;">
               <option data-type="user" data-avatar-url="/assets/images/default-avatar-32.png" value="admin">admin</option>
               <option data-type="group" data-avatar-url="/assets/images/organization_default_logo.png" value="weblabs">weblabs</option>
             </select>
@@ -119,7 +119,7 @@ const EXPECTED_PROJECT_CREATE = `
           <div class="row-fluid">
             <div class="span2 right-txt mt10"><label for="vcs">Repository type</label></div>
             <div class="span10 cu-desc">
-              <select id="vcs" name="vcs" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox" class="mb10 mt5" style="min-width: 220px;">
+              <select id="vcs" name="vcs" data-dropdown-css-class="select2-without-searchbox" class="mb10 mt5" style="min-width: 220px;">
                 <option value="GIT">Git</option>
                 <option value="SUBVERSION">Subversion</option>
               </select>
@@ -187,10 +187,13 @@ test("project create form matches legacy project/create.scala.html DOM", async (
     importLinkContained: true,
     inputWidthRatio: 0.98,
     ownerDataFormat: "user",
-    ownerDataToggle: "select2",
+    ownerDataToggle: null,
     ownerStyle: "min-width: 220px;",
     userAvatarUrl: "/assets/images/default-avatar-32.png",
     userDataType: "user",
+    vcsDataDropdownCssClass: "select2-without-searchbox",
+    vcsDataToggle: null,
+    vcsStyle: "min-width: 220px;",
   });
 });
 
@@ -227,6 +230,38 @@ test("project create form mirrors legacy owner, VCS, and menu dependencies", asy
 
   await page.locator("#menuSettingReview").check();
   await expect(page.locator("#menuSettingCode")).toBeChecked();
+});
+
+test("project create select controls drop delegated select2 markers only", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCreate(page);
+
+  await page.goto(`${basePath}/projectform`);
+
+  const owner = page.locator("#project-owner");
+  const vcs = page.locator("#vcs");
+  await expect(owner).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(owner).toHaveAttribute("data-format", "user");
+  await expect(owner).toHaveAttribute("style", "min-width: 220px;");
+  await expect(owner.locator('option[value="admin"]')).toHaveAttribute("data-type", "user");
+  await expect(owner.locator('option[value="admin"]')).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/default-avatar-32.png",
+  );
+  await expect(owner.locator('option[value="weblabs"]')).toHaveAttribute("data-type", "group");
+  await expect(owner.locator('option[value="weblabs"]')).toHaveAttribute(
+    "data-avatar-url",
+    "/assets/images/organization_default_logo.png",
+  );
+  await expect(vcs).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(vcs).toHaveAttribute("data-dropdown-css-class", "select2-without-searchbox");
+  await expect(vcs).toHaveAttribute("style", "min-width: 220px;");
+
+  await owner.selectOption("weblabs");
+  await expect(page.locator("#opt-protected")).toBeVisible();
+  await vcs.selectOption("SUBVERSION");
+  await expect(page.locator("#svn")).toBeVisible();
+  await expect(page.locator("label[for='menuSettingPullRequest']")).toBeHidden();
 });
 
 test("project create form mirrors legacy project-name blur and validation", async ({ page }) => {
@@ -438,6 +473,22 @@ test("project create route source keeps cancel navigation on a normal TanStack L
   expect(routeSource).not.toMatch(/title\s*=\s*["'`]Create new project/iu);
 });
 
+test("project create route source drops delegated select2 initializer markers only", () => {
+  const routeSource = readFileSync(
+    fileURLToPath(new URL("../src/routes/projectform.tsx", import.meta.url)),
+    "utf8",
+  );
+
+  expect(routeSource).not.toContain('data-toggle="select2"');
+  expect(routeSource).not.toContain('data-toggle="select2"');
+  expect(routeSource).not.toContain("data-toggle={'select2'}");
+  expect(routeSource).not.toContain('data-toggle={"select2"}');
+  expect(routeSource).toContain('data-format="user"');
+  expect(routeSource).toContain('data-dropdown-css-class="select2-without-searchbox"');
+  expect(routeSource).toContain('id="project-owner"');
+  expect(routeSource).toContain('id="vcs"');
+});
+
 async function mockProjectCreate(page: Page, formOptions: Record<string, unknown> = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -544,6 +595,7 @@ async function projectCreateMetrics(page: Page) {
     const formWrap = requireElement(".form-wrap.new-project");
     const form = requireElement<HTMLFormElement>("#newProjectForm");
     const owner = requireElement<HTMLSelectElement>("#project-owner");
+    const vcs = requireElement<HTMLSelectElement>("#vcs");
     const nameInput = requireElement<HTMLInputElement>("#project-name");
     const advanced = requireElement(".advanced-options");
     const actions = requireElement(".actions");
@@ -589,6 +641,9 @@ async function projectCreateMetrics(page: Page) {
       ownerStyle: owner.getAttribute("style"),
       userAvatarUrl: userOption?.getAttribute("data-avatar-url"),
       userDataType: userOption?.getAttribute("data-type"),
+      vcsDataDropdownCssClass: vcs.getAttribute("data-dropdown-css-class"),
+      vcsDataToggle: vcs.getAttribute("data-toggle"),
+      vcsStyle: vcs.getAttribute("style"),
     };
 
     function requireElement<T extends HTMLElement = HTMLElement>(selector: string) {

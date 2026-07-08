@@ -222,7 +222,6 @@ function ProjectCreateScreen({
                   <select
                     id="project-owner"
                     name="owner"
-                    data-toggle="select2"
                     data-format="user"
                     className="mb10"
                     style={{ minWidth: "220px" }}
@@ -359,7 +358,6 @@ function ProjectCreateScreen({
                     <select
                       id="vcs"
                       name="vcs"
-                      data-toggle="select2"
                       data-dropdown-css-class="select2-without-searchbox"
                       className="mb10 mt5"
                       style={{ minWidth: "220px" }}
