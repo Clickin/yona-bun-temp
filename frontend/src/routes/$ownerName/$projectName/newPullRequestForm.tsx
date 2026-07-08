@@ -391,7 +391,6 @@ function PullRequestBranchSelectors({
         <select
           id="fromProjectId"
           name="fromProjectId"
-          data-toggle="select2"
           className="mr5"
           defaultValue={String(selected.fromProjectId)}
           key={`from-project-${selected.fromProjectId}`}
@@ -407,7 +406,6 @@ function PullRequestBranchSelectors({
         <select
           id="fromBranch"
           name="fromBranch"
-          data-toggle="select2"
           data-format="branch"
           data-dropdown-css-class="branches"
           data-placeholder={t("pullRequest.select.branch")}
@@ -433,7 +431,6 @@ function PullRequestBranchSelectors({
         <select
           id="toProjectId"
           name="toProjectId"
-          data-toggle="select2"
           className="mr5"
           defaultValue={String(selected.toProjectId)}
           key={`to-project-${selected.toProjectId}`}
@@ -449,7 +446,6 @@ function PullRequestBranchSelectors({
         <select
           id="toBranch"
           name="toBranch"
-          data-toggle="select2"
           data-format="branch"
           data-dropdown-css-class="branches"
           data-placeholder={t("pullRequest.select.branch")}
