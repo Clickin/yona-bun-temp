@@ -10,7 +10,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <li><a href="__BASE_PATH__/notifications">Notification</a></li>
       <li class="active"><a href="__BASE_PATH__/user/issues">My Issues</a></li>
       <li><a href="__BASE_PATH__/user/files">My Files</a></li>
-      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+      <li style="position: relative;"><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" title="Set to default page">Set to default page</button></li>
     </ul>
     <div class="row-fluid issue-list-wrap">
       <div class="left-menu span2 span-hard-wrap">
@@ -62,7 +62,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       <li><a href="__BASE_PATH__/notifications">Notification</a></li>
       <li class="active"><a href="__BASE_PATH__/user/issues">My Issues</a></li>
       <li><a href="__BASE_PATH__/user/files">My Files</a></li>
-      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+      <li style="position: relative;"><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" title="Set to default page">Set to default page</button></li>
     </ul>
     <div class="row-fluid issue-list-wrap">
       <div class="left-menu span2 span-hard-wrap">
@@ -399,6 +399,13 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(tabsSource).toContain('to="/notifications"');
   expect(tabsSource).toContain('to="/user/issues"');
   expect(tabsSource).toContain('to="/user/files"');
+  expect(tabsSource).not.toContain("data-trigger");
+  expect(tabsSource).not.toContain("data-placement");
+  expect(tabsSource).not.toContain("data-toggle");
+  expect(tabsSource).not.toContain("data-content");
+  expect(tabsSource).toContain("onMouseEnter");
+  expect(tabsSource).toContain("onFocus");
+  expect(tabsSource).toContain('className="popover bottom"');
   const showSubtasksSource = routeSource.slice(
     routeSource.indexOf("function ShowSubtasksCheckbox("),
     routeSource.indexOf("function quickFilterIds("),
@@ -867,17 +874,61 @@ test("current-user issues set-default-login-page button follows legacy success b
   await expect(page.locator("[data-url]")).toHaveCount(0);
   await expect(setDefaultButton).toHaveText("Set to default page");
   await expect(setDefaultButton).toHaveAttribute("title", "Set to default page");
-  await expect(setDefaultButton).toHaveAttribute("data-trigger", "hover");
-  await expect(setDefaultButton).toHaveAttribute("data-placement", "bottom");
-  await expect(setDefaultButton).toHaveAttribute("data-toggle", "popover");
-  await expect(setDefaultButton).toHaveAttribute(
-    "data-content",
+  await expect(setDefaultButton).not.toHaveAttribute("data-trigger", "hover");
+  await expect(setDefaultButton).not.toHaveAttribute("data-placement", "bottom");
+  await expect(setDefaultButton).not.toHaveAttribute("data-toggle", "popover");
+  await expect(setDefaultButton).not.toHaveAttribute("data-content", /.+/u);
+  await expect(page.locator(".page-wrap > .nav-tabs .popover")).toHaveCount(0);
+
+  await page.mouse.move(1, 1);
+  await setDefaultButton.hover();
+  const defaultPopover = page.locator(".page-wrap > .nav-tabs .popover");
+  await expect(defaultPopover).toBeVisible();
+  await expect(defaultPopover).toHaveClass(/(^|\s)bottom(\s|$)/);
+  await expect(defaultPopover.locator(".popover-title")).toHaveText("Set to default page");
+  await expect(defaultPopover.locator(".popover-content")).toHaveText(
     "Make current page the index page when logged in",
   );
+  const hoverBoxes = await page.evaluate(() => {
+    const button = document.querySelector("#setDefaultLoginPage");
+    const popover = document.querySelector(".page-wrap > .nav-tabs .popover");
+    if (!button || !popover) return null;
+    const buttonBox = button.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    return {
+      button: {
+        bottom: buttonBox.bottom,
+        left: buttonBox.left,
+        width: buttonBox.width,
+      },
+      popover: {
+        left: popoverBox.left,
+        top: popoverBox.top,
+        width: popoverBox.width,
+      },
+    };
+  });
+  expect(hoverBoxes).not.toBeNull();
+  expect(hoverBoxes!.popover.top).toBeGreaterThanOrEqual(hoverBoxes!.button.bottom);
+  const buttonCenter = hoverBoxes!.button.left + hoverBoxes!.button.width / 2;
+  const popoverCenter = hoverBoxes!.popover.left + hoverBoxes!.popover.width / 2;
+  expect(Math.abs(popoverCenter - buttonCenter)).toBeLessThanOrEqual(4);
+
+  await page.mouse.move(1, 1);
+  await expect(defaultPopover).toHaveCount(0);
+  await setDefaultButton.focus();
+  await expect(defaultPopover).toBeVisible();
+  await expect(defaultPopover.locator(".popover-content")).toHaveText(
+    "Make current page the index page when logged in",
+  );
+  await setDefaultButton.evaluate((element) => element.blur());
+  await expect(defaultPopover).toHaveCount(0);
+
   await setDefaultButton.click();
   await setDefaultRequest;
 
   await expect(setDefaultButton).not.toBeVisible();
+  await expect(page.locator(".page-wrap > .nav-tabs .popover")).toHaveCount(0);
   await expect(page.locator(".yobiToasts .toast .msg")).toHaveText("Set to default: user/issues");
 });
 

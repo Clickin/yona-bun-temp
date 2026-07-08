@@ -47,6 +47,17 @@ const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
   transform: "translateX(-50%)",
 };
 
+const SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE: CSSProperties = {
+  display: "block",
+  left: "50%",
+  marginTop: "10px",
+  minWidth: "190px",
+  pointerEvents: "none",
+  position: "absolute",
+  top: "100%",
+  transform: "translateX(-50%)",
+};
+
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
   validateSearch(search: Record<string, unknown>): UserIssuesSearch {
@@ -545,6 +556,10 @@ function MySeriesMenuTabs({
 }) {
   const { t } = useLegacyMessages();
   const defaultLoginPagePath = "user/issues";
+  const [isDefaultLoginPagePopoverVisible, setIsDefaultLoginPagePopoverVisible] = useState(false);
+  const defaultLoginPagePopoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const defaultLoginPageTitle = t("button.setDefaultLoginPage");
+  const defaultLoginPageContent = t("button.setDefaultLoginPage.desc");
   const legacyTabActiveOptions = {
     exact: true,
     explicitUndefined: true,
@@ -554,6 +569,26 @@ function MySeriesMenuTabs({
     "aria-current": undefined,
     className: undefined,
     "data-status": undefined,
+  };
+  const clearDefaultLoginPagePopoverTimer = () => {
+    if (defaultLoginPagePopoverTimer.current !== null) {
+      window.clearTimeout(defaultLoginPagePopoverTimer.current);
+      defaultLoginPagePopoverTimer.current = null;
+    }
+  };
+  const showDefaultLoginPagePopover = () => {
+    clearDefaultLoginPagePopoverTimer();
+    defaultLoginPagePopoverTimer.current = window.setTimeout(() => {
+      setIsDefaultLoginPagePopoverVisible(true);
+      defaultLoginPagePopoverTimer.current = null;
+    }, 100);
+  };
+  const hideDefaultLoginPagePopover = () => {
+    clearDefaultLoginPagePopoverTimer();
+    defaultLoginPagePopoverTimer.current = window.setTimeout(() => {
+      setIsDefaultLoginPagePopoverVisible(false);
+      defaultLoginPagePopoverTimer.current = null;
+    }, 100);
   };
 
   return (
@@ -585,21 +620,35 @@ function MySeriesMenuTabs({
           {t("user.files")}
         </Link>
       </li>
-      <li>
+      <li style={{ position: "relative" }}>
         <button
           type="button"
           className="ybtn hide-in-mobile"
           id="setDefaultLoginPage"
-          title={t("button.setDefaultLoginPage")}
-          data-trigger="hover"
-          data-placement="bottom"
-          data-toggle="popover"
-          data-content={t("button.setDefaultLoginPage.desc")}
+          title={defaultLoginPageTitle}
           style={hideDefaultLoginPageButton ? { display: "none" } : undefined}
-          onClick={() => onSetDefaultLoginPage(defaultLoginPagePath)}
+          onBlur={hideDefaultLoginPagePopover}
+          onClick={() => {
+            hideDefaultLoginPagePopover();
+            onSetDefaultLoginPage(defaultLoginPagePath);
+          }}
+          onFocus={showDefaultLoginPagePopover}
+          onMouseEnter={showDefaultLoginPagePopover}
+          onMouseLeave={hideDefaultLoginPagePopover}
         >
-          {t("button.setDefaultLoginPage")}
+          {defaultLoginPageTitle}
         </button>
+        {isDefaultLoginPagePopoverVisible && !hideDefaultLoginPageButton ? (
+          <div
+            className="popover bottom"
+            role="tooltip"
+            style={SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE}
+          >
+            <div className="arrow" />
+            <h3 className="popover-title">{defaultLoginPageTitle}</h3>
+            <div className="popover-content">{defaultLoginPageContent}</div>
+          </div>
+        ) : null}
       </li>
     </ul>
   );
