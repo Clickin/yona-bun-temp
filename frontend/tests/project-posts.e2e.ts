@@ -224,7 +224,7 @@ const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
-  '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl>';
+  '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
 const POSTING_HISTORY =
   '<div class="posting-history"><button type="button">Change history</button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small">Confirm</button></div></div></div>';
 const EXPECTED_PROJECT_POST_DETAIL = `
@@ -1964,6 +1964,52 @@ test("project board detail renders legacy editable label selector", async ({ pag
     await canonicalizeHtml(page, expected),
   );
   await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveValues(["8"]);
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveAttribute(
+    "data-toggle",
+    "select2",
+  );
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveAttribute(
+    "data-format",
+    "issuelabel",
+  );
+  await expect(page.locator('.issue-info.board-labels optgroup[label="priority"]')).toHaveAttribute(
+    "data-category-is-exclusive",
+    "true",
+  );
+
+  const setSelectedLabels = async (labelIds: string[]) => {
+    await page.locator(".issue-info.board-labels #labelIds").evaluate((element, ids) => {
+      const selectedIds = new Set(ids);
+      const select = element as HTMLSelectElement;
+      for (const option of select.options) {
+        option.selected = selectedIds.has(option.value);
+      }
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }, labelIds);
+  };
+
+  await setSelectedLabels(["8", "9"]);
+  await expect.poll(() => labelUpdateRequests).toEqual([["8", "9"]]);
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveValues(["8", "9"]);
+
+  await setSelectedLabels(["8", "9", "10"]);
+  await expect
+    .poll(() => labelUpdateRequests)
+    .toEqual([
+      ["8", "9"],
+      ["8", "9", "10"],
+    ]);
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveValues(["8", "9", "10"]);
+
+  await setSelectedLabels(["8", "9", "10", "11"]);
+  await expect
+    .poll(() => labelUpdateRequests)
+    .toEqual([
+      ["8", "9"],
+      ["8", "9", "10"],
+      ["8", "9", "11"],
+    ]);
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveValues(["8", "9", "11"]);
 
   await page.locator(".issue-info.board-labels #labelIds").evaluate((element) => {
     const select = element as HTMLSelectElement;
@@ -1972,7 +2018,23 @@ test("project board detail renders legacy editable label selector", async ({ pag
     }
     select.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  await expect.poll(() => labelUpdateRequests).toEqual([[]]);
+  await expect
+    .poll(() => labelUpdateRequests)
+    .toEqual([["8", "9"], ["8", "9", "10"], ["8", "9", "11"], []]);
+  await expect(page.locator(".issue-info.board-labels #labelIds")).toHaveValues([]);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const editableLabelsSource = routeSource.slice(
+    routeSource.indexOf("function PostEditableLabels"),
+    routeSource.indexOf("function PostSelectedLabels"),
+  );
+  expect(editableLabelsSource).toContain("nextPostLabelIds(labels, selectedLabelIds, select)");
+  expect(editableLabelsSource).toContain("option.selected");
+  expect(editableLabelsSource).toContain("categoryIsExclusive");
+  expect(editableLabelsSource).not.toContain("selectedOptions");
 });
 
 test("project board detail internal links are router-owned", async ({ page }) => {
@@ -2910,6 +2972,40 @@ async function mockProjectPosts(
 ) {
   const ownerName = String(overrides.__ownerName ?? "admin");
   const projectName = String(overrides.__projectName ?? "sample");
+  const labelOptions = [
+    {
+      categoryId: "3",
+      categoryIsExclusive: false,
+      categoryName: "type",
+      color: "#51aacc",
+      id: "8",
+      name: "bug",
+    },
+    {
+      categoryId: "3",
+      categoryIsExclusive: false,
+      categoryName: "type",
+      color: "#e95e01",
+      id: "9",
+      name: "enhancement",
+    },
+    {
+      categoryId: "4",
+      categoryIsExclusive: true,
+      categoryName: "priority",
+      color: "#b13427",
+      id: "10",
+      name: "high",
+    },
+    {
+      categoryId: "4",
+      categoryIsExclusive: true,
+      categoryName: "priority",
+      color: "#666666",
+      id: "11",
+      name: "low",
+    },
+  ];
   const projectOverrides =
     overrides.__projectOverrides && typeof overrides.__projectOverrides === "object"
       ? (overrides.__projectOverrides as Record<string, unknown>)
@@ -3013,16 +3109,7 @@ async function mockProjectPosts(
             canMarkNotice: true,
             canMarkReadme: true,
           },
-          labels: [
-            {
-              categoryId: "3",
-              categoryIsExclusive: false,
-              categoryName: "type",
-              color: "#51aacc",
-              id: "8",
-              name: "bug",
-            },
-          ],
+          labels: labelOptions,
           onlineCommit: {
             branch: "",
             edit: false,
@@ -3272,7 +3359,8 @@ async function mockProjectPosts(
         const body = JSON.parse(route.request().postData() ?? "{}") as {
           labelIds?: string[];
         };
-        labelUpdateRequests.push(body.labelIds ?? []);
+        const nextLabelIds = body.labelIds ?? [];
+        labelUpdateRequests.push(nextLabelIds);
         await route.fulfill({
           contentType: "application/json",
           body: JSON.stringify({
@@ -3289,7 +3377,7 @@ async function mockProjectPosts(
             historyMarkdown: "",
             id: "33",
             isWatching: false,
-            labels: [],
+            labels: labelOptions.filter((label) => nextLabelIds.includes(label.id)),
             notice: false,
             ownerName,
             permissions: {

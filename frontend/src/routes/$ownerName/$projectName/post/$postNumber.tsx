@@ -696,6 +696,10 @@ function PostEditableLabels({
     return null;
   }
 
+  const selectLabelIds = (select: HTMLSelectElement) => {
+    onChange(nextPostLabelIds(labels, selectedLabelIds, select));
+  };
+
   return (
     <dl className="">
       <dt>
@@ -723,9 +727,7 @@ function PostEditableLabels({
           data-placeholder="Select label"
           className="hide"
           value={selectedLabelIds}
-          onChange={(event) =>
-            onChange(Array.from(event.currentTarget.selectedOptions, (option) => option.value))
-          }
+          onChange={(event) => selectLabelIds(event.currentTarget)}
         >
           <option></option>
           {Array.from(labelsByCategory.entries()).map(([categoryKey, categoryLabels]) => {
@@ -754,6 +756,43 @@ function PostEditableLabels({
       </dd>
     </dl>
   );
+}
+
+function nextPostLabelIds(
+  labels: BoardLabel[],
+  selectedLabelIds: string[],
+  select: HTMLSelectElement,
+) {
+  const previousSelection = new Set(selectedLabelIds);
+  const optionSelection = new Set<string>();
+
+  for (const option of select.options) {
+    if (option.value && option.selected) {
+      optionSelection.add(option.value);
+    }
+  }
+
+  const addedLabelId = labels.find(
+    (label) => optionSelection.has(label.id) && !previousSelection.has(label.id),
+  )?.id;
+  const addedLabel = addedLabelId ? labels.find((label) => label.id === addedLabelId) : undefined;
+  const nextLabelIds: string[] = [];
+
+  for (const label of labels) {
+    if (!optionSelection.has(label.id)) {
+      continue;
+    }
+    if (
+      addedLabel?.categoryIsExclusive &&
+      label.categoryId === addedLabel.categoryId &&
+      label.id !== addedLabel.id
+    ) {
+      continue;
+    }
+    nextLabelIds.push(label.id);
+  }
+
+  return nextLabelIds;
 }
 
 function PostSelectedLabels({
