@@ -690,6 +690,84 @@ test("project commit detail toggles legacy review-card rail collapse without nav
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
+test("project commit detail opens and closes legacy block review form without navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,2 +1,3 @@
+ fn main() {
+-    println!("old");
++    println!("new");
++    println!("again");`,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  const reviewForm = page.locator("#review-form");
+  const popButton = page.locator(".btnPop .ybtn");
+  const closeButton = reviewForm.locator('[data-toggle="close"]');
+  const initialUrl = page.url();
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewButtonVisible");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("globalThis.getSelection");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen(true)");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClose={() => setBlockReviewFormOpen(false)}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("CodeCommentBox");
+  await expect(popButton).toHaveCount(1);
+  await expect(popButton).toBeHidden();
+  await expect(reviewForm).toBeHidden();
+
+  await page.evaluate(() => {
+    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
+      "commit-block-review-form";
+  });
+
+  await page.locator(".diff-partial-codeline").first().selectText();
+  await page.locator(".diff-body").dispatchEvent("mouseup");
+  await expect(popButton).toBeVisible();
+  await popButton.click();
+
+  await expect(reviewForm).toBeVisible();
+  await expect(popButton).toBeHidden();
+  expect(await blockReviewFormMetrics(page)).toEqual({
+    authorAvatarVisible: true,
+    closeDataToggle: "close",
+    display: "block",
+    editorMode: "code-review-body",
+    uploadResourceType: "COMMIT_COMMENT",
+  });
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-block-review-form");
+
+  await closeButton.click();
+
+  await expect(reviewForm).toBeHidden();
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+    ),
+  ).toBe("commit-block-review-form");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
 test("project commit detail links known commit author avatar like legacy diff.scala.html", async ({
   page,
 }) => {
@@ -1857,6 +1935,26 @@ async function readSvnCommitShellMetrics(page: Page) {
       diffWrapFillsCodeWrap:
         Math.round(diffWrap.getBoundingClientRect().width) ===
         Math.round(codeWrap?.getBoundingClientRect().width ?? -1),
+    };
+  });
+}
+
+async function blockReviewFormMetrics(page: Page) {
+  return page.locator("#review-form").evaluate((form) => {
+    const close = form.querySelector<HTMLButtonElement>('[data-toggle="close"]');
+    const textarea = form.querySelector<HTMLTextAreaElement>(
+      'textarea[data-editor-mode="code-review-body"]',
+    );
+    const upload = form.querySelector<HTMLElement>(".upload-wrap.content-footer");
+
+    return {
+      authorAvatarVisible: Boolean(
+        form.querySelector(".author-info-wrap .avatar-wrap.medium img")?.getClientRects().length,
+      ),
+      closeDataToggle: close?.dataset.toggle ?? null,
+      display: window.getComputedStyle(form).display,
+      editorMode: textarea?.dataset.editorMode ?? null,
+      uploadResourceType: upload?.dataset.resourceType ?? null,
     };
   });
 }

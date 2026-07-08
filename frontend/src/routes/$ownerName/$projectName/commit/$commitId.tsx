@@ -194,6 +194,8 @@ function ProjectCommitDetailBody({
   const closedThreads = detail.threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const [reviewCardTab, setReviewCardTab] = useState<"closed" | "open">("open");
   const [reviewCardsCollapsed, setReviewCardsCollapsed] = useState(false);
+  const [blockReviewFormOpen, setBlockReviewFormOpen] = useState(false);
+  const [blockReviewButtonVisible, setBlockReviewButtonVisible] = useState(false);
   const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
   const detailQueryKey = apiQueryKeys.project.commitDetail(ownerName, projectName, commitId, {
@@ -331,7 +333,17 @@ function ProjectCommitDetailBody({
                 </div>
               </div>
 
-              <div className="diff-body">
+              {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
+              <div
+                className="diff-body"
+                onMouseUp={() => {
+                  const selection = globalThis.getSelection?.();
+                  const selectedText = selection?.toString() ?? "";
+                  if (selectedText.length > 0) {
+                    setBlockReviewButtonVisible(true);
+                  }
+                }}
+              >
                 {detail.files.map((file) => (
                   <FileDiffView
                     commitA={detail.parentCommit?.commitId ?? ""}
@@ -356,8 +368,18 @@ function ProjectCommitDetailBody({
                     }
                   />
                 ))}
-                <div className="btnPop">
-                  <button type="button" className="ybtn ybtn-info ybtn-small">
+                <div
+                  className="btnPop"
+                  style={blockReviewButtonVisible ? { display: "block" } : undefined}
+                >
+                  <button
+                    type="button"
+                    className="ybtn ybtn-info ybtn-small"
+                    onClick={() => {
+                      setBlockReviewFormOpen(true);
+                      setBlockReviewButtonVisible(false);
+                    }}
+                  >
                     <i className="yobicon-post2"></i>
                   </button>
                 </div>
@@ -412,6 +434,8 @@ function ProjectCommitDetailBody({
                     commitId,
                   )}
                   currentUser={currentUser}
+                  isOpen={blockReviewFormOpen}
+                  onClose={() => setBlockReviewFormOpen(false)}
                 />
               ) : null}
             </div>
@@ -1537,10 +1561,20 @@ function formContents(form: HTMLFormElement) {
   return typeof value === "string" ? value : "";
 }
 
-function ReviewForm({ action, currentUser }: { action: string; currentUser: CurrentUserSummary }) {
+function ReviewForm({
+  action,
+  currentUser,
+  isOpen = false,
+  onClose,
+}: {
+  action: string;
+  currentUser: CurrentUserSummary;
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const { t } = useLegacyMessages();
   return (
-    <div id="review-form" className="review-form">
+    <div id="review-form" className="review-form" style={isOpen ? { display: "block" } : undefined}>
       <form action={action} method="post" encType="multipart/form-data">
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
@@ -1561,7 +1595,16 @@ function ReviewForm({ action, currentUser }: { action: string; currentUser: Curr
         <div className="write-comment-box">
           <div className="write-comment-wrap">
             <div className="pull-right">
-              <button type="button" className="ybtn ybtn-default ybtn-small" data-toggle="close">
+              <button
+                type="button"
+                className="ybtn ybtn-default ybtn-small"
+                data-toggle="close"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClose?.();
+                }}
+              >
                 &times;
               </button>
             </div>
