@@ -43,11 +43,11 @@ const POPULATED_LABELS_LIST = `
 <div id="labelsList" class="issue-label-list-wrap">
   <div class="row-fluid list-head"><div class="span3 category"><strong>Category</strong></div><div class="span9 name"><strong>Name</strong></div></div>
   <div class="row-fluid list-item category-wrap" data-category="3" data-category-name="type">
-    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">type</span><p class="mt5"><i class="category-exclusive yobicon-tags multiple" data-toggle="tooltip" data-html="true" title="In this category, you can choose<br>multiple labels"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="3" data-category-name="type" data-category-is-exclusive="false" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/3">Edit category</button></p></h5></div>
+    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">type</span><p class="mt5"><i class="category-exclusive yobicon-tags multiple" data-html="true" title="In this category, you can choose<br>multiple labels"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="3" data-category-name="type" data-category-is-exclusive="false" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/3">Edit category</button></p></h5></div>
     <div class="span9"><table class="table nm"><tr data-label-id="8"><td><span class="issue-label active" data-label-id="8" data-label-name="bug">bug</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="type" data-label-id="8" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/8/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="3" data-label-name="bug" data-label-color="#e11d48" data-update-uri="__BASE_PATH__/admin/sample/issue/label/8">Edit</button></td></tr><tr data-label-id="9"><td><span class="issue-label active" data-label-id="9" data-label-name="feature">feature</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="type" data-label-id="9" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/9/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="3" data-label-name="feature" data-label-color="#3f51b5" data-update-uri="__BASE_PATH__/admin/sample/issue/label/9">Edit</button></td></tr></table></div>
   </div>
   <div class="row-fluid list-item category-wrap" data-category="4" data-category-name="priority">
-    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">priority</span><p class="mt5"><i class="category-exclusive yobicon-tag single" data-toggle="tooltip" data-html="true" title="In this category, you can choose<br>only a single label"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="4" data-category-name="priority" data-category-is-exclusive="true" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/4">Edit category</button></p></h5></div>
+    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">priority</span><p class="mt5"><i class="category-exclusive yobicon-tag single" data-html="true" title="In this category, you can choose<br>only a single label"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="4" data-category-name="priority" data-category-is-exclusive="true" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/4">Edit category</button></p></h5></div>
     <div class="span9"><table class="table nm"><tr data-label-id="10"><td><span class="issue-label active" data-label-id="10" data-label-name="high">high</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="priority" data-label-id="10" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/10/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="4" data-label-name="high" data-label-color="#ff9800" data-update-uri="__BASE_PATH__/admin/sample/issue/label/10">Edit</button></td></tr></table></div>
   </div>
   <link rel="stylesheet" type="text/css" href="__BASE_PATH__/admin/sample/issue/labels.css">
@@ -240,6 +240,11 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
   expect(routeSource).not.toContain('createElement("a"');
   expect(routeSource).not.toMatch(/name="isExclusive"[\s\S]{0,120}data-toggle="select2"/);
   expect(routeSource).not.toMatch(/name="category\.id"[\s\S]{0,120}data-toggle="select2"/);
+  expect(routeSource).not.toMatch(/category-exclusive[\s\S]{0,240}data-toggle="tooltip"/);
+  expect(routeSource).toMatch(/category-exclusive[\s\S]{0,240}data-html="true"/);
+  expect(routeSource).toMatch(
+    /category-exclusive[\s\S]{0,240}title=\{`\$\{t\("label\.category\.option"\)\}<br>/,
+  );
   expect(routeSource).toMatch(
     /name="isExclusive"[\s\S]{0,120}data-dropdown-css-class="select2-without-searchbox"/,
   );
@@ -338,6 +343,54 @@ test("project labels internal links preserve legacy hrefs with SPA transition", 
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
+test("project labels category option icon drops route-local tooltip marker only", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectLabels(page, [
+    {
+      category: "type",
+      categoryId: "3",
+      categoryIsExclusive: false,
+      color: "#e11d48",
+      id: "8",
+      name: "bug",
+    },
+    {
+      category: "priority",
+      categoryId: "4",
+      categoryIsExclusive: true,
+      color: "#ff9800",
+      id: "10",
+      name: "high",
+    },
+  ]);
+
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  const multipleIcon = page.locator(
+    '#labelsList .category-wrap[data-category-name="type"] .category-exclusive',
+  );
+  await expect(multipleIcon).toHaveClass("category-exclusive yobicon-tags multiple");
+  await expect(multipleIcon).not.toHaveAttribute("data-toggle", "tooltip");
+  await expect(multipleIcon).toHaveAttribute("data-html", "true");
+  await expect(multipleIcon).not.toHaveAttribute("data-placement", /.*/);
+  await expect(multipleIcon).toHaveAttribute(
+    "title",
+    "In this category, you can choose<br>multiple labels",
+  );
+
+  const singleIcon = page.locator(
+    '#labelsList .category-wrap[data-category-name="priority"] .category-exclusive',
+  );
+  await expect(singleIcon).toHaveClass("category-exclusive yobicon-tag single");
+  await expect(singleIcon).not.toHaveAttribute("data-toggle", "tooltip");
+  await expect(singleIcon).toHaveAttribute(
+    "title",
+    "In this category, you can choose<br>only a single label",
+  );
+});
+
 test("project labels renders legacy project/partial_issuelabels_list.scala.html populated list", async ({
   page,
 }) => {
@@ -385,6 +438,10 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
     categoryName: "type",
     deleteUri: `${basePath}/admin/sample/issue/label/8/delete`,
     exclusiveClass: "category-exclusive yobicon-tags multiple",
+    exclusiveDataHtml: "true",
+    exclusivePlacement: null,
+    exclusiveTitle: "In this category, you can choose<br>multiple labels",
+    exclusiveToggle: null,
     labelColor: "#e11d48",
     labelHeadBackground: "rgb(250, 250, 250)",
     labelId: "8",
@@ -1378,6 +1435,10 @@ async function labelListMetrics(page: Page) {
       categoryName: firstCategory?.getAttribute("data-category-name"),
       deleteUri: deleteButton?.getAttribute("data-delete-uri"),
       exclusiveClass: exclusiveIcon?.getAttribute("class"),
+      exclusiveDataHtml: exclusiveIcon?.getAttribute("data-html"),
+      exclusivePlacement: exclusiveIcon?.getAttribute("data-placement"),
+      exclusiveTitle: exclusiveIcon?.getAttribute("title"),
+      exclusiveToggle: exclusiveIcon?.getAttribute("data-toggle"),
       labelColor: editButton?.getAttribute("data-label-color"),
       labelHeadBackground: listStyle?.backgroundColor,
       labelId: firstLabel?.getAttribute("data-label-id"),

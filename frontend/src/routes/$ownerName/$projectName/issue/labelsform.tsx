@@ -714,7 +714,6 @@ function ProjectLabelsList({
               <p className="mt5">
                 <i
                   className={`category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
-                  data-toggle="tooltip"
                   data-html="true"
                   title={`${t("label.category.option")}<br>${t(
                     category.isExclusive
