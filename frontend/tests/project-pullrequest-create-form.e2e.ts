@@ -418,7 +418,8 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
     'className={isOpen ? "modal hide yobiDialog in" : "modal hide yobiDialog"}',
   );
   expect(ROUTE_SOURCE).toContain('style={{ display: isOpen ? "block" : "none" }}');
-  expect(ROUTE_SOURCE).toContain('data-dismiss="modal"');
+  expect(ROUTE_SOURCE).not.toContain('data-dismiss="modal"');
+  expect(ROUTE_SOURCE).not.toContain("dismissPullRequestConflictConfirmButtonClick");
   expect(ROUTE_SOURCE).toContain('{isOpen ? <div className="modal-backdrop in"></div> : null}');
   expect(ROUTE_SOURCE).toContain("setForceSubmit(true)");
 
@@ -455,6 +456,20 @@ test("pull request create form preserves legacy yobi.git.Write submit validation
   await expect(
     page.locator('#pullRequestConflictConfirm .center-txt.buttons button[type="button"]'),
   ).toHaveText(["Cancel", "Confirm"]);
+  await expect(page.locator('#pullRequestConflictConfirm [data-dismiss="modal"]')).toHaveCount(0);
+  await expect(page.locator('#pullRequestConflictConfirm [data-toggle="modal"]')).toHaveCount(0);
+  await expect(
+    page.locator("#pullRequestConflictConfirm .btn-dismiss .btn-transparent"),
+  ).not.toHaveAttribute("data-dismiss", /.*/u);
+  await expect(
+    page
+      .locator('#pullRequestConflictConfirm .center-txt.buttons button[type="button"]')
+      .filter({ hasText: /^Cancel$/u }),
+  ).not.toHaveAttribute("data-dismiss", /.*/u);
+  await expect(page.locator("#pullRequestConflictConfirm .ybtn.ybtn-primary")).not.toHaveAttribute(
+    "data-dismiss",
+    /.*/u,
+  );
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
     page.evaluate(

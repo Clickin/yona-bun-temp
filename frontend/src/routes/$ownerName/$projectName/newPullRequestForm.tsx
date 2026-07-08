@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -596,15 +596,6 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
   );
 }
 
-function dismissPullRequestConflictConfirmButtonClick(
-  event: MouseEvent<HTMLButtonElement>,
-  onClick: () => void,
-) {
-  event.preventDefault();
-  event.stopPropagation();
-  onClick();
-}
-
 function PullRequestConflictConfirmModal({
   isOpen,
   message,
@@ -628,12 +619,7 @@ function PullRequestConflictConfirmModal({
         style={{ display: isOpen ? "block" : "none" }}
       >
         <div className="btn-dismiss">
-          <button
-            type="button"
-            className="btn-transparent"
-            data-dismiss="modal"
-            onClick={(event) => dismissPullRequestConflictConfirmButtonClick(event, onClose)}
-          >
+          <button type="button" className="btn-transparent" onClick={onClose}>
             ×
           </button>
         </div>
@@ -642,20 +628,10 @@ function PullRequestConflictConfirmModal({
             <p className="msg">{message}</p>
           </div>
           <div className="center-txt buttons mt20 mb20">
-            <button
-              type="button"
-              className="ybtn ybtn-default"
-              data-dismiss="modal"
-              onClick={(event) => dismissPullRequestConflictConfirmButtonClick(event, onClose)}
-            >
+            <button type="button" className="ybtn ybtn-default" onClick={onClose}>
               {t("button.cancel")}
             </button>
-            <button
-              type="button"
-              className="ybtn ybtn-primary"
-              data-dismiss="modal"
-              onClick={(event) => dismissPullRequestConflictConfirmButtonClick(event, onConfirm)}
-            >
+            <button type="button" className="ybtn ybtn-primary" onClick={onConfirm}>
               {t("button.confirm")}
             </button>
           </div>
