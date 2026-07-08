@@ -400,7 +400,7 @@ function PullRequestBranchSelectors({
           <option></option>
           {formOptions.fromProjects.map((project) => (
             <option key={project.id} value={project.id}>
-              {project.ownerName}/{project.projectName}
+              {projectOptionLabel(project)}
             </option>
           ))}
         </select>
@@ -442,7 +442,7 @@ function PullRequestBranchSelectors({
           <option></option>
           {formOptions.toProjects.map((project) => (
             <option key={project.id} value={project.id}>
-              {project.ownerName}/{project.projectName}
+              {projectOptionLabel(project)}
             </option>
           ))}
         </select>
@@ -467,6 +467,10 @@ function PullRequestBranchSelectors({
       </div>
     </div>
   );
+}
+
+function projectOptionLabel(project: { ownerName: string; projectName: string }) {
+  return `${project.ownerName} / ${project.projectName}`;
 }
 
 function PullRequestMarkdownEditor({
