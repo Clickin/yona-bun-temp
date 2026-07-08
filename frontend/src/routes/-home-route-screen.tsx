@@ -872,7 +872,6 @@ export function SiteLayoutShell({
                           <button
                             type="button"
                             data-toggle="search-scope"
-                            data-action={projectSearchAction}
                             onClick={handleSearchScopeItemClick("project")}
                           >
                             {t("search.scope.project")}
@@ -884,7 +883,6 @@ export function SiteLayoutShell({
                           <button
                             type="button"
                             data-toggle="search-scope"
-                            data-action={groupSearchAction}
                             onClick={handleSearchScopeItemClick("group")}
                           >
                             {t("search.scope.group")}
@@ -896,7 +894,6 @@ export function SiteLayoutShell({
                           <button
                             type="button"
                             data-toggle="search-scope"
-                            data-action={allProjectsSearchAction}
                             onClick={handleSearchScopeItemClick("all")}
                           >
                             {t("search.scope.all")}

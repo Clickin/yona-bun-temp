@@ -747,15 +747,9 @@ test("project issue detail renders protected org-owned localhost shell state", a
     .poll(() =>
       page
         .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+        .evaluateAll((elements) => elements.map((element) => element.textContent?.trim() ?? "")),
     )
-    .toEqual([
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
-    ]);
+    .toEqual(["This Project", "This Group", "All Projects"]);
 
   await page.locator("#gnb-search-scope-title").click();
   await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
@@ -2577,14 +2571,17 @@ test("project issue detail renders legacy readonly attachment downloader lists",
     await canonicalizeHtml(page, expectedCommentAttachments),
   );
 
-  const expectedCommentUpdateAttachments =
-    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-href="__BASE_PATH__/files/502" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">4.1 kB</span><button type="button" class="btn-transparent btn-delete" data-id="502">×</button></div></div>`.replaceAll(
-      "__BASE_PATH__",
-      basePath,
-    );
+  await expect(page.locator(".attached-file-marker[data-href]")).toHaveCount(0);
+  const expectedCommentUpdateAttachments = `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">4.1 kB</span><button type="button" class="btn-transparent btn-delete" data-id="502">×</button></div></div>`;
   expect(await canonicalize(page, "#comment-editform-77 > form .attachment-files")).toEqual(
     await canonicalizeHtml(page, expectedCommentUpdateAttachments),
   );
+  const updateAttachment = page.locator(
+    '#comment-editform-77 > form .attached-file-marker[data-name="comment-shot.png"]',
+  );
+  await expect(updateAttachment.locator(".name")).toHaveText("comment-shot.png");
+  await expect(updateAttachment.locator(".btn-delete")).toHaveAttribute("data-id", "502");
+  await expect(updateAttachment.locator(".btn-delete")).toHaveAttribute("type", "button");
   expect(
     consoleErrors.some(
       (message) =>

@@ -155,12 +155,19 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
 
   const currentUrl = `${basePath}/admin/sample/code`;
-  const projectScope = page.locator('[data-toggle="search-scope"]', { hasText: "This Project" });
-  const groupScope = page.locator('[data-toggle="search-scope"]', { hasText: "This Group" });
-  const allScope = page.locator('[data-toggle="search-scope"]', { hasText: "All Projects" });
-  await expect(projectScope).toHaveAttribute("data-action", `${basePath}/admin/sample/search`);
-  await expect(groupScope).toHaveAttribute("data-action", `${basePath}/organizations/admin/search`);
-  await expect(allScope).toHaveAttribute("data-action", `${basePath}/search`);
+  const scopeItems = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(scopeItems).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeItems).toHaveCount(3);
+  await expect
+    .poll(() =>
+      scopeItems.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("data-action")),
+      ),
+    )
+    .toEqual([null, null, null]);
+  const projectScope = scopeItems.nth(0);
+  const groupScope = scopeItems.nth(1);
+  const allScope = scopeItems.nth(2);
 
   await page.locator("#gnb-search-scope-title").click();
   await groupScope.click();

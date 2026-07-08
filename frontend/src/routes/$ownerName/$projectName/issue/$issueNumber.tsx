@@ -3164,7 +3164,6 @@ function CommentUpdateForm({
                 <div
                   className="attached-file attached-file-marker"
                   data-name={stringField(file.name)}
-                  data-href={stringField(file.url)}
                   data-mime={stringField(file.mimeType)}
                   key={fileId}
                 >
