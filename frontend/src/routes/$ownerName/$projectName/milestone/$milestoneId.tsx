@@ -1071,7 +1071,6 @@ function MilestoneIssueRow({
     state === "open"
       ? {
           "data-placement": "top",
-          "data-toggle": "tooltip",
           title: stringField(issue.dueDateLabel),
         }
       : {};
@@ -1117,7 +1116,6 @@ function MilestoneIssueRow({
             {issueWeight > 0 ? (
               <span
                 className="weight-up-arrow"
-                data-toggle="tooltip"
                 data-placement="right"
                 title={`${t("issue.weight")} ${issueWeight}`}
               >
@@ -1127,7 +1125,6 @@ function MilestoneIssueRow({
             {issueWeight < 0 ? (
               <span
                 className="weight-down-arrow"
-                data-toggle="tooltip"
                 data-placement="right"
                 title={`${t("issue.weight")} ${issueWeight}`}
               >
@@ -1162,7 +1159,6 @@ function MilestoneIssueRow({
                 to="/$user"
                 params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
-                data-toggle="tooltip"
                 data-placement="bottom"
                 title={authorLoginId}
               >
@@ -1171,12 +1167,7 @@ function MilestoneIssueRow({
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
-            <span
-              className="infos-item"
-              data-toggle="tooltip"
-              data-placement="bottom"
-              title={createdLabel}
-            >
+            <span className="infos-item" data-placement="bottom" title={createdLabel}>
               {createdLabel}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
@@ -1186,7 +1177,6 @@ function MilestoneIssueRow({
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ ownerName, projectName, milestoneId: stringField(issue.milestoneId) }}
                   {...LEGACY_MILESTONE_LINK_PROPS}
-                  data-toggle="tooltip"
                   data-placement="bottom"
                   title={t("milestone")}
                 >
@@ -1232,7 +1222,6 @@ function MilestoneIssueRow({
                   <button
                     type="button"
                     className="sharer-color"
-                    data-toggle="tooltip"
                     data-placement="bottom"
                     title={t("issue.sharer")}
                   >
@@ -1285,7 +1274,6 @@ function MilestoneIssueRow({
               to="/$user"
               params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
               data-placement="top"
               title={`${t("issue.assignee")}: ${stringField(issue.assigneeLabel)}`}
             >
