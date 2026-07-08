@@ -104,11 +104,10 @@ test("project pull request recently pushed branch prompt matches legacy partial 
   await expect(closeControl).toHaveAttribute("class", "close");
   await expect(closeControl).toHaveAttribute("data-dismiss", "alert");
   await expect(closeControl).toHaveAttribute("aria-hidden", "true");
-  await expect(closeControl).toHaveAttribute("data-request-method", "delete");
-  await expect(closeControl).toHaveAttribute(
-    "data-request-uri",
-    `${basePath}/admin/sample/pushedBranch/17/delete`,
-  );
+  expect(await closeControl.getAttribute("data-request-method")).toBeNull();
+  expect(await closeControl.getAttribute("data-request-uri")).toBeNull();
+  await expect(page.locator(".alert.alert-info [data-request-method]")).toHaveCount(0);
+  await expect(page.locator(".alert.alert-info [data-request-uri]")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedRecentlyPushedPullRequests(basePath)),
@@ -501,6 +500,8 @@ test("project pull request row source uses TanStack Link for internal row naviga
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-html="true"');
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("data-title=");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("data-original-title=");
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain('data-request-method="delete"');
+  expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain("data-request-uri={");
   expect(PROJECT_PULLREQUESTS_ROUTE_SOURCE).not.toContain(
     "<a\n                href={prefixBasePath",
   );
@@ -1123,9 +1124,7 @@ function expectedRecentlyPushedPullRequests(basePath: string) {
         '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
       '<h5>Recently pushed branch</h5><div class="alert alert-info"><div><i class="yobicon-split"></i><span style="margin-left:5px;font-weight:bold">admin/sample:feature/ui ( Jul 1, 2026 )</span>&nbsp;-&nbsp;<a href="' +
         basePath +
-        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><button type="button" class="close" data-dismiss="alert" aria-hidden="true" data-request-method="delete" data-request-uri="' +
-        basePath +
-        '/admin/sample/pushedBranch/17/delete">×</button></div></div><div class="pull-right"><a href="' +
+        '/admin/sample/newPullRequestForm?fromBranch=feature/ui&amp;toBranch=main">Pull request</a><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button></div></div><div class="pull-right"><a href="' +
         basePath +
         '/admin/sample/newPullRequestForm" class="ybtn ybtn-success">pull request</a></div>',
     );

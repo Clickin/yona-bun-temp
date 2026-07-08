@@ -583,11 +583,6 @@ function ProjectRecentlyPushedBranches({
                 className="close"
                 data-dismiss="alert"
                 aria-hidden="true"
-                data-request-method="delete"
-                data-request-uri={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `${projectPath}/pushedBranch/${branch.id}/delete`,
-                )}
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
