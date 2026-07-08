@@ -663,33 +663,21 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                 <li
                   className={`myOrganizationList${activeUsermenuTab === "myOrganizationList" ? " active" : ""}`}
                 >
-                  <button
-                    type="button"
-                    data-toggle="tab"
-                    onClick={handleUsermenuTabClick("myOrganizationList")}
-                  >
+                  <button type="button" onClick={handleUsermenuTabClick("myOrganizationList")}>
                     {t("title.favorite")}
                   </button>
                 </li>
                 <li
                   className={`myProjectList${activeUsermenuTab === "myProjectList" ? " active" : ""}`}
                 >
-                  <button
-                    type="button"
-                    data-toggle="tab"
-                    onClick={handleUsermenuTabClick("myProjectList")}
-                  >
+                  <button type="button" onClick={handleUsermenuTabClick("myProjectList")}>
                     {t("title.project")}
                   </button>
                 </li>
                 <li
                   className={`myRecentIssueList${activeUsermenuTab === "myRecentIssueList" ? " active" : ""}`}
                 >
-                  <button
-                    type="button"
-                    data-toggle="tab"
-                    onClick={handleUsermenuTabClick("myRecentIssueList")}
-                  >
+                  <button type="button" onClick={handleUsermenuTabClick("myRecentIssueList")}>
                     {t("title.recently.visited.issue")}
                   </button>
                 </li>
