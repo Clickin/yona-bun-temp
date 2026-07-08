@@ -555,7 +555,6 @@ function ProjectSettingBody({
                       >
                         <button
                           className="btn dropdown-toggle large"
-                          data-toggle="dropdown"
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -599,7 +598,6 @@ function ProjectSettingBody({
                     <select
                       id="project-default-branch"
                       name="defaultBranch"
-                      data-toggle="select2"
                       data-format="branch"
                       data-dropdown-css-class="branches"
                       style={{ minWidth: "220px" }}
