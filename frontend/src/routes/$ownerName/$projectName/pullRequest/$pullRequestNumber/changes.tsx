@@ -68,6 +68,38 @@ type ParsedFileDiff = {
   pathB: string;
 };
 
+type ReviewBlockInfo = {
+  commitId: string;
+  endColumn: number;
+  endLine: number;
+  endSide: string;
+  endType: string;
+  filePath: string;
+  path: string;
+  pathA: string;
+  pathB: string;
+  prevCommitId: string;
+  startColumn: number;
+  startLine: number;
+  startSide: string;
+  startType: string;
+};
+
+type ActiveInlineReview = {
+  afterLineKey: string;
+  fields: ReviewBlockInfo;
+  placement: "bottom" | "top";
+};
+
+type ReviewHiddenField = readonly [string, string | number];
+
+const emptyReviewHiddenFields: readonly ReviewHiddenField[] = [];
+
+type DiffSelectionStart = {
+  lineNumber: number;
+  rowIndex: number;
+};
+
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes",
 )({
@@ -208,6 +240,7 @@ function ProjectPullRequestChangesBody({
   const hasReviewCards = changes.threads.length > 0;
   const codediffClassName = `codediff-wrap mt10${hasReviewCards ? "" : " diffs-only"}`;
   const [deleteRequestUri, setDeleteRequestUri] = useState<string | null>(null);
+  const [activeInlineReview, setActiveInlineReview] = useState<ActiveInlineReview | null>(null);
 
   return (
     <>
@@ -269,8 +302,15 @@ function ProjectPullRequestChangesBody({
                   </div>
                   {changes.files.map((file) => (
                     <PullRequestFileDiff
+                      activeInlineReview={activeInlineReview}
+                      currentUser={currentUser}
                       file={file as PullRequestChangedFileWithError}
+                      inlineThreads={changes.inlineThreads}
                       key={file.path}
+                      onCommentDelete={setDeleteRequestUri}
+                      onInlineReviewChange={setActiveInlineReview}
+                      pullRequest={pullRequest}
+                      runtimeConfig={runtimeConfig}
                     />
                   ))}
                   <div className="btnPop">
@@ -301,10 +341,12 @@ function ProjectPullRequestChangesBody({
                 </div>
 
                 {pullRequest.permissions.canComment ? (
-                  <ReviewForm
-                    action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
-                    currentUser={currentUser}
-                  />
+                  activeInlineReview === null ? (
+                    <ReviewForm
+                      action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, commitId)}
+                      currentUser={currentUser}
+                    />
+                  ) : null
                 ) : null}
               </div>
               {hasReviewCards ? (
@@ -332,7 +374,6 @@ function NonRangedThread({
   runtimeConfig: RuntimeConfig;
   thread: ReviewThread;
 }) {
-  const { t } = useLegacyMessages();
   const state = thread.state.toLowerCase();
   const action = pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId);
 
@@ -362,52 +403,78 @@ function NonRangedThread({
           style={{ display: "block" }}
         >
           <input type="hidden" name="thread.id" value={thread.id} />
-          <div className="author-info-wrap pull-left hide-in-mobile">
-            <div className="author-info">
-              <Link
-                to="/$user"
-                params={{ user: currentUser.loginId }}
-                search={legacyLinkInactiveSearch}
-                activeOptions={legacyLinkActiveOptions}
-                activeProps={legacyLinkActiveProps}
-                className="avatar-wrap medium"
-                title={currentUser.userLabel}
-                data-toggle="tooltip"
-                data-placement="top"
-              >
-                <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
-              </Link>
-            </div>
-          </div>
-          <div className="write-comment-box">
-            <div className="write-comment-wrap">
-              <Editor
-                editorMode="code-review-body"
-                textareaStyle={{ height: "100px" }}
-                wrapId={`thread-${thread.id}`}
-              />
-              <UploadForm />
-              <div className="right-txt">
-                <button
-                  type="button"
-                  data-request-method="post"
-                  data-request-uri={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/threads/${thread.id}/${state === "open" ? "close" : "open"}`,
-                  )}
-                  className="ybtn ybtn-default ybtn-small"
-                >
-                  {t(state === "open" ? "commentThread.close" : "commentThread.open")}
-                </button>
-                <button type="submit" className="ybtn ybtn-success ybtn-small">
-                  {t("button.comment.new")}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ThreadReplyFormBody
+            currentUser={currentUser}
+            runtimeConfig={runtimeConfig}
+            state={state}
+            threadId={thread.id}
+            wrapId={`thread-${thread.id}`}
+          />
         </form>
       </div>
     </div>
+  );
+}
+
+function ThreadReplyFormBody({
+  currentUser,
+  runtimeConfig,
+  state,
+  threadId,
+  wrapId,
+}: {
+  currentUser: CurrentUserSummary;
+  runtimeConfig: RuntimeConfig;
+  state: string;
+  threadId: number;
+  wrapId: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <>
+      <div className="author-info-wrap pull-left hide-in-mobile">
+        <div className="author-info">
+          <Link
+            to="/$user"
+            params={{ user: currentUser.loginId }}
+            search={legacyLinkInactiveSearch}
+            activeOptions={legacyLinkActiveOptions}
+            activeProps={legacyLinkActiveProps}
+            className="avatar-wrap medium"
+            title={currentUser.userLabel}
+          >
+            <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
+          </Link>
+        </div>
+      </div>
+      <div className="write-comment-box">
+        <div className="write-comment-wrap">
+          <Editor
+            editorMode="code-review-body"
+            textareaStyle={{ height: "100px" }}
+            wrapId={wrapId}
+          />
+          <UploadForm />
+          <div className="right-txt">
+            <button
+              type="button"
+              data-request-method="post"
+              data-request-uri={prefixBasePath(
+                runtimeConfig.basePath,
+                `/threads/${threadId}/${state === "open" ? "close" : "open"}`,
+              )}
+              className="ybtn ybtn-default ybtn-small"
+            >
+              {t(state === "open" ? "commentThread.close" : "commentThread.open")}
+            </button>
+            <button type="submit" className="ybtn ybtn-success ybtn-small">
+              {t("button.comment.new")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -438,8 +505,6 @@ function NonRangedThreadComment({
           activeOptions={legacyLinkActiveOptions}
           activeProps={legacyLinkActiveProps}
           className="avatar-wrap"
-          data-toggle="tooltip"
-          data-placement="top"
           title={comment.authorLabel}
         >
           <img
@@ -459,8 +524,6 @@ function NonRangedThreadComment({
               search={legacyLinkInactiveSearch}
               activeOptions={legacyLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
-              data-toggle="tooltip"
-              data-placement="top"
               title={comment.authorLabel}
             >
               <strong>{`${comment.authorLoginId} `}</strong>
@@ -725,16 +788,42 @@ function ReviewCard({
   );
 }
 
-function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }) {
+function PullRequestFileDiff({
+  activeInlineReview,
+  currentUser,
+  file,
+  inlineThreads,
+  onCommentDelete,
+  onInlineReviewChange,
+  pullRequest,
+  runtimeConfig,
+}: {
+  activeInlineReview: ActiveInlineReview | null;
+  currentUser: CurrentUserSummary;
+  file: PullRequestChangedFileWithError;
+  inlineThreads: ReviewThread[];
+  onCommentDelete: (requestUri: string) => void;
+  onInlineReviewChange: (review: ActiveInlineReview | null) => void;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   const errorMessageKey = fileDiffErrorMessageKey(file);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [selectionStart, setSelectionStart] = useState<DiffSelectionStart | null>(null);
+  const [pendingBlock, setPendingBlock] = useState<{
+    afterLineKey: string;
+    fields: ReviewBlockInfo;
+    left: number;
+    top: number;
+  } | null>(null);
   const codeStyle = isExpanded ? undefined : { display: "none" };
   const toggleExpanded = () => setIsExpanded((current) => !current);
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const pathA = isNullDiffPath(parsed.pathA) ? "" : parsed.pathA;
   const pathB = isNullDiffPath(parsed.pathB) ? "" : parsed.pathB;
   const filePath = pathB || pathA || file.path;
+  const fileInlineThreads = inlineThreads.filter((thread) => thread.path === filePath);
 
   return (
     <div id={filePath.replace(/\//g, "-").replace(/\./g, "-")} className="diff-partial-outer">
@@ -750,7 +839,30 @@ function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }
             <span className="filename">{filePath}</span>
           </div>
         </div>
-        <div className="diff-partial-code" data-hashcode={file.path} style={codeStyle}>
+        {/* oxlint-disable jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock uses mouse selection on the plain diff container. */}
+        <div
+          className="diff-partial-code"
+          data-hashcode={file.path}
+          onMouseDown={(event) => {
+            const start = diffSelectionLine(event.target);
+            setSelectionStart(start);
+            if (start) {
+              setPendingBlock(null);
+              onInlineReviewChange(null);
+            }
+          }}
+          onMouseUp={(event) => {
+            const block = readDiffSelectionBlock(
+              event.currentTarget,
+              filePath,
+              pathA,
+              pathB,
+              selectionStart,
+            );
+            setPendingBlock(block);
+          }}
+          style={codeStyle}
+        >
           <div className="patch-header">
             {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
             {pathB ? <div className="path">{`+++ ${pathB}`}</div> : null}
@@ -769,32 +881,396 @@ function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }
                   <td colSpan={3}>{t("code.noChanges")}</td>
                 </tr>
               ) : (
-                parsed.lines.map((line) =>
-                  line.kind === "range" ? (
-                    <tr className="range" key={diffLineKey(line)}>
-                      <td className="linenum">
-                        <div className="line-number" data-line-num="...">
-                          <span className="hidden">...</span>
-                        </div>
-                      </td>
-                      <td className="linenum">
-                        <div className="line-number" data-line-num="...">
-                          <span className="hidden">...</span>
-                        </div>
-                      </td>
-                      <td className="hunk">{line.text}</td>
-                    </tr>
-                  ) : (
-                    <DiffLineView key={diffLineKey(line)} line={line} />
-                  ),
-                )
+                parsed.lines.flatMap((line) => {
+                  if (line.kind === "range") {
+                    return [
+                      <tr className="range" key={diffLineKey(line)}>
+                        <td className="linenum">
+                          <div className="line-number" data-line-num="...">
+                            <span className="hidden">...</span>
+                          </div>
+                        </td>
+                        <td className="linenum">
+                          <div className="line-number" data-line-num="...">
+                            <span className="hidden">...</span>
+                          </div>
+                        </td>
+                        <td className="hunk">{line.text}</td>
+                      </tr>,
+                    ];
+                  }
+
+                  const lineKey = diffLineKey(line);
+                  const threadsOnLine = fileInlineThreads.filter(
+                    (thread) =>
+                      thread.endLine === line.lineNumber &&
+                      (thread.endSide ?? "B") === (line.type === "remove" ? "A" : "B"),
+                  );
+                  return [
+                    <DiffLineView key={lineKey} line={line} />,
+                    ...renderInlineRows({
+                      activeInlineReview,
+                      currentUser,
+                      lineKey,
+                      onCommentDelete,
+                      pullRequest,
+                      runtimeConfig,
+                      threads: threadsOnLine,
+                    }),
+                  ];
+                })
               )}
             </tbody>
           </table>
+          {pendingBlock ? (
+            /* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy btnPop is a plain positioned div around the post button. */
+            <div
+              className="btnPop"
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+              onMouseUp={(event) => {
+                event.stopPropagation();
+              }}
+              style={{ top: pendingBlock.top, left: pendingBlock.left, display: "block" }}
+            >
+              <button
+                type="button"
+                className="ybtn ybtn-info ybtn-small"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onInlineReviewChange({
+                    afterLineKey: pendingBlock.afterLineKey,
+                    fields: pendingBlock.fields,
+                    placement:
+                      pendingBlock.fields.startLine > pendingBlock.fields.endLine
+                        ? "top"
+                        : "bottom",
+                  });
+                }}
+              >
+                <i className="yobicon-post2"></i>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
   );
+}
+
+function renderInlineRows({
+  activeInlineReview,
+  currentUser,
+  lineKey,
+  onCommentDelete,
+  pullRequest,
+  runtimeConfig,
+  threads,
+}: {
+  activeInlineReview: ActiveInlineReview | null;
+  currentUser: CurrentUserSummary;
+  lineKey: string;
+  onCommentDelete: (requestUri: string) => void;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+  threads: ReviewThread[];
+}) {
+  const rows = [];
+  const topReview =
+    activeInlineReview?.afterLineKey === lineKey && activeInlineReview.placement === "top";
+  const bottomReview =
+    activeInlineReview?.afterLineKey === lineKey && activeInlineReview.placement === "bottom";
+
+  if (topReview) {
+    rows.push(
+      <InlineReviewFormRow
+        activeInlineReview={activeInlineReview}
+        currentUser={currentUser}
+        key={`${lineKey}-review-top`}
+        pullRequest={pullRequest}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+  }
+
+  if (bottomReview) {
+    rows.push(
+      <InlineReviewFormRow
+        activeInlineReview={activeInlineReview}
+        currentUser={currentUser}
+        key={`${lineKey}-review-bottom`}
+        pullRequest={pullRequest}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+  }
+
+  if (threads.length > 0) {
+    rows.push(
+      <tr
+        className="comments board-comment-wrap"
+        data-commit-id={threads[0]?.commitId}
+        key={`${lineKey}-threads`}
+      >
+        <td colSpan={3}>
+          {threads.map((thread) => (
+            <InlineThread
+              currentUser={currentUser}
+              key={thread.id}
+              onCommentDelete={onCommentDelete}
+              pullRequest={pullRequest}
+              runtimeConfig={runtimeConfig}
+              thread={thread}
+            />
+          ))}
+        </td>
+      </tr>,
+    );
+  }
+
+  return rows;
+}
+
+function InlineThread({
+  currentUser,
+  onCommentDelete,
+  pullRequest,
+  runtimeConfig,
+  thread,
+}: {
+  currentUser: CurrentUserSummary;
+  onCommentDelete: (requestUri: string) => void;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+  thread: ReviewThread;
+}) {
+  const { t } = useLegacyMessages();
+  const state = thread.state.toLowerCase();
+  const isClosed = state === "closed";
+
+  return (
+    <div
+      id={`thread-${thread.id}`}
+      data-state={state}
+      className={`comment-thread-wrap ${state}${isClosed ? " fold" : ""}`}
+      data-toggle="CodeCommentThread"
+      data-range-path={thread.path}
+      data-range-startside={thread.startSide}
+      data-range-startline={thread.startLine}
+      data-range-startcolumn="0"
+      data-range-endside={thread.endSide}
+      data-range-endline={thread.endLine}
+      data-range-endcolumn="0"
+    >
+      <div className="btn-thread-here btn-thread-minimize">
+        <button type="button" className="ybtn ybtn-default ybtn-small">
+          <i className="yobicon-post2"></i>
+        </button>
+      </div>
+      <div className="thread-header">
+        <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
+        <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
+          <i className="yobicon-maximize"></i>
+        </button>
+      </div>
+      <ul className="comments">
+        {thread.comments.map((comment) => (
+          <NonRangedThreadComment
+            comment={comment}
+            key={comment.id}
+            onCommentDelete={onCommentDelete}
+            runtimeConfig={runtimeConfig}
+          />
+        ))}
+      </ul>
+      <div className="write-comment-form">
+        <form
+          action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId)}
+          method="post"
+          encType="multipart/form-data"
+          className="review-form"
+          style={{ display: "block" }}
+        >
+          <input type="hidden" name="thread.id" value={thread.id} />
+          <ThreadReplyFormBody
+            currentUser={currentUser}
+            runtimeConfig={runtimeConfig}
+            state={state}
+            threadId={thread.id}
+            wrapId={`thread-${thread.id}`}
+          />
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function InlineReviewFormRow({
+  activeInlineReview,
+  currentUser,
+  pullRequest,
+  runtimeConfig,
+}: {
+  activeInlineReview: ActiveInlineReview;
+  currentUser: CurrentUserSummary;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <tr className="comment-form">
+      <td colSpan={3} className="write-comment-form">
+        <ReviewForm
+          action={pullRequestCommentHref(
+            runtimeConfig.basePath,
+            pullRequest,
+            activeInlineReview.fields.commitId,
+          )}
+          currentUser={currentUser}
+          hiddenFields={reviewBlockHiddenFields(activeInlineReview.fields)}
+          visible
+        />
+      </td>
+    </tr>
+  );
+}
+
+function diffSelectionLine(target: EventTarget | null): DiffSelectionStart | null {
+  const element = target instanceof Element ? target : null;
+  const row = element?.closest("tr[data-line]");
+  const lineNumber = Number(row?.getAttribute("data-line") ?? "");
+  return row && Number.isFinite(lineNumber) ? { lineNumber, rowIndex: tableRowIndex(row) } : null;
+}
+
+function readDiffSelectionBlock(
+  container: HTMLElement,
+  filePath: string,
+  pathA: string,
+  pathB: string,
+  selectionStart: DiffSelectionStart | null,
+): { afterLineKey: string; fields: ReviewBlockInfo; left: number; top: number } | null {
+  if (!selectionStart) {
+    return null;
+  }
+
+  const selection = container.ownerDocument.getSelection();
+  const selectionText = selection?.toString() ?? "";
+  if (selectionText.length === 0 || !selection?.rangeCount) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(selection.rangeCount - 1);
+  const startRow = closestDiffRow(range.startContainer);
+  const endRow = closestDiffRow(range.endContainer);
+  if (!startRow || !endRow || startRow.closest("table") !== endRow.closest("table")) {
+    return null;
+  }
+
+  const startIndex = tableRowIndex(startRow);
+  const endIndex = tableRowIndex(endRow);
+  const isReversed =
+    startIndex < selectionStart.rowIndex ||
+    (startIndex === endIndex && range.startOffset > range.endOffset);
+  const firstRow = isReversed ? endRow : startRow;
+  const lastRow = isReversed ? startRow : endRow;
+  const rows = siblingRows(firstRow, lastRow);
+  if (
+    rows.some(
+      (row) => !row.matches("tr[data-line]") && !row.matches("tr.comments") && !rowHasCodeCell(row),
+    )
+  ) {
+    return null;
+  }
+
+  const startLine = Number(firstRow.getAttribute("data-line") ?? "");
+  const endLine = Number(lastRow.getAttribute("data-line") ?? "");
+  const startType = firstRow.getAttribute("data-type") ?? "context";
+  const endType = lastRow.getAttribute("data-type") ?? "context";
+  if (!Number.isFinite(startLine) || !Number.isFinite(endLine)) {
+    return null;
+  }
+
+  const codeBox = diffRowCodeCell(lastRow)?.getBoundingClientRect();
+  const containerBox = container.getBoundingClientRect();
+  const endColumn = isReversed ? range.startOffset : range.endOffset;
+
+  return {
+    afterLineKey: lastRow.getAttribute("data-line-key") ?? "",
+    fields: {
+      commitId: "",
+      endColumn,
+      endLine,
+      endSide: endType === "remove" ? "A" : "B",
+      endType,
+      filePath,
+      path: filePath,
+      pathA,
+      pathB,
+      prevCommitId: "",
+      startColumn: isReversed ? range.endOffset : range.startOffset,
+      startLine,
+      startSide: startType === "remove" ? "A" : "B",
+      startType,
+    },
+    left: Math.min(
+      (codeBox?.left ?? containerBox.left) - containerBox.left + endColumn * 7,
+      Math.max(0, containerBox.width - 80),
+    ),
+    top: Math.max(0, (codeBox?.top ?? containerBox.top) - containerBox.top - 24),
+  };
+}
+
+function closestDiffRow(node: Node) {
+  const element = node instanceof Element ? node : node.parentNode;
+  if (!(element instanceof Element)) {
+    return null;
+  }
+  return element?.closest("tr[data-line]") ?? null;
+}
+
+function diffRowCodeCell(row: Element) {
+  const cell = row.children.item(2);
+  return cell instanceof HTMLElement && /\bcode\b/u.test(cell.getAttribute("class") ?? "")
+    ? cell
+    : null;
+}
+
+function rowHasCodeCell(row: Element) {
+  const cell = diffRowCodeCell(row);
+  return cell?.firstElementChild instanceof HTMLElement && cell.firstElementChild.tagName === "PRE";
+}
+
+function siblingRows(startRow: Element, endRow: Element) {
+  const parent = startRow.parentElement;
+  if (!parent || parent !== endRow.parentElement) {
+    return [];
+  }
+  const rows = Array.from(parent.children);
+  const start = rows.indexOf(startRow);
+  const end = rows.indexOf(endRow);
+  return rows.slice(Math.min(start, end), Math.max(start, end) + 1);
+}
+
+function tableRowIndex(row: Element) {
+  return Array.from(row.parentElement?.children ?? []).indexOf(row);
+}
+
+function reviewBlockHiddenFields(fields: ReviewBlockInfo) {
+  return [
+    ["startLine", fields.startLine],
+    ["startSide", fields.startSide],
+    ["startColumn", fields.startColumn],
+    ["endLine", fields.endLine],
+    ["endSide", fields.endSide],
+    ["endColumn", fields.endColumn],
+    ["path", fields.path],
+    ["pathA", fields.pathA],
+    ["pathB", fields.pathB],
+    ["filePath", fields.filePath],
+    ["prevCommitId", fields.prevCommitId],
+    ["commitId", fields.commitId],
+  ] as const;
 }
 
 function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }> }) {
@@ -805,6 +1281,7 @@ function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }
     <tr
       className={line.type}
       data-line={line.lineNumber}
+      data-line-key={diffLineKey(line)}
       data-side={line.type === "remove" ? "A" : "B"}
       data-type={line.type}
     >
@@ -1062,11 +1539,28 @@ function CommentForm({ action }: { action: string }) {
   );
 }
 
-function ReviewForm({ action, currentUser }: { action: string; currentUser: CurrentUserSummary }) {
+function ReviewForm({
+  action,
+  currentUser,
+  hiddenFields = emptyReviewHiddenFields,
+  visible = false,
+}: {
+  action: string;
+  currentUser: CurrentUserSummary;
+  hiddenFields?: readonly ReviewHiddenField[];
+  visible?: boolean;
+}) {
   const { t } = useLegacyMessages();
   return (
-    <div id="review-form" className="review-form">
+    <div
+      id="review-form"
+      className="review-form"
+      style={visible ? { display: "block" } : undefined}
+    >
       <form action={action} method="post" encType="multipart/form-data">
+        {hiddenFields.map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={value} />
+        ))}
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
             <Link
@@ -1076,10 +1570,7 @@ function ReviewForm({ action, currentUser }: { action: string; currentUser: Curr
               activeOptions={legacyLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
               className="avatar-wrap medium"
-              data-toggle="tooltip"
-              data-placement="top"
-              title=""
-              data-original-title={currentUser.userLabel}
+              title={currentUser.userLabel}
             >
               <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
             </Link>
