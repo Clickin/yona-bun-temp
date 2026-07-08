@@ -75,12 +75,6 @@ type ProjectIssueSearchUserOption = {
 
 const ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX = "__currentUserShortcut__:";
 
-type LegacyPjaxFilterAttributes = HTMLAttributes<HTMLButtonElement> & {
-  "pjax-filter": "";
-};
-type LegacyDataPjaxAttributes = HTMLAttributes<HTMLLIElement> & {
-  "data-pjax": "";
-};
 type LegacyStateButtonAttributes = HTMLAttributes<HTMLButtonElement> & {
   state: "closed" | "open";
 };
@@ -2232,7 +2226,6 @@ function QuickSearch({
   state: IssueListState;
 }) {
   const { t } = useLegacyMessages();
-  const quickSearchLegacyAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttributes;
   const allLabel = state === "closed" ? t("issue.list.all.closed") : t("issue.list.all.open");
   const allCount = countField(issues, state === "closed" ? "closedIssueCount" : "openIssueCount");
 
@@ -2244,7 +2237,6 @@ function QuickSearch({
         }
       >
         <button
-          {...quickSearchLegacyAttrs}
           type="button"
           data-assignee-id=""
           data-author-id=""
@@ -2269,7 +2261,6 @@ function QuickSearch({
         <>
           <li className={search.assigneeId === currentUserId ? "active" : undefined}>
             <button
-              {...quickSearchLegacyAttrs}
               type="button"
               data-assignee-id={currentUserId}
               data-author-id=""
@@ -2294,7 +2285,6 @@ function QuickSearch({
           </li>
           <li className={search.authorId === currentUserId ? "active" : undefined}>
             <button
-              {...quickSearchLegacyAttrs}
               type="button"
               data-assignee-id=""
               data-author-id={currentUserId}
@@ -2319,7 +2309,6 @@ function QuickSearch({
           </li>
           <li className={search.commenterId === currentUserId ? "active" : undefined}>
             <button
-              {...quickSearchLegacyAttrs}
               type="button"
               data-assignee-id=""
               data-author-id=""
@@ -2935,10 +2924,9 @@ function StateTab({
   state: "closed" | "open";
 }) {
   const stateTabLegacyAttrs = { state } satisfies LegacyStateButtonAttributes;
-  const stateTabLegacyPjaxAttrs = { "data-pjax": "" } satisfies LegacyDataPjaxAttributes;
 
   return (
-    <li className={active ? "active" : undefined} {...stateTabLegacyPjaxAttrs}>
+    <li className={active ? "active" : undefined}>
       <button
         type="button"
         {...stateTabLegacyAttrs}
