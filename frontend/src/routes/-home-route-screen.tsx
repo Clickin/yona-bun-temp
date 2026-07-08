@@ -94,6 +94,16 @@ const SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE: React.CSSProperties = {
   top: "100%",
   transform: "translateX(-50%)",
 };
+const HOME_SIDEBAR_POPOVER_STYLE: React.CSSProperties = {
+  display: "block",
+  left: "100%",
+  marginLeft: "10px",
+  minWidth: "200px",
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 1060,
+};
 
 function LegacyLogoLinkAnchor({
   legacyHref,
@@ -1514,13 +1524,7 @@ function SidebarAllProjectItem({
 
   return (
     <li className={`user-li ${favored ? "show-always" : "hide"}`} data-location={projectHref}>
-      <div
-        className="project-list project-flex-container"
-        data-toggle="popover"
-        data-trigger="hover"
-        data-placement="right"
-        data-content={overview}
-      >
+      <SidebarHoverPopover content={overview}>
         <div className="project-item project-item-container">
           <div className="flex-item site-logo all-project-names">
             <i className="project-avatar">
@@ -1540,7 +1544,7 @@ function SidebarAllProjectItem({
         <div className="star-project flex-item" data-project-id={projectId}>
           <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
         </div>
-      </div>
+      </SidebarHoverPopover>
     </li>
   );
 }
@@ -1773,21 +1777,44 @@ function SidebarRecentIssueItem({ basePath, issue }: { basePath: string; issue: 
 
   return (
     <li className="user-li" data-location={issueHref}>
-      <div
-        className="project-list project-flex-container"
-        data-toggle="popover"
-        data-trigger="hover"
-        data-placement="right"
-        data-content={issueNumber}
-      >
+      <SidebarHoverPopover content={issueNumber}>
         <div className="project-item project-item-container">
           <div className="issue-item projectName-owner flex-item">
             <div className="issue-title-start">-</div>
             <div className="issue-title flex-item">{title}</div>
           </div>
         </div>
-      </div>
+      </SidebarHoverPopover>
     </li>
+  );
+}
+
+function SidebarHoverPopover({
+  children,
+  content,
+}: {
+  children: React.ReactNode;
+  content: string;
+}) {
+  const [isVisible, setIsVisible] = React.useState(false);
+  const showPopover = () => setIsVisible(Boolean(content));
+  const hidePopover = () => setIsVisible(false);
+
+  return (
+    <div
+      className="project-list project-flex-container"
+      onMouseEnter={showPopover}
+      onMouseLeave={hidePopover}
+      style={isVisible ? { position: "relative" } : undefined}
+    >
+      {children}
+      {isVisible ? (
+        <div className="popover right" role="tooltip" style={HOME_SIDEBAR_POPOVER_STYLE}>
+          <div className="arrow" />
+          <div className="popover-content">{content}</div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

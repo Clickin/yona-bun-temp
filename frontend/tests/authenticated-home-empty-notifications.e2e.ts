@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_AUTHENTICATED_HOME = `
 <div class="unsupported hidden">
@@ -178,7 +178,7 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
         </div>
         <ul class="project-ul">
           <li class="user-li show-always" data-location="__BASE_PATH__/admin/sample">
-            <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Sample project">
+            <div class="project-list project-flex-container">
               <div class="project-item project-item-container">
                 <div class="flex-item site-logo all-project-names"><i class="project-avatar"><img class="logo" src="/assets/images/project_default_logo.png"></i></div>
                 <div class="projectName-owner flex-item"><div class="project-name flex-item">sample </div></div>
@@ -201,7 +201,7 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
         </div>
         <ul class="project-ul">
           <li class="user-li hide" data-location="__BASE_PATH__/weblabs/playground">
-            <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Internal playground">
+            <div class="project-list project-flex-container">
               <div class="project-item project-item-container">
                 <div class="flex-item site-logo all-project-names"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                 <div class="projectName-owner flex-item"><div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div></div>
@@ -309,7 +309,7 @@ const EXPECTED_SIDEBAR_RECENT_ISSUE_TAB = `
         <div class="tab-content">
           <ul class="tab-pane user-ul active" id="recentlyVisitedIssues">
             <li class="user-li" data-location="__BASE_PATH__/admin/sample/issue/42">
-              <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="42">
+              <div class="project-list project-flex-container">
                 <div class="project-item project-item-container">
                   <div class="issue-item projectName-owner flex-item">
                     <div class="issue-title-start">-</div><div class="issue-title flex-item">Crash on login</div>
@@ -318,7 +318,7 @@ const EXPECTED_SIDEBAR_RECENT_ISSUE_TAB = `
               </div>
             </li>
             <li class="user-li" data-location="__BASE_PATH__/weblabs/playground/issue/7">
-              <div class="project-list project-flex-container" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="7">
+              <div class="project-list project-flex-container">
                 <div class="project-item project-item-container">
                   <div class="issue-item projectName-owner flex-item">
                     <div class="issue-title-start">-</div><div class="issue-title flex-item">Review onboarding copy</div>
@@ -804,6 +804,11 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await expect(page.locator("#usermenu-tab-content-list #organizations")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .org-li")).toHaveCount(2);
+  await expect(page.locator("#usermenu-tab-content-list [data-toggle='popover']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list [data-trigger='hover']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list [data-placement='right']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list [data-content]")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list .popover.right")).toHaveCount(0);
 
   expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
     await canonicalizeHtml(
@@ -824,6 +829,29 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
     searchPadding: "4px 6px",
     starWidth: 350,
   });
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const allProjectItemSource = routeSource.slice(
+    routeSource.indexOf("function SidebarAllProjectItem"),
+    routeSource.indexOf("function SidebarProjectList"),
+  );
+  expect(allProjectItemSource).toContain("<SidebarHoverPopover content={overview}>");
+  expect(allProjectItemSource).not.toContain('data-toggle="popover"');
+  expect(allProjectItemSource).not.toContain('data-trigger="hover"');
+  expect(allProjectItemSource).not.toContain('data-placement="right"');
+  expect(allProjectItemSource).not.toContain("data-content={overview}");
+  expect(routeSource).toContain("function SidebarHoverPopover({");
+  expect(routeSource).toContain('className="popover right"');
+  expect(routeSource).toContain("onMouseEnter={showPopover}");
+
+  const sampleProjectRow = page.locator(
+    "#usermenu-tab-content-list .user-li[data-location$='/admin/sample'] > .project-list",
+  );
+  await expect(sampleProjectRow).not.toHaveAttribute("data-toggle");
+  await expect(sampleProjectRow).not.toHaveAttribute("data-trigger");
+  await expect(sampleProjectRow).not.toHaveAttribute("data-placement");
+  await expect(sampleProjectRow).not.toHaveAttribute("data-content");
+  await assertSidebarRightPopover(page, sampleProjectRow, "Sample project");
 });
 
 test("authenticated root user menu toggles stay route-local buttons without navigation", async ({
@@ -1196,6 +1224,11 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   await page.locator(".myRecentIssueList button").click();
   await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(2);
+  await expect(page.locator("#usermenu-tab-content-list [data-toggle='popover']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list [data-trigger='hover']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list [data-placement='right']")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list [data-content]")).toHaveCount(0);
+  await expect(page.locator("#usermenu-tab-content-list .popover.right")).toHaveCount(0);
 
   expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
     await canonicalizeHtml(
@@ -1215,6 +1248,26 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
     searchHeight: 30,
     searchPadding: "4px 6px",
   });
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const recentIssueItemSource = routeSource.slice(
+    routeSource.indexOf("function SidebarRecentIssueItem"),
+    routeSource.indexOf("function SidebarHoverPopover"),
+  );
+  expect(recentIssueItemSource).toContain("<SidebarHoverPopover content={issueNumber}>");
+  expect(recentIssueItemSource).not.toContain('data-toggle="popover"');
+  expect(recentIssueItemSource).not.toContain('data-trigger="hover"');
+  expect(recentIssueItemSource).not.toContain('data-placement="right"');
+  expect(recentIssueItemSource).not.toContain("data-content={issueNumber}");
+
+  const issueRow = page.locator(
+    "#recentlyVisitedIssues .user-li[data-location$='/admin/sample/issue/42'] > .project-list",
+  );
+  await expect(issueRow).not.toHaveAttribute("data-toggle");
+  await expect(issueRow).not.toHaveAttribute("data-trigger");
+  await expect(issueRow).not.toHaveAttribute("data-placement");
+  await expect(issueRow).not.toHaveAttribute("data-content");
+  await assertSidebarRightPopover(page, issueRow, "42");
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({
@@ -1938,6 +1991,49 @@ async function readSidebarFavoriteTabMetrics(page: Page) {
       searchHeight: Math.round(search.getBoundingClientRect().height),
       searchPadding: searchStyle.padding,
       starWidth: Math.round(star.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function assertSidebarRightPopover(page: Page, target: Locator, expectedContent: string) {
+  const popover = page.locator("#usermenu-tab-content-list .popover.right");
+  await expect(popover).toHaveCount(0);
+
+  await target.hover();
+  await expect(popover).toBeVisible();
+  await expect(popover).toHaveClass("popover right");
+  await expect(popover.locator(".popover-content")).toHaveText(expectedContent);
+  const metrics = await readSidebarRightPopoverMetrics(page);
+  expect(metrics.arrowDisplay).toBe("block");
+  expect(metrics.content).toBe(expectedContent);
+  expect(metrics.isRightOfTarget).toBe(true);
+  expect(metrics.verticalCenterDelta).toBeLessThanOrEqual(1);
+
+  await page.mouse.move(1, 1);
+  await expect(popover).toHaveCount(0);
+}
+
+async function readSidebarRightPopoverMetrics(page: Page) {
+  return page.evaluate(() => {
+    const target = document.querySelector<HTMLElement>(
+      "#usermenu-tab-content-list .project-list:has(.popover.right)",
+    );
+    const popover = target?.querySelector<HTMLElement>(".popover.right");
+    const arrow = popover?.querySelector<HTMLElement>(".arrow");
+    const content = popover?.querySelector<HTMLElement>(".popover-content");
+    if (!target || !popover || !arrow || !content) {
+      throw new Error("Expected sidebar right popover metric targets are missing.");
+    }
+
+    const targetBox = target.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    return {
+      arrowDisplay: getComputedStyle(arrow).display,
+      content: content.textContent ?? "",
+      isRightOfTarget: popoverBox.left >= targetBox.right,
+      verticalCenterDelta: Math.round(
+        Math.abs(targetBox.top + targetBox.height / 2 - (popoverBox.top + popoverBox.height / 2)),
+      ),
     };
   });
 }
