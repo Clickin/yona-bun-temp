@@ -309,7 +309,6 @@ function PullRequestDisabledBranchSelectors({
         <select
           id="fromProjectId"
           name="fromProjectId"
-          data-toggle="select2"
           className="mr5"
           defaultValue={String(selected.fromProjectId)}
           disabled
@@ -323,7 +322,6 @@ function PullRequestDisabledBranchSelectors({
         <select
           id="fromBranch"
           name="fromBranch"
-          data-toggle="select2"
           data-format="branch"
           disabled
           data-dropdown-css-class="branches"
@@ -350,7 +348,6 @@ function PullRequestDisabledBranchSelectors({
         <select
           id="toProjectId"
           name="toProjectId"
-          data-toggle="select2"
           className="mr5"
           defaultValue={String(selected.toProjectId)}
           disabled
@@ -364,7 +361,6 @@ function PullRequestDisabledBranchSelectors({
         <select
           id="toBranch"
           name="toBranch"
-          data-toggle="select2"
           data-format="branch"
           disabled
           data-dropdown-css-class="branches"
