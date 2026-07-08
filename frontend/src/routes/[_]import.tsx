@@ -309,7 +309,6 @@ function ProjectImportScreen({
                   <select
                     id="project-owner"
                     name="owner"
-                    data-toggle="select2"
                     data-format="user"
                     className="mb10"
                     value={ownerName}
@@ -450,7 +449,7 @@ function ProjectImportScreen({
                     <label htmlFor="vcs">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
-                    <select data-toggle="select2" className="mb10 mt5" disabled>
+                    <select className="mb10 mt5" disabled>
                       <option>{t("project.new.vcsType.git")}</option>
                     </select>
                     <input type="hidden" name="vcs" value="GIT" />
