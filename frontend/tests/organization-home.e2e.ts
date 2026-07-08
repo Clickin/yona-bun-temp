@@ -9,7 +9,7 @@ const EXPECTED_ORGANIZATION_HOME = `
 <div class="project-header-outer" style="background-image:url('__BASE_PATH__/legacy-assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="__BASE_PATH__/legacy-assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class="active"><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-home-header row-fluid"><div class="span9 span-hard-wrap"><div class="project-overview"><h3><span id="project-description">Web labs group</span></h3></div><div class="project-search-wrap row-fluid mt10"><div class="span7"><div class="search-bar"><input name="mylist-filter" id="mylist-filter" class="textbox full" type="text" value="" data-toggle="item-search" data-items="project-item" placeholder="Type name"><button type="button" class="search-btn"><i class="yobicon-search"></i></button></div></div><div class="pull-right"><a href="__BASE_PATH__/projectform?owner=weblabs" class="ybtn ybtn-primary">Create new project</a></div></div><ul class="all-projects"><li class="project" data-item="project-item" data-value="sample Sample project"><div class="info-wrap"><div class="owner-avatar-wrap hide-in-mobile"><a href="__BASE_PATH__/weblabs/sample"><img src="/assets/images/project_default_logo.png" alt="sample.name"></a></div><div style="float:left"><div class="header"><a href="__BASE_PATH__/weblabs/sample" class="black">sample</a></div><div class="desc">Sample project</div><p class="name-tag">by <a href="__BASE_PATH__/weblabs" class="owner-name-small">weblabs</a> at <strong title="2026-06-30">Jun 30, 2026</strong> <span class="small-font">,Latest code update <strong title="2026-07-01">Jul 1, 2026</strong></span></p></div></div><div class="stats-wrap pull-right"><div class="members"><ul class="unstyled"></ul><p><i class="yobicon-friends yobicon-middle"></i><strong>1</strong><i class="yobicon-eye"></i> <strong>5</strong><i class="yobicon-lightbulb ramp-on" data-toggle="tooltip" title="Watching projects"></i></p></div></div></li></ul></div><div class="span3 span-hard-wrap"><div class="bubble-wrap gray project-home"><div class="inner member-info"><header><h3>Group Manager</h3><button type="button" class="ybtn ybtn-minimum ybtn-danger pull-right" id="groupLeaveBtn" data-href="__BASE_PATH__/organizations/weblabs/leave">Leave the group</button></header><div class="member-wrap "><ul class="project-members"><li class="member"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/admin" data-toggle="tooltip" data-placement="top" title="admin">Site Admin</a></li></ul></div></div></div><div class="bubble-wrap gray project-home mt10"><div class="inner member-info"><header><h3>Group Member</h3></header><div class="member-wrap"><ul class="unstyled project-members"><li class="member"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-45.png" height="45" width="45"></a><a href="__BASE_PATH__/dev" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a></li></ul></div></div></div></div></div></div></div>
-<div id="alertLeave" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Leave the group</h3></div><div class="modal-body"><p>Do you want to leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="leaveBtn">Yes</button><button type="button" class="ybtn ybtn-mini" data-dismiss="modal">No</button></div></div>
+<div id="alertLeave" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h3>Leave the group</h3></div><div class="modal-body"><p>Do you want to leave this group?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-mini" id="leaveBtn">Yes</button><button type="button" class="ybtn ybtn-mini">No</button></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -684,6 +684,14 @@ test("organization home leave modal stays route-owned across open dismiss and co
   await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
+  await expect(page.locator('#alertLeave [data-dismiss="modal"]')).toHaveCount(0);
+  await expect(page.locator("#alertLeave .modal-header .close")).not.toHaveAttribute(
+    "data-dismiss",
+  );
+  await expect(page.locator("#alertLeave .modal-footer .ybtn").last()).not.toHaveAttribute(
+    "data-dismiss",
+  );
+  await expect(page.locator("#alertLeave .modal-footer > button")).toHaveText(["Yes", "No"]);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
@@ -695,7 +703,7 @@ test("organization home leave modal stays route-owned across open dismiss and co
     .toBe("kept");
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
-  await dispatchCancelableClick(page, '#alertLeave .modal-footer [data-dismiss="modal"]');
+  await dispatchCancelableClick(page, "#alertLeave .modal-footer .ybtn:not(#leaveBtn)");
   await expect(page.locator("#alertLeave")).toHaveClass("modal hide");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "true");
@@ -724,7 +732,7 @@ test("organization home leave modal stays route-owned across open dismiss and co
     )
     .toBe("kept");
 
-  await dispatchCancelableClick(page, '#alertLeave .modal-header [data-dismiss="modal"]');
+  await dispatchCancelableClick(page, "#alertLeave .modal-header .close");
   await expect(page.locator("#alertLeave")).toHaveClass("modal hide");
   await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
   await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "true");
@@ -802,10 +810,12 @@ test("organization home leave modal source insulates delegated modal bridge", ()
     "aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}",
   );
   expect(source).toContain('className="modal-backdrop in"');
-  expect(source).toContain("onKeyDown={dismissLeaveModal}");
+  expect(source).toContain('type="button"');
+  expect(source).toContain('aria-label={t("button.close")}');
   expect(source).toContain("onClick={dismissLeaveModal}");
   expect(source).toContain("onClick={submitLeave}");
   expect(source).not.toContain('data-toggle="modal"');
+  expect(source).not.toContain('data-dismiss="modal"');
   expect(source).not.toContain("document.addEventListener");
   expect(source).not.toContain("document.querySelector");
   expect(source).not.toContain("classList");
@@ -1298,11 +1308,11 @@ async function installOrganizationHomeLeaveModalBridgeAudit(page: Page) {
         modalBridgeHits.push("#leaveBtn");
         return;
       }
-      if (target.closest('#alertLeave .modal-header [data-dismiss="modal"]')) {
+      if (target.closest("#alertLeave .modal-header .close")) {
         modalBridgeHits.push("header-dismiss");
         return;
       }
-      if (target.closest('#alertLeave .modal-footer [data-dismiss="modal"]')) {
+      if (target.closest("#alertLeave .modal-footer .ybtn:not(#leaveBtn)")) {
         modalBridgeHits.push("footer-dismiss");
       }
     });

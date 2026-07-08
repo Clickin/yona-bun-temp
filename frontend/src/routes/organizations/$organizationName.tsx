@@ -250,7 +250,7 @@ function OrganizationHomeBody({
         aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={dismissLeaveModal}>
+          <button type="button" className="close" onClick={dismissLeaveModal}>
             ×
           </button>
           <h3>{t("organization.member.leave")}</h3>
@@ -267,24 +267,18 @@ function OrganizationHomeBody({
           >
             {t("button.yes")}
           </button>
-          <button
-            type="button"
-            className="ybtn ybtn-mini"
-            data-dismiss="modal"
-            onClick={dismissLeaveModal}
-          >
+          <button type="button" className="ybtn ybtn-mini" onClick={dismissLeaveModal}>
             {t("button.no")}
           </button>
         </div>
       </div>
       {leaveModalOpen ? (
-        <div
+        <button
+          type="button"
+          aria-label={t("button.close")}
           className="modal-backdrop in"
           onClick={dismissLeaveModal}
-          onKeyDown={dismissLeaveModal}
-          role="button"
-          tabIndex={-1}
-        ></div>
+        ></button>
       ) : null}
     </>
   );
