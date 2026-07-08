@@ -559,7 +559,6 @@ function FileView({
                 "data-status": undefined,
               }}
               className="avatar-wrap"
-              data-toggle="tooltip"
               data-placement="top"
               title={authorLoginId}
             >
