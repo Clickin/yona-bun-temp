@@ -1661,7 +1661,6 @@ function ProjectIssueItem({
     issue.state === "open"
       ? {
           "data-placement": "top",
-          "data-toggle": "tooltip",
           title: issue.dueDateLabel,
         }
       : {};
@@ -1775,7 +1774,6 @@ function ProjectIssueItem({
             {issueWeight > 0 ? (
               <span
                 className="weight-up-arrow"
-                data-toggle="tooltip"
                 data-placement="right"
                 title={`${t("issue.weight")} ${issueWeight}`}
               >
@@ -1785,7 +1783,6 @@ function ProjectIssueItem({
             {issueWeight < 0 ? (
               <span
                 className="weight-down-arrow"
-                data-toggle="tooltip"
                 data-placement="right"
                 title={`${t("issue.weight")} ${issueWeight}`}
               >
@@ -1826,7 +1823,6 @@ function ProjectIssueItem({
                 to="/$user"
                 params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
-                data-toggle="tooltip"
                 data-placement="bottom"
                 title={authorLoginId}
               >
@@ -1835,12 +1831,7 @@ function ProjectIssueItem({
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
-            <span
-              className="infos-item"
-              data-toggle="tooltip"
-              data-placement="bottom"
-              title={createdLabel}
-            >
+            <span className="infos-item" data-placement="bottom" title={createdLabel}>
               {createdLabel}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
@@ -1850,7 +1841,6 @@ function ProjectIssueItem({
                   activeProps={legacyRouteLocalActiveProps}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ milestoneId: String(issue.milestoneId), ownerName, projectName }}
-                  data-toggle="tooltip"
                   data-placement="bottom"
                   title={t("milestone")}
                 >
@@ -1892,7 +1882,6 @@ function ProjectIssueItem({
                   <button
                     type="button"
                     className="sharer-color"
-                    data-toggle="tooltip"
                     data-placement="bottom"
                     title={t("issue.sharer")}
                   >
@@ -1943,7 +1932,6 @@ function ProjectIssueItem({
               to="/$user"
               params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
               data-placement="top"
               title={`${t("issue.assignee")}: ${assigneeLabel}`}
             >
