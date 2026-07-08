@@ -33,7 +33,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
           <li class="active"><button type="button" state="open">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">1</span></button></li>
-          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
+          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position: relative;"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
         <div class="filter-wrap small-heights"><div class="filters pull-right"><button class="filter" type="button" orderBy="dueDate" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Due Date</button><button class="filter active" type="button" orderBy="updatedDate" orderDir="asc"><i class="ico btn-gray-arrow down"></i>Updated</button><button class="filter" type="button" orderBy="createdDate" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Created</button><button class="filter" type="button" orderBy="numOfComments" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Comments</button></div></div>
@@ -85,7 +85,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       <div class="span10 span-hard-wrap" id="span10">
         <ul class="nav nav-tabs nm">
           <li class=""><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li class="active"><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li>
-          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
+          <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position: relative;"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
           <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
         <div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div>
@@ -406,6 +406,18 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(tabsSource).toContain("onMouseEnter");
   expect(tabsSource).toContain("onFocus");
   expect(tabsSource).toContain('className="popover bottom"');
+  const twoColumnSource = routeSource.slice(
+    routeSource.indexOf("function TwoColumnModeCheckbox("),
+    routeSource.indexOf("function ShowSubtasksCheckbox("),
+  );
+  expect(twoColumnSource).not.toContain('data-toggle="popover"');
+  expect(twoColumnSource).not.toContain("data-toggle");
+  expect(twoColumnSource).not.toContain("data-trigger");
+  expect(twoColumnSource).not.toContain("data-placement");
+  expect(twoColumnSource).not.toContain("data-content");
+  expect(twoColumnSource).toContain("onMouseEnter");
+  expect(twoColumnSource).toContain("onFocus");
+  expect(twoColumnSource).toContain('className="popover top"');
   const showSubtasksSource = routeSource.slice(
     routeSource.indexOf("function ShowSubtasksCheckbox("),
     routeSource.indexOf("function quickFilterIds("),
@@ -578,10 +590,71 @@ test("current-user issues two-column mode toggle follows legacy yona.twoColumnMo
   await page.goto(`${basePath}/user/issues`);
   await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
   await page.reload();
+  const twoColumn = page.locator(".two-column-icon");
   const toggle = page.locator("#two-column-mode");
   const row = page.locator("#issue-item-42");
+  await expect(twoColumn).toHaveAttribute("id", "two-column-mode-checkbox");
+  await expect(twoColumn).toHaveAttribute("title", "Two Column Mode");
+  await expect(twoColumn).not.toHaveAttribute("data-toggle", "popover");
+  await expect(twoColumn).not.toHaveAttribute("data-trigger", "hover");
+  await expect(twoColumn).not.toHaveAttribute("data-placement", "top");
+  await expect(twoColumn).not.toHaveAttribute("data-content", /.+/u);
+  await expect(page.locator(".two-column-icon .popover")).toHaveCount(0);
   await expect(toggle).not.toBeChecked();
   await expect(row).not.toHaveCSS("cursor", "pointer");
+
+  await page.mouse.move(1, 1);
+  await twoColumn.hover();
+  const hoverPopover = page.locator(".two-column-icon .popover");
+  await expect(hoverPopover).toBeVisible();
+  await expect(hoverPopover).toHaveClass(/(^|\s)top(\s|$)/);
+  await expect(hoverPopover.locator(".popover-title")).toHaveText("Two Column Mode");
+  await expect(hoverPopover.locator(".popover-content")).toHaveText(
+    "Splits list and body into columns respectively",
+  );
+  const hoverBoxes = await page.evaluate(() => {
+    const control = document.querySelector(".two-column-icon");
+    const labelText = document.querySelector(".two-column-mode-text");
+    const popover = document.querySelector(".two-column-icon .popover");
+    if (!control || !labelText || !popover) return null;
+    const controlBox = control.getBoundingClientRect();
+    const labelBox = labelText.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    return {
+      control: {
+        left: controlBox.left,
+        right: controlBox.right,
+        width: controlBox.width,
+      },
+      label: { top: labelBox.top },
+      popover: {
+        bottom: popoverBox.bottom,
+        left: popoverBox.left,
+        right: popoverBox.right,
+        width: popoverBox.width,
+      },
+    };
+  });
+  expect(hoverBoxes).not.toBeNull();
+  expect(hoverBoxes!.popover.bottom).toBeLessThanOrEqual(hoverBoxes!.label.top + 1);
+  const controlCenter = hoverBoxes!.control.left + hoverBoxes!.control.width / 2;
+  const popoverCenter = hoverBoxes!.popover.left + hoverBoxes!.popover.width / 2;
+  expect(Math.abs(popoverCenter - controlCenter)).toBeLessThanOrEqual(4);
+  expect(hoverBoxes!.popover.right).toBeGreaterThan(hoverBoxes!.control.left);
+  expect(hoverBoxes!.popover.left).toBeLessThan(hoverBoxes!.control.right);
+
+  await page.mouse.move(1, 1);
+  await expect(page.locator(".two-column-icon .popover")).toHaveCount(0);
+  await toggle.focus();
+  await expect(page.locator(".two-column-icon .popover")).toBeVisible();
+  await expect(page.locator(".two-column-icon .popover .popover-title")).toHaveText(
+    "Two Column Mode",
+  );
+  await expect(page.locator(".two-column-icon .popover .popover-content")).toHaveText(
+    "Splits list and body into columns respectively",
+  );
+  await toggle.evaluate((element) => element.blur());
+  await expect(page.locator(".two-column-icon .popover")).toHaveCount(0);
 
   await toggle.click();
   await expect(toggle).toBeChecked();
