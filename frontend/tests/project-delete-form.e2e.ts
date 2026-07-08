@@ -124,7 +124,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
     </div>
     <div class="box-wrap bottom">
-      <button id="btnDelete" type="button" class="ybtn ybtn-danger" data-toggle="modal"><i class="yobicon-database-remove"></i> Delete this project</button>
+      <button id="btnDelete" type="button" class="ybtn ybtn-danger"><i class="yobicon-database-remove"></i> Delete this project</button>
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
@@ -159,6 +159,7 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   await page.goto(`${basePath}/admin/sample/deleteform`);
   await expect(page).toHaveTitle("Delete project - admin/sample");
   await expect(page.locator("#btnDelete")).toBeVisible();
+  await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
@@ -230,6 +231,7 @@ test("project delete form localhost legacy portal shell is restored", async ({ p
   await page.goto(`${basePath}/weblabs/portal/deleteform`);
   await expect(page).toHaveTitle("Delete project - weblabs/portal");
   await expect(page.locator("#btnDelete")).toBeVisible();
+  await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -289,7 +291,8 @@ test("project delete confirmation modal source stays route-owned", async () => {
 
   expect(modalSource).toContain("event.preventDefault();");
   expect(modalSource).toContain("event.stopPropagation();");
-  expect(modalSource).toContain('data-toggle="modal"');
+  expect(modalSource).not.toContain('data-toggle="modal"');
+  expect(modalSource).not.toContain("data-toggle");
   expect(modalSource).not.toContain("data-target");
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain('setDeletionModalState("open");');

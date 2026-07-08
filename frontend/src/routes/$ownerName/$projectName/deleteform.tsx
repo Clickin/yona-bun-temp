@@ -171,7 +171,6 @@ function ProjectDeleteFormBody({
               id="btnDelete"
               type="button"
               className="ybtn ybtn-danger"
-              data-toggle="modal"
               onClick={openDeletionModal}
             >
               <i className="yobicon-database-remove"></i> {t("project.delete.this")}
