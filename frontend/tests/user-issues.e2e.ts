@@ -10,7 +10,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
       <li><a href="__BASE_PATH__/notifications">Notification</a></li>
       <li class="active"><a href="__BASE_PATH__/user/issues">My Issues</a></li>
       <li><a href="__BASE_PATH__/user/files">My Files</a></li>
-      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" data-url="user/issues" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
     </ul>
     <div class="row-fluid issue-list-wrap">
       <div class="left-menu span2 span-hard-wrap">
@@ -62,7 +62,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
       <li><a href="__BASE_PATH__/notifications">Notification</a></li>
       <li class="active"><a href="__BASE_PATH__/user/issues">My Issues</a></li>
       <li><a href="__BASE_PATH__/user/files">My Files</a></li>
-      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" data-url="user/issues" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+      <li><button type="button" class="ybtn hide-in-mobile" id="setDefaultLoginPage" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
     </ul>
     <div class="row-fluid issue-list-wrap">
       <div class="left-menu span2 span-hard-wrap">
@@ -350,6 +350,8 @@ test("current-user issues route uses direct TanStack Link targets without generi
   );
 
   expect(routeSource).not.toContain("LegacyInternalLink");
+  expect(routeSource).not.toContain("data-url");
+  expect(routeSource).not.toContain("data-url=");
   expect(routeSource).toContain("function UserIssuesTitle()");
   expect(routeSource).toContain('<title>{t("issue.myIssue")}</title>');
   expect(routeSource).not.toContain("document.title");
@@ -798,7 +800,17 @@ test("current-user issues set-default-login-page button follows legacy success b
   await page.goto(`${basePath}/user/issues`);
   const setDefaultButton = page.locator("#setDefaultLoginPage");
   await expect(setDefaultButton).toBeVisible();
-  await expect(setDefaultButton).toHaveAttribute("data-url", "user/issues");
+  await expect(page.locator("#setDefaultLoginPage[data-url]")).toHaveCount(0);
+  await expect(page.locator("[data-url]")).toHaveCount(0);
+  await expect(setDefaultButton).toHaveText("Set to default page");
+  await expect(setDefaultButton).toHaveAttribute("title", "Set to default page");
+  await expect(setDefaultButton).toHaveAttribute("data-trigger", "hover");
+  await expect(setDefaultButton).toHaveAttribute("data-placement", "bottom");
+  await expect(setDefaultButton).toHaveAttribute("data-toggle", "popover");
+  await expect(setDefaultButton).toHaveAttribute(
+    "data-content",
+    "Make current page the index page when logged in",
+  );
   await setDefaultButton.click();
   await setDefaultRequest;
 

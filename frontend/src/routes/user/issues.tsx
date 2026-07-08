@@ -579,7 +579,6 @@ function MySeriesMenuTabs({
           type="button"
           className="ybtn hide-in-mobile"
           id="setDefaultLoginPage"
-          data-url={defaultLoginPagePath}
           title={t("button.setDefaultLoginPage")}
           data-trigger="hover"
           data-placement="bottom"
