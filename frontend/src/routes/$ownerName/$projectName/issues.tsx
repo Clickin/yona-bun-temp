@@ -2519,6 +2519,7 @@ function IssueSearchForm({
   const { t } = useLegacyMessages();
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
+  const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>());
   const authors = projectIssueSearchUserOptions(issueAuthors, issues, "author");
   const assignees = projectIssueSearchUserOptions(issueAssignees, issues, "assignee");
   const hasMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
@@ -2547,11 +2548,11 @@ function IssueSearchForm({
     onSearchSubmit(projectIssuesSearchFromForm(event.currentTarget, search));
   };
   const rememberSearchInputValue = (control: HTMLInputElement) => {
-    control.dataset.initialValue = control.value;
+    focusedSearchInputValuesRef.current.set(control, control.value);
   };
   const submitSearchInputIfChanged = (control: HTMLInputElement) => {
-    const initialValue = control.dataset.initialValue ?? control.value;
-    delete control.dataset.initialValue;
+    const initialValue = focusedSearchInputValuesRef.current.get(control) ?? control.value;
+    focusedSearchInputValuesRef.current.delete(control);
     if (control.value === initialValue) {
       return;
     }

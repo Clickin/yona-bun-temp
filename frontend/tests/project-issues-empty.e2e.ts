@@ -488,6 +488,20 @@ test("project issue search due-date validation uses React-owned input access", a
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("\"[data-toggle='calendar']\"");
 });
 
+test("project issue search remembers blur values outside rendered DOM dataset", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    "const focusedSearchInputValuesRef = useRef(new Map<HTMLInputElement, string>())",
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    "focusedSearchInputValuesRef.current.set(control, control.value)",
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    "focusedSearchInputValuesRef.current.delete(control)",
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dataset.initialValue");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("data-initial-value");
+});
+
 test("project issue list route source types legacy attrs without unsafe casts", async () => {
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(ROUTE_CAST_ESCAPE);
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("as unknown as");
