@@ -393,7 +393,6 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
         to="/$user"
         params={{ user: post.authorLoginId }}
         className="avatar-wrap mlarge hide-in-mobile"
-        data-toggle="tooltip"
         data-placement="top"
         title={post.authorLoginId}
       >
@@ -418,7 +417,6 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
             to="/$user"
             params={{ user: post.authorLoginId }}
             className="infos-item infos-link-item"
-            data-toggle="tooltip"
             data-placement="top"
             title={post.authorLoginId}
           >
