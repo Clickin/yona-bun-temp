@@ -469,15 +469,7 @@ function ProjectCreateScreen({
 }
 
 function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
-  return (
-    <option
-      data-type={option.organization ? "group" : "user"}
-      data-avatar-url={option.avatarUrl ?? ""}
-      value={option.ownerName}
-    >
-      {option.ownerName}
-    </option>
-  );
+  return <option value={option.ownerName}>{option.ownerName}</option>;
 }
 
 function MenuCheckbox({

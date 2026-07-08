@@ -86,8 +86,8 @@ const EXPECTED_PROJECT_CREATE = `
           <dt><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
           <dd>
             <select id="project-owner" name="owner" data-format="user" class="mb10" style="min-width: 220px;">
-              <option data-type="user" data-avatar-url="/assets/images/default-avatar-32.png" value="admin">admin</option>
-              <option data-type="group" data-avatar-url="/assets/images/organization_default_logo.png" value="weblabs">weblabs</option>
+              <option value="admin">admin</option>
+              <option value="weblabs">weblabs</option>
             </select>
           </dd>
           <dt><label for="project-name">Project name<strong class="orange-txt">*</strong></label></dt>
@@ -182,15 +182,11 @@ test("project create form matches legacy project/create.scala.html DOM", async (
     formAction: `${basePath}/projects`,
     formMethod: "post",
     formWidth: 700,
-    groupAvatarUrl: "/assets/images/organization_default_logo.png",
-    groupDataType: "group",
     importLinkContained: true,
     inputWidthRatio: 0.98,
     ownerDataFormat: "user",
     ownerDataToggle: null,
     ownerStyle: "min-width: 220px;",
-    userAvatarUrl: "/assets/images/default-avatar-32.png",
-    userDataType: "user",
     vcsDataDropdownCssClass: "select2-without-searchbox",
     vcsDataToggle: null,
     vcsStyle: "min-width: 220px;",
@@ -232,7 +228,9 @@ test("project create form mirrors legacy owner, VCS, and menu dependencies", asy
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
-test("project create select controls drop delegated select2 markers only", async ({ page }) => {
+test("project create select controls drop delegated select2 option markers only", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectCreate(page);
 
@@ -240,19 +238,17 @@ test("project create select controls drop delegated select2 markers only", async
 
   const owner = page.locator("#project-owner");
   const vcs = page.locator("#vcs");
+  const adminOption = owner.locator('option[value="admin"]');
+  const groupOption = owner.locator('option[value="weblabs"]');
   await expect(owner).not.toHaveAttribute("data-toggle", /.+/u);
   await expect(owner).toHaveAttribute("data-format", "user");
   await expect(owner).toHaveAttribute("style", "min-width: 220px;");
-  await expect(owner.locator('option[value="admin"]')).toHaveAttribute("data-type", "user");
-  await expect(owner.locator('option[value="admin"]')).toHaveAttribute(
-    "data-avatar-url",
-    "/assets/images/default-avatar-32.png",
-  );
-  await expect(owner.locator('option[value="weblabs"]')).toHaveAttribute("data-type", "group");
-  await expect(owner.locator('option[value="weblabs"]')).toHaveAttribute(
-    "data-avatar-url",
-    "/assets/images/organization_default_logo.png",
-  );
+  await expect(adminOption).toHaveText("admin");
+  await expect(adminOption).not.toHaveAttribute("data-type", /.+/u);
+  await expect(adminOption).not.toHaveAttribute("data-avatar-url", /.+/u);
+  await expect(groupOption).toHaveText("weblabs");
+  await expect(groupOption).not.toHaveAttribute("data-type", /.+/u);
+  await expect(groupOption).not.toHaveAttribute("data-avatar-url", /.+/u);
   await expect(vcs).not.toHaveAttribute("data-toggle", /.+/u);
   await expect(vcs).toHaveAttribute("data-dropdown-css-class", "select2-without-searchbox");
   await expect(vcs).toHaveAttribute("style", "min-width: 220px;");
@@ -483,6 +479,8 @@ test("project create route source drops delegated select2 initializer markers on
   expect(routeSource).not.toContain('data-toggle="select2"');
   expect(routeSource).not.toContain("data-toggle={'select2'}");
   expect(routeSource).not.toContain('data-toggle={"select2"}');
+  expect(routeSource).not.toContain("data-type={option.organization");
+  expect(routeSource).not.toContain("data-avatar-url={option.avatarUrl");
   expect(routeSource).toContain('data-format="user"');
   expect(routeSource).toContain('data-dropdown-css-class="select2-without-searchbox"');
   expect(routeSource).toContain('id="project-owner"');
@@ -560,8 +558,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-toggle",
         "data-placement",
         "data-format",
-        "data-type",
-        "data-avatar-url",
         "data-dropdown-css-class",
       ];
       const attrs = stableAttributes
@@ -603,8 +599,6 @@ async function projectCreateMetrics(page: Page) {
     const cancelLink = requireElement<HTMLAnchorElement>(".actions a.ybtn");
     const legend = requireElement("legend");
     const importLink = requireElement<HTMLAnchorElement>("legend a.ybtn-small");
-    const userOption = owner.querySelector('option[value="admin"]');
-    const groupOption = owner.querySelector('option[value="weblabs"]');
     const formWrapRect = formWrap.getBoundingClientRect();
     const nameRect = nameInput.getBoundingClientRect();
     const actionsRect = actions.getBoundingClientRect();
@@ -628,8 +622,6 @@ async function projectCreateMetrics(page: Page) {
       formAction: form.getAttribute("action"),
       formMethod: form.getAttribute("method"),
       formWidth: Math.round(formWrapRect.width),
-      groupAvatarUrl: groupOption?.getAttribute("data-avatar-url"),
-      groupDataType: groupOption?.getAttribute("data-type"),
       importLinkContained:
         importRect.top >= legendRect.top &&
         importRect.bottom <= legendRect.bottom &&
@@ -639,8 +631,6 @@ async function projectCreateMetrics(page: Page) {
       ownerDataFormat: owner.getAttribute("data-format"),
       ownerDataToggle: owner.getAttribute("data-toggle"),
       ownerStyle: owner.getAttribute("style"),
-      userAvatarUrl: userOption?.getAttribute("data-avatar-url"),
-      userDataType: userOption?.getAttribute("data-type"),
       vcsDataDropdownCssClass: vcs.getAttribute("data-dropdown-css-class"),
       vcsDataToggle: vcs.getAttribute("data-toggle"),
       vcsStyle: vcs.getAttribute("style"),
@@ -686,8 +676,6 @@ async function canonicalizeHtml(page: Page, html: string) {
         "data-toggle",
         "data-placement",
         "data-format",
-        "data-type",
-        "data-avatar-url",
         "data-dropdown-css-class",
       ];
       const attrs = stableAttributes
