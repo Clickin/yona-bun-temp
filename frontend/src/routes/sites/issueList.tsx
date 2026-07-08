@@ -169,7 +169,6 @@ function IssueListPagination({
           {hasPrev ? (
             <Link
               {...legacyIssueListLinkProps}
-              pjax-page=""
               search={pageSearch(currentPage - 1)}
               to="/sites/issueList"
             >
@@ -204,7 +203,6 @@ function IssueListPagination({
           {hasNext ? (
             <Link
               {...legacyIssueListLinkProps}
-              pjax-page=""
               search={pageSearch(currentPage + 1)}
               to="/sites/issueList"
             >
@@ -331,7 +329,13 @@ function IssueListItem({ issue }: { issue: SiteIssue }) {
         </Link>
       </div>
       <div className="post-meta-wrap">
-        <Link to="/$user" params={{ user: issue.authorLoginId }} className="avatar-wrap">
+        <Link
+          to="/$user"
+          params={{ user: issue.authorLoginId }}
+          search={legacyPublicProfileSearch}
+          mask={legacyPublicProfileMask(issue.authorLoginId)}
+          className="avatar-wrap"
+        >
           {isDefaultAuthorAvatar(issue.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
             <img src={issue.authorAvatarUrl} />
@@ -339,7 +343,13 @@ function IssueListItem({ issue }: { issue: SiteIssue }) {
             <img src={issue.authorAvatarUrl} alt={authorAvatarAlt(issue)} width="16" height="16" />
           )}
         </Link>
-        <Link to="/$user" params={{ user: issue.authorLoginId }} className="post-meta-item">
+        <Link
+          to="/$user"
+          params={{ user: issue.authorLoginId }}
+          search={legacyPublicProfileSearch}
+          mask={legacyPublicProfileMask(issue.authorLoginId)}
+          className="post-meta-item"
+        >
           {issue.authorLabel}
         </Link>
         <span className="post-meta-item" title={issue.createdTitle}>
@@ -375,4 +385,13 @@ function isDefaultAuthorAvatar(avatarUrl: string) {
 
 function authorAvatarAlt(issue: SiteIssue) {
   return (issue as SiteIssue & { authorName?: string }).authorName || issue.authorLabel;
+}
+
+const legacyPublicProfileSearch = {
+  daysAgo: 14,
+  selected: "issues" as const,
+};
+
+function legacyPublicProfileMask(loginId: string) {
+  return { to: `/${loginId}` as "/" };
 }

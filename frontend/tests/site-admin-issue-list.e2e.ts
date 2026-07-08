@@ -122,7 +122,7 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?pageNum=2&amp;state=open" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/issueList?pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
       </div>
@@ -279,14 +279,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "href",
     `${basePath}/sites/issueList?pageNum=2&state=open`,
   );
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
   expect(await legacyLinkSnapshot(page, "#pagination a")).toEqual([
     {
       ariaCurrent: null,
       className: null,
       dataStatus: null,
       href: `${basePath}/sites/issueList?pageNum=2&state=open`,
-      pjaxPage: "",
+      pjaxPage: null,
       text: "Next page",
       title: null,
     },
@@ -356,7 +356,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
       className: null,
       dataStatus: null,
       href: `${basePath}/sites/issueList?pageNum=1&state=open`,
-      pjaxPage: "",
+      pjaxPage: null,
       text: "Previous page",
       title: null,
     },
@@ -413,7 +413,8 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(routeSource).not.toContain("authorPath");
   expect(routeSource).not.toContain("to={item.href}");
   expect(routeSource).toContain('"data-status": undefined');
-  expect(routeSource).toContain('pjax-page=""');
+  expect(routeSource).not.toContain("pjax-page");
+  expect(routeSource).not.toContain("pjaxPage");
 });
 
 test("site admin issue list renders legacy closed issue rows with closed pagination state", async ({
@@ -518,7 +519,7 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
+  await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
   const nextHref = await nextPageLink.getAttribute("href");
   expect(new URL(nextHref ?? "", "http://yona.test").pathname).toBe(`${basePath}/sites/issueList`);
   expect(new URL(nextHref ?? "", "http://yona.test").searchParams.get("pageNum")).toBe("2");
