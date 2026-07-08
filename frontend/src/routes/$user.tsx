@@ -243,7 +243,7 @@ function PublicProfileUsermenuTabs({
     <ul className="nav nav-tabs nm">
       {tabs.map((tab) => (
         <li className={`${tab}${activeTab === tab ? " active" : ""}`} key={tab}>
-          <button type="button" data-toggle="tab" onClick={() => onSelect(tab)}>
+          <button type="button" onClick={() => onSelect(tab)}>
             {labels[tab]}
           </button>
         </li>
@@ -390,21 +390,13 @@ function PublicProfileBody({
                   <div id="issues" className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}>
                     <ul className="nav nav-tabs nm">
                       <li className={activeIssueTab === "openIssues" ? "active" : ""}>
-                        <button
-                          type="button"
-                          data-toggle="tab"
-                          onClick={() => setActiveIssueTab("openIssues")}
-                        >
+                        <button type="button" onClick={() => setActiveIssueTab("openIssues")}>
                           {t("issue.state.open")}
                           <span className="num-badge">{openIssues.length}</span>
                         </button>
                       </li>
                       <li className={activeIssueTab === "closedIssues" ? "active" : ""}>
-                        <button
-                          type="button"
-                          data-toggle="tab"
-                          onClick={() => setActiveIssueTab("closedIssues")}
-                        >
+                        <button type="button" onClick={() => setActiveIssueTab("closedIssues")}>
                           {t("issue.state.closed")}
                           <span className="num-badge">{closedIssues.length}</span>
                         </button>
@@ -516,7 +508,7 @@ function ProfileTab({
 }) {
   return (
     <li className={active ? "active" : ""}>
-      <button type="button" data-toggle="tab" onClick={onSelect}>
+      <button type="button" onClick={onSelect}>
         {label} {badge > 0 ? <span className="num-badge">{badge}</span> : null}
       </button>
     </li>

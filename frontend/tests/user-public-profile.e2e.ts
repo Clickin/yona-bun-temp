@@ -23,16 +23,16 @@ const EXPECTED_PROFILE_SCREEN = `
       <div class="user-stream-box">
         <div class="pull-right">recently<input id="daysAgoBtn" name="daysAgo" type="number" min="1" max="99" class="input-mini-min" value="14" style="margin:0px 5px; vertical-align:bottom;">days ago</div>
         <ul class="nav nav-tabs">
-          <li class="active"><button type="button" data-toggle="tab">Issue <span class="num-badge">2</span></button></li>
-          <li class=""><button type="button" data-toggle="tab">Pull request <span class="num-badge">1</span></button></li>
-          <li class=""><button type="button" data-toggle="tab">projects <span class="num-badge">1</span></button></li>
+          <li class="active"><button type="button">Issue <span class="num-badge">2</span></button></li>
+          <li class=""><button type="button">Pull request <span class="num-badge">1</span></button></li>
+          <li class=""><button type="button">projects <span class="num-badge">1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
         </ul>
         <div class="tab-content">
           <div id="issues" class="tab-pane active">
             <ul class="nav nav-tabs nm">
-              <li class="active"><button type="button" data-toggle="tab">Open<span class="num-badge">1</span></button></li>
-              <li class=""><button type="button" data-toggle="tab">Closed<span class="num-badge">1</span></button></li>
+              <li class="active"><button type="button">Open<span class="num-badge">1</span></button></li>
+              <li class=""><button type="button">Closed<span class="num-badge">1</span></button></li>
               <li><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask" style="position:relative"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
             </ul>
             <div class="tab-content">
@@ -82,9 +82,9 @@ const EXPECTED_MISSING_USER_SCREEN = `
           <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
+          <li class="myRecentIssueList"><button type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -153,6 +153,7 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain("<li {...legacyIssueRowAttrs}>");
   expect(source).toContain("Link,");
   expect(source).toContain("Navigate,");
+  expect(source).not.toContain('data-toggle="tab"');
   expect(source).toContain('hash="comments"');
   expect(source).toContain('hash="vote"');
   expect(source).toContain("<title>{profile.loginId}</title>");
@@ -205,10 +206,19 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     `${basePath}/door/sample/pullRequest/4#comments`,
   );
   await expect(page.locator(".auth-provider-logo")).toBeEmpty();
+  await expect(page.locator('.user-stream-box > .nav-tabs button[type="button"]')).toHaveText([
+    "Issue 2",
+    "Pull request 1",
+    "projects 1",
+  ]);
+  await expect(page.locator('#issues > .nav-tabs.nm button[type="button"]')).toHaveText([
+    "Open1",
+    "Closed1",
+  ]);
   await expect(page.locator('.user-stream-box > .nav-tabs button[data-toggle="tab"]')).toHaveCount(
-    3,
+    0,
   );
-  await expect(page.locator('#issues > .nav-tabs.nm button[data-toggle="tab"]')).toHaveCount(2);
+  await expect(page.locator('#issues > .nav-tabs.nm button[data-toggle="tab"]')).toHaveCount(0);
   const showSubtasks = page.locator(".show-subtasks");
   await expect(showSubtasks).toHaveAttribute("title", "Show subtask");
   await expect(showSubtasks).not.toHaveAttribute("data-toggle", /.+/u);
@@ -508,8 +518,11 @@ test("missing public user renders legacy user.notExists.name not-found screen", 
   await expect(page.locator(".error-wrap p")).toHaveText("User exists not");
   await expect(page.locator('#mySidenav .right-menu > .nav-tabs.nm a[href^="#"]')).toHaveCount(0);
   await expect(
-    page.locator('#mySidenav .right-menu > .nav-tabs.nm button[data-toggle="tab"]'),
+    page.locator('#mySidenav .right-menu > .nav-tabs.nm button[type="button"]'),
   ).toHaveText(["Favorite", "Project", "Recent History"]);
+  await expect(
+    page.locator('#mySidenav .right-menu > .nav-tabs.nm button[data-toggle="tab"]'),
+  ).toHaveCount(0);
   await expect(page.locator(".gnb-nav a", { hasText: "Project list" })).toHaveAttribute(
     "href",
     `${basePath}/projects`,
@@ -1065,12 +1078,12 @@ function expectedProfileScreen({
       stats,
     )
     .replace(
-      '<li class="active"><button type="button" data-toggle="tab">Issue',
-      `<li class="${selected === "issues" ? "active" : ""}"><button type="button" data-toggle="tab">Issue`,
+      '<li class="active"><button type="button">Issue',
+      `<li class="${selected === "issues" ? "active" : ""}"><button type="button">Issue`,
     )
     .replace(
-      '<li class=""><button type="button" data-toggle="tab">Pull request',
-      `<li class="${selected === "pullRequests" ? "active" : ""}"><button type="button" data-toggle="tab">Pull request`,
+      '<li class=""><button type="button">Pull request',
+      `<li class="${selected === "pullRequests" ? "active" : ""}"><button type="button">Pull request`,
     )
     .replace(
       'Pull request <span class="num-badge">1</span></button>',
@@ -1079,8 +1092,8 @@ function expectedProfileScreen({
         : 'Pull request <span class="num-badge">1</span></button>',
     )
     .replace(
-      '<li class=""><button type="button" data-toggle="tab">projects',
-      `<li class="${selected === "projects" ? "active" : ""}"><button type="button" data-toggle="tab">projects`,
+      '<li class=""><button type="button">projects',
+      `<li class="${selected === "projects" ? "active" : ""}"><button type="button">projects`,
     )
     .replace(
       '<div id="issues" class="tab-pane active">',
