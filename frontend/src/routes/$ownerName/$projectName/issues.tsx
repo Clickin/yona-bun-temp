@@ -2735,7 +2735,6 @@ function IssueSearchForm({
               name="dueDate"
               className="textbox full"
               defaultValue={search.dueDate}
-              data-toggle="calendar"
               onFocus={(event) => rememberSearchInputValue(event.currentTarget)}
               onBlur={(event) => submitSearchInputIfChanged(event.currentTarget)}
             />
