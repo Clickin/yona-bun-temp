@@ -916,8 +916,10 @@ test("project labels edit modals open and dismiss through route state", async ({
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#editCategory")).toHaveClass("modal in yobiDialog");
   await expect(page.locator("#editCategory")).not.toHaveClass(/hide/u);
   await expect(page.locator('#editCategory input[name="name"]')).toHaveValue("priority");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 
   await armProjectLabelsModalBridgeTrap(page);
@@ -930,6 +932,7 @@ test("project labels edit modals open and dismiss through route state", async ({
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#editCategory")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 
   await armProjectLabelsModalBridgeTrap(page);
@@ -937,8 +940,10 @@ test("project labels edit modals open and dismiss through route state", async ({
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#editLabel")).toHaveClass("modal in yobiDialog");
   await expect(page.locator("#editLabel")).not.toHaveClass(/hide/u);
   await expect(page.locator('#editLabel input[name="name"]')).toHaveValue("bug");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 
   await armProjectLabelsModalBridgeTrap(page);
@@ -949,6 +954,7 @@ test("project labels edit modals open and dismiss through route state", async ({
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#editLabel")).toHaveClass(/hide/u);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 });
 

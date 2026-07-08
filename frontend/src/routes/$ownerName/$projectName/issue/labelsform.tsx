@@ -1077,71 +1077,74 @@ function EditCategoryModal({
   const { t } = useLegacyMessages();
 
   return (
-    <div
-      id="editCategory"
-      className={`modal${category ? "" : " hide"} yobiDialog`}
-      tabIndex={-1}
-      role="dialog"
-      aria-hidden={category ? "false" : "true"}
-    >
-      <div className="btn-dismiss">
-        <button
-          type="button"
-          className="btn-transparent"
-          data-dismiss="modal"
-          onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
-        >
-          ×
-        </button>
-      </div>
-      <div className="message edit-label-category-form">
-        <div className="center-txt">
-          <input
-            key={category ? `category-name-${category.id}` : "category-name-empty"}
-            type="text"
-            name="name"
-            className="text category-name"
-            placeholder={t("label.category")}
-            value={category?.name || undefined}
-            onChange={(event) =>
-              category && onChange({ ...category, name: event.currentTarget.value })
-            }
-          />
-
-          <div className="desc">
-            {t("label.category.option")}
-            <select
-              key={category ? `category-exclusive-${category.id}` : "category-exclusive-empty"}
-              name="isExclusive"
-              data-toggle="select2"
-              data-dropdown-css-class="select2-without-searchbox"
-              value={category ? String(category.isExclusive) : undefined}
-              onChange={(event) =>
-                category &&
-                onChange({ ...category, isExclusive: event.currentTarget.value === "true" })
-              }
-            >
-              <option value="false">{t("label.category.option.multiple")}</option>
-              <option value="true">{t("label.category.option.single")}</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="center-txt buttons mt20 mb20">
-          <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
-            {t("button.save")}
-          </button>
+    <>
+      <div
+        id="editCategory"
+        className={`modal${category ? " in" : " hide"} yobiDialog`}
+        tabIndex={-1}
+        role="dialog"
+        aria-hidden={category ? "false" : "true"}
+      >
+        <div className="btn-dismiss">
           <button
             type="button"
-            className="ybtn ybtn-default"
+            className="btn-transparent"
             data-dismiss="modal"
             onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
           >
-            {t("button.cancel")}
+            ×
           </button>
         </div>
+        <div className="message edit-label-category-form">
+          <div className="center-txt">
+            <input
+              key={category ? `category-name-${category.id}` : "category-name-empty"}
+              type="text"
+              name="name"
+              className="text category-name"
+              placeholder={t("label.category")}
+              value={category?.name || undefined}
+              onChange={(event) =>
+                category && onChange({ ...category, name: event.currentTarget.value })
+              }
+            />
+
+            <div className="desc">
+              {t("label.category.option")}
+              <select
+                key={category ? `category-exclusive-${category.id}` : "category-exclusive-empty"}
+                name="isExclusive"
+                data-toggle="select2"
+                data-dropdown-css-class="select2-without-searchbox"
+                value={category ? String(category.isExclusive) : undefined}
+                onChange={(event) =>
+                  category &&
+                  onChange({ ...category, isExclusive: event.currentTarget.value === "true" })
+                }
+              >
+                <option value="false">{t("label.category.option.multiple")}</option>
+                <option value="true">{t("label.category.option.single")}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="center-txt buttons mt20 mb20">
+            <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
+              {t("button.save")}
+            </button>
+            <button
+              type="button"
+              className="ybtn ybtn-default"
+              data-dismiss="modal"
+              onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
+            >
+              {t("button.cancel")}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+      {category ? <div className="modal-backdrop in"></div> : null}
+    </>
   );
 }
 
@@ -1169,91 +1172,94 @@ function EditLabelModal({
   const categories = Array.from(categoriesById.values());
 
   return (
-    <div
-      id="editLabel"
-      className={`modal${label ? "" : " hide"} yobiDialog`}
-      tabIndex={-1}
-      role="dialog"
-      aria-hidden={label ? "false" : "true"}
-    >
-      <div className="btn-dismiss">
-        <button
-          type="button"
-          className="btn-transparent"
-          data-dismiss="modal"
-          onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
-        >
-          ×
-        </button>
-      </div>
-      <div className="message edit-label-form">
-        <div className="center-txt">
-          <select
-            key={label ? `label-category-${label.id}` : "label-category-empty"}
-            name="category.id"
-            data-toggle="select2"
-            value={label?.categoryId || undefined}
-            onChange={(event) =>
-              label && onChange({ ...label, categoryId: event.currentTarget.value })
-            }
-          >
-            {categories.map((category) => (
-              <option value={category.id} key={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            key={label ? `label-name-${label.id}` : "label-name-empty"}
-            type="text"
-            name="name"
-            className="text input-label-name"
-            maxLength={250}
-            placeholder={t("label.name")}
-            value={label?.name || undefined}
-            onChange={(event) => label && onChange({ ...label, name: event.currentTarget.value })}
-            style={label?.color ? { backgroundColor: label.color } : undefined}
-          />
-
-          <div className="label-preset-colors edit">
-            {EDIT_LABEL_COLORS.map((color) => (
-              <ColorButton
-                color={color}
-                isActive={label?.color.toLowerCase() === color.toLowerCase()}
-                key={color}
-                onSelect={() => label && onChange({ ...label, color })}
-              />
-            ))}
-            <input
-              key={label ? `label-color-${label.id}` : "label-color-empty"}
-              type="text"
-              name="color"
-              className="input-small input-label-color"
-              placeholder={t("label.customColor")}
-              value={label?.color || undefined}
-              onChange={(event) =>
-                label && onChange({ ...label, color: event.currentTarget.value })
-              }
-              style={colorInputStyle(label?.color ?? "")}
-            />
-          </div>
-        </div>
-        <div className="center-txt buttons mt20 mb20">
-          <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
-            {t("button.save")}
-          </button>
+    <>
+      <div
+        id="editLabel"
+        className={`modal${label ? " in" : " hide"} yobiDialog`}
+        tabIndex={-1}
+        role="dialog"
+        aria-hidden={label ? "false" : "true"}
+      >
+        <div className="btn-dismiss">
           <button
             type="button"
-            className="ybtn ybtn-default"
+            className="btn-transparent"
             data-dismiss="modal"
             onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
           >
-            {t("button.cancel")}
+            ×
           </button>
         </div>
+        <div className="message edit-label-form">
+          <div className="center-txt">
+            <select
+              key={label ? `label-category-${label.id}` : "label-category-empty"}
+              name="category.id"
+              data-toggle="select2"
+              value={label?.categoryId || undefined}
+              onChange={(event) =>
+                label && onChange({ ...label, categoryId: event.currentTarget.value })
+              }
+            >
+              {categories.map((category) => (
+                <option value={category.id} key={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              key={label ? `label-name-${label.id}` : "label-name-empty"}
+              type="text"
+              name="name"
+              className="text input-label-name"
+              maxLength={250}
+              placeholder={t("label.name")}
+              value={label?.name || undefined}
+              onChange={(event) => label && onChange({ ...label, name: event.currentTarget.value })}
+              style={label?.color ? { backgroundColor: label.color } : undefined}
+            />
+
+            <div className="label-preset-colors edit">
+              {EDIT_LABEL_COLORS.map((color) => (
+                <ColorButton
+                  color={color}
+                  isActive={label?.color.toLowerCase() === color.toLowerCase()}
+                  key={color}
+                  onSelect={() => label && onChange({ ...label, color })}
+                />
+              ))}
+              <input
+                key={label ? `label-color-${label.id}` : "label-color-empty"}
+                type="text"
+                name="color"
+                className="input-small input-label-color"
+                placeholder={t("label.customColor")}
+                value={label?.color || undefined}
+                onChange={(event) =>
+                  label && onChange({ ...label, color: event.currentTarget.value })
+                }
+                style={colorInputStyle(label?.color ?? "")}
+              />
+            </div>
+          </div>
+          <div className="center-txt buttons mt20 mb20">
+            <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
+              {t("button.save")}
+            </button>
+            <button
+              type="button"
+              className="ybtn ybtn-default"
+              data-dismiss="modal"
+              onClick={(event) => dismissIssueLabelModalButtonClick(event, onCancel)}
+            >
+              {t("button.cancel")}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+      {label ? <div className="modal-backdrop in"></div> : null}
+    </>
   );
 }
 
