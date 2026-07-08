@@ -148,9 +148,9 @@ function ProjectPostDetailBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [openPostModal, setOpenPostModal] = useState<PostDetailModalId | null>(null);
-  const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
+  const [commentDeleteCommentId, setCommentDeleteCommentId] = useState<string | null>(null);
   const deleteModalOpen = openPostModal === "deleteConfirm";
-  const modalBackdropOpen = openPostModal !== null || commentDeleteRequestUri !== null;
+  const modalBackdropOpen = openPostModal !== null || commentDeleteCommentId !== null;
   const ownerName = stringField(project.ownerName, post.ownerName);
   const projectName = stringField(project.projectName, post.projectName);
   const postNumber = stringField(post.postNumber);
@@ -161,7 +161,6 @@ function ProjectPostDetailBody({
   });
   const basePath = runtimeConfig.basePath;
   const postRoutePath = `/${ownerName}/${projectName}/post/${postNumber}`;
-  const postHref = prefixBasePath(basePath, postRoutePath);
   const editRoutePath = `${postRoutePath}/editform`;
   const canUpdate = booleanField(post.permissions.canUpdate);
   const canDelete = booleanField(post.permissions.canDelete);
@@ -212,7 +211,7 @@ function ProjectPostDetailBody({
     },
     onSuccess(updatedPost) {
       queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
-      setCommentDeleteRequestUri(null);
+      setCommentDeleteCommentId(null);
     },
   });
   const commentCreateMutation = useMutation({
@@ -268,7 +267,7 @@ function ProjectPostDetailBody({
     event.preventDefault();
     event.stopPropagation();
     setOpenPostModal(null);
-    setCommentDeleteRequestUri(null);
+    setCommentDeleteCommentId(null);
   };
 
   return (
@@ -392,7 +391,7 @@ function ProjectPostDetailBody({
               onCreateComment={(contentsMarkdown) =>
                 commentCreateMutation.mutateAsync(contentsMarkdown)
               }
-              onCommentDeleteRequest={setCommentDeleteRequestUri}
+              onCommentDeleteRequest={setCommentDeleteCommentId}
               onUpdateComment={(commentId, contentsMarkdown) =>
                 commentUpdateMutation.mutateAsync({ commentId, contentsMarkdown })
               }
@@ -486,8 +485,6 @@ function ProjectPostDetailBody({
           <button
             type="button"
             className="ybtn ybtn-danger"
-            data-request-method="delete"
-            data-request-uri={postHref}
             onClick={(event) => {
               event.stopPropagation();
               deleteMutation.mutate();
@@ -520,15 +517,12 @@ function ProjectPostDetailBody({
         cancelLabel={t("button.no")}
         confirmLabel={t("button.yes")}
         message={t("common.comment.delete.confirm")}
-        onCancel={() => setCommentDeleteRequestUri(null)}
-        onConfirm={(requestUri) => {
-          const commentId = requestUri.match(/\/comment\/(\d+)(?:\/delete)?(?:[?#].*)?$/u)?.[1];
-          if (commentId) {
-            commentDeleteMutation.mutate(commentId);
-          }
+        onCancel={() => setCommentDeleteCommentId(null)}
+        onConfirm={(commentId) => {
+          commentDeleteMutation.mutate(commentId);
         }}
-        open={commentDeleteRequestUri !== null}
-        requestUri={commentDeleteRequestUri}
+        open={commentDeleteCommentId !== null}
+        commentId={commentDeleteCommentId}
         title={t("common.comment.delete")}
       />
     </div>
@@ -615,16 +609,16 @@ function CommentDeleteConfirm({
   onCancel,
   onConfirm,
   open,
-  requestUri,
+  commentId,
   title,
 }: {
   cancelLabel: string;
+  commentId: string | null;
   confirmLabel: string;
   message: string;
   onCancel: () => void;
-  onConfirm: (requestUri: string) => void;
+  onConfirm: (commentId: string) => void;
   open: boolean;
-  requestUri: string | null;
   title: string;
 }) {
   return (
@@ -658,11 +652,9 @@ function CommentDeleteConfirm({
             id="comment-delete-confirm"
             type="button"
             className="ybtn ybtn-danger"
-            data-request-method={requestUri ? "delete" : undefined}
-            data-request-uri={requestUri ?? undefined}
             onClick={() => {
-              if (requestUri) {
-                onConfirm(requestUri);
+              if (commentId) {
+                onConfirm(commentId);
               }
             }}
           >
@@ -888,7 +880,7 @@ function PostComments({
   canDelete: boolean;
   canUpdate: boolean;
   onCreateComment: (contentsMarkdown: string) => Promise<unknown>;
-  onCommentDeleteRequest: (requestUri: string) => void;
+  onCommentDeleteRequest: (commentId: string) => void;
   onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   post: BoardPostDetail;
@@ -1061,7 +1053,7 @@ function PostCommentRow({
   comment: BoardPostComment;
   editingCommentId: string | null;
   onCommentEditRequest: (commentId: string | null) => void;
-  onCommentDeleteRequest: (requestUri: string) => void;
+  onCommentDeleteRequest: (commentId: string) => void;
   onUpdateComment: (commentId: string, contentsMarkdown: string) => Promise<unknown>;
   ownerName: string;
   postNumber: string;
@@ -1158,30 +1150,21 @@ function PostCommentRow({
                 <i className="yobicon-edit-2"></i>
               </button>
             ) : null}
-            {canDelete
-              ? (() => {
-                  const deleteUri = prefixBasePath(
-                    basePath,
-                    `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
-                  );
-                  return (
-                    <button
-                      type="button"
-                      className="btn-transparent ml6"
-                      data-toggle="comment-delete"
-                      data-request-uri={deleteUri}
-                      title={t("common.comment.delete")}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        onCommentDeleteRequest(deleteUri);
-                      }}
-                    >
-                      <i className="yobicon-trash"></i>
-                    </button>
-                  );
-                })()
-              : null}
+            {canDelete ? (
+              <button
+                type="button"
+                className="btn-transparent ml6"
+                data-toggle="comment-delete"
+                title={t("common.comment.delete")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCommentDeleteRequest(commentId);
+                }}
+              >
+                <i className="yobicon-trash"></i>
+              </button>
+            ) : null}
           </span>
         </div>
 
@@ -1409,7 +1392,7 @@ function PostChildComments({
   canDelete: boolean;
   childComments: BoardPostComment[];
   hideReplyPrompt: boolean;
-  onCommentDeleteRequest: (requestUri: string) => void;
+  onCommentDeleteRequest: (commentId: string) => void;
   ownerName: string;
   parentCommentId: string;
   postNumber: string;
@@ -1430,14 +1413,10 @@ function PostChildComments({
         <div className="child-comments">
           {childComments.map((comment) => (
             <PostChildComment
-              basePath={basePath}
               canDelete={canDelete}
               comment={comment}
               key={stringField(comment.id)}
               onCommentDeleteRequest={onCommentDeleteRequest}
-              ownerName={ownerName}
-              postNumber={postNumber}
-              projectName={projectName}
             />
           ))}
         </div>
@@ -1482,31 +1461,18 @@ function PostChildComments({
 }
 
 function PostChildComment({
-  basePath,
   canDelete,
   comment,
   onCommentDeleteRequest,
-  ownerName,
-  postNumber,
-  projectName,
 }: {
-  basePath: string;
   canDelete: boolean;
   comment: BoardPostComment;
-  onCommentDeleteRequest: (requestUri: string) => void;
-  ownerName: string;
-  postNumber: string;
-  projectName: string;
+  onCommentDeleteRequest: (commentId: string) => void;
 }) {
   const { t } = useLegacyMessages();
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
-  const deleteUri = prefixBasePath(
-    basePath,
-    `/${ownerName}/${projectName}/post/${postNumber}/comment/${commentId}`,
-  );
-
   return (
     <div className="one-line-comment">
       <div className="contents">
@@ -1538,12 +1504,11 @@ function PostChildComment({
               type="button"
               className="btn-transparent deleteButtonX"
               data-toggle="comment-delete"
-              data-request-uri={deleteUri}
               title={t("common.comment.delete")}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                onCommentDeleteRequest(deleteUri);
+                onCommentDeleteRequest(commentId);
               }}
             >
               x
