@@ -201,7 +201,9 @@ test("first-run secret setup logo is SPA-owned internal navigation", async ({ pa
   });
 
   await page.locator(".secret-wrap .logo").click();
-  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(legacyRootHref(basePath));
   expect(documentRequests).toEqual([]);
 });
 
@@ -478,7 +480,9 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
     ).__secretDisabledHomeSpaMarker = "home";
   });
   await page.locator(".error-wrap .ybtn").click();
-  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(legacyRootHref(basePath));
   await expect
     .poll(() =>
       page.evaluate(
@@ -492,9 +496,6 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
 
 test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain('from "@tanstack/react-router"');
-  expect(SECRET_ROUTE_SOURCE).toContain("href={homeHref}");
-  expect(SECRET_ROUTE_SOURCE).toContain("const LegacyRootLink = createLink");
-  expect(SECRET_ROUTE_SOURCE).toContain("legacyRootHref={homeHref}");
   expect(SECRET_ROUTE_SOURCE).toContain('to="/"');
   expect(SECRET_ROUTE_SOURCE).toContain('"loginId"');
   expect(SECRET_ROUTE_SOURCE).toContain("<title>{welcome}</title>");
@@ -507,6 +508,20 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).toContain('className="ybtn ybtn-info"');
   expect(SECRET_ROUTE_SOURCE).toContain('"aria-current": undefined');
   expect(SECRET_ROUTE_SOURCE).toContain('"data-status": undefined');
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /<Link\s+to="\/"\s+activeProps=\{legacyLinkActiveProps\}\s+className="logo"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).toMatch(
+    /<Link\s+to="\/"\s+activeProps=\{legacyLinkActiveProps\}\s+className="ybtn ybtn-info"/u,
+  );
+  expect(SECRET_ROUTE_SOURCE).not.toContain('reactJsx("a"');
+  expect(SECRET_ROUTE_SOURCE).not.toContain("createLink");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyRootLink");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyRootLinkAnchor");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("legacyRootHref");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("href={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("to={homeHref}");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("handleHomeClick");
   expect(SECRET_ROUTE_SOURCE).not.toContain("useLinkProps");
   expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
   expect(SECRET_ROUTE_SOURCE).not.toContain("React.createElement");
@@ -710,7 +725,7 @@ async function readMobileSecretMetrics(page: Page) {
 }
 
 function legacyRootHref(basePath: string) {
-  return basePath;
+  return `${basePath}/`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

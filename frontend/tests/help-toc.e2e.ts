@@ -116,7 +116,7 @@ const EXPECTED_HELP_SCREEN = `
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer" style="width: 100%;">
-            <a href="__BASE_PATH__">메인화면</a>
+            <a href="__BASE_PATH__/">메인화면</a>
             우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다.
             자물쇠가 있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다.
             혹은 자신의 <a href="__BASE_PATH__/info">정보 페이지</a>에서도 확인하실수 있습니다.
@@ -190,13 +190,14 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain(
-    'import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
+    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
   );
-  expect(HELP_ROUTE_SOURCE).toContain("const HelpRootLink = createLink(HelpRootLinkAnchor);");
-  expect(HELP_ROUTE_SOURCE).toContain("ref?: React.Ref<HTMLAnchorElement>;");
-  expect(HELP_ROUTE_SOURCE).toContain(
-    'return reactJsx("a", { ...props, ref, href: legacyHomeHref });',
-  );
+  expect(HELP_ROUTE_SOURCE).not.toContain("reactJsx");
+  expect(HELP_ROUTE_SOURCE).not.toContain("createLink");
+  expect(HELP_ROUTE_SOURCE).not.toContain("HelpRootLink");
+  expect(HELP_ROUTE_SOURCE).not.toContain("HelpRootLinkAnchor");
+  expect(HELP_ROUTE_SOURCE).not.toContain("legacyHomeHref");
+  expect(HELP_ROUTE_SOURCE).not.toContain("handleHomeClick");
   expect(HELP_ROUTE_SOURCE).toContain("<HelpTocTitle />");
   expect(HELP_ROUTE_SOURCE).toContain('return <title>{t("title.help")}</title>;');
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.title\b/);
@@ -209,10 +210,8 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).toContain("handleLayoutRootClickCapture");
   expect(HELP_ROUTE_SOURCE).toContain('target.className !== "logo logo-letter"');
   expect(HELP_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
-  expect(HELP_ROUTE_SOURCE).toContain("<HelpRootLink");
   expect(HELP_ROUTE_SOURCE).toContain('to="/"');
-  expect(HELP_ROUTE_SOURCE).toContain("href={homeHref}");
-  expect(HELP_ROUTE_SOURCE).toContain("legacyHomeHref={homeHref}");
+  expect(HELP_ROUTE_SOURCE).not.toContain("legacyHomeHref={homeHref}");
   expect(HELP_ROUTE_SOURCE).toContain('to="/info"');
   expect(HELP_ROUTE_SOURCE).not.toContain("href={infoHref}");
   expect(HELP_ROUTE_SOURCE).not.toContain('reloadDocument to="/info"');
@@ -258,7 +257,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       href: "https://github.com/doortts/yona#korean",
       text: "https://github.com/doortts/yona#korean",
     },
-    { href: `${basePath}`, text: "메인화면" },
+    { href: `${basePath}/`, text: "메인화면" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: "https://github.com/nforge/yobi/issues", text: "Yona 이슈트래커에 등록" },
@@ -275,7 +274,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      href: `${basePath}`,
+      href: `${basePath}/`,
       text: "메인화면",
     },
     {
@@ -390,12 +389,12 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
 
   await questions.nth(2).click();
   const homeLink = faqItems.nth(2).locator(".answer a", { hasText: "메인화면" });
-  await expect(homeLink).toHaveAttribute("href", basePath);
+  await expect(homeLink).toHaveAttribute("href", `${basePath}/`);
   await page.evaluate(() => {
     (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "home-link";
   });
   await homeLink.click();
-  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(`${basePath}/`);
   await expect
     .poll(() =>
       page.evaluate(

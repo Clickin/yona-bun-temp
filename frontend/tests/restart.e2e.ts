@@ -6,7 +6,7 @@ const EXPECTED_RESTART_SCREEN = `
   <div class="container page-wrap">
     <div class="page">
       <div class="secret-wrap">
-        <a href="__BASE_PATH__" class="logo"><span>Yona</span></a>
+        <a href="__HOME_HREF__" class="logo"><span>Yona</span></a>
         <h3>Welcome!</h3>
         <p class="secret-box txt-center">
           Server needs to be restarted.
@@ -27,7 +27,7 @@ const EXPECTED_FAILED_SECRET_RESTART_SCREEN = `
   <div class="container page-wrap">
     <div class="page">
       <div class="secret-wrap">
-        <a href="__BASE_PATH__" class="logo"><span>Yona</span></a>
+        <a href="__HOME_HREF__" class="logo"><span>Yona</span></a>
         <h3>Welcome!</h3>
         <p class="secret-box txt-center">
           Server needs to be restarted.Please update application.secret with random text.
@@ -45,6 +45,7 @@ const EXPECTED_FAILED_SECRET_RESTART_SCREEN = `
 
 test("restart notice matches legacy welcome/restart.scala.html screen DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const canonicalRootHref = rootHrefForBasePath(basePath);
   await page.goto(`${basePath}/restart`);
   await expect(page).toHaveTitle("Welcome!");
   await expectHeadTitle(page, "Welcome!");
@@ -54,7 +55,7 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_RESTART_SCREEN.replace("__BASE_PATH__", basePath),
+    EXPECTED_RESTART_SCREEN.replace("__HOME_HREF__", canonicalRootHref),
   );
 
   expect(actual).toEqual(expected);
@@ -83,6 +84,7 @@ test("restart notice matches legacy welcome/restart.scala.html screen DOM", asyn
 
 test("restart failed secret state adds the legacy manual update notice", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const canonicalRootHref = rootHrefForBasePath(basePath);
   await page.goto(`${basePath}/restart?hasFailedToUpdateSecret=true`);
   await expect(page).toHaveTitle("Welcome!");
   await expectHeadTitle(page, "Welcome!");
@@ -95,7 +97,7 @@ test("restart failed secret state adds the legacy manual update notice", async (
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_FAILED_SECRET_RESTART_SCREEN.replace("__BASE_PATH__", basePath),
+    EXPECTED_FAILED_SECRET_RESTART_SCREEN.replace("__HOME_HREF__", canonicalRootHref),
   );
 
   expect(actual).toEqual(expected);
@@ -113,7 +115,10 @@ test("restart logo uses TanStack navigation for the internal home href", async (
   await page.goto(`${basePath}/restart`);
 
   const logo = page.locator(".secret-wrap .logo");
-  await expect(logo).toHaveAttribute("href", basePath);
+  const canonicalRootHref = rootHrefForBasePath(basePath);
+  await expect(logo).toHaveAttribute("href", canonicalRootHref);
+  await expect(logo).not.toHaveAttribute("aria-current", "page");
+  await expect(logo).not.toHaveAttribute("data-status", "active");
 
   await page.evaluate(() => {
     (window as Window & { __restartLogoSpaMarker?: string }).__restartLogoSpaMarker = "kept";
@@ -122,7 +127,7 @@ test("restart logo uses TanStack navigation for the internal home href", async (
 
   await expect
     .poll(() => page.evaluate(() => window.location.pathname), { timeout: 5_000 })
-    .toBe(basePath);
+    .toBe(canonicalRootHref);
 
   await expect
     .poll(() =>
@@ -133,29 +138,36 @@ test("restart logo uses TanStack navigation for the internal home href", async (
     .toBe("kept");
 });
 
-test("restart route source keeps TanStack-owned home navigation with the legacy bare base href", async () => {
+test("restart route source keeps TanStack-owned home navigation without a route-local anchor adapter", async () => {
   const source = await readFile(new URL("../src/routes/restart.tsx", import.meta.url), "utf8");
 
-  expect(source).toContain(
-    'import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
-  );
+  expect(source).toContain('import { Link, createFileRoute } from "@tanstack/react-router";');
   expect(source).toContain("hasFailedToUpdateSecret");
   expect(source).toContain('<title>{t("app.restart.welcome")}</title>');
-  expect(source).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
-  expect(source).toContain("ref?: React.Ref<HTMLAnchorElement>;");
-  expect(source).toContain('return reactJsx("a", { ...props, ref, href: legacyHref });');
-  expect(source).toContain("router.history.push(basePath);");
-  expect(source).toContain("<LegacyLogoLink");
-  expect(source).toContain("legacyHref={basePath}");
+  expect(source).toContain("<Link");
   expect(source).toContain('to="/"');
+  expect(source).toContain("activeOptions={{ exact: true, explicitUndefined: true }}");
+  expect(source).toContain("activeProps={legacyLogoLinkActiveProps}");
+  expect(source).toContain('className="logo"');
   expect(source).not.toContain("useLinkProps");
+  expect(source).not.toContain("<a ");
+  expect(source).not.toContain("<a{");
+  expect(source).not.toContain("reactJsx");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("LegacyLogoLink");
+  expect(source).not.toContain("LegacyLogoLinkAnchor");
+  expect(source).not.toContain("LegacyRootLink");
+  expect(source).not.toContain("LegacyRootLinkAnchor");
+  expect(source).not.toContain("legacyHref");
+  expect(source).not.toContain("router.history.push");
+  expect(source).not.toContain("useRouter");
   expect(source).not.toContain("LegacyHrefAnchor");
   expect(source).not.toContain("React.createElement");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("window.document");
   expect(source).not.toMatch(
-    /<a\s+|dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
+    /dangerouslySetInnerHTML|__html|document\.|addEventListener|classList|style\.display/,
   );
   expect(source).not.toMatch(
     /(?:useEffect|useLayoutEffect|React\.useEffect|React\.useLayoutEffect)\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|\btitle\s*=)/u,
@@ -225,6 +237,10 @@ async function readDesktopRestartMetrics(page: Page) {
       secretWrapPaddingTop: secretWrapStyle.paddingTop,
     };
   });
+}
+
+function rootHrefForBasePath(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
 }
 
 async function expectHeadTitle(page: Page, expected: string) {

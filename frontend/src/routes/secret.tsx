@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
 import { RestApiError } from "../api/rest-client";
@@ -17,25 +16,11 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
 
 type FieldErrors = Partial<Record<"loginId" | "email" | "password" | "retypedPassword", string[]>>;
 
-const legacyAnchorActiveProps = {
+const legacyLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
   "data-status": undefined,
 };
-
-function LegacyRootLinkAnchor({
-  legacyRootHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyRootHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyRootHref });
-}
-
-const LegacyRootLink = createLink(LegacyRootLinkAnchor);
 
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
@@ -57,14 +42,6 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
-  const handleHomeClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      router.history.push(homeHref);
-    },
-    [homeHref, router.history],
-  );
   const siteName = runtimeConfig.siteName ?? "Yona";
   const welcome = lookupLegacyMessage(language, "app.welcome", { args: [siteName] });
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
@@ -129,16 +106,9 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <LegacyRootLink
-                href={homeHref}
-                legacyRootHref={homeHref}
-                to="/"
-                activeProps={legacyAnchorActiveProps}
-                className="logo"
-                onClick={handleHomeClick}
-              >
+              <Link to="/" activeProps={legacyLinkActiveProps} className="logo">
                 <span>{siteName}</span>
-              </LegacyRootLink>
+              </Link>
 
               <h3>{welcome}</h3>
 
@@ -294,39 +264,23 @@ function FieldErrorLabels({ errors }: { errors?: string[] }) {
 
 function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
-  const handleHomeClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      router.history.push(homeHref);
-    },
-    [homeHref, router.history],
-  );
   const siteName = runtimeConfig.siteName ?? "Yona";
 
   return (
     <>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <LegacyRootLink
-            href={homeHref}
-            legacyRootHref={homeHref}
-            to="/"
-            activeProps={legacyAnchorActiveProps}
-            className="logo"
-            onClick={handleHomeClick}
-          >
+          <Link to="/" activeProps={legacyLinkActiveProps} className="logo">
             <h1 className="blind">{siteName}</h1>
-          </LegacyRootLink>
+          </Link>
           <ul className="gnb-nav">
             <li>
-              <Link to="/projects" activeProps={legacyAnchorActiveProps}>
+              <Link to="/projects" activeProps={legacyLinkActiveProps}>
                 {t("title.projectList")}
               </Link>
             </li>
             <li>
-              <Link to="/_help" activeProps={legacyAnchorActiveProps}>
+              <Link to="/_help" activeProps={legacyLinkActiveProps}>
                 {t("title.help")}
               </Link>
             </li>
@@ -335,7 +289,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 href="https://github.com/nforge/yobi/issues?state=open"
                 to="https://github.com/nforge/yobi/issues?state=open"
                 target="_blank"
-                activeProps={legacyAnchorActiveProps}
+                activeProps={legacyLinkActiveProps}
               >
                 {t("title.yobi.feedback")}
               </Link>
@@ -348,16 +302,9 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <div className="error-wrap">
             <i className="ico ico-err2" />
             <p>{t("error.notfound")}</p>
-            <LegacyRootLink
-              href={homeHref}
-              legacyRootHref={homeHref}
-              to="/"
-              activeProps={legacyAnchorActiveProps}
-              className="ybtn ybtn-info"
-              onClick={handleHomeClick}
-            >
+            <Link to="/" activeProps={legacyLinkActiveProps} className="ybtn ybtn-info">
               {t("menu.home")}
-            </LegacyRootLink>
+            </Link>
           </div>
         </div>
       </div>
@@ -369,7 +316,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               href="http://navercorp.com/"
               to="http://navercorp.com/"
               target="_blank"
-              activeProps={legacyAnchorActiveProps}
+              activeProps={legacyLinkActiveProps}
             >
               NAVER Corp.
             </Link>{" "}
@@ -379,7 +326,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               to="https://developers.naver.com/d2/"
               target="_blank"
               className="d2-program"
-              activeProps={legacyAnchorActiveProps}
+              activeProps={legacyLinkActiveProps}
             >
               <span className="d2">D2</span>
               <span className="program"> Program</span>

@@ -1,6 +1,4 @@
-import * as React from "react";
-import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 
@@ -9,20 +7,6 @@ const legacyLogoLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-function LegacyLogoLinkAnchor({
-  legacyHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyHref });
-}
-
-const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);
 
 export const Route = createFileRoute("/restart")({
   component: RestartRoute,
@@ -40,26 +24,15 @@ function RestartRoute() {
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <RestartScreen
-          basePath={runtimeConfig.basePath}
-          siteName={runtimeConfig.siteName ?? "Yona"}
-        />
+        <RestartScreen siteName={runtimeConfig.siteName ?? "Yona"} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function RestartScreen({ basePath, siteName }: { basePath: string; siteName: string }) {
+function RestartScreen({ siteName }: { siteName: string }) {
   const { hasFailedToUpdateSecret } = Route.useSearch();
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const handleLogoClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      router.history.push(basePath);
-    },
-    [basePath, router.history],
-  );
 
   return (
     <>
@@ -68,16 +41,14 @@ function RestartScreen({ basePath, siteName }: { basePath: string; siteName: str
         <div className="container page-wrap">
           <div className="page">
             <div className="secret-wrap">
-              <LegacyLogoLink
-                href={basePath}
-                legacyHref={basePath}
+              <Link
                 to="/"
+                activeOptions={{ exact: true, explicitUndefined: true }}
                 activeProps={legacyLogoLinkActiveProps}
                 className="logo"
-                onClick={handleLogoClick}
               >
                 <span>{siteName}</span>
-              </LegacyLogoLink>
+              </Link>
 
               <h3>{t("app.restart.welcome")}</h3>
               <p className="secret-box txt-center">

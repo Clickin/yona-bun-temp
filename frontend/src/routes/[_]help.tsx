@@ -1,9 +1,8 @@
 import * as React from "react";
-import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { prefixBasePath } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 const legacyAnswerLinkActiveOptions = {
@@ -15,20 +14,6 @@ const legacyAnswerLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-function HelpRootLinkAnchor({
-  legacyHomeHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyHomeHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyHomeHref });
-}
-
-const HelpRootLink = createLink(HelpRootLinkAnchor);
 
 export const Route = createFileRoute("/_help")({
   component: HelpTocRoute,
@@ -59,7 +44,7 @@ function HelpTocRoute() {
         <div onClickCapture={handleLayoutRootClickCapture}>
           <HelpTocTitle />
           <SiteLayoutShell runtimeConfig={runtimeConfig}>
-            <HelpTocScreen runtimeConfig={runtimeConfig} />
+            <HelpTocScreen />
           </SiteLayoutShell>
         </div>
       </LegacyI18nProvider>
@@ -72,19 +57,10 @@ function HelpTocTitle() {
   return <title>{t("title.help")}</title>;
 }
 
-function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function HelpTocScreen() {
   const { t } = useLegacyMessages();
-  const router = useRouter();
   const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
   const appName = t("app.name");
-  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
-  const handleHomeClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      router.history.push(homeHref);
-    },
-    [homeHref, router.history],
-  );
   const toggleQuestion = (index: number) => {
     setOpenQuestionIndexes((current) => {
       const next = new Set(current);
@@ -193,16 +169,13 @@ function HelpTocScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  <HelpRootLink
+                  <Link
                     to="/"
-                    href={homeHref}
-                    legacyHomeHref={homeHref}
                     activeOptions={legacyAnswerLinkActiveOptions}
                     activeProps={legacyAnswerLinkActiveProps}
-                    onClick={handleHomeClick}
                   >
                     메인화면
-                  </HelpRootLink>{" "}
+                  </Link>{" "}
                   우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
                   있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
                   <Link
