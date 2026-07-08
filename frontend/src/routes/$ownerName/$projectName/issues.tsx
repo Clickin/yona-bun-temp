@@ -568,6 +568,27 @@ function ProjectIssuesBody({
   };
   const showMilestone = projectMilestoneMenuEnabled(project);
   const showMassUpdateControls = projectMemberControlsEnabled(project);
+  const allVisibleIssuesSelected =
+    visibleMassUpdateIssueIds.length > 0 &&
+    visibleMassUpdateIssueIds.every((issueId) => selectedIssueIds.has(issueId));
+  const handleIssueListKeyDownCapture = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (
+      event.key.toLowerCase() !== "a" ||
+      (!event.ctrlKey && !event.metaKey) ||
+      event.altKey ||
+      !showMassUpdateControls ||
+      !currentPageHasItems
+    ) {
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("input, textarea, select, [contenteditable]")) {
+      return;
+    }
+
+    event.preventDefault();
+    toggleAllIssueSelection(!allVisibleIssuesSelected);
+  };
   const showAssigneeCurrentUserSearchOption = projectMemberSearchOptionsEnabled(project);
   const showAuthorCurrentUserSearchOption = projectAuthorSearchOptionsEnabled(
     project,
@@ -580,7 +601,7 @@ function ProjectIssuesBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div className="row-fluid issue-list-wrap">
+        <div className="row-fluid issue-list-wrap" onKeyDownCapture={handleIssueListKeyDownCapture}>
           <div className="left-menu span2 span-hard-wrap">
             <QuickSearch
               currentUserId={currentUserId}
