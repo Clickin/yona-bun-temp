@@ -235,7 +235,6 @@ function PullRequestOverviewBody({
                   id="watch-button"
                   type="button"
                   className={isWatching ? "ybtn ybtn-watching" : "ybtn"}
-                  data-toggle="button"
                   data-watching={isWatching ? "true" : "false"}
                   onClick={() => watchMutation.mutate()}
                 >
