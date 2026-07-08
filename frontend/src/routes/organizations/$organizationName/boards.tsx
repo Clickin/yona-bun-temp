@@ -135,7 +135,6 @@ function OrganizationBoardsBody({
                   data-format="projects"
                   multiple
                   data-placeholder={t("organization.choose.projects")}
-                  data-toggle="select2"
                   data-container-css-class="fullsize"
                   defaultValue={search.projectNames}
                   onChange={(event) => {
