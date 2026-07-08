@@ -1575,7 +1575,7 @@ function MarkdownEditor({
   };
 
   return (
-    <div data-toggle="markdown-editor" className="mt10">
+    <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeMode === "edit" ? "active" : undefined}>
           <button type="button" data-mode="edit" onClick={(event) => selectMode("edit", event)}>
