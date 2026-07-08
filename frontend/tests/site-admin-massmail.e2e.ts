@@ -280,7 +280,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   );
   await page.keyboard.press("Enter");
   await expect(page.locator("#input-project")).toHaveValue("");
-  await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  await expect(page.locator("#selected-projects .label")).toHaveText("o x");
   await expect(page.locator(".typeahead.dropdown-menu")).toHaveCount(0);
   await expect(page.locator("#selected-projects .label a[href]")).toHaveCount(0);
   await expect(page.locator("#selected-projects .label .selected-project-remove")).toHaveAttribute(

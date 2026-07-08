@@ -253,7 +253,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
-                addProject(projectSuggestions[activeSuggestionIndex] ?? projectQuery);
+                addProject(projectQuery);
                 return;
               }
               if (event.key === "ArrowDown" && projectSuggestions.length > 0) {
