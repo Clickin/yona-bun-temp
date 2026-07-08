@@ -25,6 +25,17 @@ const SELECTED_COMMIT = {
 
 const PRIOR_COMMIT_ID = "1234567890abcdef";
 const UNKNOWN_COMMIT_ID = "fedcba9876543210";
+const NORMAL_FILE_PATCH = [
+  "diff --git a/src/main.rs b/src/main.rs",
+  "index 1111111..2222222 100644",
+  "--- a/src/main.rs",
+  "+++ b/src/main.rs",
+  "@@ -1,3 +1,3 @@",
+  " fn main() {",
+  '-    println!("old");',
+  '+    println!("new");',
+  " }",
+].join("\n");
 
 const PRIOR_COMMIT = {
   authorDateLabel: "Jul 3, 2026",
@@ -386,6 +397,63 @@ test("project pull request changes renders legacy file diff error row", async ({
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).toBe("pull-request-file-diff-collapse");
+});
+
+test("project pull request changes renders normal file diffs as legacy table rows", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    files: [{ patch: NORMAL_FILE_PATCH, path: "src/main.rs" }],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+
+  const file = page.locator("#src-main-rs.diff-partial-outer");
+  await expect(file).toHaveCount(1);
+  await expect(file.locator(".diff-partial-meta .diff-partial-commit-id")).toHaveCount(2);
+  await expect(file.locator(".diff-partial-file .filename")).toHaveText("src/main.rs");
+  await expect(file.locator(".diff-partial-code")).toHaveAttribute("data-hashcode", "src/main.rs");
+  await expect(file.locator(".patch-header .path")).toHaveText([
+    "--- src/main.rs",
+    "+++ src/main.rs",
+  ]);
+
+  const diffTable = file.locator("table.diff-container.show-comments");
+  await expect(diffTable).toHaveAttribute("data-path-a", "src/main.rs");
+  await expect(diffTable).toHaveAttribute("data-path-b", "src/main.rs");
+  await expect(diffTable).toHaveAttribute("data-file-path", "src/main.rs");
+  await expect(file.locator("pre.diff-body")).toHaveCount(0);
+  await expect(diffTable.locator("tbody > tr")).toHaveCount(5);
+  await expect(diffTable.locator("tbody > tr").nth(0)).toHaveClass("range");
+  await expect(diffTable.locator("tbody > tr").nth(0).locator(".hunk")).toHaveText(
+    "@@ -1,3 +1,3 @@",
+  );
+  await expect(diffTable.locator("tbody > tr").nth(1)).toHaveClass("context");
+  await expect(diffTable.locator("tbody > tr").nth(1)).toHaveAttribute("data-line", "1");
+  await expect(diffTable.locator("tbody > tr").nth(1)).toHaveAttribute("data-side", "B");
+  await expect(diffTable.locator("tbody > tr").nth(1).locator(".diff-partial-codeline")).toHaveText(
+    " fn main() {",
+  );
+  await expect(diffTable.locator("tbody > tr").nth(2)).toHaveClass("remove");
+  await expect(diffTable.locator("tbody > tr").nth(2)).toHaveAttribute("data-line", "2");
+  await expect(diffTable.locator("tbody > tr").nth(2)).toHaveAttribute("data-side", "A");
+  await expect(diffTable.locator("tbody > tr").nth(2).locator(".linenum").nth(0)).toHaveText("2");
+  await expect(diffTable.locator("tbody > tr").nth(2).locator(".linenum").nth(1)).toHaveText("");
+  await expect(diffTable.locator("tbody > tr").nth(3)).toHaveClass("add");
+  await expect(diffTable.locator("tbody > tr").nth(3)).toHaveAttribute("data-line", "2");
+  await expect(diffTable.locator("tbody > tr").nth(3)).toHaveAttribute("data-side", "B");
+  await expect(diffTable.locator("tbody > tr").nth(3).locator(".linenum").nth(0)).toHaveText("");
+  await expect(diffTable.locator("tbody > tr").nth(3).locator(".linenum").nth(1)).toHaveText("2");
+
+  const metrics = await pullRequestNormalDiffMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.metaBottom).toBeLessThanOrEqual(metrics!.codeTop);
+  expect(metrics!.rangeTop).toBeLessThan(metrics!.contextTop);
+  expect(metrics!.contextTop).toBeLessThan(metrics!.removeTop);
+  expect(metrics!.removeTop).toBeLessThan(metrics!.addTop);
+  expect(metrics!.oldColumnRight).toBeLessThanOrEqual(metrics!.newColumnLeft + 1);
+  expect(metrics!.newColumnRight).toBeLessThanOrEqual(metrics!.codeColumnLeft + 1);
 });
 
 test("project pull request selected commit changes matches legacy git/viewChanges.scala.html DOM", async ({
@@ -1311,6 +1379,48 @@ async function pullRequestChangesNavbarMetrics(page: Page) {
         top: box.top,
       };
     }
+  });
+}
+
+async function pullRequestNormalDiffMetrics(page: Page) {
+  return page.evaluate(() => {
+    const file = document.querySelector<HTMLElement>("#src-main-rs.diff-partial-outer");
+    const meta = file?.querySelector<HTMLElement>(".diff-partial-meta");
+    const code = file?.querySelector<HTMLElement>(".diff-partial-code");
+    const rows = file?.querySelectorAll<HTMLElement>("table.diff-container.show-comments tr");
+    const removeCells = rows?.[2]?.querySelectorAll<HTMLElement>("td");
+    if (
+      !file ||
+      !meta ||
+      !code ||
+      !rows ||
+      rows.length < 4 ||
+      !removeCells ||
+      removeCells.length < 3
+    ) {
+      return null;
+    }
+    const metaBox = meta.getBoundingClientRect();
+    const codeBox = code.getBoundingClientRect();
+    const rangeBox = rows[0].getBoundingClientRect();
+    const contextBox = rows[1].getBoundingClientRect();
+    const removeBox = rows[2].getBoundingClientRect();
+    const addBox = rows[3].getBoundingClientRect();
+    const oldColumn = removeCells[0].getBoundingClientRect();
+    const newColumn = removeCells[1].getBoundingClientRect();
+    const codeColumn = removeCells[2].getBoundingClientRect();
+    return {
+      addTop: addBox.top,
+      codeColumnLeft: codeColumn.left,
+      codeTop: codeBox.top,
+      contextTop: contextBox.top,
+      metaBottom: metaBox.bottom,
+      newColumnLeft: newColumn.left,
+      newColumnRight: newColumn.right,
+      oldColumnRight: oldColumn.right,
+      rangeTop: rangeBox.top,
+      removeTop: removeBox.top,
+    };
   });
 }
 

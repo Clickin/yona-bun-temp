@@ -50,6 +50,24 @@ type PullRequestChangedFileWithError = PullRequestChangesResponse["files"][numbe
   hasError?: boolean | string;
 };
 
+type ParsedDiffLine =
+  | { kind: "range"; text: string }
+  | {
+      kind: "line";
+      lineNumber: number;
+      newLineNumber: number | null;
+      oldLineNumber: number | null;
+      prefix: string;
+      text: string;
+      type: "add" | "context" | "remove";
+    };
+
+type ParsedFileDiff = {
+  lines: ParsedDiffLine[];
+  pathA: string;
+  pathB: string;
+};
+
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes",
 )({
@@ -708,41 +726,101 @@ function ReviewCard({
 }
 
 function PullRequestFileDiff({ file }: { file: PullRequestChangedFileWithError }) {
+  const { t } = useLegacyMessages();
   const errorMessageKey = fileDiffErrorMessageKey(file);
   const [isExpanded, setIsExpanded] = useState(true);
   const codeStyle = isExpanded ? undefined : { display: "none" };
   const toggleExpanded = () => setIsExpanded((current) => !current);
+  const parsed = parseUnifiedDiff(file.path, file.patch);
+  const pathA = isNullDiffPath(parsed.pathA) ? "" : parsed.pathA;
+  const pathB = isNullDiffPath(parsed.pathB) ? "" : parsed.pathB;
+  const filePath = pathB || pathA || file.path;
 
   return (
-    <div className="diff-partial-outer">
+    <div id={filePath.replace(/\//g, "-").replace(/\./g, "-")} className="diff-partial-outer">
       <div className="diff-partial-inner">
         {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
         {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
         <div className="diff-partial-meta" onClick={toggleExpanded} style={{ cursor: "pointer" }}>
+          <div className="diff-partial-commit">
+            <div className="diff-partial-commit-id">{"\u00a0"}</div>
+            <div className="diff-partial-commit-id">{"\u00a0"}</div>
+          </div>
           <div className="diff-partial-file">
-            <span className="filename">{file.path}</span>
+            <span className="filename">{filePath}</span>
           </div>
         </div>
-        {errorMessageKey ? (
-          <div className="diff-partial-code" data-hashcode={file.path} style={codeStyle}>
-            <table
-              className="diff-container show-comments"
-              data-path-a={file.path}
-              data-path-b={file.path}
-              data-file-path={file.path}
-            >
-              <tbody>
+        <div className="diff-partial-code" data-hashcode={file.path} style={codeStyle}>
+          <div className="patch-header">
+            {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
+            {pathB ? <div className="path">{`+++ ${pathB}`}</div> : null}
+          </div>
+          <table
+            className="diff-container show-comments"
+            data-path-a={pathA}
+            data-path-b={pathB}
+            data-file-path={filePath}
+          >
+            <tbody>
+              {errorMessageKey ? (
                 <FileDiffErrorRow messageKey={errorMessageKey} />
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="diff-partial-code" data-hashcode={file.path} style={codeStyle}>
-            <pre className="diff-body">{file.patch}</pre>
-          </div>
-        )}
+              ) : parsed.lines.length === 0 ? (
+                <tr>
+                  <td colSpan={3}>{t("code.noChanges")}</td>
+                </tr>
+              ) : (
+                parsed.lines.map((line) =>
+                  line.kind === "range" ? (
+                    <tr className="range" key={diffLineKey(line)}>
+                      <td className="linenum">
+                        <div className="line-number" data-line-num="...">
+                          <span className="hidden">...</span>
+                        </div>
+                      </td>
+                      <td className="linenum">
+                        <div className="line-number" data-line-num="...">
+                          <span className="hidden">...</span>
+                        </div>
+                      </td>
+                      <td className="hunk">{line.text}</td>
+                    </tr>
+                  ) : (
+                    <DiffLineView key={diffLineKey(line)} line={line} />
+                  ),
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+  );
+}
+
+function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }> }) {
+  const oldLine = line.oldLineNumber === null ? "" : String(line.oldLineNumber);
+  const newLine = line.newLineNumber === null ? "" : String(line.newLineNumber);
+
+  return (
+    <tr
+      className={line.type}
+      data-line={line.lineNumber}
+      data-side={line.type === "remove" ? "A" : "B"}
+      data-type={line.type}
+    >
+      <td className="linenum">
+        <i className="yobicon-comments"></i>
+        <div className="line-number" data-line-num={oldLine}></div>
+        <span className="hidden">{oldLine}</span>
+      </td>
+      <td className="linenum">
+        <div className="line-number" data-line-num={newLine}></div>
+        <span className="hidden">{newLine}</span>
+      </td>
+      <td className="code">
+        <pre className="diff-partial-codeline">{`${line.prefix}${line.text}`}</pre>
+      </td>
+    </tr>
   );
 }
 
@@ -775,6 +853,90 @@ function fileDiffErrorMessageKey(file: PullRequestChangedFileWithError) {
     return "code.tooBigDiff";
   }
   return errors.some(Boolean) ? "code.unknownError" : null;
+}
+
+function diffLineKey(line: ParsedDiffLine) {
+  if (line.kind === "range") {
+    return `range-${line.text}`;
+  }
+
+  return `line-${line.oldLineNumber ?? ""}-${line.newLineNumber ?? ""}-${line.prefix}${line.text}`;
+}
+
+function parseUnifiedDiff(path: string, patch: string): ParsedFileDiff {
+  let pathA = path;
+  let pathB = path;
+  let oldLineNumber = 0;
+  let newLineNumber = 0;
+  const lines: ParsedDiffLine[] = [];
+
+  for (const rawLine of patch.split(/\r?\n/u)) {
+    if (rawLine.startsWith("--- ")) {
+      pathA = normalizeDiffPath(rawLine.slice(4));
+      continue;
+    }
+    if (rawLine.startsWith("+++ ")) {
+      pathB = normalizeDiffPath(rawLine.slice(4));
+      continue;
+    }
+    if (rawLine.startsWith("@@")) {
+      const hunkMatch = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/u.exec(rawLine);
+      oldLineNumber = hunkMatch ? Number(hunkMatch[1]) : oldLineNumber;
+      newLineNumber = hunkMatch ? Number(hunkMatch[2]) : newLineNumber;
+      lines.push({ kind: "range", text: rawLine });
+      continue;
+    }
+    if (rawLine.startsWith("+")) {
+      lines.push({
+        kind: "line",
+        lineNumber: newLineNumber,
+        newLineNumber,
+        oldLineNumber: null,
+        prefix: "+",
+        text: rawLine.slice(1),
+        type: "add",
+      });
+      newLineNumber += 1;
+      continue;
+    }
+    if (rawLine.startsWith("-")) {
+      lines.push({
+        kind: "line",
+        lineNumber: oldLineNumber,
+        newLineNumber: null,
+        oldLineNumber,
+        prefix: "-",
+        text: rawLine.slice(1),
+        type: "remove",
+      });
+      oldLineNumber += 1;
+      continue;
+    }
+    if (rawLine.startsWith(" ")) {
+      lines.push({
+        kind: "line",
+        lineNumber: newLineNumber,
+        newLineNumber,
+        oldLineNumber,
+        prefix: " ",
+        text: rawLine.slice(1),
+        type: "context",
+      });
+      oldLineNumber += 1;
+      newLineNumber += 1;
+    }
+  }
+
+  return { lines, pathA, pathB };
+}
+
+function normalizeDiffPath(input: string) {
+  const path = input.trim().split(/\s+/u)[0] ?? "";
+  return path.replace(/^[ab]\//u, "");
+}
+
+function isNullDiffPath(path: string) {
+  return path === "/dev/null" || path === "dev/null";
 }
 
 function reviewThreadPath(pullRequest: PullRequestDetailResponse, thread: ReviewThread) {
