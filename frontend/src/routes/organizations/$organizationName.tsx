@@ -219,19 +219,15 @@ function OrganizationHomeBody({
               {shouldShowMemberPanels ? (
                 <>
                   <MemberPanel
-                    basePath={runtimeConfig.basePath}
                     members={organization.adminMembers}
                     onLeaveClick={openLeaveModal}
-                    organizationName={organizationName}
                     showLeave={showLeaveButton && viewerCanUpdate}
                     title={t("user.role.org_admin")}
                   />
                   <MemberPanel
-                    basePath={runtimeConfig.basePath}
                     className="bubble-wrap gray project-home mt10"
                     members={organization.memberMembers}
                     onLeaveClick={openLeaveModal}
-                    organizationName={organizationName}
                     showLeave={showLeaveButton && !viewerCanUpdate}
                     title={t("user.role.org_member")}
                   />
@@ -422,7 +418,6 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
             <i className="yobicon-eye"></i> <strong>{numberField(project.watchCount)}</strong>
             <i
               className={`yobicon-lightbulb ${booleanField(project.isWatching) ? "ramp-on" : "ramp-off"}`}
-              data-toggle="tooltip"
               title={
                 booleanField(project.isWatching)
                   ? t("project.default.group.watching")
@@ -437,19 +432,15 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yon
 }
 
 function MemberPanel({
-  basePath,
   className = "bubble-wrap gray project-home",
   members,
   onLeaveClick,
-  organizationName,
   showLeave,
   title,
 }: {
-  basePath: string;
   className?: string;
   members: YonaUserItem[];
   onLeaveClick: (event: MouseEvent<HTMLButtonElement>) => void;
-  organizationName: string;
   showLeave: boolean;
   title: string;
 }) {
@@ -490,7 +481,6 @@ function MemberPanel({
                     "data-status": undefined,
                   }}
                   className="avatar-wrap"
-                  data-toggle="tooltip"
                   data-placement="top"
                   params={{ user: stringField(member.loginId, "") }}
                   search={{}}
@@ -516,7 +506,6 @@ function MemberPanel({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  data-toggle="tooltip"
                   data-placement="top"
                   params={{ user: stringField(member.loginId, "") }}
                   search={{}}
