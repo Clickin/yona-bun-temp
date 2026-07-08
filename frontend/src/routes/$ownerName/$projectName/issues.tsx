@@ -3057,6 +3057,7 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
         <div
           id="helpKeys"
           className={`modal ${keymapOpen ? "" : "hide "}fade keymap-help${keymapOpen ? " in" : ""}`}
+          style={keymapOpen ? { display: "block" } : undefined}
           tabIndex={-1}
           role="dialog"
         >
