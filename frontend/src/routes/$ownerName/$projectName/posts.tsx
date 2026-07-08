@@ -286,7 +286,6 @@ function BoardLabels({
             name="labelIds"
             multiple
             data-search="labelIds"
-            data-toggle="select2"
             data-format="issuelabel"
             data-allow-clear="true"
             data-dropdown-css-class="issue-labels"
@@ -294,6 +293,7 @@ function BoardLabels({
             data-placeholder={t("label.select")}
             className="hide"
             defaultValue={search.labelIds}
+            onChange={(event) => event.currentTarget.form?.requestSubmit()}
           >
             <option></option>
             {labelGroups.map((group) => (
