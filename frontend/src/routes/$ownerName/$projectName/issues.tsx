@@ -3098,7 +3098,6 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
             <button
               type="button"
               className="ybtn ybtn-info"
-              data-dismiss="modal"
               onClick={() => {
                 setKeymapOpen(false);
               }}

@@ -11,7 +11,7 @@ const SITE_LAYOUT_SHELL_SOURCE = readFileSync(
 );
 const ROUTE_CAST_ESCAPE = ["as", "never"].join(" ");
 
-const ISSUE_LIST_KEYMAP = `<div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue list</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">←</span><span class="help-inline">Previous page</span><br><span class="ybtn ybtn-small">→</span><span class="help-inline">Next page</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">A</span><span class="help-inline">Select all</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info" data-dismiss="modal">Confirm</button></p></div>`;
+const ISSUE_LIST_KEYMAP = `<div id="helpKeys" class="modal hide fade keymap-help" tabindex="-1" role="dialog"><div class="row-fluid"><div class="span3"><h5>projects</h5><span class="ybtn ybtn-small">H</span><span class="help-inline">Home</span><br><span class="ybtn ybtn-small">B</span><span class="help-inline">Board</span><br><span class="ybtn ybtn-small">I</span><span class="help-inline">Issue</span><br><span class="ybtn ybtn-small">C</span><span class="help-inline">Code</span><br><span class="ybtn ybtn-small">M</span><span class="help-inline">Milestone</span><br><span class="ybtn ybtn-small">P</span><span class="help-inline">Pull request</span><br><span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br></div><div class="span9"><div class="row-fluid"><div class="span5"><h5>Issue list</h5><span class="ybtn ybtn-small">N</span><span class="help-inline">New issue</span><br><span class="ybtn ybtn-small">←</span><span class="help-inline">Previous page</span><br><span class="ybtn ybtn-small">→</span><span class="help-inline">Next page</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">A</span><span class="help-inline">Select all</span><br></div><div class="span7"><h5>Site</h5><span class="ybtn ybtn-small">A</span><span class="help-inline">My Issues</span><br><span class="ybtn ybtn-small">U</span><span class="help-inline">Profile</span><br><span class="ybtn ybtn-small">F</span><span class="help-inline">User menu</span><br>__SITE_SEARCH_KEYS__<span class="help-inline">Site search</span><br><span class="ybtn ybtn-small">__CTRL_KEY__</span> + <span class="ybtn ybtn-small">ENTER</span><span class="help-inline">Submit form</span><br></div></div><div class="row-fluid mt20"><div class="span12"></div></div></div></div><p class="actrow"><button type="button" class="ybtn ybtn-info">Confirm</button></p></div>`;
 const ISSUE_LIST_KEYMAP_NON_MANAGER = ISSUE_LIST_KEYMAP.replace(
   '<span class="ybtn ybtn-small">Q</span><span class="help-inline">Settings</span><br>',
   "",
@@ -459,7 +459,7 @@ test("project issue list keymap modal is route-owned React state", async () => {
   expect(keymapSource).toContain("setKeymapOpen(false)");
   expect(keymapSource).not.toContain('data-toggle="modal"');
   expect(keymapSource).not.toContain('data-target="#helpKeys"');
-  expect(keymapSource).toContain('data-dismiss="modal"');
+  expect(keymapSource).not.toContain('data-dismiss="modal"');
   expect(keymapSource).toContain('className="modal-backdrop fade in"');
   expect(keymapSource).toContain('event.key === "Escape"');
   expect(keymapSource).not.toContain("document.");
@@ -711,7 +711,7 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
     document.addEventListener("click", (event) => {
       if (
         (event.target as Element | null)?.closest(
-          '[data-toggle="modal"], [data-target="#helpKeys"]',
+          '[data-toggle="modal"], [data-target="#helpKeys"], [data-dismiss="modal"]',
         )
       ) {
         (
@@ -756,11 +756,20 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).toHaveClass(/in/u);
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
-  await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  const confirmButton = page.locator("#helpKeys").getByRole("button", { name: "Confirm" });
+  await expect(confirmButton).not.toHaveAttribute("data-dismiss", "modal");
+  await confirmButton.click();
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/u);
   await expect(page.locator("#helpKeys")).not.toHaveClass(/in/u);
   await expect(page.locator("#helpKeys")).not.toHaveAttribute("style", /display/u);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __issueListDelegatedModalClick?: string })
+          .__issueListDelegatedModalClick,
+    ),
+  ).toBeUndefined();
 });
 
 async function expectIssueListSelect2Partial(page: Page, basePath: string) {
