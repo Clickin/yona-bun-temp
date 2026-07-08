@@ -354,7 +354,7 @@ function ProjectPostDetailBody({
               id="attachments"
               data-attachments={JSON.stringify(post.attachments ?? [])}
             >
-              <AttachedFiles basePath={basePath} attachments={post.attachments} />
+              <AttachedFiles attachments={post.attachments} />
             </div>
             <div className="board-actrow right-txt">
               <div className="pull-left">
@@ -1183,7 +1183,7 @@ function PostCommentRow({
             />
           </div>
           <div className="attachments" data-attachments={JSON.stringify(comment.attachments ?? [])}>
-            <AttachedFiles basePath={basePath} attachments={comment.attachments} />
+            <AttachedFiles attachments={comment.attachments} />
           </div>
         </div>
       </div>
@@ -1352,7 +1352,7 @@ function PostCommentUpdateForm({
           />
           <div className={`preview-${commentId}`}></div>
           <div className="attachment-files">
-            <CommentEditAttachmentFiles basePath={basePath} attachments={comment.attachments} />
+            <CommentEditAttachmentFiles attachments={comment.attachments} />
           </div>
           <div
             id={`upload-${commentId}`}
@@ -1605,13 +1605,7 @@ function MarkdownEditor({
   );
 }
 
-function AttachedFiles({
-  attachments,
-  basePath,
-}: {
-  attachments: BoardAttachment[];
-  basePath: string;
-}) {
+function AttachedFiles({ attachments }: { attachments: BoardAttachment[] }) {
   if (!attachments.length) {
     return null;
   }
@@ -1623,13 +1617,11 @@ function AttachedFiles({
         const name = stringField(file.name);
         const mimeType = stringField(file.mimeType);
         const size = String(file.size);
-        const href = prefixBasePath(basePath, `/files/${id}`);
 
         return (
           <li
             className="attached-file"
             data-name={name}
-            data-href={href}
             data-mime={mimeType}
             data-size={size}
             key={id}
@@ -1647,13 +1639,7 @@ function AttachedFiles({
   );
 }
 
-function CommentEditAttachmentFiles({
-  attachments,
-  basePath,
-}: {
-  attachments: BoardAttachment[];
-  basePath: string;
-}) {
+function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachment[] }) {
   return (
     <>
       {attachments.map((file) => {
@@ -1661,13 +1647,11 @@ function CommentEditAttachmentFiles({
         const name = stringField(file.name);
         const mimeType = stringField(file.mimeType);
         const size = String(file.size);
-        const href = prefixBasePath(basePath, `/files/${id}`);
 
         return (
           <div
             className="attached-file attached-file-marker"
             data-name={name}
-            data-href={href}
             data-mime={mimeType}
             key={id}
           >

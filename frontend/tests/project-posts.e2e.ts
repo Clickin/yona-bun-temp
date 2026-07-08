@@ -51,7 +51,7 @@ function withProjectBoardSearchScope(
   options: { ownerName: string; organizationName?: string; projectName: string },
 ) {
   const { ownerName, organizationName, projectName } = options;
-  const scopedSearchMenu = `<form action="__BASE_PATH__/${ownerName}/${projectName}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/${ownerName}/${projectName}/search">This Project</button></li>${organizationName ? `<li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/organizations/${organizationName}/search">This Group</button></li>` : ""}<li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form>`;
+  const scopedSearchMenu = `<form action="__BASE_PATH__/${ownerName}/${projectName}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope">This Project</button></li>${organizationName ? `<li><button type="button" data-toggle="search-scope">This Group</button></li>` : ""}<li><button type="button" data-toggle="search-scope">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form>`;
 
   return html
     .replace('<header class="gnb-outer">', '<header class="gnb-outer project-header">')
@@ -491,16 +491,17 @@ test("project board list renders protected org-owned localhost shell state", asy
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
+      { dataAction: null, text: "This Project" },
+      { dataAction: null, text: "This Group" },
+      { dataAction: null, text: "All Projects" },
     ]);
 
   await page.locator("#gnb-search-scope-title").click();
@@ -1067,13 +1068,17 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
-    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+    .toEqual([
+      { dataAction: null, text: "This Project" },
+      { dataAction: null, text: "All Projects" },
+    ]);
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("admin");
@@ -1128,7 +1133,8 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     footerKeyboardTarget: null,
     gnbClassName: "gnb-outer project-header",
     gnbSearchAction: `${basePath}/admin/sample/search`,
-    gnbSearchScopeActions: [`${basePath}/admin/sample/search`, `${basePath}/search`],
+    gnbSearchScopeDataActions: [null, null],
+    gnbSearchScopeLabels: ["This Project", "All Projects"],
     gnbSearchScopeTitle: "This Project",
     headerMarginBottom: "15px",
     leftPaneWidth: 938,
@@ -1222,16 +1228,17 @@ test("project board detail renders protected org-owned localhost shell state", a
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          text: element.textContent?.trim() ?? "",
+        })),
+      ),
     )
     .toEqual([
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
+      { dataAction: null, text: "This Project" },
+      { dataAction: null, text: "This Group" },
+      { dataAction: null, text: "All Projects" },
     ]);
 
   const beforeUrl = page.url();
@@ -1271,11 +1278,8 @@ test("project board detail renders protected org-owned localhost shell state", a
     deleteTransportMarkerCount: 0,
     gnbClassName: "gnb-outer project-header",
     gnbSearchAction: `${basePath}/weblabs/portal/search`,
-    gnbSearchScopeActions: [
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
-    ],
+    gnbSearchScopeDataActions: [null, null, null],
+    gnbSearchScopeLabels: ["This Project", "This Group", "All Projects"],
     gnbSearchScopeTitle: "This Project",
     newPostHref: `${basePath}/weblabs/portal/postform`,
     projectHeaderProjectName: "portal",
@@ -2376,26 +2380,46 @@ test("project board detail renders legacy post and comment attachments", async (
     page.locator(".span-left-pane > #attachments > ul.attaches.wm > li.attached-file"),
   ).toHaveCount(1);
   await expect(page.locator(".span-left-pane > #attachments > .attached-file")).toHaveCount(0);
+  await expect(page.locator("#attachments .attached-file")).not.toHaveAttribute("data-href", /.+/u);
   await expect(page.locator("#attachments .attached-file")).toHaveAttribute(
-    "data-href",
-    `${basePath}/files/31`,
+    "data-name",
+    "post-note.txt",
   );
+  await expect(page.locator("#attachments .attached-file")).toHaveAttribute(
+    "data-mime",
+    "text/plain",
+  );
+  await expect(page.locator("#attachments .attached-delete")).toHaveCount(1);
   await expect(page.locator("#comment-body-21 > .attachments > ul.attaches.wm")).toHaveCount(1);
   await expect(
     page.locator("#comment-body-21 > .attachments > ul.attaches.wm > li.attached-file"),
   ).toHaveCount(1);
   await expect(page.locator("#comment-body-21 > .attachments > .attached-file")).toHaveCount(0);
-  await expect(page.locator("#comment-body-21 .attachments .attached-file")).toHaveAttribute(
+  await expect(page.locator("#comment-body-21 .attachments .attached-file")).not.toHaveAttribute(
     "data-href",
-    `${basePath}/files/41`,
+    /.+/u,
+  );
+  await expect(page.locator("#comment-body-21 .attachments .attached-file")).toHaveAttribute(
+    "data-name",
+    "comment-shot.png",
+  );
+  await expect(page.locator("#comment-body-21 .attachments .attached-delete")).toHaveCount(1);
+  const editableAttachment = page.locator(
+    "#comment-editform-21 .attachment-files .attached-file-marker",
+  );
+  await expect(editableAttachment).not.toHaveAttribute("data-href", /.+/u);
+  await expect(editableAttachment).toHaveAttribute("data-mime", "image/png");
+  await expect(page.locator("#comment-editform-21 .attachment-files .btn-delete")).toHaveAttribute(
+    "data-id",
+    "41",
   );
   await expect(
-    page.locator("#comment-editform-21 .attachment-files .attached-file-marker"),
-  ).toHaveAttribute("data-href", `${basePath}/files/41`);
+    page.locator("#comment-editform-21 .attachment-files .attached-file-marker[data-href]"),
+  ).toHaveCount(0);
 
   const postAttachments = [{ id: "31", mimeType: "text/plain", name: "post-note.txt", size: 1024 }];
   const expectedPostAttachments =
-    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="post-note.txt" data-href="__BASE_PATH__/files/31" data-mime="text/plain" data-size="1024"><strong>post-note.txt(1024)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
+    `<div class="attachments" id="attachments" data-attachments='${JSON.stringify(postAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="post-note.txt" data-mime="text/plain" data-size="1024"><strong>post-note.txt(1024)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -2407,7 +2431,7 @@ test("project board detail renders legacy post and comment attachments", async (
     { id: "41", mimeType: "image/png", name: "comment-shot.png", size: 2048 },
   ];
   const expectedCommentAttachments =
-    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="comment-shot.png" data-href="__BASE_PATH__/files/41" data-mime="image/png" data-size="2048"><strong>comment-shot.png(2048)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
+    `<div class="attachments" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attached-file" data-name="comment-shot.png" data-mime="image/png" data-size="2048"><strong>comment-shot.png(2048)</strong><button type="button" class="attached-delete"><i class="ico btn-delete"></i></button></li></ul></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -2416,7 +2440,7 @@ test("project board detail renders legacy post and comment attachments", async (
   );
 
   const expectedCommentUpdateAttachment =
-    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-href="__BASE_PATH__/files/41" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">2048</span><button type="button" class="btn-transparent btn-delete" data-id="41">×</button></div></div>`.replaceAll(
+    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">2048</span><button type="button" class="btn-transparent btn-delete" data-id="41">×</button></div></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -2436,6 +2460,8 @@ test("project board detail renders legacy post and comment attachments", async (
   expect(routeSource).not.toContain("function attachedFilesHtml");
   expect(routeSource).not.toContain("function attachmentFileHtml");
   expect(attachmentSource).not.toContain("dangerouslySetInnerHTML");
+  expect(attachmentSource).not.toContain("data-href");
+  expect(attachmentSource).not.toContain("data-href={href}");
   expect(attachmentSource).toContain('<button type="button" className="attached-delete">');
   expect(attachmentSource).toContain('className="attached-file attached-file-marker"');
   expect(
@@ -2786,9 +2812,12 @@ async function boardDetailMetrics(page: Page) {
       footerKeyboardTarget: keymap?.getAttribute("data-target") ?? null,
       gnbClassName: navbar.className,
       gnbSearchAction: searchForm.getAttribute("action"),
-      gnbSearchScopeActions: Array.from(
+      gnbSearchScopeDataActions: Array.from(
         document.querySelectorAll(".gnb-search-form [data-toggle='search-scope']"),
-      ).map((searchScope) => searchScope.getAttribute("data-action") ?? ""),
+      ).map((searchScope) => searchScope.getAttribute("data-action")),
+      gnbSearchScopeLabels: Array.from(
+        document.querySelectorAll(".gnb-search-form [data-toggle='search-scope']"),
+      ).map((searchScope) => searchScope.textContent?.trim() ?? ""),
       gnbSearchScopeTitle: scope.textContent?.trim() ?? null,
       headerMarginBottom: headerStyle.marginBottom,
       leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),

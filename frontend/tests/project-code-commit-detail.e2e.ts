@@ -170,7 +170,7 @@ function commentUpdateForm(
   const attachmentMarkers = attachments
     .map(
       (file) =>
-        `<div class="attached-file attached-file-marker" data-name="${file.name}" data-href="${basePath}/files/${file.id}" data-mime="${file.mimeType}"><i class="mimetype"></i><strong class="name">${file.name}</strong><span class="size">${file.size}</span><button type="button" class="btn-transparent btn-delete" data-id="${file.id}">×</button></div>`,
+        `<div class="attached-file attached-file-marker" data-name="${file.name}" data-mime="${file.mimeType}"><i class="mimetype"></i><strong class="name">${file.name}</strong><span class="size">${file.size}</span><button type="button" class="btn-transparent btn-delete" data-id="${file.id}">×</button></div>`,
     )
     .join("");
 
@@ -187,6 +187,7 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={`comment-${comment.id}`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("hash={`thread-${thread.id}`}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("attachmentFileHtml");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-href={href}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("escapeHtml");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
     /className="attachment-files"[\s\S]{0,160}dangerouslySetInnerHTML/u,
@@ -422,14 +423,14 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
     .poll(() =>
       page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
         elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
+          hasDataAction: element.hasAttribute("data-action"),
           text: element.textContent?.trim() ?? "",
         })),
       ),
     )
     .toEqual([
-      { action: `${basePath}/admin/sample/search`, text: "This Project" },
-      { action: `${basePath}/search`, text: "All Projects" },
+      { hasDataAction: false, text: "This Project" },
+      { hasDataAction: false, text: "All Projects" },
     ]);
 
   const commitUrl = page.url();
@@ -466,15 +467,15 @@ test("project commit detail includes group search scope when project container h
     .poll(() =>
       page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
         elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
+          hasDataAction: element.hasAttribute("data-action"),
           text: element.textContent?.trim() ?? "",
         })),
       ),
     )
     .toEqual([
-      { action: `${basePath}/admin/sample/search`, text: "This Project" },
-      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
-      { action: `${basePath}/search`, text: "All Projects" },
+      { hasDataAction: false, text: "This Project" },
+      { hasDataAction: false, text: "This Group" },
+      { hasDataAction: false, text: "All Projects" },
     ]);
 
   const commitUrl = page.url();
@@ -1588,7 +1589,10 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   );
   await expect(updateAttachment).toHaveCount(1);
   await expect(updateAttachment).toHaveAttribute("data-name", "note.txt");
-  await expect(updateAttachment).toHaveAttribute("data-href", `${basePath}/files/701`);
+  await expect(updateAttachment).not.toHaveAttribute("data-href", /.+/);
+  await expect(
+    page.locator("#comment-editform-601 .attachment-files .attached-file-marker[data-href]"),
+  ).toHaveCount(0);
   await expect(updateAttachment).toHaveAttribute("data-mime", "text/plain");
   await expect(updateAttachment.locator("i.mimetype")).toHaveCount(1);
   await expect(updateAttachment.locator("strong.name")).toHaveText("note.txt");

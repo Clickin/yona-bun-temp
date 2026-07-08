@@ -1182,7 +1182,6 @@ function CodeCommentThreadView({
                 </div>
                 <CodeCommentUpdateForm
                   action={prefixBasePath(runtimeConfig.basePath, `/comments/${comment.id}`)}
-                  basePath={runtimeConfig.basePath}
                   comment={comment}
                   isEditing={isEditing}
                   onCancel={() => setCommentEditing(comment.id, false)}
@@ -1326,14 +1325,12 @@ function splitOriginalMessageMarkdown(contentsMarkdown: string) {
 
 function CodeCommentUpdateForm({
   action,
-  basePath,
   comment,
   isEditing,
   onCancel,
   onSubmit,
 }: {
   action: string;
-  basePath: string;
   comment: CodeReviewComment;
   isEditing: boolean;
   onCancel: () => void;
@@ -1412,7 +1409,7 @@ function CodeCommentUpdateForm({
           <div className={`preview-${commentId}`}></div>
           <div className="attachment-files">
             {(comment.attachments ?? []).map((file) => (
-              <AttachmentFileMarker basePath={basePath} file={file} key={file.id} />
+              <AttachmentFileMarker file={file} key={file.id} />
             ))}
           </div>
           <div
@@ -1426,26 +1423,14 @@ function CodeCommentUpdateForm({
   );
 }
 
-function AttachmentFileMarker({
-  basePath,
-  file,
-}: {
-  basePath: string;
-  file: CodeReviewAttachment;
-}) {
+function AttachmentFileMarker({ file }: { file: CodeReviewAttachment }) {
   const id = String(file.id);
   const name = String(file.name);
   const mimeType = String(file.mimeType);
   const size = String(file.size);
-  const href = prefixBasePath(basePath, `/files/${id}`);
 
   return (
-    <div
-      className="attached-file attached-file-marker"
-      data-name={name}
-      data-href={href}
-      data-mime={mimeType}
-    >
+    <div className="attached-file attached-file-marker" data-name={name} data-mime={mimeType}>
       <i className="mimetype"></i>
       <strong className="name">{name}</strong>
       <span className="size">{size}</span>
