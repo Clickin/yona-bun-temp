@@ -658,6 +658,8 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(searchScreenSource).not.toContain("useLinkProps");
   expect(searchScreenSource).not.toContain("LegacyHrefAnchor");
   expect(searchScreenSource).not.toContain("React.createElement");
+  expect(searchScreenSource).not.toContain('data-toggle="tooltip"');
+  expect(searchScreenSource).toContain('data-placement="top"');
   expect(searchScreenSource).not.toContain("forwardRef");
   expect(searchScreenSource).not.toContain("router.history");
   expect(defaultErrorBodySource).not.toMatch(/<a[\s>]/u);
@@ -852,7 +854,7 @@ test("global user search renders legacy partial_users.scala.html populated row",
   await expect(avatarLink).toHaveAttribute("href", `${basePath}/alice`);
   await expect(avatarLink).toHaveAttribute("title", "alice");
   await expect(avatarLink).not.toHaveAttribute("data-toggle");
-  await expect(avatarLink).not.toHaveAttribute("data-placement");
+  await expect(page.locator('.search-result-wrap [data-toggle="tooltip"]')).toHaveCount(0);
   await expect(page.locator("#pagination")).toHaveAttribute("id", "pagination");
   await expect(page.locator("#pagination")).not.toHaveClass(/page-navigation-wrap/u);
   await expect(page.locator("#pagination .page-nums")).toHaveCount(0);
@@ -894,8 +896,9 @@ test("global issue search renders legacy partial_issues.scala.html populated row
   await expect(page.locator(".search-list-wrap .search-list-item")).toBeVisible();
   const authorLink = page.locator(".search-meta-info a.meta-item[title='alice']");
   await expect(authorLink).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(authorLink).toHaveText("Alice");
   await expect(authorLink).not.toHaveAttribute("data-toggle");
-  await expect(authorLink).not.toHaveAttribute("data-placement");
+  await expect(page.locator('.search-result-wrap [data-toggle="tooltip"]')).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
