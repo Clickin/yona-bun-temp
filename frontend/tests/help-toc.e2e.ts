@@ -457,7 +457,7 @@ test("shared markdown help uses typed React targets while preserving legacy targ
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain(".dataset");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain("currentTarget.dataset");
-  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain('data-toggle="markdown-help"');
+  expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain('data-toggle="markdown-help"');
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain('data-target="markdownLinks"');
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
     'onClick={() => toggleActiveTarget("markdownLinks")}',
@@ -468,11 +468,43 @@ test("shared markdown help uses typed React targets while preserving legacy targ
 
   const markdownHelp = page.locator(".markdown-help");
   await expect(markdownHelp).toBeVisible();
-  await expect(markdownHelp.locator('.help-nav[data-toggle="markdown-help"]')).toHaveCount(10);
+  await expect(markdownHelp.locator('.help-nav[data-toggle="markdown-help"]')).toHaveCount(0);
+  expect(await renderedMarkdownHelpNavItems(page)).toEqual([
+    { text: "Header", target: "markdownHeaders" },
+    { text: "Text Style", target: "markdownStyling" },
+    { text: "Link", target: "markdownLinks" },
+    { text: "List", target: "markdownLists" },
+    { text: "Checklist", target: "markdownTaskList" },
+    { text: "Image", target: "markdownImages" },
+    { text: "Blockquote", target: "markdownBlockquotes" },
+    { text: "Code", target: "markdownCodes" },
+    { text: "Table", target: "markdownTables" },
+    { text: "Short Link", target: "markdownShortLinks" },
+  ]);
+  expect(await renderedMarkdownHelpPaneClasses(page)).toEqual([
+    "markdownHeaders",
+    "markdownStyling",
+    "markdownLinks",
+    "markdownLists",
+    "markdownTaskList",
+    "markdownImages",
+    "markdownBlockquotes",
+    "markdownCodes",
+    "markdownTables",
+    "markdownShortLinks",
+  ]);
   await expect(markdownHelp.locator('.help-nav[data-target="markdownLinks"]')).toHaveText("Link");
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
+  expect(await readMarkdownHelpMetrics(page)).toEqual({
+    labelContainedInNav: true,
+    navInsideRoot: true,
+    navWidthAlignedWithRoot: true,
+    paneTopAlignedToNavBottom: true,
+    wrapInsideRoot: true,
+    wrapWidthAlignedWithNav: true,
+  });
 
-  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLinks"]').click();
+  await markdownHelp.locator('.help-nav[data-target="markdownLinks"]').click();
   await expect(
     markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
   ).toHaveClass(/active/);
@@ -482,7 +514,7 @@ test("shared markdown help uses typed React targets while preserving legacy targ
     /active/,
   );
 
-  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
   await expect(
     markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
   ).not.toHaveClass(/active/);
@@ -494,7 +526,7 @@ test("shared markdown help uses typed React targets while preserving legacy targ
   ).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
 
-  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
   await expect(
     markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
   ).not.toHaveClass(/active/);
@@ -503,6 +535,64 @@ test("shared markdown help uses typed React targets while preserving legacy targ
   );
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
 });
+
+async function renderedMarkdownHelpNavItems(page: Page) {
+  return page.locator(".markdown-help .markdown-help-nav > .help-nav").evaluateAll((items) =>
+    items.map((item) => ({
+      text: item.textContent?.trim(),
+      target: item.getAttribute("data-target"),
+    })),
+  );
+}
+
+async function renderedMarkdownHelpPaneClasses(page: Page) {
+  return page
+    .locator(".markdown-help .markdown-help-wrap > .markdown-help-item")
+    .evaluateAll((items) =>
+      items.map((item) =>
+        Array.from(item.classList).find(
+          (className) => className !== "markdown-help-item" && className !== "active",
+        ),
+      ),
+    );
+}
+
+async function readMarkdownHelpMetrics(page: Page) {
+  return page.evaluate(() => {
+    const root = document.querySelector(".markdown-help");
+    const nav = document.querySelector(".markdown-help-nav");
+    const label = document.querySelector(".markdown-help-nav .label");
+    const wrap = document.querySelector(".markdown-help-wrap");
+    if (!root || !nav || !label || !wrap) {
+      throw new Error("Expected markdown help root, nav, label, and pane wrap to render.");
+    }
+    const rootBox = root.getBoundingClientRect();
+    const navBox = nav.getBoundingClientRect();
+    const labelBox = label.getBoundingClientRect();
+    const wrapBox = wrap.getBoundingClientRect();
+
+    return {
+      labelContainedInNav:
+        labelBox.top >= navBox.top &&
+        labelBox.bottom <= navBox.bottom &&
+        labelBox.left >= navBox.left &&
+        labelBox.right <= navBox.right,
+      navInsideRoot:
+        navBox.top >= rootBox.top &&
+        navBox.left >= rootBox.left &&
+        navBox.right <= rootBox.right &&
+        navBox.bottom <= rootBox.bottom,
+      navWidthAlignedWithRoot: Math.abs(navBox.width - rootBox.width) <= 1,
+      paneTopAlignedToNavBottom: Math.abs(wrapBox.top - navBox.bottom) <= 1,
+      wrapInsideRoot:
+        wrapBox.top >= rootBox.top &&
+        wrapBox.left >= rootBox.left &&
+        wrapBox.right <= rootBox.right &&
+        wrapBox.bottom <= rootBox.bottom,
+      wrapWidthAlignedWithNav: Math.abs(wrapBox.width - navBox.width) <= 1,
+    };
+  });
+}
 
 async function renderedHelpAnswerLinks(page: Page) {
   return page.locator(".qas > .qa .answer a").evaluateAll((links) =>

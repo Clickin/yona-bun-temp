@@ -1,4 +1,4 @@
-/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy help/markdown.scala.html renders clickable help tabs as li[data-toggle="markdown-help"]. */
+/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy help/markdown.scala.html renders clickable help tabs as li.help-nav. */
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -133,7 +133,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownHeaders")}`}
-          data-toggle="markdown-help"
           data-target="markdownHeaders"
           onClick={() => toggleActiveTarget("markdownHeaders")}
         >
@@ -141,7 +140,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownStyling")}`}
-          data-toggle="markdown-help"
           data-target="markdownStyling"
           onClick={() => toggleActiveTarget("markdownStyling")}
         >
@@ -149,7 +147,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownLinks")}`}
-          data-toggle="markdown-help"
           data-target="markdownLinks"
           onClick={() => toggleActiveTarget("markdownLinks")}
         >
@@ -157,7 +154,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownLists")}`}
-          data-toggle="markdown-help"
           data-target="markdownLists"
           onClick={() => toggleActiveTarget("markdownLists")}
         >
@@ -165,7 +161,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownTaskList")}`}
-          data-toggle="markdown-help"
           data-target="markdownTaskList"
           onClick={() => toggleActiveTarget("markdownTaskList")}
         >
@@ -173,7 +168,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownImages")}`}
-          data-toggle="markdown-help"
           data-target="markdownImages"
           onClick={() => toggleActiveTarget("markdownImages")}
         >
@@ -181,7 +175,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownBlockquotes")}`}
-          data-toggle="markdown-help"
           data-target="markdownBlockquotes"
           onClick={() => toggleActiveTarget("markdownBlockquotes")}
         >
@@ -189,7 +182,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownCodes")}`}
-          data-toggle="markdown-help"
           data-target="markdownCodes"
           onClick={() => toggleActiveTarget("markdownCodes")}
         >
@@ -197,7 +189,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownTables")}`}
-          data-toggle="markdown-help"
           data-target="markdownTables"
           onClick={() => toggleActiveTarget("markdownTables")}
         >
@@ -205,7 +196,6 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownShortLinks")}`}
-          data-toggle="markdown-help"
           data-target="markdownShortLinks"
           onClick={() => toggleActiveTarget("markdownShortLinks")}
         >
