@@ -143,6 +143,43 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
   });
 });
 
+test("project webhooks omits create form when webhook resource is not creatable", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [], { webhooksResponse: { viewerCanCreate: false } });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  await expect(page).toHaveTitle("Webhooks - admin/sample");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
+  await expect(page.locator("#subMenuWebhook")).toHaveClass("active");
+  await expect(page.locator("#formNewWebhook")).toHaveCount(0);
+  await expect(page.locator("#webhooksList")).toContainText("No webhook exists.");
+  await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
+
+  await expect(
+    page.locator(".project-page-wrap.webhook-editor-wrap").evaluate((wrap) => {
+      const tabs = wrap.querySelector(".nav.nav-tabs");
+      const list = wrap.querySelector("#webhooksList");
+      const form = wrap.querySelector("#formNewWebhook");
+      if (!tabs || !list) {
+        throw new Error("Missing legacy webhooks tabs or list");
+      }
+      const tabsBox = tabs.getBoundingClientRect();
+      const listBox = list.getBoundingClientRect();
+      return {
+        formMissing: form === null,
+        listBelowTabs: listBox.top > tabsBox.bottom,
+        listLeftAlignedWithTabs: Math.round(listBox.left) === Math.round(tabsBox.left),
+      };
+    }),
+  ).resolves.toEqual({
+    formMissing: true,
+    listBelowTabs: true,
+    listLeftAlignedWithTabs: true,
+  });
+});
+
 test("project webhooks localhost legacy portal success shell is restored", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page, [], {
@@ -600,6 +637,7 @@ async function mockProjectAdmin(
     ownerName?: string;
     projectName?: string;
     project?: Partial<ReturnType<typeof projectContainer>>;
+    webhooksResponse?: Record<string, unknown>;
   } = {},
 ) {
   const ownerName = options.ownerName ?? "admin";
@@ -709,6 +747,7 @@ async function mockProjectAdmin(
           viewerCanUpdate: options.project?.viewerCanUpdate === false ? false : true,
           webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"],
           webhooks,
+          ...options.webhooksResponse,
         }),
       });
     },

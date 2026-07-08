@@ -166,7 +166,7 @@ function ProjectWebhooksBody({
     <div className="page-wrap-outer">
       <div className="project-page-wrap webhook-editor-wrap">
         <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
-        {booleanField(webhooks.viewerCanUpdate) ? (
+        {webhookCreationAllowed(webhooks) ? (
           <form
             id="formNewWebhook"
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/webhooks`)}
@@ -777,6 +777,17 @@ function countField(value: unknown, fallback: number) {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function webhookCreationAllowed(webhooks: ProjectWebhooksResponse) {
+  const record = recordField(webhooks);
+  if (typeof record.viewerCanCreate === "boolean") {
+    return record.viewerCanCreate;
+  }
+  if (typeof record.viewerCanCreateWebhook === "boolean") {
+    return record.viewerCanCreateWebhook;
+  }
+  return booleanField(webhooks.viewerCanUpdate);
 }
 
 function projectMenuEnabled(project: ProjectContainer, menuKey: string, fallbackKey: string) {
