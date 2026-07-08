@@ -4,10 +4,15 @@ import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  acceptPullRequestRest,
   closePullRequestRest,
+  deletePullRequestSourceBranchRest,
   openPullRequestRest,
+  restorePullRequestSourceBranchRest,
+  reviewPullRequestRest,
   pullRequestDetailQueryOptions,
   unwatchPullRequestRest,
+  unreviewPullRequestRest,
   watchPullRequestRest,
   type PullRequestCommit,
   type PullRequestDetailResponse,
@@ -140,7 +145,6 @@ function PullRequestOverviewBody({
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const prPath = `/${ownerName}/${projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
   const pullRequestInput = {
     ownerName,
     projectName,
@@ -255,12 +259,9 @@ function PullRequestOverviewBody({
                   {t("button.edit")}
                 </Link>
               ) : null}
-              {/* Legacy data-request-method controls below are POST actions, not navigation. */}
               {isOpenState(pullRequest.state) && pullRequest.permissions.canUpdateState ? (
                 <button
                   type="button"
-                  data-request-method="post"
-                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/close`)}
                   className="ybtn"
                   onClick={() => stateMutation.mutate("closed")}
                 >
@@ -269,13 +270,7 @@ function PullRequestOverviewBody({
               ) : null}
               {pullRequest.state.toLowerCase() === "closed" &&
               pullRequest.permissions.canUpdateState ? (
-                <button
-                  type="button"
-                  data-request-method="post"
-                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/open`)}
-                  className="ybtn"
-                  onClick={() => stateMutation.mutate("open")}
-                >
+                <button type="button" className="ybtn" onClick={() => stateMutation.mutate("open")}>
                   {t("pullRequest.reopen")}
                 </button>
               ) : null}
@@ -619,8 +614,13 @@ export function PullRequestHeader({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
-  const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const pullRequestInput = {
+    ownerName: pullRequest.ownerName,
+    projectName: pullRequest.projectName,
+    pullRequestNumber: pullRequest.pullRequestNumber,
+  };
   const isOpen = isOpenState(pullRequest.state);
   const isAcceptable =
     isOpen &&
@@ -632,6 +632,33 @@ export function PullRequestHeader({
   const openThreadCount = pullRequest.threads.filter(
     (thread) => thread.state.toLowerCase() === "open",
   ).length;
+  const reviewMutation = useMutation({
+    mutationFn: async (nextAction: "review" | "unreview") => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return nextAction === "review"
+        ? reviewPullRequestRest(runtimeConfig, csrfToken, pullRequestInput)
+        : unreviewPullRequestRest(runtimeConfig, csrfToken, pullRequestInput);
+    },
+    onSuccess(response) {
+      queryClient.setQueryData(
+        pullRequestDetailQueryOptions(runtimeConfig, pullRequestInput).queryKey,
+        response,
+      );
+    },
+  });
+  const acceptMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return acceptPullRequestRest(runtimeConfig, csrfToken, pullRequestInput);
+    },
+    onSuccess(response) {
+      queryClient.setQueryData(
+        pullRequestDetailQueryOptions(runtimeConfig, pullRequestInput).queryKey,
+        response,
+      );
+    },
+  });
+
   return (
     <>
       <div className="board-header issue">
@@ -674,23 +701,20 @@ export function PullRequestHeader({
                 </Link>
               ))}
             </div>
-            {/* Review/unreview controls are legacy POST actions, not navigation. */}
             {isOpen ? (
               pullRequest.reviewed ? (
                 <button
                   type="button"
-                  data-request-method="post"
                   className="ybtn ybtn-default"
-                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/unreview`)}
+                  onClick={() => reviewMutation.mutate("unreview")}
                 >
                   {t("pullRequest.unreview")}
                 </button>
               ) : (
                 <button
                   type="button"
-                  data-request-method="post"
                   className={`ybtn ${pullRequest.reviewers.length > 0 ? "ybtn-default" : "ybtn-success"}`}
-                  data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/review`)}
+                  onClick={() => reviewMutation.mutate("review")}
                 >
                   {t("pullRequest.review")}
                 </button>
@@ -703,9 +727,8 @@ export function PullRequestHeader({
             <button
               id="btnAccept"
               type="button"
-              data-request-method="post"
-              data-request-uri={prefixBasePath(runtimeConfig.basePath, `${prPath}/accept`)}
               className="ybtn ybtn-success"
+              onClick={() => acceptMutation.mutate()}
             >
               {t("pullRequest.merge")}
             </button>
@@ -839,7 +862,26 @@ export function PullRequestStateInfo({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const prPath = `/${pullRequest.ownerName}/${pullRequest.projectName}/pullRequest/${pullRequest.pullRequestNumber}`;
+  const queryClient = useQueryClient();
+  const pullRequestInput = {
+    ownerName: pullRequest.ownerName,
+    projectName: pullRequest.projectName,
+    pullRequestNumber: pullRequest.pullRequestNumber,
+  };
+  const sourceBranchMutation = useMutation({
+    mutationFn: async (nextAction: "delete" | "restore") => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return nextAction === "delete"
+        ? deletePullRequestSourceBranchRest(runtimeConfig, csrfToken, pullRequestInput)
+        : restorePullRequestSourceBranchRest(runtimeConfig, csrfToken, pullRequestInput);
+    },
+    onSuccess(response) {
+      queryClient.setQueryData(
+        pullRequestDetailQueryOptions(runtimeConfig, pullRequestInput).queryKey,
+        response,
+      );
+    },
+  });
 
   if (pullRequest.state.toLowerCase() === "merged") {
     return (
@@ -867,11 +909,7 @@ export function PullRequestStateInfo({
             <button
               type="button"
               className="ybtn ybtn-danger ybtn-mini pull-right"
-              data-request-method="delete"
-              data-request-uri={prefixBasePath(
-                runtimeConfig.basePath,
-                `${prPath}/deletefrombranch`,
-              )}
+              onClick={() => sourceBranchMutation.mutate("delete")}
             >
               {t("pullRequest.delete.branch")}
             </button>
@@ -880,15 +918,10 @@ export function PullRequestStateInfo({
         {pullRequest.permissions.canRestoreSourceBranch ? (
           <>
             <code>{pullRequest.fromBranch}</code> {t("pullRequest.restore.frombranch.message")}
-            {/* Restore branch is a legacy POST action, not navigation. */}
             <button
               type="button"
               className="ybtn ybtn-info ybtn-mini pull-right"
-              data-request-method="post"
-              data-request-uri={prefixBasePath(
-                runtimeConfig.basePath,
-                `${prPath}/restorefrombranch`,
-              )}
+              onClick={() => sourceBranchMutation.mutate("restore")}
             >
               {t("pullRequest.restore.branch")}
             </button>

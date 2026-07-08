@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PULL_REQUEST_OVERVIEW = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body"><div class="author-info left-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" data-toggle="tooltip" data-original-title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" data-toggle="tooltip" data-original-title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div><div class="content markdown-wrap"><p>Initial body</p></div><div class="attachments" data-attachments="[]"></div></div><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="board-footer board-actrow"><div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-toggle="button" data-watching="false">Watch</button></div><div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/close" class="ybtn">Close</button></div></div><hr class="nm"><div class="board-comment-wrap"></div><div class="right-txt"><button type="button" class="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" data-target="#helpMessage">Help</button></div></div></div><div id="helpMessage" class="modal hide fade pullreq-info"><div class="modal-header"><h5>You can check commits and descriptions on received code.</h5></div><div class="modal-body"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="/assets/images/fork-pull/merge.jpg"><br></div><div class="pull-left help-messages mt10"><p>If members of the original project accept the code, it will be merged into the original project.</p><p>You can't accept code if the code is not safe to merge.</p><p>When you can't accept code, you may postpone or delete the pull request.</p></div></div></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body"><div class="author-info left-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" data-toggle="tooltip" data-original-title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" data-toggle="tooltip" data-original-title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div><div class="content markdown-wrap"><p>Initial body</p></div><div class="attachments" data-attachments="[]"></div></div><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="board-footer board-actrow"><div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-toggle="button" data-watching="false">Watch</button></div><div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Close</button></div></div><hr class="nm"><div class="board-comment-wrap"></div><div class="right-txt"><button type="button" class="ybtn ybtn-inverse ybtn-mini" data-toggle="modal" data-target="#helpMessage">Help</button></div></div></div><div id="helpMessage" class="modal hide fade pullreq-info"><div class="modal-header"><h5>You can check commits and descriptions on received code.</h5></div><div class="modal-body"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="/assets/images/fork-pull/merge.jpg"><br></div><div class="pull-left help-messages mt10"><p>If members of the original project accept the code, it will be merged into the original project.</p><p>You can't accept code if the code is not safe to merge.</p><p>When you can't accept code, you may postpone or delete the pull request.</p></div></div></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div>
 `;
 
 const EXPECTED_PULL_REQUEST_COMMIT_EVENT = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-94"><span class="state changed">Committed</span><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="dev"><strong>Dev Member</strong></a> has committed.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-94" title="Jul 3, 2026">Jul 3, 2026</a></span><a href="__BASE_PATH__/admin/sample/compare/basehash...headhash" class="ybtn ybtn-mini">Additional changes</a><ul class="commit-list"><li class="comment-body commit-info outdated"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commit-id">1234567</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 3, 2026">Jul 3, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commitMsg short">Fix login</a></li><li class="comment-body commit-info"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commit-id">abcdef1</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 4, 2026">Jul 4, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commitMsg short">Add UI</a></li></ul></li></ul></div>`;
@@ -56,8 +56,8 @@ const EXPECTED_PULL_REQUEST_NO_WATCH_BUTTON = EXPECTED_PULL_REQUEST_OVERVIEW.rep
 );
 
 const EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
-  `<div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div>`,
-  `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><button type="button" data-request-method="post" class="ybtn ybtn-default" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/unreview">Cancel review</button><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div>`,
+  `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
+  `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><button type="button" class="ybtn ybtn-default">Cancel review</button><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
 );
 
 const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
@@ -65,7 +65,7 @@ const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.repl
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-conflict">Conflict</span></div>`,
 )
   .replace(
-    `<div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div>`,
+    `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
     `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" data-toggle="tooltip" data-placement="top" title="There are conflicts.">Merge</button></div>`,
   )
   .replace(
@@ -89,7 +89,7 @@ const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.repla
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-closed">Closed</span></div>`,
 )
   .replace(
-    `<div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div>`,
+    `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
     `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" data-toggle="tooltip" data-placement="top" title="This pull request is not open.">Merge</button></div>`,
   )
   .replace(
@@ -97,12 +97,12 @@ const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.repla
     `<div id="state" class="pullRequest-stateInfo"></div>`,
   )
   .replace(
-    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/close" class="ybtn">Close</button></div>`,
-    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/open" class="ybtn">Reopen</button></div>`,
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Close</button></div>`,
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Reopen</button></div>`,
   );
 
 const EXPECTED_PULL_REQUEST_MERGING_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
-  `<div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div>`,
+  `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
   `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" data-toggle="tooltip" data-placement="top" title="Now, it's checking the code.">Merge</button></div>`,
 ).replace(
   `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
@@ -114,22 +114,22 @@ const EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH = EXPECTED_PULL_REQUEST_OVERVIE
   `<div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-merged">Merged</span></div>`,
 )
   .replace(
-    `<div class="pull-right"><button id="btnAccept" type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/accept" class="ybtn ybtn-success">Merge</button></div>`,
+    `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
     `<div class="pull-right"></div>`,
   )
   .replace(
     `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
-    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-info"><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="25" height="25"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a> accepted this pull request.<code>feature/ui</code> You can delete branch.<button type="button" class="ybtn ybtn-danger ybtn-mini pull-right" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/deletefrombranch">Delete branch</button></div></div>`,
+    `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-info"><a href="__BASE_PATH__/admin" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="25" height="25"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></a> accepted this pull request.<code>feature/ui</code> You can delete branch.<button type="button" class="ybtn ybtn-danger ybtn-mini pull-right">Delete branch</button></div></div>`,
   )
   .replace(
-    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/close" class="ybtn">Close</button></div>`,
+    `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Close</button></div>`,
     `<div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a></div>`,
   );
 
 const EXPECTED_PULL_REQUEST_MERGED_RESTORE_BRANCH =
   EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH.replace(
-    `<code>feature/ui</code> You can delete branch.<button type="button" class="ybtn ybtn-danger ybtn-mini pull-right" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/deletefrombranch">Delete branch</button>`,
-    `<code>feature/ui</code> Branch can be restored.<button type="button" class="ybtn ybtn-info ybtn-mini pull-right" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/pullRequest/9/restorefrombranch">Restore branch</button>`,
+    `<code>feature/ui</code> You can delete branch.<button type="button" class="ybtn ybtn-danger ybtn-mini pull-right">Delete branch</button>`,
+    `<code>feature/ui</code> Branch can be restored.<button type="button" class="ybtn ybtn-info ybtn-mini pull-right">Restore branch</button>`,
   );
 
 test("project pull request overview matches legacy git/view.scala.html empty-event DOM", async ({
@@ -148,10 +148,10 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
   await expect(page.locator("#state .alert-success")).toContainText(
     "This pull request can be merged safely.",
   );
-  await expect(page.locator("#btnAccept")).toHaveAttribute(
-    "data-request-uri",
-    `${basePath}/admin/sample/pullRequest/9/accept`,
-  );
+  await expect(page.locator("#btnAccept")).toHaveClass("ybtn ybtn-success");
+  await expect(page.locator("#btnAccept")).toHaveText("Merge");
+  await expect(page.locator("#btnAccept")).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(page.locator("#btnAccept")).not.toHaveAttribute("data-request-method", /.+/u);
   await expect(page.locator(".author-info > .usf-group.pull-left")).toHaveAttribute(
     "href",
     `${basePath}/dev`,
@@ -206,10 +206,13 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     href: `${basePath}/admin/sample/pullRequest/9/editform`,
     text: "Edit",
   });
-  await expect(page.locator('.board-footer button[data-request-method="post"]')).toHaveAttribute(
-    "data-request-uri",
-    `${basePath}/admin/sample/pullRequest/9/close`,
-  );
+  const closeFooterButton = page.locator(".board-footer .mr5 button.ybtn").filter({
+    hasText: "Close",
+  });
+  await expect(closeFooterButton).toHaveCount(1);
+  await expect(closeFooterButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(closeFooterButton).not.toHaveAttribute("data-request-method", /.+/u);
+  await expect(page.locator("[data-request-uri], [data-request-method]")).toHaveCount(0);
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -537,8 +540,10 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).not.toContain("to={to as never}");
   expect(routeSource).toContain('to="."');
   expect(routeSource).toContain("hash={`event-${event.id}`}");
-  expect(routeSource).toContain("Legacy data-request-method controls below are POST actions");
-  expect(routeSource).toContain("Restore branch is a legacy POST action");
+  expect(routeSource).not.toContain("data-request-method");
+  expect(routeSource).not.toContain("data-request-uri");
+  expect(routeSource).not.toContain("Legacy data-request-method controls below are POST actions");
+  expect(routeSource).not.toContain("Restore branch is a legacy POST action");
   expect(routeSource).not.toMatch(/<a\b[^>]*data-request-method=/u);
   expect(routeSource).not.toMatch(/document\.|querySelector|classList|style\.display/u);
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
@@ -1287,8 +1292,10 @@ test("project pull request overview close and reopen footer controls post and up
   const { stateRequests } = await mockPullRequestOverview(page);
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
-  const closeButton = page.locator('.board-footer button[data-request-uri$="/close"]');
+  const closeButton = page.locator(".board-footer .mr5 button.ybtn").filter({ hasText: "Close" });
   await expect(closeButton).toHaveText("Close");
+  await expect(closeButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(closeButton).not.toHaveAttribute("data-request-method", /.+/u);
   await expect(page.locator(".badge-issue-open")).toHaveText("Open");
 
   const closeResponsePromise = page.waitForResponse(
@@ -1301,8 +1308,12 @@ test("project pull request overview close and reopen footer controls post and up
 
   await expect(page.locator(".badge-issue-closed")).toHaveText("Closed");
   await expect(page.locator("#state")).toBeEmpty();
-  const reopenButton = page.locator('.board-footer button[data-request-uri$="/open"]');
+  const reopenButton = page.locator(".board-footer .mr5 button.ybtn").filter({
+    hasText: "Reopen",
+  });
   await expect(reopenButton).toHaveText("Reopen");
+  await expect(reopenButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(reopenButton).not.toHaveAttribute("data-request-method", /.+/u);
 
   const reopenResponsePromise = page.waitForResponse(
     (response) =>
@@ -1325,7 +1336,7 @@ test("project pull request overview close and reopen footer controls post and up
 
 test("project pull request overview renders legacy reviewer controls DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockPullRequestOverview(page, {
+  const { reviewRequests } = await mockPullRequestOverview(page, {
     container: {
       isUsingReviewerCount: true,
     },
@@ -1350,7 +1361,12 @@ test("project pull request overview renders legacy reviewer controls DOM", async
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator("#reviewers")).toContainText("2 participants");
-  await expect(page.locator('button[data-request-uri$="/unreview"]')).toHaveText("Cancel review");
+  const unreviewButton = page.locator("button.ybtn.ybtn-default").filter({
+    hasText: "Cancel review",
+  });
+  await expect(unreviewButton).toHaveText("Cancel review");
+  await expect(unreviewButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(unreviewButton).not.toHaveAttribute("data-request-method", /.+/u);
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -1358,6 +1374,15 @@ test("project pull request overview renders legacy reviewer controls DOM", async
       EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  const unreviewResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/pull-requests/9/unreview") &&
+      response.request().method() === "POST",
+  );
+  await unreviewButton.click();
+  await unreviewResponsePromise;
+  expect(reviewRequests).toEqual([{ hasCsrfToken: true, method: "POST", path: "unreview" }]);
 });
 
 test("project pull request overview renders legacy conflict state DOM", async ({ page }) => {
@@ -1477,7 +1502,12 @@ test("project pull request overview renders legacy closed reopen footer DOM", as
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".badge-issue-closed")).toHaveText("Closed");
-  await expect(page.locator('button[data-request-uri$="/open"]')).toHaveText("Reopen");
+  const reopenButton = page.locator(".board-footer .mr5 button.ybtn").filter({
+    hasText: "Reopen",
+  });
+  await expect(reopenButton).toHaveText("Reopen");
+  await expect(reopenButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(reopenButton).not.toHaveAttribute("data-request-method", /.+/u);
   await expect(page.locator("#state")).toBeEmpty();
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
@@ -1517,7 +1547,7 @@ test("project pull request overview renders legacy merged source-branch delete s
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockPullRequestOverview(page, {
+  const { sourceBranchRequests } = await mockPullRequestOverview(page, {
     detail: {
       permissions: {
         canComment: true,
@@ -1536,6 +1566,10 @@ test("project pull request overview renders legacy merged source-branch delete s
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator("#state .alert-info")).toContainText("Delete branch");
+  const deleteBranchButton = page.locator("#state .alert-info button.ybtn-danger");
+  await expect(deleteBranchButton).toHaveText("Delete branch");
+  await expect(deleteBranchButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(deleteBranchButton).not.toHaveAttribute("data-request-method", /.+/u);
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -1543,13 +1577,26 @@ test("project pull request overview renders legacy merged source-branch delete s
       EXPECTED_PULL_REQUEST_MERGED_DELETE_BRANCH.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response
+        .url()
+        .includes("/api/v1/owners/admin/projects/sample/pull-requests/9/source-branch") &&
+      response.request().method() === "DELETE",
+  );
+  await deleteBranchButton.click();
+  await deleteResponsePromise;
+  expect(sourceBranchRequests).toEqual([
+    { hasCsrfToken: true, method: "DELETE", path: "source-branch" },
+  ]);
 });
 
 test("project pull request overview renders legacy merged source-branch restore state", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockPullRequestOverview(page, {
+  const { sourceBranchRequests } = await mockPullRequestOverview(page, {
     detail: {
       permissions: {
         canComment: true,
@@ -1569,6 +1616,10 @@ test("project pull request overview renders legacy merged source-branch restore 
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator("#state .alert-info")).toContainText("Restore branch");
+  const restoreBranchButton = page.locator("#state .alert-info button.ybtn-info");
+  await expect(restoreBranchButton).toHaveText("Restore branch");
+  await expect(restoreBranchButton).not.toHaveAttribute("data-request-uri", /.+/u);
+  await expect(restoreBranchButton).not.toHaveAttribute("data-request-method", /.+/u);
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -1576,6 +1627,19 @@ test("project pull request overview renders legacy merged source-branch restore 
       EXPECTED_PULL_REQUEST_MERGED_RESTORE_BRANCH.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  const restoreResponsePromise = page.waitForResponse(
+    (response) =>
+      response
+        .url()
+        .includes("/api/v1/owners/admin/projects/sample/pull-requests/9/source-branch") &&
+      response.request().method() === "POST",
+  );
+  await restoreBranchButton.click();
+  await restoreResponsePromise;
+  expect(sourceBranchRequests).toEqual([
+    { hasCsrfToken: true, method: "POST", path: "source-branch" },
+  ]);
 });
 
 async function mockPullRequestOverview(
@@ -1588,6 +1652,17 @@ async function mockPullRequestOverview(
     session?: Record<string, unknown>;
   } = {},
 ) {
+  const acceptRequests: { hasCsrfToken: boolean; method: string; path: "accept" }[] = [];
+  const reviewRequests: {
+    hasCsrfToken: boolean;
+    method: string;
+    path: "review" | "unreview";
+  }[] = [];
+  const sourceBranchRequests: {
+    hasCsrfToken: boolean;
+    method: string;
+    path: "source-branch";
+  }[] = [];
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const stateRequests: { hasCsrfToken: boolean; method: string; path: "close" | "open" }[] = [];
   const detail = {
@@ -1764,6 +1839,79 @@ async function mockPullRequestOverview(
     });
   });
   await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/accept",
+    async (route) => {
+      acceptRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        path: "accept",
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...detail,
+          state: "merged",
+        }),
+      });
+    },
+  );
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/review",
+    async (route) => {
+      reviewRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        path: "review",
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...detail,
+          reviewed: true,
+        }),
+      });
+    },
+  );
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/unreview",
+    async (route) => {
+      reviewRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        path: "unreview",
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...detail,
+          reviewed: false,
+        }),
+      });
+    },
+  );
+  await page.route(
+    "**/api/v1/owners/admin/projects/sample/pull-requests/9/source-branch",
+    async (route) => {
+      sourceBranchRequests.push({
+        hasCsrfToken: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        path: "source-branch",
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...detail,
+          permissions: {
+            ...(detail.permissions as Record<string, unknown>),
+            canDeleteSourceBranch: route.request().method() === "POST",
+            canRestoreSourceBranch: route.request().method() === "DELETE",
+          },
+          sourceBranchExists: route.request().method() === "POST",
+        }),
+      });
+    },
+  );
+  await page.route(
     "**/api/v1/owners/admin/projects/sample/pull-requests/9/changes**",
     async (route) => {
       const url = new URL(route.request().url());
@@ -1783,7 +1931,7 @@ async function mockPullRequestOverview(
     },
   );
 
-  return { stateRequests, watchRequests };
+  return { acceptRequests, reviewRequests, sourceBranchRequests, stateRequests, watchRequests };
 }
 
 async function expectLegacyAnchor(
