@@ -75,9 +75,6 @@ type ProjectIssueSearchUserOption = {
 
 const ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX = "__currentUserShortcut__:";
 
-type LegacyPjaxContainerAttributes = HTMLAttributes<HTMLDivElement> & {
-  "pjax-container": "";
-};
 type LegacyPjaxFilterAttributes = HTMLAttributes<HTMLButtonElement> & {
   "pjax-filter": "";
 };
@@ -418,7 +415,6 @@ function ProjectIssuesBody({
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
-  const issueListWrapLegacyAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttributes;
   const currentPageItems = issues.items;
   const currentPageHasItems = currentPageItems.length > 0;
   const [showSubtasksAlways, setShowSubtasksAlways] = useState(
@@ -569,7 +565,7 @@ function ProjectIssuesBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div {...issueListWrapLegacyAttrs} className="row-fluid issue-list-wrap">
+        <div className="row-fluid issue-list-wrap">
           <div className="left-menu span2 span-hard-wrap">
             <QuickSearch
               currentUserId={currentUserId}
