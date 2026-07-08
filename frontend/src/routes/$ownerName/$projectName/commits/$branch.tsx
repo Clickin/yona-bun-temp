@@ -132,7 +132,6 @@ function ProjectCodeHistoryBody({
           <div className="code-browse-wrap">
             <select
               id="branches"
-              data-toggle="select2"
               data-format="branch"
               data-dropdown-css-class="branches"
               className="pull-right"
