@@ -1270,7 +1270,6 @@ function MassUpdateToolbar({
         >
           <button
             className="btn dropdown-toggle medium"
-            data-toggle="dropdown"
             disabled={!hasSelectedIssues}
             onClick={(event) => {
               event.preventDefault();
@@ -1409,7 +1408,6 @@ function MassUpdateDropdown({
     <div id={id} className={massUpdateDropdownGroupClassName(isOpen)} data-name={name}>
       <button
         className="btn dropdown-toggle medium"
-        data-toggle="dropdown"
         disabled={disabled}
         onClick={(event) => {
           event.preventDefault();
@@ -1477,7 +1475,6 @@ function LabelMassUpdateDropdown({
     <div id={id} className={massUpdateDropdownGroupClassName(isOpen)} data-name={name}>
       <button
         className="btn dropdown-toggle medium"
-        data-toggle="dropdown"
         disabled={disabled}
         onClick={(event) => {
           event.preventDefault();
@@ -2611,7 +2608,6 @@ function IssueSearchForm({
               id="authorId"
               name="authorId"
               data-search="authorId"
-              data-toggle="select2"
               data-format="user"
               data-container-css-class="fullsize"
               defaultValue={search.authorId}
@@ -2644,7 +2640,6 @@ function IssueSearchForm({
               id="assigneeId"
               name="assigneeId"
               data-search="assigneeId"
-              data-toggle="select2"
               data-format="user"
               data-container-css-class="fullsize"
               defaultValue={search.assigneeId}
@@ -2681,7 +2676,6 @@ function IssueSearchForm({
                 )}
                 name="milestoneId"
                 data-search="milestoneId"
-                data-toggle="select2"
                 data-format="milestone"
                 data-container-css-class="fullsize"
                 defaultValue={search.milestoneId}
@@ -2914,7 +2908,6 @@ function IssueSearchLabelSelect({
           name="labelIds"
           multiple
           data-search="labelIds"
-          data-toggle="select2"
           data-format="issuelabel"
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
