@@ -610,7 +610,6 @@ function ProjectIssueFormBody({
                         <input
                           type="text"
                           id="issueDueDate"
-                          data-toggle="calendar"
                           name="dueDate"
                           className="textbox full"
                           ref={dueDateRef}
