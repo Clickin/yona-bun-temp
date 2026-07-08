@@ -70,6 +70,7 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     completionRateFontSize: "20px",
     completionRateFontWeight: "700",
     dueDateColor: "rgb(243, 108, 34)",
+    filterControlsDoNotOverlap: true,
     filterWrapHeight: 30,
     firstMilestonePaddingBottom: "15px",
     firstMilestonePaddingTop: "15px",
@@ -78,10 +79,14 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     milestoneNameFontSize: "20px",
     milestoneNameFontWeight: "700",
     progressHeight: "8px",
+    progressInsideRow: true,
     progressMarginTop: "15px",
+    progressSitsBelowMetaInfo: true,
     progressWidth: 1260,
     progressWrapWidth: 1260,
     rowWidth: 1260,
+    searchButtonInsideSearchBar: true,
+    searchInputLeftAlignedBeforeButton: true,
     searchButtonWidth: 38,
     searchInputWidth: 350,
     tabWrapMarginBottom: "0px",
@@ -102,6 +107,19 @@ test("project milestones list matches legacy milestone/list.scala.html populated
   await expect(
     page.locator('.issue-link[href$="/issue/12"]').filter({ hasText: "#12" }),
   ).toBeVisible();
+
+  await page.fill('.filter-wrap.milestone input[name="filter"]', "memberbug");
+  await expect(
+    page.locator('.issue-link[href$="/issue/11"]').filter({ hasText: "#11" }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.issue-link[href$="/issue/12"]').filter({ hasText: "#12" }),
+  ).toBeHidden();
+
+  await page.fill('.filter-wrap.milestone input[name="filter"]', "member bug");
+  await expect(
+    page.locator('.issue-link[href$="/issue/11"]').filter({ hasText: "#11" }),
+  ).toBeHidden();
 
   await page.fill('.filter-wrap.milestone input[name="filter"]', "#11");
   await expect(
@@ -552,6 +570,8 @@ async function readMilestoneListMetrics(page: Page) {
   return page.evaluate(() => {
     const tabWrap = document.querySelector<HTMLElement>(".tab-wrap");
     const filterWrap = document.querySelector<HTMLElement>(".filter-wrap.milestone");
+    const filters = document.querySelector<HTMLElement>(".filter-wrap.milestone .filters");
+    const searchBar = document.querySelector<HTMLElement>(".filter-wrap.milestone .search-bar");
     const searchInput = document.querySelector<HTMLElement>(".filter-wrap.milestone .textbox");
     const searchButton = document.querySelector<HTMLElement>(".filter-wrap.milestone .search-btn");
     const milestone = document.querySelector<HTMLElement>("ul.milestones > li.milestone");
@@ -565,6 +585,7 @@ async function readMilestoneListMetrics(page: Page) {
     const missing = Object.entries({
       completionRate,
       dueDate,
+      filters,
       filterWrap,
       infos,
       metaInfo,
@@ -572,6 +593,7 @@ async function readMilestoneListMetrics(page: Page) {
       milestoneName,
       progress,
       progressWrap,
+      searchBar,
       searchButton,
       searchInput,
       tabWrap,
@@ -585,11 +607,20 @@ async function readMilestoneListMetrics(page: Page) {
     const milestoneStyle = getComputedStyle(milestone);
     const milestoneNameStyle = getComputedStyle(milestoneName);
     const completionRateStyle = getComputedStyle(completionRate);
+    const filterBox = filterWrap.getBoundingClientRect();
+    const filtersBox = filters.getBoundingClientRect();
+    const searchBarBox = searchBar.getBoundingClientRect();
+    const searchInputBox = searchInput.getBoundingClientRect();
+    const searchButtonBox = searchButton.getBoundingClientRect();
+    const milestoneBox = milestone.getBoundingClientRect();
+    const metaInfoBox = metaInfo.getBoundingClientRect();
+    const progressBox = progress.getBoundingClientRect();
     return {
       completionRateFontSize: completionRateStyle.fontSize,
       completionRateFontWeight: completionRateStyle.fontWeight,
       dueDateColor: getComputedStyle(dueDate).color,
-      filterWrapHeight: Math.round(filterWrap.getBoundingClientRect().height),
+      filterControlsDoNotOverlap: searchBarBox.right <= filtersBox.left,
+      filterWrapHeight: Math.round(filterBox.height),
       firstMilestonePaddingBottom: milestoneStyle.paddingBottom,
       firstMilestonePaddingTop: milestoneStyle.paddingTop,
       infosWidth: Math.round(infos.getBoundingClientRect().width),
@@ -597,12 +628,22 @@ async function readMilestoneListMetrics(page: Page) {
       milestoneNameFontSize: milestoneNameStyle.fontSize,
       milestoneNameFontWeight: milestoneNameStyle.fontWeight,
       progressHeight: getComputedStyle(progress).height,
+      progressInsideRow:
+        progressBox.left >= milestoneBox.left &&
+        progressBox.right <= milestoneBox.right &&
+        progressBox.bottom <= milestoneBox.bottom,
       progressMarginTop: getComputedStyle(progressWrap).marginTop,
-      progressWidth: Math.round(progress.getBoundingClientRect().width),
+      progressSitsBelowMetaInfo: progressBox.top >= metaInfoBox.bottom,
+      progressWidth: Math.round(progressBox.width),
       progressWrapWidth: Math.round(progressWrap.getBoundingClientRect().width),
-      rowWidth: Math.round(milestone.getBoundingClientRect().width),
-      searchButtonWidth: Math.round(searchButton.getBoundingClientRect().width),
-      searchInputWidth: Math.round(searchInput.getBoundingClientRect().width),
+      rowWidth: Math.round(milestoneBox.width),
+      searchButtonInsideSearchBar:
+        searchButtonBox.top >= searchBarBox.top &&
+        searchButtonBox.bottom <= searchBarBox.bottom &&
+        searchButtonBox.right <= searchBarBox.right,
+      searchButtonWidth: Math.round(searchButtonBox.width),
+      searchInputLeftAlignedBeforeButton: searchInputBox.left < searchButtonBox.left,
+      searchInputWidth: Math.round(searchInputBox.width),
       tabWrapMarginBottom: getComputedStyle(tabWrap).marginBottom,
     };
   });

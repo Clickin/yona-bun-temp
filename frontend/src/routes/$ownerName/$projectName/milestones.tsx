@@ -419,15 +419,11 @@ function issueSearchText(issue: ProjectMilestoneIssue) {
   const issueNumber = stringField(issue.issueNumber);
   const title = stringField(issue.title);
   const assignee = stringField(issue.assigneeLabel);
-  return [
-    issueNumber,
-    `#${issueNumber}`,
-    title,
-    assignee ? `${title} - ${assignee}` : title,
-    ...issue.labels.map((label) => stringField(label.name)),
-  ]
-    .join(" ")
-    .toLowerCase();
+  const titleText = assignee ? `${title} - ${assignee}` : title;
+  const renderedText = `#${issueNumber}${titleText}${issue.labels
+    .map((label) => stringField(label.name))
+    .join("")}`;
+  return renderedText.toLowerCase();
 }
 
 function sortLabels(labels: YonaLabel[]) {
