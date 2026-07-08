@@ -6,6 +6,9 @@ import {
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
 import type { OrganizationContainer } from "../../../api/types";
@@ -802,21 +805,73 @@ function OrganizationIssueItem({
 
 function TwoColumnModeCheckbox() {
   const { t } = useLegacyMessages();
+  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
+  const [showPopover, setShowPopover] = useState(false);
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPopoverTimers = () => {
+    if (showTimerRef.current !== null) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
+    if (hideTimerRef.current !== null) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+  const showDelayedPopover = () => {
+    clearPopoverTimers();
+    showTimerRef.current = setTimeout(() => setShowPopover(true), 100);
+  };
+  const hideDelayedPopover = () => {
+    clearPopoverTimers();
+    hideTimerRef.current = setTimeout(() => setShowPopover(false), 100);
+  };
+
+  useEffect(() => clearPopoverTimers, []);
 
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
-      data-content={t("common.two.column.mode.desc")}
+      onBlur={hideDelayedPopover}
+      onFocus={showDelayedPopover}
+      onMouseEnter={showDelayedPopover}
+      onMouseLeave={hideDelayedPopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
         <div className="two-column-icon-border">
-          <input id="two-column-mode" type="checkbox" />
+          <input
+            id="two-column-mode"
+            type="checkbox"
+            checked={useTwoColumnMode}
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
+              localStorage.setItem("useTwoColumnMode", String(checked));
+              setUseTwoColumnMode(checked);
+            }}
+          />
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
+      {showPopover ? (
+        <div
+          className="popover top"
+          role="tooltip"
+          style={{ display: "block", left: "-75px", top: "-74px" }}
+        >
+          <div className="arrow"></div>
+          <h3 className="popover-title">{t("common.two.column.mode")}</h3>
+          <div className="popover-content">
+            <p>{t("common.two.column.mode.desc")}</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
