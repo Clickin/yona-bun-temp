@@ -292,8 +292,6 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 {(response?.users ?? []).map((user) => (
                   <UserListItem
                     key={user.id}
-                    query={search.query}
-                    runtimeConfig={runtimeConfig}
                     onDeleteClick={openDeleteModal}
                     onResetPasswordClick={(loginId) => resetPasswordMutation.mutate(loginId)}
                     onToggleClick={(loginId, action) =>
@@ -594,8 +592,6 @@ function UserListItem({
   onResetPasswordClick,
   onToggleClick,
   passwordReset,
-  query,
-  runtimeConfig,
   state,
   user,
 }: {
@@ -604,14 +600,10 @@ function UserListItem({
   onResetPasswordClick: (loginId: string) => void;
   onToggleClick: (loginId: string, action: UserToggleAction) => void;
   passwordReset?: SiteUserPasswordResetResponse | "pending";
-  query: string;
-  runtimeConfig: RuntimeConfig;
   state: SiteUserState;
   user: SiteUser;
 }) {
   const { t } = useLegacyMessages();
-  const userPath = prefixBasePath(runtimeConfig.basePath, `/${user.loginId}`);
-
   return (
     <li className="row-fluid listitem">
       <div className="span3 listitem-col">
@@ -656,14 +648,6 @@ function UserListItem({
           <button
             type="button"
             className={user.isGuest ? "ybtn ybtn-small ybtn-success" : "ybtn ybtn-small"}
-            data-request-method="post"
-            data-request-uri={legacyUserMutationPath(
-              runtimeConfig.basePath,
-              user.loginId,
-              "guest",
-              state,
-              query,
-            )}
             onClick={() => onToggleClick(user.loginId, "guest")}
             style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
@@ -672,14 +656,6 @@ function UserListItem({
           <button
             type="button"
             className="ybtn ybtn-small"
-            data-request-method="post"
-            data-request-uri={legacyUserMutationPath(
-              runtimeConfig.basePath,
-              user.loginId,
-              "account-lock",
-              state,
-              query,
-            )}
             onClick={() => onToggleClick(user.loginId, "account-lock")}
             style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
@@ -689,8 +665,6 @@ function UserListItem({
             type="button"
             id={user.loginId}
             className="ybtn ybtn-small"
-            data-toggle="reset-password"
-            data-href={`${userPath}?action=resetPassword`}
             onClick={() => onResetPasswordClick(user.loginId)}
           >
             {t("title.resetPassword")}
@@ -700,8 +674,6 @@ function UserListItem({
             className={
               user.isSiteAdmin ? "ybtn ybtn-small ybtn-info" : "ybtn ybtn-small label-info"
             }
-            data-request-method="post"
-            data-request-uri={legacySiteAdminRoleMutationPath(runtimeConfig.basePath, user.loginId)}
             onClick={() => onToggleClick(user.loginId, "site-admin")}
             style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
@@ -712,10 +684,6 @@ function UserListItem({
           <button
             type="button"
             className="ybtn ybtn-small ybtn-danger"
-            data-toggle="account-delete"
-            data-href={prefixBasePath(runtimeConfig.basePath, `/sites/user/delete${user.id}`)}
-            data-user-id={user.loginId}
-            data-user-name={user.displayName}
             onClick={(event) => onDeleteClick(event, user)}
           >
             {t("button.delete")}
@@ -794,27 +762,6 @@ function RequestWaitingAlert({
       <h4>{"sending requestHeader" + "..."}</h4>
     </div>
   );
-}
-
-function legacySiteAdminRoleMutationPath(basePath: string, loginId: string) {
-  return prefixBasePath(basePath, `/sites/toggleSiteAdminRole/${loginId}`);
-}
-
-function legacyUserMutationPath(
-  basePath: string,
-  loginId: string,
-  action: "account-lock" | "guest",
-  state: SiteUserState,
-  query: string,
-) {
-  const params = new URLSearchParams();
-  params.set("loginId", loginId);
-  params.set("state", state);
-  if (query.trim() !== "") {
-    params.set("query", query.trim());
-  }
-  const route = action === "guest" ? "/sites/toggleGuestMode" : "/sites/toggleAccountLock";
-  return prefixBasePath(basePath, `${route}?${params.toString()}`);
 }
 
 function isSiteUserState(value: unknown): value is SiteUserState {

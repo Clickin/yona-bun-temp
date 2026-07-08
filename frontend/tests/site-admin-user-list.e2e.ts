@@ -127,11 +127,11 @@ const EXPECTED_USER_LIST_SCREEN = `
               <span>2026-06-28 12:00:00</span>
             </div>
             <div class="span5 listitem-col action-buttons">
-              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/toggleGuestMode?loginId=doortts&amp;state=ACTIVE">Make Guest</button>
-              <button type="button" class="ybtn ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/sites/toggleAccountLock?loginId=doortts&amp;state=ACTIVE">Lock account</button>
-              <button type="button" id="doortts" class="ybtn ybtn-small" data-toggle="reset-password" data-href="__BASE_PATH__/doortts?action=resetPassword">Reset password</button>
-              <button type="button" class="ybtn ybtn-small label-info" data-request-method="post" data-request-uri="__BASE_PATH__/sites/toggleSiteAdminRole/doortts">Upgrade to Site admin</button>
-              <button type="button" class="ybtn ybtn-small ybtn-danger" data-toggle="account-delete" data-href="__BASE_PATH__/sites/user/delete42" data-user-id="doortts" data-user-name="Door TTS">Delete</button>
+              <button type="button" class="ybtn ybtn-small">Make Guest</button>
+              <button type="button" class="ybtn ybtn-small">Lock account</button>
+              <button type="button" id="doortts" class="ybtn ybtn-small">Reset password</button>
+              <button type="button" class="ybtn ybtn-small label-info">Upgrade to Site admin</button>
+              <button type="button" class="ybtn ybtn-small ybtn-danger">Delete</button>
             </div>
           </li>
         </ul>
@@ -241,6 +241,10 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
   await expect(page.locator(".action-buttons a[data-request-method]")).toHaveCount(0);
   await expect(page.locator(".action-buttons button")).toHaveCount(5);
+  await expect(page.locator(".action-buttons [data-request-method]")).toHaveCount(0);
+  await expect(page.locator(".action-buttons [data-request-uri]")).toHaveCount(0);
+  await expect(page.locator(".action-buttons [data-toggle]")).toHaveCount(0);
+  await expect(page.locator(".action-buttons [data-href]")).toHaveCount(0);
   const shellBoxes = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
@@ -292,31 +296,32 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(shellBoxes!.listAll.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
   expect(shellBoxes!.feedback.left).toBeGreaterThan(shellBoxes!.listAll.right);
   expect(shellBoxes!.feedback.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
-  const guestToggleButton = page.locator(
-    '.action-buttons button[data-request-uri$="/sites/toggleGuestMode?loginId=doortts&state=ACTIVE"]',
-  );
+  const guestToggleButton = page.getByRole("button", { exact: true, name: "Make Guest" });
   await expect(guestToggleButton).toHaveAttribute("type", "button");
   await expect(guestToggleButton).toHaveClass("ybtn ybtn-small");
-  await expect(guestToggleButton).toHaveAttribute("data-request-method", "post");
-  await expect(
-    page.locator(
-      '.action-buttons button[data-request-uri$="/sites/toggleAccountLock?loginId=doortts&state=ACTIVE"]',
-    ),
-  ).toHaveAttribute("type", "button");
-  const resetPasswordButton = page.locator('.action-buttons button[data-toggle="reset-password"]');
-  await expect(resetPasswordButton).toHaveAttribute("type", "button");
-  await expect(resetPasswordButton).toHaveAttribute(
-    "data-href",
-    `${basePath}/doortts?action=resetPassword`,
+  await expect(guestToggleButton).not.toHaveAttribute("data-request-method", /./u);
+  await expect(guestToggleButton).not.toHaveAttribute("data-request-uri", /./u);
+  await expect(page.getByRole("button", { exact: true, name: "Lock account" })).toHaveAttribute(
+    "type",
+    "button",
   );
+  const resetPasswordButton = page.getByRole("button", {
+    exact: true,
+    name: "Reset password",
+  });
+  await expect(resetPasswordButton).toHaveAttribute("type", "button");
+  await expect(resetPasswordButton).toHaveAttribute("id", "doortts");
+  await expect(resetPasswordButton).not.toHaveAttribute("data-toggle", "reset-password");
+  await expect(resetPasswordButton).not.toHaveAttribute("data-href", /./u);
   await expect(
-    page.locator('.action-buttons button[data-request-uri$="/sites/toggleSiteAdminRole/doortts"]'),
+    page.getByRole("button", { exact: true, name: "Upgrade to Site admin" }),
   ).toHaveClass("ybtn ybtn-small label-info");
-  const accountDeleteButton = page.locator('.action-buttons button[data-toggle="account-delete"]');
+  const accountDeleteButton = page.getByRole("button", { exact: true, name: "Delete" });
   await expect(accountDeleteButton).toHaveAttribute("type", "button");
-  await expect(accountDeleteButton).toHaveAttribute("data-href", `${basePath}/sites/user/delete42`);
-  await expect(accountDeleteButton).toHaveAttribute("data-user-id", "doortts");
-  await expect(accountDeleteButton).toHaveAttribute("data-user-name", "Door TTS");
+  await expect(accountDeleteButton).not.toHaveAttribute("data-toggle", "account-delete");
+  await expect(accountDeleteButton).not.toHaveAttribute("data-href", /./u);
+  await expect(accountDeleteButton).not.toHaveAttribute("data-user-id", /./u);
+  await expect(accountDeleteButton).not.toHaveAttribute("data-user-name", /./u);
   await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
   await expect(page.locator("#accountToggleBtn")).toHaveAttribute("type", "button");
   await expect(page.locator("#accountToggleBtn")).toHaveClass("ybtn ybtn-danger");
@@ -726,31 +731,31 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
     "Site Boss",
   );
 
-  const guestButton = page.locator(
-    '.action-buttons button[data-request-uri$="/sites/toggleGuestMode?loginId=siteboss&state=SITE_ADMIN&query=siteboss"]',
-  );
+  const guestButton = page.getByRole("button", { exact: true, name: "Make Guest" });
   await expect(guestButton).toHaveText("Make Guest");
   await expect(guestButton).toHaveClass("ybtn ybtn-small");
-  await expect(guestButton).toHaveAttribute("data-request-method", "post");
+  await expect(guestButton).not.toHaveAttribute("data-request-method", /./u);
+  await expect(guestButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(guestButton).toHaveCSS("margin", "2px");
-  const accountLockButton = page.locator(
-    '.action-buttons button[data-request-uri$="/sites/toggleAccountLock?loginId=siteboss&state=SITE_ADMIN&query=siteboss"]',
-  );
+  const accountLockButton = page.getByRole("button", { exact: true, name: "Lock account" });
   await expect(accountLockButton).toHaveText("Lock account");
   await expect(accountLockButton).toHaveClass("ybtn ybtn-small");
-  await expect(accountLockButton).toHaveAttribute("data-request-method", "post");
+  await expect(accountLockButton).not.toHaveAttribute("data-request-method", /./u);
+  await expect(accountLockButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(accountLockButton).toHaveCSS("margin", "2px");
-  const revokeButton = page.locator(
-    '.action-buttons button[data-request-uri$="/sites/toggleSiteAdminRole/siteboss"]',
-  );
+  const revokeButton = page.getByRole("button", {
+    exact: true,
+    name: "Revoke site admin role",
+  });
   await expect(revokeButton).toHaveText("Revoke site admin role");
   await expect(revokeButton).toHaveClass("ybtn ybtn-small ybtn-info");
-  await expect(revokeButton).toHaveAttribute("data-request-method", "post");
+  await expect(revokeButton).not.toHaveAttribute("data-request-method", /./u);
+  await expect(revokeButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(revokeButton).toHaveCSS("margin", "2px");
   await expect(page.locator(".action-buttons")).not.toContainText("Upgrade to Site admin");
-  await expect(page.locator('[data-toggle="account-delete"]')).toHaveAttribute(
-    "data-href",
-    `${basePath}/sites/user/delete7`,
+  await expect(page.getByRole("button", { exact: true, name: "Delete" })).not.toHaveAttribute(
+    "data-toggle",
+    "account-delete",
   );
   await expect(page.locator("#pagination a", { hasText: "Next page" })).toHaveAttribute(
     "href",
@@ -780,12 +785,12 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
   });
 
   const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
-  expect(routeSource).toContain("legacySiteAdminRoleMutationPath");
   expect(routeSource).toContain("LEGACY_ACTION_ANCHOR_BUTTON_STYLE");
   expect(routeSource).toContain('user.isSiteAdmin ? "ybtn ybtn-small ybtn-info"');
   expect(routeSource).toContain('t("button.user.revoke.site.admin.role")');
   expect(routeSource).toContain("state: search.state");
-  expect(routeSource).toContain("legacyUserMutationPath(");
+  expect(routeSource).not.toContain("legacySiteAdminRoleMutationPath");
+  expect(routeSource).not.toContain("legacyUserMutationPath(");
 });
 
 test("site admin user delete modal stays route-owned across open dismiss and confirm", async ({
@@ -806,7 +811,7 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await installSiteUserDeleteModalBridgeAudit(page, ["alertDeletionWrap"]);
   await rememberSpaMarker(page, "site-user-delete-modal");
   const userListUrl = page.url();
-  const deleteButton = page.locator('[data-toggle="account-delete"]');
+  const deleteButton = page.getByRole("button", { exact: true, name: "Delete" });
   const deleteModal = page.locator("#alertDeletionWrap");
   const closeButton = page.locator("#alertDeletionWrap .close");
   const noButton = page.locator("#alertDeletionWrap .modal-footer .ybtn").filter({
@@ -916,7 +921,7 @@ test("site admin user actions follow legacy reset-password alert flow", async ({
 
   await page.goto(`${basePath}/sites/userList`);
 
-  await page.locator('[data-toggle="reset-password"]').click();
+  await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   await expect(page.locator(".action-buttons .alert-success h4")).toHaveText(
     "New password: reset-1234",
   );
@@ -942,7 +947,7 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
   await installAlertDismissBridgeAudit(page);
   await rememberSpaMarker(page, "site-user-reset-alert-dismiss");
 
-  await page.locator('[data-toggle="reset-password"]').click();
+  await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   const waitingAlert = page.locator(".action-buttons .alert-fail");
   await expect(waitingAlert).toHaveText("×sending requestHeader...");
   await expect(waitingAlert.locator(".close")).toHaveAttribute("data-dismiss", "alert");
@@ -980,7 +985,7 @@ test("site admin user delete forbidden reloads legacy page", async ({ page }) =>
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "delete-forbidden";
   });
 
-  await page.locator('[data-toggle="account-delete"]').click();
+  await page.getByRole("button", { exact: true, name: "Delete" }).click();
   await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
   await expect(page.locator("#alertDeletionWrap")).toHaveClass("modal fade in");
 
@@ -1023,7 +1028,7 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
     "queryClient.setQueryData<SiteUserListResponse>(usersQueryOptions.queryKey",
   );
   expect(modalSource).toContain("closeDeleteModal();");
-  expect(modalSource).toContain('data-toggle="account-delete"');
+  expect(modalSource).not.toContain('data-toggle="account-delete"');
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onDeleteClick={openDeleteModal}");
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
@@ -1039,7 +1044,7 @@ test("site admin user reset-password alert source is route-owned", () => {
   const source = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
   const alertSource = source.slice(
     source.indexOf("const dismissPasswordResetAlert"),
-    source.indexOf("function legacyUserMutationPath"),
+    source.indexOf("function isSiteUserState"),
   );
 
   expect(alertSource).toContain(
@@ -1078,7 +1083,7 @@ test("site admin user reset password failure uses legacy alert text", async ({ p
   await page.goto(`${basePath}/sites/userList`);
 
   const alertPromise = page.waitForEvent("dialog");
-  await page.locator('[data-toggle="reset-password"]').click();
+  await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   const alert = await alertPromise;
   expect(alert.message()).toBe("password change failed: reset service unavailable");
   await alert.accept();
@@ -1101,7 +1106,7 @@ test("site admin user reset password logical failure uses legacy alert text", as
   await page.goto(`${basePath}/sites/userList`);
 
   const alertPromise = page.waitForEvent("dialog");
-  await page.locator('[data-toggle="reset-password"]').click();
+  await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   const alert = await alertPromise;
   expect(alert.message()).toBe("password change failed: password policy rejected");
   await alert.accept();
@@ -1127,9 +1132,7 @@ test("site admin user role toggle success reloads like legacy requestAs", async 
   });
 
   const reloadPromise = page.waitForEvent("framenavigated");
-  await page
-    .locator('[data-request-uri$="/sites/toggleGuestMode?loginId=doortts&state=ACTIVE"]')
-    .click();
+  await page.getByRole("button", { exact: true, name: "Make Guest" }).click();
   await reloadPromise;
 
   await expect.poll(() => requests.toggledActions).toEqual(["doortts:guest"]);
@@ -1810,9 +1813,7 @@ async function installSiteUserDeleteModalBridgeAudit(page: Page, modalIds: strin
     guardedWindow.__siteUserDeleteModalBridgeAuditArmed = true;
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      const bridgeTarget = target?.closest(
-        '[data-toggle="account-delete"], [data-dismiss="modal"]',
-      );
+      const bridgeTarget = target?.closest('[data-dismiss="modal"]');
       if (bridgeTarget) {
         guardedWindow.__siteUserDeleteModalBridgeAudit?.documentClicks.push(
           `${bridgeTarget.tagName.toLowerCase()}:${bridgeTarget.getAttribute("data-toggle") ?? ""}:${bridgeTarget.getAttribute("data-dismiss") ?? ""}`,
