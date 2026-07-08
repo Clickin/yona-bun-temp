@@ -225,12 +225,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}
               >
                 <div className="modal-header">
-                  <button
-                    type="button"
-                    className="close"
-                    data-dismiss="modal"
-                    onClick={dismissDeleteModal}
-                  >
+                  <button type="button" className="close" onClick={dismissDeleteModal}>
                     ×
                   </button>
                   <span id="project-name">
@@ -252,12 +247,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
-                  <button
-                    type="button"
-                    className="ybtn"
-                    data-dismiss="modal"
-                    onClick={dismissDeleteModal}
-                  >
+                  <button type="button" className="ybtn" onClick={dismissDeleteModal}>
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>

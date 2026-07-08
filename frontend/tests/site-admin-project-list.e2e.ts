@@ -130,7 +130,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
         </div>
         <div id="alertDeletionWrap" class="modal fade">
           <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">×</button>
+            <button type="button" class="close">×</button>
             <span id="project-name"></span>Delete project
           </div>
           <div class="modal-body">
@@ -138,7 +138,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
           </div>
           <div class="modal-footer">
             <button type="button" id="projectDeleteBtn" class="ybtn ybtn-danger">Yes</button>
-            <button type="button" class="ybtn" data-dismiss="modal">No</button>
+            <button type="button" class="ybtn">No</button>
           </div>
         </div>
       </div>
@@ -487,7 +487,7 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain("queryClient.setQueryData<SiteProjectListResponse>");
   expect(modalSource).toContain("apiQueryKeys.siteAdmin.projectsBase()");
   expect(modalSource).toContain('data-toggle="delete-project"');
-  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
   expect(modalSource).toContain('className="modal-backdrop fade in"');
   expect(modalSource).toContain("onKeyDown={dismissDeleteModal}");
@@ -567,8 +567,9 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
     openModalFooterButtonsAligned: true,
     yesBeforeNo: true,
   });
-  await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
-  await expect(noButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(closeButton).not.toHaveAttribute("data-dismiss", /.+/);
+  await expect(noButton).not.toHaveAttribute("data-dismiss", /.+/);
+  await expect(deleteModal.locator('[data-dismiss="modal"]')).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
   expect(await spaMarker(page)).toBe("site-project-delete-modal");
   expect(requests.deletedProjectIds).toEqual([]);
@@ -1131,7 +1132,7 @@ async function projectListMetrics(page: Page) {
     const pagination = requireElement("#pagination");
     const modal = requireElement("#alertDeletionWrap");
     const modalYes = requireElement("#projectDeleteBtn");
-    const modalNo = requireElement('#alertDeletionWrap [data-dismiss="modal"]');
+    const modalNo = requireElement("#alertDeletionWrap .modal-footer .ybtn:not(#projectDeleteBtn)");
     const titleAreaRect = titleArea.getBoundingClientRect();
     const titleRect = title.getBoundingClientRect();
     const searchFormRect = searchForm.getBoundingClientRect();
