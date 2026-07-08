@@ -635,11 +635,7 @@ function ProjectMemberListItem({
               className={`btn-group${isRoleMenuOpen ? " open" : ""}`}
               data-name={`roleof-${loginId}`}
             >
-              <button
-                className="btn dropdown-toggle large"
-                data-toggle="dropdown"
-                onClick={onRoleToggleClick}
-              >
+              <button className="btn dropdown-toggle large" onClick={onRoleToggleClick}>
                 <span className="d-label">{roleLabel(members, stringField(member.role, ""))}</span>
                 <span className="d-caret">
                   <span className="caret"></span>
@@ -1083,7 +1079,6 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
                     <button
                       className="btn nofocus no-border down-arrow"
                       type="button"
-                      data-toggle="dropdown"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
