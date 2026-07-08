@@ -187,12 +187,7 @@ function ProjectDeleteFormBody({
             }
           >
             <div className="modal-header">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                onClick={dismissDeletionModal}
-              >
+              <button type="button" className="close" onClick={dismissDeletionModal}>
                 ×
               </button>
               <h3>{t("project.delete.requestion")}</h3>
@@ -210,12 +205,7 @@ function ProjectDeleteFormBody({
               >
                 {t("button.yes")}
               </button>
-              <button
-                type="button"
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={dismissDeletionModal}
-              >
+              <button type="button" className="ybtn" onClick={dismissDeletionModal}>
                 {t("button.no")}
               </button>
             </div>

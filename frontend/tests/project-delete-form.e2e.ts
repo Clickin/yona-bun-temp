@@ -128,7 +128,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
+        <button type="button" class="close">×</button>
         <h3>Do you want to delete this project?</h3>
       </div>
       <div class="modal-body">
@@ -137,7 +137,7 @@ const EXPECTED_PROJECT_DELETE_FORM = `
       </div>
       <div class="modal-footer">
         <button id="btnDeleteExec" type="button" class="ybtn ybtn-danger">Yes</button>
-        <button type="button" class="ybtn" data-dismiss="modal">No</button>
+        <button type="button" class="ybtn">No</button>
       </div>
     </div>
   </div>
@@ -294,7 +294,8 @@ test("project delete confirmation modal source stays route-owned", async () => {
   expect(modalSource).not.toContain('data-toggle="modal"');
   expect(modalSource).not.toContain("data-toggle");
   expect(modalSource).not.toContain("data-target");
-  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain("data-dismiss");
   expect(modalSource).toContain('setDeletionModalState("open");');
   expect(modalSource).toContain('setDeletionModalState("closed");');
   expect(modalSource).toContain('deletionModalState === "initial" ? undefined');
@@ -323,6 +324,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await rememberSpaMarker(page, "kept");
   await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
+  await expect(page.locator("#alertDeletion .close")).not.toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator("#alertDeletion .modal-footer .ybtn").last()).not.toHaveAttribute(
+    "data-dismiss",
+    "modal",
+  );
+  await expect(page.locator('#alertDeletion [data-dismiss="modal"]')).toHaveCount(0);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: null,
@@ -372,7 +379,7 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
 
   await armRootDeleteModalBridgeTrap(page);
   expect(
-    await dispatchCancelableClick(page.locator('#alertDeletion [data-dismiss="modal"]').last()),
+    await dispatchCancelableClick(page.locator("#alertDeletion .modal-footer .ybtn").last()),
   ).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
@@ -1133,7 +1140,9 @@ async function armRootDeleteModalBridgeTrap(page: Page) {
     win.__yonaDeleteModalBridgeTrapArmed = true;
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      const bridged = target?.closest('#btnDelete, #alertDeletion [data-dismiss="modal"]');
+      const bridged = target?.closest(
+        "#btnDelete, #alertDeletion .close, #alertDeletion .modal-footer .ybtn:not(#btnDeleteExec)",
+      );
       if (bridged) {
         win.__yonaDeleteModalBridgeHits?.push(
           `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
