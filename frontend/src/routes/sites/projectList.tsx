@@ -203,12 +203,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               </div>
               <ul className="project-list-wrap">
                 {(query.data?.projects ?? []).map((project) => (
-                  <ProjectListItem
-                    key={project.id}
-                    onDelete={openDeleteModal}
-                    project={project}
-                    runtimeConfig={runtimeConfig}
-                  />
+                  <ProjectListItem key={project.id} onDelete={openDeleteModal} project={project} />
                 ))}
               </ul>
 
@@ -418,11 +413,9 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 function ProjectListItem({
   onDelete,
   project,
-  runtimeConfig,
 }: {
   onDelete: (project: SiteProject, event: MouseEvent<HTMLButtonElement>) => void;
   project: SiteProject;
-  runtimeConfig: RuntimeConfig;
 }) {
   const projectLogoUrl = project.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 
@@ -451,8 +444,6 @@ function ProjectListItem({
         <button
           className="ybtn ybtn-danger"
           data-project-name={`${project.ownerName}/${project.projectName}`}
-          data-toggle="delete-project"
-          data-href={prefixBasePath(runtimeConfig.basePath, `/sites/project/delete/${project.id}`)}
           onClick={(event) => onDelete(project, event)}
         >
           <LegacyMessage messageKey="button.delete" />

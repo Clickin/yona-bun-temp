@@ -1,6 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
+const SITE_PROJECT_LIST_ROUTE_SOURCE = new URL(
+  "../src/routes/sites/projectList.tsx",
+  import.meta.url,
+);
+
 const EXPECTED_PROJECTS_LIST = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -564,6 +569,100 @@ test("projects route source uses Link for project directory card navigation", ()
   expect(source).not.toContain("<a href={ownerHref}");
 });
 
+test("site admin project delete button drops legacy delegated hooks while React owns delete", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const requests = await mockSiteProjects(page);
+  await mockSiteUpdate(page);
+
+  await page.goto(`${basePath}/sites/projectList?filter=road`);
+  await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(1);
+
+  const deleteButton = page.locator(".project-list-wrap button.ybtn.ybtn-danger");
+  await expect(deleteButton).toHaveText("Delete");
+  await expect(deleteButton).toHaveAttribute("class", "ybtn ybtn-danger");
+  await expect(deleteButton).toHaveAttribute("data-project-name", "acme/roadmap");
+  await expect(deleteButton).not.toHaveAttribute("data-href", /.+/);
+  await expect(deleteButton).not.toHaveAttribute("data-toggle", /.+/);
+  await expect(
+    page.locator('[data-toggle="delete-project"], [data-href*="/sites/project/delete"]'),
+  ).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (
+      window as Window & { __siteAdminProjectDeleteSpaMarker?: string }
+    ).__siteAdminProjectDeleteSpaMarker = "kept";
+  });
+  const projectListUrl = page.url();
+  await deleteButton.click();
+
+  const deleteModal = page.locator("#alertDeletionWrap");
+  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
+  await expect(page.locator("#alertDeletionWrap .modal-header")).toHaveText(
+    "×acme/roadmapDelete project",
+  );
+  await expect(page.locator("#alertDeletionWrap .modal-body p")).toHaveText(
+    "Do you really want to delete this project?",
+  );
+  await expect(page.locator("#alertDeletionWrap .modal-footer > button")).toHaveText(["Yes", "No"]);
+
+  const deleteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/site/projects/77") &&
+      response.request().method() === "DELETE",
+  );
+  await page.locator("#projectDeleteBtn").click();
+  await deleteResponse;
+
+  await expect.poll(() => requests.deletedProjectIds).toEqual(["77"]);
+  expect(requests.deleteRequests).toEqual([
+    {
+      hasCsrfHeader: true,
+      method: "DELETE",
+      pathname: `${basePath}/api/v1/site/projects/77`,
+    },
+  ]);
+  await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(0);
+  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
+  await expect(page).toHaveURL(projectListUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __siteAdminProjectDeleteSpaMarker?: string })
+            .__siteAdminProjectDeleteSpaMarker,
+      ),
+    )
+    .toBe("kept");
+});
+
+test("site admin project delete source has no legacy data-href delegated hook", () => {
+  const source = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
+  const projectListItemSource = source.slice(
+    source.indexOf("function ProjectListItem"),
+    source.indexOf("function LegacyMessage"),
+  );
+
+  expect(projectListItemSource).toContain('className="ybtn ybtn-danger"');
+  expect(projectListItemSource).toContain("data-project-name=");
+  expect(projectListItemSource).toContain("onClick={(event) => onDelete(project, event)}");
+  expect(projectListItemSource).not.toContain("data-href");
+  expect(projectListItemSource).not.toContain('data-toggle="delete-project"');
+  expect(projectListItemSource).not.toContain("/sites/project/delete/");
+  expect(source).toContain("deleteSiteProjectRest(runtimeConfig, csrfToken, projectId)");
+  expect(source).not.toContain("document.");
+  expect(source).not.toContain("classList");
+  expect(source).not.toContain("addEventListener(");
+  expect(source).not.toContain("dangerouslySetInnerHTML");
+});
+
 async function expectNoActiveMarker(locator: ReturnType<Page["locator"]>) {
   await expect(locator).not.toHaveAttribute("aria-current", /./);
   await expect(locator).not.toHaveAttribute("data-status", /./);
@@ -691,6 +790,105 @@ async function mockProjectCardDestinations(page: Page) {
         pullRequestItems: [],
         selected: "issues",
         viewerCanEditProfile: true,
+      }),
+    });
+  });
+}
+
+async function mockSiteAdminSession(page: Page) {
+  const sessionBody = {
+    actorId: 1,
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    defaultLandingPath: "/",
+    emailAddress: "siteboss@example.com",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "siteboss",
+    userLabel: "Site Boss",
+  };
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify(sessionBody),
+    });
+  });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token" },
+      body: JSON.stringify(sessionBody),
+    });
+  });
+}
+
+async function mockSiteProjects(page: Page) {
+  const requests = {
+    deletedProjectIds: [] as string[],
+    deleteRequests: [] as Array<{ hasCsrfHeader: boolean; method: string; pathname: string }>,
+  };
+  const projects = [
+    {
+      createdAt: "2026-06-29",
+      id: 77,
+      ownerName: "acme",
+      overview: "Release planning",
+      projectLogoUrl: "/assets/images/default-project-logo.png",
+      projectName: "roadmap",
+    },
+  ];
+
+  await page.route("**/api/v1/site/projects?*", async (route) => {
+    const url = new URL(route.request().url());
+    const pageNum = Number(url.searchParams.get("page") ?? "1") || 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        filter: url.searchParams.get("filter") ?? "",
+        page: pageNum,
+        pageSize: 20,
+        projects,
+        total: projects.length,
+        totalPages: projects.length > 0 ? 1 : 0,
+      }),
+    });
+  });
+  await page.route("**/api/v1/site/projects/*", async (route) => {
+    if (route.request().method() === "DELETE") {
+      const url = new URL(route.request().url());
+      const deletedProjectId = url.pathname.split("/").pop() ?? "";
+      requests.deleteRequests.push({
+        hasCsrfHeader: Boolean(route.request().headers()["x-csrf-token"]),
+        method: route.request().method(),
+        pathname: url.pathname,
+      });
+      requests.deletedProjectIds.push(deletedProjectId);
+      const deletedIndex = projects.findIndex((project) => String(project.id) === deletedProjectId);
+      if (deletedIndex >= 0) {
+        projects.splice(deletedIndex, 1);
+      }
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, redirectPath: "/sites/projectList" }),
+    });
+  });
+
+  return requests;
+}
+
+async function mockSiteUpdate(page: Page) {
+  await page.route("**/api/v1/site/update", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        currentVersion: "1.0.0",
+        error: null,
+        message: "site.update.isNotNecessary",
+        releaseUrl: null,
+        versionToUpdate: null,
       }),
     });
   });
