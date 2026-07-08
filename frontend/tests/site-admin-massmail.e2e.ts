@@ -92,11 +92,11 @@ const EXPECTED_MASSMAIL_SCREEN = `
         </div>
         <div class="mess-mail-wrap">
           <label class="radio" for="mailtoAll">
-            <input type="radio" name="mailingType" id="mailtoAll" value="all" checked="checked" data-toggle="mail-type" data-action="hide">
+            <input type="radio" name="mailingType" id="mailtoAll" value="all" checked="checked" data-toggle="mail-type">
             To all
           </label>
           <label class="radio" for="mailtoPrj">
-            <input type="radio" name="mailingType" id="mailtoPrj" value="projects" data-toggle="mail-type" data-action="show">
+            <input type="radio" name="mailingType" id="mailtoPrj" value="projects" data-toggle="mail-type">
             To members of a specific project
           </label>
           <div class="control-group hide" id="project-list-wrap">
@@ -214,6 +214,11 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   ]);
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+  await expect(page.locator('[name="mailingType"][data-toggle="mail-type"]')).toHaveCount(2);
+  await expect(page.locator('.mess-mail-wrap [data-action="hide"]')).toHaveCount(0);
+  await expect(page.locator('.mess-mail-wrap [data-action="show"]')).toHaveCount(0);
+  await expect(page.locator("#mailtoAll")).not.toHaveAttribute("data-action", /.+/);
+  await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-action", /.+/);
   const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
   await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
   await expect(
@@ -363,6 +368,8 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   expect(routeSource).not.toContain("innerHTML");
   expect(routeSource).not.toContain("projectInputRef.current.value");
   expect(routeSource).not.toContain("style.display");
+  expect(routeSource).not.toContain('data-action="hide"');
+  expect(routeSource).not.toContain('data-action="show"');
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
 });
