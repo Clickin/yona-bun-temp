@@ -12,7 +12,8 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/@\{"@"\}/g, "@")
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
-  .replace(/<\/div>\s*$/u, "</div>");
+  .replace(/<\/div>\s*$/u, "</div>")
+  .replace(/\sdata-toggle="markdown-help"/g, "");
 const ROUTE_SOURCE = readFileSync(
   new URL(
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform.tsx",
@@ -38,7 +39,7 @@ function withLegacyFileUploader(html: string) {
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" data-is-user-has-typed="true">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" data-is-user-has-typed="true">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" data-is-user-has-typed="true">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -79,7 +80,7 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
-  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu.flat.right li button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
 
   await shell.locator("#gnb-search-scope-title").click();
@@ -160,8 +161,14 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   expect(ROUTE_SOURCE).not.toContain('"data-toggle": "tab"');
   expect(ROUTE_SOURCE).not.toContain('data-toggle="tab"');
   const commitsTab = page.locator('form.nm > ul.nav-tabs button[type="button"]');
-  const editTab = editor.locator('.nav-tabs button[type="button"][data-mode="edit"]');
-  const previewTab = editor.locator('.nav-tabs button[type="button"][data-mode="preview"]');
+  const editorTabs = editor.locator("> ul.nav-tabs > li");
+  const editTabItem = editorTabs.nth(0);
+  const previewTabItem = editorTabs.nth(1);
+  const editTab = editTabItem.getByRole("button", { name: "Edit" });
+  const previewTab = previewTabItem.getByRole("button", { name: "Preview" });
+  await expect(editor.locator('.nav-tabs button[type="button"][data-mode]')).toHaveCount(0);
+  expect(ROUTE_SOURCE).not.toContain('data-mode="edit"');
+  expect(ROUTE_SOURCE).not.toContain('data-mode="preview"');
   await expect(commitsTab).toHaveText("Commits1");
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
@@ -213,12 +220,14 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   });
   await previewTab.click();
   await expect(page).toHaveURL(editFormUrl);
-  await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(previewTabItem).toHaveClass(/active/);
+  await expect(editTabItem).not.toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
   await editTab.click();
   await expect(page).toHaveURL(editFormUrl);
-  await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(editTabItem).toHaveClass(/active/);
+  await expect(previewTabItem).not.toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
   await commitsTab.click();
@@ -336,7 +345,7 @@ test("project pull request edit form drops only delegated select2 markers", asyn
   await expect(page.locator('input[type="hidden"][name="toBranch"]')).toHaveValue("main");
 });
 
-test("project pull request edit form drops markdown editor initializer marker while preserving tabs", async ({
+test("project pull request edit form drops markdown JS-only markers while preserving tabs", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -347,18 +356,24 @@ test("project pull request edit form drops markdown editor initializer marker wh
   const editFormUrl = page.url();
   await expect(page.locator("form.nm")).toBeVisible();
   const editor = pullRequestEditMarkdownEditor(page);
-  const editTab = editor.locator('.nav-tabs button[type="button"][data-mode="edit"]');
-  const previewTab = editor.locator('.nav-tabs button[type="button"][data-mode="preview"]');
+  const editorTabs = editor.locator("> ul.nav-tabs > li");
+  const editTabItem = editorTabs.nth(0);
+  const previewTabItem = editorTabs.nth(1);
+  const editTab = editTabItem.getByRole("button", { name: "Edit" });
+  const previewTab = previewTabItem.getByRole("button", { name: "Preview" });
 
   await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
   expect(ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
   expect(ROUTE_SOURCE).not.toContain('"data-toggle": "markdown-editor"');
+  expect(ROUTE_SOURCE).not.toContain('data-mode="edit"');
+  expect(ROUTE_SOURCE).not.toContain('data-mode="preview"');
   await expect(editor).toHaveClass("mt10");
-  await expect(editor.locator("> ul.nav-tabs > li")).toHaveCount(5);
-  await expect(editor.locator("> ul.nav-tabs > li").nth(0)).toContainText("Edit");
-  await expect(editor.locator("> ul.nav-tabs > li").nth(1)).toContainText("Preview");
+  await expect(editorTabs).toHaveCount(5);
+  await expect(editTabItem).toContainText("Edit");
+  await expect(previewTabItem).toContainText("Preview");
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
+  await expect(editor.locator('.nav-tabs button[type="button"][data-mode]')).toHaveCount(0);
   await expect(editor.locator('.nav-tabs a[href="#edit-body"]')).toHaveCount(0);
   await expect(editor.locator('.nav-tabs a[href="#preview-body"]')).toHaveCount(0);
   await expect(page.locator('form.nm [data-toggle="tab"]')).toHaveCount(0);
@@ -375,12 +390,18 @@ test("project pull request edit form drops markdown editor initializer marker wh
 
   await previewTab.click();
   await expect(page).toHaveURL(editFormUrl);
-  await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(previewTabItem).toHaveClass(/active/);
+  await expect(editTabItem).not.toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
+  await expect(page.locator("#editor-body-body")).toBeAttached();
+  await expect(
+    page.locator("#preview-body .markdown-preview.markdown-wrap.content-body"),
+  ).toHaveAttribute("data-via-email", "false");
   await editTab.click();
   await expect(page).toHaveURL(editFormUrl);
-  await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  await expect(editTabItem).toHaveClass(/active/);
+  await expect(previewTabItem).not.toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
 });
@@ -402,7 +423,7 @@ test("project pull request edit form exposes group search scope when project org
     "Pull request",
   );
   const shell = pullRequestEditScopedShell(page);
-  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu.flat.right li button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await shell.locator("#gnb-search-scope-title").click();
