@@ -1113,7 +1113,6 @@ function InlineThread({
       id={`thread-${thread.id}`}
       data-state={state}
       className={`comment-thread-wrap ${state}${isClosed ? " fold" : ""}`}
-      data-toggle="CodeCommentThread"
       data-range-path={thread.path}
       data-range-startside={thread.startSide}
       data-range-startline={thread.startLine}

@@ -274,6 +274,8 @@ const EXPECTED_PULL_REQUEST_OUTDATED_REVIEW_CARD = EXPECTED_PULL_REQUEST_REVIEW_
 test("project pull request changes source keeps React-owned tab controls free of Bootstrap tab markers", () => {
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="tab"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='tab'");
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-toggle="CodeCommentThread"');
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='CodeCommentThread'");
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('data-toggle="markdown-editor"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('data-mode="edit"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('data-mode="preview"');
@@ -518,7 +520,7 @@ test("project pull request changes renders legacy inline review thread and block
   await expect(inlineRow).toHaveCount(1);
   await expect(inlineRow).toBeVisible();
   await expect(inlineRow.locator("#thread-95")).toHaveClass("comment-thread-wrap open");
-  await expect(inlineRow.locator("#thread-95")).toHaveAttribute("data-toggle", "CodeCommentThread");
+  await expect(inlineRow.locator("#thread-95")).not.toHaveAttribute("data-toggle", /.*/u);
   await expect(inlineRow.locator("#thread-95")).toHaveAttribute("data-range-path", "src/main.rs");
   await expect(inlineRow.locator("#thread-95")).toHaveAttribute("data-range-startside", "B");
   await expect(inlineRow.locator("#thread-95")).toHaveAttribute("data-range-startline", "2");
@@ -536,6 +538,41 @@ test("project pull request changes renders legacy inline review thread and block
   await expect(inlineRow.locator("#thread-95 .right-txt .ybtn-default")).toHaveText("Close");
   await expect(inlineRow.locator("#thread-95 [data-request-method]")).toHaveCount(0);
   await expect(inlineRow.locator("#thread-95 [data-request-uri]")).toHaveCount(0);
+
+  const inlineThreadMetrics = await page.locator("table.diff-container").evaluate((table) => {
+    const addRow = table.querySelector("tr.add");
+    const inlineRow = table.querySelector("tr.comments.board-comment-wrap");
+    const inlineCell = inlineRow?.querySelector("td");
+    const thread = table.querySelector("#thread-95");
+    const codeCell = addRow?.querySelector("td.code");
+    const addBox = addRow?.getBoundingClientRect();
+    const inlineRowBox = inlineRow?.getBoundingClientRect();
+    const inlineCellBox = inlineCell?.getBoundingClientRect();
+    const threadBox = thread?.getBoundingClientRect();
+    const codeCellBox = codeCell?.getBoundingClientRect();
+    const tableBox = table.getBoundingClientRect();
+
+    return addBox && inlineRowBox && inlineCellBox && threadBox && codeCellBox
+      ? {
+          cellContainsThread:
+            threadBox.left >= inlineCellBox.left &&
+            threadBox.right <= inlineCellBox.right + 1 &&
+            threadBox.top >= inlineCellBox.top &&
+            threadBox.bottom <= inlineCellBox.bottom + 1,
+          inlineAfterCodeLine: inlineRowBox.top >= addBox.bottom - 1,
+          inlineDoesNotOverlapCode: threadBox.top >= codeCellBox.bottom - 1,
+          rowWidth: Math.round(inlineRowBox.width),
+          tableWidth: Math.round(tableBox.width),
+          threadLeftMatchesCell: Math.round(threadBox.left) === Math.round(inlineCellBox.left),
+        }
+      : null;
+  });
+  expect(inlineThreadMetrics).not.toBeNull();
+  expect(inlineThreadMetrics!.inlineAfterCodeLine).toBe(true);
+  expect(inlineThreadMetrics!.inlineDoesNotOverlapCode).toBe(true);
+  expect(inlineThreadMetrics!.cellContainsThread).toBe(true);
+  expect(inlineThreadMetrics!.threadLeftMatchesCell).toBe(true);
+  expect(inlineThreadMetrics!.rowWidth).toBe(inlineThreadMetrics!.tableWidth);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
