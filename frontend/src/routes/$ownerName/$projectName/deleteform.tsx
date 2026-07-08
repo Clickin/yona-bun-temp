@@ -221,7 +221,10 @@ function ProjectDeleteFormBody({
               </button>
             </div>
           </div>
-          {deletionModalOpen ? <div className="modal-backdrop fade in"></div> : null}
+          {deletionModalOpen ? (
+            // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- legacy Bootstrap backdrop is a div and dismisses the delete modal on click.
+            <div className="modal-backdrop fade in" onClick={closeDeletionModal}></div>
+          ) : null}
         </div>
       </div>
     </>

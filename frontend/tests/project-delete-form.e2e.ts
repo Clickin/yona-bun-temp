@@ -298,6 +298,8 @@ test("project delete confirmation modal source stays route-owned", async () => {
   expect(modalSource).toContain("aria-hidden=");
   expect(modalSource).toContain("onClick={openDeletionModal}");
   expect(modalSource).toContain("onClick={dismissDeletionModal}");
+  expect(modalSource).toContain('className="modal-backdrop fade in"');
+  expect(modalSource).toContain("onClick={closeDeletionModal}");
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");
   expect(modalSource).not.toContain("style.display");
@@ -398,6 +400,32 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#alertDeletion .close"))).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "true",
+    className: "modal hide",
+    display: "none",
+    style: "display: none;",
+  });
+  await expect(page).toHaveURL(deleteFormUrl);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  await expect.poll(() => spaMarker(page)).toBe("kept");
+
+  await armRootDeleteModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
+  await expect(alertDeletion).toHaveClass("modal hide in");
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "false",
+    className: "modal hide in",
+    display: "block",
+    style: "display: block;",
+  });
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+
+  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.fade.in"))).toBe(true);
+  await expect(alertDeletion).toHaveClass("modal hide");
+  await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
     ariaHidden: "true",
