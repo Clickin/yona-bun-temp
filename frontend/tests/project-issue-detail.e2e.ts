@@ -2272,6 +2272,7 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#voters")).toBeVisible();
   await expect(page.locator("#voters")).toHaveClass("modal voters-dialog in");
+  await expect(page.locator("#voters")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
