@@ -41,7 +41,7 @@ function withLegacyFileUploader(html: string) {
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -198,16 +198,25 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator('form.nm > ul.nav-tabs [data-toggle="tab"]')).toHaveCount(0);
   await expect(editorRoot.locator('.nav-tabs [data-toggle="tab"]')).toHaveCount(0);
   const commitsTab = page.locator('form.nm > ul.nav-tabs button[type="button"]');
-  const editTab = editorRoot.locator('.nav-tabs button[type="button"][data-mode="edit"]');
-  const previewTab = editorRoot.locator('.nav-tabs button[type="button"][data-mode="preview"]');
+  const markdownTabButtons = editorRoot.locator('.nav-tabs > li > button[type="button"]');
+  const editTab = editorRoot
+    .locator('.nav-tabs > li > button[type="button"]')
+    .filter({ hasText: /^Edit$/u });
+  const previewTab = editorRoot
+    .locator('.nav-tabs > li > button[type="button"]')
+    .filter({ hasText: /^Preview$/u });
   await expect(commitsTab).toHaveCount(1);
+  await expect(markdownTabButtons).toHaveText(["Edit", "Preview"]);
+  await expect(editorRoot.locator(".add-task-list-button")).toHaveText(/Add checklist/u);
+  await expect(editorRoot.locator("#button-clear-temporary")).toHaveText("Clear Temporary");
   await expect(editTab).toHaveCount(1);
   await expect(previewTab).toHaveCount(1);
   await expect(commitsTab).toHaveText("Commits1");
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
-  await expect(editTab).toHaveAttribute("data-mode", "edit");
-  await expect(previewTab).toHaveAttribute("data-mode", "preview");
+  await expect(editTab).not.toHaveAttribute("data-mode", /.*/u);
+  await expect(previewTab).not.toHaveAttribute("data-mode", /.*/u);
+  await expect(editorRoot.locator('.nav-tabs button[type="button"][data-mode]')).toHaveCount(0);
   await expect(editorRoot.locator("#edit-body.tab-pane .textarea-box")).toHaveCount(1);
   await expect(editorRoot.locator("#preview-body.tab-pane .markdown-preview")).toHaveClass(
     /markdown-wrap/,
@@ -249,11 +258,15 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
+  await expect(
+    page.locator("#preview-body .markdown-preview.markdown-wrap.content-body"),
+  ).toHaveCount(1);
   await editTab.click();
   await expect(page).toHaveURL(createFormUrl);
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
+  await expect(page.locator("#edit-body .textarea-box > #editor-body-body")).toHaveCount(1);
   await commitsTab.click();
   await expect(page).toHaveURL(createFormUrl);
   await expect(page.locator("form.nm > ul.nav-tabs > li")).toHaveClass(/active/);
@@ -594,8 +607,9 @@ test("project pull request create form markdown editor and uploader omit legacy 
   expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
   expect(editorSource).toContain("<LegacyMarkdownHelp />");
   expect(editorSource).toContain('className="mt10"');
-  expect(editorSource).toContain('data-mode="edit"');
-  expect(editorSource).toContain('data-mode="preview"');
+  expect(editorSource).not.toContain('data-mode="edit"');
+  expect(editorSource).not.toContain('data-mode="preview"');
+  expect(editorSource).not.toContain("data-mode");
   expect(editorSource).toContain('name="body"');
   expect(editorSource).toContain('data-editor-mode="content-body"');
   expect(editorSource).toContain('id="editor-body-body"');
