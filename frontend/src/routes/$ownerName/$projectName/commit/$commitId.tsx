@@ -1835,7 +1835,7 @@ function CommentDeleteModal({
         style={isOpen ? { display: "block" } : undefined}
       >
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={onClose}>
+          <button type="button" className="close" onClick={onClose}>
             ×
           </button>
           <h3>{t("common.comment.delete")}</h3>
@@ -1852,7 +1852,7 @@ function CommentDeleteModal({
           >
             {t("button.yes")}
           </button>
-          <button type="button" className="ybtn" data-dismiss="modal" onClick={onClose}>
+          <button type="button" className="ybtn" onClick={onClose}>
             {t("button.no")}
           </button>
         </div>

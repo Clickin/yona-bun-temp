@@ -39,7 +39,7 @@ const EXPECTED_COMMIT_DETAIL_BODY = `
 `;
 
 const EXPECTED_COMMENT_DELETE_MODAL = `
-<div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div></div>
+<div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div>
 `;
 
 const EXPECTED_FILE_DIFF = `<div id="src-main-rs" class="diff-partial-outer"><div class="diff-partial-inner"><div class="diff-partial-meta"><div class="diff-partial-commit"><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/1234567890abcdef/src/main.rs" title="1234567890abcdef" target="_blank">1234567</a></div><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/abcdef1234567890/src/main.rs" title="abcdef1234567890" target="_blank">abcdef1</a></div></div><div class="diff-partial-file"><span class="filename">src/main.rs</span></div></div><div class="diff-partial-code" data-hashcode="src/main.rs"><div class="patch-header"><div class="path">--- src/main.rs</div><div class="path">+++ src/main.rs</div></div><table class="diff-container show-comments" data-path-a="src/main.rs" data-path-b="src/main.rs" data-commit-a="1234567890abcdef" data-commit-b="abcdef1234567890" data-file-path="src/main.rs"><tbody><tr class="range"><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="hunk">@@ -1,2 +1,3 @@</td></tr><tr class="context" data-line="1" data-type="context" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="linenum"><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="code"><pre class="diff-partial-codeline"> fn main() {</pre></td></tr><tr class="remove" data-line="2" data-type="remove" data-side="A"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="linenum"><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="code"><pre class="diff-partial-codeline">-    println!("old");</pre></td></tr><tr class="add" data-line="2" data-type="add" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("new");</pre></td></tr><tr class="add" data-line="3" data-type="add" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="3"></div><span class="hidden">3</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("again");</pre></td></tr></tbody></table></div></div></div>`;
@@ -326,6 +326,8 @@ test("project commit detail comment delete modal is route-owned React state", as
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={onClose}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onKeyUp={onClose}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={onConfirm}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="close" data-dismiss="modal"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="ybtn" data-dismiss="modal"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-request-method");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-request-uri");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
@@ -1367,7 +1369,31 @@ index 1234567..abcdef1 100644
   await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade in");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator('#comment-delete-modal [data-dismiss="modal"]')).toHaveCount(0);
   await expect(page.locator("[data-request-method], [data-request-uri]")).toHaveCount(0);
+  await page.evaluate(() => {
+    const bridgeWindow = window as Window &
+      typeof globalThis & {
+        __commitRootModalBridgeHits?: number;
+        __commitRootModalBridgeInstalled?: boolean;
+      };
+    bridgeWindow.__commitRootModalBridgeHits = 0;
+    if (bridgeWindow.__commitRootModalBridgeInstalled) {
+      return;
+    }
+    bridgeWindow.__commitRootModalBridgeInstalled = true;
+    document.addEventListener(
+      "click",
+      (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest('[data-toggle="modal"], [data-dismiss="modal"]')) {
+          bridgeWindow.__commitRootModalBridgeHits =
+            (bridgeWindow.__commitRootModalBridgeHits ?? 0) + 1;
+        }
+      },
+      true,
+    );
+  });
   expect(await commentDeleteModalMetrics(page)).toEqual({
     backdropDisplay: "block",
     bodyDisplay: "block",
@@ -1376,7 +1402,7 @@ index 1234567..abcdef1 100644
     confirmText: "Yes",
     confirmUri: null,
     display: "block",
-    dismissCount: 2,
+    dismissCount: 0,
     footerTextAlign: "right",
     headerDisplay: "block",
     left: 1,
@@ -1385,12 +1411,46 @@ index 1234567..abcdef1 100644
     top: 10,
     width: 562,
   });
+  const beforeCloseDismissUrl = page.url();
+  await page.locator("#comment-delete-modal .modal-header .close").click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(page).toHaveURL(beforeCloseDismissUrl);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __commitRootModalBridgeHits?: number })
+          .__commitRootModalBridgeHits,
+    ),
+  ).toBe(0);
+  await page.locator('#comment-501 [data-toggle="comment-delete"]').click();
+  await page.locator("#comment-delete-modal .modal-footer .ybtn").last().click();
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(page).toHaveURL(beforeCloseDismissUrl);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __commitRootModalBridgeHits?: number })
+          .__commitRootModalBridgeHits,
+    ),
+  ).toBe(0);
+  await page.locator('#comment-501 [data-toggle="comment-delete"]').click();
   const beforeBackdropDismissUrl = page.url();
   await page.locator(".modal-backdrop.fade.in").click({ position: { x: 1, y: 1 } });
   await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
   await expect(page).toHaveURL(beforeBackdropDismissUrl);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & typeof globalThis & { __commitRootModalBridgeHits?: number })
+          .__commitRootModalBridgeHits,
+    ),
+  ).toBe(0);
   await page.locator('#comment-501 [data-toggle="comment-delete"]').click();
   await page.locator("#comment-delete-confirm").click();
   await expect.poll(() => mutationRequests.length).toBe(1);
@@ -2001,7 +2061,7 @@ async function commentDeleteModalMetrics(page: Page) {
       headerDisplay: header ? window.getComputedStyle(header).display : null,
       left: Math.round(rect.left - (viewportWidth - width) / 2),
       noText:
-        footer?.querySelector<HTMLButtonElement>('[data-dismiss="modal"]')?.textContent?.trim() ??
+        footer?.querySelector<HTMLButtonElement>("button.ybtn:last-child")?.textContent?.trim() ??
         null,
       title: header?.querySelector("h3")?.textContent?.trim() ?? null,
       top: Math.round((rect.top / window.innerHeight) * 100),
