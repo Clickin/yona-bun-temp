@@ -484,7 +484,7 @@ function PullRequestMarkdownEditor({
   const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
-    <div data-toggle="markdown-editor" className="mt10">
+    <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" data-mode="edit" onClick={() => setActiveTab("edit")}>
