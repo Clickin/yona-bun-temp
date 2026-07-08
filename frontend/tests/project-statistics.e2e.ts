@@ -24,7 +24,7 @@ const EXPECTED_PROJECT_STATISTICS = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " href="__BASE_PATH__/admin/sample/watchers" title="number of watcher">3</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="__BASE_PATH__/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" data-toggle="dropdown" type="button">Watch</button></div></li></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " href="__BASE_PATH__/admin/sample/watchers" title="number of watcher">3</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="__BASE_PATH__/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul></div></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap"><h1>Under Construction</h1></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
@@ -256,6 +256,7 @@ test("project statistics header renders legacy watch dropdown and toggles projec
   await expect(watcherCount).toHaveAttribute("href", `${basePath}/admin/sample/watchers`);
   await expect(watcherCount).toHaveText("3");
   await expect(watchButton).toHaveText("Watch");
+  await expect(watchButton).not.toHaveAttribute("data-toggle", "dropdown");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -534,11 +535,13 @@ async function installProjectWatchDropdownBubbleAudit(page: Page) {
       if (
         event.target instanceof Element &&
         event.target.closest(
-          ".project-util .watch-btn .down-arrow[data-toggle='dropdown'], .project-util .watch-btn .watchBtn",
+          ".project-util .watch-btn .down-arrow, .project-util .watch-btn .watchBtn",
         )
       ) {
         dropdownClicks.push(
-          event.target.closest("[data-toggle='dropdown']") ? "watch:toggle" : "watch:action",
+          event.target.closest(".project-util .watch-btn .down-arrow")
+            ? "watch:toggle"
+            : "watch:action",
         );
       }
     });
