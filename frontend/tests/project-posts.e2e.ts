@@ -22,7 +22,7 @@ const EXPECTED_PROJECT_POSTS = `
 <header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><a href="#myOrganizationList" data-toggle="tab">Favorite</a></li><li class="myProjectList"><a href="#myProjectList" data-toggle="tab">Project</a></li><li class="myRecentIssueList"><a href="#myRecentIssueList" data-toggle="tab">Recent History</a></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><a href="javascript:void(0);" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></a></li><li class="gnb-usermenu-dropdown"><a href="javascript:void(0);" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></a><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="post-list project-page-wrap"><div class="search-wrap underline"><form id="option_form" action="__BASE_PATH__/admin/sample/posts" method="get" class="pull-left"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><div class="search-bar"><input name="filter" class="textbox" type="text" placeholder="Search current project" value="release"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div><div class="board-labels"><dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-exclusive="false"><option value="8" data-category-id="3" data-category-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></form><div class="pull-right"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></div></div><div class="filter-wrap board"><div class="filters"><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=updatedDate&amp;orderDir=asc" class="filter active"><i class="ico btn-gray-arrow  down "></i>Updated</a><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=createdDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Created</a><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=numOfComments&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Comments</a></div></div><ul class="post-list-wrap notice-wrap"><li class="post-item title" href="__BASE_PATH__/admin/sample/post/2"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="label label-notice">Notice</span>&nbsp;<span class="post-id">2</span><a href="__BASE_PATH__/admin/sample/post/2" class="title">Pinned notice</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="admin">Site Admin</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/post/2#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">1</span></a></span></div></li></ul><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/admin/sample/post/3"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">3</span><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/post/3#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">2</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</button></div></li></ul><div class="write-btn-wrap"></div><div id="pagination"></div>${BOARD_LIST_KEYMAP}</div></div>
+<div class="page-wrap-outer"><div class="post-list project-page-wrap"><div class="search-wrap underline"><form id="option_form" action="__BASE_PATH__/admin/sample/posts" method="get" class="pull-left"><input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><div class="search-bar"><input name="filter" class="textbox" type="text" placeholder="Search current project" value="release"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div><div class="board-labels"><dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-exclusive="false"><option value="8" data-category-id="3" data-category-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" style="position:relative" title="Two Column Mode"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></form><div class="pull-right"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></div></div><div class="filter-wrap board"><div class="filters"><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=updatedDate&amp;orderDir=asc" class="filter active"><i class="ico btn-gray-arrow  down "></i>Updated</a><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=createdDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Created</a><a href="__BASE_PATH__/admin/sample/posts?pageNum=1&amp;filter=release&amp;labelIds=8&amp;orderBy=numOfComments&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Comments</a></div></div><ul class="post-list-wrap notice-wrap"><li class="post-item title" href="__BASE_PATH__/admin/sample/post/2"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom" title="admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="label label-notice">Notice</span>&nbsp;<span class="post-id">2</span><a href="__BASE_PATH__/admin/sample/post/2" class="title">Pinned notice</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="admin">Site Admin</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/post/2#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">1</span></a></span></div></li></ul><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/admin/sample/post/3"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="bottom" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">3</span><a href="__BASE_PATH__/admin/sample/post/3" class="title">Release note</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-toggle="tooltip" data-placement="bottom" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/post/3#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">2</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="${BUG_LABEL_STYLE}">bug</button></div></li></ul><div class="write-btn-wrap"></div><div id="pagination"></div>${BOARD_LIST_KEYMAP}</div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -142,6 +142,7 @@ async function dispatchCancelableClick(locator: Locator) {
 test("project board list keymap modal is route state owned", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page);
+  await page.addInitScript(() => localStorage.removeItem("useTwoColumnMode"));
 
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
   await installRootModalBridgeGuard(page, ["helpKeys"]);
@@ -275,6 +276,8 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/posts?filter=release&labelIds=8`);
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
   await expect(page).toHaveTitle("sample - Board - admin/sample");
   await expect(page.locator("#option_form")).toBeVisible();
   await expect(page.locator('#option_form input[name="filter"]')).toHaveAttribute(
@@ -328,7 +331,7 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
     borderTextColor: "rgb(3, 169, 244)",
     checkboxId: "two-column-mode",
     checkboxMargin: "4px 4px 0px 2px",
-    dataContent: "Splits list and body into columns respectively",
+    dataContent: null,
     display: "inline-block",
     followsLabels: true,
     lineHeight: "37px",
@@ -338,14 +341,55 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
     textPadding: "0px 4px 0px 0px",
     title: "Two Column Mode",
     wrapperClass: "two-column-icon mr10 hide-in-mobile",
+    wrapperPosition: "relative",
   });
-
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_PROJECT_POSTS_CURRENT.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  const twoColumnWrapper = page.locator("#option_form #two-column-mode-checkbox");
+  const twoColumnToggle = page.locator("#two-column-mode");
+  await expect(twoColumnWrapper).not.toHaveAttribute("data-content", /.+/u);
+  await expect(twoColumnWrapper.locator(".popover.top")).toHaveCount(0);
+  await expect(twoColumnToggle).not.toBeChecked();
+  await twoColumnToggle.click();
+  await expect(twoColumnToggle).toBeChecked();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("true");
+  await page.reload();
+  await expect(page.locator("#two-column-mode")).toBeChecked();
+  await page.locator("#two-column-mode").click();
+  await expect(page.locator("#two-column-mode")).not.toBeChecked();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("false");
+  await page.locator("#option_form #two-column-mode-checkbox").hover();
+  const hoverPopover = page.locator("#option_form #two-column-mode-checkbox .popover.top");
+  await expect(hoverPopover).toBeVisible();
+  await expect(hoverPopover.locator(".popover-title")).toHaveText("Two Column Mode");
+  await expect(hoverPopover.locator(".popover-content")).toHaveText(
+    "Splits list and body into columns respectively",
+  );
+  const hoverMetrics = await boardTwoColumnPopoverMetrics(page);
+  expect(hoverMetrics).toMatchObject({
+    className: "popover top",
+    contentText: "Splits list and body into columns respectively",
+    placement: "top",
+    titleText: "Two Column Mode",
+  });
+  expect(hoverMetrics.isAboveWrapper).toBe(true);
+  await page.locator("body").hover({ position: { x: 10, y: 10 } });
+  await expect(hoverPopover).toHaveCount(0);
+  await page.locator('#option_form input[name="filter"]').focus();
+  await page.locator("#two-column-mode").focus();
+  const focusPopover = page.locator("#option_form #two-column-mode-checkbox .popover.top");
+  await expect(focusPopover).toBeVisible();
+  await page.locator('#option_form input[name="filter"]').focus();
+  await expect(focusPopover).toHaveCount(0);
 
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-list-keymap";
@@ -389,6 +433,21 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(routeSource).not.toContain('placeholder={t("title.search")}');
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain('globalThis["document"]');
+  const twoColumnSource = routeSource.slice(
+    routeSource.indexOf("function TwoColumnModeCheckbox"),
+    routeSource.indexOf("function BoardListKeymap"),
+  );
+  expect(twoColumnSource).toContain("useState(false)");
+  expect(twoColumnSource).toContain('localStorage.getItem("useTwoColumnMode") === "true"');
+  expect(twoColumnSource).toContain('localStorage.setItem("useTwoColumnMode", String(checked))');
+  expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(true), 100)");
+  expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
+  expect(twoColumnSource).toContain('className="popover top"');
+  expect(twoColumnSource).toContain('role="tooltip"');
+  expect(twoColumnSource).not.toContain("data-content=");
+  expect(twoColumnSource).not.toContain("document.");
+  expect(twoColumnSource).not.toContain("classList");
+  expect(twoColumnSource).not.toContain("dangerouslySetInnerHTML");
   const keymapSource = routeSource.slice(
     routeSource.indexOf("function BoardListKeymap"),
     routeSource.indexOf("function KeymapEntry"),
@@ -2648,6 +2707,25 @@ async function boardTwoColumnMetrics(page: Page) {
       textPadding: textStyle.padding,
       title: element.getAttribute("title"),
       wrapperClass: element.getAttribute("class"),
+      wrapperPosition: wrapperStyle.position,
+    };
+  });
+}
+
+async function boardTwoColumnPopoverMetrics(page: Page) {
+  return page.locator("#option_form #two-column-mode-checkbox").evaluate((wrapper) => {
+    const popover = wrapper.querySelector(".popover.top") as HTMLElement;
+    const title = popover.querySelector(".popover-title") as HTMLElement;
+    const content = popover.querySelector(".popover-content") as HTMLElement;
+    const popoverBox = popover.getBoundingClientRect();
+    const wrapperBox = wrapper.getBoundingClientRect();
+
+    return {
+      className: popover.className,
+      contentText: content.textContent?.trim(),
+      isAboveWrapper: popoverBox.bottom <= wrapperBox.top + 2,
+      placement: popover.classList.contains("top") ? "top" : "",
+      titleText: title.textContent?.trim(),
     };
   });
 }
