@@ -1483,6 +1483,8 @@ function MilestoneIssueChildRow({
         <Link
           to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${encodeURIComponent(label.id)}`}
           className="label issue-label list-label active twoColumeModeTarget"
+          data-category-id={label.categoryId}
+          data-label-id={label.id}
           key={label.id}
           style={label.color ? { background: cssBackgroundColor(label.color) } : undefined}
         >

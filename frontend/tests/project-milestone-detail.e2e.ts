@@ -24,7 +24,7 @@ const MILESTONE_DETAIL_CHILD_ISSUES = `
         </a>
       </span>
     </span>
-    <a class="label issue-label list-label active twoColumeModeTarget" href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" style="background:rgb(81,170,204)">bug</a>
+    <a class="label issue-label list-label active twoColumeModeTarget" data-category-id="3" data-label-id="8" href="__BASE_PATH__/admin/sample/issues?state=open&amp;labelIds=8" style="background:rgb(81,170,204)">bug</a>
     <span class="child-issue-date" title="2026-06-02">2026-06-02</span>
   </div>
   <div class="issue-item child-issue">
@@ -647,14 +647,22 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     page.evaluate(() => window.sessionStorage.getItem("milestone-detail-spa-marker")),
   ).resolves.toBe("kept");
   await expect(
-    page.locator('#issue-item-41 .issue-label[data-category-id="3"][data-label-id="8"]'),
+    page.locator('#issue-item-41 button.issue-label[data-category-id="3"][data-label-id="8"]'),
   ).toHaveText("bug");
   await expect(
-    page.locator('#issue-item-41 .issue-label[data-category-id="3"][data-label-id="8"]'),
+    page.locator('#issue-item-41 button.issue-label[data-category-id="3"][data-label-id="8"]'),
   ).toHaveAttribute("type", "button");
   await expect(
-    page.locator('#issue-item-41 a.issue-label[data-category-id="3"][data-label-id="8"]'),
+    page.locator('#issue-item-41 .infos > a.issue-label[data-category-id="3"][data-label-id="8"]'),
   ).toHaveCount(0);
+  const childIssueLabel = page.locator(
+    '#issue-item-41 .child-issue-list a.issue-label.twoColumeModeTarget[data-category-id="3"][data-label-id="8"]',
+  );
+  await expect(childIssueLabel).toHaveText("bug");
+  await expect(childIssueLabel).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issues?state=open&labelIds=8`,
+  );
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).toHaveAttribute(
     "title",
     "Assignee: Dev Member",
