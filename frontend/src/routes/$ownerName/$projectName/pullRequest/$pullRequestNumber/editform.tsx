@@ -216,8 +216,8 @@ function ProjectPullRequestEditBody({
                     commits={mergeResult.commits}
                     conflict={mergeResult.conflict}
                     noChangesLabel={t("pullRequest.diff.noChanges")}
-                    ownerName={ownerName}
-                    projectName={projectName}
+                    ownerName={sourceProjectOwnerName(formOptions)}
+                    projectName={sourceProjectName(formOptions)}
                   />
                 ) : null}
               </div>
@@ -592,6 +592,27 @@ function MergeResult({
         </table>
       </div>
     </div>
+  );
+}
+
+function selectedSourceProject(formOptions: PullRequestFormOptionsResponse) {
+  return (
+    formOptions.fromProjects.find((project) => project.id === formOptions.selected.fromProjectId) ??
+    formOptions.fromProjects.find((project) => project.selected)
+  );
+}
+
+function sourceProjectOwnerName(formOptions: PullRequestFormOptionsResponse) {
+  return (
+    selectedSourceProject(formOptions)?.ownerName ?? formOptions.pullRequest?.fromOwnerName ?? ""
+  );
+}
+
+function sourceProjectName(formOptions: PullRequestFormOptionsResponse) {
+  return (
+    selectedSourceProject(formOptions)?.projectName ??
+    formOptions.pullRequest?.fromProjectName ??
+    ""
   );
 }
 
