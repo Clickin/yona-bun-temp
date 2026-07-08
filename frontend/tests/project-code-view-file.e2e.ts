@@ -203,6 +203,11 @@ test("project code file internal links keep legacy hrefs and navigate through th
     "href",
     `${basePath}/admin/sample/files/main/README.txt`,
   );
+  await expect(page.locator("#open-in-browser")).not.toHaveAttribute("data-content", /.+/u);
+  await expect(page.locator("#open-in-browser")).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(page.locator("#open-in-browser")).not.toHaveAttribute("data-trigger", /.+/u);
+  await expect(page.locator("#open-in-browser")).not.toHaveAttribute("data-placement", /.+/u);
+  await expect(page.locator(".file-header .popover.top")).toHaveCount(0);
   const archiveDownloadLink = page.locator(".code-browse-header .pull-right a", {
     hasText: "Download as .zip file",
   });
@@ -232,6 +237,62 @@ test("project code file internal links keep legacy hrefs and navigate through th
   await page.locator("#breadcrumbs a").first().click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/main`);
   expect(documentRequests).toEqual([]);
+});
+
+test("project code open-in-browser popover is React-owned with legacy hover and focus placement", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(page, codeRequests, "README.txt");
+
+  await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
+  const wrapper = page.locator(".open-in-browser-popover");
+  const openInBrowser = page.locator("#open-in-browser");
+  const popover = wrapper.locator(".popover.top");
+
+  await expect(openInBrowser).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/files/main/README.txt`,
+  );
+  await expect(openInBrowser).toHaveAttribute("target", "_blank");
+  await expect(openInBrowser).toHaveText("Open in browser");
+  await expect(openInBrowser).not.toHaveAttribute("data-content", /.+/u);
+  await expect(openInBrowser).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(openInBrowser).not.toHaveAttribute("data-trigger", /.+/u);
+  await expect(openInBrowser).not.toHaveAttribute("data-placement", /.+/u);
+  await expect(popover).toHaveCount(0);
+
+  await openInBrowser.hover();
+  await expect(popover).toBeVisible();
+  await expect(popover).toHaveAttribute("role", "tooltip");
+  await expect(popover.locator(".arrow")).toHaveCount(1);
+  await expect(popover.locator(".popover-content")).toHaveText(
+    "Browser will parse and show this file. It is useful when you want to serve a static content file.",
+  );
+  expect(await openInBrowserPopoverMetrics(page)).toEqual({
+    contentLineHeight: "13.2px",
+    hasInClass: true,
+    placementClass: true,
+    popoverBottomAboveControl: true,
+    popoverCenteredOnControl: true,
+    popoverDoesNotOverlapHistory: true,
+  });
+
+  await page.mouse.move(0, 0);
+  await expect(popover).toHaveCount(0);
+
+  await openInBrowser.focus();
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".popover-content")).toHaveText(
+    "Browser will parse and show this file. It is useful when you want to serve a static content file.",
+  );
+  await page.keyboard.press("Tab");
+  await expect(popover).toHaveCount(0);
+  await expect(page.locator(".file-wrap[data-type=file] #commitMessage")).toHaveText(
+    "Update README",
+  );
+  expect(codeRequests).toEqual(["branch=main&path=README.txt"]);
 });
 
 test("project code logged-in read-only viewer still sees legacy new-file and edit actions", async ({
@@ -397,6 +458,8 @@ test("project code file route source keeps backend links as hrefs without route 
   const directLegacyLinkActiveOptions = routeSource.match(
     /activeOptions=\{\{\s*exact: true,\s*explicitUndefined: true,\s*includeHash: true,\s*includeSearch: true,\s*\}\}/gu,
   );
+  const openInBrowserLinkBlock =
+    routeSource.match(/<Link\s+id="open-in-browser"[\s\S]*?<\/Link>/u)?.[0] ?? "";
 
   expect(rawAnchorBlocks).toEqual([]);
   expect(backendAnchorHrefs).toEqual([]);
@@ -416,6 +479,16 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).toContain("<Link href={archiveHref} to={archivePath} reloadDocument");
   expect(routeSource).toContain("<Link href={rawHref} to={rawPath}");
   expect(routeSource).toContain("href={openHref}");
+  expect(routeSource).toContain("isOpenInBrowserPopoverVisible");
+  expect(routeSource).toContain('className="popover top in"');
+  expect(routeSource).toContain('className="popover-content"');
+  expect(routeSource).not.toContain('data-content={t("code.open.desc")}');
+  expect(routeSource).not.toContain('data-toggle="popover"');
+  expect(routeSource).not.toContain('data-trigger="hover"');
+  expect(openInBrowserLinkBlock).not.toContain("data-content");
+  expect(openInBrowserLinkBlock).not.toContain("data-toggle");
+  expect(openInBrowserLinkBlock).not.toContain("data-trigger");
+  expect(openInBrowserLinkBlock).not.toContain("data-placement");
   expect(routeSource).toContain(
     '<title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>',
   );
@@ -443,6 +516,39 @@ test("project code file route source keeps backend links as hrefs without route 
     'to={projectPath(ownerName, projectName, "code", encodedBranch, item.path)}',
   );
 });
+
+async function openInBrowserPopoverMetrics(page: Page) {
+  return page.locator(".open-in-browser-popover").evaluate((wrapper) => {
+    const control = wrapper.querySelector<HTMLElement>("#open-in-browser");
+    const history = wrapper.parentElement?.querySelector<HTMLElement>('a.ybtn[href*="/commits/"]');
+    const popover = wrapper.querySelector<HTMLElement>(".popover");
+    const content = wrapper.querySelector<HTMLElement>(".popover-content");
+    const missing = Object.entries({ content, control, history, popover })
+      .filter(([, element]) => !element)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected open-in-browser popover metric targets are missing: ${missing.join(", ")}`,
+      );
+    }
+
+    const controlBox = control.getBoundingClientRect();
+    const historyBox = history.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    const contentStyle = window.getComputedStyle(content);
+    const controlCenter = controlBox.left + controlBox.width / 2;
+    const popoverCenter = popoverBox.left + popoverBox.width / 2;
+    return {
+      contentLineHeight: contentStyle.lineHeight,
+      hasInClass: popover.classList.contains("in"),
+      placementClass: popover.classList.contains("top"),
+      popoverBottomAboveControl: popoverBox.bottom <= controlBox.top + 1,
+      popoverCenteredOnControl: Math.abs(controlCenter - popoverCenter) <= 2,
+      popoverDoesNotOverlapHistory:
+        popoverBox.bottom <= historyBox.top || popoverBox.left >= historyBox.right,
+    };
+  });
+}
 
 async function fileViewMetrics(page: Page) {
   return page.locator(".code-browse-wrap").evaluate((wrap) => {
@@ -831,13 +937,19 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      if (node.classList.contains("open-in-browser-popover")) {
+        return Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("");
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            attr.name !== "data-content",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
@@ -877,7 +989,8 @@ async function canonicalizeHtml(page: Page, html: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             attr.name !== "aria-current" &&
-            attr.name !== "data-status",
+            attr.name !== "data-status" &&
+            attr.name !== "data-content",
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)

@@ -535,6 +535,7 @@ function FileView({
   selectedBranch: string;
 }) {
   const { t } = useLegacyMessages();
+  const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
@@ -669,16 +670,41 @@ function FileView({
               ) : null}
             </>
           ) : null}
-          <Link
-            id="open-in-browser"
-            href={openHref}
-            to={openPath}
-            className="ybtn"
-            target="_blank"
-            data-content={t("code.open.desc")}
+          <span
+            className="open-in-browser-popover"
+            style={{ display: "inline-block", position: "relative" }}
+            onBlur={() => setIsOpenInBrowserPopoverVisible(false)}
+            onFocus={() => setIsOpenInBrowserPopoverVisible(true)}
+            onMouseEnter={() => setIsOpenInBrowserPopoverVisible(true)}
+            onMouseLeave={() => setIsOpenInBrowserPopoverVisible(false)}
           >
-            <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
-          </Link>
+            <Link
+              id="open-in-browser"
+              href={openHref}
+              to={openPath}
+              className="ybtn"
+              target="_blank"
+            >
+              <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
+            </Link>
+            {isOpenInBrowserPopoverVisible ? (
+              <div
+                className="popover top in"
+                role="tooltip"
+                style={{
+                  bottom: "100%",
+                  display: "block",
+                  left: "50%",
+                  marginBottom: "5px",
+                  position: "absolute",
+                  transform: "translateX(-50%)",
+                }}
+              >
+                <div className="arrow"></div>
+                <div className="popover-content">{t("code.open.desc")}</div>
+              </div>
+            ) : null}
+          </span>
           <Link
             to={historyPath}
             activeOptions={{
