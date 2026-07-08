@@ -5,7 +5,7 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readWorkspaceOverviewRest, toggleWorkspaceNotificationRest } from "../../../api/workspace";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/user/editform/notifications")({
@@ -178,10 +178,6 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                               <div className="switch" data-on-label="On" data-off-label="Off">
                                 <input
                                   className="notiUpdate"
-                                  data-href={prefixBasePath(
-                                    runtimeConfig.basePath,
-                                    `/noti/toggle/${projectId}/${eventType}`,
-                                  )}
                                   type="checkbox"
                                   data-toggle="switch"
                                   checked={isNotificationEnabled(notifications, eventType)}

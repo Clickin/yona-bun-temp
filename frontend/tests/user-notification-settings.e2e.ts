@@ -192,7 +192,12 @@ test("current-user notification settings page matches legacy user/edit_notificat
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("notifications-project-tab");
-  const newCommentSwitch = page.locator('[id="2"] input[data-href$="/noti/toggle/2/NEW_COMMENT"]');
+  await expect(page.locator("input.notiUpdate[data-href]")).toHaveCount(0);
+  const newCommentSwitch = page
+    .locator('.tab-content > .tab-pane[id="2"] tr', {
+      hasText: "New comment on post or issue added",
+    })
+    .locator("input.notiUpdate");
   await expect(newCommentSwitch).toBeChecked();
   const toggleResponse = page.waitForResponse(
     (response) =>
@@ -218,6 +223,7 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).not.toContain("document.location");
   expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("globalThis.location");
+  expect(source).not.toContain("data-href");
   expect(source).not.toContain("location.hash");
   expect(source).not.toContain("location.href");
   expect(source).not.toContain("location.pathname");
@@ -366,18 +372,13 @@ function expectedProjectTab(
 function expectedProjectPane(basePath: string, projectId: string, activeProjectId: string) {
   const activeClass = projectId === activeProjectId ? "tab-pane active" : "tab-pane";
   return `<div id="${projectId}" class="${activeClass}"><table class="table table-striped table-bordered"><tbody>${NOTIFICATION_TYPES.map(
-    ([eventType, label]) => expectedNotificationRow(basePath, projectId, eventType, label),
+    ([eventType, label]) => expectedNotificationRow(projectId, eventType, label),
   ).join("")}</tbody></table></div>`;
 }
 
-function expectedNotificationRow(
-  basePath: string,
-  projectId: string,
-  eventType: string,
-  label: string,
-) {
+function expectedNotificationRow(projectId: string, eventType: string, label: string) {
   const checked = CHECKED_BY_PROJECT.get(projectId)?.has(eventType) ?? false;
-  return `<tr><th>${label}</th><td><div class="switch" data-on-label="On" data-off-label="Off"><input class="notiUpdate" data-href="${basePath}/noti/toggle/${projectId}/${eventType}" type="checkbox" data-toggle="switch"${checked ? ' checked="checked"' : ""}></div></td></tr>`;
+  return `<tr><th>${label}</th><td><div class="switch" data-on-label="On" data-off-label="Off"><input class="notiUpdate" type="checkbox" data-toggle="switch"${checked ? ' checked="checked"' : ""}></div></td></tr>`;
 }
 
 async function readNotificationSettingsMetrics(page: Page) {
@@ -439,7 +440,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-placement",
         "data-on-label",
         "data-off-label",
-        "data-href",
       ];
       const attrs = stableAttrs(current, stableAttributes);
       const open = attrs
@@ -512,7 +512,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           "data-placement",
           "data-on-label",
           "data-off-label",
-          "data-href",
         ];
         const attrs = stableAttrs(current, stableAttributes);
         const open = attrs
