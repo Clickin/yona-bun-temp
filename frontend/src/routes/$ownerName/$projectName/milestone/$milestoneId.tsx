@@ -35,6 +35,11 @@ type MilestoneDetailSearch = {
   state: "all" | "closed" | "open";
 };
 
+const LEGACY_MILESTONE_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId")({
   component: ProjectMilestoneDetailRoute,
   validateSearch(search: Record<string, unknown>): MilestoneDetailSearch {
@@ -334,6 +339,7 @@ function ProjectMilestoneDetailBody({
               to="/$ownerName/$projectName/milestone/$milestoneId"
               params={{ ownerName, projectName, milestoneId }}
               search={{}}
+              {...LEGACY_MILESTONE_LINK_PROPS}
               className="title"
             >
               {stringField(milestone.title)}
@@ -447,6 +453,7 @@ function ProjectMilestoneDetailBody({
                     params={{ ownerName, projectName, milestoneId }}
                     search={{ state }}
                     hash="issues"
+                    {...LEGACY_MILESTONE_LINK_PROPS}
                   >
                     {t(`issue.state.${state}`)}
                     <span className="num-badge">
@@ -1172,6 +1179,7 @@ function MilestoneIssueRow({
                 <Link
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ ownerName, projectName, milestoneId: stringField(issue.milestoneId) }}
+                  {...LEGACY_MILESTONE_LINK_PROPS}
                   data-toggle="tooltip"
                   data-placement="bottom"
                   title={t("milestone")}

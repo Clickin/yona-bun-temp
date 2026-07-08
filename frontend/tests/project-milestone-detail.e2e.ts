@@ -46,7 +46,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
   <div class="project-page-wrap">
     <div class="milesion-wrap">
       <h4>
-        <a class="title active" href="__BASE_PATH__/admin/sample/milestone/5">v1.0</a>
+        <a class="title" href="__BASE_PATH__/admin/sample/milestone/5">v1.0</a>
         <small class="ml10">
           <span class="due-date">Due Date <strong>2026-06-30</strong></span>
           <span class="date">(Overdue)</span>
@@ -66,7 +66,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
       </div>
       <div id="issues">
         <ul class="nav nav-tabs">
-          <li class="active"><a class="active" href="__BASE_PATH__/admin/sample/milestone/5?state=open#issues">Open<span class="num-badge">1</span></a></li>
+          <li class="active"><a href="__BASE_PATH__/admin/sample/milestone/5?state=open#issues">Open<span class="num-badge">1</span></a></li>
           <li><a href="__BASE_PATH__/admin/sample/milestone/5?state=closed#issues">Closed<span class="num-badge">1</span></a></li>
           <li><a href="__BASE_PATH__/admin/sample/milestone/5?state=all#issues">All<span class="num-badge">2</span></a></li>
         </ul>
@@ -141,7 +141,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                     <span class="infos-item" data-placement="bottom" data-toggle="tooltip" title="2026-06-01">2026-06-01</span>
                     <div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width:50%" title="Subtask"></div></div>
                     <span class="subtask-progress completion-ratio">1/2</span>
-                    <span class="mileston-tag"><a class="active" href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>
+                    <span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>
                     <span class="infos-item item-count-groups">
                       <a class="comments-count comments-count-color" href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a>
                       <a class="vote-count vote-color" href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a>
@@ -380,6 +380,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "href",
     `${basePath}/admin/sample/milestone/5`,
   );
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveAttribute("class", "title");
   await expect(page.locator(".badge-issue-open")).toHaveText("Open");
   await expect(page.locator(".progress .bar")).toHaveAttribute("style", "width: 50%;");
   await expect(page.locator(".milestone-desc .markdown-wrap")).toContainText("Release scope");
@@ -417,6 +418,9 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(deleteTrigger).toHaveCount(1);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
+  await expect(page.locator("#issues .nav-tabs li.active a")).not.toHaveClass(
+    /(?:^|\s)active(?:\s|$)/u,
+  );
   expect(
     await page
       .locator("#issues .nav-tabs li:not(.active)")
@@ -622,6 +626,9 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "v1.0",
   );
   await expect(
+    page.locator('#issue-item-41 .mileston-tag a[href$="/milestone/5"]'),
+  ).not.toHaveAttribute("class", /(?:^|\s)active(?:\s|$)/u);
+  await expect(
     page.locator("#issue-item-41 .comments-count[href$='/issue/11#comments'] .item-count"),
   ).toHaveText("2");
   await expect(
@@ -709,6 +716,9 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await page.click('#issues .nav-tabs a:has-text("Closed")');
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=closed#issues`);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Closed1");
+  await expect(page.locator("#issues .nav-tabs li.active a")).not.toHaveClass(
+    /(?:^|\s)active(?:\s|$)/u,
+  );
   expect(
     await page
       .locator("#issues .nav-tabs li:not(.active)")
