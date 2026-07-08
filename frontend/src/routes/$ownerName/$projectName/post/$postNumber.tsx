@@ -1128,7 +1128,6 @@ function PostCommentRow({
               <button
                 type="button"
                 className="btn-transparent ml10"
-                data-toggle="comment-edit"
                 data-comment-id={commentId}
                 title={t("common.comment.edit")}
                 onClick={(event) => {
@@ -1144,7 +1143,6 @@ function PostCommentRow({
               <button
                 type="button"
                 className="btn-transparent ml6"
-                data-toggle="comment-delete"
                 title={t("common.comment.delete")}
                 onClick={(event) => {
                   event.preventDefault();
@@ -1493,7 +1491,6 @@ function PostChildComment({
             <button
               type="button"
               className="btn-transparent deleteButtonX"
-              data-toggle="comment-delete"
               title={t("common.comment.delete")}
               onClick={(event) => {
                 event.preventDefault();
