@@ -33,6 +33,8 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
+type HelpModalState = "initial" | "open" | "closed";
+
 function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault();
   event.stopPropagation();
@@ -145,7 +147,7 @@ function PullRequestOverviewBody({
     pullRequestNumber: pullRequest.pullRequestNumber,
   };
   const [isWatching, setIsWatching] = useState(pullRequest.isWatching);
-  const [isHelpMessageOpen, setIsHelpMessageOpen] = useState(false);
+  const [helpMessageState, setHelpMessageState] = useState<HelpModalState>("initial");
   const watchMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -294,7 +296,7 @@ function PullRequestOverviewBody({
               data-target="#helpMessage"
               onClick={(event) => {
                 insulateModalButtonClick(event);
-                setIsHelpMessageOpen(true);
+                setHelpMessageState("open");
               }}
             >
               {t("title.help")}
@@ -303,8 +305,8 @@ function PullRequestOverviewBody({
         </div>
       </div>
       <PullRequestHelpModal
-        isOpen={isHelpMessageOpen}
-        onClose={() => setIsHelpMessageOpen(false)}
+        state={helpMessageState}
+        onClose={() => setHelpMessageState("closed")}
       />
     </>
   );
@@ -995,14 +997,18 @@ function PullRequestConflictGuide({
   );
 }
 
-function PullRequestHelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: HelpModalState }) {
   const { t } = useLegacyMessages();
+  const isOpen = state === "open";
+  const modalStyle = state === "initial" ? undefined : { display: isOpen ? "block" : "none" };
+  const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";
   return (
     <>
       <div
         id="helpMessage"
-        className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}
-        style={isOpen ? { display: "block" } : undefined}
+        className={isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"}
+        style={modalStyle}
+        aria-hidden={ariaHidden}
       >
         <div className="modal-header">
           <h5>{t("pullRequest.merge.help.1")}</h5>

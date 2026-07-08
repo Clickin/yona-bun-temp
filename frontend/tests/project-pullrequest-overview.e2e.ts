@@ -506,11 +506,12 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"',
   );
+  expect(routeSource).toContain('type HelpModalState = "initial" | "open" | "closed";');
   expect(routeSource).toContain(
-    "const [isHelpMessageOpen, setIsHelpMessageOpen] = useState(false);",
+    'const [helpMessageState, setHelpMessageState] = useState<HelpModalState>("initial");',
   );
   expect(routeSource).toContain(
-    "<PullRequestHelpModal\n        isOpen={isHelpMessageOpen}\n        onClose={() => setIsHelpMessageOpen(false)}",
+    '<PullRequestHelpModal\n        state={helpMessageState}\n        onClose={() => setHelpMessageState("closed")}',
   );
   expect(routeSource).toContain(
     "function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
@@ -519,9 +520,14 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain("event.stopPropagation();");
   expect(routeSource.match(/insulateModalButtonClick\(event\);/g)?.length ?? 0).toBe(2);
   expect(routeSource).toContain(
-    'className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}',
+    'isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"',
   );
-  expect(routeSource).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(routeSource).toContain(
+    'state === "initial" ? undefined : { display: isOpen ? "block" : "none" }',
+  );
+  expect(routeSource).toContain(
+    'const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";',
+  );
   expect(routeSource).toContain('className="modal-backdrop fade in"');
   expect(routeSource).toContain('role="presentation"');
   expect(routeSource).toContain("onClick={onClose}");
@@ -549,12 +555,18 @@ test("project pull request overview help modal source insulates delegated modal 
   );
   expect(routeSource).toContain("event.preventDefault();");
   expect(routeSource).toContain("event.stopPropagation();");
+  expect(routeSource).toContain('type HelpModalState = "initial" | "open" | "closed";');
   expect(routeSource).toContain(
-    "const [isHelpMessageOpen, setIsHelpMessageOpen] = useState(false);",
+    'const [helpMessageState, setHelpMessageState] = useState<HelpModalState>("initial");',
   );
   expect(routeSource).toContain('data-target="#helpMessage"');
   expect(routeSource).toContain('data-dismiss="modal"');
-  expect(routeSource).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(routeSource).toContain(
+    'state === "initial" ? undefined : { display: isOpen ? "block" : "none" }',
+  );
+  expect(routeSource).toContain(
+    'const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";',
+  );
   expect(routeSource).toContain('className="modal-backdrop fade in"');
   expect(routeSource).toContain('role="presentation"');
   expect(routeSource).toContain("onClick={onClose}");
@@ -834,11 +846,14 @@ test("project pull request overview opens help modal through route-owned React s
   await armRootModalBridgeTrap(page);
   await helpButton.click();
   await expect(page).toHaveURL(beforeHelpUrl);
-  await expect(page.locator("#helpMessage")).not.toHaveClass(/hide/u);
-  await expect(page.locator("#helpMessage")).toHaveClass(/in/u);
+  await expect(page.locator("#helpMessage")).toHaveClass("modal hide fade pullreq-info in");
   await expect(page.locator("#helpMessage")).toHaveAttribute("style", "display: block;");
-  await expect(page.locator("#helpMessage")).not.toHaveAttribute("aria-hidden", /./u);
+  await expect(page.locator("#helpMessage")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(backdropPlacement(page)).resolves.toEqual({
+    backdropClass: "modal-backdrop fade in",
+    previousElementId: "helpMessage",
+  });
   await expect(
     page.evaluate(
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
@@ -848,23 +863,30 @@ test("project pull request overview opens help modal through route-owned React s
 
   await page.locator(".modal-backdrop.fade.in").click({ position: { x: 5, y: 5 } });
   await expect(page).toHaveURL(beforeHelpUrl);
-  await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
-  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
+  await expect(page.locator("#helpMessage")).toHaveClass("modal hide fade pullreq-info");
+  await expect(page.locator("#helpMessage")).toHaveAttribute("style", "display: none;");
+  await expect(page.locator("#helpMessage")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
   await armRootModalBridgeTrap(page);
   await helpButton.click();
+  await expect(page.locator("#helpMessage")).toHaveClass("modal hide fade pullreq-info in");
   await expect(page.locator("#helpMessage")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#helpMessage")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(backdropPlacement(page)).resolves.toEqual({
+    backdropClass: "modal-backdrop fade in",
+    previousElementId: "helpMessage",
+  });
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
   await armRootModalBridgeTrap(page);
   await page.locator('#helpMessage [data-dismiss="modal"]').click();
   await expect(page).toHaveURL(beforeHelpUrl);
-  await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
-  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
-  await expect(page.locator("#helpMessage")).not.toHaveAttribute("aria-hidden", /./u);
+  await expect(page.locator("#helpMessage")).toHaveClass("modal hide fade pullreq-info");
+  await expect(page.locator("#helpMessage")).toHaveAttribute("style", "display: none;");
+  await expect(page.locator("#helpMessage")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(
     page.evaluate(
@@ -908,6 +930,19 @@ async function rootModalBridgeHits(page: Page) {
           }
       ).__yonaRootModalBridgeHits ?? [],
   );
+}
+
+async function backdropPlacement(page: Page) {
+  return page.evaluate(() => {
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop");
+    if (!backdrop) {
+      return null;
+    }
+    return {
+      backdropClass: backdrop.className,
+      previousElementId: backdrop.previousElementSibling?.id ?? "",
+    };
+  });
 }
 
 async function pullRequestEventMetrics(page: Page) {
