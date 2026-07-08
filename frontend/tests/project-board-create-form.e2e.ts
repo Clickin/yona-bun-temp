@@ -29,7 +29,7 @@ const EXPECTED_CREATE_FORM_BODY = `
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="3"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="3"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -146,6 +146,8 @@ test("project board create form matches legacy board/create.scala.html core form
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("classList");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("style.display");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain('setAttribute("tabindex"');
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
+  expect(POSTFORM_ROUTE_SOURCE).not.toContain("markdown-editor");
   expect(POSTFORM_ROUTE_SOURCE).not.toContain("window.history.back()");
   expect(POSTFORM_ROUTE_SOURCE).toContain("router.history.back()");
   expect(POSTFORM_ROUTE_SOURCE).toContain(
@@ -164,28 +166,35 @@ test("project board create form matches legacy board/create.scala.html core form
   await expect(page.locator("#editor-body-body")).toBeFocused();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("name", "body");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("id", "editor-body-body");
+  await expect(page.locator("#editor-body-body")).toHaveAttribute(
+    "data-editor-mode",
+    "content-body",
+  );
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "3");
+  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
+  await expect(page.locator(".content-wrap.frm-wrap dd[style] > .mt10")).toHaveCount(1);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-body"]'),
+    page.locator('.content-wrap.frm-wrap dd[style] > .mt10 .nav-tabs a[href="#edit-body"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
+    page.locator('.content-wrap.frm-wrap dd[style] > .mt10 .nav-tabs a[href="#preview-body"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs [data-toggle="tab"]'),
+    page.locator('.content-wrap.frm-wrap dd[style] > .mt10 .nav-tabs [data-toggle="tab"]'),
   ).toHaveCount(0);
   const editTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
+    '.content-wrap.frm-wrap dd[style] > .mt10 .nav-tabs button[type="button"][data-mode="edit"]',
   );
   const previewTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
+    '.content-wrap.frm-wrap dd[style] > .mt10 .nav-tabs button[type="button"][data-mode="preview"]',
   );
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
-  await expect(page.locator('[data-toggle="markdown-editor"] .nav-tabs > li > button')).toHaveText([
-    "Edit",
-    "Preview",
-  ]);
+  await expect(
+    page.locator(".content-wrap.frm-wrap dd[style] > .mt10 .nav-tabs > li > button"),
+  ).toHaveText(["Edit", "Preview"]);
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
@@ -551,7 +560,7 @@ async function readBoardCreateFormMetrics(page: Page) {
 }
 
 async function readBoardCreateEditorTabBoxes(page: Page) {
-  return page.locator('[data-toggle="markdown-editor"]').evaluate((editor) => {
+  return page.locator(".content-wrap.frm-wrap dd[style] > .mt10").evaluate((editor) => {
     const tabList = editor.querySelector<HTMLElement>(".nav-tabs");
     const editTab = editor.querySelector<HTMLElement>('button[data-mode="edit"]');
     const previewTab = editor.querySelector<HTMLElement>('button[data-mode="preview"]');
