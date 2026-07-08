@@ -467,7 +467,6 @@ function ProjectPostDetailBody({
           <button
             type="button"
             className="close"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -495,7 +494,6 @@ function ProjectPostDetailBody({
           <button
             type="button"
             className="ybtn"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -568,7 +566,6 @@ function PostingHistory({
           <button
             type="button"
             className="close"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -585,7 +582,6 @@ function PostingHistory({
         <div className="modal-footer">
           <button
             className="ybtn ybtn-info ybtn-small"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -631,7 +627,6 @@ function CommentDeleteConfirm({
           <button
             type="button"
             className="close"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -661,7 +656,6 @@ function CommentDeleteConfirm({
           <button
             type="button"
             className="ybtn"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -1774,7 +1768,6 @@ function BoardDetailKeymap({
           <button
             type="button"
             className="ybtn ybtn-info"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
