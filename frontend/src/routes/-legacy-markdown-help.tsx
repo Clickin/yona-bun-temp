@@ -1,6 +1,21 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy help/markdown.scala.html renders clickable help tabs as li[data-toggle="markdown-help"]. */
 import { Link } from "@tanstack/react-router";
-import { type MouseEvent, useState } from "react";
+import { useState } from "react";
+
+const MARKDOWN_HELP_TARGETS = [
+  "markdownHeaders",
+  "markdownStyling",
+  "markdownLinks",
+  "markdownLists",
+  "markdownTaskList",
+  "markdownImages",
+  "markdownBlockquotes",
+  "markdownCodes",
+  "markdownTables",
+  "markdownShortLinks",
+] as const;
+
+type MarkdownHelpTarget = (typeof MARKDOWN_HELP_TARGETS)[number];
 
 const MARKDOWN_HEADER_SAMPLE = `
 # This is an H1
@@ -103,14 +118,10 @@ function MarkdownSampleOutput({ sample }: { sample: string }) {
 }
 
 export function LegacyMarkdownHelp() {
-  const [activeTarget, setActiveTarget] = useState<string | null>(null);
+  const [activeTarget, setActiveTarget] = useState<MarkdownHelpTarget | null>(null);
 
-  const activeClass = (target: string) => (activeTarget === target ? " active" : "");
-  const toggleActiveTarget = (event: MouseEvent<HTMLElement>) => {
-    const target = event.currentTarget.dataset.target;
-    if (!target) {
-      return;
-    }
+  const activeClass = (target: MarkdownHelpTarget) => (activeTarget === target ? " active" : "");
+  const toggleActiveTarget = (target: MarkdownHelpTarget) => {
     setActiveTarget((current) => (current === target ? null : target));
   };
 
@@ -124,7 +135,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownHeaders")}`}
           data-toggle="markdown-help"
           data-target="markdownHeaders"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownHeaders")}
         >
           Header
         </li>
@@ -132,7 +143,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownStyling")}`}
           data-toggle="markdown-help"
           data-target="markdownStyling"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownStyling")}
         >
           Text Style
         </li>
@@ -140,7 +151,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownLinks")}`}
           data-toggle="markdown-help"
           data-target="markdownLinks"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownLinks")}
         >
           Link
         </li>
@@ -148,7 +159,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownLists")}`}
           data-toggle="markdown-help"
           data-target="markdownLists"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownLists")}
         >
           List
         </li>
@@ -156,7 +167,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownTaskList")}`}
           data-toggle="markdown-help"
           data-target="markdownTaskList"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownTaskList")}
         >
           Checklist
         </li>
@@ -164,7 +175,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownImages")}`}
           data-toggle="markdown-help"
           data-target="markdownImages"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownImages")}
         >
           Image
         </li>
@@ -172,7 +183,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownBlockquotes")}`}
           data-toggle="markdown-help"
           data-target="markdownBlockquotes"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownBlockquotes")}
         >
           Blockquote
         </li>
@@ -180,7 +191,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownCodes")}`}
           data-toggle="markdown-help"
           data-target="markdownCodes"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownCodes")}
         >
           Code
         </li>
@@ -188,7 +199,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownTables")}`}
           data-toggle="markdown-help"
           data-target="markdownTables"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownTables")}
         >
           Table
         </li>
@@ -196,7 +207,7 @@ export function LegacyMarkdownHelp() {
           className={`help-nav${activeClass("markdownShortLinks")}`}
           data-toggle="markdown-help"
           data-target="markdownShortLinks"
-          onClick={toggleActiveTarget}
+          onClick={() => toggleActiveTarget("markdownShortLinks")}
         >
           Short Link
         </li>

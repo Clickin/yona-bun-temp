@@ -6,6 +6,11 @@ const HELP_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
+const SHARED_MARKDOWN_HELP_SOURCE = readFileSync(
+  new URL("../src/routes/-legacy-markdown-help.tsx", import.meta.url),
+  "utf8",
+);
+
 const EXPECTED_HELP_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -446,6 +451,59 @@ test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }
   });
 });
 
+test("shared markdown help uses typed React targets while preserving legacy target DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain(".dataset");
+  expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain("currentTarget.dataset");
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain('data-toggle="markdown-help"');
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain('data-target="markdownLinks"');
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
+    'onClick={() => toggleActiveTarget("markdownLinks")}',
+  );
+
+  await mockMarkdownHelpIssueForm(page);
+  await page.goto(`${basePath}/admin/sample/issueform`);
+
+  const markdownHelp = page.locator(".markdown-help");
+  await expect(markdownHelp).toBeVisible();
+  await expect(markdownHelp.locator('.help-nav[data-toggle="markdown-help"]')).toHaveCount(10);
+  await expect(markdownHelp.locator('.help-nav[data-target="markdownLinks"]')).toHaveText("Link");
+  await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
+
+  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLinks"]').click();
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
+  ).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
+    /active/,
+  );
+
+  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
+  ).not.toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(
+    /active/,
+  );
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
+  ).toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
+
+  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await expect(
+    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
+  ).not.toHaveClass(/active/);
+  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
+    /active/,
+  );
+  await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
+});
+
 async function renderedHelpAnswerLinks(page: Page) {
   return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
     links.map((link) => ({
@@ -646,6 +704,102 @@ async function readMobileHelpMetrics(page: Page) {
     };
     firstQa.classList.remove("open");
     return metrics;
+  });
+}
+
+async function mockMarkdownHelpIssueForm(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        enrollmentRequestCount: 0,
+        id: 7,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        logoUrl: "/assets/images/project_default_logo.png",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        ownerName: "admin",
+        projectName: "sample",
+        vcs: "GIT",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/labels", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        labels: [
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "type",
+            color: "#51aacc",
+            id: "8",
+            name: "bug",
+          },
+        ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        milestones: [
+          {
+            attachments: [],
+            closedIssueCount: 0,
+            closedIssues: [],
+            completionPercent: 0,
+            contentsHtml: "",
+            contentsMarkdown: "",
+            dueDateLabel: "",
+            id: "5",
+            openIssueCount: 0,
+            openIssues: [],
+            state: "open",
+            title: "Sprint 1",
+            viewerCanDelete: true,
+            viewerCanUpdate: true,
+          },
+        ],
+      }),
+    });
   });
 }
 
