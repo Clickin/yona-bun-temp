@@ -43,6 +43,8 @@ test("organization project search keeps the legacy organization shell with butto
   await expect(categoryButtons).toHaveCount(8);
   await expect(page.locator(".search-category-wrap li > a")).toHaveCount(0);
   await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Projects 0");
+  await expect(page.locator(".search-result-wrap .empty-result")).toHaveCount(1);
+  await expect(page.locator(".search-result-wrap .search-list-wrap")).toHaveCount(0);
 
   const labels = await categoryButtons.evaluateAll((buttons) =>
     buttons.map((button) => button.textContent?.replace(/\s+/g, " ").trim() ?? ""),
@@ -58,9 +60,10 @@ test("organization project search keeps the legacy organization shell with butto
     "Code Reviews 0",
   ]);
   await expect(categoryButtons.nth(0)).toHaveAttribute("type", "button");
-  await expect(categoryButtons.nth(0)).toHaveAttribute("data-toggle", "search-category");
-  await expect(categoryButtons.nth(0)).toHaveAttribute("data-type", "issue");
-  await expect(categoryButtons.nth(2)).toHaveAttribute("data-type", "project");
+  await expect(categoryButtons.nth(0)).not.toHaveAttribute("data-toggle");
+  await expect(categoryButtons.nth(0)).not.toHaveAttribute("data-type");
+  await expect(categoryButtons.nth(2)).not.toHaveAttribute("data-toggle");
+  await expect(categoryButtons.nth(2)).not.toHaveAttribute("data-type");
   await expect(page.locator("#searchInnerForm")).toHaveAttribute(
     "action",
     `${basePath}/organizations/weblabs/search`,
@@ -114,13 +117,18 @@ test("organization project search keeps the legacy organization shell with butto
 
 test("organization search route renders the legacy search title without direct document mutation", () => {
   expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain("<title>{searchTitle}</title>");
-  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain('data-toggle="tooltip"');
-  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).toContain('data-placement="top"');
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain('data-placement="top"');
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain('data-toggle="search-category"');
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toMatch(/<a\b/u);
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain('href="#"');
+  expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain('href="javascript:');
   expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("document.title");
   expect(ORGANIZATION_SEARCH_ROUTE_SOURCE).not.toContain("globalThis.document");
 });
 
-test("organization user search preserves legacy tooltip attributes on avatar links", async ({
+test("organization user search keeps title tooltip text without legacy tooltip plugin attributes on avatar links", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -134,15 +142,15 @@ test("organization user search preserves legacy tooltip attributes on avatar lin
   const avatarLink = page.locator(".search-list-item.project .avatar-wrap");
   await expect(avatarLink).toHaveAttribute("href", `${basePath}/alice`);
   await expect(avatarLink).toHaveAttribute("title", "alice");
-  await expect(avatarLink).toHaveAttribute("data-toggle", "tooltip");
-  await expect(avatarLink).toHaveAttribute("data-placement", "top");
+  await expect(avatarLink).not.toHaveAttribute("data-toggle");
+  await expect(avatarLink).not.toHaveAttribute("data-placement");
   await expect(avatarLink.locator("img")).toHaveAttribute("alt", "Alice");
   await expect(page.locator(".search-list-item.project .title.user-link")).toHaveText(
     "Alice (@alice)",
   );
 });
 
-test("organization issue search preserves legacy tooltip attributes on author meta links", async ({
+test("organization issue search keeps author title text without legacy tooltip plugin attributes on meta links", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -155,8 +163,8 @@ test("organization issue search preserves legacy tooltip attributes on author me
 
   const authorLink = page.locator(".search-meta-info .meta-item[title='alice']");
   await expect(authorLink).toHaveAttribute("href", `${basePath}/alice`);
-  await expect(authorLink).toHaveAttribute("data-toggle", "tooltip");
-  await expect(authorLink).toHaveAttribute("data-placement", "top");
+  await expect(authorLink).not.toHaveAttribute("data-toggle");
+  await expect(authorLink).not.toHaveAttribute("data-placement");
   await expect(authorLink).toHaveText("Alice");
   await expect(page.locator(".search-meta-info .project-link.meta-item")).toHaveText(
     "admin/sample",
@@ -183,11 +191,19 @@ test("organization project search exact missing state pins the live localhost gu
     "action",
     `${basePath}/organizations/weblabs/search`,
   );
+  await expect(page.locator("#searchInnerForm")).toHaveAttribute(
+    "action",
+    `${basePath}/organizations/weblabs/search`,
+  );
+  await expect(page.locator('#searchInnerForm input[name="searchType"]')).toHaveValue("project");
+  await expect(page.locator("#searchKeyword")).toHaveValue("missing");
   await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
   await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
   await expect(page.locator(".project-setting a")).toHaveCount(0);
   await expect(page.locator(".search-category-wrap li.active button")).toHaveText("Projects 0");
   await expect(page.locator(".search-result-title")).toHaveText("Found 0 result(s) in Projects");
+  await expect(page.locator(".search-result-wrap .empty-result")).toHaveCount(1);
+  await expect(page.locator(".search-result-wrap .search-list-wrap")).toHaveCount(0);
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
     `${basePath}/legacy-assets/images/group_default.png`,
