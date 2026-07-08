@@ -1123,7 +1123,13 @@ function IssuePostingHistory({
       </button>
       <div id="-yona-posting-history" className={open ? "modal in" : "modal hide"}>
         <div className="modal-header">
-          <button type="button" className="close" data-dismiss="modal" onClick={closeHistory}>
+          <button
+            type="button"
+            className="close"
+            data-dismiss="modal"
+            aria-hidden="true"
+            onClick={closeHistory}
+          >
             ×
           </button>
           <h5 className="nm">{t("change.history")}</h5>
@@ -1132,7 +1138,12 @@ function IssuePostingHistory({
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
         </div>
         <div className="modal-footer">
-          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" onClick={closeHistory}>
+          <button
+            className="ybtn ybtn-info ybtn-small"
+            data-dismiss="modal"
+            aria-hidden="true"
+            onClick={closeHistory}
+          >
             {t("button.confirm")}
           </button>
         </div>

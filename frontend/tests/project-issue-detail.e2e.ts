@@ -809,13 +809,19 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await expect(page.locator("#-yona-posting-history .modal-body")).not.toContainText(
     "Server HTML should not render",
   );
+  await expect(page.locator("#-yona-posting-history .close")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+  await expect(page.locator("#-yona-posting-history .modal-footer .ybtn")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
 
   const history =
-    '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal">Confirm</button></div></div></div>';
-  const expected = EXPECTED_ISSUE_DETAIL.replace(
-    '</span></a></div><div id="issue-11"',
-    `</span></a>${history}</div><div id="issue-11"`,
-  )
+    '<div class="posting-history"><button type="button" data-toggle="modal" data-target="#-yona-posting-history"><span class="lastUpdatedBy"><span>Site Admin</span><span>Jul 3, 2026</span></span><span>edited</span></button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Previous <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small" data-dismiss="modal" aria-hidden="true">Confirm</button></div></div></div>';
+  const expected = EXPECTED_ISSUE_DETAIL.replaceAll(' aria-hidden="true"', "")
+    .replace('</span></a></div><div id="issue-11"', `</span></a>${history}</div><div id="issue-11"`)
     .replace(
       '<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"></div></div></div>',
       LEFT_COMMENT_TIMELINE,
@@ -830,8 +836,7 @@ test("project issue detail renders legacy posting history modal", async ({ page 
     )
     .replace('id="numOfComments" value="0"', 'id="numOfComments" value="1"')
     .replaceAll("__CHILD_REPLY_PLACEHOLDER__", await childReplyPlaceholder(page))
-    .replaceAll("__BASE_PATH__", basePath)
-    .replaceAll(' aria-hidden="true"', "");
+    .replaceAll("__BASE_PATH__", basePath);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, expected),
@@ -851,7 +856,9 @@ test("project issue detail renders legacy posting history modal", async ({ page 
   await trigger.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#-yona-posting-history")).toBeVisible();
+  await expect(page.locator("#-yona-posting-history")).toHaveClass("modal in");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
   await expect(
     page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).resolves.toBe("posting-history-modal");
