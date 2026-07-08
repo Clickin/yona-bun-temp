@@ -239,12 +239,7 @@ function ProjectTransferBody({
             style={isTransferModalOpen ? { display: "block" } : undefined}
           >
             <div className="modal-header">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                onClick={dismissTransferModal}
-              >
+              <button type="button" className="close" onClick={dismissTransferModal}>
                 ×
               </button>
               <h3>{t("project.transfer.requestion")}</h3>
@@ -269,12 +264,7 @@ function ProjectTransferBody({
               >
                 {t("button.yes")}
               </button>
-              <button
-                type="button"
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={dismissTransferModal}
-              >
+              <button type="button" className="ybtn" onClick={dismissTransferModal}>
                 {t("button.no")}
               </button>
             </div>

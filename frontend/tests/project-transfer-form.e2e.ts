@@ -40,9 +40,9 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
     </div>
     <div class="box-wrap bottom"><button id="btnTransfer" type="button" class="ybtn ybtn-danger"><i class="yobicon-database"></i> Transfer this project</button></div>
     <div id="alertTransfer" class="modal hide">
-      <div class="modal-header"><button type="button" class="close" data-dismiss="modal">×</button><h3>Do you want to transfer this project?</h3></div>
+      <div class="modal-header"><button type="button" class="close">×</button><h3>Do you want to transfer this project?</h3></div>
       <div class="modal-body"><p>If this project is transferred, the new owner or the group's admin will take all the rights of this project.</p><p>Are you sure?</p></div>
-      <div class="modal-footer"><button id="btnTransferExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn" data-dismiss="modal">No</button></div>
+      <div class="modal-footer"><button id="btnTransferExec" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div>
     </div>
   </div>
 </div>
@@ -75,7 +75,9 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
   await expect(page.locator("#btnTransfer")).toBeVisible();
+  await expect(page.locator("#btnTransfer")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator("#alertTransfer")).toHaveClass(/hide/);
+  await expect(page.locator('#alertTransfer [data-dismiss="modal"]')).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -388,6 +390,8 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("acceptInputRef.current?.checked");
   expect(source).not.toContain("destinationInputRef");
   expect(source).not.toContain("acceptInputRef");
+  expect(source).not.toContain('data-dismiss="modal"');
+  expect(source).not.toContain('data-toggle="modal"');
   expect(source).not.toContain("useProjectTransferDocumentTitle");
   expect(source).not.toContain("const screenTitle");
   expect(source).not.toContain("<a href={prefixBasePath");
@@ -424,7 +428,8 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toMatch(
     /const openTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?setIsTransferModalOpen\(true\);/u,
   );
-  expect(source).toMatch(/data-dismiss="modal"[\s\S]+?onClick=\{dismissTransferModal\}/u);
+  expect(source).toMatch(/className="close"[\s\S]+?onClick=\{dismissTransferModal\}/u);
+  expect(source).toMatch(/className="ybtn"[\s\S]+?onClick=\{dismissTransferModal\}/u);
   expect(source).toMatch(
     /const dismissTransferModal = \(event: MouseEvent<HTMLButtonElement>\) => \{[\s\S]+?insulateTransferModalButtonClick\(event\);[\s\S]+?closeTransferModal\(\);/u,
   );
@@ -542,7 +547,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
 
   await armRootTransferModalBridgeTrap(page);
   expect(
-    await dispatchCancelableClick(page.locator('#alertTransfer [data-dismiss="modal"]').last()),
+    await dispatchCancelableClick(page.locator("#alertTransfer .modal-footer button").last()),
   ).toBe(false);
   await expect(alertTransfer).toHaveClass("modal hide");
   await expect(alertTransfer).toBeHidden();
@@ -630,7 +635,9 @@ async function armRootTransferModalBridgeTrap(page: Page) {
     win.__yonaTransferModalBridgeTrapArmed = true;
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      const bridged = target?.closest('#btnTransfer, #alertTransfer [data-dismiss="modal"]');
+      const bridged = target?.closest(
+        "#btnTransfer, #alertTransfer .close, #alertTransfer .modal-footer .ybtn:not(#btnTransferExec)",
+      );
       if (bridged) {
         win.__yonaTransferModalBridgeHits?.push(
           `${bridged.tagName.toLowerCase()}#${bridged.id}.${bridged.className}`,
