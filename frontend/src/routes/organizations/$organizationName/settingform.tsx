@@ -104,7 +104,7 @@ function OrganizationSettingsBody({
 
   function onChangeLogoPath(event: ChangeEvent<HTMLInputElement>) {
     if (!isImageFileInput(event.currentTarget)) {
-      window.alert(t("project.logo.alert"));
+      window.alert(t("organization.logo.alert"));
       setLogoInputKey((key) => key + 1);
       return;
     }

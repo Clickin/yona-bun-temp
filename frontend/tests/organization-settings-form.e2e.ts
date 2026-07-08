@@ -304,7 +304,7 @@ test("organization settings logo input validates image files and auto-submits li
     mimeType: "text/plain",
     name: "not-image.txt",
   });
-  await expect(dialogPromise).resolves.toBe("This is not an image file.");
+  await expect(dialogPromise).resolves.toBe("This is not an image.");
   await expect(page.locator("#logoPath")).toHaveValue("");
   await expectLogoInputNodeMarker(page, undefined);
   expect(uploadRequests).toEqual([]);
