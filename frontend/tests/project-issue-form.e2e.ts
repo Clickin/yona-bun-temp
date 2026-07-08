@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_ISSUE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap "><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize" disabled=""><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize" disabled=""><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn" title="Only you can see it until you publish">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value=""><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap "><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize" disabled=""><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize" disabled=""><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn" title="Only you can see it until you publish">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value=""><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
 `;
 
 const EXPECTED_PARENT_ISSUE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="">??? Select parent issue ???</option><option value="42" selected="">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn" title="Only you can see it until you publish">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value="55"><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="">??? Select parent issue ???</option><option value="42" selected="">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn" title="Only you can see it until you publish">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value="55"><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -16,6 +16,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/@\{"@"\}/g, "@")
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
+  .replaceAll(' data-toggle="markdown-help"', "")
   .replace(/<\/div>\s*$/u, "</div>");
 
 const EXPECTED_MARKDOWN_HEADER_SAMPLE = `
@@ -50,8 +51,8 @@ const EXPECTED_MARKDOWN_TABLE_SAMPLE = `
 
 function withLegacyEditor(html: string) {
   return html.replace(
-    `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -123,27 +124,29 @@ test("project issue create form matches legacy issue/create.scala.html core form
   expect(dueDateMetrics.searchBarBelowLabel).toBe(true);
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
+  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
+  await expect(page.locator(".mt10:has(#editor-body-body)")).toHaveCount(1);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-body"]'),
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#edit-body"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#preview-body"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs [data-toggle="tab"]'),
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs [data-toggle="tab"]'),
   ).toHaveCount(0);
   const editTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
+    '.mt10:has(#editor-body-body) .nav-tabs button[type="button"][data-mode="edit"]',
   );
   const previewTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
+    '.mt10:has(#editor-body-body) .nav-tabs button[type="button"][data-mode="preview"]',
   );
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect
     .poll(() =>
       page
-        .locator('[data-toggle="markdown-editor"] .nav-tabs > li')
+        .locator(".mt10:has(#editor-body-body) .nav-tabs > li")
         .evaluateAll((items) =>
           items.map((item) => item.textContent?.replace(/\s+/g, " ").trim() ?? ""),
         ),
@@ -170,30 +173,30 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expectMarkdownHelpPreText(page, ".markdownTables", EXPECTED_MARKDOWN_TABLE_SAMPLE);
   const markdownHelp = page.locator(".markdown-help");
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
-  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLinks"]').click();
+  await markdownHelp.locator('.help-nav[data-target="markdownLinks"]').click();
   await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
+    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLinks"]'),
   ).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownHeaders")).not.toHaveClass(
     /active/,
   );
-  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
   await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
+    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLinks"]'),
   ).not.toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(
     /active/,
   );
   await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
+    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLists"]'),
   ).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toBeVisible();
-  await markdownHelp.locator('[data-toggle="markdown-help"][data-target="markdownLists"]').click();
+  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
   await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
+    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLists"]'),
   ).not.toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
     /active/,
@@ -584,7 +587,8 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).not.toMatch(/setAttribute\(["']tabindex["']/u);
   expect(source).toContain("tabIndex={1}");
   expect(source).toContain("tabIndex={2}");
-  expect(source).toContain('data-toggle="markdown-editor"');
+  expect(source).not.toContain('data-toggle="markdown-editor"');
+  expect(source).toContain('className="mt10"');
   expect(source).not.toContain('data-toggle="select2"');
   expect(source).not.toContain('data-toggle="tab"');
   expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
@@ -794,23 +798,17 @@ async function issueDueDateSearchBarMetrics(page: Page) {
 
 async function issueEditorTabMetrics(page: Page) {
   return page.evaluate(() => {
-    const wrap = document.querySelector<HTMLElement>('[data-toggle="markdown-editor"]');
-    const tabs = document.querySelector<HTMLElement>('[data-toggle="markdown-editor"] .nav-tabs');
-    const tabItems = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-toggle="markdown-editor"] .nav-tabs > li'),
-    );
-    const editButton = document.querySelector<HTMLElement>(
-      '[data-toggle="markdown-editor"] .nav-tabs button[data-mode="edit"]',
-    );
-    const previewButton = document.querySelector<HTMLElement>(
-      '[data-toggle="markdown-editor"] .nav-tabs button[data-mode="preview"]',
-    );
-    const tabContent = document.querySelector<HTMLElement>(
-      '[data-toggle="markdown-editor"] .tab-content',
-    );
+    const textarea = document.querySelector<HTMLElement>("#editor-body-body");
+    const wrap = textarea?.closest<HTMLElement>(".mt10") ?? null;
+    const tabs = wrap?.querySelector<HTMLElement>(".nav-tabs") ?? null;
+    const tabItems = Array.from(wrap?.querySelectorAll<HTMLElement>(".nav-tabs > li") ?? []);
+    const editButton =
+      wrap?.querySelector<HTMLElement>('.nav-tabs button[data-mode="edit"]') ?? null;
+    const previewButton =
+      wrap?.querySelector<HTMLElement>('.nav-tabs button[data-mode="preview"]') ?? null;
+    const tabContent = wrap?.querySelector<HTMLElement>(".tab-content") ?? null;
     const editPane = document.querySelector<HTMLElement>("#edit-body");
     const previewPane = document.querySelector<HTMLElement>("#preview-body");
-    const textarea = document.querySelector<HTMLElement>("#editor-body-body");
     const preview = document.querySelector<HTMLElement>("#preview-body .markdown-preview");
     if (
       !wrap ||
