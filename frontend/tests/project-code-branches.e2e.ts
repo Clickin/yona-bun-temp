@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_BRANCHES_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><table class="table branch-list-wrap"><thead class="thead"><tr><th>Branches</th><th>Latest commit</th><th>Latest pull request</th><th></th></tr></thead><tbody><tr class="head"><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/main">main</a><span class="headBranch ml10">Default branch</span></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/main" class="commitId" title="abcdef1234567890">abcdef1</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 1, 2026">Jul 1, 2026</span></td><td class="pullRequest"><span class="disabled">No pull request has been sent</span></td><td class="actions"></td></tr><tr><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/feature%2Frelease">release</a></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/feature%2Frelease" class="commitId" title="1234567890abcdef">1234567</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 2, 2026">Jul 2, 2026</span></td><td class="pullRequest"><a href="__BASE_PATH__/admin/sample/pullRequest/3" class="blue-txt pullrequest-state open" data-toggle="tooltip" data-placement="top" title="Open">pullRequest-3</a></td><td class="actions"><button type="button" class="ybtn ybtn-default ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/setAsDefault">Set as default branch</button><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/">Delete</button></td></tr></tbody></table></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><table class="table branch-list-wrap"><thead class="thead"><tr><th>Branches</th><th>Latest commit</th><th>Latest pull request</th><th></th></tr></thead><tbody><tr class="head"><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/main">main</a><span class="headBranch ml10">Default branch</span></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/main" class="commitId" title="abcdef1234567890">abcdef1</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 1, 2026">Jul 1, 2026</span></td><td class="pullRequest"><span class="disabled">No pull request has been sent</span></td><td class="actions"></td></tr><tr><td class="branchName"><a href="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</a></td><td class="commit"><a href="__BASE_PATH__/admin/sample/commits/feature%2Frelease" class="commitId" title="1234567890abcdef">1234567</a><span class="date" data-toggle="tooltip" data-placement="top" title="Jul 2, 2026">Jul 2, 2026</span></td><td class="pullRequest"><a href="__BASE_PATH__/admin/sample/pullRequest/3" class="blue-txt pullrequest-state open" data-toggle="tooltip" data-placement="top" title="Open">pullRequest-3</a></td><td class="actions"><button type="button" class="ybtn ybtn-default ybtn-small" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/setAsDefault">Set as default branch</button><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/code/feature%2Frelease/">Delete</button></td></tr></tbody></table></div></div></div></div>
 `;
 
 const ROUTE_SOURCE = readFileSync(
@@ -56,6 +56,7 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
     "href",
     `${basePath}/admin/sample/code/feature%2Frelease`,
   );
+  await expect(page.locator(".branchName a").nth(1)).toHaveText("feature/release");
   await expect(page.locator(".pullrequest-state")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequest/3`,
@@ -496,7 +497,7 @@ function branchesPayload(
           pullRequestNumber: 3,
           state: "open",
         },
-        shortName: "release",
+        shortName: "feature/release",
       },
     ],
     defaultBranch: "refs/heads/main",

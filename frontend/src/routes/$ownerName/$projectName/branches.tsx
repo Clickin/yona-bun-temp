@@ -289,7 +289,7 @@ function BranchRow({
             "data-status": undefined,
           }}
         >
-          {branch.shortName}
+          {legacyBranchShortName(branch)}
         </Link>
         {isHead ? (
           <span className="headBranch ml10">{t("code.branches.defaultBranch")}</span>
@@ -397,6 +397,11 @@ function encodeBranch(branchName: string) {
 function shortBranchName(branchName: string) {
   const slashIndex = branchName.lastIndexOf("/");
   return slashIndex > 0 ? branchName.slice(slashIndex + 1) : branchName;
+}
+
+function legacyBranchShortName(branch: CodeBranchListItem) {
+  const name = branch.name || branch.shortName;
+  return name.startsWith("refs/heads/") ? name.slice("refs/heads/".length) : name;
 }
 
 function isDefaultBranch(branch: CodeBranchListItem, defaultBranch: string) {
