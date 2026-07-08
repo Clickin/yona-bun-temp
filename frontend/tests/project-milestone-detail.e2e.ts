@@ -751,10 +751,14 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   expect(stateRequests).toEqual([{ state: "closed" }]);
 
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
+  await expect(page.locator("#deleteConfirm")).not.toHaveAttribute("aria-hidden");
+  await expect(page.locator("#deleteConfirm")).not.toHaveAttribute("style");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   const beforeDeleteModalUrl = page.url();
   await deleteTrigger.click();
-  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade in/u);
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page).toHaveURL(beforeDeleteModalUrl);
   await expect(
@@ -780,6 +784,8 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await page.locator('#deleteConfirm [data-dismiss="modal"]').last().click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: none;");
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(beforeDeleteModalUrl);
   await expect(
@@ -794,7 +800,9 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     }),
   ).resolves.toEqual([]);
   await deleteTrigger.click();
-  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal fade in/u);
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade in/u);
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   const deleteResponse = page.waitForResponse(
     (response) =>
@@ -1157,6 +1165,9 @@ test("project milestone detail route uses direct Links", () => {
   expect(massUpdateSection).not.toContain("document.addEventListener");
   expect(massUpdateStopPropagationCount).toBeGreaterThan(0);
   expect(massUpdatePreventDefaultCount).toBe(massUpdateStopPropagationCount);
+  expect(routeSource).toContain('className={deleteConfirmOpen ? "modal hide fade in"');
+  expect(routeSource).toContain('? { display: "block" }');
+  expect(routeSource).toContain("aria-hidden={deleteConfirmOpen ? false");
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
 });
 

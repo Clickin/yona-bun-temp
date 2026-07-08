@@ -284,6 +284,7 @@ function ProjectMilestoneDetailBody({
   const search = Route.useSearch();
   const [filter, setFilter] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmWasShown, setDeleteConfirmWasShown] = useState(false);
   const projectPath = `/${ownerName}/${projectName}`;
   const milestonePath = `${projectPath}/milestone/${milestoneId}`;
   const isClosed = stringField(milestone.state) === "closed";
@@ -398,6 +399,7 @@ function ProjectMilestoneDetailBody({
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
+                  setDeleteConfirmWasShown(true);
                   setDeleteConfirmOpen(true);
                 }}
               >
@@ -530,7 +532,18 @@ function ProjectMilestoneDetailBody({
         </div>
       </div>
 
-      <div id="deleteConfirm" className={deleteConfirmOpen ? "modal fade in" : "modal hide fade"}>
+      <div
+        id="deleteConfirm"
+        className={deleteConfirmOpen ? "modal hide fade in" : "modal hide fade"}
+        style={
+          deleteConfirmOpen
+            ? { display: "block" }
+            : deleteConfirmWasShown
+              ? { display: "none" }
+              : undefined
+        }
+        aria-hidden={deleteConfirmOpen ? false : deleteConfirmWasShown ? true : undefined}
+      >
         <div className="modal-header">
           <button
             type="button"
