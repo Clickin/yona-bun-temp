@@ -34,9 +34,9 @@ const EXPECTED_AUTHENTICATED_HOME = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
+          <li class="myRecentIssueList"><button type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -240,10 +240,10 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
         </div>
         <div class="subtab-wrap subtab-group">
           <ul class="nav-subtab unstyled">
-            <li class="active"><button type="button" data-toggle="tab">Recently visited</button></li>
-            <li><button type="button" data-toggle="tab">Create</button></li>
-            <li><button type="button" data-toggle="tab">Watching</button></li>
-            <li><button type="button" data-toggle="tab">Member</button></li>
+            <li class="active"><button type="button">Recently visited</button></li>
+            <li><button type="button">Create</button></li>
+            <li><button type="button">Watching</button></li>
+            <li><button type="button">Member</button></li>
           </ul>
         </div>
         <div class="tab-content">
@@ -1117,8 +1117,9 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
     "Recent History",
   ]);
   for (const tabButton of await page.locator("#mySidenav .nav.nav-tabs.nm button").all()) {
-    await expect(tabButton).toHaveAttribute("data-toggle", "tab");
     await expect(tabButton).toHaveAttribute("type", "button");
+    await expect(tabButton).not.toHaveAttribute("data-toggle");
+    await expect(tabButton).not.toHaveAttribute("href");
   }
 
   const sidebarTabUrl = page.url();
@@ -1160,8 +1161,9 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   for (const tabButton of await page
     .locator("#usermenu-tab-content-list .nav-subtab button")
     .all()) {
-    await expect(tabButton).toHaveAttribute("data-toggle", "tab");
     await expect(tabButton).toHaveAttribute("type", "button");
+    await expect(tabButton).not.toHaveAttribute("data-toggle");
+    await expect(tabButton).not.toHaveAttribute("href");
   }
 
   expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
@@ -1214,6 +1216,18 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
       )
       .toBe("home-project-subtabs");
   }
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const authenticatedUserMenuSource = routeSource.slice(
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+    routeSource.indexOf("function AnonymousSiteUserMenu"),
+  );
+  const sidebarProjectListSource = routeSource.slice(
+    routeSource.indexOf("function SidebarProjectList"),
+    routeSource.indexOf("function SidebarProjectPane"),
+  );
+  expect(authenticatedUserMenuSource).not.toContain('data-toggle="tab"');
+  expect(sidebarProjectListSource).not.toContain('data-toggle="tab"');
 });
 
 test("authenticated root sidebar recent issue tab matches legacy index/myRecentIssueList DOM", async ({

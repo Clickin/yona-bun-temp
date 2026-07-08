@@ -1038,25 +1038,17 @@ function AuthenticatedSiteUserMenu({
           </div>
           <ul className="nav nav-tabs nm">
             <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-toggle="tab"
-                onClick={() => setActiveSidebarTab("favorite")}
-              >
+              <button type="button" onClick={() => setActiveSidebarTab("favorite")}>
                 {t("title.favorite")}
               </button>
             </li>
             <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-toggle="tab"
-                onClick={() => setActiveSidebarTab("project")}
-              >
+              <button type="button" onClick={() => setActiveSidebarTab("project")}>
                 {t("title.project")}
               </button>
             </li>
             <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
-              <button type="button" data-toggle="tab" onClick={() => setActiveSidebarTab("recent")}>
+              <button type="button" onClick={() => setActiveSidebarTab("recent")}>
                 {t("title.recently.visited.issue")}
               </button>
             </li>
@@ -1234,25 +1226,17 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
           </div>
           <ul className="nav nav-tabs nm">
             <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-toggle="tab"
-                onClick={() => setActiveSidebarTab("favorite")}
-              >
+              <button type="button" onClick={() => setActiveSidebarTab("favorite")}>
                 {t("title.favorite")}
               </button>
             </li>
             <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
-              <button
-                type="button"
-                data-toggle="tab"
-                onClick={() => setActiveSidebarTab("project")}
-              >
+              <button type="button" onClick={() => setActiveSidebarTab("project")}>
                 {t("title.project")}
               </button>
             </li>
             <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
-              <button type="button" data-toggle="tab" onClick={() => setActiveSidebarTab("recent")}>
+              <button type="button" onClick={() => setActiveSidebarTab("recent")}>
                 {t("title.recently.visited.issue")}
               </button>
             </li>
@@ -1550,34 +1534,22 @@ function SidebarProjectList({ basePath, workspace }: { basePath: string; workspa
           <div className="subtab-wrap subtab-group">
             <ul className="nav-subtab unstyled">
               <li className={activeSubtab === "recentlyVisited" ? "active" : undefined}>
-                <button
-                  type="button"
-                  data-toggle="tab"
-                  onClick={() => setActiveSubtab("recentlyVisited")}
-                >
+                <button type="button" onClick={() => setActiveSubtab("recentlyVisited")}>
                   {t("title.recently.visited")}
                 </button>
               </li>
               <li className={activeSubtab === "createdByMe" ? "active" : undefined}>
-                <button
-                  type="button"
-                  data-toggle="tab"
-                  onClick={() => setActiveSubtab("createdByMe")}
-                >
+                <button type="button" onClick={() => setActiveSubtab("createdByMe")}>
                   {t("title.createdByMe")}
                 </button>
               </li>
               <li className={activeSubtab === "watching" ? "active" : undefined}>
-                <button type="button" data-toggle="tab" onClick={() => setActiveSubtab("watching")}>
+                <button type="button" onClick={() => setActiveSubtab("watching")}>
                   {t("title.watching")}
                 </button>
               </li>
               <li className={activeSubtab === "joinmember" ? "active" : undefined}>
-                <button
-                  type="button"
-                  data-toggle="tab"
-                  onClick={() => setActiveSubtab("joinmember")}
-                >
+                <button type="button" onClick={() => setActiveSubtab("joinmember")}>
                   {t("title.joinmember")}
                 </button>
               </li>
