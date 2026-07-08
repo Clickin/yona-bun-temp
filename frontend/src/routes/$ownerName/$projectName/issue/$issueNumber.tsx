@@ -872,7 +872,6 @@ function IssueDetailBody({
                       id="watch-button"
                       type="button"
                       className={`ybtn ${isWatchingIssue ? "ybtn-watching" : ""}`}
-                      data-toggle="tooltip"
                       data-placement="top"
                       title="Watch this issue"
                       data-watching={String(isWatchingIssue)}
@@ -926,7 +925,6 @@ function IssueDetailBody({
                   type="button"
                   id="translate"
                   className="icon btn-transparent-with-fontsize-lineheight ml10"
-                  data-toggle="tooltip"
                   title="Translation"
                   disabled={translatePending || translatedBodyMarkdown !== null}
                   onClick={() => void translateIssueBody()}
@@ -1309,7 +1307,6 @@ function IssueVote({
             type="button"
             className={hasVoted ? "ybtn-watching" : ""}
             title={hasVoted ? "Unvote this issue" : "Vote this issue"}
-            data-toggle="tooltip"
             onClick={onIssueVote}
           >
             <span className="heart">
@@ -1320,7 +1317,6 @@ function IssueVote({
           <span
             className="ybtn-disabled"
             style={{ color: "#777" }}
-            data-toggle="tooltip"
             title="Please log in."
             data-login="required"
           >
@@ -1397,7 +1393,7 @@ function IssueVoterAvatars({
           </li>
         ))}
         {overflowVoters.length ? (
-          <li data-toggle="tooltip" data-html="true" title={overflowTitle}>
+          <li data-html="true" title={overflowTitle}>
             <button type="button" onClick={onOpen}>
               {`and ${overflowVoters.length} others`}
             </button>
@@ -1531,7 +1527,6 @@ function IssueWeight({
       <button
         id="upvote-issue-weight"
         className="ybtn ybtn-small"
-        data-toggle="tooltip"
         onClick={() => weightMutation.mutate("upvote")}
         title="Issue weight: Upvote"
       >
@@ -1540,7 +1535,6 @@ function IssueWeight({
       <button
         className="ybtn ybtn-small"
         id="down-vote-issue-weight"
-        data-toggle="tooltip"
         onClick={() => weightMutation.mutate("downvote")}
         title="Issue weight: Down vote"
       >
@@ -2079,7 +2073,6 @@ function IssueActionButtons({
         <button
           type="button"
           className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-          data-toggle="tooltip"
           title="Edit"
           onClick={onEditClick}
         >
@@ -2094,7 +2087,6 @@ function IssueActionButtons({
           <button
             type="button"
             className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-            data-toggle="tooltip"
             title="See text"
           >
             <i className="yobicon-edit-2"></i>
@@ -2760,7 +2752,6 @@ function IssueCommentRow({
               <button
                 type="button"
                 className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
-                data-toggle="tooltip"
                 data-comment-id={commentId}
                 title="Translation"
                 disabled={translatePending || translatedContentsMarkdown !== null}
@@ -3363,7 +3354,6 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
       <>
         <span
           style={{ marginRight: "2px" }}
-          data-toggle="tooltip"
           data-html="true"
           title={`${voters
             .slice(0, 5)
