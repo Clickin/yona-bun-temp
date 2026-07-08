@@ -354,11 +354,9 @@ function OrganizationMembersBody({
           <ul className="members project row-fluid">
             {organization.members.map((member) => (
               <OrganizationMember
-                basePath={runtimeConfig.basePath}
                 key={stringField(member.loginId, "")}
                 member={member}
                 organization={organization}
-                organizationName={organizationName}
                 onDelete={openDeleteMemberModal}
                 onRole={(userId, role) => {
                   setOpenRoleDropdownLoginId(null);
@@ -433,19 +431,15 @@ function OrganizationMembersBody({
 }
 
 function OrganizationMember({
-  basePath,
   member,
   organization,
-  organizationName,
   onDelete,
   onRole,
   onToggleRoleDropdown,
   roleDropdownOpen,
 }: {
-  basePath: string;
   member: YonaUserItem;
   organization: OrganizationAdminView;
-  organizationName: string;
   onDelete: (event: MouseEvent<HTMLButtonElement>, userId: number) => void;
   onRole: (userId: number, role: string) => void;
   onToggleRoleDropdown: (loginId: string) => void;
@@ -510,10 +504,6 @@ function OrganizationMember({
                 >
                   <button
                     type="button"
-                    data-href={prefixBasePath(
-                      basePath,
-                      `/organizations/${organizationName}/member/${userId}/edit`,
-                    )}
                     data-loginid={loginId}
                     onClick={(event) => {
                       event.preventDefault();
@@ -530,10 +520,6 @@ function OrganizationMember({
         </div>
         <button
           type="button"
-          data-href={prefixBasePath(
-            basePath,
-            `/organizations/${organizationName}/member/${userId}/delete`,
-          )}
           className="ybtn ybtn-danger ybtn-small"
           onClick={(event) => onDelete(event, userId)}
         >
