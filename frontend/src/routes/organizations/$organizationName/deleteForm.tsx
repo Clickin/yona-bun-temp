@@ -139,8 +139,6 @@ function OrganizationDeleteFormBody({
               id="btnDelete"
               type="button"
               className="ybtn ybtn-danger"
-              data-toggle="modal"
-              data-target="#alertDeletion"
               onClick={openDeletionModal}
             >
               {t("organization.delete.this")}

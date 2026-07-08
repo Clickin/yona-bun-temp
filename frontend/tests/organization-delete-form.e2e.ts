@@ -109,7 +109,7 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
       <li class="active"><a href="__BASE_PATH__/organizations/weblabs/deleteForm">Group Delete</a></li>
     </ul>
     <div class="box-wrap bottom">
-      <button id="btnDelete" type="button" class="ybtn ybtn-danger" data-toggle="modal" data-target="#alertDeletion">Delete This Group</button>
+      <button id="btnDelete" type="button" class="ybtn ybtn-danger">Delete This Group</button>
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
@@ -212,13 +212,13 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   await rememberSpaMarker(page, "organization-delete-modal");
   const deleteFormUrl = page.url();
   await expect(page.locator('a[href="#alertDeletion"][data-toggle="modal"]')).toHaveCount(0);
-  const deleteButton = page.locator(
-    '#btnDelete[type="button"][data-toggle="modal"][data-target="#alertDeletion"]',
-  );
+  const deleteButton = page.locator('#btnDelete[type="button"]');
   const deleteModal = page.locator("#alertDeletion");
   const closeButton = page.locator("#alertDeletion .close");
   const noButton = page.locator("#alertDeletion .modal-footer .ybtn").filter({ hasText: "No" });
   await expect(deleteButton).toHaveClass("ybtn ybtn-danger");
+  await expect(deleteButton).not.toHaveAttribute("data-toggle");
+  await expect(deleteButton).not.toHaveAttribute("data-target");
   await expect(deleteModal).toHaveClass("modal hide");
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).not.toHaveAttribute("aria-hidden");
@@ -344,8 +344,8 @@ test("organization delete modal source insulates delegated modal bridge", () => 
     "aria-hidden={deletionModalWasOpened ? !deletionModalOpen : undefined}",
   );
   expect(modalSource).toContain('display: deletionModalOpen ? "block" : "none"');
-  expect(modalSource).toContain('data-toggle="modal"');
-  expect(modalSource).toContain('data-target="#alertDeletion"');
+  expect(modalSource).not.toContain('data-toggle="modal"');
+  expect(modalSource).not.toContain('data-target="#alertDeletion"');
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onClick={openDeletionModal}");
   expect(modalSource.match(/onClick=\{dismissDeletionModal\}/gu) ?? []).toHaveLength(2);
