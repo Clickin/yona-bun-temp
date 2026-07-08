@@ -12,7 +12,7 @@ const ROUTE_SOURCE = readFileSync(
 function withLegacyEditor(html: string, markdownHelpHtml: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -43,10 +43,13 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   const issueEditFormUrl = page.url();
-  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
+  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu > li > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/u);
   await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-toggle", /.+/u);
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.nth(1).click();
   await expect(page).toHaveURL(issueEditFormUrl);
@@ -139,25 +142,15 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator("#editor-body-body")).toHaveValue("Editable body");
-  await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-body"]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs [data-toggle="tab"]'),
-  ).toHaveCount(0);
-  const editTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
-  );
-  const previewTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
-  );
-  await expect(page.locator('[data-toggle="markdown-editor"] .nav-tabs > li > button')).toHaveText([
-    "Edit",
-    "Preview",
-  ]);
+  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
+  const editor = page.locator(".mt10").filter({ has: page.locator("#editor-body-body") });
+  await expect(editor).toHaveCount(1);
+  await expect(editor.locator('.nav-tabs a[href="#edit-body"]')).toHaveCount(0);
+  await expect(editor.locator('.nav-tabs a[href="#preview-body"]')).toHaveCount(0);
+  await expect(editor.locator('.nav-tabs [data-toggle="tab"]')).toHaveCount(0);
+  const editTab = editor.locator('.nav-tabs button[type="button"][data-mode="edit"]');
+  const previewTab = editor.locator('.nav-tabs button[type="button"][data-mode="preview"]');
+  await expect(editor.locator(".nav-tabs > li > button")).toHaveText(["Edit", "Preview"]);
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
@@ -173,9 +166,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   expect(editorMetrics!.editPane.right).toBeCloseTo(editorMetrics!.tabContent.right, 0);
   expect(editorMetrics!.textarea.left).toBeGreaterThanOrEqual(editorMetrics!.editPane.left);
   expect(editorMetrics!.textarea.right).toBeLessThanOrEqual(editorMetrics!.editPane.right);
-  const markdownHelp = page.locator(
-    '[data-toggle="markdown-editor"] > .tab-content > .markdown-help',
-  );
+  const markdownHelp = page.locator(".mt10:has(#editor-body-body) > .tab-content > .markdown-help");
   await expect(markdownHelp).toHaveCount(1);
   await expect(markdownHelp.locator("> .markdown-help-nav > li")).toHaveCount(11);
   await expect(markdownHelp.locator("> .markdown-help-nav .label")).toHaveText("Markdown help");
@@ -405,7 +396,33 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
   await expect(page.locator('#labelIds option[value="8"]')).toHaveJSProperty("selected", true);
 
-  expect(ROUTE_SOURCE).not.toMatch(/data-toggle="(?:select2|dropdown)"/u);
+  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
+  const editor = page.locator(".mt10").filter({ has: page.locator("#editor-body-body") });
+  await expect(editor).toHaveCount(1);
+  await expect(editor).toHaveClass("mt10");
+  await expect(editor.locator("#editor-body-body")).toHaveAttribute("name", "body");
+  await expect(editor.locator("#editor-body-body")).toHaveAttribute(
+    "data-editor-mode",
+    "content-body",
+  );
+  await expect(editor.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  await expect(editor.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
+  await expect(editor.locator('.nav-tabs button[type="button"][data-mode="edit"]')).toHaveText(
+    "Edit",
+  );
+  await expect(editor.locator('.nav-tabs button[type="button"][data-mode="preview"]')).toHaveText(
+    "Preview",
+  );
+  await expect(editor.locator("#edit-body.tab-pane")).toHaveCount(1);
+  await expect(editor.locator("#preview-body.tab-pane")).toHaveCount(1);
+  await expect(editor.locator(".markdown-preview.markdown-wrap.content-body")).toHaveAttribute(
+    "data-via-email",
+    "false",
+  );
+  await expect(editor.locator(".markdown-help")).toHaveCount(1);
+  await expect(editor.locator(".notification-receiver")).toHaveCount(1);
+
+  expect(ROUTE_SOURCE).not.toMatch(/data-toggle="(?:select2|dropdown|markdown-editor)"/u);
 });
 
 test("project issue edit form exposes legacy group search scope when org data exists", async ({
@@ -427,17 +444,15 @@ test("project issue edit form exposes legacy group search scope when org data ex
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
 
-  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
+  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu > li > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect(scopeButtons.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/admin/sample/search`,
-  );
-  await expect(scopeButtons.nth(1)).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/admin/search`,
-  );
-  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+  await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(scopeButtons.nth(2)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(2)).not.toHaveAttribute("data-toggle", /.+/u);
 
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.nth(1).click();
@@ -788,34 +803,37 @@ async function expectModernCancelControl(page: Page) {
 }
 
 async function issueEditorMetrics(page: Page) {
-  return page.locator('[data-toggle="markdown-editor"]').evaluate((editor) => {
-    const tabs = editor.querySelector<HTMLElement>(".nav.nav-tabs");
-    const tabContent = editor.querySelector<HTMLElement>(":scope > .tab-content");
-    const editPane = editor.querySelector<HTMLElement>("#edit-body");
-    const previewPane = editor.querySelector<HTMLElement>("#preview-body");
-    const textarea = editor.querySelector<HTMLElement>("#editor-body-body");
-    if (!tabs || !tabContent || !editPane || !previewPane || !textarea) {
-      return null;
-    }
-    return {
-      editPane: rect(editPane),
-      editor: rect(editor),
-      previewPane: rect(previewPane),
-      tabContent: rect(tabContent),
-      tabs: rect(tabs),
-      textarea: rect(textarea),
-    };
-
-    function rect(element: Element) {
-      const box = element.getBoundingClientRect();
+  return page
+    .locator(".mt10")
+    .filter({ has: page.locator("#editor-body-body") })
+    .evaluate((editor) => {
+      const tabs = editor.querySelector<HTMLElement>(".nav.nav-tabs");
+      const tabContent = editor.querySelector<HTMLElement>(":scope > .tab-content");
+      const editPane = editor.querySelector<HTMLElement>("#edit-body");
+      const previewPane = editor.querySelector<HTMLElement>("#preview-body");
+      const textarea = editor.querySelector<HTMLElement>("#editor-body-body");
+      if (!tabs || !tabContent || !editPane || !previewPane || !textarea) {
+        return null;
+      }
       return {
-        bottom: box.bottom,
-        left: box.left,
-        right: box.right,
-        top: box.top,
+        editPane: rect(editPane),
+        editor: rect(editor),
+        previewPane: rect(previewPane),
+        tabContent: rect(tabContent),
+        tabs: rect(tabs),
+        textarea: rect(textarea),
       };
-    }
-  });
+
+      function rect(element: Element) {
+        const box = element.getBoundingClientRect();
+        return {
+          bottom: box.bottom,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+        };
+      }
+    });
 }
 
 async function issueDueDateMetrics(page: Page) {
