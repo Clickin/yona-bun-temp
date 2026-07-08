@@ -8,6 +8,9 @@ const EXPECTED_PULL_REQUEST_CHANGES_BASE = `
 const REVIEW_COMMENT_UPLOAD_WITH_ID = `<div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`;
 
 const EXPECTED_PULL_REQUEST_CHANGES = EXPECTED_PULL_REQUEST_CHANGES_BASE.replace(
+  `<button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button>`,
+  `<button type="button" class="ybtn ybtn-default ybtn-small">×</button>`,
+).replace(
   `<div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button>`,
   `${REVIEW_COMMENT_UPLOAD_WITH_ID}<div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button>`,
 );
@@ -561,6 +564,11 @@ test("project pull request changes renders legacy inline review thread and block
     "src/main.rs",
   );
   await expect(commentFormRow.locator("#editor-contents-review")).toBeVisible();
+  const closeInlineReviewButton = commentFormRow.locator(
+    "#review-form .pull-right > button.ybtn-default",
+  );
+  await expect(closeInlineReviewButton).toHaveText("×");
+  await expect(closeInlineReviewButton).not.toHaveAttribute("data-toggle", /.*/u);
   expect(
     await page.evaluate(
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
@@ -587,6 +595,11 @@ test("project pull request changes renders legacy inline review thread and block
   expect(metrics!.formAfterAdd).toBe(true);
   expect(metrics!.commentAfterForm).toBe(true);
   expect(metrics!.formWidth).toBe(metrics!.tableWidth);
+
+  await closeInlineReviewButton.click();
+  await expect(page.locator("tr.comment-form")).toHaveCount(0);
+  await expect(page.locator("#changes > #review-form")).toHaveCount(1);
+  await expect(page.locator("#changes > #review-form")).not.toHaveCSS("display", "block");
 });
 
 test("project pull request selected commit changes matches legacy git/viewChanges.scala.html DOM", async ({

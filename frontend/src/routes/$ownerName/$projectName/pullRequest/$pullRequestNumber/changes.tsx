@@ -961,6 +961,7 @@ function PullRequestFileDiff({
                       currentUser,
                       lineKey,
                       onCommentDelete,
+                      onInlineReviewChange,
                       onThreadStateToggle,
                       pullRequest,
                       runtimeConfig,
@@ -1014,6 +1015,7 @@ function renderInlineRows({
   currentUser,
   lineKey,
   onCommentDelete,
+  onInlineReviewChange,
   onThreadStateToggle,
   pullRequest,
   runtimeConfig,
@@ -1023,6 +1025,7 @@ function renderInlineRows({
   currentUser: CurrentUserSummary;
   lineKey: string;
   onCommentDelete: (requestUri: string) => void;
+  onInlineReviewChange: (review: ActiveInlineReview | null) => void;
   onThreadStateToggle: (threadId: number, state: string) => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
@@ -1040,6 +1043,7 @@ function renderInlineRows({
         activeInlineReview={activeInlineReview}
         currentUser={currentUser}
         key={`${lineKey}-review-top`}
+        onClose={() => onInlineReviewChange(null)}
         pullRequest={pullRequest}
         runtimeConfig={runtimeConfig}
       />,
@@ -1052,6 +1056,7 @@ function renderInlineRows({
         activeInlineReview={activeInlineReview}
         currentUser={currentUser}
         key={`${lineKey}-review-bottom`}
+        onClose={() => onInlineReviewChange(null)}
         pullRequest={pullRequest}
         runtimeConfig={runtimeConfig}
       />,
@@ -1164,11 +1169,13 @@ function InlineThread({
 function InlineReviewFormRow({
   activeInlineReview,
   currentUser,
+  onClose,
   pullRequest,
   runtimeConfig,
 }: {
   activeInlineReview: ActiveInlineReview;
   currentUser: CurrentUserSummary;
+  onClose: () => void;
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -1183,6 +1190,7 @@ function InlineReviewFormRow({
           )}
           currentUser={currentUser}
           hiddenFields={reviewBlockHiddenFields(activeInlineReview.fields)}
+          onClose={onClose}
           visible
         />
       </td>
@@ -1597,11 +1605,13 @@ function ReviewForm({
   action,
   currentUser,
   hiddenFields = emptyReviewHiddenFields,
+  onClose,
   visible = false,
 }: {
   action: string;
   currentUser: CurrentUserSummary;
   hiddenFields?: readonly ReviewHiddenField[];
+  onClose?: () => void;
   visible?: boolean;
 }) {
   const { t } = useLegacyMessages();
@@ -1633,7 +1643,15 @@ function ReviewForm({
         <div className="write-comment-box">
           <div className="write-comment-wrap">
             <div className="pull-right">
-              <button type="button" className="ybtn ybtn-default ybtn-small" data-toggle="close">
+              <button
+                type="button"
+                className="ybtn ybtn-default ybtn-small"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClose?.();
+                }}
+              >
                 &times;
               </button>
             </div>
