@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { uploadTemporaryAttachment } from "../../api/attachments";
@@ -63,6 +64,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
   const avatarUrl = profile?.avatarUrl ?? "";
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarCropModalOpen, setAvatarCropModalOpen] = useState(false);
+  const [avatarCropModalHasOpened, setAvatarCropModalHasOpened] = useState(false);
   const [avatarFileInputKey, setAvatarFileInputKey] = useState(0);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
   const avatarOnlyImageMessage = t("user.avatar.onlyImage");
@@ -86,6 +88,9 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       return;
     }
     setAvatarFile(nextFile);
+    if (nextFile) {
+      setAvatarCropModalHasOpened(true);
+    }
     setAvatarCropModalOpen(nextFile !== null);
   };
 
@@ -273,6 +278,9 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
             role="dialog"
             data-backdrop="static"
+            aria-hidden={
+              avatarCropModalHasOpened ? (avatarCropModalOpen ? "false" : "true") : undefined
+            }
             style={avatarCropModalOpen ? { display: "block" } : undefined}
           >
             <div className="modal-header center-txt">
@@ -307,7 +315,9 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               </button>
             </div>
           </div>
-          {avatarCropModalOpen ? <div className="modal-backdrop in"></div> : null}
+          {avatarCropModalOpen
+            ? createPortal(<div className="modal-backdrop in"></div>, document.body)
+            : null}
         </div>
       </div>
     </>

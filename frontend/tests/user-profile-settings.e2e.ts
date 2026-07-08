@@ -207,6 +207,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   });
   await expect(invalidAvatarAlert).resolves.toBe("Only image files are allowed to be uploaded.");
   await expect(page.locator("#avatarCropWrap")).toHaveClass(/hide/);
+  await expect(page.locator("#avatarCropWrap")).not.toHaveAttribute("aria-hidden", /.*/);
   await expect(page.locator("#frmAvatar .upload-progress.avatar")).toHaveCSS("display", "none");
   expect(fileUploads).toHaveLength(0);
   expect(profileUpdates).toHaveLength(1);
@@ -221,10 +222,12 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   });
   await expect(page.locator("#avatarCropWrap")).toHaveClass("modal hide in");
   await expect(page.locator("#avatarCropWrap")).toHaveCSS("display", "block");
+  await expect(page.locator("#avatarCropWrap")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#avatarCropWrap .btnSubmitCrop")).not.toHaveAttribute(
     "disabled",
     /.*/,
   );
+  expect(await isAvatarBackdropDirectBodyChild(page)).toBe(true);
   await expect(page.locator("#avatarCropWrap .modal-body > img")).toHaveAttribute("src", /^blob:/);
   await expect(
     page.locator("#avatarCropWrap .modal-header .avatar-wrap > img"),
@@ -327,6 +330,7 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
 
   await expect(avatarCropModal).toHaveClass("modal hide");
   await expect(avatarCropModal).toHaveCSS("display", "none");
+  await expect(avatarCropModal).not.toHaveAttribute("aria-hidden", /.*/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(editFormUrl);
   await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
@@ -340,7 +344,9 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
   await page.locator("#avatarFile").setInputFiles(avatarPng);
   await expect(avatarCropModal).toHaveClass("modal hide in");
   await expect(avatarCropModal).toHaveCSS("display", "block");
+  await expect(avatarCropModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await isAvatarBackdropDirectBodyChild(page)).toBe(true);
   await expect(page.locator(cancelButton)).toHaveAttribute("data-dismiss", "modal");
   await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).not.toHaveAttribute(
     "alt",
@@ -370,6 +376,7 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
   expect(await dispatchCancelableClick(page, cancelButton)).toBe(false);
   await expect(avatarCropModal).toHaveClass("modal hide");
   await expect(avatarCropModal).toHaveCSS("display", "none");
+  await expect(avatarCropModal).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(editFormUrl);
   await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
@@ -384,7 +391,10 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
 
   await page.locator("#avatarFile").setInputFiles(avatarPng);
   await expect(avatarCropModal).toHaveClass("modal hide in");
+  await expect(avatarCropModal).toHaveCSS("display", "block");
+  await expect(avatarCropModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  expect(await isAvatarBackdropDirectBodyChild(page)).toBe(true);
   await expect(page).toHaveURL(editFormUrl);
   await expect.poll(() => spaMarker(page)).toBe("user-profile-avatar-crop");
   await expect
@@ -409,6 +419,7 @@ test("user profile avatar crop modal stays route-owned across dismiss and save",
 
   await expect(avatarCropModal).toHaveClass("modal hide");
   await expect(avatarCropModal).toHaveCSS("display", "none");
+  await expect(avatarCropModal).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page.locator("#frmAvatar .avatar-wrap.xlarge > img")).toHaveAttribute(
     "src",
@@ -445,21 +456,30 @@ test("user profile avatar crop modal source stays route-owned", () => {
   expect(modalSource).toContain("const handleAvatarFileChange");
   expect(modalSource).toContain("const dismissAvatarCropModal");
   expect(modalSource).toContain("const submitAvatarCrop");
+  expect(modalSource).toContain("avatarCropModalHasOpened");
   expect(modalSource).toContain("setAvatarCropModalOpen(false);");
   expect(modalSource).toContain("setAvatarCropModalOpen(nextFile !== null);");
   expect(modalSource).toContain('id="avatarCropWrap"');
   expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).toContain("aria-hidden=");
   expect(modalSource).toContain('className={avatarCropModalOpen ? "modal hide in" : "modal hide"}');
+  expect(modalSource).toContain("createPortal(");
   expect(modalSource).toContain("key={avatarFileInputKey}");
   expect(modalSource).toContain("onClick={dismissAvatarCropModal}");
   expect(modalSource).toContain("onClick={submitAvatarCrop}");
   expect(modalSource).toContain('className="modal-backdrop in"');
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain('alt=""');
   expect(modalSource).not.toContain("disabled=");
-  expect(modalSource).not.toContain("document.");
+  expect(modalSource).not.toMatch(/document\.(querySelector|getElementById|addEventListener)/);
   expect(modalSource).not.toContain("classList");
   expect(modalSource).not.toContain("addEventListener(");
 });
+
+async function isAvatarBackdropDirectBodyChild(page: Page) {
+  return page
+    .locator(".modal-backdrop.in")
+    .evaluate((backdrop) => backdrop.parentElement === document.body);
+}
 
 async function mockAuthenticatedSession(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
