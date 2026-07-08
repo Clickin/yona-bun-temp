@@ -174,8 +174,6 @@ function OrganizationHomeBody({
                       className="textbox full"
                       type="text"
                       defaultValue=""
-                      data-toggle="item-search"
-                      data-items="project-item"
                       placeholder={t("title.type.name")}
                       onChange={(event) => setProjectFilter(event.currentTarget.value)}
                     />
