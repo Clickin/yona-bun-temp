@@ -8,7 +8,7 @@ const PROJECT_REVIEWS_ROUTE = `${PROJECT_ROUTE}/reviews`;
 const PROJECT_GROUP_SEARCH_ROUTE = `/organizations/${PROJECT_OWNER_NAME}/search`;
 
 const EXPECTED_PROJECT_REVIEWS_PAGE_WRAP = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-toggle="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="participantId" data-value="1" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="authorId" data-value="1" style="background:none;border:0px;color:inherit;cursor:pointer;display:block;font:inherit;margin:0px;padding:0px;text-align:inherit;width:100%">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" data-field="createdDate" data-value="asc" class="filter" data-toggle="order" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" data-type="state" data-value="open" data-toggle="filter" style="background:rgb(255,255,255);border-style:solid;border-width:1px;border-color:rgb(221,221,221)rgb(221,221,221)transparent;border-radius:4px4px0px0px;color:rgb(85,85,85);cursor:default;display:block;font-family:inherit;font-size:inherit;font-weight:bold;line-height:20px;margin:0px2px0px0px;padding:8px30px;text-align:inherit;width:100%">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" data-type="state" data-value="closed" data-toggle="filter" style="background:transparent;border-style:solid;border-width:1px;border-color:transparent;border-radius:4px4px0px0px;color:rgb(53,146,181);cursor:pointer;display:block;font-family:inherit;font-size:inherit;font-weight:bold;line-height:20px;margin:0px2px0px0px;padding:8px30px;text-align:inherit;width:100%">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button" data-toggle="filter">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="participantId" data-value="1">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button" data-toggle="filter" data-type="authorId" data-value="1">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" data-field="createdDate" data-value="asc" class="filter" data-toggle="order" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" data-type="state" data-value="open" data-toggle="filter">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" data-type="state" data-value="closed" data-toggle="filter">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
 `;
 
 test("project reviews list matches legacy reviewthread/list.scala.html shell", async ({ page }) => {
@@ -96,15 +96,24 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     ),
   );
   expect(await reviewListMetrics(page)).toEqual({
+    activeSidebarButtonContained: true,
+    contentStartsAfterSidebar: true,
     exportTopAfterList: true,
+    filterRightAligned: true,
     leftColumnWidth: 188,
+    listStartsBelowTabs: true,
+    paginationAfterExport: true,
     rowCount: 2,
     rowPaddingBlock: 20,
     searchAction: projectReviewsPath,
+    searchBarStartsInSidebar: true,
+    searchInputContainedInSearchBar: true,
     searchInputWidth: 156,
     stateTabBorderBottomColor: "rgba(0, 0, 0, 0)",
+    stateTabDisplay: "block",
     stateTabLineHeight: "20px",
     stateTabPadding: "8px 30px",
+    tabsStartAtContentLeft: true,
     titleOverflow: "hidden",
     titleTextOverflow: "ellipsis",
     titleWhiteSpace: "nowrap",
@@ -524,29 +533,58 @@ async function projectHeaderMetrics(page: Page) {
 async function reviewListMetrics(page: Page) {
   return page.evaluate(() => {
     const leftColumn = requireElement(".issue-list-wrap .search-wrap");
+    const contentColumn = requireElement(".issue-list-wrap > .span10");
+    const activeSidebarButton = requireElement(".lst-stacked li.active button");
     const searchForm = requireElement<HTMLFormElement>("#search");
+    const searchBar = requireElement("#search .search-bar");
     const searchInput = requireElement<HTMLInputElement>('#search input[name="filter"]');
+    const filters = requireElement(".issue-list-wrap .filters");
+    const tabs = requireElement(".issue-list-wrap .nav-tabs");
     const stateTab = requireElement<HTMLButtonElement>('.nav-tabs button[data-value="open"]');
     const firstRow = requireElement(".review-list-wrap .post-item");
     const titleWrap = requireElement(".review-list-wrap .post-item .title-wrap");
     const list = requireElement(".review-list-wrap");
     const exportLink = requireElement('.pull-left a[href$="format=xls"]');
+    const pagination = requireElement("#pagination");
+    const leftColumnBox = leftColumn.getBoundingClientRect();
+    const contentColumnBox = contentColumn.getBoundingClientRect();
+    const activeSidebarButtonBox = activeSidebarButton.getBoundingClientRect();
+    const searchBarBox = searchBar.getBoundingClientRect();
+    const filtersBox = filters.getBoundingClientRect();
+    const tabsBox = tabs.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    const exportBox = exportLink.getBoundingClientRect();
+    const paginationBox = pagination.getBoundingClientRect();
     const firstRowStyle = getComputedStyle(firstRow);
     const titleStyle = getComputedStyle(titleWrap);
     const stateTabStyle = getComputedStyle(stateTab);
 
     return {
-      exportTopAfterList: exportLink.getBoundingClientRect().top > list.getBoundingClientRect().top,
-      leftColumnWidth: Math.round(leftColumn.getBoundingClientRect().width),
+      activeSidebarButtonContained:
+        activeSidebarButtonBox.left >= leftColumnBox.left &&
+        activeSidebarButtonBox.right <= leftColumnBox.right,
+      contentStartsAfterSidebar: contentColumnBox.left > leftColumnBox.right,
+      exportTopAfterList: exportBox.top > listBox.top,
+      filterRightAligned:
+        filtersBox.right <= contentColumnBox.right && filtersBox.left > tabsBox.left,
+      leftColumnWidth: Math.round(leftColumnBox.width),
+      listStartsBelowTabs: listBox.top > tabsBox.top,
+      paginationAfterExport: paginationBox.top >= exportBox.top,
       rowCount: document.querySelectorAll(".review-list-wrap .post-item").length,
       rowPaddingBlock:
         Math.round(parseFloat(firstRowStyle.paddingTop)) +
         Math.round(parseFloat(firstRowStyle.paddingBottom)),
       searchAction: searchForm.getAttribute("action"),
+      searchBarStartsInSidebar: searchBarBox.left >= leftColumnBox.left,
+      searchInputContainedInSearchBar:
+        searchInput.getBoundingClientRect().left >= searchBarBox.left &&
+        searchInput.getBoundingClientRect().right <= searchBarBox.right,
       searchInputWidth: Math.round(searchInput.getBoundingClientRect().width),
       stateTabBorderBottomColor: stateTabStyle.borderBottomColor,
+      stateTabDisplay: stateTabStyle.display,
       stateTabLineHeight: stateTabStyle.lineHeight,
       stateTabPadding: stateTabStyle.padding,
+      tabsStartAtContentLeft: tabsBox.left === contentColumnBox.left,
       titleOverflow: titleStyle.overflow,
       titleTextOverflow: titleStyle.textOverflow,
       titleWhiteSpace: titleStyle.whiteSpace,

@@ -25,46 +25,18 @@ type ProjectReviewsSearch = {
   state: string;
 };
 
-const legacySideEffectButtonStyle: CSSProperties = {
+const legacyInlineSideEffectButtonStyle: CSSProperties = {
   background: "none",
   border: 0,
   color: "inherit",
   cursor: "pointer",
-  display: "block",
+  display: "inline",
   font: "inherit",
   margin: 0,
   padding: 0,
   textAlign: "inherit",
-  width: "100%",
-};
-
-const legacyInlineSideEffectButtonStyle: CSSProperties = {
-  ...legacySideEffectButtonStyle,
-  display: "inline",
   width: "auto",
 };
-
-function legacyTabButtonStyle(active: boolean): CSSProperties {
-  return {
-    background: active ? "#fff" : "transparent",
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderColor: active ? "#ddd #ddd transparent" : "transparent",
-    borderRadius: "4px 4px 0 0",
-    color: active ? "#555" : "#3592b5",
-    cursor: active ? "default" : "pointer",
-    display: "block",
-    fontFamily: "inherit",
-    fontSize: "inherit",
-    fontWeight: "bold",
-    lineHeight: "20px",
-    margin: 0,
-    marginRight: 2,
-    padding: "8px 30px",
-    textAlign: "inherit",
-    width: "100%",
-  };
-}
 
 export const Route = createFileRoute("/$ownerName/$projectName/reviews")({
   component: ProjectReviewsRoute,
@@ -198,12 +170,7 @@ function ProjectReviewsBody({
             <div className="inner advanced">
               <ul className="lst-stacked unstyled">
                 <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
-                  <button
-                    type="button"
-                    data-toggle="filter"
-                    onClick={() => filterClick({})}
-                    style={legacySideEffectButtonStyle}
-                  >
+                  <button type="button" data-toggle="filter" onClick={() => filterClick({})}>
                     {t("review.allReview")}
                     <span className="num-badge pull-right">{reviews.allCount}</span>
                   </button>
@@ -215,7 +182,6 @@ function ProjectReviewsBody({
                     data-type="participantId"
                     data-value={currentUserId}
                     onClick={() => filterClick({ participantId: currentUserId })}
-                    style={legacySideEffectButtonStyle}
                   >
                     {t("review.involvingYou")}
                     <span className="num-badge pull-right">{reviews.participantCount}</span>
@@ -228,7 +194,6 @@ function ProjectReviewsBody({
                     data-type="authorId"
                     data-value={currentUserId}
                     onClick={() => filterClick({ authorId: currentUserId })}
-                    style={legacySideEffectButtonStyle}
                   >
                     {t("review.createdByYou")}
                     <span className="num-badge pull-right">{reviews.authorCount}</span>
@@ -297,7 +262,6 @@ function ProjectReviewsBody({
                   onClick={() => {
                     pushReviews({ pageNum: 1, state: "open" });
                   }}
-                  style={legacyTabButtonStyle(activeState === "open")}
                 >
                   {t("issue.state.open")}
                   <span className="num-badge">{reviews.openCount}</span>
@@ -312,7 +276,6 @@ function ProjectReviewsBody({
                   onClick={() => {
                     pushReviews({ pageNum: 1, state: "closed" });
                   }}
-                  style={legacyTabButtonStyle(activeState === "closed")}
                 >
                   {t("issue.state.closed")}
                   <span className="num-badge">{reviews.closedCount}</span>
