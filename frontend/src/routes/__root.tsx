@@ -323,7 +323,7 @@ function RootYobiDialog({ isOpen, onDismiss }: RootYobiDialogProps) {
       aria-hidden={!isOpen}
     >
       <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" data-dismiss="modal" onClick={onDismiss}>
+        <button type="button" className="btn-transparent" onClick={onDismiss}>
           &times;
         </button>
       </div>
@@ -333,7 +333,7 @@ function RootYobiDialog({ isOpen, onDismiss }: RootYobiDialogProps) {
           <p className="desc" />
         </div>
         <div className="center-txt buttons">
-          <button type="button" className="ybtn ybtn-info" data-dismiss="modal" onClick={onDismiss}>
+          <button type="button" className="ybtn ybtn-info" onClick={onDismiss}>
             {t("button.confirm")}
           </button>
         </div>
@@ -466,13 +466,8 @@ function RootLoginDialog({
     >
       <div className="modal-body">
         <div className="pull-right">
-          <button
-            type="button"
-            className="close"
-            data-dismiss="modal"
-            aria-hidden="true"
-            onClick={onDismiss}
-          >
+          {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy common/loginDialog.scala.html renders aria-hidden on the focusable close button. */}
+          <button type="button" className="close" aria-hidden="true" onClick={onDismiss}>
             &times;
           </button>
         </div>
@@ -516,7 +511,7 @@ function RootLoginDialog({
                   />
                 </dd>
               </dl>
-              <div className="error">
+              <div className="error" style={state.errorMessage ? { display: "block" } : undefined}>
                 <i className="yobicon-error" />
                 <span className="error-message">{state.errorMessage ?? ""}</span>
               </div>

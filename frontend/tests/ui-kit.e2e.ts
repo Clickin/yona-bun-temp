@@ -485,7 +485,7 @@ test("standalone UI kit root shell opens legacy login dialog from data-login req
 
   await page.locator("#login-required-fixture").click();
 
-  await expect(dialog).toHaveClass("modal loginDialog in");
+  await expect(dialog).toHaveClass("modal hide loginDialog in");
   await expect(dialog).toHaveAttribute("aria-hidden", "false");
   await expect(dialog).toHaveCSS("display", "block");
   await expect(dialog.locator("#loginIdOrEmailD")).toBeFocused();
@@ -506,7 +506,7 @@ test("standalone UI kit root shell opens legacy login dialog from data-login req
     rememberLabelDisplay: "inline-block",
   });
 
-  await dialog.locator('[data-dismiss="modal"]').click();
+  await dialog.locator(".pull-right .close").click();
   await expect(dialog).toHaveClass("modal hide loginDialog");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 });
@@ -560,7 +560,7 @@ test("standalone UI kit login dialog shows legacy AJAX failure error", async ({ 
   await dialog.locator("#remember-meD").uncheck();
   await dialog.locator("button[type=submit]").click();
 
-  await expect(dialog).toHaveClass("modal loginDialog in");
+  await expect(dialog).toHaveClass("modal hide loginDialog in");
   await expect(dialog.locator("#loginIdOrEmailD")).toHaveValue("bad-user");
   await expect(dialog.locator("#passwordD")).toHaveValue("bad-password");
   await expect(dialog.locator(".error")).toBeVisible();
@@ -645,14 +645,20 @@ test("standalone UI kit root shell emits legacy select2 Japanese locale script",
   ]);
 });
 
-test("standalone UI kit root shell dismisses legacy modal buttons", async ({ page }) => {
+test("standalone UI kit root shell dismisses legacy modal buttons through React state", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
   await page.goto(`${basePath}/_UIKit`);
-  await expect(page.locator("#yobiDialog .center-txt.buttons .ybtn.ybtn-info")).toHaveText(
-    "Confirm",
+  const yobiConfirm = page.locator("#yobiDialog .center-txt.buttons .ybtn.ybtn-info");
+  await expect(yobiConfirm).toHaveText("Confirm");
+  await expect(yobiConfirm).not.toHaveAttribute("data-dismiss", "modal");
+  await expect(page.locator("#yobiDialog .btn-dismiss .btn-transparent")).not.toHaveAttribute(
+    "data-dismiss",
+    "modal",
   );
-  await expect(page.locator("#yobiDialog .center-txt.buttons .ybtn.ybtn-info")).toHaveAttribute(
+  await expect(page.locator("#loginDialog .pull-right .close")).not.toHaveAttribute(
     "data-dismiss",
     "modal",
   );
@@ -675,16 +681,16 @@ test("standalone UI kit root shell dismisses legacy modal buttons", async ({ pag
   await page.locator("#yobi-dialog-trigger").click();
   await expect(yobiDialog).toHaveClass("modal yobiDialog in");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
-  await yobiDialog.locator('.center-txt.buttons [data-dismiss="modal"]').click();
+  await yobiConfirm.click();
   await expect(yobiDialog).toHaveClass("modal hide yobiDialog");
   await expect(yobiDialog).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 
   const loginDialog = page.locator("#loginDialog");
   await page.locator("#login-required-fixture").click();
-  await expect(loginDialog).toHaveClass("modal loginDialog in");
+  await expect(loginDialog).toHaveClass("modal hide loginDialog in");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
-  await loginDialog.locator('.pull-right [data-dismiss="modal"]').click();
+  await loginDialog.locator(".pull-right .close").click();
   await expect(loginDialog).toHaveClass("modal hide loginDialog");
   await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);

@@ -485,6 +485,10 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     source.indexOf("function RootLoginDialog"),
     source.indexOf("function RootOAuthProviderLink"),
   );
+  const rootYobiDialogSource = source.slice(
+    source.indexOf("function RootYobiDialog"),
+    source.indexOf("function LegacySelect2Assets"),
+  );
   expect(rootLoginDialogSource).toContain(
     'className={visible ? "modal hide loginDialog in" : "modal hide loginDialog"}',
   );
@@ -496,6 +500,8 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   expect(rootLoginDialogSource).not.toMatch(/\bdocument\s*\./u);
   expect(rootLoginDialogSource).not.toContain("addEventListener");
   expect(rootLoginDialogSource).not.toContain("classList");
+  expect(rootLoginDialogSource).not.toContain('data-dismiss="modal"');
+  expect(rootYobiDialogSource).not.toContain('data-dismiss="modal"');
 });
 
 test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
@@ -732,7 +738,7 @@ function expectedRootLoginDialog(basePath: string, formBody: string) {
 <div id="loginDialog" class="modal hide loginDialog in" style="display: block;" tabindex="-1" role="dialog" aria-hidden="false">
   <div class="modal-body">
     <div class="pull-right">
-      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <button type="button" class="close" aria-hidden="true">×</button>
     </div>
     <form action="/users/login" method="post" class="frm-wrap login-form-wrap">
       ${formBody.replaceAll("__BASE_PATH__", basePath)}
@@ -878,7 +884,6 @@ async function canonicalizeLoginDialogRoot(page: Page) {
         "alt",
         "aria-hidden",
         "version",
-        "data-dismiss",
         "for",
         "checked",
         "tabindex",
@@ -943,7 +948,6 @@ async function canonicalizeLoginDialogHtml(page: Page, html: string) {
           "alt",
           "aria-hidden",
           "version",
-          "data-dismiss",
           "for",
           "checked",
           "tabindex",
