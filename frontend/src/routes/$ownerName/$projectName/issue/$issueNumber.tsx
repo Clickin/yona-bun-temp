@@ -3257,12 +3257,7 @@ function MarkdownEditor({
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
-          <button
-            type="button"
-            data-mode="edit"
-            data-target={`#edit-${wrapId}`}
-            onClick={(event) => switchTab(event, "edit")}
-          >
+          <button type="button" data-mode="edit" onClick={(event) => switchTab(event, "edit")}>
             Edit
           </button>
         </li>
@@ -3270,7 +3265,6 @@ function MarkdownEditor({
           <button
             type="button"
             data-mode="preview"
-            data-target={`#preview-${wrapId}`}
             onClick={(event) => switchTab(event, "preview")}
           >
             Preview
