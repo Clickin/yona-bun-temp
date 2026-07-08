@@ -121,7 +121,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
               </form>
             </div>
             <div class="pull-right search search-bar">
-              <input class="textbox" data-items="issue-item" data-toggle="item-search" name="filter" placeholder="search at current milestone" type="text" value="">
+              <input class="textbox" name="filter" placeholder="search at current milestone" type="text" value="">
               <button class="search-btn" type="submit"><i class="yobicon-search"></i></button>
             </div>
           </div>
@@ -534,10 +534,10 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     (button as HTMLButtonElement).click();
   });
   await expect(page.locator("#state")).not.toHaveClass(/(?:^|\s)open(?:\s|$)/u);
-  await expect(page.locator('.search-bar input[data-toggle="item-search"]')).toHaveAttribute(
-    "data-items",
-    "issue-item",
-  );
+  await expect(page.locator('.search-bar input[name="filter"]')).not.toHaveAttribute("data-toggle");
+  await expect(page.locator('.search-bar input[name="filter"]')).not.toHaveAttribute("data-items");
+  await expect(page.locator('.search-bar [data-toggle="item-search"]')).toHaveCount(0);
+  await expect(page.locator('.search-bar [data-items="issue-item"]')).toHaveCount(0);
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
   await expect(page.locator("#issue-item-41")).toHaveAttribute(
     "href",
@@ -760,6 +760,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator('.search-bar input[name="filter"]')).toHaveValue("[UI]");
   await expect(page.locator('.search-bar input[name="filter"]')).toBeFocused();
   await expect(page.locator("#issue-item-41")).toBeVisible();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=open#issues`);
   await expect(
     page.evaluate(() => {
       return (
@@ -779,6 +780,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator("#issue-item-41")).toBeVisible();
   await page.fill('.search-bar input[name="filter"]', "no-match");
   await expect(page.locator("#issue-item-41")).toBeHidden();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=open#issues`);
 
   const closeResponse = page.waitForResponse(
     (response) =>
@@ -1191,6 +1193,10 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("style.display");
   expect(routeSource).not.toContain("data-request-method");
   expect(routeSource).not.toContain("data-request-uri");
+  expect(routeSource).not.toContain('data-toggle="item-search"');
+  expect(routeSource).not.toContain('data-items="issue-item"');
+  expect(routeSource).not.toContain("data-toggle='item-search'");
+  expect(routeSource).not.toContain("data-items='issue-item'");
   expect(routeSource).not.toContain("<script");
   expect(routeSource).not.toContain("highlight.pack.js");
   expect(routeSource).not.toContain("marked.js");
@@ -1325,6 +1331,7 @@ test("project milestone detail E2E selectors stay anchored to legacy Scala HTML"
     '<div class="filter-wrap">',
     "@issue.partial_massupdate(project, new SearchCondition())",
     'data-toggle="item-search" data-items="issue-item"',
+    '$("li[data-value*=\'"+$(".textbox").val() + "\']").show();',
     "issue.partial_list(project, milestone.sortedByNumberOfOpenIssue(), new SearchCondition(),0,0)",
     '<div id="deleteConfirm" class="modal hide fade">',
     '<h3>@Messages("milestone.delete")</h3>',

@@ -491,8 +491,6 @@ function ProjectMilestoneDetailBody({
                     type="text"
                     placeholder={t("milestone.searchPlaceholder")}
                     value={filter}
-                    data-toggle="item-search"
-                    data-items="issue-item"
                     onChange={(event) => {
                       setFilter(event.currentTarget.value);
                     }}
