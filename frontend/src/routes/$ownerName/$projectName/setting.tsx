@@ -496,7 +496,6 @@ function ProjectSettingBody({
                     <input
                       name="isUsingReviewerCount"
                       data-toggle="reviewer-count"
-                      data-action="show"
                       type="radio"
                       className="radio-btn"
                       id="reviewerCountEnable"
@@ -510,7 +509,6 @@ function ProjectSettingBody({
                     <input
                       name="isUsingReviewerCount"
                       data-toggle="reviewer-count"
-                      data-action="hide"
                       type="radio"
                       className="radio-btn"
                       id="reviewerCountDisable"
