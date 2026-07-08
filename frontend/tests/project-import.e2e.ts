@@ -104,8 +104,8 @@ const EXPECTED_PROJECT_IMPORT = `
           <dt class="bordertop"><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
           <dd>
             <select id="project-owner" name="owner" data-format="user" class="mb10">
-              <option data-type="user" data-avatar-url="/assets/images/default-avatar-32.png" value="admin">admin</option>
-              <option data-type="group" data-avatar-url="/assets/images/organization_default_logo.png" value="weblabs">weblabs</option>
+              <option value="admin">admin</option>
+              <option value="weblabs">weblabs</option>
             </select>
           </dd>
           <dt><label for="project-name">Project name<strong class="orange-txt">*</strong></label></dt>
@@ -188,13 +188,14 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   await expect(page.locator("#project-owner")).toHaveValue("admin");
   await expect(page.locator("#project-owner")).not.toHaveAttribute("data-toggle", "select2");
   await expect(page.locator("#project-owner")).toHaveAttribute("data-format", "user");
-  await expect(page.locator("#project-owner option[value='admin']")).toHaveAttribute(
+  await expect(page.locator("#project-owner option[value='admin']")).toHaveText("admin");
+  await expect(page.locator("#project-owner option[value='admin']")).not.toHaveAttribute(
     "data-type",
-    "user",
+    /.*/u,
   );
-  await expect(page.locator("#project-owner option[value='admin']")).toHaveAttribute(
+  await expect(page.locator("#project-owner option[value='admin']")).not.toHaveAttribute(
     "data-avatar-url",
-    "/assets/images/default-avatar-32.png",
+    /.*/u,
   );
   const vcsSelect = page.locator(".advanced-options .cu-desc select.mb10.mt5");
   await expect(vcsSelect).toBeDisabled();
@@ -232,13 +233,14 @@ test("project import form mirrors legacy auth, owner, and menu dependencies", as
   await expect(page.locator("#repoAuth")).toBeHidden();
   await expect(page.locator("#project-owner")).not.toHaveAttribute("data-toggle", "select2");
   await expect(page.locator("#project-owner")).toHaveAttribute("data-format", "user");
-  await expect(page.locator("#project-owner option[value='weblabs']")).toHaveAttribute(
+  await expect(page.locator("#project-owner option[value='weblabs']")).toHaveText("weblabs");
+  await expect(page.locator("#project-owner option[value='weblabs']")).not.toHaveAttribute(
     "data-type",
-    "group",
+    /.*/u,
   );
-  await expect(page.locator("#project-owner option[value='weblabs']")).toHaveAttribute(
+  await expect(page.locator("#project-owner option[value='weblabs']")).not.toHaveAttribute(
     "data-avatar-url",
-    "/assets/images/organization_default_logo.png",
+    /.*/u,
   );
   const vcsSelect = page.locator(".advanced-options .cu-desc select.mb10.mt5");
   await expect(vcsSelect).toBeDisabled();
@@ -386,7 +388,7 @@ test("project import form renders legacy server auth and owner validation state"
     [
       '<input id="useRepoAuth" type="checkbox"></input>',
       '<div class="repo-auth-wrap" id="repoAuth" style="display: block;"><div class="row-fluid"><dl class="span6"><dt>Access ID</dt><dd><input class="text" name="authId" placeholder="Entered information will not be stored anywhere." type="text" value="deploy-bot"></input></dd></dl><dl class="span6"><dt>Access Password</dt><dd><input class="text" name="authPw" type="password"></input></dd></dl></div></div>',
-      '<select class="mb10" data-format="user" id="project-owner" name="owner"><option data-avatar-url="/assets/images/default-avatar-32.png" data-type="user" value="admin">admin</option><option data-avatar-url="/assets/images/organization_default_logo.png" data-type="group" value="weblabs">weblabs</option></select>',
+      '<select class="mb10" data-format="user" id="project-owner" name="owner"><option value="admin">admin</option><option value="weblabs">weblabs</option></select>',
       '<span class="orange-text">Owner information is not valid.</span>',
     ].join(""),
   );
@@ -494,6 +496,9 @@ test("project import form navigation links use TanStack Router Link in route sou
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('<Link\n                    to="/projectform"');
+  expect(routeSource).toContain("<option key={option.ownerName} value={option.ownerName}>");
+  expect(routeSource).not.toContain("data-type={");
+  expect(routeSource).not.toContain("data-avatar-url={");
   expect(routeSource).not.toContain('data-toggle="select2"');
   expect(routeSource).not.toContain('data-toggle={"select2"}');
   expect(routeSource).not.toContain('dataToggle="select2"');

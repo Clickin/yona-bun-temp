@@ -1,11 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import {
-  importProjectRest,
-  projectCreateFormOptionsQueryOptions,
-  type ProjectCreateOwnerOption,
-} from "../api/org-project";
+import { importProjectRest, projectCreateFormOptionsQueryOptions } from "../api/org-project";
 import { apiQueryKeys } from "../api/query-keys";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
@@ -324,7 +320,9 @@ function ProjectImportScreen({
                     }}
                   >
                     {ownerOptions.map((option) => (
-                      <OwnerOption key={option.ownerName} option={option} />
+                      <option key={option.ownerName} value={option.ownerName}>
+                        {option.ownerName}
+                      </option>
                     ))}
                   </select>
                   {ownerError ? (
@@ -548,18 +546,6 @@ function validateProjectName(projectName: string, t: (key: string) => string) {
     return t("project.name.reserved.alert");
   }
   return null;
-}
-
-function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
-  return (
-    <option
-      data-type={option.organization ? "group" : "user"}
-      data-avatar-url={option.avatarUrl ?? ""}
-      value={option.ownerName}
-    >
-      {option.ownerName}
-    </option>
-  );
 }
 
 function MenuCheckbox({
