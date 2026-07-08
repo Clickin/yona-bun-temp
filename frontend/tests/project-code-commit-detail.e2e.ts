@@ -35,7 +35,7 @@ function withReactEditorTabButtons(html: string) {
 }
 
 const EXPECTED_COMMIT_DETAIL_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="codediff-wrap"><button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div class="diffs-wrap"><div class="commitInfo"><div class="commitAuthor"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span></div><div class="commitMsg-wrap"><span class="commitMsg short">Initial commit</span><pre class="commitMsg desc">Add README</pre></div><div class="commitId-wrap"><strong class="commitId">@abcdef1234567890</strong></div></div><div class="diff-body"><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button></div><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-review" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-review" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" markdown="true" id="editor-contents-review"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div><div class="review-wrap span-hard-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><button type="button" data-toggle="tab">Open 0</button></li><li><button type="button" data-toggle="tab">Closed 0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div><button id="watch-button" type="button" class="pull-left ybtn " data-toggle="button">Watch</button><a href="__BASE_PATH__/admin/sample/commits/main" class="ybtn pull-right">List</a></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div id="code-browse-wrap" class="code-browse-wrap"><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="codediff-wrap"><button type="button" class="ybtn ybtn-default btn-show-reviewcards"><i class="yobicon-restore"></i></button><div class="diffs-wrap"><div class="commitInfo"><div class="commitAuthor"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Dev Author</strong><span class="ago" title="Jul 1, 2026">Jul 1, 2026</span></div><div class="commitMsg-wrap"><span class="commitMsg short">Initial commit</span><pre class="commitMsg desc">Add README</pre></div><div class="commitId-wrap"><strong class="commitId">@abcdef1234567890</strong></div></div><div class="diff-body"><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small">×</button></div><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-review" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-review" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" markdown="true" id="editor-contents-review"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div><div class="review-wrap span-hard-wrap"><div class="review-container"><button type="button" class="ybtn ybtn-default btn-hide-reviewcards"><i class="yobicon-maximize"></i></button><ul class="nav nav-tabs" style="margin-bottom:10px"><li class="active"><button type="button" data-toggle="tab">Open 0</button></li><li><button type="button" data-toggle="tab">Closed 0</button></li></ul><div class="tab-content review-list"><div id="reviewcards-open" class="tab-pane active"></div><div id="reviewcards-closed" class="tab-pane"></div></div></div></div></div></div><button id="watch-button" type="button" class="pull-left ybtn " data-toggle="button">Watch</button><a href="__BASE_PATH__/admin/sample/commits/main" class="ybtn pull-right">List</a></div></div>
 `;
 
 const EXPECTED_COMMENT_DELETE_MODAL = `
@@ -143,7 +143,7 @@ function withCommentUpdateForm(
   attachments: Array<typeof COMMENT_601_ATTACHMENT> = [],
 ) {
   const id = String(commentId);
-  const editButton = `<span class="edit pull-right"><button type="button" class="btn-transparent pull-right" data-toggle="comment-edit" data-comment-id="${id}" title="Edit comment"><i class="yobicon-edit-2"></i></button></span>`;
+  const editButton = `<span class="edit pull-right"><button type="button" class="btn-transparent pull-right" data-comment-id="${id}" title="Edit comment"><i class="yobicon-edit-2"></i></button></span>`;
   const bodyStart = `<div class="comment-body markdown-wrap" data-via-email="false">`;
   const attachmentsJson = JSON.stringify(attachments);
   return html
@@ -206,7 +206,9 @@ test("project commit detail markdown help uses shared React helper", async () =>
 
 test("project commit detail comment edit toggle is route-owned React state", async () => {
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setEditingCommentIds");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-toggle="comment-edit"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("data-comment-id={comment.id}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="comment-edit"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="close"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("event.stopPropagation();");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("addEventListener");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("document.");
@@ -719,7 +721,9 @@ index 1234567..abcdef1 100644
 
   const reviewForm = page.locator("#review-form");
   const popButton = page.locator(".btnPop .ybtn");
-  const closeButton = reviewForm.locator('[data-toggle="close"]');
+  const closeButton = reviewForm.locator(".pull-right > button.ybtn.ybtn-default.ybtn-small", {
+    hasText: "×",
+  });
   const initialUrl = page.url();
 
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen");
@@ -747,7 +751,8 @@ index 1234567..abcdef1 100644
   await expect(popButton).toBeHidden();
   expect(await blockReviewFormMetrics(page)).toEqual({
     authorAvatarVisible: true,
-    closeDataToggle: "close",
+    closeButtonText: "×",
+    closeDataToggle: null,
     display: "block",
     editorMode: "code-review-body",
     uploadResourceType: "COMMIT_COMMENT",
@@ -1695,7 +1700,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).toBe("commit-comment-hash");
-  await page.locator('[data-toggle="comment-edit"][data-comment-id="601"]').click();
+  await page.locator('[data-comment-id="601"][title="Edit comment"]').click();
   await expect(page.locator("#comment-editform-601")).toBeVisible();
   await expect(page.locator("#comment-body-601")).toBeHidden();
   await expect(
@@ -2023,7 +2028,9 @@ async function readSvnCommitShellMetrics(page: Page) {
 
 async function blockReviewFormMetrics(page: Page) {
   return page.locator("#review-form").evaluate((form) => {
-    const close = form.querySelector<HTMLButtonElement>('[data-toggle="close"]');
+    const close = form.querySelector<HTMLButtonElement>(
+      ".pull-right > button.ybtn.ybtn-default.ybtn-small",
+    );
     const textarea = form.querySelector<HTMLTextAreaElement>(
       'textarea[data-editor-mode="code-review-body"]',
     );
@@ -2033,6 +2040,7 @@ async function blockReviewFormMetrics(page: Page) {
       authorAvatarVisible: Boolean(
         form.querySelector(".author-info-wrap .avatar-wrap.medium img")?.getClientRects().length,
       ),
+      closeButtonText: close?.textContent?.trim() ?? null,
       closeDataToggle: close?.dataset.toggle ?? null,
       display: window.getComputedStyle(form).display,
       editorMode: textarea?.dataset.editorMode ?? null,

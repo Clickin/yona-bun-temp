@@ -1146,7 +1146,6 @@ function CodeCommentThreadView({
                       <button
                         type="button"
                         className="btn-transparent pull-right"
-                        data-toggle="comment-edit"
                         data-comment-id={comment.id}
                         onClick={(event) => {
                           event.preventDefault();
@@ -1579,7 +1578,6 @@ function ReviewForm({
               <button
                 type="button"
                 className="ybtn ybtn-default ybtn-small"
-                data-toggle="close"
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
