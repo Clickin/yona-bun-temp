@@ -269,7 +269,6 @@ function ProjectWebhooksBody({
         ) : null}
         <div id="webhooksList" className="webhook-list-wrap">
           <ProjectWebhooksList
-            basePath={runtimeConfig.basePath}
             ownerName={ownerName}
             projectName={projectName}
             runtimeConfig={runtimeConfig}
@@ -302,13 +301,11 @@ function LegacyWebhookHelp({ help }: { help: string }) {
 }
 
 function ProjectWebhooksList({
-  basePath,
   ownerName,
   projectName,
   runtimeConfig,
   webhooks,
 }: {
-  basePath: string;
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -386,11 +383,6 @@ function ProjectWebhooksList({
             <button
               type="button"
               className="ybtn ybtn-danger ybtn-small"
-              data-request-method="delete"
-              data-request-uri={prefixBasePath(
-                basePath,
-                `/${ownerName}/${projectName}/webhooks/${webhook.id}`,
-              )}
               onClick={() => deleteMutation.mutate(webhook.id)}
             >
               {t("button.delete")}

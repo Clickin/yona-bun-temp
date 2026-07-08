@@ -6,8 +6,8 @@ const EMPTY_WEBHOOKS_LIST =
 const POPULATED_WEBHOOKS_LIST = `
 <div id="webhooksList" class="webhook-list-wrap">
   <div class="row-fluid list-head"><div class="span5 payload-url"><strong>Payload URL</strong></div><div class="span2 secret text-center"><strong>Authorization Token</strong></div><div class="span2 secret text-center"><strong>Type of message</strong></div><div class="span2 secret text-center"><strong>Include git push events</strong></div><div class="span1 secret text-center"></div></div>
-  <div class="row-fluid list-item vertical-align" data-webhook-id="11"><div class="span5"><h6 class="mr20 truncate">https://hooks.example.test/yona</h6></div><div class="span2 text-center"><h6>NONE</h6></div><div class="span2 text-center"><h6>SIMPLE</h6></div><div class="span2 text-center"><input type="checkbox" checked=""></div><div class="span1 text-center"><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/webhooks/11">Delete</button></div></div>
-  <div class="row-fluid list-item vertical-align" data-webhook-id="12"><div class="span5"><h6 class="mr20 truncate">https://hooks.example.test/slack</h6></div><div class="span2 text-center"><h6>secret-token</h6></div><div class="span2 text-center"><h6>DETAIL_SLACK</h6></div><div class="span2 text-center"><input type="checkbox"></div><div class="span1 text-center"><button type="button" class="ybtn ybtn-danger ybtn-small" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/webhooks/12">Delete</button></div></div>
+  <div class="row-fluid list-item vertical-align" data-webhook-id="11"><div class="span5"><h6 class="mr20 truncate">https://hooks.example.test/yona</h6></div><div class="span2 text-center"><h6>NONE</h6></div><div class="span2 text-center"><h6>SIMPLE</h6></div><div class="span2 text-center"><input type="checkbox" checked=""></div><div class="span1 text-center"><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></div>
+  <div class="row-fluid list-item vertical-align" data-webhook-id="12"><div class="span5"><h6 class="mr20 truncate">https://hooks.example.test/slack</h6></div><div class="span2 text-center"><h6>secret-token</h6></div><div class="span2 text-center"><h6>DETAIL_SLACK</h6></div><div class="span2 text-center"><input type="checkbox"></div><div class="span1 text-center"><button type="button" class="ybtn ybtn-danger ybtn-small">Delete</button></div></div>
 </div>`;
 
 const EXPECTED_PROJECT_WEBHOOKS = `
@@ -75,6 +75,8 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain('globalThis["document"]');
+  expect(source).not.toContain("data-request-method");
+  expect(source).not.toContain("data-request-uri");
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).not.toContain("ProjectForbiddenBody");
   expect(source).not.toContain("SiteForbiddenBody");
@@ -227,22 +229,27 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectAdmin(page, [
-    {
-      gitPush: true,
-      id: 11,
-      payloadUrl: "https://hooks.example.test/yona",
-      secret: "",
-      webhookType: "SIMPLE",
-    },
-    {
-      gitPush: false,
-      id: 12,
-      payloadUrl: "https://hooks.example.test/slack",
-      secret: "secret-token",
-      webhookType: "DETAIL_SLACK",
-    },
-  ]);
+  const deleteRequests: { hasCsrfToken: boolean; method: string; webhookId: string }[] = [];
+  await mockProjectAdmin(
+    page,
+    [
+      {
+        gitPush: true,
+        id: 11,
+        payloadUrl: "https://hooks.example.test/yona",
+        secret: "",
+        webhookType: "SIMPLE",
+      },
+      {
+        gitPush: false,
+        id: 12,
+        payloadUrl: "https://hooks.example.test/slack",
+        secret: "secret-token",
+        webhookType: "DETAIL_SLACK",
+      },
+    ],
+    { deleteRequests },
+  );
 
   await page.goto(`${basePath}/admin/sample/webhooks`);
   await expect(page.locator("#webhooksList .list-item")).toHaveCount(2);
@@ -264,8 +271,8 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
   expect(await canonicalizeScreenRoots(page)).toEqual(await canonicalizeHtml(page, expected));
 
   await expect(webhookListMetrics(page)).resolves.toMatchObject({
-    deleteMethod: "delete",
-    deleteUri: `${basePath}/admin/sample/webhooks/11`,
+    deleteButtonText: "Delete",
+    requestMarkerCount: 0,
     gitPushChecked: true,
     headBackground: "rgb(250, 250, 250)",
     headBorderBottomWidth: "2px",
@@ -275,6 +282,16 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
     webhookId: "11",
     webhookType: "SIMPLE",
   });
+
+  const deleteResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/webhooks/11") &&
+      response.request().method() === "DELETE",
+  );
+  await page.locator('#webhooksList [data-webhook-id="11"] button.ybtn-danger').click();
+  await deleteResponsePromise;
+
+  expect(deleteRequests).toEqual([{ hasCsrfToken: true, method: "DELETE", webhookId: "11" }]);
 });
 
 test("project webhooks internal project links preserve legacy hrefs with SPA transitions", async ({
@@ -642,6 +659,7 @@ async function mockProjectAdmin(
       secret: string;
       webhookType: string;
     }[];
+    deleteRequests?: { hasCsrfToken: boolean; method: string; webhookId: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     ownerName?: string;
@@ -763,6 +781,26 @@ async function mockProjectAdmin(
     },
   );
   await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/webhooks/*`,
+    async (route) => {
+      const request = route.request();
+      const webhookId = new URL(request.url()).pathname.split("/").pop() ?? "";
+      if (request.method() === "DELETE") {
+        options.deleteRequests?.push({
+          hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-webhooks",
+          method: request.method(),
+          webhookId,
+        });
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fallback();
+    },
+  );
+  await page.route(
     `**/api/v1/owners/${ownerName}/projects/${projectName}/favorite`,
     async (route) => {
       const request = route.request();
@@ -832,17 +870,18 @@ async function webhookListMetrics(page: Page) {
     const firstItem = document.querySelector("#webhooksList .list-item");
     const cells = firstItem ? Array.from(firstItem.children) : [];
     const checkbox = firstItem?.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
-    const button = firstItem?.querySelector("button[data-request-uri]");
+    const button = firstItem?.querySelector("button.ybtn-danger");
     const headStyle = head ? getComputedStyle(head) : null;
     const itemStyle = firstItem ? getComputedStyle(firstItem) : null;
     return {
-      deleteMethod: button?.getAttribute("data-request-method"),
-      deleteUri: button?.getAttribute("data-request-uri"),
+      deleteButtonText: button?.textContent?.trim(),
       gitPushChecked: checkbox?.checked,
       headBackground: headStyle?.backgroundColor,
       headBorderBottomWidth: headStyle?.borderBottomWidth,
       listItemBorderBottomWidth: itemStyle?.borderBottomWidth,
       payloadText: cells[0]?.textContent?.trim(),
+      requestMarkerCount: firstItem?.querySelectorAll("[data-request-method], [data-request-uri]")
+        .length,
       secretText: cells[1]?.textContent?.trim(),
       webhookId: firstItem?.getAttribute("data-webhook-id"),
       webhookType: cells[2]?.textContent?.trim(),
