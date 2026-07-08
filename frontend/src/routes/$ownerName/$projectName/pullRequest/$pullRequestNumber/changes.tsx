@@ -592,7 +592,6 @@ function NonRangedThreadComment({
             <span className="edit pull-right">
               <button
                 className="btn-transparent pull-right close"
-                data-toggle="comment-delete"
                 onClick={(event: MouseEvent<HTMLButtonElement>) => {
                   event.preventDefault();
                   event.stopPropagation();

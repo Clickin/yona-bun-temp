@@ -247,7 +247,7 @@ const EXPECTED_PULL_REQUEST_NON_RANGED_THREAD = EXPECTED_PULL_REQUEST_REVIEW_CAR
     `<div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div>`,
   ).replace(
     `</span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
-    `</span><span class="edit pull-right"><button class="btn-transparent pull-right close" data-toggle="comment-delete" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
+    `</span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>General <strong>note</strong></p></div>`,
   )}</div>`,
 )
   .replace(
@@ -833,9 +833,15 @@ test("project pull request changes renders legacy non-ranged thread DOM", async 
     ),
   );
 
-  const deleteButton = page.locator("#comment-801 [data-toggle='comment-delete']");
+  const deleteButton = page.locator(
+    '#comment-801 .edit.pull-right > button.btn-transparent.pull-right.close[title="Delete comment"]',
+  );
+  await expect(deleteButton).toHaveCount(1);
+  await expect(deleteButton.locator(".yobicon-trash")).toHaveCount(1);
+  await expect(deleteButton).not.toHaveAttribute("data-toggle", /.*/u);
   await expect(deleteButton).not.toHaveAttribute("data-request-method", /.*/u);
   await expect(deleteButton).not.toHaveAttribute("data-request-uri", /.*/u);
+  await expect(page.locator('#comment-801 [data-toggle="comment-delete"]')).toHaveCount(0);
   await expect(page.locator("#changes [data-request-method]")).toHaveCount(0);
   await expect(page.locator("#changes [data-request-uri]")).toHaveCount(0);
   await page.evaluate(() => {
@@ -1143,6 +1149,7 @@ test("project pull request changes route source uses TanStack Links for navigati
   expect(routeSource).toContain('type="button"');
   expect(routeSource).not.toContain("data-request-method");
   expect(routeSource).not.toContain("data-request-uri");
+  expect(routeSource).not.toContain('data-toggle="comment-delete"');
   expect(routeSource).not.toContain('data-dismiss="modal"');
   expect(routeSource).toContain("const closeModal = (event: MouseEvent<HTMLButtonElement>) => {");
   expect(routeSource).toContain("onClick={closeModal}");
