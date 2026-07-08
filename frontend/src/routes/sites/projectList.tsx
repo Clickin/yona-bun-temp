@@ -25,7 +25,7 @@ const legacyLinkSuppressionProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
-function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+function insulateProjectDeleteModalClick(event: MouseEvent<HTMLElement>) {
   event.preventDefault();
   event.stopPropagation();
 }
@@ -71,16 +71,16 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     setDeleteProject(null);
   };
   const openDeleteModal = (selectedProject: SiteProject, event: MouseEvent<HTMLButtonElement>) => {
-    insulateProjectDeleteModalButtonClick(event);
+    insulateProjectDeleteModalClick(event);
     setDeleteModalClosed(false);
     setDeleteProject(selectedProject);
   };
-  const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {
-    insulateProjectDeleteModalButtonClick(event);
+  const dismissDeleteModal = (event: MouseEvent<HTMLElement>) => {
+    insulateProjectDeleteModalClick(event);
     closeDeletionModal();
   };
   const confirmDeleteProject = (event: MouseEvent<HTMLButtonElement>) => {
-    insulateProjectDeleteModalButtonClick(event);
+    insulateProjectDeleteModalClick(event);
     if (deleteProject) {
       deleteMutation.mutate(deleteProject.id);
     }
@@ -262,7 +262,15 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   </button>
                 </div>
               </div>
-              {deleteProject ? <div className="modal-backdrop fade in"></div> : null}
+              {deleteProject ? (
+                <div
+                  className="modal-backdrop fade in"
+                  onClick={dismissDeleteModal}
+                  onKeyDown={dismissDeleteModal}
+                  role="button"
+                  tabIndex={-1}
+                ></div>
+              ) : null}
             </div>
           </div>
         </div>

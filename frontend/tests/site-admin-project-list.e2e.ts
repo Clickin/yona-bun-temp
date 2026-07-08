@@ -459,21 +459,19 @@ test("site admin project list row project links use SPA navigation", async ({ pa
 test("site admin project delete modal source stays route-owned", () => {
   const routeSource = readFileSync(SITE_PROJECT_LIST_ROUTE_SOURCE, "utf8");
   const modalSource = routeSource.slice(
-    routeSource.indexOf("function insulateProjectDeleteModalButtonClick"),
+    routeSource.indexOf("function insulateProjectDeleteModalClick"),
     routeSource.indexOf("function LegacyMessage"),
   );
 
   expect(modalSource).toContain(
-    "function insulateProjectDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
+    "function insulateProjectDeleteModalClick(event: MouseEvent<HTMLElement>) {",
   );
   expect(modalSource).toContain("event.preventDefault();");
   expect(modalSource).toContain("event.stopPropagation();");
   expect(modalSource).toContain(
     "const openDeleteModal = (selectedProject: SiteProject, event: MouseEvent<HTMLButtonElement>) => {",
   );
-  expect(modalSource).toContain(
-    "const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {",
-  );
+  expect(modalSource).toContain("const dismissDeleteModal = (event: MouseEvent<HTMLElement>) => {");
   expect(modalSource).toContain(
     "const confirmDeleteProject = (event: MouseEvent<HTMLButtonElement>) => {",
   );
@@ -493,9 +491,8 @@ test("site admin project delete modal source stays route-owned", () => {
   expect(modalSource).toContain('data-toggle="delete-project"');
   expect(modalSource).toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
-  expect(modalSource).toContain(
-    '{deleteProject ? <div className="modal-backdrop fade in"></div> : null}',
-  );
+  expect(modalSource).toContain('className="modal-backdrop fade in"');
+  expect(modalSource).toContain("onKeyDown={dismissDeleteModal}");
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");
   expect(modalSource).not.toContain("style.display");
@@ -592,6 +589,18 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   expect(await dispatchCancelableClick(closeButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveCSS("display", "none");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(projectListUrl);
+  expect(await spaMarker(page)).toBe("site-project-delete-modal");
+
+  expect(await dispatchCancelableClick(deleteButton)).toBe(false);
+  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveCSS("display", "block");
+  await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
+  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.fade.in"))).toBe(false);
   await expect(deleteModal).toHaveClass("modal fade");
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
