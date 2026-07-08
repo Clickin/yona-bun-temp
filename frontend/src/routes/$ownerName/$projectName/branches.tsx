@@ -315,7 +315,7 @@ function BranchRow({
         >
           {branch.commitShortId}
         </Link>
-        <span className="date" data-toggle="tooltip" data-placement="top" title={branch.commitDate}>
+        <span className="date" data-placement="top" title={branch.commitDate}>
           {branch.commitDate}
         </span>
       </td>
@@ -340,7 +340,6 @@ function BranchRow({
               "data-status": undefined,
             }}
             className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
-            data-toggle="tooltip"
             data-placement="top"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >
