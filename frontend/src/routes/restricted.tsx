@@ -61,7 +61,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <div className="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+          <div className="pin" data-placement="bottom" title="Sidebar">
             <i className="yobicon-arrow-left" />
             <i className="yobicon-arrow-right" />
           </div>

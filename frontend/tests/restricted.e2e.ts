@@ -14,7 +14,7 @@ const EXPECTED_RESTRICTED_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <div class="pin" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
     </div>
@@ -80,6 +80,10 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
     "src",
     "https://www.youtube.com/embed/9bZkp7q19f0",
   );
+  const sidebarPin = page.locator(".gnb-inner > .pin");
+  await expect(sidebarPin).not.toHaveAttribute("data-toggle");
+  await expect(sidebarPin).toHaveAttribute("data-placement", "bottom");
+  await expect(sidebarPin).toHaveAttribute("title", "Sidebar");
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -236,6 +240,13 @@ test("restricted route source keeps footer links as external href Links", async 
   expect(RESTRICTED_ROUTE_SOURCE).toContain("reloadDocument");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain(" as never");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/to=\{["'`]https?:\/\//);
+});
+
+test("restricted route source drops route-owned tooltip initializer marker", async () => {
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('className="pin"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-placement="bottom"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('title="Sidebar"');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
 });
 
 test("restricted page keeps legacy mobile shell and fixed iframe proportions", async ({ page }) => {
