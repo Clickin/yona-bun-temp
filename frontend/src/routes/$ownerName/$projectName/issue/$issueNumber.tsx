@@ -1174,7 +1174,6 @@ function IssueVote({
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
-  const voteHref = `${issueHref}/${hasVoted ? "unvote" : "vote"}`;
   const openVotersDialog = (event: MouseEvent<HTMLButtonElement>) => {
     insulateModalButtonClick(event);
     setVotersOpen(true);
@@ -1192,7 +1191,6 @@ function IssueVote({
             type="button"
             className={hasVoted ? "ybtn-watching" : ""}
             title={hasVoted ? "Unvote this issue" : "Vote this issue"}
-            data-request-uri={voteHref}
             data-toggle="tooltip"
             onClick={onIssueVote}
           >
