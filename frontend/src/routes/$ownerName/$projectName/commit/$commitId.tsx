@@ -540,7 +540,6 @@ function SvnCommitDetailBody({
           >
             <button
               className="btn dropdown-toggle large"
-              data-toggle="dropdown"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
