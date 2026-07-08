@@ -59,8 +59,8 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
       ),
     )
     .toEqual([
-      { action: `${basePath}/admin/sample/search`, text: "This Project" },
-      { action: `${basePath}/search`, text: "All Projects" },
+      { action: "", text: "This Project" },
+      { action: "", text: "All Projects" },
     ]);
 
   const fileUrl = page.url();
@@ -135,9 +135,9 @@ test("project code text file includes legacy group search scope when project has
       ),
     )
     .toEqual([
-      { action: `${basePath}/admin/sample/search`, text: "This Project" },
-      { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
-      { action: `${basePath}/search`, text: "All Projects" },
+      { action: "", text: "This Project" },
+      { action: "", text: "This Group" },
+      { action: "", text: "All Projects" },
     ]);
 
   const fileUrl = page.url();
@@ -386,6 +386,62 @@ test("project code file branch selector navigates slash branch in the SPA", asyn
   ]);
 });
 
+test("project code folder entry links keep classes and SPA navigation without data-type", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFolder(page, codeRequests, "src");
+
+  await page.goto(`${basePath}/admin/sample/code/main/src`);
+  const folderLink = page.locator('.listitem[data-path="src/docs"] .filename a');
+  const fileLink = page.locator('.listitem[data-path="src/README.txt"] .filename a');
+
+  await expect(folderLink).toHaveText("docs");
+  await expect(folderLink).toHaveAttribute("class", "folder");
+  await expect(folderLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src/docs#cb-srcdocs`,
+  );
+  await expect(folderLink).toHaveAttribute("data-targetpath", "src/docs");
+  await expect(folderLink).not.toHaveAttribute("data-type", /.+/u);
+  await expect(fileLink).toHaveText("README.txt");
+  await expect(fileLink).toHaveAttribute("class", "file");
+  await expect(fileLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/main/src/README.txt`,
+  );
+  await expect(fileLink).toHaveAttribute("data-targetpath", "src/README.txt");
+  await expect(fileLink).not.toHaveAttribute("data-type", /.+/u);
+
+  await page.evaluate(() => {
+    (
+      window as typeof window & { __yonaCodeFolderEntrySpaMarker?: string }
+    ).__yonaCodeFolderEntrySpaMarker = "alive";
+  });
+  const documentRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "document") {
+      documentRequests.push(request.url());
+    }
+  });
+
+  await folderLink.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/main/src/docs#cb-srcdocs`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __yonaCodeFolderEntrySpaMarker?: string })
+            .__yonaCodeFolderEntrySpaMarker,
+      ),
+    )
+    .toBe("alive");
+  expect(documentRequests).toEqual([]);
+  expect(codeRequests[0]).toBe("branch=main&path=src");
+  expect(codeRequests).toContain("branch=main&path=src%2Fdocs");
+});
+
 test("project code file normalizes refs branch names like legacy branchItemName", async ({
   page,
 }) => {
@@ -464,7 +520,16 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(rawAnchorBlocks).toEqual([]);
   expect(backendAnchorHrefs).toEqual([]);
   expect(linkHrefs).toHaveLength(5);
-  expect(routeSource).toContain("import { Link, createFileRoute, createLink, useRouter }");
+  expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("reactJsx");
+  expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("CodeBrowserEntryLink");
+  expect(routeSource).not.toContain("<a");
+  expect(routeSource).toContain("<Link");
+  expect(routeSource).toContain("data-targetpath={entry.path}");
+  expect(routeSource).not.toContain('data-type={entry.kind === "folder" ? "folder" : undefined}');
+  expect(routeSource).toContain('className={entry.kind === "folder" ? "folder" : "file"}');
   expect(routeSource).toContain("router.history.push(event.currentTarget.value)");
   expect(routeSource).not.toContain("legacyLinkProps");
   expect(routeSource).not.toContain("legacyEmptySearch");
@@ -912,6 +977,89 @@ async function mockProjectCodeFile(
         noHead: false,
         ownerName: "admin",
         path: filePath,
+        projectName: "sample",
+        selectedBranch: requestedBranch,
+      }),
+    });
+  });
+}
+
+async function mockProjectCodeFolder(page: Page, codeRequests: string[], folderPath: string) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        enrollmentRequestCount: 0,
+        id: 7,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        logoUrl: "/assets/images/project_default_logo.png",
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        ownerName: "admin",
+        projectName: "sample",
+        vcs: "GIT",
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/code**", async (route) => {
+    const url = new URL(route.request().url());
+    const requestedBranch = url.searchParams.get("branch") ?? "main";
+    const requestedPath = url.searchParams.get("path") ?? folderPath;
+    codeRequests.push(url.searchParams.toString());
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        branches: [{ name: "main" }, { name: "feature/release" }],
+        breadcrumbs: breadcrumbsFor(requestedPath),
+        entries: [
+          {
+            commitDate: "Jul 2, 2026",
+            commitMessage: "Add docs",
+            commitShortId: "abc1234",
+            kind: "folder",
+            name: "docs",
+            path: "src/docs",
+          },
+          {
+            commitDate: "Jul 2, 2026",
+            commitMessage: "Update README",
+            commitShortId: "1234567",
+            kind: "file",
+            name: "README.txt",
+            path: "src/README.txt",
+          },
+        ],
+        file: null,
+        noHead: false,
+        ownerName: "admin",
+        path: requestedPath,
         projectName: "sample",
         selectedBranch: requestedBranch,
       }),

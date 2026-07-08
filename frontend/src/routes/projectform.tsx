@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   createProjectRest,
   projectCreateFormOptionsQueryOptions,
@@ -27,31 +26,17 @@ type ProjectCreateFormRestore = {
   vcs?: string;
 };
 
-const legacyProjectCreateRootLinkActiveOptions = {
+const legacyProjectCreateCancelLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
   includeHash: true,
   includeSearch: true,
 } as const;
-const legacyProjectCreateRootLinkActiveProps = {
+const legacyProjectCreateCancelLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
   "data-status": undefined,
 };
-
-function ProjectCreateRootLinkAnchor({
-  legacyRootHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyRootHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyRootHref });
-}
-
-const ProjectCreateRootLink = createLink(ProjectCreateRootLinkAnchor);
 
 export const Route = createFileRoute("/projectform")({
   component: ProjectCreateRoute,
@@ -122,8 +107,6 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
-  const legacyCancelHref = "/";
-  const cancelNavigationHref = prefixBasePath(runtimeConfig.basePath, "/");
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -470,20 +453,14 @@ function ProjectCreateScreen({
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   {t("project.create")}
                 </button>
-                <ProjectCreateRootLink
+                <Link
                   to="/"
-                  href={legacyCancelHref}
-                  legacyRootHref={legacyCancelHref}
                   className="ybtn"
-                  activeOptions={legacyProjectCreateRootLinkActiveOptions}
-                  activeProps={legacyProjectCreateRootLinkActiveProps}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    router.history.push(cancelNavigationHref);
-                  }}
+                  activeOptions={legacyProjectCreateCancelLinkActiveOptions}
+                  activeProps={legacyProjectCreateCancelLinkActiveProps}
                 >
                   {t("button.cancel")}
-                </ProjectCreateRootLink>
+                </Link>
               </div>
             </form>
           </div>

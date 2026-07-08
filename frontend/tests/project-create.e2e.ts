@@ -141,7 +141,7 @@ const EXPECTED_PROJECT_CREATE = `
         </div>
         <div class="actions mt20">
           <button class="ybtn ybtn-success">Create a project</button>
-          <a href="/" class="ybtn">Cancel</a>
+          <a href="__BASE_PATH__/" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -169,7 +169,7 @@ test("project create form matches legacy project/create.scala.html DOM", async (
   await expect(page.locator("#newProjectForm")).toBeVisible();
   await expect(page.locator("#project-owner")).toHaveValue("admin");
   await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
-  await expect(page.locator(".actions.mt20 .ybtn").last()).toHaveAttribute("href", "/");
+  await expect(page.locator(".actions.mt20 .ybtn").last()).toHaveAttribute("href", `${basePath}/`);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, EXPECTED_PROJECT_CREATE.replaceAll("__BASE_PATH__", basePath)),
@@ -356,7 +356,7 @@ test("project create import link keeps legacy href and navigates through the SPA
   expect(documentRequests).toEqual([]);
 });
 
-test("project create cancel link keeps legacy root href and navigates through the SPA", async ({
+test("project create cancel link keeps root navigation and navigates through the SPA", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -365,7 +365,7 @@ test("project create cancel link keeps legacy root href and navigates through th
   await page.goto(`${basePath}/projectform`);
   const cancelLink = page.locator(".actions.mt20 .ybtn").last();
 
-  await expect(cancelLink).toHaveAttribute("href", "/");
+  await expect(cancelLink).toHaveAttribute("href", `${basePath}/`);
   await expect(cancelLink).not.toHaveAttribute("data-status", /.+/u);
   await expect(cancelLink).not.toHaveAttribute("aria-current", /.+/u);
 
@@ -383,7 +383,7 @@ test("project create cancel link keeps legacy root href and navigates through th
 
   await cancelLink.click({ noWaitAfter: true });
 
-  await expect(page).toHaveURL(basePath);
+  await expect(page).toHaveURL(`${basePath}/`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -396,42 +396,46 @@ test("project create cancel link keeps legacy root href and navigates through th
   expect(documentRequests).toEqual([]);
 });
 
-test("project create route source keeps cancel navigation on a TanStack root link host", () => {
+test("project create route source keeps cancel navigation on a normal TanStack Link", () => {
   const routeSource = readFileSync(
     fileURLToPath(new URL("../src/routes/projectform.tsx", import.meta.url)),
     "utf8",
   );
-  const rawAnchorBlocks = routeSource.match(/<a\b[\s\S]*?<\/a>/gu) ?? [];
 
   expect(routeSource).toContain(
-    'import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
+    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('<title>{t("title.newProject")}</title>');
   expect(routeSource).toContain('to="/_import"');
-  expect(routeSource).toContain("function ProjectCreateRootLinkAnchor({");
-  expect(routeSource).toContain("ref?: React.Ref<HTMLAnchorElement>;");
-  expect(routeSource).toContain("const ProjectCreateRootLink = createLink");
-  expect(routeSource).toContain("<ProjectCreateRootLink");
-  expect(routeSource).toContain('const legacyCancelHref = "/";');
-  expect(routeSource).toContain(
-    'const cancelNavigationHref = prefixBasePath(runtimeConfig.basePath, "/");',
-  );
-  expect(routeSource).toContain("legacyRootHref={legacyCancelHref}");
-  expect(routeSource).toContain("activeOptions={legacyProjectCreateRootLinkActiveOptions}");
-  expect(routeSource).toContain("router.history.push(cancelNavigationHref);");
+  expect(routeSource).toContain("<Link");
+  expect(routeSource).toContain('to="/"');
+  expect(routeSource).toContain("activeOptions={legacyProjectCreateCancelLinkActiveOptions}");
+  expect(routeSource).toContain("const legacyProjectCreateCancelLinkActiveProps = {");
+  expect(routeSource).toContain('"aria-current": undefined');
+  expect(routeSource).toContain("className: undefined");
+  expect(routeSource).toContain('"data-status": undefined');
+  expect(routeSource).toContain("activeProps={legacyProjectCreateCancelLinkActiveProps}");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("reactJsx");
   expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("ProjectCreateRootLink");
+  expect(routeSource).not.toContain("ProjectCreateRootLinkAnchor");
+  expect(routeSource).not.toContain("legacyCancelHref");
+  expect(routeSource).not.toContain("legacyRootHref");
   expect(routeSource).not.toContain("LegacyHrefAnchor");
   expect(routeSource).not.toContain("React.createElement");
   expect(routeSource).not.toContain("forwardRef");
+  expect(routeSource).not.toContain("router.history.push(cancelNavigationHref);");
+  expect(routeSource).not.toContain(
+    'const cancelNavigationHref = prefixBasePath(runtimeConfig.basePath, "/");',
+  );
+  expect(routeSource).not.toMatch(/<a\b/u);
   expect(routeSource).not.toContain('<Link to="/" className="ybtn">');
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain("globalThis.document");
   expect(routeSource).not.toContain("window.document");
   expect(routeSource).not.toMatch(/use(?:Layout)?Effect\s*\([^)]*title/iu);
   expect(routeSource).not.toMatch(/title\s*=\s*["'`]Create new project/iu);
-  expect(
-    rawAnchorBlocks.filter((block) => /(?:_import|prefixBasePath\([^)]*"\/")/u.test(block)),
-  ).toEqual([]);
 });
 
 async function mockProjectCreate(page: Page, formOptions: Record<string, unknown> = {}) {

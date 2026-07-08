@@ -1,8 +1,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
-import { jsx as reactJsx } from "react/jsx-runtime";
 import remarkGfm from "remark-gfm";
 import {
   codeBrowserQueryOptions,
@@ -25,28 +24,6 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$fil
 type CodeFile = Record<string, unknown>;
 
 const MAX_FILE_SIZE_CAN_BE_VIEWED = 1024 * 1024;
-
-function CodeBrowserEntryLinkAnchor({
-  href,
-  legacyDataTargetPath,
-  legacyDataType,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyDataTargetPath: string;
-  legacyDataType?: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", {
-    ...props,
-    ref,
-    href,
-    ...(legacyDataType ? { "data-type": legacyDataType } : {}),
-    "data-targetpath": legacyDataTargetPath,
-  });
-}
-
-const CodeBrowserEntryLink = createLink(CodeBrowserEntryLinkAnchor);
 
 export type ProjectCodeFileRouteParams = {
   branch: string;
@@ -464,7 +441,7 @@ function FolderListEntry({
   return (
     <div id={rowId} className="row-fluid listitem" data-path={entry.path}>
       <div className="span6 filename">
-        <CodeBrowserEntryLink
+        <Link
           activeOptions={{
             exact: true,
             explicitUndefined: true,
@@ -480,12 +457,11 @@ function FolderListEntry({
           hash={entry.kind === "folder" ? rowId : undefined}
           className={entry.kind === "folder" ? "folder" : "file"}
           title={entry.name}
-          legacyDataTargetPath={entry.path}
-          legacyDataType={entry.kind === "folder" ? "folder" : undefined}
+          data-targetpath={entry.path}
         >
           <span className="dynatree-icon vmiddle"></span>
           {entry.name}
-        </CodeBrowserEntryLink>
+        </Link>
       </div>
       <div className="span5 commitMsg">
         <span className="ml5">
