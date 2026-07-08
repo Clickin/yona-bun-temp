@@ -686,7 +686,6 @@ function OrganizationIssueItem({
         <Link
           to={authorRoutePath}
           className="avatar-wrap mlarge hide-in-mobile"
-          data-toggle="tooltip"
           data-placement="top"
           title={issue.authorLoginId}
         >
@@ -702,7 +701,6 @@ function OrganizationIssueItem({
             <Link
               to={authorRoutePath}
               className="infos-item infos-link-item"
-              data-toggle="tooltip"
               data-placement="top"
               title={issue.authorLoginId}
             >
@@ -718,7 +716,6 @@ function OrganizationIssueItem({
             <span className="infos-item mileston-tag">
               <Link
                 to={`${projectRoutePath}/milestone/${issue.milestoneId}`}
-                data-toggle="tooltip"
                 data-placement="top"
                 title={t("milestone")}
               >
@@ -769,7 +766,6 @@ function OrganizationIssueItem({
             <Link
               to={assigneeRoutePath}
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
               data-placement="top"
               title={`${t("issue.assignee")}: ${issue.assigneeLabel}`}
             >
@@ -787,7 +783,6 @@ function OrganizationIssueItem({
         {issue.dueDateLabel ? (
           <div
             className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
-            data-toggle="tooltip"
             data-placement="top"
             title={issue.dueDateLabel}
           >
