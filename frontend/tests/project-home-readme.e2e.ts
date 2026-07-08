@@ -554,11 +554,13 @@ test("project home header renders legacy watch utility for watchable projects", 
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Watch</button></div></li></ul>`,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
     ),
   );
 
   const watchItem = page.locator(".project-util > li").first();
+  await expect(page.locator(".project-util [data-toggle='dropdown']")).toHaveCount(0);
+  await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(1);
   await rememberSpaMarker(page, "project-home-watch-dropdown");
   await page.locator(".watch-btn .down-arrow").click();
   await expect(watchItem).toHaveClass(/open/);
@@ -596,11 +598,13 @@ test("project home header renders and posts legacy enrollment utility for guest 
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
     ),
   );
 
   const enrollmentItem = page.locator(".project-util > li").first();
+  await expect(page.locator(".project-util [data-toggle='dropdown']")).toHaveCount(0);
+  await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(1);
   await expect(page.locator("a#enrollBtn")).toHaveCount(0);
   await expect(page.locator("button#enrollBtn")).toHaveAttribute("type", "button");
   await rememberSpaMarker(page, "project-home-enroll");
@@ -632,7 +636,7 @@ test("project home header renders and posts legacy enrollment utility for guest 
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i></button><div class="dropdown-menu flat right title"><div class="pop-title">You have sent a sign-up request for the sample project.</div><div class="pop-content">You will be a member of this project when the project manager or other members accept your request.</div><div class="pop-content btn-wrap"><button class="ybtn enrollBtn" id="enrollBtn" type="button"><i class="yobicon-removefriend"></i> Cancel sign-up request</button></div></div></li></ul>`,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button"><i class="yobicon-addfriend"></i></button><div class="dropdown-menu flat right title"><div class="pop-title">You have sent a sign-up request for the sample project.</div><div class="pop-content">You will be a member of this project when the project manager or other members accept your request.</div><div class="pop-content btn-wrap"><button class="ybtn enrollBtn" id="enrollBtn" type="button"><i class="yobicon-removefriend"></i> Cancel sign-up request</button></div></div></li></ul>`,
     ),
   );
 });
@@ -672,7 +676,7 @@ test("project home header enrollment utility cancels pending guest request", asy
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i>Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You can send a sign-up request for the sample project.</div><div class="pop-content">The project manager or other members of this project will check your sign-up request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
     ),
   );
 });
@@ -715,7 +719,7 @@ test("project home header watch action posts and renders watching branch", async
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Unwatch</button></div></li></ul>`,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Unwatch</button></div></li></ul>`,
     ),
   );
 });
@@ -757,7 +761,7 @@ test("project home header unwatch action deletes and renders not-watching branch
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button" data-toggle="dropdown">Watch</button></div></li></ul>`,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
     ),
   );
 });
@@ -848,6 +852,12 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).toContain("window.setTimeout(() => descriptionInputRef.current?.focus());");
   expect(source).toContain('className={projectUtilDropdown === "enrollment" ? "open" : undefined}');
   expect(source).toContain('className={projectUtilDropdown === "watch" ? "open" : undefined}');
+  expect(source).not.toMatch(
+    /className="ybtn ybtn-small(?: ybtn-info)? dropdown-toggle"(?:(?!<\/button>)[\s\S])*data-toggle="dropdown"/u,
+  );
+  expect(source).not.toMatch(
+    /className="btn nofocus no-border down-arrow"(?:(?!<\/button>)[\s\S])*data-toggle="dropdown"/u,
+  );
   expect(enrollmentDropdownHandlers).toHaveLength(2);
   expect(enrollmentActionHandlers).toHaveLength(2);
   expect(watchDropdownHandlers).toHaveLength(1);
@@ -942,7 +952,7 @@ async function installProjectHomeDropdownDocumentBridgeAudit(page: Page) {
         return;
       }
       const delegatedTarget = target.closest(
-        '.project-util [data-toggle="dropdown"], .project-util .watchBtn, .project-util #enrollBtn',
+        ".project-util .dropdown-toggle, .project-util .down-arrow, .project-util .watchBtn, .project-util #enrollBtn",
       );
       if (!delegatedTarget) {
         return;

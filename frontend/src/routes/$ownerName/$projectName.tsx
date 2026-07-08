@@ -1454,7 +1454,6 @@ export function ProjectHeader({
                       <button
                         className="ybtn ybtn-small ybtn-info dropdown-toggle"
                         type="button"
-                        data-toggle="dropdown"
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -1490,7 +1489,6 @@ export function ProjectHeader({
                       <button
                         className="ybtn ybtn-small dropdown-toggle"
                         type="button"
-                        data-toggle="dropdown"
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -1606,7 +1604,6 @@ export function ProjectHeader({
                     <button
                       className="btn nofocus no-border down-arrow"
                       type="button"
-                      data-toggle="dropdown"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
