@@ -430,7 +430,6 @@ function ProjectSearchResultList({
                   hash={userLink.hash || undefined}
                   className="avatar-wrap"
                   data-placement="top"
-                  data-toggle="tooltip"
                   title={item.authorLoginId}
                 >
                   {isDefaultProjectSearchAvatar(item.avatarUrl) ? (
@@ -541,7 +540,6 @@ function ProjectSearchResultList({
                       hash={authorLink.hash || undefined}
                       className="meta-item"
                       data-placement="top"
-                      data-toggle="tooltip"
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
