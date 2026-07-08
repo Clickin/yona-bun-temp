@@ -67,7 +67,7 @@ const MASS_UPDATE_OPTION_BUTTON_STYLE =
   "background:transparent;border:0px;clear:both;color:rgb(51,51,51);display:block;font-weight:normal;line-height:20px;padding:3px20px;text-align:left;white-space:nowrap;width:100%";
 
 const MASS_UPDATE_MILESTONE_DROPDOWN = `<div id="milestone" class="btn-group" data-name="milestone.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="-1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No milestone</button></li><li class="divider"></li><li data-value="5"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">v1.0</button></li></ul></div>`;
-const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form pull-left" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all" data-target="checked-issue"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Open</button></li><li data-value="CLOSED"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No assignee</button></li><li data-value="1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
+const MASS_UPDATE_TOOLBAR = `<div class="mass-update-wrap hide-in-mobile"><form id="mass-update-form" class="mass-update-form pull-left" action="__BASE_PATH__/admin/sample/issues" method="post"><div class="btn-group check-all"><label for="check-all"><input type="checkbox" id="check-all"></label></div><div id="state" class="btn-group" data-name="state"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="OPEN"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Open</button></li><li data-value="CLOSED"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Closed</button></li></ul></div><div id="assignee" class="btn-group" data-name="assignee.id"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu mass-update-list"><li data-value="0"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">No assignee</button></li><li data-value="1"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}">Assign to me</button></li><li class="divider"></li><li data-value="1"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Site Admin</strong><span class="loginid"> <strong>@</strong>admin</span></button></li><li data-value="2"><button type="button" class="usf-group" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></button></li></ul></div>${MASS_UPDATE_MILESTONE_DROPDOWN}<div id="attaching-label" class="btn-group" data-name="attachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="attach-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div><div id="detaching-label" class="btn-group" data-name="detachingLabelIds"><button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled=""><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button><ul id="delete-label-list" class="dropdown-menu mass-update-list"><li class="disabled" data-category="3"><span>bug</span></li><li data-value="8" data-category="3"><button type="button" style="${MASS_UPDATE_OPTION_BUTTON_STYLE}"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li><li class="divider" data-category="3"></li></ul></div></form></div>`;
 const POPULATED_SPAN10_WITH_TOOLBAR = POPULATED_SPAN10.replace(
   '<div class="filter-wrap board"></div>',
   `<div class="filter-wrap board">${MASS_UPDATE_TOOLBAR}</div>`,
@@ -2216,7 +2216,10 @@ test("project issue list mass update toolbar matches legacy partial_massupdate.s
     checkAllInputMargin: "4px 0px 0px",
     dropdownMaxHeight: "350px",
     dropdownOverflowY: "auto",
+    toolbarContainedInFilterWrap: true,
     toolbarBeforeRows: true,
+    checkAllBeforeDropdowns: true,
+    checkAllInputContainedInLabel: true,
   });
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
@@ -2286,6 +2289,8 @@ async function expectMassUpdateReactRuntime(page: Page) {
   await expect(page.locator('script#labelListItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
   await expect(page.locator('script#labelCatetoryItem[type="text/x-jquery-tmpl"]')).toHaveCount(0);
   expect(await scriptTextContains(page, '$yobi.loadModule("issue.MassUpdate"')).toBe(false);
+  await expect(page.locator('[data-target="checked-issue"]')).toHaveCount(0);
+  await expect(page.locator("#check-all")).not.toHaveAttribute("data-target", /.+/u);
   await expect(page.locator("#mass-update-form")).toHaveAttribute(
     "action",
     /\/admin\/sample\/issues$/u,
@@ -2369,9 +2374,8 @@ test("project issue list mass update checkboxes enable legacy toolbar controls",
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bulk`);
   await expect(page.locator("#mass-update-form")).toBeVisible();
-  await expect(
-    page.locator('input[name="checked-issue"][data-toggle="issue-checkbox"]'),
-  ).toHaveCount(0);
+  await expect(page.locator('input[name="checked-issue"]')).toHaveCount(2);
+  await expect(page.locator('[data-target="checked-issue"]')).toHaveCount(0);
 
   expect(await massUpdateButtonsDisabled(page)).toEqual([true, true, true, true, true]);
   await page.locator("#issue-42").check();
@@ -3121,6 +3125,9 @@ async function issueListMassUpdateMetrics(page: Page) {
     const firstGroup = form.querySelector(".btn-group") as HTMLElement;
     const secondGroup = form.querySelector(".btn-group + .btn-group") as HTMLElement;
     const checkAllInput = form.querySelector(".btn-group.check-all input") as HTMLElement;
+    const checkAllLabel = form.querySelector(
+      '.btn-group.check-all label[for="check-all"]',
+    ) as HTMLElement | null;
     const dropdown = form.querySelector(".mass-update-list") as HTMLElement;
     const filterWrap = form.closest(".filter-wrap") as HTMLElement;
     const list = document.querySelector(".post-list-wrap") as HTMLElement;
@@ -3129,6 +3136,11 @@ async function issueListMassUpdateMetrics(page: Page) {
     const secondGroupStyle = window.getComputedStyle(secondGroup);
     const inputStyle = window.getComputedStyle(checkAllInput);
     const dropdownStyle = window.getComputedStyle(dropdown);
+    const formRect = form.getBoundingClientRect();
+    const inputRect = checkAllInput.getBoundingClientRect();
+    const labelRect = checkAllLabel?.getBoundingClientRect();
+    const firstGroupRect = firstGroup.getBoundingClientRect();
+    const secondGroupRect = secondGroup.getBoundingClientRect();
     const filterWrapRect = filterWrap.getBoundingClientRect();
     const listRect = list.getBoundingClientRect();
 
@@ -3140,7 +3152,16 @@ async function issueListMassUpdateMetrics(page: Page) {
       checkAllInputMargin: inputStyle.margin,
       dropdownMaxHeight: dropdownStyle.maxHeight,
       dropdownOverflowY: dropdownStyle.overflowY,
+      toolbarContainedInFilterWrap:
+        formRect.left >= filterWrapRect.left - 1 && formRect.right <= filterWrapRect.right + 1,
       toolbarBeforeRows: filterWrapRect.top < listRect.top,
+      checkAllBeforeDropdowns: firstGroupRect.right <= secondGroupRect.left + 1,
+      checkAllInputContainedInLabel: labelRect
+        ? inputRect.left >= labelRect.left - 1 &&
+          inputRect.right <= labelRect.right + 1 &&
+          inputRect.top >= labelRect.top - 1 &&
+          inputRect.bottom <= labelRect.bottom + 1
+        : false,
     };
   });
 }

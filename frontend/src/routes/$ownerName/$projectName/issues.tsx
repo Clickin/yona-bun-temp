@@ -1245,7 +1245,6 @@ function MassUpdateToolbar({
             <input
               type="checkbox"
               id="check-all"
-              data-target="checked-issue"
               checked={allVisibleIssuesSelected}
               onChange={(event) => onSelectAllIssues(event.currentTarget.checked)}
             />
