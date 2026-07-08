@@ -34,7 +34,6 @@ type OrganizationIssuesSearch = {
   state: "closed" | "open";
 };
 
-type LegacyPjaxFilterAttrs = { "pjax-filter": "" };
 type LegacyStateTabAttrs = { state: OrganizationIssuesSearch["state"] };
 type LegacySortFilterAttrs = {
   orderby: string;
@@ -149,9 +148,6 @@ function OrganizationIssuesBody({
   const navigate = useNavigate();
   const organizationName = stringField(organization.organizationName, issues.organizationName);
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-  const legacyPjaxRootAttrs = { "pjax-container": "" } satisfies HTMLAttributes<HTMLDivElement> & {
-    "pjax-container": string;
-  };
   const hasIssues = issues.items.length > 0;
 
   const navigateToSearch = (
@@ -251,7 +247,7 @@ function OrganizationIssuesBody({
       />
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <div {...legacyPjaxRootAttrs} className="row-fluid issue-list-wrap">
+          <div className="row-fluid issue-list-wrap">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
                 <QuickSearch
@@ -406,14 +402,12 @@ function QuickSearch({
   search: OrganizationIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
-  const legacyQuickSearchAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttrs;
   const projectNames = search.projectNames.join(",");
 
   return (
     <ul className="lst-stacked unstyled">
       <li className={!search.assigneeId && !search.authorId && !search.mentionId ? "active" : ""}>
         <button
-          {...legacyQuickSearchAttrs}
           type="button"
           data-assignee-id=""
           data-author-id=""
@@ -429,7 +423,6 @@ function QuickSearch({
         <>
           <li className={search.assigneeId === currentUserId ? "active" : ""}>
             <button
-              {...legacyQuickSearchAttrs}
               type="button"
               data-author-id=""
               data-assignee-id={currentUserId}
@@ -445,7 +438,6 @@ function QuickSearch({
           </li>
           <li className={search.authorId === currentUserId ? "active" : ""}>
             <button
-              {...legacyQuickSearchAttrs}
               type="button"
               data-author-id={currentUserId}
               data-assignee-id=""
@@ -461,7 +453,6 @@ function QuickSearch({
           </li>
           <li className={search.mentionId === currentUserId ? "active" : ""}>
             <button
-              {...legacyQuickSearchAttrs}
               type="button"
               data-author-id=""
               data-assignee-id=""
