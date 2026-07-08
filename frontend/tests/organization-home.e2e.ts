@@ -680,7 +680,10 @@ test("organization home leave modal stays route-owned across open dismiss and co
   });
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
@@ -693,7 +696,9 @@ test("organization home leave modal stays route-owned across open dismiss and co
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
   await dispatchCancelableClick(page, '#alertLeave .modal-footer [data-dismiss="modal"]');
-  await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide");
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
+  await expect(page.locator("#alertLeave")).not.toHaveAttribute("aria-hidden");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
@@ -707,7 +712,9 @@ test("organization home leave modal stays route-owned across open dismiss and co
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
     .poll(() =>
@@ -718,7 +725,9 @@ test("organization home leave modal stays route-owned across open dismiss and co
     .toBe("kept");
 
   await dispatchCancelableClick(page, '#alertLeave .modal-header [data-dismiss="modal"]');
-  await expect(page.locator("#alertLeave")).toHaveClass(/hide/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide");
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "none");
+  await expect(page.locator("#alertLeave")).not.toHaveAttribute("aria-hidden");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
@@ -731,7 +740,9 @@ test("organization home leave modal stays route-owned across open dismiss and co
   expect(await readOrganizationHomeLeaveModalBridgeAudit(page)).toEqual([]);
 
   await dispatchCancelableClick(page, "#groupLeaveBtn");
-  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#alertLeave")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
   await expect
@@ -770,7 +781,9 @@ test("organization home leave modal source insulates delegated modal bridge", ()
   expect(source).toContain("function submitLeave");
   expect(source).toContain("event.preventDefault();");
   expect(source).toContain("event.stopPropagation();");
-  expect(source).toContain('className={leaveModalOpen ? "modal in" : "modal hide"}');
+  expect(source).toContain('className={leaveModalOpen ? "modal hide in" : "modal hide"}');
+  expect(source).toContain('style={leaveModalOpen ? { display: "block" } : undefined}');
+  expect(source).toContain("aria-hidden={leaveModalOpen ? false : undefined}");
   expect(source).toContain('className="modal-backdrop in"');
   expect(source).toContain("onClick={dismissLeaveModal}");
   expect(source).toContain("onClick={submitLeave}");

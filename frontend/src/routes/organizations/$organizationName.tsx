@@ -241,7 +241,12 @@ function OrganizationHomeBody({
           </div>
         </div>
       </div>
-      <div id="alertLeave" className={leaveModalOpen ? "modal in" : "modal hide"}>
+      <div
+        id="alertLeave"
+        className={leaveModalOpen ? "modal hide in" : "modal hide"}
+        style={leaveModalOpen ? { display: "block" } : undefined}
+        aria-hidden={leaveModalOpen ? false : undefined}
+      >
         <div className="modal-header">
           <button type="button" className="close" data-dismiss="modal" onClick={dismissLeaveModal}>
             ×
