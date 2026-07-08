@@ -1502,7 +1502,6 @@ function CommitDropdown({
     <div id="commits" className={`btn-group auto mb10${isOpen ? " open" : ""}`}>
       <button
         className="btn dropdown-toggle auto"
-        data-toggle="dropdown"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
