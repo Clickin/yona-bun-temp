@@ -7,9 +7,11 @@ import {
   createPostCommentRest,
   deleteProjectPostRest,
   deletePostCommentRest,
+  readProjectPostFormOptionsQueryOptions,
   readProjectPostQueryOptions,
   unwatchPostRest,
   updatePostCommentRest,
+  updateProjectPostLabelsRest,
   watchPostRest,
   type BoardAttachment,
   type BoardLabel,
@@ -159,6 +161,10 @@ function ProjectPostDetailBody({
   const canDelete = booleanField(post.permissions.canDelete);
   const canWatch = booleanField(post.permissions.canWatch);
   const canCreate = booleanField(post.permissions.canCreate);
+  const formOptionsQuery = useQuery({
+    ...readProjectPostFormOptionsQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: canUpdate,
+  });
   const watchMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -229,6 +235,20 @@ function ProjectPostDetailBody({
       return updatePostCommentRest(runtimeConfig, csrfToken, {
         commentId,
         contentsMarkdown,
+        ownerName,
+        postNumber,
+        projectName,
+      });
+    },
+    onSuccess(updatedPost) {
+      queryClient.setQueryData(postQueryOptions.queryKey, updatedPost);
+    },
+  });
+  const labelUpdateMutation = useMutation({
+    mutationFn: async (labelIds: string[]) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return updateProjectPostLabelsRest(runtimeConfig, csrfToken, {
+        labelIds,
         ownerName,
         postNumber,
         projectName,
@@ -388,13 +408,21 @@ function ProjectPostDetailBody({
                   </dd>
                 ) : null}
               </dl>
-              {!canUpdate ? (
+              {canUpdate ? (
+                <PostEditableLabels
+                  labels={formOptionsQuery.data?.labels ?? []}
+                  onChange={(labelIds) => labelUpdateMutation.mutate(labelIds)}
+                  ownerName={ownerName}
+                  projectName={projectName}
+                  selectedLabelIds={post.labels.map((label) => label.id)}
+                />
+              ) : (
                 <PostSelectedLabels
                   labels={post.labels}
                   ownerName={ownerName}
                   projectName={projectName}
                 />
-              ) : null}
+              )}
               <div className="right-menu-icons">
                 <PostActionButtons
                   canDelete={canDelete}
@@ -637,6 +665,92 @@ function CommentDeleteConfirm({
         </div>
       </div>
     </>
+  );
+}
+
+function PostEditableLabels({
+  labels,
+  onChange,
+  ownerName,
+  projectName,
+  selectedLabelIds,
+}: {
+  labels: BoardLabel[];
+  onChange: (labelIds: string[]) => void;
+  ownerName: string;
+  projectName: string;
+  selectedLabelIds: string[];
+}) {
+  const { t } = useLegacyMessages();
+  const labelsByCategory = labels.reduce<Map<string, BoardLabel[]>>((groups, label) => {
+    const key = `${label.categoryId}:${label.categoryName}:${String(label.categoryIsExclusive)}`;
+    const categoryLabels = groups.get(key) ?? [];
+    categoryLabels.push(label);
+    groups.set(key, categoryLabels);
+    return groups;
+  }, new Map());
+
+  if (!labels.length) {
+    return null;
+  }
+
+  return (
+    <dl className="">
+      <dt>
+        {t("label")}{" "}
+        <Link
+          to={`/${ownerName}/${projectName}/issue/labelsform`}
+          activeProps={legacyRouteLocalActiveProps}
+          target="_blank"
+          className="label-edit"
+        >
+          [{t("button.edit")}]
+        </Link>
+      </dt>
+      <dd>
+        <select
+          id="labelIds"
+          name="labelIds"
+          multiple
+          data-search="labelIds"
+          data-toggle="select2"
+          data-format="issuelabel"
+          data-allow-clear="true"
+          data-dropdown-css-class="issue-labels"
+          data-container-css-class="issue-labels bordered fullsize"
+          data-placeholder="Select label"
+          className="hide"
+          value={selectedLabelIds}
+          onChange={(event) =>
+            onChange(Array.from(event.currentTarget.selectedOptions, (option) => option.value))
+          }
+        >
+          <option></option>
+          {Array.from(labelsByCategory.entries()).map(([categoryKey, categoryLabels]) => {
+            const [categoryId, categoryName, categoryIsExclusive] = categoryKey.split(":");
+            return (
+              <optgroup
+                label={categoryName}
+                data-category-id={categoryId}
+                data-category-is-exclusive={categoryIsExclusive}
+                key={categoryKey}
+              >
+                {categoryLabels.map((label) => (
+                  <option
+                    value={label.id}
+                    data-category-id={label.categoryId}
+                    data-category-is-exclusive={String(label.categoryIsExclusive)}
+                    key={label.id}
+                  >
+                    {label.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
+        </select>
+      </dd>
+    </dl>
   );
 }
 
