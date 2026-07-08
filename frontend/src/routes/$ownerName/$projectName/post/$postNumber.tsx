@@ -550,8 +550,6 @@ function PostingHistory({
     <div className="posting-history">
       <button
         type="button"
-        data-toggle="modal"
-        data-target="#-yona-posting-history"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -847,8 +845,6 @@ function PostActionButtons({
         <button
           type="button"
           className="icon btn-transparent-with-fontsize-lineheight ml6"
-          data-toggle="modal"
-          data-target="#deleteConfirm"
           title={t("button.delete")}
           onClick={(event) => {
             event.preventDefault();
@@ -1721,8 +1717,6 @@ function BoardDetailKeymap({
     <div className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}>
       <button
         type="button"
-        data-toggle="modal"
-        data-target="#helpKeys"
         className="ybtn ybtn-inverse ybtn-mini"
         onClick={(event) => {
           event.preventDefault();

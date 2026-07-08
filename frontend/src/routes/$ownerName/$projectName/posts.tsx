@@ -673,8 +673,6 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
       <button
         type="button"
-        data-toggle="modal"
-        data-target="#helpKeys"
         className="ybtn ybtn-inverse ybtn-mini"
         onClick={(event) => {
           event.preventDefault();
