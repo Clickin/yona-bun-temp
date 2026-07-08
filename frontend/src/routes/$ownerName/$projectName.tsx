@@ -536,12 +536,7 @@ function ProjectHomeBody({
             style={leaveModalStyle}
           >
             <div className="modal-header">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                onClick={closeLeaveModal}
-              >
+              <button type="button" className="close" onClick={closeLeaveModal}>
                 ×
               </button>
               <h3>{t("project.member.leave")}</h3>
@@ -561,12 +556,7 @@ function ProjectHomeBody({
               >
                 {t("button.yes")}
               </button>
-              <button
-                type="button"
-                className="ybtn ybtn-mini"
-                data-dismiss="modal"
-                onClick={closeLeaveModal}
-              >
+              <button type="button" className="ybtn ybtn-mini" onClick={closeLeaveModal}>
                 {t("button.no")}
               </button>
             </div>
@@ -578,7 +568,7 @@ function ProjectHomeBody({
           className="modal-backdrop in"
           onClick={closeLeaveModal}
           onKeyDown={closeLeaveModal}
-          role="button"
+          role="presentation"
           tabIndex={-1}
         ></div>
       ) : null}
@@ -1414,6 +1404,7 @@ export function ProjectHeader({
                   {projectName}
                 </Link>
               </span>
+              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
               <span
                 className="user-project-list"
                 data-project-id={projectIdValue}
