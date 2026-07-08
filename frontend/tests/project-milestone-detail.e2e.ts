@@ -78,14 +78,14 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                   <label aria-label="check-all" for="check-all"><input id="check-all" type="checkbox"></label>
                 </div>
                 <div class="btn-group" data-name="state" id="state">
-                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <button class="btn dropdown-toggle medium" disabled="" type="button"><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button>
                   <ul class="dropdown-menu mass-update-list">
                     <li data-value="OPEN"><button type="button">Open</button></li>
                     <li data-value="CLOSED"><button type="button">Closed</button></li>
                   </ul>
                 </div>
                 <div class="btn-group" data-name="assignee.id" id="assignee">
-                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <button class="btn dropdown-toggle medium" disabled="" type="button"><span class="d-label">Update assignee</span><span class="d-caret"><span class="caret"></span></span></button>
                   <ul class="dropdown-menu mass-update-list">
                     <li data-value="0"><button type="button">No assignee</button></li>
                     <li data-value="1"><button type="button">Assign to me</button></li>
@@ -95,7 +95,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                   </ul>
                 </div>
                 <div class="btn-group" data-name="milestone.id" id="milestone">
-                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <button class="btn dropdown-toggle medium" disabled="" type="button"><span class="d-label">Update milestone</span><span class="d-caret"><span class="caret"></span></span></button>
                   <ul class="dropdown-menu mass-update-list">
                     <li data-value="-1"><button type="button">No milestone</button></li>
                     <li class="divider"></li>
@@ -103,7 +103,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                   </ul>
                 </div>
                 <div class="btn-group" data-name="attachingLabelIds" id="attaching-label">
-                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <button class="btn dropdown-toggle medium" disabled="" type="button"><span class="d-label">Attach label</span><span class="d-caret"><span class="caret"></span></span></button>
                   <ul class="dropdown-menu mass-update-list" id="attach-label-list">
                     <li class="disabled" data-category="3"><span>type</span></li>
                     <li data-category="3" data-value="8"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li>
@@ -111,7 +111,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                   </ul>
                 </div>
                 <div class="btn-group" data-name="detachingLabelIds" id="detaching-label">
-                  <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button>
+                  <button class="btn dropdown-toggle medium" disabled="" type="button"><span class="d-label">Detach label</span><span class="d-caret"><span class="caret"></span></span></button>
                   <ul class="dropdown-menu mass-update-list" id="delete-label-list">
                     <li class="disabled" data-category="3"><span>type</span></li>
                     <li data-category="3" data-value="8"><button type="button"><span class="issue-label active list-label" data-label-id="8">bug</span></button></li>
@@ -457,6 +457,29 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     page.locator("#mass-update-form .btn-group.check-all #check-all"),
   ).not.toHaveAttribute("data-target");
   await expect(page.locator('[data-target="checked-issue"]')).toHaveCount(0);
+  const massUpdateDropdownButtons = page.locator("#mass-update-form .btn-group > button");
+  await expect(massUpdateDropdownButtons).toHaveCount(5);
+  await expect(
+    page.locator('#mass-update-form .dropdown-toggle[data-toggle="dropdown"]'),
+  ).toHaveCount(0);
+  await expect(massUpdateDropdownButtons).toHaveClass([
+    "btn dropdown-toggle medium",
+    "btn dropdown-toggle medium",
+    "btn dropdown-toggle medium",
+    "btn dropdown-toggle medium",
+    "btn dropdown-toggle medium",
+  ]);
+  for (const triggerId of [
+    "state",
+    "assignee",
+    "milestone",
+    "attaching-label",
+    "detaching-label",
+  ]) {
+    const trigger = page.locator(`#${triggerId} > button`);
+    await expect(trigger).not.toHaveAttribute("data-toggle");
+    await expect(trigger).toHaveAttribute("type", "button");
+  }
   await expect(page.locator("#state[data-name='state'] .d-label")).toHaveText("Update status");
   await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] button')).toHaveText(
     "Open",
@@ -1268,6 +1291,10 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("data-dismiss");
   expect(routeSource).toContain("event.stopPropagation();");
   expect(massUpdateSection).not.toContain("document.addEventListener");
+  expect(massUpdateSection).not.toContain('data-toggle="dropdown"');
+  expect(massUpdateSection).not.toContain("data-toggle='dropdown'");
+  expect(massUpdateSection).not.toContain('data-toggle="item-search"');
+  expect(massUpdateSection).not.toContain("data-toggle='issue-checkbox'");
   expect(massUpdateStopPropagationCount).toBeGreaterThan(0);
   expect(massUpdatePreventDefaultCount).toBe(massUpdateStopPropagationCount);
   expect(routeSource).toContain('className={deleteConfirmOpen ? "modal hide fade in"');

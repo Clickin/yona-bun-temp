@@ -747,7 +747,6 @@ function MassUpdateShell({
           <button
             type="button"
             className="btn dropdown-toggle medium"
-            data-toggle="dropdown"
             disabled={!hasCheckedIssues}
             onClick={(event) => {
               event.preventDefault();
@@ -889,7 +888,6 @@ function MassUpdateDropdown({
       <button
         type="button"
         className="btn dropdown-toggle medium"
-        data-toggle="dropdown"
         disabled={disabled}
         onClick={(event) => {
           event.preventDefault();
@@ -962,7 +960,6 @@ function LabelMassUpdateDropdown({
       <button
         type="button"
         className="btn dropdown-toggle medium"
-        data-toggle="dropdown"
         disabled={disabled}
         onClick={(event) => {
           event.preventDefault();
