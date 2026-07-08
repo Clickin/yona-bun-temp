@@ -1002,6 +1002,7 @@ function PullRequestHelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
       <div
         id="helpMessage"
         className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}
+        style={isOpen ? { display: "block" } : undefined}
       >
         <div className="modal-header">
           <h5>{t("pullRequest.merge.help.1")}</h5>
@@ -1033,7 +1034,14 @@ function PullRequestHelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
           </button>
         </div>
       </div>
-      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
+      {isOpen ? (
+        <div
+          className="modal-backdrop fade in"
+          role="presentation"
+          onClick={onClose}
+          onKeyUp={onClose}
+        ></div>
+      ) : null}
     </>
   );
 }

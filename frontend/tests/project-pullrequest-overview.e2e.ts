@@ -521,7 +521,11 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).toContain(
     'className={isOpen ? "modal fade pullreq-info in" : "modal hide fade pullreq-info"}',
   );
-  expect(routeSource).toContain('{isOpen ? <div className="modal-backdrop fade in"');
+  expect(routeSource).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(routeSource).toContain('className="modal-backdrop fade in"');
+  expect(routeSource).toContain('role="presentation"');
+  expect(routeSource).toContain("onClick={onClose}");
+  expect(routeSource).toContain("onKeyUp={onClose}");
   expect(routeSource).toContain("commitId: commit.commitId");
   expect(routeSource).not.toContain("commitPath as never");
   expect(routeSource).not.toContain("to={to as never}");
@@ -550,6 +554,11 @@ test("project pull request overview help modal source insulates delegated modal 
   );
   expect(routeSource).toContain('data-target="#helpMessage"');
   expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(routeSource).toContain('className="modal-backdrop fade in"');
+  expect(routeSource).toContain('role="presentation"');
+  expect(routeSource).toContain("onClick={onClose}");
+  expect(routeSource).toContain("onKeyUp={onClose}");
   expect(routeSource.match(/insulateModalButtonClick\(event\);/g)?.length ?? 0).toBe(2);
 });
 
@@ -827,7 +836,7 @@ test("project pull request overview opens help modal through route-owned React s
   await expect(page).toHaveURL(beforeHelpUrl);
   await expect(page.locator("#helpMessage")).not.toHaveClass(/hide/u);
   await expect(page.locator("#helpMessage")).toHaveClass(/in/u);
-  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
+  await expect(page.locator("#helpMessage")).toHaveAttribute("style", "display: block;");
   await expect(page.locator("#helpMessage")).not.toHaveAttribute("aria-hidden", /./u);
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(
@@ -835,6 +844,19 @@ test("project pull request overview opens help modal through route-owned React s
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).resolves.toBe("pull-request-help-modal");
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await page.locator(".modal-backdrop.fade.in").click({ position: { x: 5, y: 5 } });
+  await expect(page).toHaveURL(beforeHelpUrl);
+  await expect(page.locator("#helpMessage")).toHaveClass(/hide/u);
+  await expect(page.locator("#helpMessage")).not.toHaveAttribute("style", /./u);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
+
+  await armRootModalBridgeTrap(page);
+  await helpButton.click();
+  await expect(page.locator("#helpMessage")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(rootModalBridgeHits(page)).resolves.toEqual([]);
 
   await armRootModalBridgeTrap(page);
