@@ -1,15 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, Link as RouterLink, createLink, useRouter } from "@tanstack/react-router";
+import { Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
 import {
-  type ComponentPropsWithoutRef,
   Fragment,
-  type Ref,
   useEffect,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { jsx as reactJsx } from "react/jsx-runtime";
 import { type SearchCounts, type SearchResponse, type SearchType } from "../api/search";
 import { RestApiError } from "../api/rest-client";
 import { apiQueryKeys } from "../api/query-keys";
@@ -44,20 +41,6 @@ const legacySearchPaginationLinkActiveProps = {
   "data-status": undefined,
 } as const;
 
-function SearchMountedRootLinkAnchor({
-  legacyRootHref,
-  href: _href,
-  ref,
-  ...props
-}: ComponentPropsWithoutRef<"a"> & {
-  legacyRootHref: string;
-  ref?: Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyRootHref });
-}
-
-const SearchMountedRootLink = createLink(SearchMountedRootLinkAnchor);
-
 export type SearchBodyInput = {
   includeProjectCategory: boolean;
   result: SearchResponse;
@@ -80,7 +63,6 @@ export function isDefaultInternalServerError(error: unknown) {
 export function DefaultSearchErrorBody({
   iconClassName,
   messageKey,
-  runtimeConfig,
   ybtnClassName = "ybtn ybtn-primary",
 }: {
   iconClassName: string;
@@ -89,8 +71,6 @@ export function DefaultSearchErrorBody({
   ybtnClassName?: string;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const homeHref = prefixBasePath(runtimeConfig.basePath, "/");
 
   return (
     <div className="page-wrap-outer">
@@ -98,19 +78,14 @@ export function DefaultSearchErrorBody({
         <div className="error-wrap">
           <i className={iconClassName}></i>
           <p>{t(messageKey)}</p>
-          <SearchMountedRootLink
+          <Link
             activeOptions={legacySearchPaginationLinkActiveOptions}
             activeProps={legacySearchPaginationLinkActiveProps}
             className={ybtnClassName}
-            legacyRootHref={homeHref}
             to="/"
-            onClick={(event) => {
-              event.preventDefault();
-              router.history.push(homeHref);
-            }}
           >
             {t("menu.home")}
-          </SearchMountedRootLink>
+          </Link>
         </div>
       </div>
     </div>

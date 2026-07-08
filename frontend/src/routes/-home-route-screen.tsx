@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createLink, Link, Navigate } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, Navigate } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -62,7 +61,7 @@ const LEGACY_LOGIN_FORM_LINK_SEARCH = {
   password: undefined!,
   redirectUrl: undefined!,
 } satisfies LegacyLoginFormLinkSearch;
-const LEGACY_LOGO_LINK_SEARCH = { __legacyLogoActiveMarker: undefined };
+const LEGACY_GNB_LOGO_ACTIVE_MARKER_SEARCH = { __legacyLogoActiveMarker: undefined };
 const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new";
 const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
@@ -104,20 +103,6 @@ const HOME_SIDEBAR_POPOVER_STYLE: React.CSSProperties = {
   transform: "translateY(-50%)",
   zIndex: 1060,
 };
-
-function LegacyLogoLinkAnchor({
-  legacyHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyHref });
-}
-
-const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);
 
 export function HomeRouteScreen({
   flashMessageKey = "",
@@ -747,7 +732,6 @@ export function SiteLayoutShell({
       : selectedSearchScope === "group" && groupSearchAction
         ? groupSearchAction
         : allProjectsSearchAction;
-  const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");
   const gnbSearchScopeTitle =
     selectedSearchScope === "project" && projectSearchAction
       ? t("search.scope.project")
@@ -799,7 +783,7 @@ export function SiteLayoutShell({
           </div>
           <ul className="gnb-nav">
             <li>
-              <LegacyLogoLink
+              <Link
                 activeOptions={{
                   exact: true,
                   explicitUndefined: true,
@@ -812,12 +796,11 @@ export function SiteLayoutShell({
                   "data-status": undefined,
                 }}
                 className="logo logo-letter"
-                legacyHref={legacyHomeHref}
-                search={LEGACY_LOGO_LINK_SEARCH}
+                search={LEGACY_GNB_LOGO_ACTIVE_MARKER_SEARCH}
                 to="/"
               >
                 Y
-              </LegacyLogoLink>
+              </Link>
             </li>
             {shouldRenderProjectListingLink &&
             (showLegacyProjectHeaderLinks || activeMenu === "projects") ? (

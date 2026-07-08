@@ -10,23 +10,21 @@ test("root fallback reset-password alias source uses router navigation", () => {
   );
   const rootFallbackStart = source.indexOf("function RootAliasNotFoundScreen");
   const rootFallbackSource = source.slice(rootFallbackStart);
-  const rootMountedLinkStart = source.indexOf("function RootMountedRootLinkAnchor");
-  const rootMountedLinkSource = source.slice(rootMountedLinkStart, rootFallbackStart);
 
   expect(legacyRoutes).toContain(
     "GET            /resetPassword                                                         controllers.PasswordResetApp.resetPasswordForm(s:String)",
   );
   expect(legacyResetPassword).toContain('class="center-wrap tag-line-wrap reset-password"');
-  expect(rootMountedLinkSource).toContain("const RootMountedRootLink = createLink");
-  expect(rootMountedLinkSource).toContain("ref?: React.Ref<HTMLAnchorElement>");
-  expect(rootMountedLinkSource).toContain("legacyRootHref: string");
   expect(rootFallbackSource).toContain('if (pathname === "/reset-password")');
   expect(rootFallbackSource).toContain(
     '<Navigate to="/resetPassword" search={resetPasswordSearch} replace />',
   );
-  expect(rootFallbackSource).toContain("<RootMountedRootLink");
-  expect(rootFallbackSource).toContain("legacyRootHref={homeHref}");
-  expect(rootFallbackSource).toContain('to="/"');
+  expect(rootFallbackSource).toMatch(
+    /<Link\s+activeOptions=\{legacyPlainLinkActiveOptions\}[\s\S]*?className="logo"[\s\S]*?to="\/"/u,
+  );
+  expect(rootFallbackSource).toMatch(
+    /<Link\s+activeOptions=\{legacyPlainLinkActiveOptions\}[\s\S]*?className="ybtn ybtn-info"[\s\S]*?to="\/"/u,
+  );
   expect(rootFallbackSource).toContain("activeOptions={legacyPlainLinkActiveOptions}");
   expect(rootFallbackSource).toContain("activeProps={legacyPlainLinkActiveProps}");
   expect(rootFallbackSource).toContain(
@@ -34,11 +32,16 @@ test("root fallback reset-password alias source uses router navigation", () => {
   );
   expect(rootFallbackSource).toContain("const pathname = rootAliasLocation.pathname;");
   expect(rootFallbackSource).toContain("const resetPasswordSearch = rootAliasLocation.search;");
-  expect(rootFallbackSource).toContain("router.history.push(homeHref);");
+  expect(source).not.toContain("createLink");
+  expect(source).not.toContain("reactJsx");
+  expect(source).not.toContain("RootMountedRootLink");
+  expect(source).not.toContain("RootMountedRootLinkAnchor");
   expect(source).not.toContain("useLinkProps");
+  expect(rootFallbackSource).not.toMatch(/<a[\s>]/u);
   expect(source).not.toContain("LegacyHrefAnchor");
   expect(source).not.toContain("React.createElement");
   expect(source).not.toContain("forwardRef");
+  expect(rootFallbackSource).not.toContain("router.history");
   expect(rootFallbackSource).not.toContain("window.location");
   expect(source).not.toContain("window.location.pathname");
   expect(rootFallbackSource).not.toContain("window.location.replace");
@@ -46,7 +49,7 @@ test("root fallback reset-password alias source uses router navigation", () => {
 
 test("regular root not-found shell keeps legacy link hrefs", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const mountedRootHref = basePath === "/" ? "/" : basePath;
+  const mountedRootHref = basePath === "/" ? "/" : `${basePath}/`;
 
   await page.goto(`${basePath}/missing-legacy-route/unknown/root-alias-guard`);
   await expect(page.locator(".error-wrap")).toBeVisible();

@@ -649,23 +649,26 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
     searchScreenSource.indexOf("export function DefaultSearchErrorBody"),
     searchScreenSource.indexOf("export function RequestTextTooLargeErrorBody"),
   );
-  expect(searchScreenSource).toContain("createLink");
-  expect(searchScreenSource).toContain("function SearchMountedRootLinkAnchor");
-  expect(searchScreenSource).toContain("ref?: Ref<HTMLAnchorElement>");
-  expect(searchScreenSource).toContain("const SearchMountedRootLink = createLink");
+  expect(searchScreenSource).not.toContain("createLink");
+  expect(searchScreenSource).not.toContain("reactJsx");
+  expect(searchScreenSource).not.toContain("react/jsx-runtime");
+  expect(searchScreenSource).not.toContain("function SearchMountedRootLinkAnchor");
+  expect(searchScreenSource).not.toContain("SearchMountedRootLink");
+  expect(searchScreenSource).not.toContain("ref?: Ref<HTMLAnchorElement>");
   expect(searchScreenSource).not.toContain("useLinkProps");
   expect(searchScreenSource).not.toContain("LegacyHrefAnchor");
   expect(searchScreenSource).not.toContain("React.createElement");
   expect(searchScreenSource).not.toContain("forwardRef");
+  expect(searchScreenSource).not.toContain("router.history");
   expect(defaultErrorBodySource).not.toMatch(/<a[\s>]/u);
-  expect(defaultErrorBodySource).toContain("<SearchMountedRootLink");
-  expect(defaultErrorBodySource).toContain("legacyRootHref={homeHref}");
+  expect(defaultErrorBodySource).toContain("<Link");
   expect(defaultErrorBodySource).toContain('to="/"');
   expect(defaultErrorBodySource).toContain(
     "activeOptions={legacySearchPaginationLinkActiveOptions}",
   );
   expect(defaultErrorBodySource).toContain("activeProps={legacySearchPaginationLinkActiveProps}");
-  expect(defaultErrorBodySource).toContain("router.history.push(homeHref);");
+  expect(defaultErrorBodySource).not.toContain("onClick=");
+  expect(defaultErrorBodySource).not.toContain('prefixBasePath(runtimeConfig.basePath, "/")');
 });
 
 test("global search category Link keeps legacy SPA navigation without query noise", async ({
@@ -719,7 +722,7 @@ test("global search without required query renders legacy badrequest_default.sca
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const homeHref = basePath === "/" ? "/" : basePath;
+  const homeHref = basePath === "/" ? "/" : `${basePath}/`;
   const searchApi = await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search`);
@@ -1058,7 +1061,7 @@ test("global search renders legacy request text too large error shell", async ({
 
 test("global search renders legacy error/forbidden_default.scala.html shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const homeHref = basePath === "/" ? "/" : basePath;
+  const homeHref = basePath === "/" ? "/" : `${basePath}/`;
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=forbidden&searchType=issue&pageNum=1`);
@@ -1108,7 +1111,7 @@ test("global search renders legacy error/internalServerError_default.scala.html 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const homeHref = basePath === "/" ? "/" : basePath;
+  const homeHref = basePath === "/" ? "/" : `${basePath}/`;
   await mockGlobalSearch(page);
 
   await page.goto(`${basePath}/search?keyword=server-error&searchType=issue&pageNum=1`);
@@ -2008,6 +2011,7 @@ function expectedDefaultSearchErrorScreen({
   iconClass: string;
   message: string;
 }) {
+  const homeHref = basePath === "/" ? "/" : `${basePath}/`;
   return `
 <div class="unsupported hidden">
   <div class="unsupported-inner"><p id="unsupported-content"></p></div>
@@ -2026,7 +2030,7 @@ function expectedDefaultSearchErrorScreen({
     <ul class="gnb-usermenu"><li class="gnb-usermenu-item" id="required-logged-in"><a href="${basePath}/users/loginform" class="user-item-btn" data-login="required">Log in</a></li><li class="divider"></li><li><a href="${basePath}/users/signupform" class="ybtn ybtn-success">Sign up</a></li></ul>
   </div>
 </header>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${basePath}" class="${buttonClass}">Home</a></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="${iconClass}"></i><p>${message}</p><a href="${homeHref}" class="${buttonClass}">Home</a></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 }

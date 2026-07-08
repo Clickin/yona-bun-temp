@@ -15,7 +15,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -378,7 +378,7 @@ test("authenticated index redirects to the configured non-root default landing",
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/me`);
 });
 
-test("shared shell logo keeps legacy navbar link with createLink host ownership", async ({
+test("shared shell logo keeps legacy navbar link with normal TanStack Link ownership", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -389,7 +389,7 @@ test("shared shell logo keeps legacy navbar link with createLink host ownership"
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
   await expect(logoLink).toHaveText("Y");
-  await expect(logoLink).toHaveAttribute("href", basePath);
+  await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
   await expect(logoLink).toHaveAttribute("class", "logo logo-letter");
   await expect(logoLink).not.toHaveAttribute("aria-current");
   await expect(logoLink).not.toHaveAttribute("data-status");
@@ -415,12 +415,14 @@ test("shared shell logo keeps legacy navbar link with createLink host ownership"
     .toBe("logo");
 
   expect(routeSource).not.toContain("LegacyHrefLink");
-  expect(routeSource).toContain("function LegacyLogoLinkAnchor({");
-  expect(routeSource).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
-  expect(routeSource).toContain("ref?: React.Ref<HTMLAnchorElement>;");
-  expect(routeSource).toContain('return reactJsx("a", { ...props, ref, href: legacyHref });');
-  expect(routeSource).toContain("<LegacyLogoLink");
-  expect(routeSource).toContain("legacyHref={legacyHomeHref}");
+  expect(routeSource).not.toContain("LegacyLogoLink");
+  expect(routeSource).not.toContain("LegacyLogoLinkAnchor");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("reactJsx");
+  expect(routeSource).not.toContain("legacyHref");
+  expect(routeSource).toContain("<Link\n                activeOptions={{");
+  expect(routeSource).toContain('className="logo logo-letter"');
+  expect(routeSource).toContain('to="/"');
   expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
   expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
   expect(routeSource).not.toContain(["React", "createElement"].join("."));
@@ -455,8 +457,11 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).not.toContain("as unknown as");
   expect(routeSource).not.toContain("ComponentType");
   expect(routeSource).not.toContain("AnchorHTMLAttributes");
-  expect(routeSource).toContain("createLink");
-  expect(routeSource).toContain("const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("reactJsx");
+  expect(routeSource).not.toContain("LegacyLogoLink");
+  expect(routeSource).not.toContain("LegacyLogoLinkAnchor");
+  expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
   expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
   expect(routeSource).not.toContain(["React", "createElement"].join("."));
