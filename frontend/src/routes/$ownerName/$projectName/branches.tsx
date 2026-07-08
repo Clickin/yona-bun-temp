@@ -13,7 +13,7 @@ import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
@@ -241,7 +241,6 @@ function BranchRow({
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
   const queryClient = useQueryClient();
-  const encodedBranch = encodeBranch(branch.name);
   const isHead = isDefaultBranch(branch, branches.defaultBranch);
   const queryKey = apiQueryKeys.project.codeBranches(ownerName, projectName);
   const setDefaultMutation = useMutation({
@@ -357,11 +356,6 @@ function BranchRow({
             <button
               type="button"
               className="ybtn ybtn-default ybtn-small"
-              data-request-method="post"
-              data-request-uri={prefixBasePath(
-                runtimeConfig.basePath,
-                `/${ownerName}/${projectName}/code/${encodedBranch}/setAsDefault`,
-              )}
               onClick={() => setDefaultMutation.mutate()}
             >
               {t("code.branches.setAsDefault")}
@@ -371,11 +365,6 @@ function BranchRow({
             <button
               type="button"
               className="ybtn ybtn-danger ybtn-small"
-              data-request-method="delete"
-              data-request-uri={prefixBasePath(
-                runtimeConfig.basePath,
-                `/${ownerName}/${projectName}/code/${encodedBranch}/`,
-              )}
               onClick={(event) => {
                 event.preventDefault();
                 deleteMutation.mutate();
@@ -388,10 +377,6 @@ function BranchRow({
       ) : null}
     </tr>
   );
-}
-
-function encodeBranch(branchName: string) {
-  return encodeURIComponent(branchName);
 }
 
 function shortBranchName(branchName: string) {
