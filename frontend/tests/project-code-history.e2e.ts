@@ -223,6 +223,8 @@ test("project bare code history renders default branch on the legacy commits URL
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890`,
   );
+  await expect(page.locator(".author a.avatar-wrap")).toHaveAttribute("data-toggle", "tooltip");
+  await expect(page.locator(".author a.avatar-wrap")).toHaveAttribute("data-placement", "top");
   await expect(
     page.locator(".messages a.commitMsg.short", { hasText: "Initial commit" }),
   ).toHaveAttribute("href", `${basePath}/admin/sample/commit/abcdef1234567890`);

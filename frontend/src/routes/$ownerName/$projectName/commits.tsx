@@ -374,6 +374,8 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         activeOptions={legacyCodeHistoryLinkActiveOptions}
         className="avatar-wrap"
         activeProps={legacyCodeHistoryLinkActiveProps}
+        data-toggle="tooltip"
+        data-placement="top"
         title={commit.authorLoginId}
       >
         {usesGeneratedAvatar ? (
