@@ -787,7 +787,6 @@ function IssueMilestoneSelect({
           <select
             id="milestoneId"
             name="milestoneId"
-            data-toggle="select2"
             data-format="milestone"
             data-container-css-class="fullsize"
             defaultValue="-1"
@@ -835,7 +834,6 @@ function SubtaskSelects({
           name="targetProjectId"
           data-format="projects"
           data-placeholder={t("organization.choose.projects")}
-          data-toggle="select2"
           data-container-css-class="fullsize"
           disabled={!showOption}
         >
@@ -850,7 +848,6 @@ function SubtaskSelects({
           name="parentIssueId"
           data-format="issues"
           data-placeholder={t("organization.choose.projects")}
-          data-toggle="select2"
           data-container-css-class="fullsize"
           disabled={!showOption}
           defaultValue={parentIssueId}
@@ -911,7 +908,6 @@ function IssueLabelSelect({
           name="labelIds"
           multiple
           data-search="labelIds"
-          data-toggle="select2"
           data-format="issuelabel"
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
