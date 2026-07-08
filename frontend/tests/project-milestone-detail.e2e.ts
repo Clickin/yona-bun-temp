@@ -75,7 +75,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
             <div class="mass-update-wrap hide-in-mobile">
               <form action="__BASE_PATH__/admin/sample/issues" class="mass-update-form pull-left" id="mass-update-form" method="post">
                 <div class="btn-group check-all">
-                  <label aria-label="check-all" for="check-all"><input data-target="checked-issue" id="check-all" type="checkbox"></label>
+                  <label aria-label="check-all" for="check-all"><input id="check-all" type="checkbox"></label>
                 </div>
                 <div class="btn-group" data-name="state" id="state">
                   <button class="btn dropdown-toggle medium" data-toggle="dropdown" disabled="" type="button"><span class="d-label">Update status</span><span class="d-caret"><span class="caret"></span></span></button>
@@ -453,10 +453,10 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "action",
     `${basePath}/admin/sample/issues`,
   );
-  await expect(page.locator("#mass-update-form .btn-group.check-all #check-all")).toHaveAttribute(
-    "data-target",
-    "checked-issue",
-  );
+  await expect(
+    page.locator("#mass-update-form .btn-group.check-all #check-all"),
+  ).not.toHaveAttribute("data-target");
+  await expect(page.locator('[data-target="checked-issue"]')).toHaveCount(0);
   await expect(page.locator("#state[data-name='state'] .d-label")).toHaveText("Update status");
   await expect(page.locator('#state .mass-update-list li[data-value="OPEN"] button')).toHaveText(
     "Open",
@@ -561,6 +561,19 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     ),
   );
   await page.check("#issue-41");
+  await expect(page.locator("#state > button")).toBeEnabled();
+  await page.uncheck("#issue-41");
+  await expect(page.locator("#state > button")).toBeDisabled();
+  await page.check("#check-all");
+  await expect(page.locator("#check-all")).toBeChecked();
+  await expect(page.locator('#issue-item-41 input[name="checked-issue"]')).toBeChecked();
+  await expect(page.locator("#state > button")).toBeEnabled();
+  await page.uncheck("#check-all");
+  await expect(page.locator("#check-all")).not.toBeChecked();
+  await expect(page.locator('#issue-item-41 input[name="checked-issue"]')).not.toBeChecked();
+  await expect(page.locator("#state > button")).toBeDisabled();
+  await page.check("#issue-41");
+  await expect(page.locator("#check-all")).toBeChecked();
   await expect(page.locator("#state > button")).toBeEnabled();
   await page.evaluate(() => {
     window.sessionStorage.setItem("milestone-detail-spa-marker", "kept");

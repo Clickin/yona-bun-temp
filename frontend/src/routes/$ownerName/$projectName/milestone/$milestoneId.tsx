@@ -718,7 +718,6 @@ function MassUpdateShell({
             <input
               type="checkbox"
               id="check-all"
-              data-target="checked-issue"
               checked={allChecked}
               onChange={(event) => {
                 onCheckedIssueIdsChange(event.currentTarget.checked ? issueIds : []);
