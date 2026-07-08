@@ -1054,7 +1054,6 @@ function DashboardPane({
                             >
                               <span
                                 className="avatar-wrap smaller"
-                                data-toggle="tooltip"
                                 title={`${stringField(record.contributorUserLabel, "")} (@${stringField(record.contributorLoginId, "")})`}
                               >
                                 <img
@@ -1228,11 +1227,7 @@ function ProgressBar({
   success?: boolean;
 }) {
   return (
-    <div
-      className={`progress ${className} ${percent === 0 ? "empty" : ""}`}
-      data-toggle="tooltip"
-      title={`${percent}%`}
-    >
+    <div className={`progress ${className} ${percent === 0 ? "empty" : ""}`} title={`${percent}%`}>
       <div className={`bar${success ? " bar-success" : ""}`} style={{ width: `${percent}%` }}></div>
     </div>
   );
@@ -1532,7 +1527,6 @@ export function ProjectHeader({
                   >
                     <Link
                       className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
-                      data-toggle="tooltip"
                       title={t("project.watcher.number")}
                       to={toRoutePath(
                         basePath,

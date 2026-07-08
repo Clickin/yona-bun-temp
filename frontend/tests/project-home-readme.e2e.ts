@@ -554,11 +554,17 @@ test("project home header renders legacy watch utility for watchable projects", 
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " title="number of watcher" href="${basePath}/admin/sample/watchers">5</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
     ),
   );
 
   const watchItem = page.locator(".project-util > li").first();
+  await expect(page.locator(".project-util .watcher-count[data-toggle='tooltip']")).toHaveCount(0);
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "title",
+    "number of watcher",
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("5");
   await expect(page.locator(".project-util [data-toggle='dropdown']")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(1);
   await rememberSpaMarker(page, "project-home-watch-dropdown");
@@ -719,9 +725,15 @@ test("project home header watch action posts and renders watching branch", async
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Unwatch</button></div></li></ul>`,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border watch-on" title="number of watcher" href="${basePath}/admin/sample/watchers">6</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Unwatch</button></div></li></ul>`,
     ),
   );
+  await expect(page.locator(".project-util .watcher-count[data-toggle='tooltip']")).toHaveCount(0);
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "title",
+    "number of watcher",
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("6");
 });
 
 test("project home header unwatch action deletes and renders not-watching branch", async ({
@@ -761,9 +773,15 @@ test("project home header unwatch action deletes and renders not-watching branch
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " data-toggle="tooltip" title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
+      `<ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " title="number of watcher" href="${basePath}/admin/sample/watchers">0</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="${basePath}/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul>`,
     ),
   );
+  await expect(page.locator(".project-util .watcher-count[data-toggle='tooltip']")).toHaveCount(0);
+  await expect(page.locator(".project-util .watcher-count")).toHaveAttribute(
+    "title",
+    "number of watcher",
+  );
+  await expect(page.locator(".project-util .watcher-count")).toHaveText("0");
 });
 
 test("project home admin cog badge uses enrolled-user count instead of request count", async ({
