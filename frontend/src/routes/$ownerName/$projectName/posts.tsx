@@ -663,6 +663,11 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
   const modalClassName = isOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help";
+  const closeModal = (event: ReactMouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsOpen(false);
+  };
 
   return (
     <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
@@ -679,7 +684,20 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
       >
         {t("title.keymap")}
       </button>
-      <div id="helpKeys" className={modalClassName} tabIndex={-1} role="dialog">
+      <div
+        id="helpKeys"
+        className={modalClassName}
+        style={isOpen ? { display: "block" } : undefined}
+        tabIndex={-1}
+        role="dialog"
+        onKeyUp={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsOpen(false);
+          }
+        }}
+      >
         <div className="row-fluid">
           <div className="span3">
             <h5>{t("project.projects")}</h5>
@@ -721,17 +739,15 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
             type="button"
             className="ybtn ybtn-info"
             data-dismiss="modal"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setIsOpen(false);
-            }}
+            onClick={closeModal}
           >
             {t("button.confirm")}
           </button>
         </p>
       </div>
-      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
+      {isOpen ? (
+        <div className="modal-backdrop fade in" role="presentation" onClick={closeModal}></div>
+      ) : null}
     </div>
   );
 }

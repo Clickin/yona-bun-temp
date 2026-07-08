@@ -165,6 +165,7 @@ test("project board list keymap modal is route state owned", async ({ page }) =>
   await expectRootModalBridgeUnused(page);
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/);
+  await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await expect(page).toHaveURL(beforeUrl);
   await expect
@@ -195,13 +196,17 @@ test("project board list keymap modal is route state owned", async ({ page }) =>
   expect(keymapSource).toContain("event.stopPropagation();");
   expect(keymapSource).toContain("setIsOpen(true);");
   expect(keymapSource).toContain("setIsOpen(false);");
+  expect(keymapSource).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(keymapSource).toContain('event.key === "Escape"');
   expect(keymapSource).toMatch(
     /data-target="#helpKeys"[\s\S]+?event\.preventDefault\(\);[\s\S]+?event\.stopPropagation\(\);[\s\S]+?setIsOpen\(true\);/u,
   );
   expect(keymapSource).toMatch(
-    /data-dismiss="modal"[\s\S]+?event\.preventDefault\(\);[\s\S]+?event\.stopPropagation\(\);[\s\S]+?setIsOpen\(false\);/u,
+    /const closeModal[\s\S]+?event\.preventDefault\(\);[\s\S]+?event\.stopPropagation\(\);[\s\S]+?setIsOpen\(false\);/u,
   );
-  expect(keymapSource).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(keymapSource).toMatch(/data-dismiss="modal"[\s\S]+?onClick=\{closeModal\}/u);
+  expect(keymapSource).toContain('className="modal-backdrop fade in"');
+  expect(keymapSource).toContain("onClick={closeModal}");
   expect(keymapSource).not.toContain("document.");
   expect(keymapSource).not.toContain("classList");
   expect(keymapSource).not.toContain("style.display");
@@ -343,12 +348,24 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   await keymapButton.click();
   await expect(page.locator("#helpKeys")).not.toHaveClass(/hide/);
   await expect(page.locator("#helpKeys")).toHaveClass(/in/);
+  await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   expect(page.url()).toBe(beforeUrl);
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).toBe("board-list-keymap");
   await page.locator('#helpKeys [data-dismiss="modal"]').click();
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await keymapButton.click();
+  await expect(page.locator("#helpKeys")).toHaveCSS("display", "block");
+  await page.locator(".modal-backdrop.in").click({ position: { x: 1, y: 1 } });
+  await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+
+  await keymapButton.click();
+  await page.locator("#helpKeys").press("Escape");
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 
@@ -368,7 +385,10 @@ test("project board list matches legacy board/list.scala.html DOM", async ({ pag
   expect(keymapSource).toContain("event.stopPropagation();");
   expect(keymapSource).toContain("setIsOpen(true);");
   expect(keymapSource).toContain("setIsOpen(false);");
-  expect(keymapSource).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(keymapSource).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(keymapSource).toContain('event.key === "Escape"');
+  expect(keymapSource).toContain('className="modal-backdrop fade in"');
+  expect(keymapSource).toContain("onClick={closeModal}");
   expect(keymapSource).not.toContain("document.");
   expect(keymapSource).not.toContain("classList");
   expect(keymapSource).not.toContain("style.display");
