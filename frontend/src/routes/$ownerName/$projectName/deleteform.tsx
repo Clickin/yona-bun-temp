@@ -96,7 +96,10 @@ function ProjectDeleteFormBody({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [acceptedDeletion, setAcceptedDeletion] = useState(false);
-  const [deletionModalOpen, setDeletionModalOpen] = useState(false);
+  const [deletionModalState, setDeletionModalState] = useState<"initial" | "open" | "closed">(
+    "initial",
+  );
+  const deletionModalOpen = deletionModalState === "open";
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const deleteMutation = useMutation({
@@ -107,13 +110,13 @@ function ProjectDeleteFormBody({
     onSuccess(response) {
       queryClient.removeQueries({ queryKey: apiQueryKeys.project.base(ownerName, projectName) });
       queryClient.invalidateQueries({ queryKey: apiQueryKeys.project.list() });
-      setDeletionModalOpen(false);
+      setDeletionModalState("closed");
       router.history.push(
         prefixBasePath(runtimeConfig.basePath, stringField(response.redirectPath, "/")),
       );
     },
     onError() {
-      setDeletionModalOpen(false);
+      setDeletionModalState("closed");
       window.alert(t("project.delete.error"));
     },
   });
@@ -127,9 +130,9 @@ function ProjectDeleteFormBody({
       window.alert(t("project.delete.alert"));
       return;
     }
-    setDeletionModalOpen(true);
+    setDeletionModalState("open");
   };
-  const closeDeletionModal = () => setDeletionModalOpen(false);
+  const closeDeletionModal = () => setDeletionModalState("closed");
   const dismissDeletionModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateDeletionModalButtonClick(event);
     closeDeletionModal();
@@ -177,7 +180,12 @@ function ProjectDeleteFormBody({
           <div
             id="alertDeletion"
             className={`modal hide${deletionModalOpen ? " in" : ""}`}
-            style={deletionModalOpen ? { display: "block" } : undefined}
+            aria-hidden={deletionModalState === "initial" ? undefined : !deletionModalOpen}
+            style={
+              deletionModalState === "initial"
+                ? undefined
+                : { display: deletionModalOpen ? "block" : "none" }
+            }
           >
             <div className="modal-header">
               <button

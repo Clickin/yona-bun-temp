@@ -292,8 +292,10 @@ test("project delete confirmation modal source stays route-owned", async () => {
   expect(modalSource).toContain('data-toggle="modal"');
   expect(modalSource).not.toContain("data-target");
   expect(modalSource).toContain('data-dismiss="modal"');
-  expect(modalSource).toContain("setDeletionModalOpen(true);");
-  expect(modalSource).toContain("setDeletionModalOpen(false);");
+  expect(modalSource).toContain('setDeletionModalState("open");');
+  expect(modalSource).toContain('setDeletionModalState("closed");');
+  expect(modalSource).toContain('deletionModalState === "initial" ? undefined');
+  expect(modalSource).toContain("aria-hidden=");
   expect(modalSource).toContain("onClick={openDeletionModal}");
   expect(modalSource).toContain("onClick={dismissDeletionModal}");
   expect(modalSource).not.toContain("document.");
@@ -312,12 +314,18 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
 
   await page.goto(`${basePath}/admin/sample/deleteform`);
   const deleteFormUrl = page.url();
+  const alertDeletion = page.locator("#alertDeletion");
   await rememberSpaMarker(page, "kept");
   await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: null,
+    className: "modal hide",
+    display: "",
+    style: null,
+  });
 
-  const alertDeletion = page.locator("#alertDeletion");
   const rejectedAlertPromise = new Promise<string>((resolve) => {
     page.once("dialog", async (dialog) => {
       const message = dialog.message();
@@ -331,6 +339,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: null,
+    className: "modal hide",
+    display: "",
+    style: null,
+  });
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
   await expect.poll(() => spaMarker(page)).toBe("kept");
@@ -341,6 +355,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveClass("modal hide in");
   await expect(alertDeletion).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "false",
+    className: "modal hide in",
+    display: "block",
+    style: "display: block;",
+  });
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
   await expect.poll(() => spaMarker(page)).toBe("kept");
@@ -352,6 +372,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(alertDeletion).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "true",
+    className: "modal hide",
+    display: "none",
+    style: "display: none;",
+  });
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
   await expect.poll(() => spaMarker(page)).toBe("kept");
@@ -359,6 +385,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide in");
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "false",
+    className: "modal hide in",
+    display: "block",
+    style: "display: block;",
+  });
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
   await expect.poll(() => spaMarker(page)).toBe("kept");
@@ -367,6 +399,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   expect(await dispatchCancelableClick(page.locator("#alertDeletion .close"))).toBe(false);
   await expect(alertDeletion).toHaveClass("modal hide");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "true",
+    className: "modal hide",
+    display: "none",
+    style: "display: none;",
+  });
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
   await expect.poll(() => spaMarker(page)).toBe("kept");
@@ -374,6 +412,12 @@ test("project delete confirmation modal opens, dismisses, deletes, and redirects
   await armRootDeleteModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnDelete"))).toBe(false);
   expect(await rootDeleteModalBridgeHits(page)).toEqual([]);
+  expect(await readDeletionModalRuntimeState(alertDeletion)).toEqual({
+    ariaHidden: "false",
+    className: "modal hide in",
+    display: "block",
+    style: "display: block;",
+  });
   const deleteResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample") &&
@@ -422,6 +466,12 @@ test("project delete request failure hides modal and shows legacy error alert", 
   await expect(page.locator("#alertDeletion")).toHaveClass("modal hide");
   await expect(page.locator("#alertDeletion")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  expect(await readDeletionModalRuntimeState(page.locator("#alertDeletion"))).toEqual({
+    ariaHidden: "true",
+    className: "modal hide",
+    display: "none",
+    style: "display: none;",
+  });
   await expect(page).toHaveURL(`${basePath}/admin/sample/deleteform`);
 });
 
@@ -789,6 +839,18 @@ async function readDesktopDeleteMetrics(page: Page) {
       }
       return element;
     }
+  });
+}
+
+async function readDeletionModalRuntimeState(locator: Locator) {
+  return locator.evaluate((element) => {
+    const htmlElement = element as HTMLElement;
+    return {
+      ariaHidden: htmlElement.getAttribute("aria-hidden"),
+      className: htmlElement.className,
+      display: htmlElement.style.display,
+      style: htmlElement.getAttribute("style"),
+    };
   });
 }
 
