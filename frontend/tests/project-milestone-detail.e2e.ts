@@ -60,7 +60,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
       </div>
       <div class="actrow right-txt row-fluid" style="clear:both;padding:15px 0px">
         <a class="ybtn pull-left" href="__BASE_PATH__/admin/sample/milestones">List</a>
-        <button class="ybtn ybtn-danger" data-target="#deleteConfirm" data-toggle="modal" type="button">Delete</button>
+        <button class="ybtn ybtn-danger" data-toggle="modal" href="#deleteConfirm" type="button">Delete</button>
         <a class="ybtn" href="__BASE_PATH__/admin/sample/milestone/5/editform">Edit</a>
         <button class="ybtn" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/milestone/5/close" type="button">Close milestone</button>
       </div>
@@ -414,7 +414,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   expect(actionRowMetrics.editLeft).toBeLessThan(actionRowMetrics.closeLeft);
   expect(actionRowMetrics.closeRight).toBeGreaterThanOrEqual(actionRowMetrics.actionRowRight - 2);
   const deleteTrigger = page.locator(
-    '.actrow button.ybtn-danger[data-toggle="modal"][data-target="#deleteConfirm"]:has-text("Delete")',
+    '.actrow button.ybtn-danger[data-toggle="modal"][href="#deleteConfirm"]:has-text("Delete")',
   );
   await expect(deleteTrigger).toHaveCount(1);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
@@ -1158,8 +1158,9 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain(
     "const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)",
   );
-  expect(routeSource).toContain('data-toggle="modal"');
-  expect(routeSource).toContain('data-target="#deleteConfirm"');
+  expect(routeSource).toContain('"data-toggle": "modal"');
+  expect(routeSource).toContain('href: "#deleteConfirm"');
+  expect(routeSource).not.toContain('data-target="#deleteConfirm"');
   expect(routeSource).toContain('data-dismiss="modal"');
   expect(routeSource).toContain("event.stopPropagation();");
   expect(massUpdateSection).not.toContain("document.addEventListener");
