@@ -363,6 +363,8 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("as unknown as LiHTMLAttributes");
   expect(routeSource).not.toContain("const pjaxContainer");
   expect(routeSource).not.toContain("const pjaxFilter");
+  expect(routeSource).not.toContain("LegacyPjaxFilterAttrs");
+  expect(routeSource).not.toContain("legacyPjaxFilterAttrs");
   expect(routeSource).not.toContain("const legacyState =");
   expect(routeSource).not.toContain("to={`${issuePath}#comments`}");
   expect(routeSource).not.toContain("to={`${issuePath}#vote`}");
@@ -372,10 +374,8 @@ test("current-user issues route uses direct TanStack Link targets without generi
     "type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };",
   );
   expect(routeSource).toContain("const legacyPjaxContainerAttrs");
-  expect(routeSource).toContain("const legacyPjaxFilterAttrs");
   expect(routeSource).toContain("const legacyStateButtonAttrs");
   expect(routeSource).toContain("satisfies LegacyPjaxContainerAttrs");
-  expect(routeSource).toContain("satisfies LegacyPjaxFilterAttrs");
   expect(routeSource).toContain("satisfies LegacyStateButtonAttrs");
   expect(routeSource).toContain("satisfies LegacyOrderButtonAttrs");
   expect(routeSource).toContain("orderby: filter.field");
@@ -484,7 +484,7 @@ test("current-user issues single-item list keeps legacy empty filter wrapper", a
   await expect(page.locator(".post-list-wrap.my-issues .post-item")).toHaveCount(1);
 });
 
-test("current-user issues quick filter uses button pjax hooks with SPA transition", async ({
+test("current-user issues quick filter drops legacy pjax hooks with SPA transition", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -496,14 +496,14 @@ test("current-user issues quick filter uses button pjax hooks with SPA transitio
     .locator(".left-menu .lst-stacked button")
     .filter({ hasText: "Favorite" });
   await expect(favoriteFilter).toHaveAttribute("type", "button");
-  await expect(favoriteFilter).toHaveAttribute("pjax-filter", "");
-  await expect(favoriteFilter).toHaveAttribute("data-author-id", "");
-  await expect(favoriteFilter).toHaveAttribute("data-assignee-id", "");
-  await expect(favoriteFilter).toHaveAttribute("data-commenter-id", "");
-  await expect(favoriteFilter).toHaveAttribute("data-milestone-id", "");
-  await expect(favoriteFilter).toHaveAttribute("data-mention-id", "");
-  await expect(favoriteFilter).toHaveAttribute("data-sharer-id", "");
-  await expect(favoriteFilter).toHaveAttribute("data-favorite-id", "1");
+  await expect(page.locator(".left-menu .lst-stacked button[pjax-filter]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-author-id]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-assignee-id]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-commenter-id]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-milestone-id]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-mention-id]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-sharer-id]")).toHaveCount(0);
+  await expect(page.locator(".left-menu .lst-stacked button[data-favorite-id]")).toHaveCount(0);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";

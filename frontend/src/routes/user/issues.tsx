@@ -24,7 +24,6 @@ type UserIssuesSearch = {
 };
 
 type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
-type LegacyPjaxFilterAttrs = HTMLAttributes<HTMLButtonElement> & { "pjax-filter": "" };
 type LegacyStateButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
   state: UserIssuesSearch["state"];
 };
@@ -262,7 +261,6 @@ function UserIssuesBody({
             <div className="inner advanced">
               <QuickSearch
                 counts={issues.sideFilterCounts}
-                currentUserId={currentUserId}
                 onNavigate={navigateQuickFilter}
                 search={search}
               />
@@ -624,12 +622,10 @@ function YobiToast({ notice }: { notice: { key: number; message: string } | null
 
 function QuickSearch({
   counts,
-  currentUserId,
   onNavigate,
   search,
 }: {
   counts: UserIssueListRestResponse["sideFilterCounts"];
-  currentUserId: string;
   onNavigate: (event: MouseEvent<HTMLButtonElement>, filter: UserIssuesSearch["filter"]) => void;
   search: UserIssuesSearch;
 }) {
@@ -679,22 +675,9 @@ function QuickSearch({
   return (
     <ul className="lst-stacked unstyled">
       {rows.map((row) => {
-        const ids = quickFilterIds(row.filter, currentUserId);
-        const legacyPjaxFilterAttrs = { "pjax-filter": "" } satisfies LegacyPjaxFilterAttrs;
         return (
           <li className={search.filter === row.filter ? "active" : ""} key={row.filter}>
-            <button
-              {...legacyPjaxFilterAttrs}
-              type="button"
-              data-author-id={ids.authorId}
-              data-assignee-id={ids.assigneeId}
-              data-commenter-id={ids.commenterId}
-              data-milestone-id=""
-              data-mention-id={ids.mentionId}
-              data-sharer-id={ids.sharerId}
-              data-favorite-id={ids.favoriteId}
-              onClick={(event) => onNavigate(event, row.filter)}
-            >
+            <button type="button" onClick={(event) => onNavigate(event, row.filter)}>
               <span className={row.className}>
                 <i className={row.icon}></i>
                 {row.label}
