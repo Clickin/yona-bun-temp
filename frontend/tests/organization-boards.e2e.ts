@@ -11,7 +11,7 @@ const EXPECTED_ORGANIZATION_BOARDS = `
 <header class="gnb-outer project-header"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/organizations/weblabs/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Group</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
 <div class="project-header-outer" style="background-image:url('/assets/images/group_default.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/group_default.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author"><span class="group-title-head">group</span><a href="__BASE_PATH__/organizations/weblabs">weblabs</a></span></div></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/organizations/weblabs">Group Home</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/issues">Issue</a></li><li class="active"><a href="__BASE_PATH__/organizations/weblabs/boards">Board</a></li><li class=""><a href="__BASE_PATH__/organizations/weblabs/pullrequests">Pull request</a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/organizations/weblabs/settingform"><i class="yobicon-cog"></i><span class="blind">Project configuration</span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="search-wrap underline"><form id="option_form" method="get" class="pull-left"><input type="hidden" name="orderBy" value="numOfComments"><input type="hidden" name="orderDir" value="desc"><div class="project-selects span7"><select id="projects" name="projectNames[]" data-format="projects" multiple="" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="sample" selected="" data-avatar-url="/assets/images/project_default_logo.png">sample</option><option value="playground" data-avatar-url="/assets/images/project_default_logo.png">playground</option></select></div><div class="search-bar span4"><input name="filter" class="textbox group-board" type="text" placeholder="Search by keyword" value="release"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></form></div><div class="filter-wrap board"><div class="filters"><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=updatedDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Updated</a><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=createdDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Created</a><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=numOfComments&amp;orderDir=asc" class="filter active"><i class="ico btn-gray-arrow  down "></i>Comments</a></div></div><ul class="post-list-wrap notice-wrap"><li class="post-item title" href="__BASE_PATH__/weblabs/sample/post/9"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/post/9" class="title">Pinned release notice</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="admin">Site Admin</a><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id">#9</span><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/post/9#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">1</span></a></span></div></li></ul><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/weblabs/sample/post/7"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/post/7" class="title">Release note</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id">#7</span><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/post/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">2</span></a></span></div></li></ul><div class="write-btn-wrap"></div><div id="pagination"></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="search-wrap underline"><form id="option_form" method="get" class="pull-left"><input type="hidden" name="orderBy" value="numOfComments"><input type="hidden" name="orderDir" value="desc"><div class="project-selects span7"><select id="projects" name="projectNames[]" data-format="projects" multiple="" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="sample" selected="" data-avatar-url="/assets/images/project_default_logo.png">sample</option><option value="playground" data-avatar-url="/assets/images/project_default_logo.png">playground</option></select></div><div class="search-bar span4"><input name="filter" class="textbox group-board" type="text" placeholder="Search by keyword" value="release"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></form></div><div class="filter-wrap board"><div class="filters"><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=updatedDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Updated</a><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=createdDate&amp;orderDir=desc" class="filter"><i class="ico btn-gray-arrow  down "></i>Created</a><a href="__BASE_PATH__/organizations/weblabs/boards?orderBy=numOfComments&amp;orderDir=asc" class="filter active"><i class="ico btn-gray-arrow  down "></i>Comments</a></div></div><ul class="post-list-wrap notice-wrap"><li class="post-item title" href="__BASE_PATH__/weblabs/sample/post/9"><a href="__BASE_PATH__/admin" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/post/9" class="title">Pinned release notice</a></div><div class="infos"><a href="__BASE_PATH__/admin" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="admin">Site Admin</a><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id">#9</span><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/post/9#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">1</span></a></span></div></li></ul><ul class="post-list-wrap"><li class="post-item title" href="__BASE_PATH__/weblabs/sample/post/7"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-toggle="tooltip" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png"></a><div class="title-wrap"><a href="__BASE_PATH__/weblabs/sample/post/7" class="title">Release note</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-toggle="tooltip" data-placement="top" title="dev">Dev Member</a><a href="__BASE_PATH__/weblabs/sample" class="infos-link-item group-project-name">sample</a><span class="post-id">#7</span><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/weblabs/sample/post/7#comments"><span class="count-groups item-icon "><i class="yobicon-comments"></i></span><span class="count-groups item-count ">2</span></a></span></div></li></ul><div class="write-btn-wrap"></div><div id="pagination"></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -87,6 +87,87 @@ test("organization board aggregate matches legacy group_board_list.scala.html DO
         .replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("organization board two-column checkbox popover follows legacy hover and persisted toggle behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page);
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+  );
+  await page.evaluate(() => localStorage.removeItem("useTwoColumnMode"));
+  await page.reload();
+
+  const wrapper = page.locator("#option_form #two-column-mode-checkbox");
+  const toggle = page.locator("#two-column-mode");
+  await expect(wrapper).toHaveClass("two-column-icon mr10 hide-in-mobile");
+  await expect(wrapper).toHaveAttribute("title", "Two Column Mode");
+  await expect(wrapper).not.toHaveAttribute("data-content", /.+/u);
+  await expect(wrapper.locator("label.checkbox")).toHaveCount(1);
+  await expect(wrapper.locator(".two-column-icon-border")).toHaveCount(1);
+  await expect(wrapper.locator(".two-column-mode-text")).toHaveText("Column View");
+  await expect(wrapper.locator(".popover.top")).toHaveCount(0);
+  await expect(toggle).not.toBeChecked();
+  expect(await organizationBoardTwoColumnMetrics(page)).toEqual({
+    borderColor: "rgb(3, 175, 255)",
+    borderPadding: "3px 3px 0px",
+    borderRadius: "3px",
+    borderTextColor: "rgb(3, 169, 244)",
+    checkboxId: "two-column-mode",
+    checkboxMargin: "4px 4px 0px 2px",
+    dataContent: null,
+    display: "inline-block",
+    followsSearchBar: true,
+    lineHeight: "37px",
+    marginLeft: "10px",
+    text: "Column View",
+    textLineHeight: "20px",
+    textPadding: "0px 4px 0px 0px",
+    title: "Two Column Mode",
+    wrapperClass: "two-column-icon mr10 hide-in-mobile",
+    wrapperPosition: "relative",
+  });
+
+  await toggle.click();
+  await expect(toggle).toBeChecked();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("true");
+  await page.reload();
+  await expect(page.locator("#two-column-mode")).toBeChecked();
+  await page.locator("#two-column-mode").click();
+  await expect(page.locator("#two-column-mode")).not.toBeChecked();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("useTwoColumnMode")))
+    .toBe("false");
+
+  await wrapper.hover();
+  const hoverPopover = wrapper.locator(".popover.top");
+  await expect(hoverPopover).toBeVisible();
+  await expect(hoverPopover.locator(".popover-title")).toHaveText("Two Column Mode");
+  await expect(hoverPopover.locator(".popover-content")).toHaveText(
+    "Splits list and body into columns respectively",
+  );
+  expect(await organizationBoardTwoColumnPopoverMetrics(page)).toEqual({
+    contentText: "Splits list and body into columns respectively",
+    hasArrow: true,
+    placementClass: true,
+    popoverBottomIsAboveToggleBottom: true,
+    role: "tooltip",
+    titleText: "Two Column Mode",
+  });
+  await page.locator("body").hover({ position: { x: 10, y: 10 } });
+  await expect(wrapper.locator(".popover")).toHaveCount(0);
+
+  await page.locator('#option_form input[name="filter"]').focus();
+  await toggle.focus();
+  const focusPopover = wrapper.locator(".popover.top");
+  await expect(focusPopover).toBeVisible();
+  await page.locator('#option_form input[name="filter"]').focus();
+  await expect(wrapper.locator(".popover")).toHaveCount(0);
 });
 
 test("organization board aggregate pins the live localhost guest shell title and scope branch", async ({
@@ -398,6 +479,26 @@ test("organization board route source uses direct Links for row navigation", asy
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain("<li {...legacyPostItemAttrs}>");
 });
 
+test("organization board route source renders two-column popover through React state", async () => {
+  const twoColumnSource = ORGANIZATION_BOARDS_ROUTE_SOURCE.slice(
+    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function TwoColumnModeCheckbox"),
+    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function OrganizationHeader"),
+  );
+  expect(twoColumnSource).toContain("useState(false)");
+  expect(twoColumnSource).toContain('localStorage.getItem("useTwoColumnMode") === "true"');
+  expect(twoColumnSource).toContain('localStorage.setItem("useTwoColumnMode", String(checked))');
+  expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(true), 100)");
+  expect(twoColumnSource).toContain("setTimeout(() => setShowPopover(false), 100)");
+  expect(twoColumnSource).toContain('className="popover top"');
+  expect(twoColumnSource).toContain('role="tooltip"');
+  expect(twoColumnSource).not.toContain("data-content=");
+  expect(twoColumnSource).not.toContain("document.");
+  expect(twoColumnSource).not.toContain("addEventListener");
+  expect(twoColumnSource).not.toContain("classList");
+  expect(twoColumnSource).not.toContain("style.display");
+  expect(twoColumnSource).not.toContain("dangerouslySetInnerHTML");
+});
+
 test("organization board route source uses direct Links for organization top, filter, and header navigation", async () => {
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toMatch(/<a\b/u);
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).not.toMatch(
@@ -423,6 +524,77 @@ test("organization board route source uses direct Links for organization top, fi
     'to="/organizations/$organizationName/settingform"',
   );
 });
+
+async function organizationBoardTwoColumnMetrics(page: Page) {
+  return page.locator("#option_form #two-column-mode-checkbox").evaluate((element) => {
+    const wrapperStyle = window.getComputedStyle(element);
+    const border = element.querySelector(".two-column-icon-border") as HTMLElement;
+    const input = element.querySelector("#two-column-mode") as HTMLInputElement;
+    const text = element.querySelector(".two-column-mode-text") as HTMLElement;
+    const searchBar = document.querySelector("#option_form .search-bar");
+    const missing = Object.entries({ border, input, text })
+      .filter(([, node]) => !node)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(`Expected organization board two-column targets: ${missing.join(", ")}`);
+    }
+    const borderStyle = window.getComputedStyle(border);
+    const inputStyle = window.getComputedStyle(input);
+    const textStyle = window.getComputedStyle(text);
+
+    return {
+      borderColor: borderStyle.borderColor,
+      borderPadding: borderStyle.padding,
+      borderRadius: borderStyle.borderRadius,
+      borderTextColor: borderStyle.color,
+      checkboxId: input.id,
+      checkboxMargin: inputStyle.margin,
+      dataContent: element.getAttribute("data-content"),
+      display: wrapperStyle.display,
+      followsSearchBar: Boolean(
+        searchBar &&
+        searchBar.compareDocumentPosition(element) === Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+      lineHeight: wrapperStyle.lineHeight,
+      marginLeft: wrapperStyle.marginLeft,
+      text: text.textContent?.trim(),
+      textLineHeight: textStyle.lineHeight,
+      textPadding: textStyle.padding,
+      title: element.getAttribute("title"),
+      wrapperClass: element.getAttribute("class"),
+      wrapperPosition: wrapperStyle.position,
+    };
+  });
+}
+
+async function organizationBoardTwoColumnPopoverMetrics(page: Page) {
+  return page.locator("#option_form #two-column-mode-checkbox").evaluate((wrapper) => {
+    const popover = wrapper.querySelector(".popover") as HTMLElement;
+    const arrow = wrapper.querySelector(".popover .arrow") as HTMLElement;
+    const title = wrapper.querySelector(".popover-title") as HTMLElement;
+    const content = wrapper.querySelector(".popover-content") as HTMLElement;
+    const toggle = wrapper.querySelector("#two-column-mode") as HTMLInputElement;
+    const missing = Object.entries({ arrow, content, popover, title, toggle })
+      .filter(([, node]) => !node)
+      .map(([name]) => name);
+    if (missing.length > 0) {
+      throw new Error(
+        `Expected organization board two-column popover targets: ${missing.join(", ")}`,
+      );
+    }
+
+    const popoverBox = popover.getBoundingClientRect();
+    const toggleBox = toggle.getBoundingClientRect();
+    return {
+      contentText: content.textContent?.trim(),
+      hasArrow: Boolean(arrow),
+      placementClass: popover.classList.contains("top"),
+      popoverBottomIsAboveToggleBottom: popoverBox.bottom <= toggleBox.bottom,
+      role: popover.getAttribute("role"),
+      titleText: title.textContent?.trim(),
+    };
+  });
+}
 
 async function mockOrganizationBoards(
   page: Page,

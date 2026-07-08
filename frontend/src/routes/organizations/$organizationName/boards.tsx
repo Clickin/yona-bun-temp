@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type HTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import {
   listOrganizationBoardsQueryOptions,
   type BoardPostListItem,
@@ -23,6 +30,15 @@ type OrganizationBoardsSearch = {
 };
 
 type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
+
+const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
+  bottom: "100%",
+  display: "block",
+  left: "50%",
+  marginBottom: "5px",
+  position: "absolute",
+  transform: "translateX(-50%)",
+};
 
 export const Route = createFileRoute("/organizations/$organizationName/boards")({
   component: OrganizationBoardsRoute,
@@ -448,21 +464,80 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
 
 function TwoColumnModeCheckbox() {
   const { t } = useLegacyMessages();
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showPopover, setShowPopover] = useState(false);
+  const [useTwoColumnMode, setUseTwoColumnMode] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
+  );
+  const clearPopoverTimers = () => {
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+  const showDelayedPopover = () => {
+    clearPopoverTimers();
+    showTimerRef.current = setTimeout(() => setShowPopover(true), 100);
+  };
+  const hideDelayedPopover = () => {
+    clearPopoverTimers();
+    hideTimerRef.current = setTimeout(() => setShowPopover(false), 100);
+  };
+
+  useEffect(
+    () => () => {
+      if (showTimerRef.current) {
+        clearTimeout(showTimerRef.current);
+      }
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    },
+    [],
+  );
 
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
-      data-content={t("common.two.column.mode.desc")}
+      style={{ position: "relative" }}
+      onBlur={hideDelayedPopover}
+      onFocus={showDelayedPopover}
+      onMouseEnter={showDelayedPopover}
+      onMouseLeave={hideDelayedPopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
       <label className="checkbox">
         <div className="two-column-icon-border">
-          <input id="two-column-mode" type="checkbox" />
+          <input
+            id="two-column-mode"
+            type="checkbox"
+            checked={useTwoColumnMode}
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
+              localStorage.setItem("useTwoColumnMode", String(checked));
+              setUseTwoColumnMode(checked);
+            }}
+          />
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
+      {showPopover ? (
+        <div className="popover top" role="tooltip" style={TWO_COLUMN_MODE_POPOVER_STYLE}>
+          <div className="arrow"></div>
+          <h3 className="popover-title">{t("common.two.column.mode")}</h3>
+          <div className="popover-content">
+            <p>{t("common.two.column.mode.desc")}</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
