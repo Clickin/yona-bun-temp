@@ -1,5 +1,4 @@
 import { useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
-import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { uploadTemporaryAttachment } from "../../api/attachments";
@@ -315,9 +314,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               </button>
             </div>
           </div>
-          {avatarCropModalOpen
-            ? createPortal(<div className="modal-backdrop in"></div>, document.body)
-            : null}
+          {avatarCropModalOpen ? <div className="modal-backdrop in"></div> : null}
         </div>
       </div>
     </>
