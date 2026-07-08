@@ -62,7 +62,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
         <a class="ybtn pull-left" href="__BASE_PATH__/admin/sample/milestones">List</a>
         <button class="ybtn ybtn-danger" data-toggle="modal" href="#deleteConfirm" type="button">Delete</button>
         <a class="ybtn" href="__BASE_PATH__/admin/sample/milestone/5/editform">Edit</a>
-        <button class="ybtn" data-request-method="post" data-request-uri="__BASE_PATH__/admin/sample/milestone/5/close" type="button">Close milestone</button>
+        <button class="ybtn" type="button">Close milestone</button>
       </div>
       <div id="issues">
         <ul class="nav nav-tabs">
@@ -170,7 +170,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
   </div>
   <div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div>
   <div class="modal-footer">
-    <button class="ybtn ybtn-danger" data-request-method="delete" data-request-uri="__BASE_PATH__/admin/sample/milestone/5/delete" type="button">Yes</button>
+    <button class="ybtn ybtn-danger" type="button">Yes</button>
     <button class="ybtn" data-dismiss="modal" type="button">No</button>
   </div>
 </div>`;
@@ -411,9 +411,11 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
       },
     ]),
   );
-  await expect(page.locator('.actrow [data-request-uri$="/milestone/5/close"]')).toHaveText(
-    "Close milestone",
-  );
+  const closeMilestoneButton = page.getByRole("button", { name: "Close milestone" });
+  await expect(closeMilestoneButton).toBeVisible();
+  await expect(
+    page.locator(".actrow [data-request-method], .actrow [data-request-uri]"),
+  ).toHaveCount(0);
   await expect(page.locator(".actrow .ybtn.pull-left")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/milestones`,
@@ -783,9 +785,27 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
       response.url().includes("/api/v1/owners/admin/projects/sample/milestones/5/state") &&
       response.request().method() === "PATCH",
   );
-  await page.click('.actrow [data-request-uri$="/milestone/5/close"]');
+  await closeMilestoneButton.click();
   await closeResponse;
   expect(stateRequests).toEqual([{ state: "closed" }]);
+  await expect(page.locator(".badge-issue-closed")).toHaveText("Closed");
+  await expect(page.getByRole("button", { name: "Open" })).toBeVisible();
+  await expect(
+    page.locator(".actrow [data-request-method], .actrow [data-request-uri]"),
+  ).toHaveCount(0);
+  const openResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/owners/admin/projects/sample/milestones/5/state") &&
+      response.request().method() === "PATCH",
+  );
+  await page.getByRole("button", { name: "Open" }).click();
+  await openResponse;
+  expect(stateRequests).toEqual([{ state: "closed" }, { state: "open" }]);
+  await expect(page.locator(".badge-issue-open")).toHaveText("Open");
+  await expect(page.getByRole("button", { name: "Close milestone" })).toBeVisible();
+  await expect(
+    page.locator(".actrow [data-request-method], .actrow [data-request-uri]"),
+  ).toHaveCount(0);
 
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
   await expect(page.locator("#deleteConfirm")).not.toHaveAttribute("aria-hidden");
@@ -815,10 +835,9 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "modal",
   );
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
-  await expect(page.locator("#deleteConfirm [data-request-method='delete']")).toHaveAttribute(
-    "data-request-uri",
-    `${basePath}/admin/sample/milestone/5/delete`,
-  );
+  await expect(
+    page.locator("#deleteConfirm [data-request-method], #deleteConfirm [data-request-uri]"),
+  ).toHaveCount(0);
   await page.locator('#deleteConfirm [data-dismiss="modal"]').last().click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: none;");
@@ -846,9 +865,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
       response.url().includes("/api/v1/owners/admin/projects/sample/milestones/5") &&
       response.request().method() === "DELETE",
   );
-  await page.locator("#deleteConfirm [data-request-method='delete']").evaluate((button) => {
-    (button as HTMLButtonElement).click();
-  });
+  await page.locator("#deleteConfirm .modal-footer .ybtn-danger").click();
   await deleteResponse;
   expect(deleteRequests).toEqual(["DELETE"]);
 });
@@ -1071,7 +1088,10 @@ test("project milestone detail keeps mass-update shell visible but inert for rea
     page.locator('.actrow [data-toggle="modal"][data-target="#deleteConfirm"]'),
   ).toHaveCount(0);
   await expect(page.locator('.actrow [href$="/milestone/5/editform"]')).toHaveCount(0);
-  await expect(page.locator('.actrow [data-request-uri$="/milestone/5/close"]')).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Close milestone" })).toHaveCount(0);
+  await expect(
+    page.locator(".actrow [data-request-method], .actrow [data-request-uri]"),
+  ).toHaveCount(0);
   await expect(page.locator("#assignee")).not.toContainText("Assign to me");
   await expect(page.locator('#assignee li[data-value="99"]')).toHaveCount(0);
   await expect(page.locator('#assignee li[data-value="1"] .usf-group')).toContainText(
@@ -1150,6 +1170,8 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("classList");
   expect(routeSource).not.toContain("style.display");
+  expect(routeSource).not.toContain("data-request-method");
+  expect(routeSource).not.toContain("data-request-uri");
   expect(routeSource).not.toContain("<script");
   expect(routeSource).not.toContain("highlight.pack.js");
   expect(routeSource).not.toContain("marked.js");
@@ -1598,14 +1620,16 @@ async function mockProjectMilestoneDetail(
   await page.route(
     `**/api/v1/owners/${ownerName}/projects/${projectName}/milestones/${milestoneId}/state`,
     async (route) => {
-      stateRequests.push(route.request().postDataJSON());
+      const requestBody = route.request().postDataJSON() as { state?: string };
+      stateRequests.push(requestBody);
+      milestone = {
+        ...milestone,
+        state: requestBody.state === "open" ? "open" : "closed",
+      };
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          milestone: {
-            ...milestone,
-            state: "closed",
-          },
+          milestone,
         }),
       });
     },
@@ -1963,9 +1987,9 @@ async function milestoneDetailActionRowMetrics(page: Page) {
     const editButton = document.querySelector<HTMLElement>(
       '.actrow .ybtn[href$="/milestone/5/editform"]',
     );
-    const closeButton = document.querySelector<HTMLElement>(
-      '.actrow [data-request-uri$="/milestone/5/close"]',
-    );
+    const closeButton = Array.from(
+      document.querySelectorAll<HTMLElement>(".actrow button.ybtn"),
+    ).find((button) => button.textContent?.trim() === "Close milestone");
     if (!actionRow || !listButton || !deleteButton || !editButton || !closeButton) {
       throw new Error("Expected milestone detail action row controls are missing.");
     }

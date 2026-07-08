@@ -291,7 +291,6 @@ function ProjectMilestoneDetailBody({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmWasShown, setDeleteConfirmWasShown] = useState(false);
   const projectPath = `/${ownerName}/${projectName}`;
-  const milestonePath = `${projectPath}/milestone/${milestoneId}`;
   const isClosed = stringField(milestone.state) === "closed";
   const completionPercent = numberField(milestone.completionPercent);
   const openIssues = milestone.openIssues ?? [];
@@ -430,11 +429,6 @@ function ProjectMilestoneDetailBody({
                 {isClosed ? (
                   <button
                     type="button"
-                    data-request-method="post"
-                    data-request-uri={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `${milestonePath}/open`,
-                    )}
                     className="ybtn"
                     onClick={() => stateMutation.mutate("open")}
                   >
@@ -443,11 +437,6 @@ function ProjectMilestoneDetailBody({
                 ) : (
                   <button
                     type="button"
-                    data-request-method="post"
-                    data-request-uri={prefixBasePath(
-                      runtimeConfig.basePath,
-                      `${milestonePath}/close`,
-                    )}
                     className="ybtn"
                     onClick={() => stateMutation.mutate("closed")}
                   >
@@ -579,8 +568,6 @@ function ProjectMilestoneDetailBody({
           <button
             type="button"
             className="ybtn ybtn-danger"
-            data-request-method="delete"
-            data-request-uri={prefixBasePath(runtimeConfig.basePath, `${milestonePath}/delete`)}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
