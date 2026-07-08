@@ -131,7 +131,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 const EXPECTED_DIRECT_NOTIFICATIONS = EXPECTED_AUTHENTICATED_HOME.replace(
   `<li></li>
           </ul>`,
-  `<li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" title="Set to default page" data-trigger="hover" data-placement="bottom" data-toggle="popover" data-content="Make current page the index page when logged in">Set to default page</button></li>
+  `<li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" title="Set to default page">Set to default page</button></li>
           </ul>`,
 );
 
@@ -1266,15 +1266,47 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(defaultLandingButton).toHaveAttribute("type", "button");
   await expect(defaultLandingButton).not.toHaveAttribute("data-url");
   await expect(defaultLandingButton).toHaveAttribute("title", "Set to default page");
-  await expect(defaultLandingButton).toHaveAttribute("data-trigger", "hover");
-  await expect(defaultLandingButton).toHaveAttribute("data-placement", "bottom");
-  await expect(defaultLandingButton).toHaveAttribute("data-toggle", "popover");
-  await expect(defaultLandingButton).toHaveAttribute(
-    "data-content",
+  await expect(defaultLandingButton).not.toHaveAttribute("data-trigger");
+  await expect(defaultLandingButton).not.toHaveAttribute("data-placement");
+  await expect(defaultLandingButton).not.toHaveAttribute("data-toggle");
+  await expect(defaultLandingButton).not.toHaveAttribute("data-content");
+  await expect(page.locator(".main-stream > .nav-tabs .popover")).toHaveCount(0);
+
+  await defaultLandingButton.hover();
+  const defaultLandingPopover = page.locator(".main-stream > .nav-tabs .popover.bottom");
+  await expect(defaultLandingPopover).toBeVisible();
+  await expect(defaultLandingPopover).toHaveClass("popover bottom");
+  await expect(defaultLandingPopover.locator(".popover-title")).toHaveText("Set to default page");
+  await expect(defaultLandingPopover.locator(".popover-content")).toHaveText(
     "Make current page the index page when logged in",
   );
+  const popoverBoxes = await page.evaluate(() => {
+    const button = document.querySelector<HTMLElement>("#setDefaultLoginPage");
+    const popover = document.querySelector<HTMLElement>(".main-stream > .nav-tabs .popover.bottom");
+    if (!button || !popover) return null;
+    const buttonBox = button.getBoundingClientRect();
+    const popoverBox = popover.getBoundingClientRect();
+    return {
+      buttonBottom: buttonBox.bottom,
+      buttonCenter: buttonBox.left + buttonBox.width / 2,
+      popoverCenter: popoverBox.left + popoverBox.width / 2,
+      popoverTop: popoverBox.top,
+    };
+  });
+  expect(popoverBoxes).not.toBeNull();
+  expect(popoverBoxes!.popoverTop).toBeGreaterThanOrEqual(popoverBoxes!.buttonBottom);
+  expect(Math.abs(popoverBoxes!.popoverCenter - popoverBoxes!.buttonCenter)).toBeLessThanOrEqual(4);
+  await page.mouse.move(1, 1);
+  await expect(defaultLandingPopover).toHaveCount(0);
+  await defaultLandingButton.focus();
+  await expect(defaultLandingPopover).toBeVisible();
+  await expect(defaultLandingPopover.locator(".popover-title")).toHaveText("Set to default page");
+  await defaultLandingButton.evaluate((button) => button.blur());
+  await expect(defaultLandingPopover).toHaveCount(0);
+
   await defaultLandingButton.click();
   await expect(defaultLandingButton).toBeHidden();
+  await expect(defaultLandingPopover).toHaveCount(0);
   expect(setDefaultLoginPageRequests).toEqual([
     `${basePath}/user/defultLoginPage?path=%2Fnotifications`,
   ]);
@@ -1320,6 +1352,13 @@ test("direct notifications route matches legacy Application.notifications empty 
     routeSource.indexOf('<div className="span8 main-stream">'),
     routeSource.indexOf('<ul className="activity-streams notification-wrap unstyled">'),
   );
+  const setDefaultButtonSource = routeSource.slice(
+    routeSource.indexOf('id="setDefaultLoginPage"'),
+    routeSource.indexOf(
+      "{defaultLandingButtonTitle}",
+      routeSource.indexOf('id="setDefaultLoginPage"'),
+    ),
+  );
   expect(mainStreamTabSource).not.toContain("LegacyInternalLink");
   expect(mainStreamTabSource).not.toContain("activeProps={{ className: undefined }}");
   expect(mainStreamTabSource).toContain('to="/notifications"');
@@ -1328,6 +1367,13 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(mainStreamTabSource).toContain("LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS");
   expect(mainStreamTabSource).not.toContain("data-url=");
   expect(mainStreamTabSource).not.toContain("data-url");
+  expect(setDefaultButtonSource).not.toContain("data-trigger");
+  expect(setDefaultButtonSource).not.toContain("data-placement");
+  expect(setDefaultButtonSource).not.toContain("data-toggle");
+  expect(setDefaultButtonSource).not.toContain("data-content");
+  expect(mainStreamTabSource).toContain('className="popover bottom"');
+  expect(mainStreamTabSource).toContain("onMouseEnter={showDefaultLandingPopover}");
+  expect(mainStreamTabSource).toContain("onFocus={showDefaultLandingPopover}");
 
   const myIssuesTab = mainStreamTabs.locator('a:has-text("My Issues")');
   await expect(myIssuesTab).toHaveAttribute("href", `${basePath}/user/issues`);

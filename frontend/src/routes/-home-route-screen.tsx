@@ -84,6 +84,16 @@ const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
     "data-status": undefined,
   },
 };
+const SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE: React.CSSProperties = {
+  display: "block",
+  left: "50%",
+  marginTop: "10px",
+  minWidth: "190px",
+  pointerEvents: "none",
+  position: "absolute",
+  top: "100%",
+  transform: "translateX(-50%)",
+};
 
 function LegacyLogoLinkAnchor({
   legacyHref,
@@ -168,10 +178,36 @@ function HomeScreen({
     () => typeof window === "undefined" || localStorage.getItem("yobi-intro") !== "false",
   );
   const [isDefaultLandingButtonHidden, setIsDefaultLandingButtonHidden] = React.useState(false);
+  const [isDefaultLandingPopoverVisible, setIsDefaultLandingPopoverVisible] = React.useState(false);
+  const defaultLandingPopoverTimer = React.useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
   const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);
   const [notificationHasMore, setNotificationHasMore] = React.useState(false);
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = React.useState(false);
   const flashMessage = flashMessageKey ? t(flashMessageKey) : "";
+  const defaultLandingButtonTitle = t("button.setDefaultLoginPage");
+  const defaultLandingButtonContent = t("button.setDefaultLoginPage.desc");
+  const clearDefaultLandingPopoverTimer = React.useCallback(() => {
+    if (defaultLandingPopoverTimer.current !== null) {
+      window.clearTimeout(defaultLandingPopoverTimer.current);
+      defaultLandingPopoverTimer.current = null;
+    }
+  }, []);
+  const showDefaultLandingPopover = React.useCallback(() => {
+    clearDefaultLandingPopoverTimer();
+    defaultLandingPopoverTimer.current = window.setTimeout(() => {
+      setIsDefaultLandingPopoverVisible(true);
+      defaultLandingPopoverTimer.current = null;
+    }, 100);
+  }, [clearDefaultLandingPopoverTimer]);
+  const hideDefaultLandingPopover = React.useCallback(() => {
+    clearDefaultLandingPopoverTimer();
+    defaultLandingPopoverTimer.current = window.setTimeout(() => {
+      setIsDefaultLandingPopoverVisible(false);
+      defaultLandingPopoverTimer.current = null;
+    }, 100);
+  }, [clearDefaultLandingPopoverTimer]);
   const setDefaultLoginPage = useMutation({
     mutationFn: async (path: string) => {
       const response = await fetch(
@@ -196,8 +232,11 @@ function HomeScreen({
         setRootToast((current) => (current?.key === toastKey ? null : current));
       }, 3000);
       setIsDefaultLandingButtonHidden(true);
+      setIsDefaultLandingPopoverVisible(false);
     },
   });
+
+  React.useEffect(() => clearDefaultLandingPopoverTimer, [clearDefaultLandingPopoverTimer]);
 
   React.useEffect(() => {
     if (!notificationsQuery.data) {
@@ -366,22 +405,38 @@ function HomeScreen({
                         {t("user.files")}
                       </Link>
                     </li>
-                    <li>
+                    <li style={{ position: "relative" }}>
                       {shouldShowDefaultLandingButton ? (
-                        <button
-                          id="setDefaultLoginPage"
-                          type="button"
-                          className="ybtn hide-in-mobile"
-                          title={t("button.setDefaultLoginPage")}
-                          data-trigger="hover"
-                          data-placement="bottom"
-                          data-toggle="popover"
-                          data-content={t("button.setDefaultLoginPage.desc")}
-                          style={isDefaultLandingButtonHidden ? { display: "none" } : undefined}
-                          onClick={() => setDefaultLoginPage.mutate(routePathWithoutSlash)}
-                        >
-                          {t("button.setDefaultLoginPage")}
-                        </button>
+                        <>
+                          <button
+                            id="setDefaultLoginPage"
+                            type="button"
+                            className="ybtn hide-in-mobile"
+                            title={defaultLandingButtonTitle}
+                            style={isDefaultLandingButtonHidden ? { display: "none" } : undefined}
+                            onBlur={hideDefaultLandingPopover}
+                            onClick={() => {
+                              hideDefaultLandingPopover();
+                              setDefaultLoginPage.mutate(routePathWithoutSlash);
+                            }}
+                            onFocus={showDefaultLandingPopover}
+                            onMouseEnter={showDefaultLandingPopover}
+                            onMouseLeave={hideDefaultLandingPopover}
+                          >
+                            {defaultLandingButtonTitle}
+                          </button>
+                          {isDefaultLandingPopoverVisible && !isDefaultLandingButtonHidden ? (
+                            <div
+                              className="popover bottom"
+                              role="tooltip"
+                              style={SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE}
+                            >
+                              <div className="arrow" />
+                              <h3 className="popover-title">{defaultLandingButtonTitle}</h3>
+                              <div className="popover-content">{defaultLandingButtonContent}</div>
+                            </div>
+                          ) : null}
+                        </>
                       ) : null}
                     </li>
                   </ul>
