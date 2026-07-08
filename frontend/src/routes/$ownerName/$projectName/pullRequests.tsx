@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -911,13 +917,39 @@ function TwoColumnModeCheckbox({
   onToggle: (checked: boolean) => void;
 }) {
   const { t } = useLegacyMessages();
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPopoverTimers = () => {
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+  const showPopover = () => {
+    clearPopoverTimers();
+    showTimerRef.current = setTimeout(() => setIsPopoverVisible(true), 100);
+  };
+  const hidePopover = () => {
+    clearPopoverTimers();
+    hideTimerRef.current = setTimeout(() => setIsPopoverVisible(false), 100);
+  };
+
+  useEffect(() => clearPopoverTimers, []);
 
   return (
     <div
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
-      data-content={t("common.two.column.mode.desc")}
+      onBlur={hidePopover}
+      onFocus={showPopover}
+      onMouseEnter={showPopover}
+      onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper without aria-label. */}
       <label className="checkbox">
@@ -933,6 +965,19 @@ function TwoColumnModeCheckbox({
           <span className="two-column-mode-text">{t("common.two.column.view")}</span>
         </div>
       </label>
+      {isPopoverVisible ? (
+        <div
+          className="popover top"
+          role="tooltip"
+          style={{ display: "block", left: "-75px", top: "-74px" }}
+        >
+          <div className="arrow"></div>
+          <h3 className="popover-title">{t("common.two.column.mode")}</h3>
+          <div className="popover-content">
+            <p>{t("common.two.column.mode.desc")}</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
