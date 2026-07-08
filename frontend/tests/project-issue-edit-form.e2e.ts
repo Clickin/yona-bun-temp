@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto" data-name="state"><button type="button" class="btn dropdown-toggle auto" data-toggle="dropdown"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-toggle="select2" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" data-toggle="calendar" name="dueDate" class="textbox full" value="2026-08-02"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-toggle="select2" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto" data-name="state"><button type="button" class="btn dropdown-toggle auto" data-toggle="dropdown"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-toggle="select2" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full" value="2026-08-02"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-toggle="select2" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
 `;
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx", import.meta.url),
@@ -73,6 +73,23 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
   await expect(page.locator('#labelIds option[value="8"]')).toHaveJSProperty("selected", true);
+  await expect(page.locator("#issueDueDate")).toHaveAttribute("name", "dueDate");
+  await expect(page.locator("#issueDueDate")).toHaveClass("textbox full");
+  await expect(page.locator("#issueDueDate")).not.toHaveAttribute("data-toggle", "calendar");
+  await expect(page.locator('#issueDueDate[data-toggle="calendar"]')).toHaveCount(0);
+  await expect(page.locator(".right-menu .search.search-bar .btn-calendar")).toHaveCount(1);
+  const dueDateMetrics = await issueDueDateMetrics(page);
+  expect(dueDateMetrics).not.toBeNull();
+  expect(dueDateMetrics!.searchBar.top).toBeGreaterThanOrEqual(dueDateMetrics!.option.top);
+  expect(dueDateMetrics!.searchBar.bottom).toBeLessThanOrEqual(dueDateMetrics!.option.bottom);
+  expect(dueDateMetrics!.searchBar.left).toBeGreaterThanOrEqual(dueDateMetrics!.rightMenu.left);
+  expect(dueDateMetrics!.searchBar.right).toBeLessThanOrEqual(dueDateMetrics!.rightMenu.right);
+  expect(dueDateMetrics!.input.left).toBeGreaterThanOrEqual(dueDateMetrics!.searchBar.left);
+  expect(dueDateMetrics!.input.right).toBeLessThanOrEqual(dueDateMetrics!.searchBar.right);
+  expect(dueDateMetrics!.button.left).toBeGreaterThanOrEqual(dueDateMetrics!.input.left);
+  expect(dueDateMetrics!.button.right).toBeLessThanOrEqual(dueDateMetrics!.searchBar.right);
+  expect(dueDateMetrics!.button.top).toBeGreaterThanOrEqual(dueDateMetrics!.searchBar.top);
+  expect(dueDateMetrics!.button.bottom).toBeLessThanOrEqual(dueDateMetrics!.searchBar.bottom);
   const labelEditLink = page.locator("dl.issue-option dt .label-edit");
   await expect(labelEditLink).toHaveCount(1);
   await expect(labelEditLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
@@ -410,6 +427,23 @@ test("project issue edit form translates legacy write validation behavior", asyn
   await expect(page.locator("#title")).toBeFocused();
   await expect(page.locator("#title")).toHaveClass(/^text title\s*$/u);
   await expect(page.locator("dd > .message")).toHaveCount(0);
+  await expect(page.locator("#issueDueDate")).toHaveAttribute("name", "dueDate");
+  await expect(page.locator("#issueDueDate")).toHaveClass("textbox full");
+  await expect(page.locator("#issueDueDate")).not.toHaveAttribute("data-toggle", "calendar");
+  await expect(page.locator('#issueDueDate[data-toggle="calendar"]')).toHaveCount(0);
+  await expect(page.locator(".right-menu .search.search-bar .btn-calendar")).toHaveCount(1);
+  const dueDateMetrics = await issueDueDateMetrics(page);
+  expect(dueDateMetrics).not.toBeNull();
+  expect(dueDateMetrics!.searchBar.top).toBeGreaterThanOrEqual(dueDateMetrics!.option.top);
+  expect(dueDateMetrics!.searchBar.bottom).toBeLessThanOrEqual(dueDateMetrics!.option.bottom);
+  expect(dueDateMetrics!.searchBar.left).toBeGreaterThanOrEqual(dueDateMetrics!.rightMenu.left);
+  expect(dueDateMetrics!.searchBar.right).toBeLessThanOrEqual(dueDateMetrics!.rightMenu.right);
+  expect(dueDateMetrics!.input.left).toBeGreaterThanOrEqual(dueDateMetrics!.searchBar.left);
+  expect(dueDateMetrics!.input.right).toBeLessThanOrEqual(dueDateMetrics!.searchBar.right);
+  expect(dueDateMetrics!.button.left).toBeGreaterThanOrEqual(dueDateMetrics!.input.left);
+  expect(dueDateMetrics!.button.right).toBeLessThanOrEqual(dueDateMetrics!.searchBar.right);
+  expect(dueDateMetrics!.button.top).toBeGreaterThanOrEqual(dueDateMetrics!.searchBar.top);
+  expect(dueDateMetrics!.button.bottom).toBeLessThanOrEqual(dueDateMetrics!.searchBar.bottom);
 
   await page.locator("#title").press("Enter");
   await expect(page.locator("#editor-body-body")).toBeFocused();
@@ -443,6 +477,7 @@ test("project issue edit form translates legacy write validation behavior", asyn
   await expect.poll(() => updateRequests).toBe(1);
   expect(updateBody?.isDraft).toBe(false);
   expect(updateBody?.isPublish).toBe(false);
+  expect(updateBody?.dueDate).toBe("2026-08-03");
 });
 
 test("project issue draft edit form submits legacy draft save and publish flags", async ({
@@ -706,6 +741,36 @@ async function issueEditorMetrics(page: Page) {
       tabContent: rect(tabContent),
       tabs: rect(tabs),
       textarea: rect(textarea),
+    };
+
+    function rect(element: Element) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
+  });
+}
+
+async function issueDueDateMetrics(page: Page) {
+  return page.evaluate(() => {
+    const input = document.querySelector<HTMLElement>("#issueDueDate");
+    const searchBar = input?.closest<HTMLElement>(".search.search-bar") ?? null;
+    const button = searchBar?.querySelector<HTMLElement>(".search-btn.btn-calendar") ?? null;
+    const option = searchBar?.closest<HTMLElement>("dl.issue-option") ?? null;
+    const rightMenu = document.querySelector<HTMLElement>(".span3.span-hard-wrap.right-menu");
+    if (!input || !searchBar || !button || !option || !rightMenu) {
+      return null;
+    }
+    return {
+      button: rect(button),
+      input: rect(input),
+      option: rect(option),
+      rightMenu: rect(rightMenu),
+      searchBar: rect(searchBar),
     };
 
     function rect(element: Element) {

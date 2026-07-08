@@ -375,7 +375,6 @@ function ProjectIssueEditFormBody({
                         <input
                           type="text"
                           id="issueDueDate"
-                          data-toggle="calendar"
                           name="dueDate"
                           className="textbox full"
                           defaultValue={stringField(issueRecord.dueDateLabel, "")}
