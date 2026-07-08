@@ -307,13 +307,8 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 
               <div
                 id="alertDeletionWrap"
-                className={
-                  deleteUser
-                    ? "modal fade in"
-                    : deleteModalClosed
-                      ? "modal fade hide"
-                      : "modal fade"
-                }
+                className={deleteUser ? "modal fade in" : "modal fade"}
+                aria-hidden={deleteUser ? false : deleteModalClosed ? true : undefined}
                 style={deleteUser ? { display: "block" } : { display: "none" }}
               >
                 <div className="modal-header">
