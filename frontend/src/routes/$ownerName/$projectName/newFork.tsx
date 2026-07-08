@@ -261,14 +261,19 @@ function ProjectForkBody({
   }
 
   function onChangeOwner(event: ChangeEvent<HTMLSelectElement>) {
-    const url = event.currentTarget.selectedOptions.item(0)?.dataset.url;
-    if (!url) {
+    const nextOwnerName = event.currentTarget.value;
+    if (!nextOwnerName) {
       return;
     }
     queryClient.invalidateQueries({
       queryKey: apiQueryKeys.project.forkOptions(ownerName, projectName),
     });
-    router.history.push(url);
+    router.history.push(
+      prefixBasePath(
+        runtimeConfig.basePath,
+        `/${ownerName}/${projectName}/newFork/${nextOwnerName}`,
+      ),
+    );
   }
 
   if (cloneProgress) {
@@ -350,14 +355,7 @@ function ProjectForkBody({
                     {options.ownerOptions.map((ownerOption) => {
                       const optionOwnerName = stringField(ownerOption.ownerName, "");
                       return (
-                        <option
-                          key={optionOwnerName}
-                          data-url={prefixBasePath(
-                            runtimeConfig.basePath,
-                            `/${ownerName}/${projectName}/newFork/${optionOwnerName}`,
-                          )}
-                          value={optionOwnerName}
-                        >
+                        <option key={optionOwnerName} value={optionOwnerName}>
                           {optionOwnerName}
                         </option>
                       );
