@@ -210,7 +210,6 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           id="mailtoAll"
           value="all"
           checked={mailingType === "all"}
-          data-toggle="mail-type"
           onClick={() => selectMailingType("all")}
           onChange={() => selectMailingType("all")}
         />
@@ -222,7 +221,6 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           name="mailingType"
           id="mailtoPrj"
           value="projects"
-          data-toggle="mail-type"
           checked={mailingType === "projects"}
           onClick={() => selectMailingType("projects")}
           onChange={() => selectMailingType("projects")}

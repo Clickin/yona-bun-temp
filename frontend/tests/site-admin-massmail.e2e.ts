@@ -14,7 +14,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
       <i class="yobicon-arrow-right"></i>
     </div>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_ROOT__" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
@@ -92,11 +92,11 @@ const EXPECTED_MASSMAIL_SCREEN = `
         </div>
         <div class="mess-mail-wrap">
           <label class="radio" for="mailtoAll">
-            <input type="radio" name="mailingType" id="mailtoAll" value="all" checked="checked" data-toggle="mail-type">
+            <input type="radio" name="mailingType" id="mailtoAll" value="all" checked="checked">
             To all
           </label>
           <label class="radio" for="mailtoPrj">
-            <input type="radio" name="mailingType" id="mailtoPrj" value="projects" data-toggle="mail-type">
+            <input type="radio" name="mailingType" id="mailtoPrj" value="projects">
             To members of a specific project
           </label>
           <div class="control-group hide" id="project-list-wrap">
@@ -128,6 +128,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
 
 test("site admin mass mail matches legacy site/massMail.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const baseRoot = basePath.endsWith("/") ? basePath : `${basePath}/`;
   await mockSiteAdminSession(page);
   await mockMailOptions(page);
 
@@ -149,11 +150,7 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
         .locator(".gnb-nav > li > a")
         .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
     )
-    .toEqual([
-      `${basePath}`,
-      `${basePath}/projects`,
-      "https://github.com/yona-projects/yona/issues",
-    ]);
+    .toEqual([baseRoot, `${basePath}/projects`, "https://github.com/yona-projects/yona/issues"]);
   await expect(page.locator(".gnb-search-form")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
   await expect(page.locator(".site-setting-nav a")).toHaveText([
@@ -214,9 +211,11 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   ]);
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
-  await expect(page.locator('[name="mailingType"][data-toggle="mail-type"]')).toHaveCount(2);
+  await expect(page.locator('[name="mailingType"][data-toggle="mail-type"]')).toHaveCount(0);
   await expect(page.locator('.mess-mail-wrap [data-action="hide"]')).toHaveCount(0);
   await expect(page.locator('.mess-mail-wrap [data-action="show"]')).toHaveCount(0);
+  await expect(page.locator("#mailtoAll")).not.toHaveAttribute("data-toggle", /.+/);
+  await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-toggle", /.+/);
   await expect(page.locator("#mailtoAll")).not.toHaveAttribute("data-action", /.+/);
   await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-action", /.+/);
   const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
@@ -228,7 +227,10 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_MASSMAIL_SCREEN.replaceAll("__BASE_PATH__", basePath),
+    EXPECTED_MASSMAIL_SCREEN.replaceAll("__BASE_ROOT__", baseRoot).replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    ),
   );
 
   expect(actual).toEqual(expected);
@@ -368,6 +370,8 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   expect(routeSource).not.toContain("innerHTML");
   expect(routeSource).not.toContain("projectInputRef.current.value");
   expect(routeSource).not.toContain("style.display");
+  expect(routeSource).not.toContain('data-toggle="mail-type"');
+  expect(routeSource).not.toContain('data-toggle: "mail-type"');
   expect(routeSource).not.toContain('data-action="hide"');
   expect(routeSource).not.toContain('data-action="show"');
   expect(routeSource).not.toContain("LegacyInternalLink");
