@@ -155,19 +155,33 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
 
   const currentUrl = `${basePath}/admin/sample/code`;
-  const scopeItems = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
+  const scopeItems = page.locator(".gnb-search-form .dropdown-menu > li > button");
   await expect(scopeItems).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeItems).toHaveCount(3);
   await expect
     .poll(() =>
       scopeItems.evaluateAll((elements) =>
-        elements.map((element) => element.getAttribute("data-action")),
+        elements.map((element) => [
+          element.getAttribute("data-action"),
+          element.getAttribute("data-toggle"),
+        ]),
       ),
     )
-    .toEqual([null, null, null]);
-  const projectScope = scopeItems.nth(0);
-  const groupScope = scopeItems.nth(1);
-  const allScope = scopeItems.nth(2);
+    .toEqual([
+      [null, null],
+      [null, null],
+      [null, null],
+    ]);
+  const projectScope = page
+    .locator(".gnb-search-form .dropdown-menu")
+    .getByRole("button", { name: "This Project" });
+  const groupScope = page
+    .locator(".gnb-search-form .dropdown-menu")
+    .getByRole("button", { name: "This Group" });
+  const allScope = page
+    .locator(".gnb-search-form .dropdown-menu")
+    .getByRole("button", { name: "All Projects" });
 
   await page.locator("#gnb-search-scope-title").click();
   await groupScope.click();

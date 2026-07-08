@@ -847,33 +847,21 @@ export function SiteLayoutShell({
                     <ul className="dropdown-menu flat right">
                       {projectSearchAction ? (
                         <li>
-                          <button
-                            type="button"
-                            data-toggle="search-scope"
-                            onClick={handleSearchScopeItemClick("project")}
-                          >
+                          <button type="button" onClick={handleSearchScopeItemClick("project")}>
                             {t("search.scope.project")}
                           </button>
                         </li>
                       ) : null}
                       {projectSearchAction && groupSearchAction ? (
                         <li>
-                          <button
-                            type="button"
-                            data-toggle="search-scope"
-                            onClick={handleSearchScopeItemClick("group")}
-                          >
+                          <button type="button" onClick={handleSearchScopeItemClick("group")}>
                             {t("search.scope.group")}
                           </button>
                         </li>
                       ) : null}
                       {shouldRenderAllProjectsSearchScope ? (
                         <li>
-                          <button
-                            type="button"
-                            data-toggle="search-scope"
-                            onClick={handleSearchScopeItemClick("all")}
-                          >
+                          <button type="button" onClick={handleSearchScopeItemClick("all")}>
                             {t("search.scope.all")}
                           </button>
                         </li>
