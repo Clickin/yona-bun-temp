@@ -86,20 +86,6 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
   notFoundComponent: RootAliasNotFound,
 });
 
-function getModalToggleSelector(element: HTMLElement) {
-  return element.dataset.target ?? element.getAttribute("href")?.match(/#[^\s]+$/u)?.[0] ?? null;
-}
-
-function getRootShellModalId(selector: string | null | undefined): RootShellModalId | null {
-  if (selector === "#loginDialog") {
-    return "loginDialog";
-  }
-  if (selector === "#yobiDialog") {
-    return "yobiDialog";
-  }
-  return null;
-}
-
 function RootResetShell() {
   const { runtimeConfig } = Route.useRouteContext();
   const [rootToast, setRootToast] = React.useState<RootToast | null>(null);
@@ -147,25 +133,6 @@ function RootResetShell() {
         event.stopPropagation();
         return;
       }
-
-      const modalToggle = target.closest<HTMLElement>('[data-toggle="modal"]');
-      if (!modalToggle) {
-        return;
-      }
-
-      const modalId = getRootShellModalId(getModalToggleSelector(modalToggle));
-      if (!modalId) {
-        return;
-      }
-
-      if (modalId === "loginDialog") {
-        if (!rendersStandaloneLoginState) {
-          openRootLoginDialog(false);
-        }
-      } else {
-        setRootShellModal(modalId);
-      }
-      event.preventDefault();
     },
     [openRootLoginDialog, rendersStandaloneLoginState],
   );

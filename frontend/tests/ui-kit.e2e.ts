@@ -189,7 +189,6 @@ test("root shell does not own route alert dismissal", async ({ page }) => {
   expect(ROOT_ROUTE_SOURCE).not.toContain("dismissAlert");
   expect(ROOT_ROUTE_SOURCE).not.toContain('closest<HTMLElement>(".alert")');
   expect(ROOT_ROUTE_SOURCE).not.toContain('[data-dismiss="modal"]');
-  expect(ROOT_ROUTE_SOURCE).toContain('[data-toggle="modal"]');
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -212,6 +211,7 @@ test("root shell owns login dialog state without delegated document modal mutati
   const forbiddenRootModalBridgeSources = [
     'document.addEventListener("click"',
     "target?.closest<HTMLElement>('[data-dismiss=\"modal\"]')",
+    "target.closest<HTMLElement>('[data-toggle=\"modal\"]')",
     'document.querySelectorAll(".modal-backdrop")',
     "document.getElementById",
     'document.createElement("div")',
@@ -225,6 +225,11 @@ test("root shell owns login dialog state without delegated document modal mutati
   }
 
   expect(ROOT_ROUTE_SOURCE).not.toContain("handleDocumentSubmit");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("getModalToggleSelector");
+  expect(ROOT_ROUTE_SOURCE).not.toContain("getRootShellModalId");
+  expect(ROOT_ROUTE_SOURCE).not.toContain('[data-toggle="modal"]');
+  expect(ROOT_ROUTE_SOURCE).not.toContain("data-target");
+  expect(ROOT_ROUTE_SOURCE).not.toMatch(/getAttribute\(["']href["']\).*#[^)]/s);
   expect(ROOT_ROUTE_SOURCE).not.toContain('document.querySelector<HTMLElement>("#loginDialog")');
   expect(ROOT_ROUTE_SOURCE).not.toContain("dialog.querySelectorAll<HTMLInputElement>(");
   expect(ROOT_ROUTE_SOURCE).not.toContain('dialog.style.display = "block"');
@@ -645,7 +650,7 @@ test("standalone UI kit root shell emits legacy select2 Japanese locale script",
   ]);
 });
 
-test("standalone UI kit root shell dismisses legacy modal buttons through React state", async ({
+test("standalone UI kit root shell does not open synthetic data-toggle modals", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -666,27 +671,35 @@ test("standalone UI kit root shell dismisses legacy modal buttons through React 
   await page.locator(".page-wrap-outer").evaluate((container, href) => {
     container.insertAdjacentHTML(
       "beforeend",
-      `<button id="yobi-dialog-trigger" type="button" data-toggle="modal" data-target="#yobiDialog">Open dialog</button><a id="login-required-fixture" href="${href}" data-login="required">Log in</a><button id="route-modal-trigger" type="button" data-toggle="modal" data-target="#routeOwnedModal">Open route modal</button><div id="routeOwnedModal" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-footer"><button id="route-modal-dismiss" type="button" data-dismiss="modal">Close</button></div></div>`,
+      `<button id="yobi-dialog-trigger" type="button" data-toggle="modal" data-target="#yobiDialog">Open dialog</button><button id="login-dialog-trigger" type="button" data-toggle="modal" data-target="#loginDialog">Open login modal</button><a id="href-login-dialog-trigger" href="#loginDialog" data-toggle="modal">Open login href modal</a><a id="login-required-fixture" href="${href}" data-login="required">Log in</a><button id="route-modal-trigger" type="button" data-toggle="modal" data-target="#routeOwnedModal">Open route modal</button><div id="routeOwnedModal" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-footer"><button id="route-modal-dismiss" type="button" data-dismiss="modal">Close</button></div></div>`,
     );
   }, `${basePath}/users/loginform`);
 
   const yobiDialog = page.locator("#yobiDialog");
   const routeOwnedModal = page.locator("#routeOwnedModal");
+  const loginDialog = page.locator("#loginDialog");
   await expect(routeOwnedModal).toHaveClass("modal hide fade");
+
+  await page.locator("#yobi-dialog-trigger").click();
+  await expect(yobiDialog).toHaveClass("modal hide yobiDialog");
+  await expect(yobiDialog).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+
+  await page.locator("#login-dialog-trigger").click();
+  await expect(loginDialog).toHaveClass("modal hide loginDialog");
+  await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+
+  await page.locator("#href-login-dialog-trigger").click();
+  await expect(loginDialog).toHaveClass("modal hide loginDialog");
+  await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+
   await page.locator("#route-modal-trigger").click();
   await expect(routeOwnedModal).toHaveClass("modal hide fade");
   await expect(routeOwnedModal).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 
-  await page.locator("#yobi-dialog-trigger").click();
-  await expect(yobiDialog).toHaveClass("modal yobiDialog in");
-  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
-  await yobiConfirm.click();
-  await expect(yobiDialog).toHaveClass("modal hide yobiDialog");
-  await expect(yobiDialog).toHaveAttribute("aria-hidden", "true");
-  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
-
-  const loginDialog = page.locator("#loginDialog");
   await page.locator("#login-required-fixture").click();
   await expect(loginDialog).toHaveClass("modal hide loginDialog in");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
