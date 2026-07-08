@@ -225,12 +225,7 @@ function ProjectChangeVcsBody({
             }
           >
             <div className="modal-header">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                onClick={dismissChangeVcsModal}
-              >
+              <button type="button" className="close" onClick={dismissChangeVcsModal}>
                 ×
               </button>
               <h3>{t("project.changeVCS.requestion", { args: [nextVcs] })}</h3>
@@ -248,12 +243,7 @@ function ProjectChangeVcsBody({
               >
                 {t("button.yes")}
               </button>
-              <button
-                type="button"
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={dismissChangeVcsModal}
-              >
+              <button type="button" className="ybtn" onClick={dismissChangeVcsModal}>
                 {t("button.no")}
               </button>
             </div>
