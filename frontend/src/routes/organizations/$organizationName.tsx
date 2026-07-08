@@ -467,7 +467,6 @@ function MemberPanel({
               type="button"
               className="ybtn ybtn-minimum ybtn-danger pull-right"
               id="groupLeaveBtn"
-              data-href={prefixBasePath(basePath, `/organizations/${organizationName}/leave`)}
               onClick={onLeaveClick}
             >
               {t("organization.member.leave")}
