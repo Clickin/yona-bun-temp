@@ -581,7 +581,6 @@ function ProjectRecentlyPushedBranches({
               <button
                 type="button"
                 className="close"
-                data-dismiss="alert"
                 aria-hidden="true"
                 onClick={(event) => {
                   event.preventDefault();
