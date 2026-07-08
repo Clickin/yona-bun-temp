@@ -36,9 +36,9 @@ const EDIT_COLORS = [
 ];
 const EMPTY_LABELS_LIST =
   '<div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div>';
-const EMPTY_EDIT_LABEL_SELECT = '<select name="category.id" data-toggle="select2"></select>';
+const EMPTY_EDIT_LABEL_SELECT = '<select name="category.id"></select>';
 const POPULATED_EDIT_LABEL_SELECT =
-  '<select name="category.id" data-toggle="select2"><option value="3">type</option><option value="4">priority</option></select>';
+  '<select name="category.id"><option value="3">type</option><option value="4">priority</option></select>';
 const POPULATED_LABELS_LIST = `
 <div id="labelsList" class="issue-label-list-wrap">
   <div class="row-fluid list-head"><div class="span3 category"><strong>Category</strong></div><div class="span9 name"><strong>Name</strong></div></div>
@@ -74,8 +74,8 @@ const EXPECTED_PROJECT_LABELS = `
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class="active"><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="page-wrap-outer"><div class="project-page-wrap label-editor-wrap"><ul class="nav nav-tabs"><li id="subMenuProjectSetting" class=""><a href="__BASE_PATH__/admin/sample/setting">Settings</a></li><li id="subMenuProjectMember" class=""><a href="__BASE_PATH__/admin/sample/members">Member</a></li><li id="subMenuIssueLabel" class="active"><a href="__BASE_PATH__/admin/sample/issue/labelsform">Issue Label</a></li><li id="subMenuWebhook" class=""><a href="__BASE_PATH__/admin/sample/webhooks">Webhooks</a></li><li id="subMenuProjectTransfer" class=""><a href="__BASE_PATH__/admin/sample/transfer">Transfer</a></li><li id="subMenuProjectDelete" class=""><a href="__BASE_PATH__/admin/sample/deleteform">Delete project</a></li><li id="subMenuProjectChangeVCS" class=""><a href="__BASE_PATH__/admin/sample/changeVCS">Repository Type Change</a></li></ul><form id="copyLabel" action="__BASE_PATH__/admin/sample/copyLabels" method="post" class="new-label-wrap"><strong class="form-legend">Copy all labels from a project and append to current project</strong><div class="form-wrap"><input type="text" name="owner" class="input-label mr5" placeholder="Owner Name"><input type="text" name="projectName" class="input-label" placeholder="Project name"></div><button type="submit" class="ybtn ybtn-info btn-submit">Copy labels</button><div>If project path is 'naver/yobi', then owner name is 'naver' and project name is 'yobi'. Character case is ignored.</div><div>If there is already a label with the same name, category and color, another label will not be added.</div></form><form id="frmNewLabel" action="__BASE_PATH__/admin/sample/issue/labels" method="post" class="new-label-wrap"><strong class="form-legend">Add new label</strong><div class="form-wrap"><div><input type="text" name="category" class="input-label mr5" maxlength="250" data-provider="typeahead" autocomplete="off" placeholder="Category"><input type="text" name="name" class="input-label" maxlength="250" autocomplete="off" placeholder="Name"></div><div class="label-preset-colors">__NEW_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><button type="submit" class="ybtn ybtn-primary btn-submit">Add label</button></form><div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div></div></div>
-<div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-toggle="select2" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
-<div id="editLabel" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-form"><div class="center-txt"><select name="category.id" data-toggle="select2"></select><input type="text" name="name" class="text input-label-name" maxlength="250" placeholder="Name"><div class="label-preset-colors edit">__EDIT_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
+<div id="editCategory" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-category-form"><div class="center-txt"><input type="text" name="name" class="text category-name" placeholder="Category"><div class="desc">In this category, you can choose<select name="isExclusive" data-dropdown-css-class="select2-without-searchbox"><option value="false">multiple labels</option><option value="true">only a single label</option></select></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
+<div id="editLabel" class="modal hide yobiDialog" tabindex="-1" role="dialog" aria-hidden="true"><div class="btn-dismiss"><button type="button" class="btn-transparent">×</button></div><div class="message edit-label-form"><div class="center-txt"><select name="category.id"></select><input type="text" name="name" class="text input-label-name" maxlength="250" placeholder="Name"><div class="label-preset-colors edit">__EDIT_COLORS__<input type="text" name="color" class="input-small input-label-color" placeholder="Label Color"></div></div><div class="center-txt buttons mt20 mb20"><button type="button" class="ybtn ybtn-info btnSubmit">Save</button><button type="button" class="ybtn ybtn-default">Cancel</button></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -87,6 +87,18 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
   await expect(page.locator("#copyLabel")).toBeVisible();
   await expect(page.locator("#frmNewLabel")).toBeVisible();
   await expect(page.locator("#labelsList")).toContainText("No label exists");
+  await expect(page.locator('#editCategory select[name="isExclusive"]')).not.toHaveAttribute(
+    "data-toggle",
+    "select2",
+  );
+  await expect(page.locator('#editCategory select[name="isExclusive"]')).toHaveAttribute(
+    "data-dropdown-css-class",
+    "select2-without-searchbox",
+  );
+  await expect(page.locator('#editLabel select[name="category.id"]')).not.toHaveAttribute(
+    "data-toggle",
+    "select2",
+  );
 
   const expected = expectedProjectLabels(basePath);
   expect(await canonicalizeScreenRoots(page)).toEqual(await canonicalizeHtml(page, expected));
@@ -226,6 +238,11 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
   expect(routeSource).not.toContain("useLinkProps");
   expect(routeSource).not.toContain("onMouseDown=");
   expect(routeSource).not.toContain('createElement("a"');
+  expect(routeSource).not.toMatch(/name="isExclusive"[\s\S]{0,120}data-toggle="select2"/);
+  expect(routeSource).not.toMatch(/name="category\.id"[\s\S]{0,120}data-toggle="select2"/);
+  expect(routeSource).toMatch(
+    /name="isExclusive"[\s\S]{0,120}data-dropdown-css-class="select2-without-searchbox"/,
+  );
   expect(routeSource).not.toMatch(/\bfunction\s+LegacyLink\b/);
   expect(routeSource).not.toMatch(/\bconst\s+LegacyLink\b/);
 });
@@ -775,6 +792,10 @@ test("project labels edit modals submit through route mutations", async ({ page 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
   await page.locator('#labelsList tr[data-label-id="8"] button[data-update-uri]').click();
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator('#editLabel select[name="category.id"]')).not.toHaveAttribute(
+    "data-toggle",
+    "select2",
+  );
   await expect(page.locator('#editLabel input[name="name"]')).toHaveValue("bug");
   await page.fill('#editLabel input[name="name"]', "bugfix");
   await page.locator("#editLabel .btn-preset-color").nth(1).click();
@@ -790,6 +811,14 @@ test("project labels edit modals submit through route mutations", async ({ page 
     .locator('#labelsList .category-wrap[data-category="4"] button[data-category-update-uri]')
     .click();
   await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator('#editCategory select[name="isExclusive"]')).not.toHaveAttribute(
+    "data-toggle",
+    "select2",
+  );
+  await expect(page.locator('#editCategory select[name="isExclusive"]')).toHaveAttribute(
+    "data-dropdown-css-class",
+    "select2-without-searchbox",
+  );
   await expect(page.locator('#editCategory input[name="name"]')).toHaveValue("priority");
   await page.fill('#editCategory input[name="name"]', "severity");
   await page.selectOption('#editCategory select[name="isExclusive"]', "false");

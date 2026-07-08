@@ -1112,7 +1112,6 @@ function EditCategoryModal({
               <select
                 key={category ? `category-exclusive-${category.id}` : "category-exclusive-empty"}
                 name="isExclusive"
-                data-toggle="select2"
                 data-dropdown-css-class="select2-without-searchbox"
                 value={category ? String(category.isExclusive) : undefined}
                 onChange={(event) =>
@@ -1191,7 +1190,6 @@ function EditLabelModal({
             <select
               key={label ? `label-category-${label.id}` : "label-category-empty"}
               name="category.id"
-              data-toggle="select2"
               value={label?.categoryId || undefined}
               onChange={(event) =>
                 label && onChange({ ...label, categoryId: event.currentTarget.value })
