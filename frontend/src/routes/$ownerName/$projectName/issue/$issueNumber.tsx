@@ -789,6 +789,7 @@ function IssueDetailBody({
               </div>
               <IssueVote
                 canComment={canComment}
+                currentUserLoginId={currentUserLoginId}
                 hasVoted={hasVotedIssue}
                 issue={issue}
                 issueHref={issueHref}
@@ -1143,6 +1144,7 @@ function IssuePostingHistory({
 
 function IssueVote({
   canComment,
+  currentUserLoginId,
   hasVoted,
   issue,
   issueHref,
@@ -1150,6 +1152,7 @@ function IssueVote({
   voters,
 }: {
   canComment: boolean;
+  currentUserLoginId: string;
   hasVoted: boolean;
   issue: RestIssueDetailResponse;
   issueHref: string;
@@ -1199,7 +1202,14 @@ function IssueVote({
             </span>
           </span>
         )}
-        {voters.length ? <IssueVoterAvatars onOpen={openVotersDialog} voters={voters} /> : null}
+        {voters.length ? (
+          <IssueVoterAvatars
+            currentUserLoginId={currentUserLoginId}
+            hasVoted={hasVoted}
+            onOpen={openVotersDialog}
+            voters={voters}
+          />
+        ) : null}
       </div>
       {voters.length ? (
         <IssueVoterListDialog
@@ -1217,14 +1227,27 @@ function IssueVote({
 }
 
 function IssueVoterAvatars({
+  currentUserLoginId,
+  hasVoted,
   onOpen,
   voters,
 }: {
+  currentUserLoginId: string;
+  hasVoted: boolean;
   onOpen: (event: MouseEvent<HTMLButtonElement>) => void;
   voters: VoterLike[];
 }) {
-  const visibleVoters = voters.slice(0, 3);
-  const overflowVoters = voters.slice(3);
+  const currentUserVoter =
+    hasVoted && currentUserLoginId
+      ? voters.find((voter) => stringField(voter.loginId) === currentUserLoginId)
+      : undefined;
+  const otherVoters = currentUserVoter
+    ? voters.filter((voter) => stringField(voter.loginId) !== currentUserLoginId)
+    : voters;
+  const visibleVoters = currentUserVoter
+    ? [currentUserVoter, ...otherVoters.slice(0, 3)]
+    : otherVoters.slice(0, 3);
+  const overflowVoters = otherVoters.slice(3);
   const overflowTitle = overflowVoters
     .slice(0, 5)
     .map((voter) => `${stringField(voter.userLabel)} <br>`)

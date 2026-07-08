@@ -2164,6 +2164,84 @@ test("project issue detail vote action refreshes legacy voter list branch", asyn
   await expect(page.locator("#voters.voters-dialog")).toHaveCount(1);
 });
 
+test("project issue detail renders current voter first like legacy partial_voters", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const { issueDetailRequests } = await mockProjectIssueDetail(page, {
+    hasVoted: true,
+    issueVoters: [commentVoters()[1], commentVoters()[0], commentVoters()[2], commentVoters()[3]],
+    voterCount: 4,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li></ul></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#vote > .voter-list-wrap")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+  expect(await issueVoterAvatarOrderMetrics(page)).toEqual({
+    firstHref: `${basePath}/admin`,
+    firstLeftBeforeSecond: true,
+    secondHref: `${basePath}/dev`,
+  });
+  expect(issueDetailRequests).toEqual([`GET ${basePath}/api/v1/projects/admin/sample/issues/11`]);
+});
+
+test("project issue detail overflows non-current voters after current plus three avatars", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    hasVoted: true,
+    issueVoters: [
+      commentVoters()[1],
+      commentVoters()[0],
+      commentVoters()[2],
+      commentVoters()[3],
+      commentVoters()[4],
+    ],
+    voterCount: 5,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/admin" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li><li data-toggle="tooltip" data-html="true" title="QA Three &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 1 others</button></li></ul></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#vote > .voter-list-wrap")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
+test("project issue detail does not invent current voter when voted payload omits current user", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page, {
+    hasVoted: true,
+    issueVoters: [commentVoters()[1], commentVoters()[2], commentVoters()[3], commentVoters()[4]],
+    voterCount: 4,
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const expected =
+    `<div class="voter-list-wrap"><ul class="voter-list"><li><a href="__BASE_PATH__/dev" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa1" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA One"><img src="/assets/images/default-avatar-32.png"></a></li><li><a href="__BASE_PATH__/qa2" class="avatar-wrap smaller" data-toggle="tooltip" data-placement="top" title="QA Two"><img src="/assets/images/default-avatar-32.png"></a></li><li data-toggle="tooltip" data-html="true" title="QA Three &lt;br&gt;"><button type="button" data-toggle="modal" data-target="#voters">and 1 others</button></li></ul></div>`.replaceAll(
+      "__BASE_PATH__",
+      basePath,
+    );
+  expect(await canonicalize(page, "#vote > .voter-list-wrap")).toEqual(
+    await canonicalizeHtml(page, expected),
+  );
+});
+
 test("project issue detail renders legacy voter overflow link", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {
@@ -3270,6 +3348,21 @@ function commentVoters() {
   ];
 }
 
+async function issueVoterAvatarOrderMetrics(page: Page) {
+  return page.evaluate(() => {
+    const voters = Array.from(document.querySelectorAll<HTMLAnchorElement>("#vote .voter-list a"));
+    const first = voters[0];
+    const second = voters[1];
+    const firstRect = first?.getBoundingClientRect();
+    const secondRect = second?.getBoundingClientRect();
+    return {
+      firstHref: first?.getAttribute("href") ?? null,
+      firstLeftBeforeSecond: firstRect && secondRect ? firstRect.left < secondRect.left : false,
+      secondHref: second?.getAttribute("href") ?? null,
+    };
+  });
+}
+
 async function commentUpdateFormMetrics(page: Page) {
   return page.locator(".span-left-pane #comment-77").evaluate((comment) => {
     const form = comment.querySelector<HTMLElement>("#comment-editform-77");
@@ -3655,6 +3748,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
   const commentDeleteRequests: string[] = [];
   const commentVoteRequests: { csrfToken: string | null; method: string }[] = [];
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
+  const issueDetailRequests: string[] = [];
   const issueVoteRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const watchRequests: { hasCsrfToken: boolean; method: string }[] = [];
   const issueWeightRequests: { csrfToken: string | null; method: string; url: string }[] = [];
@@ -3807,6 +3901,9 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     },
   );
   await page.route(`**${detailPath}`, async (route) => {
+    issueDetailRequests.push(
+      `${route.request().method()} ${new URL(route.request().url()).pathname}`,
+    );
     if (route.request().method() === "DELETE") {
       deleteRequests.push(route.request().method());
       await route.fulfill({ status: 204 });
@@ -3972,6 +4069,7 @@ async function mockProjectIssueDetail(page: Page, issueOverrides: Record<string,
     commentVoteRequests,
     deleteRequests,
     favoriteRequests,
+    issueDetailRequests,
     issueVoteRequests,
     issueWeightRequests,
     watchRequests,
