@@ -140,6 +140,8 @@ function ProjectReviewsBody({
   const activeState = search.state || reviews.state || "open";
   const activeOrderBy = effectiveOrderBy(search);
   const activeOrderDir = effectiveOrderDir(search);
+  const nextCreatedDateOrderDir =
+    activeOrderBy === "createdDate" ? (activeOrderDir === "asc" ? "desc" : "asc") : "desc";
 
   function pushReviews(next: Partial<ProjectReviewsSearch>) {
     router.history.push(
@@ -170,7 +172,7 @@ function ProjectReviewsBody({
             <div className="inner advanced">
               <ul className="lst-stacked unstyled">
                 <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
-                  <button type="button" data-toggle="filter" onClick={() => filterClick({})}>
+                  <button type="button" onClick={() => filterClick({})}>
                     {t("review.allReview")}
                     <span className="num-badge pull-right">{reviews.allCount}</span>
                   </button>
@@ -178,8 +180,6 @@ function ProjectReviewsBody({
                 <li className={search.participantId === currentUserId ? "active" : ""}>
                   <button
                     type="button"
-                    data-toggle="filter"
-                    data-value={currentUserId}
                     onClick={() => filterClick({ participantId: currentUserId })}
                   >
                     {t("review.involvingYou")}
@@ -187,12 +187,7 @@ function ProjectReviewsBody({
                   </button>
                 </li>
                 <li className={search.authorId === currentUserId ? "active" : ""}>
-                  <button
-                    type="button"
-                    data-toggle="filter"
-                    data-value={currentUserId}
-                    onClick={() => filterClick({ authorId: currentUserId })}
-                  >
+                  <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
                     {t("review.createdByYou")}
                     <span className="num-badge pull-right">{reviews.authorCount}</span>
                   </button>
@@ -223,20 +218,11 @@ function ProjectReviewsBody({
             <div className="pull-right filters">
               <button
                 type="button"
-                data-field="createdDate"
-                data-value={
-                  activeOrderBy === "createdDate"
-                    ? activeOrderDir === "asc"
-                      ? "desc"
-                      : "asc"
-                    : "desc"
-                }
                 className="filter"
-                data-toggle="order"
-                onClick={(event) => {
+                onClick={() => {
                   pushReviews({
                     orderBy: "createdDate",
-                    orderDir: event.currentTarget.dataset.value || "desc",
+                    orderDir: nextCreatedDateOrderDir,
                     pageNum: 1,
                   });
                 }}
@@ -254,8 +240,6 @@ function ProjectReviewsBody({
               <li className={activeState === "open" ? "active" : ""}>
                 <button
                   type="button"
-                  data-value="open"
-                  data-toggle="filter"
                   onClick={() => {
                     pushReviews({ pageNum: 1, state: "open" });
                   }}
@@ -267,8 +251,6 @@ function ProjectReviewsBody({
               <li className={activeState === "closed" ? "active" : ""}>
                 <button
                   type="button"
-                  data-value="closed"
-                  data-toggle="filter"
                   onClick={() => {
                     pushReviews({ pageNum: 1, state: "closed" });
                   }}
