@@ -1,10 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import type {
-  HTMLAttributes,
-  KeyboardEvent as ReactKeyboardEvent,
-  MouseEvent as ReactMouseEvent,
-} from "react";
+import type { HTMLAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
@@ -18,7 +14,6 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
-type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 export type OrganizationPullRequestsSearch = {
@@ -118,7 +113,6 @@ function OrganizationPullRequestsBody({
   const router = useRouter();
   const organizationName = stringField(organization.organizationName, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
-  const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const openAction = prefixBasePath(
     runtimeConfig.basePath,
     `/organizations/${organizationName}/pullrequests`,
@@ -128,19 +122,7 @@ function OrganizationPullRequestsBody({
     `/organizations/${organizationName}/closedPullrequests`,
   );
   const searchAction = selectedCategory === "closed" ? closedAction : openAction;
-  const navigateTab = (event: ReactMouseEvent<HTMLButtonElement>, to: string) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
+  const navigateTab = (to: string) => {
     router.history.push(to);
   };
 
@@ -155,7 +137,7 @@ function OrganizationPullRequestsBody({
       />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div {...legacyPjaxAttrs} className="row-fluid cb">
+          <div className="row-fluid cb">
             <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
               <form id="search" name="search" action={searchAction} method="get">
                 <div className="search">
@@ -176,23 +158,13 @@ function OrganizationPullRequestsBody({
             <div className="span10 span-hard-wrap" id="span10">
               <ul className="nav nav-tabs nm pullrequeset-tab-menu">
                 <li className={selectedCategory === "open" ? "active" : ""}>
-                  <button
-                    type="button"
-                    data-url={openAction}
-                    data-type="state"
-                    onClick={(event) => navigateTab(event, openAction)}
-                  >
+                  <button type="button" onClick={() => navigateTab(openAction)}>
                     {t("pullRequest.state.open")}
                     <span className="num-badge">{pullRequests.openCount}</span>
                   </button>
                 </li>
                 <li className={selectedCategory === "closed" ? "active" : ""}>
-                  <button
-                    type="button"
-                    data-url={closedAction}
-                    data-type="state"
-                    onClick={(event) => navigateTab(event, closedAction)}
-                  >
+                  <button type="button" onClick={() => navigateTab(closedAction)}>
                     {t("pullRequest.state.closed")}
                     <span className="num-badge">{pullRequests.closedCount}</span>
                   </button>
