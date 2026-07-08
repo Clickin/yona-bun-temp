@@ -1054,7 +1054,6 @@ function CodeCommentThreadView({
       id={`thread-${thread.id}`}
       data-state={isNonRanged ? undefined : state}
       className={`comment-thread-wrap ${state}${!isNonRanged && state === "closed" ? " fold" : ""}`}
-      data-toggle={isNonRanged ? undefined : "CodeCommentThread"}
       data-range-path={isNonRanged ? undefined : thread.path}
       data-range-startside={isNonRanged ? undefined : thread.startSide}
       data-range-startline={isNonRanged ? undefined : thread.startLine}
@@ -1152,7 +1151,6 @@ function CodeCommentThreadView({
                     <span className="edit pull-right">
                       <button
                         className="btn-transparent pull-right close"
-                        data-toggle={isNonRanged ? undefined : "comment-delete"}
                         onClick={(event) => {
                           if (isNonRanged) {
                             deleteComment(comment.id);
