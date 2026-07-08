@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/milestone/5" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="v1.0" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2">Release scope</textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE" data-resource-id="5"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__/admin/sample/milestones" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" value="2026-08-31"></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/milestone/5" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="v1.0" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2">Release scope</textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE" data-resource-id="5"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__/admin/sample/milestones" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" value="2026-08-31"></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
 `;
 
 test("project milestone edit form matches legacy milestone/edit.scala.html core form DOM", async ({
@@ -29,18 +29,13 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator("#editor-contents-content-body")).toHaveValue("Release scope");
-  await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-content-body"]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-content-body"]'),
-  ).toHaveCount(0);
-  const editTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
-  );
-  const previewTab = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
-  );
+  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
+  const editor = milestoneEditMarkdownEditor(page);
+  await expect(editor).toHaveClass("mt10");
+  await expect(editor.locator('.nav-tabs a[href="#edit-content-body"]')).toHaveCount(0);
+  await expect(editor.locator('.nav-tabs a[href="#preview-content-body"]')).toHaveCount(0);
+  const editTab = editor.locator('.nav-tabs button[type="button"][data-mode="edit"]');
+  const previewTab = editor.locator('.nav-tabs button[type="button"][data-mode="preview"]');
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect(editTab).not.toHaveAttribute("data-toggle", /.+/u);
@@ -326,6 +321,7 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).toContain('event.key === "Enter"');
   expect(routeSource).toContain("tabIndex={1}");
   expect(routeSource).toContain("tabIndex={2}");
+  expect(routeSource).not.toContain('data-toggle="markdown-editor"');
   expect(routeSource).not.toContain('data-toggle="tab"');
   expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
   expect(routeSource).toContain("function projectSearchScopeOrganizationName");
@@ -513,7 +509,7 @@ async function readMilestoneEditFormMetrics(page: Page) {
 }
 
 async function readMilestoneEditorTabMetrics(page: Page) {
-  return page.locator('[data-toggle="markdown-editor"]').evaluate((editor) => {
+  return milestoneEditMarkdownEditor(page).evaluate((editor) => {
     const nav = editor.querySelector<HTMLElement>(".nav-tabs");
     const editButton = editor.querySelector<HTMLButtonElement>('button[data-mode="edit"]');
     const previewButton = editor.querySelector<HTMLButtonElement>('button[data-mode="preview"]');
@@ -568,6 +564,12 @@ async function readMilestoneEditorTabMetrics(page: Page) {
       textareaTop: Math.round(textareaBox.top),
     };
   });
+}
+
+function milestoneEditMarkdownEditor(page: Page) {
+  return page.locator(
+    ".content-wrap.frm-wrap .span-left-pane .mt10:has(#editor-contents-content-body)",
+  );
 }
 
 async function navbarSearchMetrics(page: Page) {
