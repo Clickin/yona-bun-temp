@@ -171,7 +171,9 @@ function ProjectCodeFileBody({
   const router = useRouter();
   const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = code.selectedBranch || branch;
+  const selectedBranchItemName = branchItemName(selectedBranch);
   const encodedBranch = encodeURIComponent(selectedBranch);
+  const encodedBranchItemName = encodeURIComponent(selectedBranchItemName);
   const isFolder = code.file === null;
   const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
@@ -181,7 +183,7 @@ function ProjectCodeFileBody({
     ownerName,
     projectName,
     "postform",
-  )}?path=${newFilePath}&branch=${encodedBranch}`;
+  )}?path=${newFilePath}&branch=${encodedBranchItemName}`;
 
   return (
     <div className="page-wrap-outer">
@@ -265,28 +267,31 @@ function ProjectCodeFileBody({
                 ownerName,
                 projectName,
                 "code",
-                encodedBranch,
+                encodedBranchItemName,
                 filePath,
               )}
               onChange={(event) => {
                 router.history.push(event.currentTarget.value);
               }}
             >
-              {code.branches.map((item) => (
-                <option
-                  key={item.name}
-                  value={projectHref(
-                    runtimeConfig.basePath,
-                    ownerName,
-                    projectName,
-                    "code",
-                    encodeURIComponent(item.name),
-                    filePath,
-                  )}
-                >
-                  {item.name}
-                </option>
-              ))}
+              {code.branches.map((item) => {
+                const branchName = branchItemName(item.name);
+                return (
+                  <option
+                    key={item.name}
+                    value={projectHref(
+                      runtimeConfig.basePath,
+                      ownerName,
+                      projectName,
+                      "code",
+                      encodeURIComponent(branchName),
+                      filePath,
+                    )}
+                  >
+                    {item.name}
+                  </option>
+                );
+              })}
             </select>
             <div id="breadcrumbs" className="code-breadcrumb-wrap ml10 pull-left">
               <Link
@@ -533,13 +538,14 @@ function FileView({
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
+  const selectedBranchItemName = branchItemName(selectedBranch);
   const authorLoginId = stringField(file.userLoginId, "");
   const hasViewableText = typeof file.data === "string" || typeof file.text === "string";
   const fileText = stringField(file.data, "") || stringField(file.text, "");
   const isBinary = booleanField(file.isBinary);
   const isTooLargeText = !isBinary && !hasViewableText && numberField(file.size) > 0;
   const mimeType = stringField(file.mimeType, "");
-  const rawRevision = encodeURIComponent(isGit ? selectedBranch : commitId);
+  const rawRevision = encodeURIComponent(isGit ? selectedBranchItemName : commitId);
   const rawPath = projectPath(ownerName, projectName, "rawcode", rawRevision, filePath);
   const rawHref = prefixBasePath(runtimeConfig.basePath, rawPath);
   const openPath = projectPath(ownerName, projectName, "files", rawRevision, filePath);
@@ -548,7 +554,7 @@ function FileView({
     ownerName,
     projectName,
     "postform",
-  )}?path=${filePath}&branch=${encodeURIComponent(selectedBranch)}&edit=true`;
+  )}?path=${filePath}&branch=${encodeURIComponent(selectedBranchItemName)}&edit=true`;
   const historyPath = projectPath(
     ownerName,
     projectName,
@@ -779,6 +785,15 @@ function numberField(value: unknown) {
 
 function booleanField(value: unknown) {
   return value === true || value === "true";
+}
+
+function branchItemName(branch: string) {
+  const refsPrefix = "refs/";
+  if (!branch.startsWith(refsPrefix)) {
+    return branch;
+  }
+  const branchTypeEnd = branch.indexOf("/", refsPrefix.length);
+  return branchTypeEnd === -1 ? branch : branch.slice(branchTypeEnd + 1);
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {

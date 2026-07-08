@@ -325,6 +325,59 @@ test("project code file branch selector navigates slash branch in the SPA", asyn
   ]);
 });
 
+test("project code file normalizes refs branch names like legacy branchItemName", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(
+    page,
+    codeRequests,
+    "src/main.rs",
+    "fn main() {}\n",
+    {},
+    {},
+    [{ name: "refs/heads/main" }, { name: "refs/tags/v1.0.0" }],
+    "refs/heads/main",
+  );
+
+  await page.goto(`${basePath}/admin/sample/code/refs%2Fheads%2Fmain/src/main.rs`);
+
+  await expect(page.locator("#branches option").first()).toHaveText("refs/heads/main");
+  await expect(page.locator("#branches option").first()).toHaveAttribute(
+    "value",
+    `${basePath}/admin/sample/code/main/src/main.rs`,
+  );
+  await expect(page.locator("#branches option").nth(1)).toHaveText("refs/tags/v1.0.0");
+  await expect(page.locator("#branches option").nth(1)).toHaveAttribute(
+    "value",
+    `${basePath}/admin/sample/code/v1.0.0/src/main.rs`,
+  );
+  await expect(page.locator("#branches")).toHaveValue(
+    `${basePath}/admin/sample/code/main/src/main.rs`,
+  );
+  await expect(page.locator("#new-file-link")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?path=src/&branch=main`,
+  );
+  await expect(page.locator(".file-header .pull-right a", { hasText: "Raw" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/rawcode/main/src/main.rs`,
+  );
+  await expect(page.locator(".file-header .pull-right a", { hasText: "Edit" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/postform?path=src/main.rs&branch=main&edit=true`,
+  );
+  await expect(page.locator("#open-in-browser")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/files/main/src/main.rs`,
+  );
+  await expect(
+    page.locator(".file-header .pull-right a", { hasText: "Change history" }),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/commits/refs%2Fheads%2Fmain/src/main.rs`);
+  expect(codeRequests).toEqual(["branch=refs%2Fheads%2Fmain&path=src%2Fmain.rs"]);
+});
+
 test("project code file route source keeps backend links as hrefs without route casts", () => {
   const routeSource = readFileSync(
     fileURLToPath(
@@ -384,6 +437,7 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).toContain('to="/$ownerName/$projectName/commit/$commitId"');
   expect(routeSource).toContain("const newFilePathWithSearch =");
   expect(routeSource).toContain("const editPathWithSearch =");
+  expect(routeSource).toContain("function branchItemName(branch: string)");
   expect(routeSource).toContain("const historyPath =");
   expect(routeSource).toContain(
     'to={projectPath(ownerName, projectName, "code", encodedBranch, item.path)}',
