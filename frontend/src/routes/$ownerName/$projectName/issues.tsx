@@ -293,7 +293,11 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
         isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
         currentUserLoginId={stringField(sessionQuery.data.loginId, "")}
-        currentSearchString={location.searchStr}
+        currentSearchString={
+          typeof globalThis.location === "undefined"
+            ? location.searchStr
+            : globalThis.location.search
+        }
         issues={issuesQuery.data}
         issueAssignees={issueAssigneesQuery.data.items}
         issueAuthors={issueAuthorsQuery.data.items}
@@ -3154,7 +3158,7 @@ function excelHref(
       (name === "labelIds" && value === "[]") ||
       (name === "orderBy" && value === "updatedDate") ||
       (name === "orderDir" && value === "desc") ||
-      (name === "state" && value === "open")
+      (name === "state" && value === "open" && !initialNavigationSearchHas("state", "open"))
     ) {
       routeDefaultParams.push(name);
     }
@@ -3176,6 +3180,22 @@ function excelHref(
   }
   pushSearchParam(queryPairs, "format", "xls");
   return `${prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}?${queryPairs.join("&")}`;
+}
+
+function initialNavigationSearchHas(name: string, value: string) {
+  if (typeof globalThis.location === "undefined" || typeof performance === "undefined") {
+    return false;
+  }
+  const navigation = performance.getEntriesByType("navigation")[0];
+  if (!navigation) {
+    return false;
+  }
+  try {
+    const url = new URL(navigation.name);
+    return url.searchParams.get(name) === value;
+  } catch {
+    return false;
+  }
 }
 
 function legacyExcelLabelIds(values: string[]) {

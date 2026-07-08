@@ -1443,6 +1443,11 @@ test("project issue Excel export href removes pageNum like legacy partial_list_w
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssues(page, "populated");
 
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug&state=open&pageNum=1`);
+  await expect(
+    page.locator('.pull-left a.ybtn.small:has-text("Download as Excel file")'),
+  ).toHaveAttribute("href", `${basePath}/admin/sample/issues?filter=bug&state=open&format=xls`);
+
   await page.goto(
     `${basePath}/admin/sample/issues?filter=bug&pageNum=3&orderBy=createdDate&orderDir=asc&state=closed&labelIds=8`,
   );
