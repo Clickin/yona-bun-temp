@@ -319,9 +319,12 @@ test("project commit detail comment delete modal is route-owned React state", as
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('id="comment-delete-modal"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
-    'className={isOpen ? "modal fade in" : "modal hide fade"}',
+    'className={isOpen ? "modal hide fade in" : "modal hide fade"}',
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('className="modal-backdrop fade in"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('role="presentation"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClick={onClose}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onKeyUp={onClose}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     'data-request-method={isOpen ? "delete" : undefined}',
   );
@@ -1276,11 +1279,13 @@ index 1234567..abcdef1 100644
   });
   await expect(page.locator("#comment-501 .comment-avatar img")).toHaveAttribute("alt", "dev");
   await page.locator('#comment-501 [data-toggle="comment-delete"]').click();
-  await expect(page.locator("#comment-delete-modal")).toHaveClass(/in/);
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade in");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   expect(await commentDeleteModalMetrics(page)).toEqual({
     backdropDisplay: "block",
     bodyDisplay: "block",
+    className: "modal hide fade in",
     confirmMethod: "delete",
     confirmText: "Yes",
     confirmUri: `${basePath}/comments/501`,
@@ -1294,6 +1299,12 @@ index 1234567..abcdef1 100644
     top: 10,
     width: 562,
   });
+  const beforeBackdropDismissUrl = page.url();
+  await page.locator(".modal-backdrop.fade.in").click({ position: { x: 1, y: 1 } });
+  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade");
+  await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "none");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(page).toHaveURL(beforeBackdropDismissUrl);
   expect(detailRequests).toEqual(["branch=main"]);
   expect(await canonicalize(page, ".diff-body")).toEqual(
     await canonicalizeHtml(
@@ -1864,6 +1875,7 @@ async function commentDeleteModalMetrics(page: Page) {
     return {
       backdropDisplay: backdrop ? window.getComputedStyle(backdrop).display : null,
       bodyDisplay: body ? window.getComputedStyle(body).display : null,
+      className: modal.className,
       confirmMethod: confirm?.dataset.requestMethod ?? null,
       confirmText: confirm?.textContent?.trim() ?? null,
       confirmUri: confirm?.dataset.requestUri ?? null,

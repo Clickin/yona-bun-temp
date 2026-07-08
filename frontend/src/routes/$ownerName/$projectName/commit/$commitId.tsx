@@ -1791,7 +1791,7 @@ function CommentDeleteModal({
     <>
       <div
         id="comment-delete-modal"
-        className={isOpen ? "modal fade in" : "modal hide fade"}
+        className={isOpen ? "modal hide fade in" : "modal hide fade"}
         style={isOpen ? { display: "block" } : undefined}
       >
         <div className="modal-header">
@@ -1818,7 +1818,14 @@ function CommentDeleteModal({
           </button>
         </div>
       </div>
-      {isOpen ? <div className="modal-backdrop fade in"></div> : null}
+      {isOpen ? (
+        <div
+          className="modal-backdrop fade in"
+          role="presentation"
+          onClick={onClose}
+          onKeyUp={onClose}
+        ></div>
+      ) : null}
     </>
   );
 }
