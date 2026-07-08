@@ -34,7 +34,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
         <ul class="nav nav-tabs nm">
           <li class="active"><button type="button" state="open">Open<span class="num-badge">2</span></button></li><li class=""><button type="button" state="closed">Closed<span class="num-badge">1</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
-          <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
+          <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
         <div class="filter-wrap small-heights"><div class="filters pull-right"><button class="filter" type="button" orderBy="dueDate" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Due Date</button><button class="filter active" type="button" orderBy="updatedDate" orderDir="asc"><i class="ico btn-gray-arrow down"></i>Updated</button><button class="filter" type="button" orderBy="createdDate" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Created</button><button class="filter" type="button" orderBy="numOfComments" orderDir="desc"><i class="ico btn-gray-arrow down"></i>Comments</button></div></div>
         <ul class="post-list-wrap my-issues">
@@ -86,7 +86,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
         <ul class="nav nav-tabs nm">
           <li class=""><button type="button" state="open">Open<span class="num-badge">0</span></button></li><li class="active"><button type="button" state="closed">Closed<span class="num-badge">0</span></button></li>
           <li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" data-content="Splits list and body into columns respectively"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li>
-          <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" data-toggle="popover" data-trigger="hover" data-placement="top" title="Show subtask" data-content="Show subtask always"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
+          <li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li>
         </ul>
         <div class="error-wrap"><i class="ico ico-err1"></i><p>No issue found</p></div>
       </div>
@@ -399,6 +399,18 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(tabsSource).toContain('to="/notifications"');
   expect(tabsSource).toContain('to="/user/issues"');
   expect(tabsSource).toContain('to="/user/files"');
+  const showSubtasksSource = routeSource.slice(
+    routeSource.indexOf("function ShowSubtasksCheckbox("),
+    routeSource.indexOf("function quickFilterIds("),
+  );
+  expect(showSubtasksSource).not.toContain('data-toggle="popover"');
+  expect(showSubtasksSource).not.toContain("data-toggle");
+  expect(showSubtasksSource).not.toContain("data-trigger");
+  expect(showSubtasksSource).not.toContain("data-placement");
+  expect(showSubtasksSource).not.toContain("data-content");
+  expect(showSubtasksSource).toContain("onMouseEnter");
+  expect(showSubtasksSource).toContain("onFocus");
+  expect(showSubtasksSource).toContain('className="popover top"');
 });
 
 test("current-user issues state tab uses button side-effect control with SPA transition", async ({
@@ -592,8 +604,13 @@ test("current-user issues show-subtasks toggle follows legacy yona.showSubtask l
   await page.goto(`${basePath}/user/issues`);
   await page.evaluate(() => localStorage.removeItem("showSubtasksAlways"));
   await page.reload();
+  const showSubtasks = page.locator(".show-subtasks");
   const toggle = page.locator("#toggle-show-subtasks");
   const childList = page.locator("#issue-item-42 .child-issue-list");
+  await expect(showSubtasks).toHaveAttribute("title", "Show subtask");
+  await expect(showSubtasks).not.toHaveAttribute("data-toggle", "popover");
+  await expect(showSubtasks).not.toHaveAttribute("data-trigger", "hover");
+  await expect(showSubtasks).not.toHaveAttribute("data-placement", "top");
   await expect(toggle).not.toBeChecked();
   await expect(childList).not.toBeVisible();
   await expect(page.locator(".child-issue-list .issue-item.child-issue")).toHaveCount(2);
@@ -622,6 +639,52 @@ test("current-user issues show-subtasks toggle follows legacy yona.showSubtask l
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("showSubtasksAlways")))
     .toBe("false");
+
+  await toggle.evaluate((element) => element.blur());
+  await page.mouse.move(1, 1);
+  await showSubtasks.hover();
+  const popover = page.locator(".popover");
+  await expect(popover).toBeVisible();
+  await expect(popover.locator(".popover-content")).toHaveText("Show subtask always");
+  const hoverBoxes = await page.evaluate(() => {
+    const control = document.querySelector(".show-subtasks");
+    const labelText = document.querySelector(".show-subtasks-text");
+    const popoverElement = document.querySelector(".popover");
+    if (!control || !labelText || !popoverElement) return null;
+    const controlBox = control.getBoundingClientRect();
+    const labelBox = labelText.getBoundingClientRect();
+    const popoverBox = popoverElement.getBoundingClientRect();
+    return {
+      control: {
+        left: controlBox.left,
+        right: controlBox.right,
+        top: controlBox.top,
+        width: controlBox.width,
+      },
+      label: { top: labelBox.top },
+      popover: {
+        bottom: popoverBox.bottom,
+        left: popoverBox.left,
+        right: popoverBox.right,
+        width: popoverBox.width,
+      },
+    };
+  });
+  expect(hoverBoxes).not.toBeNull();
+  expect(hoverBoxes!.popover.bottom).toBeLessThanOrEqual(hoverBoxes!.label.top + 1);
+  const controlCenter = hoverBoxes!.control.left + hoverBoxes!.control.width / 2;
+  const popoverCenter = hoverBoxes!.popover.left + hoverBoxes!.popover.width / 2;
+  expect(Math.abs(popoverCenter - controlCenter)).toBeLessThanOrEqual(4);
+  expect(hoverBoxes!.popover.right).toBeGreaterThan(hoverBoxes!.control.left);
+  expect(hoverBoxes!.popover.left).toBeLessThan(hoverBoxes!.control.right);
+
+  await page.mouse.move(1, 1);
+  await expect(page.locator(".popover")).toHaveCount(0);
+  await toggle.focus();
+  await expect(page.locator(".popover")).toBeVisible();
+  await expect(page.locator(".popover .popover-content")).toHaveText("Show subtask always");
+  await toggle.evaluate((element) => element.blur());
+  await expect(page.locator(".popover")).toHaveCount(0);
 });
 
 test("current-user issues subtask summary follows legacy partial_list_subtask", async ({
