@@ -742,12 +742,12 @@ function ReviewWrap({
 
         <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
           <li className={reviewCardTab === "open" ? "active" : undefined}>
-            <button type="button" data-toggle="tab" onClick={() => setReviewCardTab("open")}>
+            <button type="button" onClick={() => setReviewCardTab("open")}>
               {t("issue.state.open")} {openThreads.length}
             </button>
           </li>
           <li className={reviewCardTab === "closed" ? "active" : undefined}>
-            <button type="button" data-toggle="tab" onClick={() => setReviewCardTab("closed")}>
+            <button type="button" onClick={() => setReviewCardTab("closed")}>
               {t("issue.state.closed")} {closedThreads.length}
             </button>
           </li>
@@ -1687,17 +1687,12 @@ function Editor({
     <div data-toggle="markdown-editor" className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={mode === "edit" ? "active" : undefined}>
-          <button type="button" data-toggle="tab" data-mode="edit" onClick={() => setMode("edit")}>
+          <button type="button" data-mode="edit" onClick={() => setMode("edit")}>
             {t("common.editor.edit")}
           </button>
         </li>
         <li className={mode === "preview" ? "active" : undefined}>
-          <button
-            type="button"
-            data-toggle="tab"
-            data-mode="preview"
-            onClick={() => setMode("preview")}
-          >
+          <button type="button" data-mode="preview" onClick={() => setMode("preview")}>
             {t("common.editor.preview")}
           </button>
         </li>
