@@ -484,7 +484,6 @@ function ProjectCommitDetailBody({
             id="watch-button"
             type="button"
             className={`pull-left ybtn ${detail.isWatching ? "active ybtn-watching" : ""}`}
-            data-toggle="button"
             onClick={() => watchMutation.mutate(!detail.isWatching)}
           >
             {t("notification.watch")}
@@ -628,7 +627,6 @@ function SvnCommitDetailBody({
           id="watch-button"
           type="button"
           className={`ybtn ${detail.isWatching ? "active" : ""}`}
-          data-toggle="button"
           onClick={toggleWatch}
         >
           {t("notification.watch")}
