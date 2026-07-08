@@ -154,12 +154,7 @@ function OrganizationDeleteFormBody({
             aria-hidden={deletionModalWasOpened ? !deletionModalOpen : undefined}
           >
             <div className="modal-header">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                onClick={dismissDeletionModal}
-              >
+              <button type="button" className="close" onClick={dismissDeletionModal}>
                 ×
               </button>
               <h3>{t("organization.delete.requestion")}</h3>
@@ -176,12 +171,7 @@ function OrganizationDeleteFormBody({
               >
                 {t("button.yes")}
               </button>
-              <button
-                type="button"
-                className="ybtn"
-                data-dismiss="modal"
-                onClick={dismissDeletionModal}
-              >
+              <button type="button" className="ybtn" onClick={dismissDeletionModal}>
                 {t("button.no")}
               </button>
             </div>

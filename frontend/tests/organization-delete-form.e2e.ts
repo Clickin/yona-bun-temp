@@ -113,13 +113,13 @@ const EXPECTED_ORGANIZATION_DELETE_FORM = `
     </div>
     <div id="alertDeletion" class="modal hide">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">×</button>
+        <button type="button" class="close">×</button>
         <h3>Do you want to delete this group?</h3>
       </div>
       <div class="modal-body"><p> Are you sure you want to delete this group? </p></div>
       <div class="modal-footer">
         <button id="btnDeleteExec" type="button" class="ybtn ybtn-danger">Yes</button>
-        <button type="button" class="ybtn" data-dismiss="modal">No</button>
+        <button type="button" class="ybtn">No</button>
       </div>
     </div>
   </div>
@@ -233,8 +233,8 @@ test("organization delete confirmation modal opens, closes, deletes, and redirec
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(deleteModal).toHaveAttribute("style", "display: block;");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
-  await expect(closeButton).toHaveAttribute("data-dismiss", "modal");
-  await expect(noButton).toHaveAttribute("data-dismiss", "modal");
+  await expect(closeButton).not.toHaveAttribute("data-dismiss");
+  await expect(noButton).not.toHaveAttribute("data-dismiss");
   await expect(page).toHaveURL(deleteFormUrl);
   expect(await spaMarker(page)).toBe("organization-delete-modal");
   await expect
@@ -346,7 +346,7 @@ test("organization delete modal source insulates delegated modal bridge", () => 
   expect(modalSource).toContain('display: deletionModalOpen ? "block" : "none"');
   expect(modalSource).not.toContain('data-toggle="modal"');
   expect(modalSource).not.toContain('data-target="#alertDeletion"');
-  expect(modalSource).toContain('data-dismiss="modal"');
+  expect(modalSource).not.toContain('data-dismiss="modal"');
   expect(modalSource).toContain("onClick={openDeletionModal}");
   expect(modalSource.match(/onClick=\{dismissDeletionModal\}/gu) ?? []).toHaveLength(2);
   expect(modalSource).not.toContain("document.");
