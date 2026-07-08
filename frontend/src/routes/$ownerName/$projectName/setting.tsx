@@ -514,7 +514,6 @@ function ProjectSettingBody({
                   <div className="cu-desc">
                     <input
                       name="isUsingReviewerCount"
-                      data-toggle="reviewer-count"
                       type="radio"
                       className="radio-btn"
                       id="reviewerCountEnable"
@@ -527,7 +526,6 @@ function ProjectSettingBody({
                     </label>
                     <input
                       name="isUsingReviewerCount"
-                      data-toggle="reviewer-count"
                       type="radio"
                       className="radio-btn"
                       id="reviewerCountDisable"
