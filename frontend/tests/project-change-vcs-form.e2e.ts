@@ -269,6 +269,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await installProjectChangeVcsModalBridgeAudit(page, ["alertChangeVCS"]);
   await rememberSpaMarker(page, "change-vcs-modal");
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).not.toHaveAttribute("aria-hidden", /.*/);
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
@@ -293,9 +294,13 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
   await page.locator("#acceptChangeVCS").check();
   expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#alertChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
-  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer + .modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".project-page-wrap > .modal-backdrop")).toHaveCount(0);
   await expect(page.locator("#alertChangeVCS .close")).toHaveAttribute("data-dismiss", "modal");
   await expect(
     page.locator("#alertChangeVCS .modal-footer .ybtn").filter({ hasText: "No" }),
@@ -315,6 +320,7 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
     ),
   ).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
@@ -328,8 +334,16 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
 
   expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "block");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer + .modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".project-page-wrap > .modal-backdrop")).toHaveCount(0);
   expect(await dispatchCancelableClick(page.locator("#alertChangeVCS .close"))).toBe(false);
   await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+  await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#alertChangeVCS")).toHaveCSS("display", "none");
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample/changeVCS`);
   expect(await spaMarker(page)).toBe("change-vcs-modal");
@@ -342,6 +356,9 @@ test("project change-VCS confirmation modal opens, closes, posts, and redirects 
 
   await rememberSpaMarker(page, "kept");
   expect(await dispatchCancelableClick(page.locator("#btnChangeVCS"))).toBe(false);
+  await expect(page.locator("#alertChangeVCS")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(0);
   const postResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/owners/admin/projects/sample/change-vcs") &&

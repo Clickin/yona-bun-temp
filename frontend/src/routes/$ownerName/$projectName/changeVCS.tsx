@@ -113,6 +113,7 @@ function ProjectChangeVcsBody({
   const queryClient = useQueryClient();
   const [acceptedChangeVcs, setAcceptedChangeVcs] = useState(false);
   const [changeVcsModalOpen, setChangeVcsModalOpen] = useState(false);
+  const [changeVcsModalTouched, setChangeVcsModalTouched] = useState(false);
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const currentVcs = stringField(project.currentVcs, stringField(project.vcs, "GIT"));
@@ -155,6 +156,7 @@ function ProjectChangeVcsBody({
       window.alert(t("project.changeVCS.alert"));
       return;
     }
+    setChangeVcsModalTouched(true);
     setChangeVcsModalOpen(true);
   };
   const closeChangeVcsModal = () => setChangeVcsModalOpen(false);
@@ -213,7 +215,14 @@ function ProjectChangeVcsBody({
           <div
             id="alertChangeVCS"
             className={`modal hide${changeVcsModalOpen ? " in" : ""}`}
-            style={changeVcsModalOpen ? { display: "block" } : undefined}
+            aria-hidden={changeVcsModalOpen ? false : changeVcsModalTouched ? true : undefined}
+            style={
+              changeVcsModalOpen
+                ? { display: "block" }
+                : changeVcsModalTouched
+                  ? { display: "none" }
+                  : undefined
+            }
           >
             <div className="modal-header">
               <button
@@ -249,9 +258,9 @@ function ProjectChangeVcsBody({
               </button>
             </div>
           </div>
-          {changeVcsModalOpen ? <div className="modal-backdrop fade in"></div> : null}
         </div>
       </div>
+      {changeVcsModalOpen ? <div className="modal-backdrop in"></div> : null}
     </>
   );
 }
