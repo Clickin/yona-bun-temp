@@ -57,7 +57,9 @@ function legacyQueryString(value: unknown) {
       : "";
 }
 
-function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
+type LeaveModalPhase = "initial" | "open" | "closed";
+
+function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLElement>) {
   event.preventDefault();
   event.stopPropagation();
 }
@@ -149,7 +151,7 @@ function ProjectHomeBody({
   const queryClient = useQueryClient();
   const initialOverview = stringField(project.overview, "");
   const [descriptionEditing, setDescriptionEditing] = useState(false);
-  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [leaveModalPhase, setLeaveModalPhase] = useState<LeaveModalPhase>("initial");
   const [cloneCopyNotice, setCloneCopyNotice] = useState<{ key: number; message: string } | null>(
     null,
   );
@@ -219,13 +221,22 @@ function ProjectHomeBody({
     setDescriptionDraft(overviewText);
     setDescriptionEditing(false);
   };
+  const leaveModalOpen = leaveModalPhase === "open";
+  const leaveModalStyle =
+    leaveModalPhase === "open"
+      ? { display: "block" }
+      : leaveModalPhase === "closed"
+        ? { display: "none" }
+        : undefined;
+  const leaveModalAriaHidden =
+    leaveModalPhase === "initial" ? undefined : leaveModalOpen ? "false" : "true";
   const openLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
     insulateProjectHomeModalButtonClick(event);
-    setLeaveModalOpen(true);
+    setLeaveModalPhase("open");
   };
-  const closeLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
+  const closeLeaveModal = (event: MouseEvent<HTMLElement>) => {
     insulateProjectHomeModalButtonClick(event);
-    setLeaveModalOpen(false);
+    setLeaveModalPhase("closed");
   };
 
   return (
@@ -508,7 +519,7 @@ function ProjectHomeBody({
                     id="projectLeaveBtn"
                     data-href={prefixBasePath(
                       runtimeConfig.basePath,
-                      `/${ownerName}/${projectName}/members/${currentUserId}`,
+                      `/${ownerName}/${projectName}/member/${currentUserId}/delete`,
                     )}
                     onClick={openLeaveModal}
                   >
@@ -521,7 +532,8 @@ function ProjectHomeBody({
           <div
             id="alertLeave"
             className={leaveModalOpen ? "modal hide in" : "modal hide"}
-            style={leaveModalOpen ? { display: "block" } : undefined}
+            aria-hidden={leaveModalAriaHidden}
+            style={leaveModalStyle}
           >
             <div className="modal-header">
               <button
@@ -561,7 +573,15 @@ function ProjectHomeBody({
           </div>
         </div>
       </div>
-      {leaveModalOpen ? <div className="modal-backdrop in"></div> : null}
+      {leaveModalOpen ? (
+        <div
+          className="modal-backdrop in"
+          onClick={closeLeaveModal}
+          onKeyDown={closeLeaveModal}
+          role="button"
+          tabIndex={-1}
+        ></div>
+      ) : null}
     </>
   );
 }
