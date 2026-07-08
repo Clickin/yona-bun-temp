@@ -117,11 +117,12 @@ test("organization home header renders and posts legacy enrollment utility for g
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i> Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You may want to be a member of weblabs group.</div><div class="pop-content">Admins of this group can check your enrollment request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i> Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You may want to be a member of weblabs group.</div><div class="pop-content">Admins of this group can check your enrollment request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
     ),
   );
 
   const enrollmentItem = page.locator(".project-util > li").first();
+  await expect(page.locator(".project-util .dropdown-toggle")).not.toHaveAttribute("data-toggle");
   await expect(page.locator("a#enrollBtn")).toHaveCount(0);
   await expect(page.locator("button#enrollBtn")).toHaveAttribute("type", "button");
   await page.evaluate(() => {
@@ -156,7 +157,7 @@ test("organization home header renders and posts legacy enrollment utility for g
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i> Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You want to be a member of weblabs group.</div><div class="pop-content">You can be a member if the members of this group accept this request.</div><div class="pop-content btn-wrap"><button class="ybtn enrollBtn" id="enrollBtn" type="button"><i class="yobicon-removefriend"></i> Cancel sign-up request</button></div></div></li></ul>`,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small ybtn-info dropdown-toggle" type="button"><i class="yobicon-addfriend"></i> Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You want to be a member of weblabs group.</div><div class="pop-content">You can be a member if the members of this group accept this request.</div><div class="pop-content btn-wrap"><button class="ybtn enrollBtn" id="enrollBtn" type="button"><i class="yobicon-removefriend"></i> Cancel sign-up request</button></div></div></li></ul>`,
     ),
   );
 });
@@ -176,6 +177,7 @@ test("organization home header enrollment utility cancels pending guest request"
 
   const enrollmentItem = page.locator(".project-util > li").first();
   await expect(page.locator(".project-util-wrap")).toHaveCount(1);
+  await expect(page.locator(".project-util .dropdown-toggle")).not.toHaveAttribute("data-toggle");
   await expect(page.locator("a#enrollBtn")).toHaveCount(0);
   await expect(page.locator("button#enrollBtn")).toHaveAttribute("type", "button");
   await page.locator(".project-util .dropdown-toggle").click();
@@ -194,7 +196,7 @@ test("organization home header enrollment utility cancels pending guest request"
   expect(await canonicalizeLocator(page, ".project-util")).toEqual(
     await canonicalizeHtml(
       page,
-      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button" data-toggle="dropdown"><i class="yobicon-addfriend"></i> Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You may want to be a member of weblabs group.</div><div class="pop-content">Admins of this group can check your enrollment request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
+      `<ul class="project-util"><li><button class="ybtn ybtn-small dropdown-toggle" type="button"><i class="yobicon-addfriend"></i> Member enrollment request</button><div class="dropdown-menu flat right title"><div class="pop-title">You may want to be a member of weblabs group.</div><div class="pop-content">Admins of this group can check your enrollment request.</div><div class="pop-content btn-wrap"><button class="ybtn ybtn-info enrollBtn" id="enrollBtn" type="button"><i class="yobicon-addfriend"></i> Send sign-up request</button></div></div></li></ul>`,
     ),
   );
 });
@@ -608,6 +610,7 @@ test("organization home project card route source uses Link for internal card na
   expect(source).toContain('to="/organizations/$organizationName/pullrequests"');
   expect(source).toContain('to="/organizations/$organizationName/settingform"');
   expect(source).not.toContain("__legacyInactive");
+  expect(source).not.toContain('data-toggle="dropdown"');
   expect(source).not.toContain('data-toggle="item-search"');
   expect(source).not.toContain('data-items="project-item"');
 });

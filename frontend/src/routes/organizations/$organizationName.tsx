@@ -610,7 +610,6 @@ export function OrganizationHeader({
                   <button
                     className={`ybtn ybtn-small ${enrollmentRequested ? "ybtn-info " : ""}dropdown-toggle`}
                     type="button"
-                    data-toggle="dropdown"
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
