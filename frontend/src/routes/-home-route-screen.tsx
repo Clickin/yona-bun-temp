@@ -772,7 +772,7 @@ export function SiteLayoutShell({
       ) : null}
       <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
         <div className="gnb-inner">
-          <div className="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+          <div className="pin" data-placement="bottom" title="Sidebar">
             <i className="yobicon-arrow-left" />
             <i className="yobicon-arrow-right" />
           </div>
@@ -1071,7 +1071,6 @@ function AuthenticatedSiteUserMenu({
         ) : null}
         <li
           className="gnb-usermenu-item"
-          data-toggle="tooltip"
           data-placement="bottom"
           title={`${t("title.shortcut")} (A)`}
         >
@@ -1090,7 +1089,6 @@ function AuthenticatedSiteUserMenu({
               <Link
                 to="/sites/userList"
                 search={LEGACY_SITE_USER_LIST_LINK_SEARCH}
-                data-toggle="tooltip"
                 title={t("menu.siteAdmin")}
                 data-placement="bottom"
                 className="usermenu-icon-button show-progress-bar"
@@ -1105,7 +1103,6 @@ function AuthenticatedSiteUserMenu({
           <button
             type="button"
             className="gnb-dropdown-toggle"
-            data-toggle="tooltip"
             data-placement="bottom"
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
             onClick={handleSidebarToggleClick}

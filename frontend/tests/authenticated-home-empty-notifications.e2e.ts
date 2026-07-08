@@ -10,7 +10,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 <div class="admin-logged-in-affix" data-spy="affix" data-offset-top="30">You are Admin now! <span class="small-font">With great power comes great responsibility</span></div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <div class="pin" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
     </div>
@@ -44,18 +44,18 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-toggle="tooltip" data-placement="bottom">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-placement="bottom">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button class="gnb-dropdown-toggle" type="button" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button class="gnb-dropdown-toggle" type="button" data-placement="bottom" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
         </button>
       </li>
@@ -794,7 +794,66 @@ test("authenticated shell renders legacy custom navbar link before my issues", a
     "https://docs.example.test/yona",
   );
   await expect(menuItems.nth(1).locator("a.user-item-btn.loggged-in")).toHaveText("My Issues");
+  await expect(menuItems.nth(1)).not.toHaveAttribute("data-toggle");
+  await expect(menuItems.nth(1)).toHaveAttribute("data-placement", "bottom");
   await expect(menuItems.nth(1)).toHaveAttribute("title", "Shortcut (A)");
+});
+
+test("authenticated shared shell drops route-owned tooltip initializers but keeps metadata", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/`);
+
+  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const siteLayoutShellSource = routeSource.slice(
+    routeSource.indexOf("export function SiteLayoutShell"),
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+  );
+  const authenticatedUserMenuSource = routeSource.slice(
+    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
+    routeSource.indexOf("function AnonymousSiteUserMenu"),
+  );
+  const legacySources = {
+    navbar: readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8"),
+    scripts: readFileSync("../yona-original/app/views/common/scripts.scala.html", "utf8"),
+    usermenu: readFileSync("../yona-original/app/views/common/usermenu.scala.html", "utf8"),
+  };
+
+  expect(legacySources.navbar).toContain('data-toggle="tooltip"');
+  expect(legacySources.usermenu).toContain('data-toggle="tooltip"');
+  expect(legacySources.scripts).toContain('"[data-toggle=tooltip]"');
+  expect(siteLayoutShellSource).not.toContain('data-toggle="tooltip"');
+  expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
+  expect(siteLayoutShellSource).toContain('data-placement="bottom"');
+  expect(siteLayoutShellSource).toContain('title="Sidebar"');
+  expect(authenticatedUserMenuSource).toContain('data-placement="bottom"');
+  expect(authenticatedUserMenuSource).toContain('title={`${t("title.shortcut")} (A)`}');
+  expect(authenticatedUserMenuSource).toContain('title={t("menu.siteAdmin")}');
+  expect(authenticatedUserMenuSource).toContain(
+    'title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}',
+  );
+
+  const shellTooltipMetadata = [
+    { locator: page.locator(".gnb-inner > .pin"), title: "Sidebar" },
+    {
+      locator: page.locator(".gnb-usermenu > li.gnb-usermenu-item").first(),
+      title: "Shortcut (A)",
+    },
+    { locator: page.locator(".gnb-usermenu a.usermenu-icon-button"), title: "Site administration" },
+    {
+      locator: page.locator("#sidebar-open-btn .gnb-dropdown-toggle"),
+      title: "User menu, Shortcut (F)",
+    },
+  ];
+
+  for (const { locator, title } of shellTooltipMetadata) {
+    await expect(locator).not.toHaveAttribute("data-toggle");
+    await expect(locator).toHaveAttribute("data-placement", "bottom");
+    await expect(locator).toHaveAttribute("title", title);
+  }
 });
 
 test("authenticated root sidebar favorite tab matches legacy index/myOrganizationList DOM", async ({
@@ -949,7 +1008,8 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(authenticatedUserMenuSource).toContain("event.preventDefault();");
   expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
   expect(authenticatedUserMenuSource).toContain('className="gnb-dropdown-toggle dropdwon-box-btn"');
-  expect(authenticatedUserMenuSource).toContain('data-toggle="tooltip"');
+  expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
+  expect(authenticatedUserMenuSource).toContain('data-placement="bottom"');
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="dropdown"');
   expect(authenticatedUserMenuSource).not.toContain("document.addEventListener");
   expect(authenticatedUserMenuSource).not.toContain("classList");
