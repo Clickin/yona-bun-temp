@@ -3027,13 +3027,17 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
       <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
         <button
           type="button"
-          data-toggle="modal"
-          data-target="#helpKeys"
           className="ybtn ybtn-inverse ybtn-mini"
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
             setKeymapOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && keymapOpen) {
+              event.preventDefault();
+              setKeymapOpen(false);
+            }
           }}
         >
           {t("title.keymap")}
@@ -3044,6 +3048,12 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
           style={keymapOpen ? { display: "block" } : undefined}
           tabIndex={-1}
           role="dialog"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setKeymapOpen(false);
+            }
+          }}
         >
           <div className="row-fluid">
             <div className="span3">
@@ -3098,7 +3108,15 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
           </p>
         </div>
       </div>
-      {keymapOpen ? <div className="modal-backdrop fade in"></div> : null}
+      {keymapOpen ? (
+        <div
+          className="modal-backdrop fade in"
+          role="presentation"
+          onClick={() => {
+            setKeymapOpen(false);
+          }}
+        ></div>
+      ) : null}
     </>
   );
 }
