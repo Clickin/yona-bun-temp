@@ -733,12 +733,7 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
           </div>
         </div>
         <p className="actrow">
-          <button
-            type="button"
-            className="ybtn ybtn-info"
-            data-dismiss="modal"
-            onClick={closeModal}
-          >
+          <button type="button" className="ybtn ybtn-info" onClick={closeModal}>
             {t("button.confirm")}
           </button>
         </p>
