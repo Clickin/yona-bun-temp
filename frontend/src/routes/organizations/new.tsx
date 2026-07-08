@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createOrganizationRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import { readSessionBootstrap } from "../../auth-workspace-client";
@@ -19,20 +18,6 @@ const legacyAnchorActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-function MountedRootLinkAnchor({
-  legacyHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyHref });
-}
-
-const MountedRootLink = createLink(MountedRootLinkAnchor);
 
 export const Route = createFileRoute("/organizations/new")({
   component: OrganizationNewRoute,
@@ -68,14 +53,6 @@ function OrganizationNewScreen({
   const queryClient = useQueryClient();
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
-  const cancelHref = prefixBasePath(runtimeConfig.basePath, "");
-  const handleCancelClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      router.history.push(cancelHref);
-    },
-    [cancelHref, router.history],
-  );
   const createMutation = useMutation({
     mutationFn: async (input: { description: string; organizationName: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -178,16 +155,14 @@ function OrganizationNewScreen({
                   <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                     <i className="yobicon-friends" /> {t("organization.create")}
                   </button>
-                  <MountedRootLink
+                  <Link
+                    to="/"
+                    className="ybtn"
                     activeOptions={{ exact: true }}
                     activeProps={legacyAnchorActiveProps}
-                    className="ybtn"
-                    legacyHref={cancelHref}
-                    onClick={handleCancelClick}
-                    to="/"
                   >
                     {t("button.cancel")}
-                  </MountedRootLink>
+                  </Link>
                 </div>
               </form>
             </div>

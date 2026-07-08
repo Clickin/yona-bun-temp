@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   importProjectRest,
   projectCreateFormOptionsQueryOptions,
@@ -34,20 +33,6 @@ const legacyImportActionLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-function LegacyRootLinkAnchor({
-  legacyRootHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyRootHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyRootHref });
-}
-
-const LegacyRootLink = createLink(LegacyRootLinkAnchor);
 
 export const Route = createFileRoute("/_import")({
   component: ProjectImportRoute,
@@ -529,20 +514,15 @@ function ProjectImportScreen({
                 <button className="ybtn ybtn-primary" disabled={importMutation.isPending}>
                   {t("project.create")}
                 </button>
-                <LegacyRootLink
+                <Link
                   to="/"
                   href={cancelHref}
-                  legacyRootHref={cancelHref}
                   className="ybtn"
                   activeOptions={legacyImportActionLinkActiveOptions}
                   activeProps={legacyImportActionLinkActiveProps}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    router.history.push(cancelHref);
-                  }}
                 >
                   {t("button.cancel")}
-                </LegacyRootLink>
+                </Link>
               </div>
             </form>
           </div>

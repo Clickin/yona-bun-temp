@@ -158,7 +158,7 @@ const EXPECTED_PROJECT_IMPORT = `
         </div>
         <div class="actions mt20">
           <button class="ybtn ybtn-primary">Create a project</button>
-          <a href="__BASE_PATH__" class="ybtn">Cancel</a>
+          <a href="__CANCEL_ROOT_HREF__" class="ybtn">Cancel</a>
         </div>
       </form>
     </div>
@@ -190,10 +190,9 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_IMPORT.replaceAll("__BASE_ROOT__", rootHref(basePath)).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
+      EXPECTED_PROJECT_IMPORT.replaceAll("__BASE_ROOT__", rootHref(basePath))
+        .replaceAll("__BASE_PATH__", basePath)
+        .replaceAll("__CANCEL_ROOT_HREF__", routerRootHref(basePath)),
     ),
   );
   expect(await importFormMetrics(page)).toEqual({
@@ -426,8 +425,8 @@ test("project import form links preserve legacy destinations and navigate in the
 
   const cancelLink = page.locator("#importGit .actions a.ybtn");
   await expect(cancelLink).toHaveText("Cancel");
-  await expect(cancelLink).toHaveAttribute("href", basePath);
-  await expect(await cancelLink.getAttribute("href")).toBe(basePath);
+  await expect(cancelLink).toHaveAttribute("href", routerRootHref(basePath));
+  await expect(await cancelLink.getAttribute("href")).toBe(routerRootHref(basePath));
   await expect(cancelLink).toHaveClass("ybtn");
   await expect(cancelLink).not.toHaveAttribute("title", /.*/u);
   await expect(cancelLink).not.toHaveAttribute("aria-current", /.*/u);
@@ -437,7 +436,7 @@ test("project import form links preserve legacy destinations and navigate in the
     (window as Window & { __projectImportSpaMarker?: string }).__projectImportSpaMarker = "alive";
   });
   await cancelLink.click();
-  await page.waitForURL((url) => url.pathname === basePath);
+  await page.waitForURL((url) => url.pathname === routerRootHref(basePath));
   await expect
     .poll(() =>
       page.evaluate(
@@ -445,33 +444,41 @@ test("project import form links preserve legacy destinations and navigate in the
       ),
     )
     .toBe("alive");
-  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect
+    .poll(() => page.evaluate(() => window.location.pathname))
+    .toBe(routerRootHref(basePath));
 });
 
 test("project import form navigation links use TanStack Router Link in route source", () => {
   const routeSource = readFileSync(PROJECT_IMPORT_ROUTE_SOURCE, "utf8");
 
-  expect(routeSource).toContain("import { Link, createFileRoute, createLink, useRouter }");
+  expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
   expect(routeSource).toContain('<title>{t("title.newProject")}</title>');
-  expect(routeSource).toContain("const LegacyRootLink = createLink");
-  expect(routeSource).toContain("legacyRootHref={cancelHref}");
   expect(routeSource).toContain("const legacyImportActionLinkActiveOptions =");
   expect(routeSource).toContain("const legacyImportActionLinkActiveProps =");
   expect(routeSource).toContain(
     'const cancelHref = runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath;',
   );
-  expect(routeSource).toContain('<LegacyRootLink\n                  to="/"');
-  expect(routeSource).toContain("router.history.push(cancelHref);");
+  expect(routeSource).toContain(
+    '<Link\n                  to="/"\n                  href={cancelHref}',
+  );
   expect(routeSource).toContain("activeOptions={legacyImportActionLinkActiveOptions}");
   expect(routeSource).toContain("activeProps={legacyImportActionLinkActiveProps}");
   expect(routeSource).toContain("explicitUndefined: true");
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
   expect(routeSource).toContain('<Link\n                    to="/projectform"');
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain("reactJsx");
   expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("LegacyRootLinkAnchor");
+  expect(routeSource).not.toContain("LegacyRootLink");
   expect(routeSource).not.toContain("LegacyHrefAnchor");
   expect(routeSource).not.toContain("LegacyHrefLink");
   expect(routeSource).not.toContain("React.createElement");
+  expect(routeSource).not.toContain("jsx as reactJsx");
+  expect(routeSource).not.toContain('reactJsx("a"');
+  expect(routeSource).not.toContain("router.history.push(cancelHref);");
   expect(routeSource).not.toMatch(/<a\b/);
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain("globalThis.document");
@@ -533,6 +540,10 @@ async function mockProjectImport(
 
 function rootHref(basePath: string) {
   return basePath === "/" ? "/" : basePath;
+}
+
+function routerRootHref(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

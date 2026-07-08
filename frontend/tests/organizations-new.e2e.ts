@@ -289,26 +289,26 @@ test("organization create route source keeps cancel navigation out of raw anchor
     routeSource.match(/(?:React\.)?use(?:Layout)?Effect\s*\([\s\S]*?\)\s*;/gu) ?? [];
 
   expect(routeSource).toContain(
-    'import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";',
+    'import { createFileRoute, Link, useRouter } from "@tanstack/react-router";',
   );
   expect(routeSource).toContain('data-errtype="name"');
-  expect(routeSource).toContain("const MountedRootLink = createLink(MountedRootLinkAnchor);");
   expect(routeSource).toContain('<title>{t("app.name")}</title>');
-  expect(routeSource).toContain('const cancelHref = prefixBasePath(runtimeConfig.basePath, "");');
-  expect(routeSource).toContain("router.history.push(cancelHref);");
-  expect(routeSource).toContain("<MountedRootLink");
-  expect(routeSource).toContain("legacyHref={cancelHref}");
+  expect(routeSource).toContain('<Link\n                    to="/"');
   expect(routeSource).toContain("activeProps={legacyAnchorActiveProps}");
+  expect(routeSource).not.toContain("createLink");
+  expect(routeSource).not.toContain('reactJsx("a"');
+  expect(routeSource).not.toContain("react/jsx-runtime");
   expect(routeSource).not.toContain("useLinkProps");
+  expect(routeSource).not.toContain("MountedRootLink");
   expect(routeSource).not.toContain("LegacyHrefAnchor");
+  expect(routeSource).not.toContain("legacyHref");
+  expect(routeSource).not.toContain("handleCancelClick");
+  expect(routeSource).not.toContain("router.history.push(cancelHref);");
   expect(routeSource).not.toContain("React.createElement");
   expect(routeSource).not.toContain('setAttribute("data-errType"');
   expect(
     rawAnchorBlocks.filter((block) => /Cancel|button\.cancel|prefixBasePath/u.test(block)),
   ).toEqual([]);
-  expect(routeSource).not.toContain(
-    '<Link to="/" activeOptions={{ exact: true }} className="ybtn">',
-  );
   expect(routeSource).not.toContain("href={runtimeConfig.basePath}");
   expect(routeSource).not.toContain("<Link {...cancelLinkProps}>");
   expect(routeSource).not.toMatch(/\bdocument\s*\.\s*title\b/u);
@@ -375,7 +375,7 @@ async function mockAuthenticatedSession(page: Page) {
 }
 
 function rootHref(basePath: string) {
-  return basePath;
+  return basePath === "/" ? "/" : `${basePath}/`;
 }
 
 async function canonicalizeScreenRoots(page: Page) {

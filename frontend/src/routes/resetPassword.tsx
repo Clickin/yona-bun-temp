@@ -1,12 +1,11 @@
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, createLink, useRouter } from "@tanstack/react-router";
-import { jsx as reactJsx } from "react/jsx-runtime";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { apiQueryKeys } from "../api/query-keys";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import type { RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
@@ -23,20 +22,6 @@ const legacyAnchorActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-
-function ResetPasswordRootLinkAnchor({
-  legacyRootHref,
-  href: _href,
-  ref,
-  ...props
-}: React.ComponentPropsWithoutRef<"a"> & {
-  legacyRootHref: string;
-  ref?: React.Ref<HTMLAnchorElement>;
-}) {
-  return reactJsx("a", { ...props, ref, href: legacyRootHref });
-}
-
-const ResetPasswordRootLink = createLink(ResetPasswordRootLinkAnchor);
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
@@ -270,15 +255,6 @@ function BadRequestPage({
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const router = useRouter();
-  const homeHref = prefixBasePath(runtimeConfig.basePath, "");
-  const handleHomeClick = React.useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault();
-      router.history.push(homeHref);
-    },
-    [homeHref, router.history],
-  );
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <div className="page-wrap-outer">
@@ -286,17 +262,14 @@ function BadRequestPage({
           <div className="error-wrap">
             <i className="ico-404" />
             <p>{message}</p>
-            <ResetPasswordRootLink
-              href={homeHref}
-              legacyRootHref={homeHref}
-              to="/"
+            <Link
+              to=".."
               activeOptions={legacyAnchorActiveOptions}
               activeProps={legacyAnchorActiveProps}
               className="ybtn ybtn-info"
-              onClick={handleHomeClick}
             >
               {t("menu.home")}
-            </ResetPasswordRootLink>
+            </Link>
           </div>
         </div>
       </div>

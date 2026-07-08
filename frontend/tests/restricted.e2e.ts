@@ -84,7 +84,10 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_RESTRICTED_SCREEN.replaceAll("__BASE_PATH__", basePath),
+    EXPECTED_RESTRICTED_SCREEN.replaceAll("__BASE_PATH__", rootHref(basePath)).replace(
+      `action="${rootHref(basePath)}/search"`,
+      `action="${basePath}/search"`,
+    ),
   );
 
   expect(actual).toEqual(expected);
@@ -122,7 +125,7 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
   const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
   await expectLegacyAnchor(logoLink, {
     className: "logo logo-letter",
-    href: basePath,
+    href: rootHref(basePath),
     target: null,
     text: "Y",
   });
@@ -130,7 +133,7 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
 
   await expect
     .poll(() => page.evaluate(() => `${location.pathname}${location.hash}`))
-    .toBe(basePath);
+    .toBe(rootHref(basePath));
   await expect
     .poll(() => page.evaluate(() => sessionStorage.getItem("__restricted_doc_loads")))
     .toBe("1");
@@ -182,17 +185,23 @@ test("restricted footer links preserve legacy external anchors without router ma
 });
 
 test("restricted route source keeps internal navigation out of raw anchors", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("const LegacyRootLink = createLink");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("function LegacyRootLinkAnchor");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain(
+    'import { Link, createFileRoute } from "@tanstack/react-router";',
+  );
   expect(RESTRICTED_ROUTE_SOURCE).toContain('className="logo logo-letter"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("legacyRootHref={homeHref}");
   expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps={legacyPlainLinkActiveProps}");
   expect(RESTRICTED_ROUTE_SOURCE).toContain('to="/"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("<LegacyRootLink");
+  expect(RESTRICTED_ROUTE_SOURCE).toContain("<Link");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("createLink");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("reactJsx");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("jsx as");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("useLinkProps");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("useRouter");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("router.history");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("LegacyRootLink");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("React.createElement");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a(?:\s|>)/u);
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
 });
 
@@ -509,4 +518,8 @@ async function canonicalizeHtml(page: Page, html: string) {
     },
     { markup: html },
   );
+}
+
+function rootHref(basePath: string) {
+  return basePath.endsWith("/") ? basePath : `${basePath}/`;
 }
