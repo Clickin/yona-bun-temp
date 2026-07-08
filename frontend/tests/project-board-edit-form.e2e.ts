@@ -16,6 +16,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 )
   .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
   .replace(/@\{"@"\}/g, "@")
+  .replace(/\sdata-toggle="markdown-help"/g, "")
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>");
@@ -23,7 +24,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div data-toggle="markdown-editor" class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Post **markdown**</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Post **markdown**</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -131,19 +132,21 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   });
 
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#edit-body"]'),
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#edit-body"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs a[href="#preview-body"]'),
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#preview-body"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-toggle="markdown-editor"] .nav-tabs [data-toggle="tab"]'),
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs [data-toggle="tab"]'),
   ).toHaveCount(0);
+  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
+  await expect(page.locator(".mt10:has(#editor-body-body)")).toHaveCount(1);
   const editTabButton = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="edit"]',
+    '.mt10:has(#editor-body-body) .nav-tabs button[type="button"][data-mode="edit"]',
   );
   const previewTabButton = page.locator(
-    '[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]',
+    '.mt10:has(#editor-body-body) .nav-tabs button[type="button"][data-mode="preview"]',
   );
   await expect(editTabButton).toHaveText("Edit");
   await expect(previewTabButton).toHaveText("Preview");
