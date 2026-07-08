@@ -58,6 +58,15 @@ test("project code compare route uses React-rendered legacy projectLayout title 
   expect(ROUTE_SOURCE).not.toMatch(/\btitle\b[\s\S]*?\buseEffect\b/u);
 });
 
+test("project code compare route preserves legacy partial_diff file limit alert", () => {
+  expect(ROUTE_SOURCE).toContain("const LEGACY_DIFF_FILE_LIMIT = 2000;");
+  expect(ROUTE_SOURCE).toContain("compare.files.length >= LEGACY_DIFF_FILE_LIMIT");
+  expect(ROUTE_SOURCE).toContain('t("code.fileDiffLimitExceeded"');
+  expect(ROUTE_SOURCE).toMatch(
+    /<div className="diff-body discommentable">[\s\S]*?<p className="alert">[\s\S]*?compare\.files\.map/u,
+  );
+});
+
 test("project code compare uses legacy project-scoped GNB search shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const compareUrl = `${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`;
@@ -187,6 +196,24 @@ test("project code compare non-empty patch renders legacy diff table rows", asyn
   await expect(diffTable.locator("tbody > tr.add .diff-partial-codeline")).toHaveText(
     '+    println!("new");',
   );
+
+  const metrics = await compareDiffMetrics(page);
+  expect(metrics).not.toBeNull();
+  expect(metrics!.commitInfo.top).toBeGreaterThanOrEqual(metrics!.pageWrap.top);
+  expect(metrics!.commitInfo.left).toBeGreaterThanOrEqual(metrics!.pageWrap.left);
+  expect(metrics!.diffBody.top).toBeGreaterThan(metrics!.commitInfo.bottom);
+  expect(metrics!.diffOuter.top).toBeGreaterThanOrEqual(metrics!.diffBody.top);
+  expect(metrics!.diffOuter.left).toBeGreaterThanOrEqual(metrics!.diffBody.left);
+  expect(metrics!.diffOuter.right).toBeLessThanOrEqual(metrics!.diffBody.right + 1);
+  expect(metrics!.meta.top).toBeGreaterThanOrEqual(metrics!.diffOuter.top);
+  expect(metrics!.meta.height).toBeGreaterThanOrEqual(29);
+  expect(metrics!.meta.height).toBeLessThanOrEqual(32);
+  expect(metrics!.commitColumn.right).toBeLessThanOrEqual(metrics!.filename.left + 1);
+  expect(metrics!.filename.top).toBeGreaterThanOrEqual(metrics!.meta.top);
+  expect(metrics!.filename.bottom).toBeLessThanOrEqual(metrics!.meta.bottom + 1);
+  expect(metrics!.table.top).toBeGreaterThanOrEqual(metrics!.meta.bottom);
+  expect(metrics!.oldLine.right).toBeLessThanOrEqual(metrics!.newLine.left + 1);
+  expect(metrics!.newLine.right).toBeLessThanOrEqual(metrics!.codeCell.left + 1);
 });
 
 test("project code compare added file renders legacy added-path metadata", async ({ page }) => {
@@ -311,6 +338,62 @@ async function compareNavbarMetrics(page: Page) {
       const box = element.getBoundingClientRect();
       return {
         bottom: box.bottom,
+        left: box.left,
+        right: box.right,
+        top: box.top,
+      };
+    }
+  });
+}
+
+async function compareDiffMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const commitInfo = document.querySelector<HTMLElement>(".code-browse-wrap .commitInfo");
+    const diffBody = document.querySelector<HTMLElement>(".diff-body.discommentable");
+    const diffOuter = document.querySelector<HTMLElement>(".diff-partial-outer#src-main-rs");
+    const meta = document.querySelector<HTMLElement>(".diff-partial-meta");
+    const commitColumn = document.querySelector<HTMLElement>(".diff-partial-commit");
+    const filename = document.querySelector<HTMLElement>(".diff-partial-file");
+    const table = document.querySelector<HTMLElement>("table.diff-container.show-comments");
+    const oldLine = document.querySelector<HTMLElement>("tr.context td.linenum:nth-child(1)");
+    const newLine = document.querySelector<HTMLElement>("tr.context td.linenum:nth-child(2)");
+    const codeCell = document.querySelector<HTMLElement>("tr.context td.code");
+    if (
+      !pageWrap ||
+      !commitInfo ||
+      !diffBody ||
+      !diffOuter ||
+      !meta ||
+      !commitColumn ||
+      !filename ||
+      !table ||
+      !oldLine ||
+      !newLine ||
+      !codeCell
+    ) {
+      return null;
+    }
+
+    return {
+      codeCell: rect(codeCell),
+      commitColumn: rect(commitColumn),
+      commitInfo: rect(commitInfo),
+      diffBody: rect(diffBody),
+      diffOuter: rect(diffOuter),
+      filename: rect(filename),
+      meta: rect(meta),
+      newLine: rect(newLine),
+      oldLine: rect(oldLine),
+      pageWrap: rect(pageWrap),
+      table: rect(table),
+    };
+
+    function rect(element: HTMLElement) {
+      const box = element.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        height: box.height,
         left: box.left,
         right: box.right,
         top: box.top,

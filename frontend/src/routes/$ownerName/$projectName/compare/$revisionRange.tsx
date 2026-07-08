@@ -27,6 +27,8 @@ type ParsedFileDiff = {
   pathB: string;
 };
 
+const LEGACY_DIFF_FILE_LIMIT = 2000;
+
 export const Route = createFileRoute("/$ownerName/$projectName/compare/$revisionRange")({
   component: ProjectCodeCompareRoute,
 });
@@ -156,6 +158,11 @@ function ProjectCodeCompareBody({
           <div className="alert">{t("code.noChanges")}</div>
         ) : (
           <div className="diff-body discommentable">
+            {compare.files.length >= LEGACY_DIFF_FILE_LIMIT ? (
+              <p className="alert">
+                {t("code.fileDiffLimitExceeded", { args: [String(LEGACY_DIFF_FILE_LIMIT)] })}
+              </p>
+            ) : null}
             {compare.files.map((file) => (
               <CompareFileDiff
                 commitA={commitA}
