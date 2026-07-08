@@ -165,13 +165,13 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
 </div>
 <div class="modal hide fade" id="deleteConfirm">
   <div class="modal-header">
-    <button class="close" data-dismiss="modal" type="button">×</button>
+    <button class="close" type="button">×</button>
     <h3>Delete milestone</h3>
   </div>
   <div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div>
   <div class="modal-footer">
     <button class="ybtn ybtn-danger" type="button">Yes</button>
-    <button class="ybtn" data-dismiss="modal" type="button">No</button>
+    <button class="ybtn" type="button">No</button>
   </div>
 </div>`;
 
@@ -830,15 +830,34 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     }),
   ).resolves.toEqual([]);
   await expect(page.locator("#deleteConfirm .modal-header .close")).toHaveText("×");
-  await expect(page.locator("#deleteConfirm .modal-header .close")).toHaveAttribute(
-    "data-dismiss",
-    "modal",
-  );
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete milestone");
   await expect(
     page.locator("#deleteConfirm [data-request-method], #deleteConfirm [data-request-uri]"),
   ).toHaveCount(0);
-  await page.locator('#deleteConfirm [data-dismiss="modal"]').last().click();
+  await expect(page.locator("#deleteConfirm [data-dismiss='modal']")).toHaveCount(0);
+  await page.locator("#deleteConfirm .modal-footer .ybtn").last().click();
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: none;");
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(beforeDeleteModalUrl);
+  await expect(
+    page.evaluate(() => {
+      return (
+        (
+          window as unknown as {
+            __milestoneModalDelegatedClicks?: string[];
+          }
+        ).__milestoneModalDelegatedClicks ?? []
+      );
+    }),
+  ).resolves.toEqual([]);
+  await deleteTrigger.click();
+  await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade in/u);
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: block;");
+  await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await page.locator("#deleteConfirm .modal-header .close").click();
   await expect(page.locator("#deleteConfirm")).toHaveClass(/modal hide fade/u);
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("style", "display: none;");
   await expect(page.locator("#deleteConfirm")).toHaveAttribute("aria-hidden", "true");
@@ -1220,7 +1239,8 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain('"data-toggle": "modal"');
   expect(routeSource).toContain('href: "#deleteConfirm"');
   expect(routeSource).not.toContain('data-target="#deleteConfirm"');
-  expect(routeSource).toContain('data-dismiss="modal"');
+  expect(routeSource).not.toContain('data-dismiss="modal"');
+  expect(routeSource).not.toContain("data-dismiss");
   expect(routeSource).toContain("event.stopPropagation();");
   expect(massUpdateSection).not.toContain("document.addEventListener");
   expect(massUpdateStopPropagationCount).toBeGreaterThan(0);

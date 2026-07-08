@@ -550,7 +550,6 @@ function ProjectMilestoneDetailBody({
           <button
             type="button"
             className="close"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -579,7 +578,6 @@ function ProjectMilestoneDetailBody({
           <button
             type="button"
             className="ybtn"
-            data-dismiss="modal"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
