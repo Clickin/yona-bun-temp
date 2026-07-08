@@ -447,7 +447,9 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(transferStateSlice).toContain(
     'style={isTransferModalOpen ? { display: "block" } : undefined}',
   );
-  expect(transferStateSlice).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(transferStateSlice).toContain(
+    '<div className="modal-backdrop fade in" onClick={closeTransferModal}></div>',
+  );
 });
 
 test("project transfer confirmation follows legacy accept gate and REST redirect flow", async ({
@@ -516,6 +518,27 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
       ),
     )
     .toBe("kept");
+
+  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.fade.in"))).toBe(true);
+  await expect(alertTransfer).toHaveClass("modal hide");
+  await expect(alertTransfer).toBeHidden();
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
+      ),
+    )
+    .toBe("kept");
+
+  await armRootTransferModalBridgeTrap(page);
+  expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
+  await expect(alertTransfer).toHaveClass("modal hide in");
+  await expect(alertTransfer).toBeVisible();
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(page).toHaveURL(transferFormUrl);
+  await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
 
   await armRootTransferModalBridgeTrap(page);
   expect(

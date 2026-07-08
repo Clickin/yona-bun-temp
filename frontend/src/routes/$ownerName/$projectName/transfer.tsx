@@ -279,7 +279,10 @@ function ProjectTransferBody({
               </button>
             </div>
           </div>
-          {isTransferModalOpen ? <div className="modal-backdrop fade in"></div> : null}
+          {isTransferModalOpen ? (
+            // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- legacy Bootstrap backdrop is a div and dismisses the transfer modal on click.
+            <div className="modal-backdrop fade in" onClick={closeTransferModal}></div>
+          ) : null}
         </div>
       </div>
     </>
