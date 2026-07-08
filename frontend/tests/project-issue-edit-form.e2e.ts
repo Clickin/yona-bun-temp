@@ -12,7 +12,7 @@ const ROUTE_SOURCE = readFileSync(
 function withLegacyEditor(html: string, markdownHelpHtml: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${markdownHelpHtml}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Editable body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -122,6 +122,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     /document\.|globalThis\["document"\]|window\.parent\.document|addEventListener|classList|style\.display|href="javascript:/u,
   );
   expect(ROUTE_SOURCE).not.toMatch(/data-toggle="tab"/u);
+  expect(ROUTE_SOURCE).not.toMatch(/data-mode=/u);
   expect(ROUTE_SOURCE).toContain(
     '<title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>',
   );
@@ -148,9 +149,11 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(editor.locator('.nav-tabs a[href="#edit-body"]')).toHaveCount(0);
   await expect(editor.locator('.nav-tabs a[href="#preview-body"]')).toHaveCount(0);
   await expect(editor.locator('.nav-tabs [data-toggle="tab"]')).toHaveCount(0);
-  const editTab = editor.locator('.nav-tabs button[type="button"][data-mode="edit"]');
-  const previewTab = editor.locator('.nav-tabs button[type="button"][data-mode="preview"]');
-  await expect(editor.locator(".nav-tabs > li > button")).toHaveText(["Edit", "Preview"]);
+  await expect(editor.locator(".nav-tabs [data-mode]")).toHaveCount(0);
+  const editorTabButtons = editor.locator(".nav-tabs > li > button");
+  const editTab = editorTabButtons.nth(0);
+  const previewTab = editorTabButtons.nth(1);
+  await expect(editorTabButtons).toHaveText(["Edit", "Preview"]);
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
@@ -340,9 +343,9 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueEditForm(page);
+  await mockProjectIssueEditForm(page, { issue: { issueNumber: 11 }, issueNumber: 11 });
 
-  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  await page.goto(`${basePath}/admin/sample/issue/11/editform`);
   await expect(page.locator("#issue-form")).toBeVisible();
 
   await expect(page.locator("#state .dropdown-toggle")).not.toHaveAttribute("data-toggle", /.+/u);
@@ -407,12 +410,8 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   );
   await expect(editor.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(editor.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
-  await expect(editor.locator('.nav-tabs button[type="button"][data-mode="edit"]')).toHaveText(
-    "Edit",
-  );
-  await expect(editor.locator('.nav-tabs button[type="button"][data-mode="preview"]')).toHaveText(
-    "Preview",
-  );
+  await expect(editor.locator(".nav-tabs [data-mode]")).toHaveCount(0);
+  await expect(editor.locator(".nav-tabs > li > button")).toHaveText(["Edit", "Preview"]);
   await expect(editor.locator("#edit-body.tab-pane")).toHaveCount(1);
   await expect(editor.locator("#preview-body.tab-pane")).toHaveCount(1);
   await expect(editor.locator(".markdown-preview.markdown-wrap.content-body")).toHaveAttribute(
@@ -423,6 +422,7 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   await expect(editor.locator(".notification-receiver")).toHaveCount(1);
 
   expect(ROUTE_SOURCE).not.toMatch(/data-toggle="(?:select2|dropdown|markdown-editor)"/u);
+  expect(ROUTE_SOURCE).not.toMatch(/data-mode=/u);
 });
 
 test("project issue edit form exposes legacy group search scope when org data exists", async ({
@@ -653,9 +653,11 @@ async function mockProjectIssueEditForm(
   page: Page,
   options: {
     issue?: Partial<Record<string, unknown>>;
+    issueNumber?: number;
     project?: Partial<Record<string, unknown>>;
   } = {},
 ) {
+  const issueNumber = options.issueNumber ?? 1;
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -725,7 +727,7 @@ async function mockProjectIssueEditForm(
       }),
     });
   });
-  await page.route("**/api/v1/projects/admin/sample/issues/1", async (route) => {
+  await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, async (route) => {
     const issue = {
       assigneeLoginId: "dev",
       authorId: 1,
@@ -733,7 +735,7 @@ async function mockProjectIssueEditForm(
       dueDateLabel: "2026-08-02",
       isDraft: false,
       issueId: 101,
-      issueNumber: 1,
+      issueNumber,
       labels: [
         {
           categoryId: "3",
