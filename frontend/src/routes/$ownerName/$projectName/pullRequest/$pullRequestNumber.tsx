@@ -524,6 +524,7 @@ function PullRequestEventCommit({
     projectName: pullRequest.projectName,
     pullRequestNumber: String(pullRequest.pullRequestNumber),
   };
+  const commitAuthorLoginId = inferredCommitAuthorLoginId(commit, event);
 
   return (
     <li
@@ -539,18 +540,24 @@ function PullRequestEventCommit({
       >
         {commit.commitShortId}
       </Link>
-      <Link
-        to="/$user"
-        params={{ user: event.senderLoginId }}
-        className="avatar-wrap small hide-in-mobile"
-        data-toggle="tooltip"
-        data-placement="top"
-        title={event.senderLabel || event.senderLoginId}
-        {...LEGACY_LINK_PROPS}
-      >
-        <img src={event.senderAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />{" "}
-        {commit.authorEmail}
-      </Link>
+      {commitAuthorLoginId ? (
+        <Link
+          to="/$user"
+          params={{ user: commitAuthorLoginId }}
+          className="avatar-wrap small hide-in-mobile"
+          title={event.senderLabel || commitAuthorLoginId}
+          {...LEGACY_LINK_PROPS}
+        >
+          <img src={event.senderAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />{" "}
+          {commit.authorEmail}
+        </Link>
+      ) : (
+        <img
+          src="/assets/images/default-avatar-32.png"
+          className="avatar-wrap small hide-in-mobile"
+          alt=""
+        />
+      )}
       <div className="date hide-in-mobile" title={commit.authorDateLabel}>
         {commit.authorDateLabel}
       </div>
@@ -1147,4 +1154,12 @@ function compareRevisionRange(value: string) {
     return encodeURIComponent(value);
   }
   return `${encodeURIComponent(revA)}...${encodeURIComponent(revB)}`;
+}
+
+function inferredCommitAuthorLoginId(commit: PullRequestCommit, event: PullRequestEvent) {
+  const [emailLocalPart] = commit.authorEmail.split("@");
+  if (!emailLocalPart || emailLocalPart !== event.senderLoginId) {
+    return "";
+  }
+  return event.senderLoginId;
 }
