@@ -1100,7 +1100,6 @@ function MilestoneIssueRow({
               id={`issue-${issueId}`}
               type="checkbox"
               name="checked-issue"
-              data-toggle="issue-checkbox"
               data-issue-id={issueId}
               data-issue-labels={issueLabelData(labels)}
               checked={checked}

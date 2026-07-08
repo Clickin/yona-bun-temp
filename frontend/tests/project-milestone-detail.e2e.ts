@@ -128,7 +128,7 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
           <ul class="post-list-wrap row-fluid">
             <li class="post-item title" data-item="issue-item" data-value="dev 11 [UI] Open milestone issue" href="__BASE_PATH__/admin/sample/issue/11" id="issue-item-41">
               <div class="span9 span-hard-wrap">
-                <label aria-label="issue-41" class="mass-update-check hide-in-mobile" for="issue-41"><input data-issue-id="41" data-issue-labels="type,8,bug,3,false|" data-toggle="issue-checkbox" id="issue-41" name="checked-issue" type="checkbox"></label>
+                <label aria-label="issue-41" class="mass-update-check hide-in-mobile" for="issue-41"><input data-issue-id="41" data-issue-labels="type,8,bug,3,false|" id="issue-41" name="checked-issue" type="checkbox"></label>
                 <div class="issue-item-row" for="issue-41">
                   <div class="title-wrap">
                     <a class="title" href="__BASE_PATH__/admin/sample/issue/11"><span class="post-id">#11</span></a>
@@ -549,6 +549,10 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "data-issue-labels",
     "type,8,bug,3,false|",
   );
+  await expect(page.locator("#issue-41")).not.toHaveAttribute("data-toggle");
+  await expect(
+    page.locator('input[name="checked-issue"][data-toggle="issue-checkbox"]'),
+  ).toHaveCount(0);
   await expect(page.locator("#issue-item-41 .issue-item-row")).toHaveAttribute("for", "issue-41");
   expect(await canonicalizeMilestoneRouteRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -1197,6 +1201,8 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).not.toContain('data-items="issue-item"');
   expect(routeSource).not.toContain("data-toggle='item-search'");
   expect(routeSource).not.toContain("data-items='issue-item'");
+  expect(routeSource).not.toContain('data-toggle="issue-checkbox"');
+  expect(routeSource).not.toContain("data-toggle='issue-checkbox'");
   expect(routeSource).not.toContain("<script");
   expect(routeSource).not.toContain("highlight.pack.js");
   expect(routeSource).not.toContain("marked.js");
