@@ -146,7 +146,6 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
                       search={legacyEditTabLinkInactiveSearch}
                       activeOptions={legacyEditTabLinkActiveOptions}
                       activeProps={legacyEditTabLinkActiveProps}
-                      data-toggle="tab"
                       onClick={() => {
                         setSelectedProjectId(projectId);
                       }}

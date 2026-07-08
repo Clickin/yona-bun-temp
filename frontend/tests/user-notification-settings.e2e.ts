@@ -77,7 +77,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      dataToggle: "tab",
+      dataToggle: null,
       href: `${basePath}/user/editform/notifications#2`,
       text: "admin / projectYobi",
       title: null,
@@ -86,16 +86,15 @@ test("current-user notification settings page matches legacy user/edit_notificat
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      dataToggle: "tab",
+      dataToggle: null,
       href: `${basePath}/user/editform/notifications#7`,
       text: "weblabs / projectAlpha",
       title: null,
     },
   ]);
-  await expect(page.locator('#notification-projects a[data-toggle="tab"]').first()).toHaveText(
-    "admin / projectYobi",
-  );
-  await expect(page.locator('#notification-projects a[data-toggle="tab"]').last()).toHaveText(
+  await expect(page.locator('#notification-projects a[data-toggle="tab"]')).toHaveCount(0);
+  await expect(page.locator("#notification-projects a").first()).toHaveText("admin / projectYobi");
+  await expect(page.locator("#notification-projects a").last()).toHaveText(
     "weblabs / projectAlpha",
   );
   await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveCount(1);
@@ -174,7 +173,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      dataToggle: "tab",
+      dataToggle: null,
       href: `${basePath}/user/editform/notifications#2`,
       text: "admin / projectYobi",
       title: null,
@@ -183,7 +182,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
       ariaCurrent: null,
       className: null,
       dataStatus: null,
-      dataToggle: "tab",
+      dataToggle: null,
       href: `${basePath}/user/editform/notifications#7`,
       text: "weblabs / projectAlpha",
       title: null,
@@ -309,7 +308,7 @@ function expectedScreen(basePath: string, activeProjectId: string) {
   <div class="gnb-inner">
     <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
     <ul class="gnb-nav">
-      <li><a href="${basePath}" class="logo logo-letter">Y</a></li>
+      <li><a href="${basePath}/" class="logo logo-letter">Y</a></li>
       <li><form action="${basePath}/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
     </ul>
     <div id="mySidenav" class="sidenav">
@@ -366,7 +365,7 @@ function expectedProjectTab(
   name: string,
   activeProjectId: string,
 ) {
-  return `<li${id === activeProjectId ? ' class="active"' : ""}><a href="${basePath}/user/editform/notifications#${id}" data-toggle="tab">${owner} / ${name}</a></li>`;
+  return `<li${id === activeProjectId ? ' class="active"' : ""}><a href="${basePath}/user/editform/notifications#${id}">${owner} / ${name}</a></li>`;
 }
 
 function expectedProjectPane(basePath: string, projectId: string, activeProjectId: string) {
