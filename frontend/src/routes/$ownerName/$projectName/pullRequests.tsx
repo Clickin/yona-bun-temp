@@ -1,12 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import {
-  useEffect,
-  useState,
-  type CSSProperties,
-  type HTMLAttributes,
-  type MouseEvent as ReactMouseEvent,
-} from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -26,9 +20,6 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-
-type LegacyPjaxContainerAttrs = HTMLAttributes<HTMLDivElement> & { "pjax-container": "" };
-type LegacyPullRequestRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 const LEGACY_LIST_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -255,7 +246,6 @@ function ProjectPullRequestsBody({
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, pullRequests.items[0]?.ownerName ?? "");
   const projectName = stringField(project.projectName, pullRequests.items[0]?.projectName ?? "");
-  const legacyPjaxAttrs = { "pjax-container": "" } satisfies LegacyPjaxContainerAttrs;
   const openAction = projectPullRequestsHref(runtimeConfig.basePath, ownerName, projectName);
   const closedAction = prefixBasePath(
     runtimeConfig.basePath,
@@ -341,7 +331,7 @@ function ProjectPullRequestsBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div {...legacyPjaxAttrs} className="row-fluid cb">
+        <div className="row-fluid cb">
           <div
             className="left-menu span2 search-wrap hide-in-mobile"
             style={{ paddingTop: 0, ...(leftMenuHiddenByTwoColumnMode ? { display: "none" } : {}) }}
@@ -762,7 +752,6 @@ function ProjectPullRequestRow({
   const reviewerClass = pullRequest.reviewerNames.includes(currentUserLabel)
     ? "infos-item over"
     : "infos-item";
-  const legacyPullRequestRowAttrs = { href: pullRequestHref } satisfies LegacyPullRequestRowAttrs;
   const pullRequestId = stringField(pullRequest.id, String(pullRequest.pullRequestNumber));
   const rowStyle: CSSProperties | undefined = useTwoColumnMode ? { cursor: "pointer" } : undefined;
   const titleHistoryLabel = `${pullRequest.pullRequestNumber} ${titleParts.title}`;
@@ -789,7 +778,6 @@ function ProjectPullRequestRow({
       className={`post-item title${highlighted ? " highlightBg" : ""}`}
       onClickCapture={handleRowClickCapture}
       style={rowStyle}
-      {...legacyPullRequestRowAttrs}
     >
       <div className="span10 span-hard-wrap">
         <Link
