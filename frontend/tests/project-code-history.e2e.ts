@@ -225,7 +225,21 @@ test("project bare code history renders default branch on the legacy commits URL
   const historyRequest = new URL(historyRequestUrls[0]);
   expect(historyRequest.searchParams.get("branch")).toBeNull();
   expect(historyRequest.searchParams.get("path")).toBeNull();
-  expect(page.locator("#branches")).toHaveValue(`${basePath}/admin/sample/commits/main`);
+  const branchSelector = page.locator("#branches");
+  await expect(branchSelector).not.toHaveAttribute("data-toggle", "select2");
+  await expect(branchSelector).toHaveAttribute("data-format", "branch");
+  await expect(branchSelector).toHaveAttribute("data-dropdown-css-class", "branches");
+  await expect(branchSelector).toHaveClass("pull-right");
+  await expect(branchSelector.locator("option")).toHaveCount(2);
+  await expect(branchSelector.locator("option").nth(0)).toHaveAttribute(
+    "value",
+    `${basePath}/admin/sample/commits/main`,
+  );
+  await expect(branchSelector.locator("option").nth(1)).toHaveAttribute(
+    "value",
+    `${basePath}/admin/sample/commits/feature%2Frelease`,
+  );
+  await expect(branchSelector).toHaveValue(`${basePath}/admin/sample/commits/main`);
   await expect(page.locator(".nav-tabs a", { hasText: "Files" })).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/HEAD`,
@@ -454,6 +468,10 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).toContain(
     'codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName })',
   );
+  expect(bareSource).toContain('id="branches"');
+  expect(bareSource).not.toContain('data-toggle="select2"');
+  expect(bareSource).toContain('data-format="branch"');
+  expect(bareSource).toContain('data-dropdown-css-class="branches"');
   expect(bareSource).toContain('to="/$ownerName/$projectName/commits"');
   expect(bareSource).toContain('params={{ branch: "HEAD", ownerName, projectName }}');
   expect(bareSource).not.toContain("historyUntilHead");
