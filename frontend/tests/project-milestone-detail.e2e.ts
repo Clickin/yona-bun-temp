@@ -713,6 +713,14 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   expect(await issueLabelColorMetrics(page, ".post-list-wrap .issue-label")).toEqual({
     backgroundColor: "rgb(81, 170, 204)",
   });
+  expect(await milestoneDetailIssueAreaMetrics(page)).toEqual({
+    filterBelowTabs: true,
+    filterInsideIssues: true,
+    listBelowFilter: true,
+    massUpdateAlignedWithSearch: true,
+    searchInsideFilter: true,
+    tabInsideIssues: true,
+  });
   await page.click('#issues .nav-tabs a:has-text("Closed")');
   await expect(page).toHaveURL(`${basePath}/admin/sample/milestone/5?state=closed#issues`);
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Closed1");
@@ -1170,6 +1178,12 @@ test("project milestone detail route uses direct Links", () => {
   expect(routeSource).toContain('? { display: "block" }');
   expect(routeSource).toContain("aria-hidden={deleteConfirmOpen ? false");
   expect(routeSource).toContain('<div className="modal-backdrop fade in"></div>');
+  expect(routeSource).toContain("legacyProjectIssuesHref(ownerName, projectName");
+  expect(routeSource).not.toContain("to: `${projectPath}/issues?");
+  expect(routeSource).not.toContain(
+    "to={`/${ownerName}/${projectName}/issues?state=open&labelIds=",
+  );
+  expect(routeSource).not.toContain("labelIds=%5B");
 });
 
 test("project milestone detail E2E selectors stay anchored to legacy Scala HTML", () => {
@@ -1191,6 +1205,38 @@ test("project milestone detail E2E selectors stay anchored to legacy Scala HTML"
   );
   const childIssueSource = readFileSync(
     "../yona-original/app/views/issue/partial_view_child.scala.html",
+    "utf8",
+  );
+  const projectLayoutSource = readFileSync(
+    "../yona-original/app/views/projectLayout.scala.html",
+    "utf8",
+  );
+  const projectHeaderSource = readFileSync(
+    "../yona-original/app/views/project/header.scala.html",
+    "utf8",
+  );
+  const projectMenuSource = readFileSync(
+    "../yona-original/app/views/projectMenu.scala.html",
+    "utf8",
+  );
+  const navbarSource = readFileSync("../yona-original/app/views/common/navbar.scala.html", "utf8");
+  const messagesSource = readFileSync("../yona-original/conf/messages", "utf8");
+  const routesSource = readFileSync("../yona-original/conf/routes", "utf8");
+  const yobiLessSource = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  const pageLessSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const responsiveLessSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const yobiUiLessSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+    "utf8",
+  );
+  const overrideLessSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_override.less",
     "utf8",
   );
 
@@ -1256,6 +1302,89 @@ test("project milestone detail E2E selectors stay anchored to legacy Scala HTML"
   ]) {
     expect(childIssueSource).toContain(snippet);
   }
+
+  for (const snippet of [
+    "@common.navbar(menuType, project, null)",
+    "@views.html.project.header(project)",
+    "@common.footer()",
+  ]) {
+    expect(projectLayoutSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '<div class="project-header-outer"',
+    '<div class="project-breadcrumb">',
+    '<ul class="project-util">',
+  ]) {
+    expect(projectHeaderSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '<div class="project-menu-outer">',
+    '<ul class="project-menu-nav project-menu-gruop">',
+    "@if(menuSetting.milestone) {",
+    '@Messages("milestone")',
+  ]) {
+    expect(projectMenuSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '<header class="gnb-outer @if(project != null || org != null) {project-header}">',
+    '<form action="@makeSearchLink()" class="input-prepend gnb-search-form"',
+    'data-toggle="search-scope"',
+  ]) {
+    expect(navbarSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    "milestone.searchPlaceholder = search at current milestone",
+    "issue.update.state = Update status",
+    "issue.update.assignee.id = Update assignee",
+    "issue.update.milestone.id = Update milestone",
+    "post.delete.confirm = Once you delete the post",
+  ]) {
+    expect(messagesSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    "GET            /:user/:project/milestone/:id",
+    "GET            /:user/:project/issues",
+    "POST           /:user/:project/issues",
+    "GET            /:user/:project/issue/labels.css",
+  ]) {
+    expect(routesSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    '@import "less/_page.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+    '@import "less/_override.less";',
+  ]) {
+    expect(yobiLessSource).toContain(snippet);
+  }
+
+  for (const snippet of [
+    ".project-page-wrap {",
+    ".filter-wrap {",
+    ".milestone-desc {",
+    ".milesion-wrap {",
+    ".post-list-wrap {",
+    ".mass-update-wrap {",
+    ".child-issue-list {",
+  ]) {
+    expect(pageLessSource).toContain(snippet);
+  }
+
+  for (const snippet of [".post-list-wrap {", ".search-bar {", ".project-header-outer {"]) {
+    expect(responsiveLessSource).toContain(snippet);
+  }
+
+  for (const snippet of [".search-bar {", ".num-badge {"]) {
+    expect(yobiUiLessSource).toContain(snippet);
+  }
+
+  expect(overrideLessSource).toContain(".modal-backdrop, .modal-backdrop.fade.in");
 });
 
 async function expectMilestoneDetailAssets(page: Page, basePath: string) {
@@ -1762,6 +1891,37 @@ async function milestoneDetailMetrics(page: Page) {
       ).length,
       progressBackgroundColor: getComputedStyle(progress).backgroundColor,
       progressBarBackgroundColor: getComputedStyle(progressBar).backgroundColor,
+    };
+  });
+}
+
+async function milestoneDetailIssueAreaMetrics(page: Page) {
+  return page.evaluate(() => {
+    const issues = document.querySelector<HTMLElement>("#issues");
+    const tabs = document.querySelector<HTMLElement>("#issues .nav-tabs");
+    const filter = document.querySelector<HTMLElement>("#issues .filter-wrap");
+    const massUpdate = document.querySelector<HTMLElement>("#mass-update-form");
+    const search = document.querySelector<HTMLElement>("#issues .search-bar");
+    const list = document.querySelector<HTMLElement>("#issues .post-list-wrap");
+    if (!issues || !tabs || !filter || !massUpdate || !search || !list) {
+      throw new Error("Expected milestone issue area metric targets are missing.");
+    }
+    const issuesBox = issues.getBoundingClientRect();
+    const tabsBox = tabs.getBoundingClientRect();
+    const filterBox = filter.getBoundingClientRect();
+    const massUpdateBox = massUpdate.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    return {
+      filterBelowTabs: filterBox.top >= tabsBox.bottom - 1,
+      filterInsideIssues: filterBox.left >= issuesBox.left && filterBox.right <= issuesBox.right,
+      listBelowFilter: listBox.top >= filterBox.bottom - 1,
+      massUpdateAlignedWithSearch: Math.abs(massUpdateBox.top - searchBox.top) <= 6,
+      searchInsideFilter:
+        searchBox.top >= filterBox.top &&
+        searchBox.bottom <= filterBox.bottom + 6 &&
+        searchBox.right <= filterBox.right,
+      tabInsideIssues: tabsBox.left >= issuesBox.left && tabsBox.right <= issuesBox.right,
     };
   });
 }

@@ -1270,9 +1270,10 @@ function MilestoneIssueRow({
                 style={{ background: cssBackgroundColor(stringField(label.color)) }}
                 onClick={() => {
                   void router.navigate({
-                    to: `${projectPath}/issues?milestoneId=${encodeURIComponent(
+                    to: legacyProjectIssuesHref(ownerName, projectName, {
+                      labelIds: [stringField(label.id)],
                       milestoneId,
-                    )}&labelIds=${encodeURIComponent(stringField(label.id))}`,
+                    }),
                   });
                 }}
               >
@@ -1509,7 +1510,10 @@ function MilestoneIssueChildRow({
       </span>
       {childIssueLabels.map((label) => (
         <Link
-          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${encodeURIComponent(label.id)}`}
+          to={legacyProjectIssuesHref(ownerName, projectName, {
+            labelIds: [label.id],
+            state: "open",
+          })}
           className="label issue-label list-label active twoColumeModeTarget"
           data-category-id={label.categoryId}
           data-label-id={label.id}
@@ -1822,4 +1826,26 @@ function cssBackgroundColor(value: string) {
     hex.slice(2, 4),
     16,
   )}, ${Number.parseInt(hex.slice(4, 6), 16)})`;
+}
+
+function legacyProjectIssuesHref(
+  ownerName: string,
+  projectName: string,
+  query: {
+    labelIds?: string[];
+    milestoneId?: string;
+    state?: "all" | "closed" | "open";
+  },
+) {
+  const queryParts: string[] = [];
+  if (query.state) {
+    queryParts.push(`state=${encodeURIComponent(query.state)}`);
+  }
+  for (const labelId of query.labelIds ?? []) {
+    queryParts.push(`labelIds=${encodeURIComponent(labelId)}`);
+  }
+  if (query.milestoneId) {
+    queryParts.push(`milestoneId=${encodeURIComponent(query.milestoneId)}`);
+  }
+  return `/${ownerName}/${projectName}/issues?${queryParts.join("&")}`;
 }
