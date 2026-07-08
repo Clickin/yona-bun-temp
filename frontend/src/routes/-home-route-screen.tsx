@@ -837,7 +837,6 @@ export function SiteLayoutShell({
                   >
                     <button
                       className="ybtn dropdown-toggle"
-                      data-toggle="dropdown"
                       type="button"
                       id="gnb-search-scope-title"
                       onClick={handleSearchScopeToggleClick}
@@ -1124,7 +1123,6 @@ function AuthenticatedSiteUserMenu({
           <button
             type="button"
             className="gnb-dropdown-toggle dropdwon-box-btn"
-            data-toggle="dropdown"
             onClick={handleCreateMenuToggleClick}
           >
             <i className="yobicon-plus"></i>

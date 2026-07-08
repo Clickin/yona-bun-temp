@@ -60,7 +60,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <button class="gnb-dropdown-toggle dropdwon-box-btn" type="button" data-toggle="dropdown">
+        <button class="gnb-dropdown-toggle dropdwon-box-btn" type="button">
           <i class="yobicon-plus"></i><span class="caret"></span>
         </button>
         <ul class="dropdown-menu flat right">
@@ -880,6 +880,9 @@ test("authenticated root user menu toggles stay route-local buttons without navi
 
   await expect(createToggle).toHaveJSProperty("tagName", "BUTTON");
   await expect(createToggle).toHaveAttribute("type", "button");
+  await expect(createToggle).not.toHaveAttribute("data-toggle");
+  await expect(createToggle).toHaveClass(/gnb-dropdown-toggle/);
+  await expect(createToggle).toHaveClass(/dropdwon-box-btn/);
   await expect(createMenu.locator("a.gnb-dropdown-toggle.dropdwon-box-btn")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu a[href^='javascript:']")).toHaveCount(0);
   await page.evaluate(() => {
@@ -933,6 +936,9 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(siteLayoutShellSource).toContain("setIsSearchScopeMenuOpen");
   expect(siteLayoutShellSource).toContain("event.preventDefault();");
   expect(siteLayoutShellSource).toContain("event.stopPropagation();");
+  expect(siteLayoutShellSource).toContain('id="gnb-search-scope-title"');
+  expect(siteLayoutShellSource).toContain('className="ybtn dropdown-toggle"');
+  expect(siteLayoutShellSource).not.toContain('data-toggle="dropdown"');
   expect(siteLayoutShellSource).not.toContain("document.addEventListener");
   expect(siteLayoutShellSource).not.toContain("classList");
   expect(siteLayoutShellSource).not.toContain("style.display");
@@ -942,6 +948,9 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(authenticatedUserMenuSource).toContain("handleCreateMenuBlur");
   expect(authenticatedUserMenuSource).toContain("event.preventDefault();");
   expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
+  expect(authenticatedUserMenuSource).toContain('className="gnb-dropdown-toggle dropdwon-box-btn"');
+  expect(authenticatedUserMenuSource).toContain('data-toggle="tooltip"');
+  expect(authenticatedUserMenuSource).not.toContain('data-toggle="dropdown"');
   expect(authenticatedUserMenuSource).not.toContain("document.addEventListener");
   expect(authenticatedUserMenuSource).not.toContain("classList");
   expect(authenticatedUserMenuSource).not.toContain("style.display");
@@ -998,6 +1007,7 @@ test("authenticated home create dropdown new issue link preserves legacy href an
   const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
   const newIssueLink = createMenu.locator(".dropdown-menu a", { hasText: /^New issue$/ });
 
+  await expect(createToggle).not.toHaveAttribute("data-toggle");
   await createToggle.click();
   await expect(createMenu.locator(".dropdown-menu")).toBeVisible();
   await expect(newIssueLink).toHaveAttribute("href", `${basePath}/user/issues/new`);
@@ -1040,6 +1050,7 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
     hasText: /^New issue - personal inbox$/,
   });
 
+  await expect(createToggle).not.toHaveAttribute("data-toggle");
   await createToggle.click();
   await expect(createMenu.locator(".dropdown-menu")).toBeVisible();
   await expect(personalInboxLink).toHaveAttribute("href", `${basePath}/user/issues/new/mine`);
