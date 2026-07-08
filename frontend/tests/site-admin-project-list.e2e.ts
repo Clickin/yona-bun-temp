@@ -125,7 +125,7 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
             <li class="page-num"><input class="input-mini nospinner" name="pageNum" type="number" value="1" max="2" min="1" pattern="[0-9]*"></li>
             <li class="page-num delimiter">/</li>
             <li class="page-num">2</li>
-            <li class="page-num ikon"><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2" pjax-page=""><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
+            <li class="page-num ikon"><a href="__BASE_PATH__/sites/projectList?filter=road&amp;pageNum=2"><span>Next page</span><i class="ico btn-pg-next"></i></a></li>
           </ul>
         </div>
         <div id="alertDeletionWrap" class="modal fade">
@@ -251,8 +251,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "href",
     `${basePath}/sites/projectList?filter=road&pageNum=2`,
   );
-  await expect(nextPageLink).toHaveAttribute("pjax-page", "");
-  await expectLegacyPaginationLink(nextPageLink, {
+  await expectReactPaginationLink(nextPageLink, {
     href: `${basePath}/sites/projectList?filter=road&pageNum=2`,
     text: "Next page",
   });
@@ -327,8 +326,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     "href",
     `${basePath}/sites/projectList?filter=road&pageNum=1`,
   );
-  await expect(prevPageLink).toHaveAttribute("pjax-page", "");
-  await expectLegacyPaginationLink(prevPageLink, {
+  await expectReactPaginationLink(prevPageLink, {
     href: `${basePath}/sites/projectList?filter=road&pageNum=1`,
     text: "Previous page",
   });
@@ -724,13 +722,13 @@ test("site admin project list uses direct typed links", () => {
   expect(routeSource).toContain("showLegacyProjectHeaderLinks");
   expect(routeSource).toContain("key={filter}");
   expect(routeSource).not.toContain("<a href={projectPath}");
-  expect(routeSource).toContain('pjax-page=""');
+  expect(routeSource).not.toContain("pjax-page");
 });
 
-async function expectLegacyPaginationLink(link: Locator, expected: { href: string; text: string }) {
+async function expectReactPaginationLink(link: Locator, expected: { href: string; text: string }) {
   await expect(link).toHaveText(expected.text);
   await expect(link).toHaveAttribute("href", expected.href);
-  await expect(link).toHaveAttribute("pjax-page", "");
+  expect(await link.getAttribute("pjax-page")).toBeNull();
   await expect(link).not.toHaveAttribute("class", /.+/);
   await expect(link).not.toHaveAttribute("title", /.+/);
   await expect(link).not.toHaveAttribute("aria-current", /.+/);

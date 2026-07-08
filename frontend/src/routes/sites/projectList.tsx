@@ -309,7 +309,6 @@ function ProjectListPagination({
           {hasPrev ? (
             <Link
               {...legacyLinkSuppressionProps}
-              pjax-page=""
               search={search(currentPage - 1)}
               to="/sites/projectList"
             >
@@ -360,7 +359,6 @@ function ProjectListPagination({
           {hasNext ? (
             <Link
               {...legacyLinkSuppressionProps}
-              pjax-page=""
               search={search(currentPage + 1)}
               to="/sites/projectList"
             >
