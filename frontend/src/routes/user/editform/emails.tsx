@@ -156,11 +156,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               {rows.map((row) => {
                 const id = stringValue(row.id);
                 const valid = row.valid === true;
-                const requestUri = prefixBasePath(
-                  runtimeConfig.basePath,
-                  valid ? `/user/email/setAsMain/${id}` : `/user/email/sendValidationEmail/${id}`,
-                );
-                const requestHref = { href: requestUri };
                 return (
                   <tr key={id || stringValue(row.emailAddress)}>
                     <td>
@@ -171,11 +166,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                     <td style={{ textAlign: "right", verticalAlign: "middle" }}>
                       <button
                         type="button"
-                        data-request-method="delete"
-                        data-request-uri={prefixBasePath(
-                          runtimeConfig.basePath,
-                          `/user/email/delete/${id}`,
-                        )}
                         className="ybtn ybtn-small ybtn-danger"
                         onClick={() => deleteMutation.mutate(id)}
                       >
@@ -184,8 +174,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                       {valid ? (
                         <button
                           type="button"
-                          data-request-method="put"
-                          {...requestHref}
                           className="ybtn ybtn-small"
                           style={{ width: "150px" }}
                           onClick={() => setMainMutation.mutate(id)}
@@ -195,8 +183,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                       ) : (
                         <button
                           type="button"
-                          data-request-method="post"
-                          {...requestHref}
                           className="ybtn ybtn-small"
                           style={{ width: "150px" }}
                           onClick={() => sendValidationMutation.mutate(id)}
