@@ -520,7 +520,6 @@ function OrganizationMember({
                 >
                   <button
                     type="button"
-                    data-action="apply"
                     data-href={prefixBasePath(
                       basePath,
                       `/organizations/${organizationName}/member/${userId}/edit`,
@@ -541,7 +540,6 @@ function OrganizationMember({
         </div>
         <button
           type="button"
-          data-action="delete"
           data-href={prefixBasePath(
             basePath,
             `/organizations/${organizationName}/member/${userId}/delete`,
