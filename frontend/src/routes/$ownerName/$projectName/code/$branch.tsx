@@ -175,7 +175,6 @@ function ProjectCodeFolderBody({
           <div className="code-browse-header">
             <select
               id="branches"
-              data-toggle="select2"
               data-format="branch"
               data-dropdown-css-class="branches"
               className="pull-left"
