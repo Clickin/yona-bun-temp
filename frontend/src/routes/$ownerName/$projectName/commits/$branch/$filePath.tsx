@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../../../api/code-commits";
@@ -8,6 +8,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
+import { useRootToast } from "../../../../__root";
 import { ProjectHeader, ProjectMenu } from "../../../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch/$filePath")({
@@ -149,6 +150,8 @@ function ProjectCodeFileHistoryBody({
   routeParams: ProjectCodeFileHistoryRouteParams;
 }) {
   const { t } = useLegacyMessages();
+  const setRootToast = useRootToast();
+  const copyToastCounterRef = useRef(0);
   const { branch, filePath, ownerName, projectName } = routeParams;
   const selectedBranch = history.selectedBranch || branch;
   const encodedBranch = encodeURIComponent(selectedBranch);
@@ -223,6 +226,15 @@ function ProjectCodeFileHistoryBody({
                               className="ybtn ybtn-mini btn-copy-commitId"
                               title={t("code.copyCommitId")}
                               data-commitid={commit.commitId}
+                              onClick={async () => {
+                                await navigator.clipboard?.writeText(commit.commitId);
+                                copyToastCounterRef.current += 1;
+                                setRootToast({
+                                  durationMs: 1000,
+                                  key: `copy-commit-id:${commit.commitId}:${copyToastCounterRef.current}`,
+                                  message: t("code.copyCommitId.copied"),
+                                });
+                              }}
                             >
                               <i className="yobicon-copy"></i>
                             </button>
@@ -369,6 +381,7 @@ function CommitMessage({
 
 function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][number] }) {
   const avatarUrl = commit.authorAvatarUrl || "/assets/images/default-avatar-32.png";
+  const usesGeneratedAvatar = avatarUrl === "/assets/images/default-avatar-32.png";
 
   if (commit.authorLoginId) {
     const authorPath = `/${commit.authorLoginId}` as "/";
@@ -382,12 +395,17 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         data-placement="top"
         title={commit.authorLoginId}
       >
-        <img
-          src={avatarUrl}
-          alt={commit.authorName || commit.authorLoginId}
-          width="32"
-          height="32"
-        />
+        {usesGeneratedAvatar ? (
+          // oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes.
+          <img src={avatarUrl} />
+        ) : (
+          <img
+            src={avatarUrl}
+            alt={commit.authorName || commit.authorLoginId}
+            width="32"
+            height="32"
+          />
+        )}
       </Link>
     );
   }
@@ -400,7 +418,8 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         data-placement="top"
         title={commit.authorEmail}
       >
-        <img src={avatarUrl} alt={commit.authorEmail} width="32" height="32" />
+        {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy email-only default avatar branch renders no alt/size attributes. */}
+        <img src={avatarUrl} />
       </span>
     );
   }
