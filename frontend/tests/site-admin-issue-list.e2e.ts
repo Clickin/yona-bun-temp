@@ -210,6 +210,17 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(page.locator(".site-setting-nav li").nth(2)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
+  expect(await legacyLinkSnapshot(page, ".site-setting-nav li.active a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList`,
+      pjaxPage: null,
+      text: "Issues",
+      title: null,
+    },
+  ]);
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
   await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveAttribute(
     "href",
@@ -412,7 +423,8 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   expect(routeSource).not.toContain("issuePath");
   expect(routeSource).not.toContain("authorPath");
   expect(routeSource).not.toContain("to={item.href}");
-  expect(routeSource).toContain('"data-status": undefined');
+  expect(routeSource).not.toContain('"data-status": undefined');
+  expect(routeSource).not.toContain("data-status={undefined}");
   expect(routeSource).not.toContain("pjax-page");
   expect(routeSource).not.toContain("pjaxPage");
 });
