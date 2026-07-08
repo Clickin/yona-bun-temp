@@ -294,8 +294,10 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   await page.goto(`${basePath}/admin/sample`);
   await rememberSpaMarker(page, "project-home-leave-modal");
   expect(await dispatchCancelableClick(page.locator("#projectLeaveBtn"))).toBe(false);
-  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".project-page-wrap > .modal-backdrop")).toHaveCount(0);
   await expect(page).toHaveURL(`${basePath}/admin/sample`);
   expect(await spaMarker(page)).toBe("project-home-leave-modal");
   await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
@@ -311,8 +313,10 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   await expect.poll(() => projectHomeLeaveModalBridgeAuditHits(page)).toEqual([]);
 
   await page.locator("#projectLeaveBtn").click();
-  await expect(page.locator("#alertLeave")).toHaveClass(/modal in/);
+  await expect(page.locator("#alertLeave")).toHaveClass("modal hide in");
+  await expect(page.locator("#alertLeave")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".project-page-wrap > .modal-backdrop")).toHaveCount(0);
   await page.locator("#leaveBtn").click();
   await expect(page).toHaveURL(`${basePath}/admin`);
   expect(leaveRequests).toEqual([{ hasCsrfToken: true, method: "DELETE" }]);
@@ -326,7 +330,7 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   expect(leaveModalSource).toContain("event.stopPropagation();");
   expect(leaveModalSource).toContain("setLeaveModalOpen(true);");
   expect(leaveModalSource).toContain("setLeaveModalOpen(false);");
-  expect(leaveModalSource).toContain('className={leaveModalOpen ? "modal in" : "modal hide"}');
+  expect(leaveModalSource).toContain('className={leaveModalOpen ? "modal hide in" : "modal hide"}');
   expect(leaveModalSource).toContain(
     '{leaveModalOpen ? <div className="modal-backdrop in"></div> : null}',
   );

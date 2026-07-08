@@ -229,329 +229,340 @@ function ProjectHomeBody({
   };
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="project-breadcrumb hide show-in-mobile">
-          <span className="project-author">
-            <Link activeProps={{}} to={toRoutePath(runtimeConfig.basePath, `/${ownerName}`)}>
-              {ownerName}
-            </Link>
-          </span>
-          <span className="project-separator">/</span>
-          <span className="project-name">
-            <Link
-              activeProps={{}}
-              to={toRoutePath(
-                runtimeConfig.basePath,
-                projectHref(runtimeConfig.basePath, ownerName, projectName),
-              )}
-            >
-              {projectName}
-            </Link>
-          </span>
-          {booleanField(projectRecord.isPrivate) ? (
-            <span className="project-private">
-              <i className="yobicon-lock"></i>
+    <>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="project-breadcrumb hide show-in-mobile">
+            <span className="project-author">
+              <Link activeProps={{}} to={toRoutePath(runtimeConfig.basePath, `/${ownerName}`)}>
+                {ownerName}
+              </Link>
             </span>
-          ) : null}
-        </div>
-        <div className="project-home-header row-fluid">
-          <div className="project-overview span9 span-hard-wrap">
-            <div
-              className={descriptionEditing ? "project-description hidden" : "project-description"}
-              data-toggle="project-description-tab"
-            >
-              <h3>
-                <span id="project-description" className="markdown-wrap">
-                  {overviewText ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{overviewText}</ReactMarkdown>
-                  ) : (
-                    t("project.description.placeholder")
+            <span className="project-separator">/</span>
+            <span className="project-name">
+              <Link
+                activeProps={{}}
+                to={toRoutePath(
+                  runtimeConfig.basePath,
+                  projectHref(runtimeConfig.basePath, ownerName, projectName),
+                )}
+              >
+                {projectName}
+              </Link>
+            </span>
+            {booleanField(projectRecord.isPrivate) ? (
+              <span className="project-private">
+                <i className="yobicon-lock"></i>
+              </span>
+            ) : null}
+          </div>
+          <div className="project-home-header row-fluid">
+            <div className="project-overview span9 span-hard-wrap">
+              <div
+                className={
+                  descriptionEditing ? "project-description hidden" : "project-description"
+                }
+                data-toggle="project-description-tab"
+              >
+                <h3>
+                  <span id="project-description" className="markdown-wrap">
+                    {overviewText ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{overviewText}</ReactMarkdown>
+                    ) : (
+                      t("project.description.placeholder")
+                    )}
+                  </span>
+                  {booleanField(project.viewerCanUpdate) ? (
+                    <button
+                      type="button"
+                      className="ybtn ybtn-minimum"
+                      data-toggle="description-edit"
+                      onClick={openDescriptionEditor}
+                    >
+                      <i className="yobicon-edit"></i>
+                    </button>
+                  ) : null}
+                </h3>
+              </div>
+              <div
+                className={
+                  descriptionEditing
+                    ? "project-description-edit"
+                    : "project-description-edit hidden"
+                }
+                data-toggle="project-description-tab"
+              >
+                <form
+                  action={prefixBasePath(
+                    runtimeConfig.basePath,
+                    `/${ownerName}/${projectName}/projectOverviewUpdate`,
                   )}
-                </span>
-                {booleanField(project.viewerCanUpdate) ? (
+                  onSubmit={(event) => event.preventDefault()}
+                >
+                  <input
+                    type="text"
+                    id="project-description-input"
+                    ref={descriptionInputRef}
+                    className="span6"
+                    placeholder={t("project.description.placeholder")}
+                    value={descriptionDraft}
+                    onChange={(event) => setDescriptionDraft(event.currentTarget.value)}
+                  />
                   <button
                     type="button"
-                    className="ybtn ybtn-minimum"
-                    data-toggle="description-edit"
-                    onClick={openDescriptionEditor}
+                    className="ybtn ybtn-success"
+                    id="descriptionSaveBtn"
+                    onClick={() => overviewMutation.mutate(descriptionDraft)}
                   >
-                    <i className="yobicon-edit"></i>
+                    {t("button.save")}
+                  </button>{" "}
+                  <button
+                    type="button"
+                    className="ybtn"
+                    data-toggle="description-cancel"
+                    onClick={cancelDescriptionEditor}
+                  >
+                    {t("button.cancel")}
                   </button>
-                ) : null}
-              </h3>
+                </form>
+              </div>
             </div>
-            <div
-              className={
-                descriptionEditing ? "project-description-edit" : "project-description-edit hidden"
-              }
-              data-toggle="project-description-tab"
-            >
-              <form
-                action={prefixBasePath(
-                  runtimeConfig.basePath,
-                  `/${ownerName}/${projectName}/projectOverviewUpdate`,
-                )}
-                onSubmit={(event) => event.preventDefault()}
-              >
+            {booleanField(menuSetting.code) ? (
+              <div className="project-clone-wrap span3 hide-in-mobile">
                 <input
                   type="text"
-                  id="project-description-input"
-                  ref={descriptionInputRef}
-                  className="span6"
-                  placeholder={t("project.description.placeholder")}
-                  value={descriptionDraft}
-                  onChange={(event) => setDescriptionDraft(event.currentTarget.value)}
+                  className="project-clone-url"
+                  id="cloneURL"
+                  readOnly
+                  value={cloneUrl}
+                  onClick={(event) => event.currentTarget.select()}
                 />
                 <button
-                  type="button"
-                  className="ybtn ybtn-success"
-                  id="descriptionSaveBtn"
-                  onClick={() => overviewMutation.mutate(descriptionDraft)}
+                  className="ybtn project-clone-button"
+                  data-clipboard-target="cloneURL"
+                  id="cloneURLBtn"
+                  onClick={async () => {
+                    await navigator.clipboard?.writeText(cloneUrl);
+                    setCloneCopyNotice((notice) => ({
+                      key: (notice?.key ?? 0) + 1,
+                      message: t("code.copyUrl.copied"),
+                    }));
+                  }}
                 >
-                  {t("button.save")}
-                </button>{" "}
-                <button
-                  type="button"
-                  className="ybtn"
-                  data-toggle="description-cancel"
-                  onClick={cancelDescriptionEditor}
-                >
-                  {t("button.cancel")}
+                  {t("code.copyUrl")}
                 </button>
-              </form>
-            </div>
-          </div>
-          {booleanField(menuSetting.code) ? (
-            <div className="project-clone-wrap span3 hide-in-mobile">
-              <input
-                type="text"
-                className="project-clone-url"
-                id="cloneURL"
-                readOnly
-                value={cloneUrl}
-                onClick={(event) => event.currentTarget.select()}
-              />
-              <button
-                className="ybtn project-clone-button"
-                data-clipboard-target="cloneURL"
-                id="cloneURLBtn"
-                onClick={async () => {
-                  await navigator.clipboard?.writeText(cloneUrl);
-                  setCloneCopyNotice((notice) => ({
-                    key: (notice?.key ?? 0) + 1,
-                    message: t("code.copyUrl.copied"),
-                  }));
-                }}
-              >
-                {t("code.copyUrl")}
-              </button>
-              <YobiToast notice={cloneCopyNotice} />
-            </div>
-          ) : null}
-        </div>
-        <div className="row-fluid">
-          <div className="span9 span-left-pane">
-            <ul className="nav nav-tabs">
-              <li className={tabId === "readme" ? "active" : ""}>
-                <Link
-                  activeProps={{}}
-                  to={toRoutePath(
-                    runtimeConfig.basePath,
-                    projectHref(runtimeConfig.basePath, ownerName, projectName),
-                  )}
-                >
-                  README
-                </Link>
-              </li>
-              <li className={tabId === "history" ? "active" : ""}>
-                <Link
-                  activeProps={{}}
-                  to={toRoutePath(
-                    runtimeConfig.basePath,
-                    prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${ownerName}/${projectName}?tabId=history`,
-                    ),
-                  )}
-                >
-                  {t("project.history.recent")}
-                </Link>
-              </li>
-              <li className={tabId === "dashboard" ? "active" : ""}>
-                <Link
-                  activeProps={{}}
-                  to={toRoutePath(
-                    runtimeConfig.basePath,
-                    prefixBasePath(
-                      runtimeConfig.basePath,
-                      `/${ownerName}/${projectName}?tabId=dashboard`,
-                    ),
-                  )}
-                >
-                  {t("project.dashboard")}
-                </Link>
-              </li>
-            </ul>
-
-            <div className="tab-content">
-              <div className="tab-pane active">
-                {tabId === "history" ? (
-                  <HistoryPane basePath={runtimeConfig.basePath} project={project} />
-                ) : tabId === "dashboard" ? (
-                  <DashboardPane
-                    basePath={runtimeConfig.basePath}
-                    ownerName={ownerName}
-                    project={project}
-                    projectName={projectName}
-                  />
-                ) : (
-                  <ReadmePane
-                    basePath={runtimeConfig.basePath}
-                    ownerName={ownerName}
-                    project={project}
-                    projectName={projectName}
-                  />
-                )}
+                <YobiToast notice={cloneCopyNotice} />
               </div>
-            </div>
+            ) : null}
           </div>
+          <div className="row-fluid">
+            <div className="span9 span-left-pane">
+              <ul className="nav nav-tabs">
+                <li className={tabId === "readme" ? "active" : ""}>
+                  <Link
+                    activeProps={{}}
+                    to={toRoutePath(
+                      runtimeConfig.basePath,
+                      projectHref(runtimeConfig.basePath, ownerName, projectName),
+                    )}
+                  >
+                    README
+                  </Link>
+                </li>
+                <li className={tabId === "history" ? "active" : ""}>
+                  <Link
+                    activeProps={{}}
+                    to={toRoutePath(
+                      runtimeConfig.basePath,
+                      prefixBasePath(
+                        runtimeConfig.basePath,
+                        `/${ownerName}/${projectName}?tabId=history`,
+                      ),
+                    )}
+                  >
+                    {t("project.history.recent")}
+                  </Link>
+                </li>
+                <li className={tabId === "dashboard" ? "active" : ""}>
+                  <Link
+                    activeProps={{}}
+                    to={toRoutePath(
+                      runtimeConfig.basePath,
+                      prefixBasePath(
+                        runtimeConfig.basePath,
+                        `/${ownerName}/${projectName}?tabId=dashboard`,
+                      ),
+                    )}
+                  >
+                    {t("project.dashboard")}
+                  </Link>
+                </li>
+              </ul>
 
-          <div className="span3 span-right-pane">
-            <div className="bubble-wrap gray project-home">
-              <div className="project-btn-wrap">
-                {booleanField(menuSetting.issue) ? (
-                  <span className="project-btn-item">
-                    <Link
-                      activeProps={{}}
-                      to={toRoutePath(
-                        runtimeConfig.basePath,
-                        prefixBasePath(
-                          runtimeConfig.basePath,
-                          `/${ownerName}/${projectName}/issueform`,
-                        ),
-                      )}
-                      className="ybtn ybtn-success"
-                    >
-                      {t("button.newIssue")}
-                    </Link>
-                  </span>
-                ) : null}
-                {booleanField(menuSetting.code) && stringField(project.vcs, "GIT") === "GIT" ? (
-                  <span className="project-btn-item">
-                    <Link
-                      activeProps={{}}
-                      to={toRoutePath(
-                        runtimeConfig.basePath,
-                        prefixBasePath(
-                          runtimeConfig.basePath,
-                          `/${ownerName}/${projectName}/newFork`,
-                        ),
-                      )}
-                      className="ybtn ybtn-inverse"
-                    >
-                      {t("fork")}
-                    </Link>
-                  </span>
-                ) : null}
-              </div>
-              {booleanField(menuSetting.milestone) && currentMilestone ? (
-                <ProjectHomeMilestoneStatus
-                  basePath={runtimeConfig.basePath}
-                  milestone={currentMilestone}
-                  ownerName={ownerName}
-                  projectName={projectName}
-                />
-              ) : null}
-              <div className="inner member-info">
-                <header>
-                  <h3>{t("project.members")}</h3>
-                  {booleanField(project.viewerCanUpdate) ? (
-                    <Link
-                      activeProps={{}}
-                      to={toRoutePath(
-                        runtimeConfig.basePath,
-                        prefixBasePath(
-                          runtimeConfig.basePath,
-                          `/${ownerName}/${projectName}/members`,
-                        ),
-                      )}
-                      className="ybtn ybtn-minimum"
-                      id="member-add-link"
-                    >
-                      <i className="yobicon-addfriend"></i> {t("button.add")}
-                    </Link>
-                  ) : null}
-                </header>
-                <div className="member-wrap">
-                  <ul className="project-members">
-                    {members.map((member) => (
-                      <ProjectMember
-                        basePath={runtimeConfig.basePath}
-                        key={stringField(member.loginId, stringField(member.userId, ""))}
-                        member={member}
-                      />
-                    ))}
-                  </ul>
+              <div className="tab-content">
+                <div className="tab-pane active">
+                  {tabId === "history" ? (
+                    <HistoryPane basePath={runtimeConfig.basePath} project={project} />
+                  ) : tabId === "dashboard" ? (
+                    <DashboardPane
+                      basePath={runtimeConfig.basePath}
+                      ownerName={ownerName}
+                      project={project}
+                      projectName={projectName}
+                    />
+                  ) : (
+                    <ReadmePane
+                      basePath={runtimeConfig.basePath}
+                      ownerName={ownerName}
+                      project={project}
+                      projectName={projectName}
+                    />
+                  )}
                 </div>
               </div>
-              {booleanField(projectRecord.viewerCanLeave) ||
-              booleanField(project.viewerCanLeave) ? (
-                <button
-                  type="button"
-                  className="ybtn ybtn-minimum ybtn-danger pull-right"
-                  id="projectLeaveBtn"
-                  data-href={prefixBasePath(
-                    runtimeConfig.basePath,
-                    `/${ownerName}/${projectName}/members/${currentUserId}`,
-                  )}
-                  onClick={openLeaveModal}
-                >
-                  {t("project.member.leave")}
-                </button>
-              ) : null}
+            </div>
+
+            <div className="span3 span-right-pane">
+              <div className="bubble-wrap gray project-home">
+                <div className="project-btn-wrap">
+                  {booleanField(menuSetting.issue) ? (
+                    <span className="project-btn-item">
+                      <Link
+                        activeProps={{}}
+                        to={toRoutePath(
+                          runtimeConfig.basePath,
+                          prefixBasePath(
+                            runtimeConfig.basePath,
+                            `/${ownerName}/${projectName}/issueform`,
+                          ),
+                        )}
+                        className="ybtn ybtn-success"
+                      >
+                        {t("button.newIssue")}
+                      </Link>
+                    </span>
+                  ) : null}
+                  {booleanField(menuSetting.code) && stringField(project.vcs, "GIT") === "GIT" ? (
+                    <span className="project-btn-item">
+                      <Link
+                        activeProps={{}}
+                        to={toRoutePath(
+                          runtimeConfig.basePath,
+                          prefixBasePath(
+                            runtimeConfig.basePath,
+                            `/${ownerName}/${projectName}/newFork`,
+                          ),
+                        )}
+                        className="ybtn ybtn-inverse"
+                      >
+                        {t("fork")}
+                      </Link>
+                    </span>
+                  ) : null}
+                </div>
+                {booleanField(menuSetting.milestone) && currentMilestone ? (
+                  <ProjectHomeMilestoneStatus
+                    basePath={runtimeConfig.basePath}
+                    milestone={currentMilestone}
+                    ownerName={ownerName}
+                    projectName={projectName}
+                  />
+                ) : null}
+                <div className="inner member-info">
+                  <header>
+                    <h3>{t("project.members")}</h3>
+                    {booleanField(project.viewerCanUpdate) ? (
+                      <Link
+                        activeProps={{}}
+                        to={toRoutePath(
+                          runtimeConfig.basePath,
+                          prefixBasePath(
+                            runtimeConfig.basePath,
+                            `/${ownerName}/${projectName}/members`,
+                          ),
+                        )}
+                        className="ybtn ybtn-minimum"
+                        id="member-add-link"
+                      >
+                        <i className="yobicon-addfriend"></i> {t("button.add")}
+                      </Link>
+                    ) : null}
+                  </header>
+                  <div className="member-wrap">
+                    <ul className="project-members">
+                      {members.map((member) => (
+                        <ProjectMember
+                          basePath={runtimeConfig.basePath}
+                          key={stringField(member.loginId, stringField(member.userId, ""))}
+                          member={member}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                {booleanField(projectRecord.viewerCanLeave) ||
+                booleanField(project.viewerCanLeave) ? (
+                  <button
+                    type="button"
+                    className="ybtn ybtn-minimum ybtn-danger pull-right"
+                    id="projectLeaveBtn"
+                    data-href={prefixBasePath(
+                      runtimeConfig.basePath,
+                      `/${ownerName}/${projectName}/members/${currentUserId}`,
+                    )}
+                    onClick={openLeaveModal}
+                  >
+                    {t("project.member.leave")}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+          <div
+            id="alertLeave"
+            className={leaveModalOpen ? "modal hide in" : "modal hide"}
+            style={leaveModalOpen ? { display: "block" } : undefined}
+          >
+            <div className="modal-header">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={closeLeaveModal}
+              >
+                ×
+              </button>
+              <h3>{t("project.member.leave")}</h3>
+            </div>
+            <div className="modal-body">
+              <p>{t("project.member.leaveConfirm")}</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="ybtn ybtn-info ybtn-mini"
+                id="leaveBtn"
+                onClick={(event) => {
+                  insulateProjectHomeModalButtonClick(event);
+                  leaveMutation.mutate();
+                }}
+              >
+                {t("button.yes")}
+              </button>
+              <button
+                type="button"
+                className="ybtn ybtn-mini"
+                data-dismiss="modal"
+                onClick={closeLeaveModal}
+              >
+                {t("button.no")}
+              </button>
             </div>
           </div>
         </div>
-        <div
-          id="alertLeave"
-          className={leaveModalOpen ? "modal in" : "modal hide"}
-          style={leaveModalOpen ? { display: "block" } : undefined}
-        >
-          <div className="modal-header">
-            <button type="button" className="close" data-dismiss="modal" onClick={closeLeaveModal}>
-              ×
-            </button>
-            <h3>{t("project.member.leave")}</h3>
-          </div>
-          <div className="modal-body">
-            <p>{t("project.member.leaveConfirm")}</p>
-          </div>
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="ybtn ybtn-info ybtn-mini"
-              id="leaveBtn"
-              onClick={(event) => {
-                insulateProjectHomeModalButtonClick(event);
-                leaveMutation.mutate();
-              }}
-            >
-              {t("button.yes")}
-            </button>
-            <button
-              type="button"
-              className="ybtn ybtn-mini"
-              data-dismiss="modal"
-              onClick={closeLeaveModal}
-            >
-              {t("button.no")}
-            </button>
-          </div>
-        </div>
-        {leaveModalOpen ? <div className="modal-backdrop in"></div> : null}
       </div>
-    </div>
+      {leaveModalOpen ? <div className="modal-backdrop in"></div> : null}
+    </>
   );
 }
 
