@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   Fragment,
+  type ChangeEvent,
   useEffect,
   useRef,
   useState,
@@ -25,6 +26,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
   deleteIssueComment,
   deleteIssue,
+  massUpdateIssues,
   readIssueDetail,
   listProjectMilestones,
   readSessionBootstrap,
@@ -579,6 +581,9 @@ function IssueDetailBody({
   const historyMarkdown = stringField(issue.historyMarkdown);
   const issueUpdateMillis = stringField(issue.issueUpdateMillis, "0");
   const dueDateLabel = stringField(issue.dueDateLabel);
+  const [dueDateValue, setDueDateValue] = useState(dueDateLabel);
+  const [committedDueDateValue, setCommittedDueDateValue] = useState(dueDateLabel.trim());
+  const dueDateInputRef = useRef<HTMLInputElement>(null);
   const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
     ? "Overdue"
     : stringField(issue.dueDateUntilLabel);
@@ -694,6 +699,42 @@ function IssueDetailBody({
       );
     },
   });
+  const dueDateMutation = useMutation({
+    mutationFn: async (dueDate: string) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return massUpdateIssues(runtimeConfig, csrfToken, {
+        dueDate,
+        isDueDateChanged: true,
+        issueNumbers: [Number(issueNumber) || 0],
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess(_response, dueDate) {
+      setCommittedDueDateValue(dueDate);
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+    },
+  });
+  useEffect(() => {
+    setDueDateValue(dueDateLabel);
+    setCommittedDueDateValue(dueDateLabel.trim());
+  }, [dueDateLabel]);
+  function handleDueDateChange(event: ChangeEvent<HTMLInputElement>) {
+    setDueDateValue(event.currentTarget.value);
+  }
+  function commitDueDateChange() {
+    const trimmedDueDate = dueDateValue.trim();
+    if (!isValidIssueDueDate(trimmedDueDate)) {
+      dueDateInputRef.current?.focus();
+      return;
+    }
+    if (trimmedDueDate === committedDueDateValue) {
+      return;
+    }
+    dueDateMutation.mutate(trimmedDueDate);
+  }
   async function translateIssueBody() {
     if (translatePending || translatedBodyMarkdown !== null) {
       return;
@@ -1071,12 +1112,18 @@ function IssueDetailBody({
                         <input
                           type="text"
                           name="dueDate"
-                          defaultValue={dueDateLabel}
+                          value={dueDateValue}
                           className="textbox full"
                           autoComplete="off"
-                          data-toggle="calendar"
+                          onBlur={commitDueDateChange}
+                          onChange={handleDueDateChange}
+                          ref={dueDateInputRef}
                         />
-                        <button type="button" className="search-btn btn-calendar">
+                        <button
+                          type="button"
+                          className="search-btn btn-calendar"
+                          onClick={() => dueDateInputRef.current?.focus()}
+                        >
                           <i className="yobicon-calendar2"></i>
                         </button>
                       </div>
@@ -3770,6 +3817,10 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
+}
+
+function isValidIssueDueDate(value: string) {
+  return value === "" || !Number.isNaN(Date.parse(value));
 }
 
 function projectMenuEnabled(project: ProjectContainer, key: string) {
