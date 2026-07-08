@@ -364,7 +364,6 @@ function ProjectPostDetailBody({
                       id="watch-button"
                       type="button"
                       className={`ybtn ${post.isWatching ? "ybtn-watching" : ""}`}
-                      data-toggle="tooltip"
                       data-placement="top"
                       title={t("issue.watch.description")}
                       data-watching={String(post.isWatching)}
@@ -852,7 +851,6 @@ function PostActionButtons({
         <button
           type="button"
           className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-          data-toggle="tooltip"
           title={t("button.edit")}
           onClick={(event) => {
             event.preventDefault();
