@@ -582,7 +582,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
               {...LEGACY_LINK_PROPS}
               to={projectPath}
               className="title project"
-              data-toggle="tooltip"
               data-placement="bottom"
               title={t("project.name")}
             >
@@ -647,7 +646,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             </span>
             <span
               className="infos-item"
-              data-toggle="tooltip"
               data-placement="bottom"
               title={stringField(issue, "updatedLabel")}
             >
@@ -658,7 +656,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 <Link
                   {...LEGACY_LINK_PROPS}
                   to={`${projectPath}/milestone/${milestoneId}`}
-                  data-toggle="tooltip"
                   data-placement="bottom"
                   title={t("milestone")}
                 >
@@ -669,7 +666,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             {dueDateLabel ? (
               <span
                 className={`pull-right ${dueDateOverdue ? "overdue" : ""}`}
-                data-toggle="tooltip"
                 data-placement="top"
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
@@ -964,7 +960,6 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               {...LEGACY_LINK_PROPS}
               to={`/${receiverLoginId}`}
               className="avatar-wrap assinee"
-              data-toggle="tooltip"
               data-placement="top"
               title={receiverLabel}
             >
@@ -1241,7 +1236,6 @@ function ProfileTextLink({
       {...LEGACY_LINK_PROPS}
       to={`/${loginId}`}
       className={className}
-      data-toggle="tooltip"
       data-placement={placement}
       title={loginId}
     >
