@@ -383,7 +383,6 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).not.toContain("document.getElementById");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("classList");
-  expect(source).not.toContain('style={isTransferModalOpen ? { display: "block" } : undefined}');
   expect(source).not.toContain("style.display");
   expect(source).not.toContain("destinationInputRef.current?.value");
   expect(source).not.toContain("acceptInputRef.current?.checked");
@@ -442,6 +441,13 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(transferStateSlice).toContain("checked={isTransferAccepted}");
   expect(transferStateSlice).toContain("setDestination(event.target.value)");
   expect(transferStateSlice).toContain("setIsTransferAccepted(event.target.checked)");
+  expect(transferStateSlice).toContain(
+    'className={isTransferModalOpen ? "modal hide in" : "modal hide"}',
+  );
+  expect(transferStateSlice).toContain(
+    'style={isTransferModalOpen ? { display: "block" } : undefined}',
+  );
+  expect(transferStateSlice).toContain('<div className="modal-backdrop fade in"></div>');
 });
 
 test("project transfer confirmation follows legacy accept gate and REST redirect flow", async ({
@@ -497,10 +503,10 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
   });
   await armRootTransferModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
-  await expect(alertTransfer).toHaveClass("modal in");
+  await expect(alertTransfer).toHaveClass("modal hide in");
   await expect(alertTransfer).toBeVisible();
   await expect(alertTransfer).toHaveCSS("display", "block");
-  await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
+  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page).toHaveURL(transferFormUrl);
   await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
   await expect
@@ -530,7 +536,7 @@ test("project transfer confirmation follows legacy accept gate and REST redirect
 
   await armRootTransferModalBridgeTrap(page);
   expect(await dispatchCancelableClick(page.locator("#btnTransfer"))).toBe(false);
-  await expect(alertTransfer).toHaveClass("modal in");
+  await expect(alertTransfer).toHaveClass("modal hide in");
   await expect(page).toHaveURL(transferFormUrl);
   await expect(rootTransferModalBridgeHits(page)).resolves.toEqual([]);
   await armRootTransferModalBridgeTrap(page);
@@ -646,7 +652,7 @@ test("project transfer confirmation sends only one request on repeated Yes click
   await page.locator("#owner").fill("target-owner");
   await page.locator("#accept").check();
   await page.locator("#btnTransfer").click();
-  await expect(page.locator("#alertTransfer")).toHaveClass("modal in");
+  await expect(page.locator("#alertTransfer")).toHaveClass("modal hide in");
 
   const transferResponsePromise = page.waitForResponse(
     (response) =>
@@ -678,7 +684,7 @@ test("project transfer confirmation reloads when success has no redirect path", 
   await page.locator("#owner").fill("target-owner");
   await page.locator("#accept").check();
   await page.locator("#btnTransfer").click();
-  await expect(page.locator("#alertTransfer")).toHaveClass("modal in");
+  await expect(page.locator("#alertTransfer")).toHaveClass("modal hide in");
 
   await page.locator("#btnTransferExec").click();
   await page.waitForFunction(() => {

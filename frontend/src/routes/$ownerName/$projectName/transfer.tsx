@@ -233,7 +233,11 @@ function ProjectTransferBody({
               <i className="yobicon-database"></i> {t("project.transfer.this")}
             </button>
           </div>
-          <div id="alertTransfer" className={isTransferModalOpen ? "modal in" : "modal hide"}>
+          <div
+            id="alertTransfer"
+            className={isTransferModalOpen ? "modal hide in" : "modal hide"}
+            style={isTransferModalOpen ? { display: "block" } : undefined}
+          >
             <div className="modal-header">
               <button
                 type="button"
@@ -275,7 +279,7 @@ function ProjectTransferBody({
               </button>
             </div>
           </div>
-          {isTransferModalOpen ? <div className="modal-backdrop in"></div> : null}
+          {isTransferModalOpen ? <div className="modal-backdrop fade in"></div> : null}
         </div>
       </div>
     </>
