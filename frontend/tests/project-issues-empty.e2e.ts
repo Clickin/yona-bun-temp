@@ -427,23 +427,62 @@ test("project issue list mass update option buttons keep click ownership route-l
   expect(labelMassUpdateGroupSource).not.toContain("onClick={() => onSelect(name, label.id)}");
 });
 
-test("project issue list route source does not duplicate common Select2 templates", async () => {
-  const routeLocalSelect2Source =
-    PROJECT_ISSUES_ROUTE_SOURCE.match(
-      /function IssueListSelect2Partial\([\s\S]*?\nfunction ProjectIssuesBody/u,
-    )?.[0] ?? "";
-
-  expect(routeLocalSelect2Source).toContain("/assets/javascripts/lib/select2/select2.js");
-  expect(routeLocalSelect2Source).toContain("/assets/javascripts/common/yobi.ui.Select2.js");
+test("project issue list route source does not inject route-local common Select2", async () => {
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("function IssueListSelect2Partial");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("/assets/javascripts/lib/select2/select2.js");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    "/assets/javascripts/common/yobi.ui.Select2.js",
+  );
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("select2_locale_ko.js");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("select2_locale_ja.js");
 
   for (const templateId of select2TemplateIds) {
-    expect(routeLocalSelect2Source).not.toContain(templateId);
+    expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(templateId);
   }
 
-  expect(routeLocalSelect2Source).not.toContain('type="text/x-jquery-tmpl"');
-  expect(routeLocalSelect2Source).not.toContain("${avatarURL}");
-  expect(routeLocalSelect2Source).not.toContain("${stateLabel}");
-  expect(routeLocalSelect2Source).not.toContain("dangerouslySetInnerHTML");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain('type="text/x-jquery-tmpl"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("${avatarURL}");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("${stateLabel}");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project issue list select2 metadata stays without React-owned initializer markers", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "project-labels");
+
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator("#advanced-search-form select[data-toggle='select2']")).toHaveCount(0);
+  await expect(page.locator("#authorId")).toHaveAttribute("data-format", "user");
+  await expect(page.locator("#authorId")).toHaveAttribute("data-search", "authorId");
+  await expect(page.locator("#authorId")).toHaveAttribute("data-container-css-class", "fullsize");
+  await expect(page.locator("#authorId")).not.toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#assigneeId")).toHaveAttribute("data-format", "user");
+  await expect(page.locator("#assigneeId")).toHaveAttribute("data-search", "assigneeId");
+  await expect(page.locator("#assigneeId")).toHaveAttribute("data-container-css-class", "fullsize");
+  await expect(page.locator("#assigneeId")).not.toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#milestoneId")).toHaveAttribute("data-format", "milestone");
+  await expect(page.locator("#milestoneId")).toHaveAttribute("data-search", "milestoneId");
+  await expect(page.locator("#milestoneId")).toHaveAttribute(
+    "data-container-css-class",
+    "fullsize",
+  );
+  await expect(page.locator("#milestoneId")).not.toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-format", "issuelabel");
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-search", "labelIds");
+  await expect(page.locator("#labelIds")).toHaveAttribute(
+    "data-dropdown-css-class",
+    "issue-labels",
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute(
+    "data-container-css-class",
+    "issue-labels bordered fullsize",
+  );
+  await expect(page.locator("#labelIds")).toHaveAttribute("data-placeholder", "Select label");
+  await expect(page.locator("#labelIds")).not.toHaveAttribute("data-toggle", "select2");
+  await expectIssueListSelect2PartialAbsent(page, basePath);
 });
 
 test("project issue list route source does not inject route-local bootstrap scripts", async () => {
@@ -730,7 +769,7 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
     'data-content={t("common.show.subtasks.desc")}',
   );
-  await expectIssueListSelect2Partial(page, basePath);
+  await expectIssueListSelect2PartialAbsent(page, basePath);
   const twoColumnWrapper = page.locator(".nav-tabs .two-column-icon");
   await expect(twoColumnWrapper).toHaveAttribute("title", "Two Column Mode");
   await expect(twoColumnWrapper).not.toHaveAttribute("data-toggle", "popover");
@@ -847,44 +886,17 @@ test("empty project issue list matches legacy issue/list.scala.html DOM", async 
   ).toBeUndefined();
 });
 
-async function expectIssueListSelect2Partial(page: Page, basePath: string) {
+async function expectIssueListSelect2PartialAbsent(page: Page, basePath: string) {
   const select2Scripts = [
     `${basePath}/assets/javascripts/lib/select2/select2.js`,
     `${basePath}/assets/javascripts/common/yobi.ui.Select2.js`,
   ];
   for (const src of select2Scripts) {
-    const scripts = page.locator(`script[src="${src}"]`);
-    await expect(scripts).toHaveCount(2);
-    await expect(scripts.nth(1)).toHaveAttribute("defer", "");
+    await expect(page.locator(`script[src="${src}"]`)).toHaveCount(1);
   }
 
-  const templates = [
-    {
-      id: "tplSelect2FormatUser",
-      text: '<div class="usf-group" title="${name} ${loginId}">',
-    },
-    {
-      id: "tplSelect2FormatMilestone",
-      text: '<div title="[${stateLabel}] ${name}">',
-    },
-    {
-      id: "tplSelect2Projects",
-      text: '<span class="avatar-wrap smaller"><img src="${avatarURL}" width="16" height="16"></span>',
-    },
-    {
-      id: "tplSelect2ProjectsWithoutAvatar",
-      text: '<span class="width25px"></span>',
-    },
-    {
-      id: "tplSelect2FormatIssues",
-      text: '<div title="${name}">',
-    },
-  ];
-
-  for (const template of templates) {
-    const nodes = page.locator(`script#${template.id}[type="text/x-jquery-tmpl"]`);
-    await expect(nodes).toHaveCount(1);
-    expect(await nodes.first().textContent()).toContain(template.text);
+  for (const templateId of select2TemplateIds) {
+    await expect(page.locator(`script#${templateId}[type="text/x-jquery-tmpl"]`)).toHaveCount(1);
   }
 }
 

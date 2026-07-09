@@ -17,7 +17,7 @@ import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
-import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../../../i18n";
+import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
@@ -296,10 +296,7 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         )}
         type="text/css"
       />
-      <IssueListAssets
-        basePath={runtimeConfig.basePath}
-        supportedLanguages={runtimeConfig.supportedLanguages}
-      />
+      <IssueListAssets basePath={runtimeConfig.basePath} />
       <ProjectIssuesBody
         assignableUsers={assignableUsersQuery.data.items}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
@@ -336,16 +333,9 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
   return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
-function IssueListAssets({
-  basePath,
-  supportedLanguages,
-}: {
-  basePath: string;
-  supportedLanguages?: string[];
-}) {
+function IssueListAssets({ basePath }: { basePath: string }) {
   return (
     <>
-      <IssueListSelect2Partial basePath={basePath} supportedLanguages={supportedLanguages} />
       <script
         defer
         src={prefixBasePath(basePath, "/assets/javascripts/lib/moment-with-langs.min.js")}
@@ -358,36 +348,6 @@ function IssueListAssets({
         defer
         src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Calendar.js")}
       ></script>
-    </>
-  );
-}
-
-function IssueListSelect2Partial({
-  basePath,
-  supportedLanguages,
-}: {
-  basePath: string;
-  supportedLanguages?: string[];
-}) {
-  const language = resolveInitialLanguage(supportedLanguages);
-  const localeScript =
-    language === "ko-KR"
-      ? "/assets/javascripts/lib/select2/select2_locale_ko.js"
-      : language === "ja-JP"
-        ? "/assets/javascripts/lib/select2/select2_locale_ja.js"
-        : "";
-
-  return (
-    <>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/select2/select2.js")}
-      ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Select2.js")}
-      ></script>
-      {localeScript ? <script defer src={prefixBasePath(basePath, localeScript)}></script> : null}
     </>
   );
 }
