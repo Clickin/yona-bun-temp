@@ -27,16 +27,16 @@ function withReactOwnedTabButtons(html: string) {
   return html
     .replaceAll(
       /<a href="#edit-[^"]+" data-toggle="tab" data-mode="edit">Edit<\/a>/g,
-      '<button type="button" data-mode="edit">Edit</button>',
+      '<button type="button">Edit</button>',
     )
     .replaceAll(
       /<a href="#preview-[^"]+" data-toggle="tab" data-mode="preview">Preview<\/a>/g,
-      '<button type="button" data-mode="preview">Preview</button>',
+      '<button type="button">Preview</button>',
     )
     .replaceAll(/<button type="button" data-toggle="tab">/g, '<button type="button">')
     .replaceAll(
       /<button type="button" data-toggle="tab" data-mode="([^"]+)">/g,
-      '<button type="button" data-mode="$1">',
+      '<button type="button">',
     );
 }
 
@@ -139,6 +139,12 @@ async function expectEditorTabState(
   await expect(editor.locator("li").nth(1)).toHaveClass(/active/);
   await expect(editor.locator(`#edit-${wrapId}`)).not.toHaveClass(/active/);
   await expect(editor.locator(`#preview-${wrapId}`)).toHaveClass(/active/);
+}
+
+function editorTabButton(editor: Locator, mode: "edit" | "preview") {
+  const index = mode === "edit" ? 0 : 1;
+  const name = mode === "edit" ? "Edit" : "Preview";
+  return editor.locator("ul.nav-tabs > li").nth(index).locator("button").filter({ hasText: name });
 }
 
 function withCommentUpdateForm(
@@ -247,8 +253,8 @@ test("project commit detail comment edit toggle is route-owned React state", asy
 
 test("project commit detail React tab controls do not carry Bootstrap tab triggers", async () => {
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="tab"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-mode="edit"');
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-mode="preview"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-mode="edit"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-mode="preview"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setReviewCardTab");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setActiveTab");
@@ -587,8 +593,15 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     "#comment-form .mt10:has(#editor-contents-comment), #review-form .mt10:has(#editor-contents-review)",
   );
   await expect(editorTabs.locator('a[href^="#edit-"], a[href^="#preview-"]')).toHaveCount(0);
-  await expect(editorTabs.locator('button[type="button"][data-mode="edit"]')).toHaveCount(2);
-  await expect(editorTabs.locator('button[type="button"][data-mode="preview"]')).toHaveCount(2);
+  await expect(editorTabs.locator('button[type="button"][data-mode]')).toHaveCount(0);
+  await expect(editorTabs.locator("> ul.nav-tabs > li:nth-child(1) button")).toHaveText([
+    "Edit",
+    "Edit",
+  ]);
+  await expect(editorTabs.locator("> ul.nav-tabs > li:nth-child(2) button")).toHaveText([
+    "Preview",
+    "Preview",
+  ]);
   await expect(editorTabs.locator('[data-toggle="tab"]')).toHaveCount(0);
   const commentEditor = page.locator("#comment-form .mt10:has(#editor-contents-comment)");
   const reviewEditor = page.locator("#review-form .mt10:has(#editor-contents-review)");
@@ -600,10 +613,10 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
   await expect(
     commentEditor.locator(".markdown-help .markdown-help-item.markdownHeaders"),
   ).toHaveCount(1);
-  await expect(commentEditor.locator('button[data-mode="edit"]')).toHaveText("Edit");
-  await expect(commentEditor.locator('button[data-mode="preview"]')).toHaveText("Preview");
-  await expect(reviewEditor.locator('button[data-mode="edit"]')).toHaveText("Edit");
-  await expect(reviewEditor.locator('button[data-mode="preview"]')).toHaveText("Preview");
+  await expect(editorTabButton(commentEditor, "edit")).toHaveText("Edit");
+  await expect(editorTabButton(commentEditor, "preview")).toHaveText("Preview");
+  await expect(editorTabButton(reviewEditor, "edit")).toHaveText("Edit");
+  await expect(editorTabButton(reviewEditor, "preview")).toHaveText("Preview");
   await expectEditorTabState(commentEditor, "comment", "edit");
   await expectEditorTabState(reviewEditor, "review", "edit");
   await page.evaluate(() => {
@@ -611,7 +624,7 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
       "commit-editor-tabs";
   });
   const urlBeforeEditorTabClick = page.url();
-  await commentEditor.locator('button[data-mode="preview"]').click();
+  await editorTabButton(commentEditor, "preview").click();
   await expectEditorTabState(commentEditor, "comment", "preview");
   await expectEditorTabState(reviewEditor, "review", "edit");
   expect(page.url()).toBe(urlBeforeEditorTabClick);
@@ -620,7 +633,7 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).toBe("commit-editor-tabs");
-  await commentEditor.locator('button[data-mode="edit"]').click();
+  await editorTabButton(commentEditor, "edit").click();
   await expectEditorTabState(commentEditor, "comment", "edit");
   await expectEditorTabState(reviewEditor, "review", "edit");
   expect(page.url()).toBe(urlBeforeEditorTabClick);
@@ -1742,7 +1755,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   expect(await canonicalize(page, ".board-comment-wrap")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${withCommentUpdateForm(withThreadUploadForm(withThreadTextareaStyle(withThreadReplyAuthorInfo(EXPECTED_NON_RANGED_THREAD, 88), 88)), basePath, 601, "General **note**", [COMMENT_601_ATTACHMENT]).replaceAll("__BASE_PATH__", basePath)}</div>${withCommentUploadForm(`<form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-toggle="tab" data-mode="edit">Edit</button></li><li><button type="button" data-toggle="tab" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`)}</div>`,
+      `<div class="board-comment-wrap"><div class="non-ranged-threads-wrap">${withCommentUpdateForm(withThreadUploadForm(withThreadTextareaStyle(withThreadReplyAuthorInfo(EXPECTED_NON_RANGED_THREAD, 88), 88)), basePath, 601, "General **note**", [COMMENT_601_ATTACHMENT]).replaceAll("__BASE_PATH__", basePath)}</div>${withCommentUploadForm(`<form id="comment-form" action="${basePath}/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-comment"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`)}</div>`,
     ),
   );
   await page.evaluate(() => {
@@ -1775,6 +1788,9 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await expect(
     page.locator(".mt10:has(textarea[id^='editor-contents-']) [data-toggle='tab']"),
   ).toHaveCount(0);
+  await expect(
+    page.locator(".mt10:has(textarea[id^='editor-contents-']) > ul.nav-tabs button[data-mode]"),
+  ).toHaveCount(0);
   const threadEditor = page.locator(
     "#thread-88 .write-comment-form .mt10:has(#editor-contents-thread-88)",
   );
@@ -1786,11 +1802,11 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
       "commit-thread-editor-tabs";
   });
   const urlBeforeThreadEditorTabs = page.url();
-  await threadEditor.locator('button[data-mode="preview"]').click();
+  await editorTabButton(threadEditor, "preview").click();
   await expectEditorTabState(threadEditor, "thread-88", "preview");
   await expectEditorTabState(updateEditor, "601", "edit");
-  await updateEditor.locator('button[data-mode="preview"]').click();
-  await threadEditor.locator('button[data-mode="edit"]').click();
+  await editorTabButton(updateEditor, "preview").click();
+  await editorTabButton(threadEditor, "edit").click();
   await expectEditorTabState(threadEditor, "thread-88", "edit");
   await expectEditorTabState(updateEditor, "601", "preview");
   expect(page.url()).toBe(urlBeforeThreadEditorTabs);
