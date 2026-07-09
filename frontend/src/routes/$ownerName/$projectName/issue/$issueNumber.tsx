@@ -961,7 +961,6 @@ function IssueDetailBody({
                     name="issueSharer"
                     placeholder={t("issue.sharer.select")}
                     defaultValue={sharerValue}
-                    title=""
                   />
                 ) : (
                   sharers.map((sharer) => {
@@ -1025,7 +1024,6 @@ function IssueDetailBody({
                         placeholder={t("issue.noAssignee")}
                         defaultValue={assigneeLoginId}
                         style={{ width: "100%" }}
-                        title=""
                       />
                     ) : assigneeLoginId ? (
                       <Link
