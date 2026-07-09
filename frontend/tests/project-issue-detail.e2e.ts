@@ -408,6 +408,15 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   expect(routeSource).not.toContain("attachedFilesHtml(issue.attachments)");
   expect(routeSource).not.toContain("attachedFilesHtml(comment.attachments)");
   expect(routeSource).not.toContain('className="attached-delete"');
+  const commentUpdateFormSource = routeSource.slice(
+    routeSource.indexOf("function CommentUpdateForm"),
+    routeSource.indexOf("function MarkdownEditor"),
+  );
+  expect(commentUpdateFormSource).toContain('className="attached-file attached-file-marker"');
+  expect(commentUpdateFormSource).toContain('className="btn-transparent btn-delete"');
+  expect(commentUpdateFormSource).not.toMatch(
+    /<button\s+type="button"\s+className="btn-transparent btn-delete"\s+data-id=/u,
+  );
   expect(routeSource).toContain('<ul className="attaches wm">');
   expect(routeSource).toContain('className="attach"');
   expect(routeSource).toContain('className="download ybtn ybtn-mini"');
@@ -2946,7 +2955,7 @@ test("project issue detail renders legacy readonly attachment downloader lists",
   );
 
   await expect(page.locator(".attached-file-marker[data-href]")).toHaveCount(0);
-  const expectedCommentUpdateAttachments = `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">4.1 kB</span><button type="button" class="btn-transparent btn-delete" data-id="502">×</button></div></div>`;
+  const expectedCommentUpdateAttachments = `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">4.1 kB</span><button type="button" class="btn-transparent btn-delete">×</button></div></div>`;
   expect(await canonicalize(page, "#comment-editform-77 > form .attachment-files")).toEqual(
     await canonicalizeHtml(page, expectedCommentUpdateAttachments),
   );
@@ -2954,7 +2963,7 @@ test("project issue detail renders legacy readonly attachment downloader lists",
     '#comment-editform-77 > form .attached-file-marker[data-name="comment-shot.png"]',
   );
   await expect(updateAttachment.locator(".name")).toHaveText("comment-shot.png");
-  await expect(updateAttachment.locator(".btn-delete")).toHaveAttribute("data-id", "502");
+  await expect(updateAttachment.locator(".btn-delete")).not.toHaveAttribute("data-id");
   await expect(updateAttachment.locator(".btn-delete")).toHaveAttribute("type", "button");
   expect(
     consoleErrors.some(

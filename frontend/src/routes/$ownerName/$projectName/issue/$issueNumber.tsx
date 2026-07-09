@@ -3232,7 +3232,7 @@ function CommentUpdateForm({
                   <span className="size">
                     {stringField(file.sizeLabel, stringField(file.size))}
                   </span>
-                  <button type="button" className="btn-transparent btn-delete" data-id={fileId}>
+                  <button type="button" className="btn-transparent btn-delete">
                     &times;
                   </button>
                 </div>
