@@ -292,7 +292,6 @@ function OrganizationMembersBody({
                 id="loginId"
                 name="loginId"
                 required={true}
-                data-provider="typeahead"
                 autoComplete="off"
                 ref={loginIdInputRef}
                 value={loginIdQuery}
