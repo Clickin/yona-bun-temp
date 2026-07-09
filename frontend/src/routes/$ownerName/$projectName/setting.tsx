@@ -1,12 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  useState,
-  type ButtonHTMLAttributes,
-  type ChangeEvent,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
 import {
@@ -566,7 +560,8 @@ function ProjectSettingBody({
                         <ul className="dropdown-menu">
                           {reviewerPoints.map((point) => (
                             <li data-value={point} key={point}>
-                              <LegacyDropdownButton
+                              <button
+                                type="button"
                                 onClick={(event) => {
                                   event.preventDefault();
                                   event.stopPropagation();
@@ -575,7 +570,7 @@ function ProjectSettingBody({
                                 }}
                               >
                                 {point}
-                              </LegacyDropdownButton>
+                              </button>
                             </li>
                           ))}
                         </ul>
@@ -721,20 +716,6 @@ function MenuCheckbox({
       />
       {label}
     </label>
-  );
-}
-
-function LegacyDropdownButton({
-  children,
-  onClick,
-}: {
-  children: ReactNode;
-  onClick?: ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
-}) {
-  return (
-    <button type="button" onClick={onClick}>
-      {children}
-    </button>
   );
 }
 

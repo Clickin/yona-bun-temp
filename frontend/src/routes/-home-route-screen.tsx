@@ -189,20 +189,20 @@ function HomeScreen({
       defaultLandingPopoverTimer.current = null;
     }
   }, []);
-  const showDefaultLandingPopover = React.useCallback(() => {
+  const showDefaultLandingPopover = () => {
     clearDefaultLandingPopoverTimer();
     defaultLandingPopoverTimer.current = window.setTimeout(() => {
       setIsDefaultLandingPopoverVisible(true);
       defaultLandingPopoverTimer.current = null;
     }, 100);
-  }, [clearDefaultLandingPopoverTimer]);
-  const hideDefaultLandingPopover = React.useCallback(() => {
+  };
+  const hideDefaultLandingPopover = () => {
     clearDefaultLandingPopoverTimer();
     defaultLandingPopoverTimer.current = window.setTimeout(() => {
       setIsDefaultLandingPopoverVisible(false);
       defaultLandingPopoverTimer.current = null;
     }, 100);
-  }, [clearDefaultLandingPopoverTimer]);
+  };
   const setDefaultLoginPage = useMutation({
     mutationFn: async (path: string) => {
       const response = await fetch(
@@ -733,29 +733,24 @@ export function SiteLayoutShell({
       : selectedSearchScope === "group" && groupSearchAction
         ? t("search.scope.group")
         : t("search.scope.all");
-  const handleSearchScopeToggleClick = React.useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsSearchScopeMenuOpen((value) => !value);
-    },
-    [],
-  );
-  const handleSearchScopeBlur = React.useCallback((event: React.FocusEvent<HTMLDivElement>) => {
+  const handleSearchScopeToggleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsSearchScopeMenuOpen((value) => !value);
+  };
+  const handleSearchScopeBlur = (event: React.FocusEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
       return;
     }
     setIsSearchScopeMenuOpen(false);
-  }, []);
-  const handleSearchScopeItemClick = React.useCallback(
+  };
+  const handleSearchScopeItemClick =
     (scope: "all" | "group" | "project") => (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
       setSelectedSearchScope(scope);
       setIsSearchScopeMenuOpen(false);
-    },
-    [],
-  );
+    };
 
   return (
     <>
@@ -960,28 +955,22 @@ function AuthenticatedSiteUserMenu({
   const isGuest = booleanField(session, "isGuest", false);
   const navbarCustomLinkName = runtimeConfig.navbarCustomLinkName?.trim() ?? "";
   const navbarCustomLinkUrl = runtimeConfig.navbarCustomLinkUrl?.trim() ?? "";
-  const handleSidebarToggleClick = React.useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsSidebarOpen((value) => !value);
-    },
-    [],
-  );
-  const handleCreateMenuToggleClick = React.useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsCreateMenuOpen((value) => !value);
-    },
-    [],
-  );
-  const handleCreateMenuBlur = React.useCallback((event: React.FocusEvent<HTMLLIElement>) => {
+  const handleSidebarToggleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsSidebarOpen((value) => !value);
+  };
+  const handleCreateMenuToggleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsCreateMenuOpen((value) => !value);
+  };
+  const handleCreateMenuBlur = (event: React.FocusEvent<HTMLLIElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
       return;
     }
     setIsCreateMenuOpen(false);
-  }, []);
+  };
 
   return (
     <>

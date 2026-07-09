@@ -185,7 +185,7 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
           project={projectQuery.data}
         />
         <ProjectSearchForbiddenErrorBody
-          isAnonymous={isAnonymousViewer(currentSessionQuery.data)}
+          isAnonymous={currentSessionQuery.data?.isAnonymous === true}
           redirectUrl={legacyProjectSearchRedirectUrl(
             runtimeConfig.basePath,
             ownerName,
@@ -746,41 +746,15 @@ function ProjectSearchPagination({
 function projectSearchNormalizedType(
   searchType: SearchType,
 ): Exclude<SearchType, "auto" | "project"> {
-  switch (searchType) {
-    case "issue":
-    case "user":
-    case "post":
-    case "milestone":
-    case "issue_comment":
-    case "post_comment":
-    case "review":
-      return searchType;
-    case "auto":
-    case "project":
-      return "issue";
-  }
+  return searchType === "auto" || searchType === "project" ? "issue" : searchType;
 }
 
 function projectSearchCountForType(
   counts: SearchCounts,
   searchType: Exclude<SearchType, "auto" | "project">,
 ) {
-  switch (searchType) {
-    case "issue":
-      return counts.issues;
-    case "user":
-      return counts.users;
-    case "post":
-      return counts.posts;
-    case "milestone":
-      return counts.milestones;
-    case "issue_comment":
-      return counts.issueComments;
-    case "post_comment":
-      return counts.postComments;
-    case "review":
-      return counts.reviews;
-  }
+  const category = PROJECT_SEARCH_CATEGORIES.find((entry) => entry.type === searchType);
+  return category ? counts[category.countKey] : 0;
 }
 
 function projectSearchTitleForType(
@@ -897,15 +871,6 @@ function ProjectSearchForbiddenErrorBody({
         </div>
       </div>
     </div>
-  );
-}
-
-function isAnonymousViewer(session: unknown) {
-  return (
-    typeof session === "object" &&
-    session !== null &&
-    "isAnonymous" in session &&
-    session.isAnonymous === true
   );
 }
 

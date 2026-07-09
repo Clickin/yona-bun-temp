@@ -1295,7 +1295,7 @@ export function ProjectHeader({
   );
   const canWatchProject = projectCanWatch(project);
   const [watchState, setWatchState] = useState({
-    count: projectWatchingCount(project),
+    count: projectWatchingCountValue(project) ?? 0,
     isWatching: projectIsWatching(project),
   });
   const [projectUtilDropdown, setProjectUtilDropdown] = useState<"enrollment" | "watch" | null>(
@@ -1865,10 +1865,6 @@ function projectEnrollmentRequested(project: ProjectContainer) {
 function projectIsWatching(project: ProjectContainer) {
   const record = recordField(project);
   return booleanField(record.isWatching) || booleanField(record.viewerIsWatching);
-}
-
-function projectWatchingCount(project: ProjectContainer) {
-  return projectWatchingCountValue(project) ?? 0;
 }
 
 function projectWatchingCountValue(project: ProjectContainer) {

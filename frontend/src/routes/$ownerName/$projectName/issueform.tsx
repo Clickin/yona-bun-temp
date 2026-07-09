@@ -26,8 +26,8 @@ export const Route = createFileRoute("/$ownerName/$projectName/issueform")({
   component: ProjectIssueFormRoute,
   validateSearch(search: Record<string, unknown>): IssueFormSearch {
     return {
-      commentId: stringSearch(search.commentId),
-      parentIssueId: stringSearch(search.parentIssueId),
+      commentId: stringField(search.commentId, ""),
+      parentIssueId: stringField(search.parentIssueId, ""),
     };
   },
 });
@@ -86,8 +86,8 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   const search = Route.useSearch();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const legacySearch = legacyUrlSearch(locationHref);
-  const parentIssueId = search.parentIssueId || stringSearch(legacySearch.get("parentIssueId"));
-  const commentId = search.commentId || stringSearch(legacySearch.get("commentId"));
+  const parentIssueId = search.parentIssueId || stringField(legacySearch.get("parentIssueId"), "");
+  const commentId = search.commentId || stringField(legacySearch.get("commentId"), "");
 
   return (
     <>
@@ -1037,14 +1037,6 @@ function YobiToast({ message, noticeKey }: { message: string; noticeKey: number 
       </div>
     </div>
   );
-}
-
-function stringSearch(value: unknown) {
-  return typeof value === "string"
-    ? value
-    : typeof value === "number" || typeof value === "bigint"
-      ? String(value)
-      : "";
 }
 
 function legacyUrlSearch(locationHref: string) {

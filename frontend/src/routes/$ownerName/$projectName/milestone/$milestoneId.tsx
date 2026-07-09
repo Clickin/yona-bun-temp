@@ -1765,15 +1765,9 @@ function truncateParentIssueTitle(title: string) {
 }
 
 function cssBackgroundColor(value: string) {
-  const match = /^#([0-9a-f]{6})$/iu.exec(value.trim());
-  if (!match) {
-    return value;
-  }
-  const hex = match[1];
-  return `rgb(${Number.parseInt(hex.slice(0, 2), 16)}, ${Number.parseInt(
-    hex.slice(2, 4),
-    16,
-  )}, ${Number.parseInt(hex.slice(4, 6), 16)})`;
+  // ponytail: background style renders #rrggbb identically to rgb(); no consumer string-matches rgb, so use hex directly.
+  const trimmed = value.trim();
+  return /^#[0-9a-f]{6}$/iu.test(trimmed) ? trimmed : value;
 }
 
 function legacyProjectIssuesHref(

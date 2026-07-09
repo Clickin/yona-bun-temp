@@ -500,7 +500,14 @@ function ProjectLabelsBody({
                           >
                             <button
                               type="button"
-                              style={typeaheadButtonStyle()}
+                              style={{
+                                background: "transparent",
+                                border: 0,
+                                display: "block",
+                                padding: "3px 20px",
+                                textAlign: "left",
+                                width: "100%",
+                              }}
                               onClick={() => selectCategoryTypeaheadSuggestion(suggestion.value)}
                             >
                               {suggestion.parts.map((part, partIndex) =>
@@ -903,17 +910,6 @@ function typeaheadMenuStyle(input: HTMLInputElement | null) {
     minWidth: input ? `${input.offsetWidth}px` : undefined,
     position: "absolute" as const,
     top: input ? `${input.offsetHeight}px` : undefined,
-  };
-}
-
-function typeaheadButtonStyle() {
-  return {
-    background: "transparent",
-    border: 0,
-    display: "block",
-    padding: "3px 20px",
-    textAlign: "left" as const,
-    width: "100%",
   };
 }
 
