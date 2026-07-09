@@ -237,7 +237,6 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             id="input-project"
             type="text"
             className="span3"
-            data-provider="typeahead"
             autoComplete="off"
             placeholder={t("project.name")}
             ref={projectInputRef}
@@ -270,7 +269,6 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             id="select-project"
             type="submit"
             className="ybtn"
-            data-loading-text={t("site.massMail.loading")}
             onClick={(event) => {
               event.preventDefault();
               addProject();

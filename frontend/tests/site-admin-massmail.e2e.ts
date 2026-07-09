@@ -9,7 +9,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <div class="pin" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
     </div>
@@ -36,9 +36,9 @@ const EXPECTED_MASSMAIL_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
+          <li class="myRecentIssueList"><button type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -46,15 +46,15 @@ const EXPECTED_MASSMAIL_SCREEN = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -101,8 +101,8 @@ const EXPECTED_MASSMAIL_SCREEN = `
           </label>
           <div class="control-group hide" id="project-list-wrap">
             <div class="controls">
-              <input id="input-project" type="text" class="span3" data-provider="typeahead" autocomplete="off" placeholder="Project name">
-              <button id="select-project" type="submit" class="ybtn" data-loading-text="Loading...">
+              <input id="input-project" type="text" class="span3" autocomplete="off" placeholder="Project name">
+              <button id="select-project" type="submit" class="ybtn">
                 <strong>Add</strong>
               </button>
             </div>
@@ -218,6 +218,8 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-toggle", /.+/);
   await expect(page.locator("#mailtoAll")).not.toHaveAttribute("data-action", /.+/);
   await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-action", /.+/);
+  await expect(page.locator("#input-project")).not.toHaveAttribute("data-provider", /.+/);
+  await expect(page.locator("#select-project")).not.toHaveAttribute("data-loading-text", /.+/);
   const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
   await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
   await expect(
@@ -374,6 +376,8 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   expect(routeSource).not.toContain('data-toggle: "mail-type"');
   expect(routeSource).not.toContain('data-action="hide"');
   expect(routeSource).not.toContain('data-action="show"');
+  expect(routeSource).not.toContain('data-provider="typeahead"');
+  expect(routeSource).not.toContain("data-loading-text");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
 });
