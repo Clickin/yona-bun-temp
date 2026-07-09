@@ -388,7 +388,7 @@ function FolderList({
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap" data-type="folder" data-listpath={filePath}>
+    <div className="list-wrap">
       <div className="row-fluid listhead">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
@@ -438,7 +438,7 @@ function FolderListEntry({
   const encodedBranch = encodeURIComponent(selectedBranch);
 
   return (
-    <div id={rowId} className="row-fluid listitem" data-path={entry.path}>
+    <div id={rowId} className="row-fluid listitem">
       <div className="span6 filename">
         <Link
           activeOptions={{
@@ -456,7 +456,6 @@ function FolderListEntry({
           hash={entry.kind === "folder" ? rowId : undefined}
           className={entry.kind === "folder" ? "folder" : "file"}
           title={entry.name}
-          data-targetpath={entry.path}
         >
           <span className="dynatree-icon vmiddle"></span>
           {entry.name}
@@ -540,7 +539,7 @@ function FileView({
   );
 
   return (
-    <div className="file-wrap" data-type="file">
+    <div className="file-wrap">
       <div className="file-header nm">
         <div id="fileInfo" className="file-info">
           <span id="commiter" className="commiter">

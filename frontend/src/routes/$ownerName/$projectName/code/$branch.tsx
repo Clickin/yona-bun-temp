@@ -291,7 +291,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap" data-type="folder">
+    <div className="list-wrap">
       <div className="row-fluid listhead">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
@@ -311,12 +311,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
       ) : null}
 
       {[...folders, ...files].map((entry) => (
-        <div
-          id={`cb-${entry.path}`}
-          className="row-fluid listitem"
-          data-path={entry.path}
-          key={entry.path}
-        >
+        <div id={`cb-${entry.path}`} className="row-fluid listitem" key={entry.path}>
           <div className="span6 filename">
             <Link
               activeOptions={{
@@ -340,8 +335,6 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
               hash={entry.kind === "folder" ? `cb-${entry.path}` : undefined}
               className={entry.kind === "folder" ? "folder" : "file"}
               title={entry.name}
-              {...(entry.kind === "folder" ? { "data-type": "folder" } : {})}
-              data-targetpath={entry.path}
             >
               <span className="dynatree-icon vmiddle"></span>
               {entry.name}

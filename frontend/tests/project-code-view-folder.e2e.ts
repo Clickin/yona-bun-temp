@@ -11,11 +11,11 @@ const FILE_ROUTE_SOURCE = readFileSync(
 );
 
 const EXPECTED_CODE_FOLDER_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap" data-type="folder"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem" data-path="src"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src" data-type="folder" data-targetpath="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem" data-path="README.md"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md" data-targetpath="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
 `;
 
 const EXPECTED_SVN_CODE_FOLDER_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/trunk">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/trunk">Commit</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/trunk" selected="">trunk</option><option value="__BASE_PATH__/admin/sample/code/branches%2Frelease">branches/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/trunk">sample</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap" data-type="folder"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem" data-path="src"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/trunk/src#cb-src" class="folder" title="src" data-type="folder" data-targetpath="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=trunk">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem" data-path="README.md"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/trunk/README.md" class="file" title="README.md" data-targetpath="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=trunk">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/trunk">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/trunk">Commit</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/trunk" selected="">trunk</option><option value="__BASE_PATH__/admin/sample/code/branches%2Frelease">branches/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/trunk">sample</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/trunk/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=trunk">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/trunk/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=trunk">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
 `;
 
 test("project code branch root folder matches legacy code/view.scala.html DOM", async ({
@@ -43,7 +43,7 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await expect(page.locator('form.gnb-search-form input[name="searchType"]')).toHaveValue("auto");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .dropdown-menu li")).toHaveCount(2);
-  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
+  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
     "This Project",
     "All Projects",
   ]);
@@ -66,11 +66,11 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
     "href",
     `${basePath}/admin/sample/postform?path=&branch=main`,
   );
-  await expect(page.locator('.listitem[data-path="src"] .filename a')).toHaveAttribute(
+  await expect(page.locator("#cb-src .filename a.folder")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src#cb-src`,
   );
-  await expect(page.locator('.listitem[data-path="README.md"] .commitMsg a')).toHaveAttribute(
+  await expect(page.locator("#cb-README\\.md .commitMsg a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commit/1234567?branch=main`,
   );
@@ -128,7 +128,7 @@ test("project code root redirects non-empty repository to default branch folder"
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/main`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
-  await expect(page.locator('.listitem[data-path="src"] .filename a')).toHaveAttribute(
+  await expect(page.locator("#cb-src .filename a.folder")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src#cb-src`,
   );
@@ -184,7 +184,7 @@ test("project code branch folder links navigate with TanStack Router without doc
       (window as typeof window & { __yonaCodeFolderDocumentMarker: string })
         .__yonaCodeFolderDocumentMarker,
   );
-  await page.locator('.listitem[data-path="src"] .filename a').click();
+  await page.locator("#cb-src .filename a.folder").click();
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/main/src#cb-src`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
@@ -207,11 +207,11 @@ test("project code nested folder matches legacy partial_view_folder.scala.html D
 
   await page.goto(`${basePath}/admin/sample/code/main/src`);
 
-  await expect(page.locator('.code-viewer-wrap .file-wrap[data-type="file"]')).toHaveCount(0);
-  await expect(page.locator('.code-viewer-wrap .list-wrap[data-type="folder"]')).toHaveAttribute(
-    "data-listpath",
-    "src",
-  );
+  await expect(page.locator(".code-viewer-wrap .file-wrap")).toHaveCount(0);
+  const folderList = page.locator(".code-viewer-wrap > .list-wrap");
+  await expect(folderList).toBeVisible();
+  await expect(folderList).not.toHaveAttribute("data-type", /.+/u);
+  await expect(folderList).not.toHaveAttribute("data-listpath", /.+/u);
   await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
   await expect(page.locator("#branches")).toHaveClass("pull-left");
   await expect(page.locator("#new-file-link")).toHaveAttribute(
@@ -225,18 +225,22 @@ test("project code nested folder matches legacy partial_view_folder.scala.html D
   );
 
   const folderRow = page.locator("#cb-srcmain");
-  await expect(folderRow).toHaveAttribute("data-path", "src/main");
-  await expect(folderRow.locator(".filename a")).toHaveAttribute("data-type", "folder");
-  await expect(folderRow.locator(".filename a")).toHaveAttribute("data-targetpath", "src/main");
+  await expect(folderRow).toHaveClass(/(?:^|\s)listitem(?:\s|$)/u);
+  await expect(folderRow).not.toHaveAttribute("data-path", /.+/u);
+  await expect(folderRow.locator(".filename a")).toHaveClass("folder");
+  await expect(folderRow.locator(".filename a")).not.toHaveAttribute("data-type", /.+/u);
+  await expect(folderRow.locator(".filename a")).not.toHaveAttribute("data-targetpath", /.+/u);
   await expect(folderRow.locator(".filename a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src/main#cb-srcmain`,
   );
 
   const fileRow = page.locator('[id="cb-srclib.rs"]');
-  await expect(fileRow).toHaveAttribute("data-path", "src/lib.rs");
+  await expect(fileRow).toHaveClass(/(?:^|\s)listitem(?:\s|$)/u);
+  await expect(fileRow).not.toHaveAttribute("data-path", /.+/u);
+  await expect(fileRow.locator(".filename a")).toHaveClass("file");
   await expect(fileRow.locator(".filename a")).not.toHaveAttribute("data-type", /.+/u);
-  await expect(fileRow.locator(".filename a")).toHaveAttribute("data-targetpath", "src/lib.rs");
+  await expect(fileRow.locator(".filename a")).not.toHaveAttribute("data-targetpath", /.+/u);
   await expect(fileRow.locator(".filename a")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src/lib.rs`,
@@ -315,6 +319,9 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).not.toContain("tplFileListItem");
   expect(ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
   expect(ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(ROUTE_SOURCE).not.toContain('data-type="folder"');
+  expect(ROUTE_SOURCE).not.toContain("data-targetpath");
+  expect(ROUTE_SOURCE).not.toContain("data-path={entry.path}");
   expect(ROUTE_SOURCE).not.toContain("<a");
   expect(ROUTE_SOURCE).not.toContain("function commitHref");
   expect(ROUTE_SOURCE).not.toContain("href={commitHref(");
@@ -324,8 +331,10 @@ test("project code branch route source converts internal raw anchors to Link", a
 
 test("project code file route source keeps nested folder view in React Link state", async () => {
   expect(FILE_ROUTE_SOURCE).toContain("function FolderList(");
-  expect(FILE_ROUTE_SOURCE).toContain('data-type="folder"');
-  expect(FILE_ROUTE_SOURCE).toContain("data-listpath={filePath}");
+  expect(FILE_ROUTE_SOURCE).not.toContain('data-type="folder"');
+  expect(FILE_ROUTE_SOURCE).not.toContain("data-listpath={filePath}");
+  expect(FILE_ROUTE_SOURCE).not.toContain("data-targetpath");
+  expect(FILE_ROUTE_SOURCE).not.toContain("data-path={entry.path}");
   expect(FILE_ROUTE_SOURCE).toContain("const isFolder = code.file === null");
   expect(FILE_ROUTE_SOURCE).toContain("router.history.push(event.currentTarget.value)");
   expect(FILE_ROUTE_SOURCE).not.toContain("document.");
