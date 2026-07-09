@@ -413,6 +413,11 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   );
   expect(routeSource).toContain("const legacyIssueListLinkProps = {");
   expect(routeSource).toContain("explicitUndefined: true");
+  expect(routeSource).toContain("normalizeLegacyIssueStateSearch(search.state)");
+  expect(routeSource).toContain('state.trim() === ""');
+  expect(routeSource).not.toContain(
+    'state: search.state === "open" || search.state === "closed" ? search.state : undefined',
+  );
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("<a");
@@ -570,6 +575,58 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
     tabsBelowTitle: true,
     titleTabsNoOverlap: true,
   });
+});
+
+test("site admin issue list preserves invalid nonblank state for backend rejection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  const issueRequests = await mockInvalidIssueState(page);
+  await mockUpdate(page, {
+    currentVersion: "1.0.0",
+    error: null,
+    message: "site.update.isNotNecessary",
+    releaseUrl: null,
+    versionToUpdate: null,
+  });
+
+  await page.goto(`${basePath}/sites/issueList?state=waiting`);
+
+  await expect.poll(() => issueRequests.some((request) => request.state === "waiting")).toBe(true);
+  expect(issueRequests.filter((request) => request.state === "open")).toEqual([]);
+  expect(issueRequests[0]).toEqual({ page: "1", state: "waiting" });
+  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveCount(0);
+  await expect(page.locator(".span10 > .nav.nav-tabs li").first()).toHaveClass("");
+  await expect(page.locator(".span10 > .nav.nav-tabs li").nth(1)).toHaveClass("");
+  expect(await legacyLinkSnapshot(page, ".span10 > .nav.nav-tabs a")).toEqual([
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=open`,
+      pjaxPage: null,
+      text: "Open",
+      title: null,
+    },
+    {
+      ariaCurrent: null,
+      className: null,
+      dataStatus: null,
+      href: `${basePath}/sites/issueList?state=closed`,
+      pjaxPage: null,
+      text: "Closed",
+      title: null,
+    },
+  ]);
+
+  const routeSource = readFileSync("src/routes/sites/issueList.tsx", "utf8");
+  expect(routeSource).toContain("function normalizeLegacyIssueStateSearch(state: unknown)");
+  expect(routeSource).toContain("return state;");
+  expect(routeSource).toContain("state: state as SiteIssueState");
+  expect(routeSource).not.toContain(
+    'state: search.state === "open" || search.state === "closed" ? search.state : undefined',
+  );
 });
 
 test("site admin issue list renders legacy update notification badge", async ({ page }) => {
@@ -803,6 +860,25 @@ async function mockIssues(page: Page, overrides: MockIssueOverrides = {}) {
         total: overrides.totalPages ?? 2,
         totalPages: overrides.totalPages ?? 2,
       }),
+    });
+  });
+
+  return requests;
+}
+
+async function mockInvalidIssueState(page: Page) {
+  const requests: Array<{ page: string; state: string | null }> = [];
+
+  await page.route("**/api/v1/site/issues?*", async (route) => {
+    const url = new URL(route.request().url());
+    requests.push({
+      page: url.searchParams.get("page") ?? url.searchParams.get("pageNum") ?? "1",
+      state: url.searchParams.get("state"),
+    });
+    await route.fulfill({
+      body: JSON.stringify({ error: "invalid issue state" }),
+      contentType: "application/json",
+      status: url.searchParams.get("state") === "waiting" ? 400 : 200,
     });
   });
 

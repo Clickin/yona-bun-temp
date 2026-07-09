@@ -14,12 +14,12 @@ import { SiteLayoutShell } from "../-home-route-screen";
 
 type IssueListSearch = {
   pageNum: number;
-  state: SiteIssueState;
+  state: string;
 } & Record<string, unknown>;
 
 type IssueListRouteSearch = {
   pageNum?: number;
-  state?: SiteIssueState;
+  state?: string;
 } & Record<string, unknown>;
 
 const legacySiteSidebarLinkProps = {
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/sites/issueList")({
   validateSearch: (search: Record<string, unknown>): IssueListRouteSearch => ({
     ...search,
     pageNum: search.pageNum ? Number(search.pageNum) || 1 : undefined,
-    state: search.state === "open" || search.state === "closed" ? search.state : undefined,
+    state: normalizeLegacyIssueStateSearch(search.state),
   }),
 });
 
@@ -63,7 +63,9 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const search = normalizeIssueListSearch(routeSearch);
   const { pageNum, state } = search;
   const { t } = useLegacyMessages();
-  const query = useQuery(siteIssuesQueryOptions(runtimeConfig, { page: pageNum, state }));
+  const query = useQuery(
+    siteIssuesQueryOptions(runtimeConfig, { page: pageNum, state: state as SiteIssueState }),
+  );
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
 
   return (
@@ -123,6 +125,13 @@ function normalizeIssueListSearch(search: IssueListRouteSearch): IssueListSearch
   };
 }
 
+function normalizeLegacyIssueStateSearch(state: unknown): string | undefined {
+  if (typeof state !== "string" || state.trim() === "") {
+    return undefined;
+  }
+  return state;
+}
+
 function IssueListPagination({
   currentPage,
   search,
@@ -131,7 +140,7 @@ function IssueListPagination({
 }: {
   currentPage: number;
   search: IssueListSearch;
-  state: SiteIssueState;
+  state: string;
   totalPages: number;
 }) {
   const { t } = useLegacyMessages();
@@ -282,7 +291,7 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   );
 }
 
-function IssueStateTab({ selected, state }: { selected: SiteIssueState; state: SiteIssueState }) {
+function IssueStateTab({ selected, state }: { selected: string; state: SiteIssueState }) {
   const { t } = useLegacyMessages();
 
   return (
