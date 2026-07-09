@@ -722,7 +722,7 @@ function PostEditableLabels({
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
           data-container-css-class="issue-labels bordered fullsize"
-          data-placeholder="Select label"
+          data-placeholder={t("label.select")}
           className="hide"
           value={selectedLabelIds}
           onChange={(event) => selectLabelIds(event.currentTarget)}
@@ -802,13 +802,15 @@ function PostSelectedLabels({
   ownerName: string;
   projectName: string;
 }) {
+  const { t } = useLegacyMessages();
+
   if (!labels.length) {
     return null;
   }
 
   return (
     <dl>
-      <dt>Label</dt>
+      <dt>{t("label")}</dt>
       <dd>
         {labels.map((label) => (
           <Link
@@ -984,13 +986,14 @@ function PostCommentForm({
   postNumber: string;
   projectName: string;
 }) {
+  const { t } = useLegacyMessages();
   const [editorResetKey, setEditorResetKey] = useState(0);
 
   if (!canComment) {
     return (
       <div
         className="write-comment-box mt20"
-        title="You need to log in to add comments."
+        title={t("error.auth.unauthorized.comment")}
         data-login="required"
       >
         <div className="write-comment-wrap">
@@ -998,7 +1001,7 @@ function PostCommentForm({
             <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
           </div>
           <div className="right-txt mt10">
-            <span className="ybtn ybtn-disabled">Add a comment</span>
+            <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
           </div>
         </div>
       </div>
@@ -1036,27 +1039,26 @@ function PostCommentForm({
           id="upload"
         >
           <div className="attach-wrap">
-            <span className="help help-droppable">Drag &amp; Drop files to attach here or</span>
+            <span className="help help-droppable">{t("common.attach.drophere")}</span>
             <div className="btn-wrap">
               <div className="nbtn medium white fake-file-wrap">
-                <i className="yobicon-upload"></i> File upload
+                <i className="yobicon-upload"></i> {t("button.upload")}
                 <input type="file" className="file" name="filePath" multiple />
               </div>
             </div>
-            <span className="plain">Click upload button</span>
-            <span className="help help-pastable">Paste the clipboard image</span>
+            <span className="plain">{t("common.attach.clickbutton")}</span>
+            <span className="help help-pastable">{t("common.attach.pastehere")}</span>
           </div>
           <ul className="attached-files unstyled"></ul>
           <p className="right-txt help">
-            <i className="yobicon-supportrequest"></i> Selected file will be attached when your
-            comment is saved.
+            <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
           </p>
         </div>
         <div className="write-comment-wrap">
           <div className="right-txt">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
-              Add a comment
+              {t("button.comment.new")}
             </button>
           </div>
         </div>
@@ -1318,6 +1320,7 @@ function PostCommentUpdateForm({
   postNumber: string;
   projectName: string;
 }) {
+  const { t } = useLegacyMessages();
   const commentId = stringField(comment.id);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1352,13 +1355,13 @@ function PostCommentUpdateForm({
             />
             <div className="upload-drop-here">
               <div className="msg-wrap">
-                <div className="msg">Drag &amp; Drop files here to upload.</div>
+                <div className="msg">{t("common.attach.dropFilesHere")}</div>
               </div>
             </div>
             <div className="right-txt comment-update-button upload-button-line">
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
-                  File upload
+                  {t("button.upload")}
                 </label>
                 <input
                   id={`upload-${commentId}`}
@@ -1378,11 +1381,11 @@ function PostCommentUpdateForm({
                   onCancel();
                 }}
               >
-                Cancel
+                {t("button.cancel")}
               </button>
               {canUpdate ? (
                 <button type="submit" className="ybtn ybtn-info">
-                  Save
+                  {t("button.save")}
                 </button>
               ) : null}
             </div>
@@ -1482,7 +1485,9 @@ function PostChildComments({
                 </button>
               </div>
               <div className="notification-receiver">
-                <span className="notification-receiver-title">Notification receivers </span>
+                <span className="notification-receiver-title">
+                  {t("notification.receiver.list.title")}{" "}
+                </span>
                 <span className="notification-receiver-list"></span>
               </div>
             </form>
@@ -1563,6 +1568,7 @@ function MarkdownEditor({
   value: string;
   wrapId: string;
 }) {
+  const { t } = useLegacyMessages();
   const [activeMode, setActiveMode] = useState<"edit" | "preview">("edit");
   const [editorValue, setEditorValue] = useState(value);
 
@@ -1577,12 +1583,12 @@ function MarkdownEditor({
       <ul className="nav nav-tabs nm small">
         <li className={activeMode === "edit" ? "active" : undefined}>
           <button type="button" onClick={(event) => selectMode("edit", event)}>
-            Edit
+            {t("common.editor.edit")}
           </button>
         </li>
         <li className={activeMode === "preview" ? "active" : undefined}>
           <button type="button" onClick={(event) => selectMode("preview", event)}>
-            Preview
+            {t("common.editor.preview")}
           </button>
         </li>
         <li>
@@ -1591,7 +1597,7 @@ function MarkdownEditor({
               type="button"
               className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
             >
-              <i className="yobicon-list task-list-icon"></i> Add checklist
+              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
             </button>
           </div>
         </li>
@@ -1603,7 +1609,7 @@ function MarkdownEditor({
                 id="button-clear-temporary"
                 className="ybtn ybtn-small ybtn-warning"
               >
-                Clear Temporary
+                {t("button.clear.temporary")}
               </button>
             </div>
           </div>
@@ -1638,7 +1644,9 @@ function MarkdownEditor({
           </div>
         </div>
         <div className="notification-receiver">
-          <span className="notification-receiver-title">Notification receivers </span>
+          <span className="notification-receiver-title">
+            {t("notification.receiver.list.title")}{" "}
+          </span>
           <span className="notification-receiver-list"></span>
         </div>
       </div>

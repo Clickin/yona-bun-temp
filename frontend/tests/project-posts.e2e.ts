@@ -2065,9 +2065,37 @@ test("project board detail submits legacy comment form through REST", async ({ p
     routeSource.indexOf("function MarkdownEditor"),
     routeSource.indexOf("function AttachedFiles"),
   );
+  const postCommentFormSource = routeSource.slice(
+    routeSource.indexOf("function PostCommentForm"),
+    routeSource.indexOf("function PostCommentRow"),
+  );
+  expect(postCommentFormSource).toContain('t("error.auth.unauthorized.comment")');
+  expect(postCommentFormSource).toContain('t("button.comment.new")');
+  expect(postCommentFormSource).toContain('t("common.attach.drophere")');
+  expect(postCommentFormSource).toContain('t("button.upload")');
+  expect(postCommentFormSource).toContain('t("common.attach.clickbutton")');
+  expect(postCommentFormSource).toContain('t("common.attach.pastehere")');
+  expect(postCommentFormSource).toContain('t("common.attach.attachIfYouSave")');
+  expect(postCommentFormSource).not.toContain('"You need to log in to add comments."');
+  expect(postCommentFormSource).not.toContain(">Add a comment<");
+  expect(postCommentFormSource).not.toContain("Drag &amp; Drop files to attach here or");
+  expect(postCommentFormSource).not.toContain("File upload");
+  expect(postCommentFormSource).not.toContain("Click upload button");
+  expect(postCommentFormSource).not.toContain("Paste the clipboard image");
+  expect(postCommentFormSource).not.toContain("Selected file will be attached");
   expect(markdownEditorSource).not.toContain('data-toggle="markdown-editor"');
   expect(markdownEditorSource).not.toContain("data-mode");
   expect(markdownEditorSource).not.toContain('data-toggle="tab"');
+  expect(markdownEditorSource).toContain('t("common.editor.edit")');
+  expect(markdownEditorSource).toContain('t("common.editor.preview")');
+  expect(markdownEditorSource).toContain('t("button.add.checklist")');
+  expect(markdownEditorSource).toContain('t("button.clear.temporary")');
+  expect(markdownEditorSource).toContain('t("notification.receiver.list.title")');
+  expect(markdownEditorSource).not.toContain(">Edit<");
+  expect(markdownEditorSource).not.toContain(">Preview<");
+  expect(markdownEditorSource).not.toContain("Add checklist");
+  expect(markdownEditorSource).not.toContain("Clear Temporary");
+  expect(markdownEditorSource).not.toContain("Notification receivers ");
   expect(markdownEditorSource).toContain("setActiveMode(mode)");
   expect(markdownEditorSource).not.toContain("document.");
   expect(markdownEditorSource).not.toContain("classList");
@@ -2306,6 +2334,17 @@ test("project board detail renders legacy read-only selected labels", async ({ p
   expect(
     await canonicalize(page, ".issue-info.board-labels dl:has(a.label.issue-label.active.static)"),
   ).toEqual(await canonicalizeHtml(page, expected));
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const selectedLabelsSource = routeSource.slice(
+    routeSource.indexOf("function PostSelectedLabels"),
+    routeSource.indexOf("function ProjectPostActionButtons"),
+  );
+  expect(selectedLabelsSource).toContain('t("label")');
+  expect(selectedLabelsSource).not.toContain("<dt>Label</dt>");
 });
 
 test("project board detail renders legacy editable label selector", async ({ page }) => {
@@ -2351,6 +2390,18 @@ test("project board detail renders legacy editable label selector", async ({ pag
     "data-category-is-exclusive",
     "true",
   );
+
+  const labelMessageRouteSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const editableLabelMessageSource = labelMessageRouteSource.slice(
+    labelMessageRouteSource.indexOf("function PostEditableLabels"),
+    labelMessageRouteSource.indexOf("function nextPostLabelIds"),
+  );
+  expect(editableLabelMessageSource).toContain('t("label")');
+  expect(editableLabelMessageSource).toContain('t("label.select")');
+  expect(editableLabelMessageSource).not.toContain('data-placeholder="Select label"');
 
   const setSelectedLabels = async (labelIds: string[]) => {
     await page.locator(".issue-info.board-labels #labelIds").evaluate((element, ids) => {
@@ -2844,6 +2895,8 @@ test("project board detail renders legacy comment update form", async ({ page })
   expect(commentToggleSource).toContain(
     'className="add-a-comment pull-right" hidden={hideReplyPrompt}',
   );
+  expect(commentToggleSource).toContain('t("notification.receiver.list.title")');
+  expect(commentToggleSource).not.toContain("Notification receivers ");
   expect(commentToggleSource).not.toContain("document.");
   expect(commentToggleSource).not.toContain("querySelector");
   expect(commentToggleSource).not.toContain("classList");
@@ -2856,6 +2909,14 @@ test("project board detail renders legacy comment update form", async ({ page })
   expect(updateFormSource).not.toContain("setAttribute");
   expect(updateFormSource).not.toContain("removeAttribute");
   expect(updateFormSource).not.toContain("style.display");
+  expect(updateFormSource).toContain('t("common.attach.dropFilesHere")');
+  expect(updateFormSource).toContain('t("button.upload")');
+  expect(updateFormSource).toContain('t("button.cancel")');
+  expect(updateFormSource).toContain('t("button.save")');
+  expect(updateFormSource).not.toContain("Drag &amp; Drop files here to upload.");
+  expect(updateFormSource).not.toContain("File upload");
+  expect(updateFormSource).not.toContain(">Cancel<");
+  expect(updateFormSource).not.toContain(">Save<");
   const markdownEditorSource = routeSource.slice(
     routeSource.indexOf("function MarkdownEditor"),
     routeSource.indexOf("function AttachedFiles"),
