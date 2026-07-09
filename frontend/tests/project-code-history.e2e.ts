@@ -10,7 +10,7 @@ const LEGACY_ROUTES_SOURCE_PATH = "../yona-original/conf/routes";
 const LEGACY_CONTROLLER_SOURCE_PATH = "../yona-original/app/controllers/CodeHistoryApp.java";
 
 const EXPECTED_HISTORY_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-right"><option value="__BASE_PATH__/admin/sample/commits/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/commits/feature%2Frelease">feature/release</option></select><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div id="history" class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>…</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" data-placement="top" title="admin"><img src="/assets/images/default-avatar-32.png"></a></td></tr><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="1234567890abcdef"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" title="View commit">1234567</a></td><td class="messages"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" class="commitMsg short">Second commit</a></td><td class="date">Jul 2, 2026</td><td class="author"><span class="avatar-wrap" data-placement="top" title="dev@example.com"><img src="/assets/images/default-avatar-32.png"></span></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main?page=2" class="ybtn pull-left">Older</a></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="bubble-wrap dark-gray repo-wrap"><div class="code-browse-wrap"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-right"><option value="__BASE_PATH__/admin/sample/commits/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/commits/feature%2Frelease">feature/release</option></select><ul class="nav nav-tabs" style="margin-bottom:20px"><li><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div id="history" class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Author Date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="abcdef1234567890"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" title="View commit">abcdef1</a></td><td class="messages"><span class="number-of-comments"><i class="yobicon-comments"></i> 2</span><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main" class="commitMsg short">Initial commit</a><button type="button" class="commitMsg moreBtn"><span>…</span></button><pre class="commitMsg desc hidden">Add README</pre></td><td class="date">Jul 1, 2026</td><td class="author"><a href="__BASE_PATH__/admin" class="avatar-wrap" title="admin"><img src="/assets/images/default-avatar-32.png"></a></td></tr><tr><td class="commit-id"><button type="button" class="ybtn ybtn-mini btn-copy-commitId" title="Copy commit ID" data-commitid="1234567890abcdef"><i class="yobicon-copy"></i></button><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" title="View commit">1234567</a></td><td class="messages"><a href="__BASE_PATH__/admin/sample/commit/1234567890abcdef?branch=main" class="commitMsg short">Second commit</a></td><td class="date">Jul 2, 2026</td><td class="author"><span class="avatar-wrap" title="dev@example.com"><img src="/assets/images/default-avatar-32.png"></span></td></tr></tbody></table></div></div><div class="actrow margin-top-20"><a href="__BASE_PATH__/admin/sample/commits/main?page=2" class="ybtn pull-left">Older</a></div></div></div></div>
 `;
 
 test("project code history matches legacy code/history.scala.html DOM", async ({ page }) => {
@@ -78,16 +78,22 @@ test("project code history matches legacy code/history.scala.html DOM", async ({
   await expect(authorAvatarLink).toHaveAttribute("href", `${basePath}/admin`);
   await expect(authorAvatarLink).toHaveClass("avatar-wrap");
   await expect(page.locator('#history [data-toggle="tooltip"]')).toHaveCount(0);
+  await expect(page.locator("#history [data-placement]")).toHaveCount(0);
   await expect(authorAvatarLink).not.toHaveAttribute("data-toggle", /.*/u);
-  await expect(authorAvatarLink).toHaveAttribute("data-placement", "top");
+  await expect(authorAvatarLink).not.toHaveAttribute("data-placement", /.*/u);
   await expect(authorAvatarLink).toHaveAttribute("title", "admin");
   await expectNoTanStackActiveMarkers(authorAvatarLink);
   await expect(page.locator(".author span.avatar-wrap")).not.toHaveAttribute("data-toggle", /.*/u);
-  await expect(page.locator(".author span.avatar-wrap")).toHaveAttribute("data-placement", "top");
+  await expect(page.locator(".author span.avatar-wrap")).not.toHaveAttribute(
+    "data-placement",
+    /.*/u,
+  );
   await expect(page.locator(".author span.avatar-wrap")).toHaveAttribute(
     "title",
     "dev@example.com",
   );
+  await expect(page.locator("#history tbody tr").nth(0).locator(".date")).toHaveText("Jul 1, 2026");
+  await expect(page.locator("#history tbody tr").nth(1).locator(".date")).toHaveText("Jul 2, 2026");
   await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("width");
   await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("height");
   await expect(page.locator(".author .avatar-wrap img").first()).not.toHaveAttribute("alt");
@@ -481,7 +487,7 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source).toContain("return { branch };");
   expect(source).toMatch(/projectRoutePath\(\s*ownerName,\s*projectName,\s*"commit",/u);
   expect(source).not.toContain('data-toggle="tooltip"');
-  expect(source).toContain('data-placement="top"');
+  expect(source).not.toContain("data-placement");
   expect(source).toContain("title={commit.authorLoginId}");
   expect(source).toContain("title={commit.authorEmail}");
   expect(source).toContain('t("user.role.anonymous")');
