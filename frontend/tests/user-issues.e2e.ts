@@ -25,7 +25,7 @@ const EXPECTED_USER_ISSUES_PAGE_WRAP = `
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="updatedDate"><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="state" value="open">
-            <input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="commenterId" value="" data-search="commenterId"><input type="hidden" name="assigneeId" value="1" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><input type="hidden" name="sharerId" value="" data-search="sharerId"><input type="hidden" name="favoriteId" value="" data-search="favoriteId">
+            <input type="hidden" name="authorId" value=""><input type="hidden" name="commenterId" value=""><input type="hidden" name="assigneeId" value="1"><input type="hidden" name="mentionId" value=""><input type="hidden" name="sharerId" value=""><input type="hidden" name="favoriteId" value="">
             <div class="search myissues-search-input"><div class="search-bar"><input name="filter" class="textbox full" type="text" placeholder="Search Issues" value=""><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div>
           </form>
         </div>
@@ -77,7 +77,7 @@ const EXPECTED_FILTERED_EMPTY_USER_ISSUES_PAGE_WRAP = `
           </ul>
           <form id="search" name="search" action="__BASE_PATH__/user/issues" method="get">
             <input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="orderDir" value="asc"><input type="hidden" name="state" value="closed">
-            <input type="hidden" name="authorId" value="" data-search="authorId"><input type="hidden" name="commenterId" value="" data-search="commenterId"><input type="hidden" name="assigneeId" value="" data-search="assigneeId"><input type="hidden" name="mentionId" value="" data-search="mentionId"><input type="hidden" name="sharerId" value="" data-search="sharerId"><input type="hidden" name="favoriteId" value="1" data-search="favoriteId">
+            <input type="hidden" name="authorId" value=""><input type="hidden" name="commenterId" value=""><input type="hidden" name="assigneeId" value=""><input type="hidden" name="mentionId" value=""><input type="hidden" name="sharerId" value=""><input type="hidden" name="favoriteId" value="1">
             <div class="search myissues-search-input"><div class="search-bar"><input name="filter" class="textbox full" type="text" placeholder="Search Issues" value="needle"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></div>
           </form>
         </div>
@@ -388,6 +388,7 @@ test("current-user issues route uses direct TanStack Link targets without generi
   expect(routeSource).not.toContain("orderDir: nextOrderDir");
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).not.toContain("LegacyHrefListItemAttrs");
+  expect(routeSource).not.toContain("data-search");
   const rowSource = routeSource.slice(
     routeSource.indexOf("function UserIssueItem("),
     routeSource.indexOf("function UserIssueLabel("),
@@ -565,6 +566,7 @@ test("current-user issues quick filter drops legacy pjax hooks with SPA transiti
   await expect(page.locator('input[name="sharerId"]')).toHaveValue("");
   await expect(page.locator('input[name="favoriteId"]')).toHaveValue("1");
   await expect(page.locator('input[name="state"]')).toHaveValue("open");
+  await expect(page.locator("#search [data-search]")).toHaveCount(0);
 });
 
 test("current-user issues quick filter zero counts follow legacy blank-filter rendering", async ({

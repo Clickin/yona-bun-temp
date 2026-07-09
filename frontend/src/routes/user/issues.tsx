@@ -303,42 +303,12 @@ function UserIssuesBody({
                 <input type="hidden" name="orderBy" value={search.orderBy} />
                 <input type="hidden" name="orderDir" value={search.orderDir} />
                 <input type="hidden" name="state" value={search.state} />
-                <input
-                  type="hidden"
-                  name="authorId"
-                  value={activeFilterIds.authorId}
-                  data-search="authorId"
-                />
-                <input
-                  type="hidden"
-                  name="commenterId"
-                  value={activeFilterIds.commenterId}
-                  data-search="commenterId"
-                />
-                <input
-                  type="hidden"
-                  name="assigneeId"
-                  value={activeFilterIds.assigneeId}
-                  data-search="assigneeId"
-                />
-                <input
-                  type="hidden"
-                  name="mentionId"
-                  value={activeFilterIds.mentionId}
-                  data-search="mentionId"
-                />
-                <input
-                  type="hidden"
-                  name="sharerId"
-                  value={activeFilterIds.sharerId}
-                  data-search="sharerId"
-                />
-                <input
-                  type="hidden"
-                  name="favoriteId"
-                  value={activeFilterIds.favoriteId}
-                  data-search="favoriteId"
-                />
+                <input type="hidden" name="authorId" value={activeFilterIds.authorId} />
+                <input type="hidden" name="commenterId" value={activeFilterIds.commenterId} />
+                <input type="hidden" name="assigneeId" value={activeFilterIds.assigneeId} />
+                <input type="hidden" name="mentionId" value={activeFilterIds.mentionId} />
+                <input type="hidden" name="sharerId" value={activeFilterIds.sharerId} />
+                <input type="hidden" name="favoriteId" value={activeFilterIds.favoriteId} />
                 <div className="search myissues-search-input">
                   <div className="search-bar">
                     <input
