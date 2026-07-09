@@ -415,7 +415,7 @@ function StateOption({ state }: { state: string }) {
     <dl className="issue-option">
       <dt>{t("issue.state")}</dt>
       <dd>
-        <div id="state" className={`btn-group auto${isMenuOpen ? " open" : ""}`} data-name="state">
+        <div id="state" className={`btn-group auto${isMenuOpen ? " open" : ""}`}>
           <button
             type="button"
             className="btn dropdown-toggle auto"
