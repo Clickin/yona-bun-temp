@@ -558,7 +558,6 @@ function FileView({
                 "data-status": undefined,
               }}
               className="avatar-wrap"
-              data-placement="top"
               title={authorLoginId}
             >
               <img src={stringField(file.avatarUrl, "")} alt="" width="32" height="32" />
