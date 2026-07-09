@@ -325,12 +325,17 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   expect(routeSource).not.toContain("yobi.OriginalMessage.hide");
   for (const key of [
     "button.newSubtask",
+    "button.comment.new",
     "button.share.issue",
     "issue.sharer.description",
     "issue.sharer",
     "issue.sharer.select",
     "issue.assignee",
+    "issue.noAuthor",
     "issue.noAssignee",
+    "issue.state.assigned",
+    "issue.state.closed",
+    "issue.state.open",
     "issue.event.sharer.deleted.title",
     "label.select",
     "milestone",
@@ -353,6 +358,14 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   }
   expect(routeSource).not.toContain(">Issue Sharing<");
   expect(routeSource).not.toContain(">New subtask<");
+  expect(routeSource).not.toContain('<strong className="name">No author</strong>');
+  expect(routeSource).not.toContain('<span className="ybtn ybtn-disabled">Add a comment</span>');
+  expect(routeSource).not.toContain('<span className="state changed">Assigned</span>');
+  expect(routeSource).not.toContain(
+    'const stateLabel = issueState === "closed" ? "Closed" : "Open";',
+  );
+  expect(routeSource).not.toContain('{parentIssueState === "closed" ? "Closed" : "Open"}');
+  expect(routeSource).not.toContain('return state === "closed" ? "Closed" : "Open";');
   expect(routeSource).not.toContain(">Issue Sharer{");
   expect(routeSource).not.toContain(">Assignee<");
   expect(routeSource).not.toContain('placeholder="No assignee"');

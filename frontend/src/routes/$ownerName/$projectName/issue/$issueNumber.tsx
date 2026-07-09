@@ -541,7 +541,7 @@ function IssueDetailBody({
   const issueId = stringField(issue.issueId, issueNumber);
   const editIssuePath = `/${ownerName}/${projectName}/issue/${issueNumber}/editform`;
   const issueState = stringField(issue.state, "open").toLowerCase();
-  const stateLabel = issueState === "closed" ? "Closed" : "Open";
+  const stateLabel = issueStateLabel(issueState, t);
   const createdLabel = stringField(issue.createdLabel);
   const isDraft = booleanField(issue.isDraft);
   const isWatching = booleanField(issue.isWatching);
@@ -825,7 +825,7 @@ function IssueDetailBody({
                     </span>
                   </>
                 ) : (
-                  <strong className="name">No author</strong>
+                  <strong className="name">{t("issue.noAuthor")}</strong>
                 )}
               </Link>
               <IssuePostingHistory
@@ -1773,6 +1773,7 @@ function IssueChildIssues({
   currentUserLoginId: string;
   issue: RestIssueDetailResponse;
 }) {
+  const { t } = useLegacyMessages();
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
@@ -1831,7 +1832,7 @@ function IssueChildIssues({
             {totalCount}{" "}
           </span>
           <span className={`parent-issue-state ${parentIssueState}`}>
-            {parentIssueState === "closed" ? "Closed" : "Open"}
+            {issueStateLabel(parentIssueState, t)}
           </span>
         </div>
         <hr className="parent-issue-delimeter" />
@@ -2235,6 +2236,7 @@ function IssueCommentForm({
   basePath: string;
   issue: RestIssueDetailResponse;
 }) {
+  const { t } = useLegacyMessages();
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
   const issueNumber = stringField(issue.issueNumber);
@@ -2251,7 +2253,7 @@ function IssueCommentForm({
             <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
           </div>
           <div className="right-txt mt10">
-            <span className="ybtn ybtn-disabled">Add a comment</span>
+            <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
           </div>
         </div>
       </div>
@@ -2276,7 +2278,7 @@ function IssueCommentForm({
             <div className="right-txt">
               <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
               <button type="submit" className="ybtn ybtn-success">
-                Add a comment
+                {t("button.comment.new")}
               </button>
             </div>
           </div>
@@ -2342,7 +2344,7 @@ function IssueEventRow({
   if (eventType === "ISSUE_STATE_CHANGED") {
     return (
       <li className="event" id={`event-${eventId}`}>
-        <span className={`state ${newValue}`}>{issueStateLabel(newValue)}</span>
+        <span className={`state ${newValue}`}>{issueStateLabel(newValue, t)}</span>
         {sender}
         {issueStateEventText(newValue)}
         <span className="date">
@@ -2359,7 +2361,7 @@ function IssueEventRow({
     const targetLabel = stringField(event.targetLabel, targetLoginId);
     return (
       <li className="event" id={`event-${eventId}`}>
-        <span className="state changed">Assigned</span>
+        <span className="state changed">{t("issue.state.assigned")}</span>
         {sender}
         {targetLoginId === senderLoginId ? " self-assigned this issue" : " assigned this issue to "}
         {targetLoginId === senderLoginId ? null : (
@@ -3777,8 +3779,8 @@ function hasLegacyMention(value: unknown, loginId: string) {
   return loginId !== "" && stringField(value).includes(`@${loginId} `);
 }
 
-function issueStateLabel(state: string) {
-  return state === "closed" ? "Closed" : "Open";
+function issueStateLabel(state: string, t: (key: string) => string) {
+  return state === "closed" ? t("issue.state.closed") : t("issue.state.open");
 }
 
 function issueStateEventText(state: string) {
