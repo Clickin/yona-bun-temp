@@ -515,6 +515,7 @@ function SubtaskSelects({
   const issueRecord = issue as YonaRecord;
   const parentIssueId = stringField(issueRecord.parentIssueId, "");
   const hasChildIssue = booleanField(issueRecord.hasChildIssue);
+  const movableProjects = issueMovableProjects(project);
   const visibleParentOptions = hasChildIssue
     ? parentOptions.filter((parentIssue) => String(parentIssue.id) === parentIssueId)
     : parentOptions;
@@ -532,6 +533,16 @@ function SubtaskSelects({
           <option value={stringField(project.id, "")} data-avatar-url={projectLogoUrl(project)}>
             {stringField(project.projectName, "")}
           </option>
+          {movableProjects.map((movableProject) => (
+            <option
+              key={movableProject.id}
+              value={movableProject.id}
+              data-owner={movableProject.owner ? `${movableProject.owner} /` : undefined}
+              data-avatar-url={movableProject.avatarUrl}
+            >
+              {movableProject.name}
+            </option>
+          ))}
         </select>
       </div>
       <div className="span6">
@@ -774,7 +785,37 @@ function groupLabels(labels: YonaRecord[]) {
 }
 
 function projectLogoUrl(project: ProjectContainer) {
-  return stringField((project as YonaRecord).logoUrl, "/assets/images/project_default_logo.png");
+  return (
+    stringField((project as YonaRecord).logoUrl, "") || "/assets/images/project_default_logo.png"
+  );
+}
+
+function issueMovableProjects(project: ProjectContainer) {
+  const currentProjectId = stringField(project.id, "");
+  const rawProjects = (project as YonaRecord).movableIssueProjects;
+  if (!Array.isArray(rawProjects)) {
+    return [];
+  }
+
+  const projects: Array<{ avatarUrl: string; id: string; name: string; owner: string }> = [];
+  for (const rawProject of rawProjects) {
+    if (!rawProject || typeof rawProject !== "object" || Array.isArray(rawProject)) {
+      continue;
+    }
+    const record = rawProject as YonaRecord;
+    const id = stringField(record.id, "");
+    const name = stringField(record.projectName, "") || stringField(record.name, "");
+    if (!id || !name || id === currentProjectId) {
+      continue;
+    }
+    projects.push({
+      avatarUrl: stringField(record.logoUrl, "") || "/assets/images/project_default_logo.png",
+      id,
+      name,
+      owner: stringField(record.ownerName, "") || stringField(record.owner, ""),
+    });
+  }
+  return projects;
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {

@@ -485,6 +485,75 @@ test("project issue edit form keeps legacy subtask selector visible for a parent
   await expect(page.locator("#parentId option").first()).toHaveText("이미 부모 이슈입니다.");
 });
 
+test("project issue edit form renders movable project options like legacy partial_select_subtask.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page, {
+    project: {
+      movableIssueProjects: [
+        {
+          id: 7,
+          logoUrl: "/assets/images/current-duplicate.png",
+          ownerName: "admin",
+          projectName: "sample",
+        },
+        {
+          id: 9,
+          logoUrl: "/avatars/weblabs-portal.png",
+          ownerName: "weblabs",
+          projectName: "portal",
+        },
+        {
+          id: 11,
+          logoUrl: "",
+          owner: "qa",
+          name: "triage",
+        },
+      ],
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+  await expect(page.locator(".subtask-wrap")).toHaveClass("subtask-wrap show");
+  await expect(page.locator("#targetProjectId")).toBeEnabled();
+
+  await expect
+    .poll(() =>
+      page.locator("#targetProjectId option").evaluateAll((options) =>
+        options.map((option) => ({
+          avatarUrl: option.getAttribute("data-avatar-url"),
+          owner: option.getAttribute("data-owner"),
+          text: option.textContent?.trim(),
+          value: option.getAttribute("value"),
+        })),
+      ),
+    )
+    .toEqual([
+      {
+        avatarUrl: "/assets/images/project_default_logo.png",
+        owner: null,
+        text: "sample",
+        value: "7",
+      },
+      {
+        avatarUrl: "/avatars/weblabs-portal.png",
+        owner: "weblabs /",
+        text: "portal",
+        value: "9",
+      },
+      {
+        avatarUrl: "/assets/images/project_default_logo.png",
+        owner: "qa /",
+        text: "triage",
+        value: "11",
+      },
+    ]);
+
+  expect(ROUTE_SOURCE).toContain("(project as YonaRecord).movableIssueProjects");
+  expect(ROUTE_SOURCE).toContain("id === currentProjectId");
+});
+
 test("project issue edit form translates legacy write validation behavior", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   let updateRequests = 0;
