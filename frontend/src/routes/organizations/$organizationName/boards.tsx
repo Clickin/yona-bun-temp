@@ -144,11 +144,7 @@ function OrganizationBoardsBody({
                   {boards.visibleProjects.map((project) => {
                     const projectName = project.projectName;
                     return (
-                      <option
-                        value={projectName}
-                        data-avatar-url="/assets/images/project_default_logo.png"
-                        key={projectName}
-                      >
+                      <option value={projectName} key={projectName}>
                         {projectName}
                       </option>
                     );
