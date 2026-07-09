@@ -472,10 +472,7 @@ function OrganizationMember({
       <div className="member-name">{stringField(member.userLabel, loginId)}</div>
       <div className="member-id">@{loginId}</div>
       <div className="member-setting">
-        <div
-          className={roleDropdownOpen ? "btn-group open" : "btn-group"}
-          data-name={`roleof-${loginId}`}
-        >
+        <div className={roleDropdownOpen ? "btn-group open" : "btn-group"}>
           <button
             className="btn dropdown-toggle large"
             onClick={(event) => {
