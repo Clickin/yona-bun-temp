@@ -2517,12 +2517,7 @@ function IssueSearchForm({
       <input type="hidden" name="orderBy" value={search.orderBy} />
       <input type="hidden" name="orderDir" value={search.orderDir} />
       <input type="hidden" name="state" value={search.state} />
-      <input
-        type="hidden"
-        name="commenterId"
-        value={search.commenterId}
-        data-search="commenterId"
-      />
+      <input type="hidden" name="commenterId" value={search.commenterId} />
       <hr className="hide-in-mobile" />
       <div className="search">
         <div className="search-bar">
@@ -2532,7 +2527,6 @@ function IssueSearchForm({
             className="textbox full"
             type="text"
             defaultValue={search.filter}
-            data-search="filter"
             onFocus={(event) => rememberSearchInputValue(event.currentTarget)}
             onBlur={(event) => submitSearchInputIfChanged(event.currentTarget)}
           />
@@ -2555,7 +2549,6 @@ function IssueSearchForm({
               key={issueSearchUserSelectKey("author", search.authorId, authors)}
               id="authorId"
               name="authorId"
-              data-search="authorId"
               data-format="user"
               data-container-css-class="fullsize"
               defaultValue={search.authorId}
@@ -2582,7 +2575,6 @@ function IssueSearchForm({
               key={issueSearchUserSelectKey("assignee", search.assigneeId, assignees)}
               id="assigneeId"
               name="assigneeId"
-              data-search="assigneeId"
               data-format="user"
               data-container-css-class="fullsize"
               defaultValue={search.assigneeId}
@@ -2613,7 +2605,6 @@ function IssueSearchForm({
                   ":",
                 )}
                 name="milestoneId"
-                data-search="milestoneId"
                 data-format="milestone"
                 data-container-css-class="fullsize"
                 defaultValue={search.milestoneId}
@@ -2845,7 +2836,6 @@ function IssueSearchLabelSelect({
           id="labelIds"
           name="labelIds"
           multiple
-          data-search="labelIds"
           data-format="issuelabel"
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
