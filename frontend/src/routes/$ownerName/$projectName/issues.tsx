@@ -2568,12 +2568,7 @@ function IssueSearchForm({
                 </option>
               ) : null}
               {authors.map((author) => (
-                <option
-                  key={author.id}
-                  value={author.id}
-                  data-avatar-url={author.avatarUrl}
-                  data-login-id={author.loginId}
-                >
+                <option key={author.id} value={author.id}>
                   {author.label}
                 </option>
               ))}
@@ -2601,12 +2596,7 @@ function IssueSearchForm({
                 </option>
               ) : null}
               {assignees.map((assignee) => (
-                <option
-                  key={assignee.id}
-                  value={assignee.id}
-                  data-avatar-url={assignee.avatarUrl}
-                  data-login-id={assignee.loginId}
-                >
+                <option key={assignee.id} value={assignee.id}>
                   {assignee.label}
                 </option>
               ))}

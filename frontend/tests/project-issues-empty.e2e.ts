@@ -28,11 +28,11 @@ const EXPECTED_PROJECT_ISSUES_EMPTY = `
 `
   .replace(
     '<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option></select>',
-    '<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
+    '<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1">Site Admin</option></select>',
   )
   .replace(
     '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option></select>',
-    '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>',
+    '<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>',
   )
   .replace(
     '<li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li><li><form action="__BASE_PATH__/admin/sample/search"',
@@ -55,10 +55,10 @@ const EXPECTED_PROJECT_ISSUES_EMPTY = `
     '<li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span><span class="project-menu-count">1</span></a></li>',
   );
 const BUG_CHILD_LABEL_STYLE = "background:rgb(81, 170, 204)";
-const EMPTY_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
-const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="2" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="dev">Dev Member</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
-const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
-const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1" data-avatar-url="/assets/images/default-avatar-32.png" data-login-id="admin">Site Admin</option></select>`;
+const EMPTY_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="1">Site Admin</option></select>`;
+const POPULATED_AUTHOR_SELECT = `<select id="authorId" name="authorId" data-search="authorId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="1">Created</option><option value="2">Dev Member</option><option value="1">Site Admin</option></select>`;
+const EMPTY_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
+const POPULATED_ASSIGNEE_SELECT = `<select id="assigneeId" name="assigneeId" data-search="assigneeId" data-format="user" data-container-css-class="fullsize"><option value="" selected="">All</option><option value="0">No assignee</option><option value="1">Assigned</option><option value="1">Site Admin</option></select>`;
 
 const POPULATED_SPAN10 = `<div class="span10 span-hard-wrap" id="span10"><div class="pull-right"><a href="__BASE_PATH__/admin/sample/issueform" class="ybtn ybtn-success">New issue</a></div><ul class="nav nav-tabs nm"><li class="active"><button type="button" state="open">Open<span class="num-badge">1</span></button></li><li><button type="button" state="closed">Closed<span class="num-badge">2</span></button></li><li><div class="two-column-icon mr10 hide-in-mobile" id="two-column-mode-checkbox" title="Two Column Mode" style="position:relative"><label class="checkbox"><div class="two-column-icon-border"><input id="two-column-mode" type="checkbox"><span class="two-column-mode-text">Column View</span></div></label></div></li><li class="show-subtasks-li"><div class="show-subtasks mr10" id="two-column-mode-checkbox" style="position:relative" title="Show subtask"><label class="checkbox"><div class="show-subtasks-button-border"><input id="toggle-show-subtasks" type="checkbox"><span class="show-subtasks-text">Show subtask</span></div></label></div></li></ul><div class="filter-wrap board"></div><ul class="post-list-wrap row-fluid"><li class="post-item title" id="issue-item-42" data-item="issue-item" data-value="dev 11 Fix flaky issue" href="__BASE_PATH__/admin/sample/issue/11"><div class="span9 span-hard-wrap"><label for="issue-42" class="mass-update-check hide-in-mobile"><input id="issue-42" type="checkbox" name="checked-issue" data-issue-id="42" data-issue-labels="bug,8,bug,3,false|"></label><div for="issue-42" class="issue-item-row"><div class="title-wrap"><a href="__BASE_PATH__/admin/sample/issue/11" class="title"><span class="post-id">#11</span></a><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix flaky issue</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-placement="bottom" title="dev">Dev Member</a><span class="infos-item" data-placement="bottom" title="Jul 1, 2026">Jul 1, 2026</span><span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" data-placement="bottom" title="Milestone">v1.0</a></span><span class="infos-item item-count-groups"><a href="__BASE_PATH__/admin/sample/issue/11#comments" class="comments-count comments-count-color"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a><a href="__BASE_PATH__/admin/sample/issue/11#vote" class="vote-count vote-color"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a></span><button type="button" class="label issue-label list-label active" data-category-id="3" data-label-id="8">bug</button><div class="child-issue-list hide"></div></div></div></div><div class="span3 hide-in-mobile"><div class="mt5 pull-right"><a href="__BASE_PATH__/admin" class="avatar-wrap assinee" data-placement="top" title="Assignee: Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Site Admin"></a></div><div class="mr20 mt10 pull-right overdue" data-placement="top" title="Jun 30, 2026"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">Overdue</span></div></div></li></ul><div class="pull-left" style="padding:10px"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div class="pull-left" style="padding:10px 0px;margin-left:55px"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Keyboard shortcuts</button>${ISSUE_LIST_KEYMAP}</div><div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div></div>`;
 const POPULATED_PAGINATION = `<div id="pagination" class="page-navigation-wrap" data-total="3"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="3" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">3</li><li class="page-num ikon"><a href="__BASE_PATH__/admin/sample/issues?filter=bug&amp;orderBy=updatedDate&amp;orderDir=desc&amp;pageNum=2&amp;state=open"><span>Next page</span><i class="ico btn-pg-next"></i></a></li></ul></div>`;
@@ -908,6 +908,25 @@ const select2TemplateIds = [
   "tplSelect2FormatIssues",
 ];
 
+async function userSearchOptionMetadata(page: Page) {
+  return page.evaluate(() => {
+    const optionState = (selector: string) =>
+      Array.from(document.querySelectorAll<HTMLOptionElement>(`${selector} option`)).map(
+        (option) => ({
+          avatarUrl: option.hasAttribute("data-avatar-url"),
+          loginId: option.hasAttribute("data-login-id"),
+          text: option.textContent?.trim() ?? "",
+          value: option.value,
+        }),
+      );
+
+    return {
+      assignee: optionState("#assigneeId"),
+      author: optionState("#authorId"),
+    };
+  });
+}
+
 test("project issue list search form renders legacy partial_select_label when project labels exist", async ({
   page,
 }) => {
@@ -1061,14 +1080,16 @@ test("project issue advanced search prefers legacy current-user options and subm
       page.locator("#authorId").evaluate((select) => {
         const selectedOption = select.selectedOptions.item(0);
         return {
-          loginId: selectedOption?.getAttribute("data-login-id") ?? "",
+          hasAvatarUrl: selectedOption?.hasAttribute("data-avatar-url") ?? false,
+          hasLoginId: selectedOption?.hasAttribute("data-login-id") ?? false,
           text: selectedOption?.textContent?.trim() ?? "",
           value: select.value,
         };
       }),
     )
     .toEqual({
-      loginId: "admin",
+      hasAvatarUrl: false,
+      hasLoginId: false,
       text: "Site Admin",
       value: "1",
     });
@@ -1077,14 +1098,16 @@ test("project issue advanced search prefers legacy current-user options and subm
       page.locator("#assigneeId").evaluate((select) => {
         const selectedOption = select.selectedOptions.item(0);
         return {
-          loginId: selectedOption?.getAttribute("data-login-id") ?? "",
+          hasAvatarUrl: selectedOption?.hasAttribute("data-avatar-url") ?? false,
+          hasLoginId: selectedOption?.hasAttribute("data-login-id") ?? false,
           text: selectedOption?.textContent?.trim() ?? "",
           value: select.value,
         };
       }),
     )
     .toEqual({
-      loginId: "admin",
+      hasAvatarUrl: false,
+      hasLoginId: false,
       text: "Site Admin",
       value: "1",
     });
@@ -1164,14 +1187,20 @@ test("populated project issue list matches legacy partial_list.scala.html DOM", 
     "3",
   );
   await expect(page.locator('.issue-label[data-label-id="8"]')).toHaveCount(3);
-  await expect(page.locator('#authorId option[data-login-id="dev"]')).toHaveAttribute(
-    "data-avatar-url",
-    "/assets/images/default-avatar-32.png",
-  );
-  await expect(page.locator('#assigneeId option[data-login-id="admin"]')).toHaveAttribute(
-    "data-avatar-url",
-    "/assets/images/default-avatar-32.png",
-  );
+  expect(await userSearchOptionMetadata(page)).toEqual({
+    assignee: [
+      { avatarUrl: false, loginId: false, text: "All", value: "" },
+      { avatarUrl: false, loginId: false, text: "No assignee", value: "0" },
+      { avatarUrl: false, loginId: false, text: "Assigned", value: "1" },
+      { avatarUrl: false, loginId: false, text: "Site Admin", value: "1" },
+    ],
+    author: [
+      { avatarUrl: false, loginId: false, text: "All", value: "" },
+      { avatarUrl: false, loginId: false, text: "Created", value: "1" },
+      { avatarUrl: false, loginId: false, text: "Dev Member", value: "2" },
+      { avatarUrl: false, loginId: false, text: "Site Admin", value: "1" },
+    ],
+  });
 
   expect(await issueListRowMetrics(page)).toEqual({
     listStyle: "none",
@@ -1504,14 +1533,16 @@ test("project issue quick search updates route like legacy partial_list_quicksea
       page.locator("#assigneeId").evaluate((select) => {
         const selectedOption = select.selectedOptions.item(0);
         return {
-          loginId: selectedOption?.getAttribute("data-login-id") ?? "",
+          hasAvatarUrl: selectedOption?.hasAttribute("data-avatar-url") ?? false,
+          hasLoginId: selectedOption?.hasAttribute("data-login-id") ?? false,
           text: selectedOption?.textContent?.trim() ?? "",
           value: select.value,
         };
       }),
     )
     .toEqual({
-      loginId: "admin",
+      hasAvatarUrl: false,
+      hasLoginId: false,
       text: "Site Admin",
       value: "1",
     });
@@ -2458,11 +2489,13 @@ test("project issue list mass update options come from project-wide legacy sourc
   await expect(page.locator('#delete-label-list li[data-value="10"] .issue-label')).toHaveText(
     "backend",
   );
-  await expect(page.locator('#authorId option[data-login-id="wide"]')).toHaveCount(0);
-  await expect(page.locator('#assigneeId option[data-login-id="wide"]')).toHaveCount(0);
+  await expect(page.locator("#authorId option[data-login-id]")).toHaveCount(0);
+  await expect(page.locator("#authorId option[data-avatar-url]")).toHaveCount(0);
+  await expect(page.locator("#assigneeId option[data-login-id]")).toHaveCount(0);
+  await expect(page.locator("#assigneeId option[data-avatar-url]")).toHaveCount(0);
 });
 
-test("project issue list user-option avatars fall back to the legacy default when API data is empty", async ({
+test("project issue search user options omit Select2 metadata and preserve copy with empty avatar data", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -2475,14 +2508,19 @@ test("project issue list user-option avatars fall back to the legacy default whe
   await page.goto(`${basePath}/admin/sample/issues?filter=empty-avatar-options`);
   await expect(page.locator("#mass-update-form")).toBeVisible();
 
-  await expect(page.locator('#authorId option[data-login-id="ghost"]')).toHaveAttribute(
-    "data-avatar-url",
-    "/assets/images/default-avatar-32.png",
-  );
-  await expect(page.locator('#assigneeId option[data-login-id="ghost"]')).toHaveAttribute(
-    "data-avatar-url",
-    "/assets/images/default-avatar-32.png",
-  );
+  expect(await userSearchOptionMetadata(page)).toEqual({
+    assignee: [
+      { avatarUrl: false, loginId: false, text: "All", value: "" },
+      { avatarUrl: false, loginId: false, text: "No assignee", value: "0" },
+      { avatarUrl: false, loginId: false, text: "Assigned", value: "1" },
+      { avatarUrl: false, loginId: false, text: "Ghost Author", value: "4" },
+    ],
+    author: [
+      { avatarUrl: false, loginId: false, text: "All", value: "" },
+      { avatarUrl: false, loginId: false, text: "Created", value: "1" },
+      { avatarUrl: false, loginId: false, text: "Ghost Author", value: "4" },
+    ],
+  });
 
   await page.locator("#issue-42").check();
   await page.locator("#assignee > button").click();
