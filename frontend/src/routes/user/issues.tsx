@@ -31,9 +31,6 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
   orderdir: string;
 };
 type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
-type LegacyTooltipAttrs = {
-  "data-placement": "bottom";
-};
 
 const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
   bottom: "100%",
@@ -838,9 +835,6 @@ function UserIssueItem({
   const issueWeight = issue.weight ?? 0;
   const [isChildListVisible, setIsChildListVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const legacyTooltipAttrs = {
-    "data-placement": "bottom",
-  } satisfies LegacyTooltipAttrs;
   const legacyIssueRowAttrs = {
     className: "post-item title",
     href: issueHref,
@@ -872,12 +866,7 @@ function UserIssueItem({
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">
-            <Link
-              to={projectRoutePath}
-              className="title project"
-              {...legacyTooltipAttrs}
-              title={t("project.name")}
-            >
+            <Link to={projectRoutePath} className="title project" title={t("project.name")}>
               {issue.projectName}
             </Link>
           </span>
@@ -886,20 +875,12 @@ function UserIssueItem({
         <div className="title-wrap span6">
           <span className="title-cell">
             {issueWeight > 0 ? (
-              <span
-                className="weight-up-arrow"
-                data-placement="right"
-                title={`${t("issue.weight")} ${issueWeight}`}
-              >
+              <span className="weight-up-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
                 <i className="yobicon-angle-circled-up"></i>
               </span>
             ) : null}
             {issueWeight < 0 ? (
-              <span
-                className="weight-down-arrow"
-                data-placement="right"
-                title={`${t("issue.weight")} ${issueWeight}`}
-              >
+              <span className="weight-down-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
                 <i className="yobicon-angle-circled-down"></i>
               </span>
             ) : null}
@@ -961,12 +942,12 @@ function UserIssueItem({
                 <span className="infos-item">{t("issue.noAuthor")}</span>
               ) : null}
             </span>
-            <span className="infos-item" data-placement="bottom" title={dateTooltipTitle}>
+            <span className="infos-item" title={dateTooltipTitle}>
               {dateLabel}
             </span>
             {issue.milestoneId ? (
               <span className="mileston-tag">
-                <Link to={milestoneRoutePath} {...legacyTooltipAttrs} title={t("milestone")}>
+                <Link to={milestoneRoutePath} title={t("milestone")}>
                   {issue.milestoneTitle}
                 </Link>
               </span>
@@ -974,7 +955,6 @@ function UserIssueItem({
             {issue.dueDateLabel ? (
               <span
                 className={`pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
-                data-placement="top"
                 title={`Due date: ${issue.dueDateLabel}`}
               >
                 <i className="yobicon-clock2"></i>
@@ -988,12 +968,7 @@ function UserIssueItem({
         {showAssignee ? (
           <div className="span1 hide-in-mobile">
             <div className="mt5 pull-right hide-in-mobile">
-              <Link
-                to={assigneeRoutePath}
-                className="avatar-wrap assinee"
-                {...legacyTooltipAttrs}
-                title={assigneeTitle}
-              >
+              <Link to={assigneeRoutePath} className="avatar-wrap assinee" title={assigneeTitle}>
                 <img
                   src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
                   width="32"
@@ -1018,17 +993,8 @@ function UserIssueAuthorLink({
   loginId: string;
   to: string;
 }) {
-  const legacyTooltipAttrs = {
-    "data-placement": "bottom",
-  } satisfies LegacyTooltipAttrs;
-
   return (
-    <Link
-      to={to}
-      className="infos-item infos-link-item author-cell"
-      {...legacyTooltipAttrs}
-      title={loginId}
-    >
+    <Link to={to} className="infos-item infos-link-item author-cell" title={loginId}>
       {label}
     </Link>
   );
