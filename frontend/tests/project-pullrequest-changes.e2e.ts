@@ -9,6 +9,11 @@ const PULL_REQUEST_CHANGES_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
+const LEGACY_MESSAGES_SOURCE = readFileSync(
+  new URL("../../yona-original/conf/messages", import.meta.url),
+  "utf8",
+);
+
 const EXPECTED_PULL_REQUEST_CHANGES_BASE = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body mb20"><div class="author-info right-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div></div><div class="codediff-wrap mt10 diffs-only"><div id="changes" class="diffs-wrap"><div id="commits" class="btn-group auto mb10"><button class="btn dropdown-toggle auto"><span class="d-label">All commit changes</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="All"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">All commit changes</a></li><li class="divider"></li></ul></div><div class="diff-body diffs-wrap-scroll"><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div><div class="board-comment-wrap"><div class="non-ranged-threads-wrap"></div><form id="comment-form" action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div><div id="review-form" class="review-form"><form action="__BASE_PATH__/admin/sample/pullRequest/90/comments" method="post" enctype="multipart/form-data"><div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div><div class="write-comment-box"><div class="write-comment-wrap"><div class="pull-right"><button type="button" class="ybtn ybtn-default ybtn-small" data-toggle="close">×</button></div><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-review" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-review" markdown="true"></textarea></div></div><div id="preview-review" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers</span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="REVIEW_COMMENT"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="right-txt"><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></div></div></div></div>
 `;
@@ -31,6 +36,18 @@ const SELECTED_COMMIT = {
   commitId: SELECTED_COMMIT_ID,
   commitMessage: "Add UI\n\nDetails",
   commitShortId: "abcdef1",
+  state: "CURRENT",
+};
+
+const SELECTED_NO_AUTHOR_COMMIT_ID = "0000000000000000";
+
+const SELECTED_NO_AUTHOR_COMMIT = {
+  authorDateLabel: "Jul 9, 2026",
+  authorEmail: "",
+  authorName: "",
+  commitId: SELECTED_NO_AUTHOR_COMMIT_ID,
+  commitMessage: "No author metadata\n\nDetails",
+  commitShortId: "0000000",
   state: "CURRENT",
 };
 
@@ -72,6 +89,23 @@ const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.repl
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=abcdef1234567890"`,
+  );
+
+const EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
+  `<span class="d-label">All commit changes</span>`,
+  `<span class="d-label"><strong class="blue-txt mr10 commit-hash">0000000</strong><span>No author metadata</span></span>`,
+)
+  .replace(
+    `<li class="divider"></li></ul>`,
+    `<li class="divider"></li><li data-value="0000000000000000"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/0000000000000000"><strong class="blue-txt mr10 commit-hash">0000000</strong><span>No author metadata</span></a></li></ul>`,
+  )
+  .replace(
+    `<div class="diff-body diffs-wrap-scroll">`,
+    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Anonymous</strong><span class="ago" title="Jul 9, 2026">Jul 9, 2026</span></p><pre class="commitMsg mt5">No author metadata\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
+  )
+  .replaceAll(
+    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
+    `action="__BASE_PATH__/admin/sample/pullRequest/90/comments?commitId=0000000000000000"`,
   );
 
 const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace(
@@ -285,6 +319,13 @@ test("project pull request changes source keeps React-owned tab controls free of
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="edit"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="preview"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-type={line.type}");
+});
+
+test("project pull request changes selected commit anonymous fallback uses legacy messages", () => {
+  expect(LEGACY_MESSAGES_SOURCE).toMatch(/^user\.role\.anonymous\s*=\s*Anonymous$/m);
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('t("user.role.anonymous")');
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('commit.authorEmail || "Anonymous"');
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toMatch(/authorEmail\s*\|\|\s*["']Anonymous/u);
 });
 
 test("project pull request changes matches legacy git/viewChanges.scala.html empty diff DOM", async ({
@@ -681,6 +722,31 @@ test("project pull request selected commit changes matches legacy git/viewChange
     await canonicalizeHtmlAll(
       page,
       EXPECTED_PULL_REQUEST_SELECTED_CHANGE.replaceAll("__BASE_PATH__", basePath),
+    ),
+  );
+});
+
+test("project pull request selected commit without author renders legacy anonymous fallback", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, {
+    commits: [SELECTED_NO_AUTHOR_COMMIT],
+    expectedCommitId: SELECTED_NO_AUTHOR_COMMIT_ID,
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_NO_AUTHOR_COMMIT_ID}`);
+  await expect(page.locator(".commitInfo strong")).toHaveText("Anonymous");
+  await expect(page.locator(".commitInfo > a.avatar-wrap")).toHaveCount(0);
+  await expect(page.locator(".commitInfo > .avatar-wrap.smaller img")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
+  );
+
+  expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
+    await canonicalizeHtmlAll(
+      page,
+      EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE.replaceAll("__BASE_PATH__", basePath),
     ),
   );
 });

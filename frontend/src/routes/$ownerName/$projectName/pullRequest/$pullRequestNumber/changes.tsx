@@ -1568,13 +1568,15 @@ function CommitDropdown({
 }
 
 function SelectedCommitInfo({ commit }: { commit: PullRequestCommit }) {
+  const { t } = useLegacyMessages();
+
   return (
     <>
       <p className="commitInfo">
         <span className="avatar-wrap smaller">
           <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
         </span>
-        <strong>{commit.authorEmail || "Anonymous"}</strong>
+        <strong>{commit.authorEmail || t("user.role.anonymous")}</strong>
         <span className="ago" title={commit.authorDateLabel}>
           {commit.authorDateLabel}
         </span>
