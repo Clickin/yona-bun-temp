@@ -481,8 +481,7 @@ function OrganizationPullRequestItem({
               to="/$user"
               className="avatar-wrap assinee"
               data-placement="top"
-              title=""
-              data-original-title={pullRequest.receiverLabel}
+              title={pullRequest.receiverLabel}
             >
               <img
                 src="/assets/images/default-avatar-32.png"
