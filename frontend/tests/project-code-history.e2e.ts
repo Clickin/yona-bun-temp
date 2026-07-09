@@ -222,6 +222,7 @@ test("project bare code history renders default branch on the legacy commits URL
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const historyRequestUrls: string[] = [];
   await mockProjectCodeHistory(page, {
+    includeAnonymousCommit: true,
     onHistoryRequest: (requestUrl) => historyRequestUrls.push(requestUrl.href),
   });
 
@@ -229,7 +230,10 @@ test("project bare code history renders default branch on the legacy commits URL
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/commits`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
-  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
+  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(3);
+  await expect(
+    page.locator("#history .code-table.commits tbody tr").nth(2).locator(".author"),
+  ).toHaveText("Anonymous");
   expect(historyRequestUrls).toHaveLength(1);
   const historyRequest = new URL(historyRequestUrls[0]);
   expect(historyRequest.searchParams.get("branch")).toBeNull();
@@ -425,7 +429,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   const legacyControllerSource = readFileSync(LEGACY_CONTROLLER_SOURCE_PATH, "utf8");
 
   expect(legacyMessagesSource).toContain("title.commitHistory = Commit history");
+  expect(legacyMessagesSource).toContain("user.role.anonymous = Anonymous");
   expect(legacySource).toContain('@projectLayout(Messages("title.commitHistory"), project');
+  expect(legacySource).toContain("<span>@User.anonymous.name</span>");
   expect(legacyRoutesSource).toContain(
     "GET            /:user/:project/commits                                                controllers.CodeHistoryApp.historyUntilHead(user, project)",
   );
@@ -497,6 +503,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).toContain('data-dropdown-css-class="branches"');
   expect(bareSource).toContain("title={commit.authorLoginId}");
   expect(bareSource).toContain("title={commit.authorEmail}");
+  expect(bareSource).toContain('t("user.role.anonymous")');
+  expect(bareSource).not.toContain('|| "Anonymous"');
+  expect(bareSource).not.toContain("'Anonymous'");
   expect(bareSource).toContain('to="/$ownerName/$projectName/commits"');
   expect(bareSource).toContain('params={{ branch: "HEAD", ownerName, projectName }}');
   expect(bareSource).not.toContain("historyUntilHead");
@@ -727,6 +736,7 @@ async function mockProjectCodeHistory(
   page: Page,
   options: {
     onHistoryRequest?: (requestUrl: URL) => void;
+    includeAnonymousCommit?: boolean;
     ownerName?: string;
     project?: Record<string, unknown>;
     projectName?: string;
@@ -816,6 +826,22 @@ async function mockProjectCodeHistory(
             message: options.secondMessage ?? "Second commit",
             shortMessage: "Second commit",
           },
+          ...(options.includeAnonymousCommit
+            ? [
+                {
+                  authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                  authorDate: "Jul 3, 2026",
+                  authorEmail: "",
+                  authorLoginId: "",
+                  authorName: "",
+                  commentCount: 0,
+                  commitId: "fedcba0987654321",
+                  commitShortId: "fedcba0",
+                  message: "Anonymous commit",
+                  shortMessage: "Anonymous commit",
+                },
+              ]
+            : []),
         ],
         hasNewer: false,
         hasOlder: true,

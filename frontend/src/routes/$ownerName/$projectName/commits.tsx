@@ -362,6 +362,7 @@ function CommitMessage({
 }
 
 function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][number] }) {
+  const { t } = useLegacyMessages();
   const avatarUrl = commit.authorAvatarUrl || "/assets/images/default-avatar-32.png";
   const usesGeneratedAvatar = avatarUrl === "/assets/images/default-avatar-32.png";
 
@@ -400,7 +401,7 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
     );
   }
 
-  return <span>{commit.authorName || "Anonymous"}</span>;
+  return <span>{commit.authorName || t("user.role.anonymous")}</span>;
 }
 
 function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {
