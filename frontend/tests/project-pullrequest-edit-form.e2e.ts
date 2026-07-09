@@ -13,7 +13,8 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>")
-  .replace(/\sdata-toggle="markdown-help"/g, "");
+  .replace(/\sdata-toggle="markdown-help"/g, "")
+  .replace(/\sdata-target="markdown[^"]+"/g, "");
 const ROUTE_SOURCE = readFileSync(
   new URL(
     "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform.tsx",

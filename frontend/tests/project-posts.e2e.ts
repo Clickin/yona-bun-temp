@@ -10,6 +10,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/ data-toggle="markdown-help"/g, "")
+  .replace(/\sdata-target="markdown[^"]+"/g, "")
   .replace(/<\/div>\s*$/u, "</div>");
 
 const BUG_LABEL_STYLE =

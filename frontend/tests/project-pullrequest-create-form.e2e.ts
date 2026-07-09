@@ -252,7 +252,11 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator(".markdown-help-wrap > .markdown-help-item")).toHaveCount(10);
   await expect(page.locator(".markdown-help .label")).toHaveText("Markdown help");
-  await expect(page.locator('.help-nav[data-target="markdownTables"]')).toHaveText("Table");
+  const tableNav = page
+    .locator(".markdown-help .markdown-help-nav > .help-nav")
+    .filter({ hasText: /^Table$/u });
+  await expect(page.locator(".markdown-help .help-nav[data-target]")).toHaveCount(0);
+  await expect(tableNav).toHaveText("Table");
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-type", "PULL_REQUEST");
   await expect(page.locator("#upload")).not.toHaveAttribute("data-resource-id", /.*/u);
   await expect(page.locator("#upload .attach-wrap")).toHaveCount(1);
@@ -343,11 +347,11 @@ test("project pull request create form matches legacy git/create.scala.html core
     syntaxPreMargin: "0px",
     tableHeaderLineHeight: "30px",
   });
-  await page.locator('.help-nav[data-target="markdownTables"]').click();
-  await expect(page.locator('.help-nav[data-target="markdownTables"]')).toHaveClass(/active/);
+  await tableNav.click();
+  await expect(tableNav).toHaveClass(/active/);
   await expect(page.locator(".markdown-help-wrap > .markdownTables")).toHaveClass(/active/);
-  await page.locator('.help-nav[data-target="markdownTables"]').click();
-  await expect(page.locator('.help-nav[data-target="markdownTables"]')).not.toHaveClass(/active/);
+  await tableNav.click();
+  await expect(tableNav).not.toHaveClass(/active/);
   await expect(page.locator(".markdown-help-wrap > .markdownTables")).not.toHaveClass(/active/);
 
   await page.evaluate((url) => {

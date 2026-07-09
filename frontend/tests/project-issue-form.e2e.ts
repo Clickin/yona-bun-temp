@@ -17,6 +17,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<script[\s\S]*$/u, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replaceAll(' data-toggle="markdown-help"', "")
+  .replace(/\sdata-target="markdown[^"]+"/g, "")
   .replace(/<\/div>\s*$/u, "</div>");
 
 const EXPECTED_MARKDOWN_HEADER_SAMPLE = `
@@ -176,32 +177,28 @@ test("project issue create form matches legacy issue/create.scala.html core form
   await expectMarkdownHelpPreText(page, ".markdownCodes", EXPECTED_MARKDOWN_CODE_SAMPLE);
   await expectMarkdownHelpPreText(page, ".markdownTables", EXPECTED_MARKDOWN_TABLE_SAMPLE);
   const markdownHelp = page.locator(".markdown-help");
+  const markdownHelpNavItems = markdownHelp.locator(".markdown-help-nav > .help-nav");
+  const linkNav = markdownHelpNavItems.filter({ hasText: /^Link$/u });
+  const listNav = markdownHelpNavItems.filter({ hasText: /^List$/u });
+  await expect(markdownHelp.locator(".help-nav[data-target]")).toHaveCount(0);
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
-  await markdownHelp.locator('.help-nav[data-target="markdownLinks"]').click();
-  await expect(
-    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLinks"]'),
-  ).toHaveClass(/active/);
+  await linkNav.click();
+  await expect(linkNav).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownHeaders")).not.toHaveClass(
     /active/,
   );
-  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
-  await expect(
-    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLinks"]'),
-  ).not.toHaveClass(/active/);
+  await listNav.click();
+  await expect(linkNav).not.toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(
     /active/,
   );
-  await expect(
-    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLists"]'),
-  ).toHaveClass(/active/);
+  await expect(listNav).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toBeVisible();
-  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
-  await expect(
-    markdownHelp.locator('.markdown-help-nav .help-nav[data-target="markdownLists"]'),
-  ).not.toHaveClass(/active/);
+  await listNav.click();
+  await expect(listNav).not.toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
     /active/,
   );

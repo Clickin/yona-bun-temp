@@ -133,70 +133,60 @@ export function LegacyMarkdownHelp() {
         </li>
         <li
           className={`help-nav${activeClass("markdownHeaders")}`}
-          data-target="markdownHeaders"
           onClick={() => toggleActiveTarget("markdownHeaders")}
         >
           Header
         </li>
         <li
           className={`help-nav${activeClass("markdownStyling")}`}
-          data-target="markdownStyling"
           onClick={() => toggleActiveTarget("markdownStyling")}
         >
           Text Style
         </li>
         <li
           className={`help-nav${activeClass("markdownLinks")}`}
-          data-target="markdownLinks"
           onClick={() => toggleActiveTarget("markdownLinks")}
         >
           Link
         </li>
         <li
           className={`help-nav${activeClass("markdownLists")}`}
-          data-target="markdownLists"
           onClick={() => toggleActiveTarget("markdownLists")}
         >
           List
         </li>
         <li
           className={`help-nav${activeClass("markdownTaskList")}`}
-          data-target="markdownTaskList"
           onClick={() => toggleActiveTarget("markdownTaskList")}
         >
           Checklist
         </li>
         <li
           className={`help-nav${activeClass("markdownImages")}`}
-          data-target="markdownImages"
           onClick={() => toggleActiveTarget("markdownImages")}
         >
           Image
         </li>
         <li
           className={`help-nav${activeClass("markdownBlockquotes")}`}
-          data-target="markdownBlockquotes"
           onClick={() => toggleActiveTarget("markdownBlockquotes")}
         >
           Blockquote
         </li>
         <li
           className={`help-nav${activeClass("markdownCodes")}`}
-          data-target="markdownCodes"
           onClick={() => toggleActiveTarget("markdownCodes")}
         >
           Code
         </li>
         <li
           className={`help-nav${activeClass("markdownTables")}`}
-          data-target="markdownTables"
           onClick={() => toggleActiveTarget("markdownTables")}
         >
           Table
         </li>
         <li
           className={`help-nav${activeClass("markdownShortLinks")}`}
-          data-target="markdownShortLinks"
           onClick={() => toggleActiveTarget("markdownShortLinks")}
         >
           Short Link

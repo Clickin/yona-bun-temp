@@ -9,6 +9,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/@\{"@"\}/g, "@")
   .replace(/<script[\s\S]*$/u, "")
   .replace(/\sdata-toggle="markdown-help"/g, "")
+  .replace(/\sdata-target="markdown[^"]+"/g, "")
   .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
   .replace(/<\/div>\s*$/u, "</div>");
 

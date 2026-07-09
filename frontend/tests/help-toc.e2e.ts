@@ -451,14 +451,14 @@ test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }
   });
 });
 
-test("shared markdown help uses typed React targets while preserving legacy target DOM", async ({
+test("shared markdown help uses typed React targets without legacy target markers", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain(".dataset");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain("currentTarget.dataset");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain('data-toggle="markdown-help"');
-  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain('data-target="markdownLinks"');
+  expect(SHARED_MARKDOWN_HELP_SOURCE).not.toMatch(/data-target=["']markdown/u);
   expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
     'onClick={() => toggleActiveTarget("markdownLinks")}',
   );
@@ -469,17 +469,18 @@ test("shared markdown help uses typed React targets while preserving legacy targ
   const markdownHelp = page.locator(".markdown-help");
   await expect(markdownHelp).toBeVisible();
   await expect(markdownHelp.locator('.help-nav[data-toggle="markdown-help"]')).toHaveCount(0);
+  await expect(markdownHelp.locator(".help-nav[data-target]")).toHaveCount(0);
   expect(await renderedMarkdownHelpNavItems(page)).toEqual([
-    { text: "Header", target: "markdownHeaders" },
-    { text: "Text Style", target: "markdownStyling" },
-    { text: "Link", target: "markdownLinks" },
-    { text: "List", target: "markdownLists" },
-    { text: "Checklist", target: "markdownTaskList" },
-    { text: "Image", target: "markdownImages" },
-    { text: "Blockquote", target: "markdownBlockquotes" },
-    { text: "Code", target: "markdownCodes" },
-    { text: "Table", target: "markdownTables" },
-    { text: "Short Link", target: "markdownShortLinks" },
+    "Header",
+    "Text Style",
+    "Link",
+    "List",
+    "Checklist",
+    "Image",
+    "Blockquote",
+    "Code",
+    "Table",
+    "Short Link",
   ]);
   expect(await renderedMarkdownHelpPaneClasses(page)).toEqual([
     "markdownHeaders",
@@ -493,7 +494,10 @@ test("shared markdown help uses typed React targets while preserving legacy targ
     "markdownTables",
     "markdownShortLinks",
   ]);
-  await expect(markdownHelp.locator('.help-nav[data-target="markdownLinks"]')).toHaveText("Link");
+  const navItems = markdownHelp.locator(".markdown-help-nav > .help-nav");
+  const linkNav = navItems.filter({ hasText: /^Link$/u });
+  const listNav = navItems.filter({ hasText: /^List$/u });
+  await expect(linkNav).toHaveText("Link");
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
   expect(await readMarkdownHelpMetrics(page)).toEqual({
     labelContainedInNav: true,
@@ -504,32 +508,24 @@ test("shared markdown help uses typed React targets while preserving legacy targ
     wrapWidthAlignedWithNav: true,
   });
 
-  await markdownHelp.locator('.help-nav[data-target="markdownLinks"]').click();
-  await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
-  ).toHaveClass(/active/);
+  await linkNav.click();
+  await expect(linkNav).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
     /active/,
   );
 
-  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
-  await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLinks"]'),
-  ).not.toHaveClass(/active/);
+  await listNav.click();
+  await expect(linkNav).not.toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(
     /active/,
   );
-  await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
-  ).toHaveClass(/active/);
+  await expect(listNav).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
 
-  await markdownHelp.locator('.help-nav[data-target="markdownLists"]').click();
-  await expect(
-    markdownHelp.locator('.markdown-help-nav [data-target="markdownLists"]'),
-  ).not.toHaveClass(/active/);
+  await listNav.click();
+  await expect(listNav).not.toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
     /active/,
   );
@@ -537,12 +533,9 @@ test("shared markdown help uses typed React targets while preserving legacy targ
 });
 
 async function renderedMarkdownHelpNavItems(page: Page) {
-  return page.locator(".markdown-help .markdown-help-nav > .help-nav").evaluateAll((items) =>
-    items.map((item) => ({
-      text: item.textContent?.trim(),
-      target: item.getAttribute("data-target"),
-    })),
-  );
+  return page
+    .locator(".markdown-help .markdown-help-nav > .help-nav")
+    .evaluateAll((items) => items.map((item) => item.textContent?.trim()));
 }
 
 async function renderedMarkdownHelpPaneClasses(page: Page) {
