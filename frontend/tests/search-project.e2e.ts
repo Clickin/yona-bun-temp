@@ -108,8 +108,9 @@ test("project search route source renders legacy projectLayout title without dir
   expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
     '<title>{`${t("title.search")} - ${ownerName}/${projectName}`}</title>',
   );
-  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain(
-    '<Link\n                          from="/$ownerName/$projectName/search"',
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain("includeHash: true");
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).toMatch(
+    /search-category-wrap[\s\S]*<Link[\s\S]*activeOptions=\{projectSearchPaginationLinkActiveOptions\}[\s\S]*activeProps=\{projectSearchPaginationLinkActiveProps\}[\s\S]*from="\/\$ownerName\/\$projectName\/search"/u,
   );
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("createLink");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
@@ -207,6 +208,20 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(page, expectedProjectIssueSearchScreen(basePath)),
   );
+});
+
+test("project issue search category Links keep legacy active state on list items", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSearch(page);
+
+  await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 1");
+  await expectProjectSearchCategoryAttributes(page, basePath, "sample");
+  await expectProjectSearchCategoryActiveMarkers(page);
 });
 
 test("project issue comment search renders legacy partial_issue_comments.scala.html scoped result row", async ({
@@ -547,6 +562,7 @@ test("project search category and form navigation stay inside the React SPA", as
   await markSearchSpaSession(page);
   await page.locator("#searchKeyword").fill("fresh");
   await expectProjectSearchCategoryAttributes(page, basePath, "fresh");
+  await expectProjectSearchCategoryActiveMarkers(page);
   const issueCategory = page.locator(".search-category-wrap a", { hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute(
     "href",
@@ -555,6 +571,7 @@ test("project search category and form navigation stay inside the React SPA", as
   await issueCategory.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=fresh&searchType=issue`);
   await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
+  await expectProjectSearchCategoryActiveMarkers(page);
   await expectSearchSpaSession(page);
 
   await page.goto(`${basePath}/admin/sample/search?keyword=missing&searchType=review`);
@@ -772,11 +789,26 @@ async function expectProjectSearchCategoryAttributes(
     expect(category.href).not.toBeNull();
     const href = new URL(category.href!, "http://127.0.0.1");
     expect(`${href.pathname}`).toBe(`${basePath}/admin/sample/search`);
+    expect(href.hash).toBe("");
     expect(href.searchParams.get("keyword")).toBe(keyword);
     expect(href.searchParams.get("searchType")).toBe(
       EXPECTED_PROJECT_SEARCH_CATEGORIES[index]?.type,
     );
   }
+}
+
+async function expectProjectSearchCategoryActiveMarkers(page: Page) {
+  await expect(page.locator(".search-category-wrap a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap a[class]")).toHaveCount(0);
+  await expect(page.locator(".search-category-wrap li.active")).toHaveCount(1);
+  await expect(page.locator(".search-category-wrap a.active")).toHaveCount(0);
+
+  expect(
+    await page
+      .locator(".search-category-wrap li:not(.active) > a")
+      .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("class"))),
+  ).toEqual(Array(EXPECTED_PROJECT_SEARCH_CATEGORIES.length - 1).fill(null));
 }
 
 async function mockProjectSearch(

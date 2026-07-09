@@ -57,6 +57,7 @@ const PROJECT_SEARCH_CATEGORIES: ProjectSearchCategory[] = [
 const projectSearchPaginationLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
+  includeHash: true,
   includeSearch: true,
 } as const;
 
@@ -334,7 +335,18 @@ function ProjectSearchSuccessBody({
                     return (
                       <li className={className} key={category.type}>
                         <Link
+                          activeOptions={projectSearchPaginationLinkActiveOptions}
+                          activeProps={projectSearchPaginationLinkActiveProps}
                           from="/$ownerName/$projectName/search"
+                          hash={`project-search-category-active-suppressor-${category.type}-${activeType}`}
+                          mask={{
+                            params: { ownerName, projectName },
+                            search: {
+                              keyword: keywordValue,
+                              searchType: category.type,
+                            },
+                            to: "/$ownerName/$projectName/search",
+                          }}
                           params={{ ownerName, projectName }}
                           search={{
                             keyword: keywordValue,
