@@ -530,7 +530,7 @@ function SubtaskSelects({
           data-container-css-class="fullsize"
           disabled={!showOption}
         >
-          <option value={stringField(project.id, "")} data-avatar-url={projectLogoUrl(project)}>
+          <option value={stringField(project.id, "")}>
             {stringField(project.projectName, "")}
           </option>
           {movableProjects.map((movableProject) => (
@@ -538,7 +538,6 @@ function SubtaskSelects({
               key={movableProject.id}
               value={movableProject.id}
               data-owner={movableProject.owner ? `${movableProject.owner} /` : undefined}
-              data-avatar-url={movableProject.avatarUrl}
             >
               {movableProject.name}
             </option>
@@ -784,12 +783,6 @@ function groupLabels(labels: YonaRecord[]) {
   return Array.from(groups.values());
 }
 
-function projectLogoUrl(project: ProjectContainer) {
-  return (
-    stringField((project as YonaRecord).logoUrl, "") || "/assets/images/project_default_logo.png"
-  );
-}
-
 function issueMovableProjects(project: ProjectContainer) {
   const currentProjectId = stringField(project.id, "");
   const rawProjects = (project as YonaRecord).movableIssueProjects;
@@ -797,7 +790,7 @@ function issueMovableProjects(project: ProjectContainer) {
     return [];
   }
 
-  const projects: Array<{ avatarUrl: string; id: string; name: string; owner: string }> = [];
+  const projects: Array<{ id: string; name: string; owner: string }> = [];
   for (const rawProject of rawProjects) {
     if (!rawProject || typeof rawProject !== "object" || Array.isArray(rawProject)) {
       continue;
@@ -809,7 +802,6 @@ function issueMovableProjects(project: ProjectContainer) {
       continue;
     }
     projects.push({
-      avatarUrl: stringField(record.logoUrl, "") || "/assets/images/project_default_logo.png",
       id,
       name,
       owner: stringField(record.ownerName, "") || stringField(record.owner, ""),

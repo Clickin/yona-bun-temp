@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7" data-avatar-url="/assets/images/project_default_logo.png">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto" data-name="state"><button type="button" class="btn dropdown-toggle auto"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full" value="2026-08-02"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issue/1" id="issue-form" enctype="multipart/form-data"><input type="hidden" name="authorId" value="1"><input type="hidden" id="isDraft" name="isDraft" value="false"><input type="hidden" id="isPublish" name="isPublish" value="false"><div class="row-fluid"><div class="span12"><dl><dt><label for="title"><strong class="secondary-txt">#1</strong></label></dt><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="Editable issue" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Editable body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST" data-resource-id="101"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class=" actrow right-txt"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button type="submit" id="button-save" class="ybtn ybtn-info">Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Status</dt><dd><div id="state" class="btn-group auto" data-name="state"><button type="button" class="btn dropdown-toggle auto"><span class="d-label">Status</span><span class="d-caret"><span class="caret"></span></span></button><ul class="dropdown-menu"><li data-value="OPEN" data-selected="true" class="active"><button type="button">Open</button></li><li data-value="CLOSED"><button type="button">Closed</button></li></ul></div></dd></dl><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="dev" style="width:100%" title=""></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="0">No milestone</option><optgroup label="Open"><option value="5" data-state="open" selected="">v1.0</option></optgroup></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full" value="2026-08-02"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option></optgroup></select></dd></dl></div></div></div></form></div>
 `;
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx", import.meta.url),
@@ -373,6 +373,7 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
     "data-container-css-class",
     "fullsize",
   );
+  await expect(page.locator("#targetProjectId option[data-avatar-url]")).toHaveCount(0);
 
   await expect(page.locator("#parentId")).not.toHaveAttribute("data-toggle", /.+/u);
   await expect(page.locator('#parentId[data-toggle="select2"]')).toHaveCount(0);
@@ -422,6 +423,7 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   await expect(editor.locator(".notification-receiver")).toHaveCount(1);
 
   expect(ROUTE_SOURCE).not.toMatch(/data-toggle="(?:select2|dropdown|markdown-editor)"/u);
+  expect(ROUTE_SOURCE).not.toMatch(/data-avatar-url/u);
   expect(ROUTE_SOURCE).not.toMatch(/data-mode=/u);
 });
 
@@ -485,7 +487,7 @@ test("project issue edit form keeps legacy subtask selector visible for a parent
   await expect(page.locator("#parentId option").first()).toHaveText("이미 부모 이슈입니다.");
 });
 
-test("project issue edit form renders movable project options like legacy partial_select_subtask.scala.html", async ({
+test("project issue edit form renders movable project options without select2 avatar metadata", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -517,12 +519,12 @@ test("project issue edit form renders movable project options like legacy partia
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
   await expect(page.locator(".subtask-wrap")).toHaveClass("subtask-wrap show");
   await expect(page.locator("#targetProjectId")).toBeEnabled();
+  await expect(page.locator("#targetProjectId option[data-avatar-url]")).toHaveCount(0);
 
   await expect
     .poll(() =>
       page.locator("#targetProjectId option").evaluateAll((options) =>
         options.map((option) => ({
-          avatarUrl: option.getAttribute("data-avatar-url"),
           owner: option.getAttribute("data-owner"),
           text: option.textContent?.trim(),
           value: option.getAttribute("value"),
@@ -531,19 +533,16 @@ test("project issue edit form renders movable project options like legacy partia
     )
     .toEqual([
       {
-        avatarUrl: "/assets/images/project_default_logo.png",
         owner: null,
         text: "sample",
         value: "7",
       },
       {
-        avatarUrl: "/avatars/weblabs-portal.png",
         owner: "weblabs /",
         text: "portal",
         value: "9",
       },
       {
-        avatarUrl: "/assets/images/project_default_logo.png",
         owner: "qa /",
         text: "triage",
         value: "11",
