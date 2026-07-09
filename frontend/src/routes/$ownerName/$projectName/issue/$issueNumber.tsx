@@ -882,10 +882,7 @@ function IssueDetailBody({
                     </button>
                   ) : null}
                   {canUpdate ? (
-                    <LegacyHoverPopover
-                      content="You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks."
-                      focusable
-                    >
+                    <LegacyHoverPopover content={t("issue.sharer.description")} focusable>
                       {(popoverProps) => (
                         <button
                           id="issue-share-button"
@@ -894,14 +891,14 @@ function IssueDetailBody({
                           onClick={() => setSharerListOpen(true)}
                           {...popoverProps}
                         >
-                          Issue Sharing
+                          {t("button.share.issue")}
                         </button>
                       )}
                     </LegacyHoverPopover>
                   ) : null}
                   <span className="project-btn-item hide show-in-mobile-inline ml4">
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
-                      New subtask
+                      {t("button.newSubtask")}
                     </Link>
                   </span>
                   <IssueWeight
@@ -946,7 +943,7 @@ function IssueDetailBody({
             </div>
             <dl className={sharerListClassName} style={sharerListStyle}>
               <dt className="issue-share-title mb10">
-                Issue Sharer{" "}
+                {t("issue.sharer")}{" "}
                 <span className="num issue-sharer-count">
                   {sharers.length ? ` ${String(sharers.length)}` : ""}
                 </span>
@@ -962,7 +959,7 @@ function IssueDetailBody({
                     className="bigdrop width100p"
                     id="issueSharer"
                     name="issueSharer"
-                    placeholder="Select Issue Sharer"
+                    placeholder={t("issue.sharer.select")}
                     defaultValue={sharerValue}
                     title=""
                   />
@@ -1013,11 +1010,11 @@ function IssueDetailBody({
                   {showIssue ? (
                     <dd className="project-btn-item">
                       <Link to={newSubtaskPath} className="ybtn ybtn-success">
-                        New subtask
+                        {t("button.newSubtask")}
                       </Link>
                     </dd>
                   ) : null}
-                  <dt>Assignee</dt>
+                  <dt>{t("issue.assignee")}</dt>
                   <dd>
                     {canUpdate ? (
                       <input
@@ -1025,7 +1022,7 @@ function IssueDetailBody({
                         className="bigdrop"
                         id="assignee"
                         name="assigneeLoginId"
-                        placeholder="No assignee"
+                        placeholder={t("issue.noAssignee")}
                         defaultValue={assigneeLoginId}
                         style={{ width: "100%" }}
                         title=""
@@ -1056,7 +1053,7 @@ function IssueDetailBody({
                         </span>
                       </Link>
                     ) : (
-                      <div>No assignee</div>
+                      <div>{t("issue.noAssignee")}</div>
                     )}
                   </dd>
                 </dl>
@@ -1630,6 +1627,7 @@ function IssueLabelSelect({
   projectName: string;
   selectedLabelIds: Set<string>;
 }) {
+  const { t } = useLegacyMessages();
   const categoryGroups = new Map<
     string,
     {
@@ -1677,7 +1675,7 @@ function IssueLabelSelect({
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
           data-container-css-class="issue-labels bordered fullsize"
-          data-placeholder="Select label"
+          data-placeholder={t("label.select")}
           data-close-on-select="false"
           className="hide"
         >
@@ -2312,6 +2310,7 @@ function IssueEventRow({
   issue: RestIssueDetailResponse;
   previousEvent?: IssueTimelineItem;
 }) {
+  const { t } = useLegacyMessages();
   const eventType = stringField(event.eventType);
   if (eventType === "ISSUE_BODY_CHANGED") {
     return null;
@@ -2501,7 +2500,7 @@ function IssueEventRow({
           <span className="state"></span>
         ) : (
           <span className={`state ${added ? "sharer-added" : "sharer-deleted"}`}>
-            {added ? "Issue Sharer" : "Cancelled"}
+            {added ? t("issue.sharer") : t("issue.event.sharer.deleted.title")}
           </span>
         )}
         {sender}

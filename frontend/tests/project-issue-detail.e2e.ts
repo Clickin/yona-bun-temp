@@ -296,7 +296,7 @@ test("project issue detail preserves legacy clickable right-pane index comments"
   ).resolves.toBe("issue-index-comment-row");
 });
 
-test("project issue detail route uses shared markdown help and direct TanStack links", () => {
+test("project issue detail route source uses shared markdown help, legacy copy keys, and direct TanStack links", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "utf8",
@@ -323,6 +323,26 @@ test("project issue detail route uses shared markdown help and direct TanStack l
   expect(routeSource).not.toContain(":contains(");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
   expect(routeSource).not.toContain("yobi.OriginalMessage.hide");
+  for (const key of [
+    "button.newSubtask",
+    "button.share.issue",
+    "issue.sharer.description",
+    "issue.sharer",
+    "issue.sharer.select",
+    "issue.assignee",
+    "issue.noAssignee",
+    "issue.event.sharer.deleted.title",
+    "label.select",
+  ]) {
+    expect(routeSource).toContain(`t("${key}")`);
+  }
+  expect(routeSource).not.toContain(">Issue Sharing<");
+  expect(routeSource).not.toContain(">New subtask<");
+  expect(routeSource).not.toContain(">Issue Sharer{");
+  expect(routeSource).not.toContain(">Assignee<");
+  expect(routeSource).not.toContain('placeholder="No assignee"');
+  expect(routeSource).not.toContain('placeholder="Select Issue Sharer"');
+  expect(routeSource).not.toContain('data-placeholder="Select label"');
   expect(routeSource).toMatch(
     /data-yobi-original-message-processed=\{viaEmail\s*\?\s*"true"\s*:\s*undefined\}/u,
   );
