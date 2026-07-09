@@ -1534,7 +1534,7 @@ function CommitDropdown({
         </span>
       </button>
       <ul className="dropdown-menu">
-        <li data-value="All">
+        <li>
           <Link
             to={changesPath}
             search={legacyLinkInactiveSearch}
@@ -1548,7 +1548,7 @@ function CommitDropdown({
         <li className="divider"></li>
         {commits.map((commit) =>
           commit.state === "CURRENT" ? (
-            <li data-value={commit.commitId} key={commit.commitId}>
+            <li key={commit.commitId}>
               <Link
                 to={`${changesPath}/${encodeURIComponent(commit.commitId)}`}
                 search={legacyLinkInactiveSearch}
