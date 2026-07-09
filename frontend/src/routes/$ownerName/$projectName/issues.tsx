@@ -1620,7 +1620,6 @@ function ProjectIssueItem({
   const dueDateAttrs =
     issue.state === "open"
       ? {
-          "data-placement": "top",
           title: issue.dueDateLabel,
         }
       : {};
@@ -1732,20 +1731,12 @@ function ProjectIssueItem({
               </span>
             </Link>
             {issueWeight > 0 ? (
-              <span
-                className="weight-up-arrow"
-                data-placement="right"
-                title={`${t("issue.weight")} ${issueWeight}`}
-              >
+              <span className="weight-up-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
                 <i className="yobicon-angle-circled-up"></i>
               </span>
             ) : null}
             {issueWeight < 0 ? (
-              <span
-                className="weight-down-arrow"
-                data-placement="right"
-                title={`${t("issue.weight")} ${issueWeight}`}
-              >
+              <span className="weight-down-arrow" title={`${t("issue.weight")} ${issueWeight}`}>
                 <i className="yobicon-angle-circled-down"></i>
               </span>
             ) : null}
@@ -1783,7 +1774,6 @@ function ProjectIssueItem({
                 to="/$user"
                 params={{ user: authorLoginId }}
                 className="infos-item infos-link-item"
-                data-placement="bottom"
                 title={authorLoginId}
               >
                 {issue.authorLabel}
@@ -1791,7 +1781,7 @@ function ProjectIssueItem({
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
-            <span className="infos-item" data-placement="bottom" title={createdLabel}>
+            <span className="infos-item" title={createdLabel}>
               {createdLabel}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
@@ -1801,7 +1791,6 @@ function ProjectIssueItem({
                   activeProps={legacyRouteLocalActiveProps}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
                   params={{ milestoneId: String(issue.milestoneId), ownerName, projectName }}
-                  data-placement="bottom"
                   title={t("milestone")}
                 >
                   {issue.milestoneTitle}
@@ -1839,12 +1828,7 @@ function ProjectIssueItem({
                   </Link>
                 ) : null}
                 {(issue.sharerCount ?? 0) > 0 ? (
-                  <button
-                    type="button"
-                    className="sharer-color"
-                    data-placement="bottom"
-                    title={t("issue.sharer")}
-                  >
+                  <button type="button" className="sharer-color" title={t("issue.sharer")}>
                     <span className="count-groups item-icon">
                       <i className="yobicon-friends"></i>
                     </span>
@@ -1892,7 +1876,6 @@ function ProjectIssueItem({
               to="/$user"
               params={{ user: assigneeLoginId }}
               className="avatar-wrap assinee"
-              data-placement="top"
               title={`${t("issue.assignee")}: ${assigneeLabel}`}
             >
               <img
