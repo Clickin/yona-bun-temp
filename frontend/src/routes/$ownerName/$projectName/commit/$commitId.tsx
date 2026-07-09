@@ -537,7 +537,6 @@ function SvnCommitDetailBody({
             id="branches"
             className={`btn-group branches pull-right${branchDropdownOpen ? " open" : ""}`}
             data-name="branch"
-            data-activate="manual"
           >
             <button
               className="btn dropdown-toggle large"
