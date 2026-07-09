@@ -43,12 +43,12 @@ const POPULATED_LABELS_LIST = `
 <div id="labelsList" class="issue-label-list-wrap">
   <div class="row-fluid list-head"><div class="span3 category"><strong>Category</strong></div><div class="span9 name"><strong>Name</strong></div></div>
   <div class="row-fluid list-item category-wrap" data-category="3" data-category-name="type">
-    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">type</span><p class="mt5"><i class="category-exclusive yobicon-tags multiple" data-html="true" title="In this category, you can choose<br>multiple labels"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="3" data-category-name="type" data-category-is-exclusive="false" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/3">Edit category</button></p></h5></div>
-    <div class="span9"><table class="table nm"><tr data-label-id="8"><td><span class="issue-label active" data-label-id="8" data-label-name="bug">bug</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="type" data-label-id="8" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/8/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="3" data-label-name="bug" data-label-color="#e11d48" data-update-uri="__BASE_PATH__/admin/sample/issue/label/8">Edit</button></td></tr><tr data-label-id="9"><td><span class="issue-label active" data-label-id="9" data-label-name="feature">feature</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="type" data-label-id="9" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/9/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="3" data-label-name="feature" data-label-color="#3f51b5" data-update-uri="__BASE_PATH__/admin/sample/issue/label/9">Edit</button></td></tr></table></div>
+    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">type</span><p class="mt5"><i class="category-exclusive yobicon-tags multiple" data-html="true" title="In this category, you can choose<br>multiple labels"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="3" data-category-name="type" data-category-is-exclusive="false">Edit category</button></p></h5></div>
+    <div class="span9"><table class="table nm"><tr data-label-id="8"><td><span class="issue-label active" data-label-id="8" data-label-name="bug">bug</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="type" data-label-id="8">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="3" data-label-name="bug" data-label-color="#e11d48">Edit</button></td></tr><tr data-label-id="9"><td><span class="issue-label active" data-label-id="9" data-label-name="feature">feature</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="type" data-label-id="9">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="3" data-label-name="feature" data-label-color="#3f51b5">Edit</button></td></tr></table></div>
   </div>
   <div class="row-fluid list-item category-wrap" data-category="4" data-category-name="priority">
-    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">priority</span><p class="mt5"><i class="category-exclusive yobicon-tag single" data-html="true" title="In this category, you can choose<br>only a single label"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="4" data-category-name="priority" data-category-is-exclusive="true" data-category-update-uri="__BASE_PATH__/admin/sample/issue/label/category/4">Edit category</button></p></h5></div>
-    <div class="span9"><table class="table nm"><tr data-label-id="10"><td><span class="issue-label active" data-label-id="10" data-label-name="high">high</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="priority" data-label-id="10" data-delete-uri="__BASE_PATH__/admin/sample/issue/label/10/delete">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="4" data-label-name="high" data-label-color="#ff9800" data-update-uri="__BASE_PATH__/admin/sample/issue/label/10">Edit</button></td></tr></table></div>
+    <div class="span3"><h5 class="right-txt mr20"><span class="category-name">priority</span><p class="mt5"><i class="category-exclusive yobicon-tag single" data-html="true" title="In this category, you can choose<br>only a single label"></i><button type="button" class="ybtn ybtn-mini" data-project-id="7" data-category-id="4" data-category-name="priority" data-category-is-exclusive="true">Edit category</button></p></h5></div>
+    <div class="span9"><table class="table nm"><tr data-label-id="10"><td><span class="issue-label active" data-label-id="10" data-label-name="high">high</span></td><td class="actions"><button type="button" class="ybtn ybtn-danger ybtn-small" data-category-name="priority" data-label-id="10">Delete</button><button type="button" class="ybtn ybtn-small" data-category-id="4" data-label-name="high" data-label-color="#ff9800">Edit</button></td></tr></table></div>
   </div>
   <link rel="stylesheet" type="text/css" href="__BASE_PATH__/admin/sample/issue/labels.css">
 </div>`;
@@ -238,6 +238,9 @@ test("project labels route TSX has no route-local raw anchor elements", () => {
   expect(routeSource).not.toContain("useLinkProps");
   expect(routeSource).not.toContain("onMouseDown=");
   expect(routeSource).not.toContain('createElement("a"');
+  expect(routeSource).not.toContain("data-category-update-uri");
+  expect(routeSource).not.toContain("data-delete-uri");
+  expect(routeSource).not.toContain("data-update-uri");
   expect(routeSource).not.toMatch(/name="isExclusive"[\s\S]{0,120}data-toggle="select2"/);
   expect(routeSource).not.toMatch(/name="category\.id"[\s\S]{0,120}data-toggle="select2"/);
   expect(routeSource).not.toMatch(/category-exclusive[\s\S]{0,240}data-toggle="tooltip"/);
@@ -425,18 +428,29 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
   await expect(page.locator("#labelsList .category-wrap")).toHaveCount(2);
   await expect(page.locator('#labelsList tr[data-label-id="9"]')).toContainText("feature");
+  await expect(page.locator("#labelsList [data-category-update-uri]")).toHaveCount(0);
+  await expect(page.locator("#labelsList [data-delete-uri]")).toHaveCount(0);
+  await expect(page.locator("#labelsList [data-update-uri]")).toHaveCount(0);
 
-  const expected = expectedProjectLabels(basePath)
-    .replace(EMPTY_LABELS_LIST, POPULATED_LABELS_LIST.replaceAll("__BASE_PATH__", basePath))
-    .replace(EMPTY_EDIT_LABEL_SELECT, POPULATED_EDIT_LABEL_SELECT);
-  expect(await canonicalizeScreenRoots(page)).toEqual(await canonicalizeHtml(page, expected));
+  expect(await canonicalizeElement(page, "#labelsList")).toEqual(
+    await canonicalizeHtml(page, POPULATED_LABELS_LIST.replaceAll("__BASE_PATH__", basePath)),
+  );
+  expect(await canonicalizeElement(page, '#editLabel select[name="category.id"]')).toEqual(
+    await canonicalizeHtml(page, POPULATED_EDIT_LABEL_SELECT),
+  );
 
   await expect(labelListMetrics(page)).resolves.toMatchObject({
-    categoryEditUri: `${basePath}/admin/sample/issue/label/category/3`,
+    categoryEditCategoryId: "3",
+    categoryEditCategoryName: "type",
+    categoryEditIsExclusive: "false",
+    categoryEditProjectId: "7",
+    categoryEditUri: null,
     categoryHeaderAlign: "right",
     categoryId: "3",
     categoryName: "type",
-    deleteUri: `${basePath}/admin/sample/issue/label/8/delete`,
+    deleteCategoryName: "type",
+    deleteLabelId: "8",
+    deleteUri: null,
     exclusiveClass: "category-exclusive yobicon-tags multiple",
     exclusiveDataHtml: "true",
     exclusivePlacement: null,
@@ -447,7 +461,10 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
     labelId: "8",
     labelListBorderTopWidth: "2px",
     labelName: "bug",
-    updateUri: `${basePath}/admin/sample/issue/label/8`,
+    updateCategoryId: "3",
+    updateLabelColor: "#e11d48",
+    updateLabelName: "bug",
+    updateUri: null,
   });
 });
 
@@ -847,7 +864,7 @@ test("project labels edit modals submit through route mutations", async ({ page 
   );
 
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
-  await page.locator('#labelsList tr[data-label-id="8"] button[data-update-uri]').click();
+  await labelEditButton(page, "8", "bug").click();
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator('#editLabel select[name="category.id"]')).not.toHaveAttribute(
     "data-toggle",
@@ -864,9 +881,7 @@ test("project labels edit modals submit through route mutations", async ({ page 
   });
   expect(labelRequests[0].url).toContain("/api/v1/owners/admin/projects/sample/labels/8");
 
-  await page
-    .locator('#labelsList .category-wrap[data-category="4"] button[data-category-update-uri]')
-    .click();
+  await categoryEditButton(page, "4", "priority").click();
   await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator('#editCategory select[name="isExclusive"]')).not.toHaveAttribute(
     "data-toggle",
@@ -923,7 +938,7 @@ test("project labels delete confirm modal preserves legacy dismiss and accept fl
   await rememberSpaMarker(page, "project-labels-delete-confirm");
 
   await armProjectLabelsModalBridgeTrap(page);
-  await page.locator('#labelsList tr[data-label-id="10"] button[data-delete-uri]').click();
+  await labelDeleteButton(page, "10", "priority").click();
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-delete-confirm");
   await expect(page.locator("#deleteLabelConfirm")).toHaveAttribute("aria-hidden", "false");
@@ -952,7 +967,7 @@ test("project labels delete confirm modal preserves legacy dismiss and accept fl
   expect(labelRequests).toHaveLength(0);
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 
-  await page.locator('#labelsList tr[data-label-id="10"] button[data-delete-uri]').click();
+  await labelDeleteButton(page, "10", "priority").click();
   await expect(page.locator("#deleteLabelConfirm")).toHaveAttribute("aria-hidden", "false");
   await armProjectLabelsModalBridgeTrap(page);
   expect(
@@ -996,9 +1011,7 @@ test("project labels edit modals open and dismiss through route state", async ({
   await rememberSpaMarker(page, "project-labels-edit-modals");
 
   await armProjectLabelsModalBridgeTrap(page);
-  await page
-    .locator('#labelsList .category-wrap[data-category="4"] button[data-category-update-uri]')
-    .click();
+  await categoryEditButton(page, "4", "priority").click();
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editCategory")).toHaveAttribute("aria-hidden", "false");
@@ -1020,7 +1033,7 @@ test("project labels edit modals open and dismiss through route state", async ({
   await expect(projectLabelsModalBridgeHits(page)).resolves.toEqual([]);
 
   await armProjectLabelsModalBridgeTrap(page);
-  await page.locator('#labelsList tr[data-label-id="8"] button[data-update-uri]').click();
+  await labelEditButton(page, "8", "bug").click();
   await expect(page).toHaveURL(labelsPageUrl);
   expect(await spaMarker(page)).toBe("project-labels-edit-modals");
   await expect(page.locator("#editLabel")).toHaveAttribute("aria-hidden", "false");
@@ -1186,6 +1199,24 @@ async function installFavoriteSpanNativeListenerAudit(page: Page) {
       return originalAddEventListener.call(this, type, listener, options);
     };
   });
+}
+
+function categoryEditButton(page: Page, categoryId: string, categoryName: string) {
+  return page.locator(
+    `#labelsList .category-wrap[data-category="${categoryId}"][data-category-name="${categoryName}"] button.ybtn-mini[data-category-id="${categoryId}"][data-category-name="${categoryName}"]`,
+  );
+}
+
+function labelDeleteButton(page: Page, labelId: string, categoryName: string) {
+  return page.locator(
+    `#labelsList tr[data-label-id="${labelId}"] td.actions button.ybtn-danger.ybtn-small[data-label-id="${labelId}"][data-category-name="${categoryName}"]`,
+  );
+}
+
+function labelEditButton(page: Page, labelId: string, labelName: string) {
+  return page.locator(
+    `#labelsList tr[data-label-id="${labelId}"] td.actions button.ybtn-small[data-label-name="${labelName}"][data-label-color]`,
+  );
 }
 
 async function installProjectLabelsInternalLinkNativeListenerAudit(page: Page) {
@@ -1422,17 +1453,25 @@ async function labelListMetrics(page: Page) {
     const categoryHead = document.querySelector("#labelsList .list-head .category");
     const firstCategory = document.querySelector("#labelsList .category-wrap");
     const exclusiveIcon = firstCategory?.querySelector(".category-exclusive");
-    const categoryEdit = firstCategory?.querySelector("button[data-category-update-uri]");
+    const categoryEdit = firstCategory?.querySelector("button.ybtn-mini[data-category-id]");
     const firstLabel = firstCategory?.querySelector("tr[data-label-id] .issue-label");
-    const deleteButton = firstCategory?.querySelector("button[data-delete-uri]");
-    const editButton = firstCategory?.querySelector("button[data-update-uri]");
+    const deleteButton = firstCategory?.querySelector("button.ybtn-danger.ybtn-small");
+    const editButton = firstCategory?.querySelector(
+      "button.ybtn-small[data-category-id][data-label-name][data-label-color]:not(.ybtn-danger)",
+    );
     const listStyle = listHead ? getComputedStyle(listHead) : null;
     const categoryStyle = categoryHead ? getComputedStyle(categoryHead) : null;
     return {
+      categoryEditCategoryId: categoryEdit?.getAttribute("data-category-id"),
+      categoryEditCategoryName: categoryEdit?.getAttribute("data-category-name"),
+      categoryEditIsExclusive: categoryEdit?.getAttribute("data-category-is-exclusive"),
+      categoryEditProjectId: categoryEdit?.getAttribute("data-project-id"),
       categoryEditUri: categoryEdit?.getAttribute("data-category-update-uri"),
       categoryHeaderAlign: categoryStyle?.textAlign,
       categoryId: firstCategory?.getAttribute("data-category"),
       categoryName: firstCategory?.getAttribute("data-category-name"),
+      deleteCategoryName: deleteButton?.getAttribute("data-category-name"),
+      deleteLabelId: deleteButton?.getAttribute("data-label-id"),
       deleteUri: deleteButton?.getAttribute("data-delete-uri"),
       exclusiveClass: exclusiveIcon?.getAttribute("class"),
       exclusiveDataHtml: exclusiveIcon?.getAttribute("data-html"),
@@ -1444,6 +1483,9 @@ async function labelListMetrics(page: Page) {
       labelId: firstLabel?.getAttribute("data-label-id"),
       labelListBorderTopWidth: listStyle?.borderTopWidth,
       labelName: firstLabel?.getAttribute("data-label-name"),
+      updateCategoryId: editButton?.getAttribute("data-category-id"),
+      updateLabelColor: editButton?.getAttribute("data-label-color"),
+      updateLabelName: editButton?.getAttribute("data-label-name"),
       updateUri: editButton?.getAttribute("data-update-uri"),
     };
   });
@@ -1709,6 +1751,71 @@ async function canonicalizeScreenRoots(page: Page) {
         .replaceAll('"', "'");
     }
   });
+}
+
+async function canonicalizeElement(page: Page, selector: string) {
+  return page.evaluate((targetSelector) => {
+    const root = document.querySelector(targetSelector);
+    if (!root) {
+      throw new Error(`missing canonical root: ${targetSelector}`);
+    }
+    return visit(root);
+
+    function visit(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return normalizeText(node.textContent ?? "");
+      }
+      if (!(node instanceof Element)) {
+        return "";
+      }
+      const attrs = Array.from(node.attributes)
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status" &&
+            !isEmptyInputValueAttr(node, attr),
+        )
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .join(" ");
+      const open = attrs
+        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+        : `<${node.tagName.toLowerCase()}>`;
+      return `${open}${Array.from(node.childNodes)
+        .map((child) => visit(child))
+        .join("")}</${node.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeText(text: string) {
+      return text.replace(/\s+/g, " ").trim();
+    }
+
+    function normalizeAttr(attr: Attr) {
+      if (attr.name === "style") {
+        return normalizeStyle(attr.value);
+      }
+      return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function isEmptyInputValueAttr(node: Element, attr: Attr) {
+      return node instanceof HTMLInputElement && attr.name === "value" && attr.value === "";
+    }
+
+    function normalizeStyle(value: string) {
+      return value
+        .replace(/\s+/g, "")
+        .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
+          return `#${[red, green, blue]
+            .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+            .join("")}`;
+        })
+        .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
+        .replace(/;$/, "")
+        .replaceAll('"', "'");
+    }
+  }, selector);
 }
 
 async function canonicalizeHtml(page: Page, html: string) {

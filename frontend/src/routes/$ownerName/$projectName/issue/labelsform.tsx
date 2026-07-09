@@ -729,10 +729,6 @@ function ProjectLabelsList({
                     data-category-id={category.id}
                     data-category-name={category.name}
                     data-category-is-exclusive={String(category.isExclusive)}
-                    data-category-update-uri={prefixBasePath(
-                      basePath,
-                      `/${ownerName}/${projectName}/issue/label/category/${category.id}`,
-                    )}
                     onClick={() => onEditCategory(category)}
                   >
                     {t("label.category.edit")}
@@ -766,10 +762,6 @@ function ProjectLabelsList({
                               className="ybtn ybtn-danger ybtn-small"
                               data-category-name={category.name}
                               data-label-id={labelId}
-                              data-delete-uri={prefixBasePath(
-                                basePath,
-                                `/${ownerName}/${projectName}/issue/label/${labelId}/delete`,
-                              )}
                               onClick={() => onDeleteLabel(labelId)}
                             >
                               {t("button.delete")}
@@ -780,10 +772,6 @@ function ProjectLabelsList({
                               data-category-id={category.id}
                               data-label-name={labelName}
                               data-label-color={stringField(label.color, "")}
-                              data-update-uri={prefixBasePath(
-                                basePath,
-                                `/${ownerName}/${projectName}/issue/label/${labelId}`,
-                              )}
                               onClick={() =>
                                 onEditLabel({
                                   categoryId: category.id,
