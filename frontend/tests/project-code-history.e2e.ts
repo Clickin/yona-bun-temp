@@ -279,15 +279,26 @@ test("project bare code history renders default branch on the legacy commits URL
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890`,
   );
+  await expect(page.locator("#history tbody tr").nth(0).locator(".date")).toHaveText("Jul 1, 2026");
+  await expect(page.locator("#history tbody tr").nth(1).locator(".date")).toHaveText("Jul 2, 2026");
   await expect(page.locator('#history [data-toggle="tooltip"]')).toHaveCount(0);
-  await expect(page.locator(".author a.avatar-wrap")).not.toHaveAttribute("data-toggle", /.*/u);
-  await expect(page.locator(".author a.avatar-wrap")).toHaveAttribute("data-placement", "top");
-  await expect(page.locator(".author a.avatar-wrap")).toHaveAttribute("title", "admin");
-  await expect(page.locator(".author span.avatar-wrap")).not.toHaveAttribute("data-toggle", /.*/u);
-  await expect(page.locator(".author span.avatar-wrap")).toHaveAttribute("data-placement", "top");
-  await expect(page.locator(".author span.avatar-wrap")).toHaveAttribute(
-    "title",
-    "dev@example.com",
+  await expect(page.locator("#history [data-placement]")).toHaveCount(0);
+  const authorAvatarLink = page.locator(".author a.avatar-wrap");
+  const emailAuthorAvatar = page.locator(".author span.avatar-wrap");
+  await expect(authorAvatarLink).not.toHaveAttribute("data-toggle", /.*/u);
+  await expect(authorAvatarLink).not.toHaveAttribute("data-placement", /.*/u);
+  await expect(authorAvatarLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(authorAvatarLink).toHaveAttribute("title", "admin");
+  await expect(authorAvatarLink.locator("img")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
+  );
+  await expect(emailAuthorAvatar).not.toHaveAttribute("data-toggle", /.*/u);
+  await expect(emailAuthorAvatar).not.toHaveAttribute("data-placement", /.*/u);
+  await expect(emailAuthorAvatar).toHaveAttribute("title", "dev@example.com");
+  await expect(emailAuthorAvatar.locator("img")).toHaveAttribute(
+    "src",
+    "/assets/images/default-avatar-32.png",
   );
   await expect(
     page.locator(".messages a.commitMsg.short", { hasText: "Initial commit" }),
@@ -515,7 +526,7 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(bareSource).toContain('id="branches"');
   expect(bareSource).not.toContain('data-toggle="select2"');
   expect(bareSource).not.toContain('data-toggle="tooltip"');
-  expect(bareSource).toContain('data-placement="top"');
+  expect(bareSource).not.toContain("data-placement");
   expect(bareSource).toContain('data-format="branch"');
   expect(bareSource).toContain('data-dropdown-css-class="branches"');
   expect(bareSource).toContain("title={commit.authorLoginId}");

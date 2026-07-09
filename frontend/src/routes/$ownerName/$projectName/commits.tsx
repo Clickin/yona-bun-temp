@@ -374,7 +374,6 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
         activeOptions={legacyCodeHistoryLinkActiveOptions}
         className="avatar-wrap"
         activeProps={legacyCodeHistoryLinkActiveProps}
-        data-placement="top"
         title={commit.authorLoginId}
       >
         {usesGeneratedAvatar ? (
@@ -394,7 +393,7 @@ function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][numbe
 
   if (commit.authorEmail) {
     return (
-      <span className="avatar-wrap" data-placement="top" title={commit.authorEmail}>
+      <span className="avatar-wrap" title={commit.authorEmail}>
         {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy email-only default avatar branch renders no alt/size attributes. */}
         <img src={avatarUrl} />
       </span>
