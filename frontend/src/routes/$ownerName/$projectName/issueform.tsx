@@ -590,7 +590,6 @@ function ProjectIssueFormBody({
                         placeholder={t("issue.noAssignee")}
                         defaultValue=""
                         style={{ width: "100%" }}
-                        title=""
                       />
                     </dd>
                   </dl>
