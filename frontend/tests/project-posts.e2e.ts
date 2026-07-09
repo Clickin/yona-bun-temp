@@ -2968,10 +2968,17 @@ test("project board detail renders legacy post and comment attachments", async (
   );
   await expect(editableAttachment).not.toHaveAttribute("data-href", /.+/u);
   await expect(editableAttachment).toHaveAttribute("data-mime", "image/png");
-  await expect(page.locator("#comment-editform-21 .attachment-files .btn-delete")).toHaveAttribute(
-    "data-id",
-    "41",
+  const editableAttachmentDelete = page.locator(
+    "#comment-editform-21 .attachment-files .attached-file-marker > button.btn-delete",
   );
+  await expect(editableAttachmentDelete).toHaveCount(1);
+  await expect(editableAttachmentDelete).toHaveAttribute("type", "button");
+  await expect(editableAttachmentDelete).toHaveClass("btn-transparent btn-delete");
+  await expect(editableAttachmentDelete).toHaveText("×");
+  await expect(editableAttachmentDelete).not.toHaveAttribute("data-id", /.+/u);
+  await expect(
+    page.locator("#comment-editform-21 .attachment-files .btn-delete[data-id]"),
+  ).toHaveCount(0);
   await expect(
     page.locator("#comment-editform-21 .attachment-files .attached-file-marker[data-href]"),
   ).toHaveCount(0);
@@ -2999,7 +3006,7 @@ test("project board detail renders legacy post and comment attachments", async (
   );
 
   const expectedCommentUpdateAttachment =
-    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">2048</span><button type="button" class="btn-transparent btn-delete" data-id="41">×</button></div></div>`.replaceAll(
+    `<div class="attachment-files"><div class="attached-file attached-file-marker" data-name="comment-shot.png" data-mime="image/png"><i class="mimetype"></i><strong class="name">comment-shot.png</strong><span class="size">2048</span><button type="button" class="btn-transparent btn-delete">×</button></div></div>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
@@ -3023,6 +3030,12 @@ test("project board detail renders legacy post and comment attachments", async (
   expect(attachmentSource).not.toContain("data-href={href}");
   expect(attachmentSource).toContain('<button type="button" className="attached-delete">');
   expect(attachmentSource).toContain('className="attached-file attached-file-marker"');
+  const commentEditAttachmentSource = routeSource.slice(
+    routeSource.indexOf("function CommentEditAttachmentFiles"),
+    routeSource.indexOf("function TasklistBar"),
+  );
+  expect(commentEditAttachmentSource).toContain('className="btn-transparent btn-delete"');
+  expect(commentEditAttachmentSource).not.toContain("data-id");
   expect(
     consoleMessages.some((message) =>
       /validateDOMNesting|<li> cannot (?:be|appear) as a child of <div>/u.test(message),

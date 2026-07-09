@@ -1706,7 +1706,7 @@ function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachm
             <i className="mimetype"></i>
             <strong className="name">{name}</strong>
             <span className="size">{size}</span>
-            <button type="button" className="btn-transparent btn-delete" data-id={id}>
+            <button type="button" className="btn-transparent btn-delete">
               ×
             </button>
           </div>
