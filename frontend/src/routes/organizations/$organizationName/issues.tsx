@@ -280,11 +280,7 @@ function OrganizationIssuesBody({
                     style={{ width: "100%" }}
                   >
                     {issues.visibleProjects.map((project) => (
-                      <option
-                        value={project.projectName}
-                        data-avatar-url="/assets/images/project_default_logo.png"
-                        key={project.projectName}
-                      >
+                      <option value={project.projectName} key={project.projectName}>
                         {project.projectName}
                       </option>
                     ))}
