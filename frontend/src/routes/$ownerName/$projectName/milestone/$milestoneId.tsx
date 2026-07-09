@@ -30,10 +30,6 @@ type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string }
 type LegacyIssueItemRowAttrs = {
   htmlFor: string;
 };
-type LegacyModalTriggerButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
-  href: string;
-  "data-toggle": "modal";
-};
 
 type MilestoneDetailSearch = {
   state: "all" | "closed" | "open";
@@ -301,10 +297,6 @@ function ProjectMilestoneDetailBody({
   const [checkedIssueIds, setCheckedIssueIds] = useState<string[]>([]);
   const attachmentsJson = useMemo(() => JSON.stringify(milestone.attachments ?? []), [milestone]);
   const milestoneQueryKey = ["project", ownerName, projectName, "milestones", Number(milestoneId)];
-  const deleteModalTriggerAttrs = {
-    href: "#deleteConfirm",
-    "data-toggle": "modal",
-  } satisfies LegacyModalTriggerButtonAttrs;
   const applyTitlePrefixFilter = (prefix: string) => {
     setFilter(prefix);
     searchInputRef.current?.focus();
@@ -406,7 +398,6 @@ function ProjectMilestoneDetailBody({
               <button
                 type="button"
                 className="ybtn ybtn-danger"
-                {...deleteModalTriggerAttrs}
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
