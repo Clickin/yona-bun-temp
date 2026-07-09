@@ -917,7 +917,6 @@ function IssueLabelSelect({
           id="labelIds"
           name="labelIds"
           multiple
-          data-search="labelIds"
           data-format="issuelabel"
           data-allow-clear="true"
           data-dropdown-css-class="issue-labels"
