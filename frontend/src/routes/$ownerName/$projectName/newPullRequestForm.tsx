@@ -318,6 +318,9 @@ function ProjectNewPullRequestBody({
                 <div id="__commits" className="code-browse-wrap tab-pane active">
                   {mergeResult ? (
                     <MergeResult
+                      authorLabel={t("code.author")}
+                      commitDateLabel={t("code.commitDate")}
+                      commitMessageLabel={t("code.commitMsg")}
                       commits={mergeResult.commits}
                       noChangesLabel={t("pullRequest.diff.noChanges")}
                       ownerName={ownerName}
@@ -618,11 +621,17 @@ function PullRequestConflictConfirmModal({
 }
 
 function MergeResult({
+  authorLabel,
+  commitDateLabel,
+  commitMessageLabel,
   commits,
   noChangesLabel,
   ownerName,
   projectName,
 }: {
+  authorLabel: string;
+  commitDateLabel: string;
+  commitMessageLabel: string;
   commits: PullRequestCommit[];
   noChangesLabel: string;
   ownerName: string;
@@ -648,13 +657,13 @@ function MergeResult({
                 <strong>@</strong>
               </td>
               <td className="messages">
-                <strong>Commit message</strong>
+                <strong>{commitMessageLabel}</strong>
               </td>
               <td className="date">
-                <strong>Commit date</strong>
+                <strong>{commitDateLabel}</strong>
               </td>
               <td className="author">
-                <strong>Author</strong>
+                <strong>{authorLabel}</strong>
               </td>
             </tr>
           </thead>

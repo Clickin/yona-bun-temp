@@ -153,6 +153,24 @@ test("project pull request create form omits select2 initializer markers on sele
   expect(postRequests).toEqual([]);
 });
 
+test("project pull request create merge result route source uses legacy message keys", () => {
+  const mergeResultStart = ROUTE_SOURCE.indexOf("function MergeResult(");
+  const mergeResultEnd = ROUTE_SOURCE.indexOf("function legacyUrlSearch", mergeResultStart);
+  const mergeResultSource = ROUTE_SOURCE.slice(mergeResultStart, mergeResultEnd);
+
+  expect(mergeResultStart).toBeGreaterThanOrEqual(0);
+  expect(mergeResultEnd).toBeGreaterThan(mergeResultStart);
+  expect(ROUTE_SOURCE).toContain('commitMessageLabel={t("code.commitMsg")}');
+  expect(ROUTE_SOURCE).toContain('commitDateLabel={t("code.commitDate")}');
+  expect(ROUTE_SOURCE).toContain('authorLabel={t("code.author")}');
+  expect(mergeResultSource).toContain("<strong>{commitMessageLabel}</strong>");
+  expect(mergeResultSource).toContain("<strong>{commitDateLabel}</strong>");
+  expect(mergeResultSource).toContain("<strong>{authorLabel}</strong>");
+  expect(mergeResultSource).not.toContain("<strong>Commit message</strong>");
+  expect(mergeResultSource).not.toContain("<strong>Commit date</strong>");
+  expect(mergeResultSource).not.toContain("<strong>Author</strong>");
+});
+
 test("project pull request create form matches legacy git/create.scala.html core DOM", async ({
   page,
 }) => {
@@ -186,6 +204,9 @@ test("project pull request create form matches legacy git/create.scala.html core
   await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-title", /.*/u);
   await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-body", /.*/u);
   await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-conflict", /.*/u);
+  await expect(page.locator("#mergeResult thead .messages strong")).toHaveText("Commit message");
+  await expect(page.locator("#mergeResult thead .date strong")).toHaveText("Commit date");
+  await expect(page.locator("#mergeResult thead .author strong")).toHaveText("Author");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("name", "body");
   await expect(page.locator("#editor-body-body")).toHaveAttribute(
