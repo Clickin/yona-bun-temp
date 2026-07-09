@@ -356,6 +356,72 @@ test("project issue create form parent state matches legacy partial_select_subta
   );
 });
 
+test("project issue create form renders movable project options like legacy partial_select_subtask.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueForm(page, {
+    project: {
+      movableIssueProjects: [
+        {
+          id: 7,
+          logoUrl: "/assets/images/current-duplicate.png",
+          ownerName: "admin",
+          projectName: "sample",
+        },
+        {
+          id: 9,
+          logoUrl: "/avatars/weblabs-portal.png",
+          ownerName: "weblabs",
+          projectName: "portal",
+        },
+        {
+          id: 11,
+          logoUrl: "",
+          owner: "qa",
+          name: "triage",
+        },
+      ],
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/issueform?parentIssueId=42`);
+  await expect(page.locator("#targetProjectId")).toBeEnabled();
+  await expectIssueFormSelect2InitializerHooksDropped(page);
+
+  await expect
+    .poll(() =>
+      page.locator("#targetProjectId option").evaluateAll((options) =>
+        options.map((option) => ({
+          avatarUrl: option.getAttribute("data-avatar-url"),
+          owner: option.getAttribute("data-owner"),
+          text: option.textContent?.trim(),
+          value: option.getAttribute("value"),
+        })),
+      ),
+    )
+    .toEqual([
+      {
+        avatarUrl: "/assets/images/project_default_logo.png",
+        owner: null,
+        text: "sample",
+        value: "7",
+      },
+      {
+        avatarUrl: "/avatars/weblabs-portal.png",
+        owner: "weblabs /",
+        text: "portal",
+        value: "9",
+      },
+      {
+        avatarUrl: "/assets/images/project_default_logo.png",
+        owner: "qa /",
+        text: "triage",
+        value: "11",
+      },
+    ]);
+});
+
 test("project issue create form keeps the legacy protected project title and group search scope", async ({
   page,
 }) => {
@@ -581,6 +647,9 @@ test("project issue create form source uses TanStack Link and no uploader templa
   expect(source).toContain("router.history.back()");
   expect(source).toContain('t("issue.error.emptyTitle")');
   expect(source).toContain('t("issue.error.invalid.duedate")');
+  expect(source).toContain("function issueMovableProjects(project: ProjectContainer)");
+  expect(source).toContain("(project as YonaRecord).movableIssueProjects");
+  expect(source).toContain("id === currentProjectId");
   expect(source).not.toContain("useProjectIssueFormDocumentTitle");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain('globalThis["document"]');
