@@ -289,24 +289,9 @@ function OrganizationIssuesBody({
                   <input type="hidden" name="orderBy" value={search.orderBy} />
                   <input type="hidden" name="orderDir" value={search.orderDir} />
                   <input type="hidden" name="state" value={search.state} />
-                  <input
-                    type="hidden"
-                    name="authorId"
-                    value={search.authorId}
-                    data-search="authorId"
-                  />
-                  <input
-                    type="hidden"
-                    name="assigneeId"
-                    value={search.assigneeId}
-                    data-search="assigneeId"
-                  />
-                  <input
-                    type="hidden"
-                    name="mentionId"
-                    value={search.mentionId}
-                    data-search="mentionId"
-                  />
+                  <input type="hidden" name="authorId" value={search.authorId} />
+                  <input type="hidden" name="assigneeId" value={search.assigneeId} />
+                  <input type="hidden" name="mentionId" value={search.mentionId} />
                   <div className="search">
                     <div className="search-bar">
                       <input
