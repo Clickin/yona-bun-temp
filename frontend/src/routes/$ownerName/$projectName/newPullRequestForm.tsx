@@ -206,8 +206,6 @@ function ProjectNewPullRequestBody({
     pendingConflictSubmitRef.current = null;
     setIsConflictConfirmOpen(false);
   };
-  const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
-
   const submitPullRequestForm = (
     form: HTMLFormElement,
     options: { skipConflictConfirm?: boolean } = {},
@@ -285,12 +283,10 @@ function ProjectNewPullRequestBody({
                     setTitleValue(event.currentTarget.value);
                     setIsUserHasTyped(true);
                   }}
-                  {...userTypedAttr}
                 />
                 <div style={{ position: "relative" }}>
                   <PullRequestMarkdownEditor
                     bodyValue={bodyValue}
-                    isUserHasTyped={isUserHasTyped}
                     mergeSuggestionRevision={mergeSuggestionRevision}
                     onBodyChange={(nextBody) => {
                       setBodyValue(nextBody);
@@ -323,12 +319,9 @@ function ProjectNewPullRequestBody({
                   {mergeResult ? (
                     <MergeResult
                       commits={mergeResult.commits}
-                      conflict={mergeResult.conflict}
                       noChangesLabel={t("pullRequest.diff.noChanges")}
                       ownerName={ownerName}
                       projectName={projectName}
-                      suggestedBody={mergeResultBody}
-                      suggestedTitle={mergeResultTitle}
                     />
                   ) : null}
                 </div>
@@ -471,17 +464,14 @@ function projectOptionLabel(project: { ownerName: string; projectName: string })
 
 function PullRequestMarkdownEditor({
   bodyValue,
-  isUserHasTyped = false,
   mergeSuggestionRevision,
   onBodyChange,
 }: {
   bodyValue: string;
-  isUserHasTyped?: boolean;
   mergeSuggestionRevision: number;
   onBodyChange: (nextBody: string) => void;
 }) {
   const { t } = useLegacyMessages();
-  const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
     <div className="mt10">
@@ -535,7 +525,6 @@ function PullRequestMarkdownEditor({
               key={`body-${mergeSuggestionRevision}`}
               defaultValue={bodyValue}
               onChange={(event) => onBodyChange(event.currentTarget.value)}
-              {...userTypedAttr}
               {...{ markdown: "true" }}
             ></textarea>
           </div>
@@ -630,30 +619,18 @@ function PullRequestConflictConfirmModal({
 
 function MergeResult({
   commits,
-  conflict,
   noChangesLabel,
   ownerName,
   projectName,
-  suggestedBody,
-  suggestedTitle,
 }: {
   commits: PullRequestCommit[];
-  conflict: boolean;
   noChangesLabel: string;
   ownerName: string;
   projectName: string;
-  suggestedBody: string;
-  suggestedTitle: string;
 }) {
   if (!commits.length) {
     return (
-      <div
-        id="mergeResult"
-        className="code-browser-wrap"
-        data-commits="0"
-        data-pullrequest-title={suggestedTitle}
-        data-pullrequest-body={suggestedBody}
-      >
+      <div id="mergeResult" className="code-browser-wrap">
         <div>
           <h5>{noChangesLabel}</h5>
         </div>
@@ -662,14 +639,7 @@ function MergeResult({
   }
 
   return (
-    <div
-      id="mergeResult"
-      className="code-browser-wrap"
-      data-commits={String(commits.length)}
-      data-pullrequest-title={suggestedTitle}
-      data-pullrequest-body={suggestedBody}
-      data-conflict={String(conflict)}
-    >
+    <div id="mergeResult" className="code-browser-wrap">
       <div className="commit-wrap">
         <table className="code-table commits">
           <thead className="thead">
