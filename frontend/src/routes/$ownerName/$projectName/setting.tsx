@@ -550,7 +550,6 @@ function ProjectSettingBody({
                       />
                       <div
                         className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""}`}
-                        data-id="project-reviewer-count"
                         data-name="defaultReviewerCount"
                       >
                         <button
