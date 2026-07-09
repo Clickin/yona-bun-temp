@@ -378,6 +378,7 @@ function BoardPagination({
 }
 
 function OrganizationBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
+  const { t } = useLegacyMessages();
   const postHref = prefixBasePath(
     basePath,
     `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`,
@@ -423,7 +424,7 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
             {post.authorLabel}
           </Link>
         ) : (
-          <span className="infos-item">No author</span>
+          <span className="infos-item">{t("issue.noAuthor")}</span>
         )}
         <Link
           to="/$ownerName/$projectName"

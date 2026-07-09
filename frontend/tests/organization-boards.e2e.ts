@@ -138,6 +138,24 @@ test("organization board row tooltip marker cleanup preserves legacy title place
   await assertOrganizationBoardRowTooltipCleanup(page);
 });
 
+test("organization board row missing author fallback uses legacy message copy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationBoards(page, "missingAuthor");
+
+  await page.goto(
+    `${basePath}/organizations/weblabs/boards?filter=release&projectNames%5B%5D=sample&orderBy=numOfComments&orderDir=desc`,
+  );
+
+  const missingAuthorRow = page.locator(".post-list-wrap:not(.notice-wrap) .post-item").first();
+  await expect(missingAuthorRow.locator(".title-wrap .title")).toHaveText("Release note");
+  await expect(missingAuthorRow.locator(".infos > .infos-item").first()).toHaveText("No author");
+  await expect(missingAuthorRow.locator(".infos > .infos-item").first()).toHaveClass("infos-item");
+  await expect(missingAuthorRow.locator(".infos > .infos-item.infos-link-item")).toHaveCount(0);
+  await expect(missingAuthorRow.locator(".group-project-name")).toHaveText("sample");
+});
+
 test("organization board project selector keeps legacy metadata without select2 initializer", async ({
   page,
 }) => {
@@ -560,6 +578,16 @@ test("organization board route source uses direct Links for row navigation", asy
   expect(ORGANIZATION_BOARDS_ROUTE_SOURCE).toContain("<li {...legacyPostItemAttrs}>");
 });
 
+test("organization board route source uses legacy no-author message key", async () => {
+  const rowSource = ORGANIZATION_BOARDS_ROUTE_SOURCE.slice(
+    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function OrganizationBoardPost"),
+    ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("function TwoColumnModeCheckbox"),
+  );
+  expect(rowSource).toContain("useLegacyMessages()");
+  expect(rowSource).toContain('t("issue.noAuthor")');
+  expect(rowSource).not.toContain(">No author<");
+});
+
 test("organization board route source drops only the delegated select2 initializer marker", async () => {
   const projectSelectSource = ORGANIZATION_BOARDS_ROUTE_SOURCE.slice(
     ORGANIZATION_BOARDS_ROUTE_SOURCE.indexOf("<select"),
@@ -693,7 +721,7 @@ async function organizationBoardTwoColumnPopoverMetrics(page: Page) {
 
 async function mockOrganizationBoards(
   page: Page,
-  state: "default" | "empty" | "paginated" = "default",
+  state: "default" | "empty" | "missingAuthor" | "paginated" = "default",
   options: { isAnonymous?: boolean; viewerCanUpdate?: boolean } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -728,6 +756,7 @@ async function mockOrganizationBoards(
   });
   await page.route("**/api/v1/organizations/weblabs/boards**", async (route) => {
     const isEmpty = state === "empty";
+    const isMissingAuthor = state === "missingAuthor";
     const isPaginated = state === "paginated";
     const url = new URL(route.request().url());
     const pageNum = Number(url.searchParams.get("pageNum")) || 1;
@@ -739,7 +768,7 @@ async function mockOrganizationBoards(
           : [
               {
                 authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                authorLabel: "Dev Member",
+                authorLabel: isMissingAuthor ? "" : "Dev Member",
                 authorLoginId: "dev",
                 commentCount: 2,
                 createdLabel: "Jul 1, 2026",
