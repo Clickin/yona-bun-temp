@@ -75,7 +75,7 @@ const EXPECTED_SVN_COMMIT_BODY = `<div class="page-wrap-outer"><div class="proje
 Add README</pre><div class="diff-wrap"><div id="commit" data-commit-origin="true" class="diff-body hide">${SVN_PATCH}</div></div><div class="board-comment-wrap"><form id="comment-form" action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-comment" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-comment" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-comment" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" id="editor-contents-comment" markdown="true"></textarea></div></div><div id="preview-comment" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form></div></div><button id="watch-button" type="button" class="ybtn ">Watch</button><a href="__BASE_PATH__/admin/sample/commits/trunk" class="ybtn pull-right">List</a><div id="minimap" class="minimap-outer"><div class="minimap-wrap"><div class="minimap-curr"></div><div class="minimap-links"></div></div></div></div></div>`;
 
 const THREAD_REPLY_AUTHOR_INFO = `<div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" title="Site Admin" data-placement="top"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div>`;
-const REVIEW_FORM_AUTHOR_INFO = `<div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" data-placement="top" title="" data-original-title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div>`;
+const REVIEW_FORM_AUTHOR_INFO = `<div class="author-info-wrap pull-left hide-in-mobile"><div class="author-info"><a href="__BASE_PATH__/admin" class="avatar-wrap medium" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div></div>`;
 
 function withReviewAuthorInfo(html: string) {
   return html.replace(
@@ -311,8 +311,9 @@ test("project commit detail tooltip metadata is preserved without Bootstrap init
     /className="avatar-wrap medium"[\s\S]{0,120}title=\{currentUser\.userLabel\}[\s\S]{0,80}data-placement="top"/u,
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toMatch(
-    /className="avatar-wrap medium"[\s\S]{0,120}data-placement="top"[\s\S]{0,80}title=""[\s\S]{0,80}data-original-title=\{currentUser\.userLabel\}/u,
+    /className="avatar-wrap medium"[\s\S]{0,120}data-placement="top"[\s\S]{0,80}title=\{currentUser\.userLabel\}/u,
   );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-original-title={currentUser.userLabel}");
 });
 
 test("project commit detail browser title follows legacy project layout", async ({ page }) => {
@@ -855,6 +856,9 @@ index 1234567..abcdef1 100644
   await expect(popButton).toBeHidden();
   expect(await blockReviewFormMetrics(page)).toEqual({
     authorAvatarVisible: true,
+    authorDataOriginalTitle: null,
+    authorDataPlacement: "top",
+    authorTitle: "Site Admin",
     closeButtonText: "×",
     closeDataToggle: null,
     display: "block",
@@ -2161,11 +2165,15 @@ async function blockReviewFormMetrics(page: Page) {
       'textarea[data-editor-mode="code-review-body"]',
     );
     const upload = form.querySelector<HTMLElement>(".upload-wrap.content-footer");
+    const author = form.querySelector<HTMLElement>(".author-info-wrap .avatar-wrap.medium");
 
     return {
       authorAvatarVisible: Boolean(
         form.querySelector(".author-info-wrap .avatar-wrap.medium img")?.getClientRects().length,
       ),
+      authorDataOriginalTitle: author?.getAttribute("data-original-title") ?? null,
+      authorDataPlacement: author?.dataset.placement ?? null,
+      authorTitle: author?.getAttribute("title") ?? null,
       closeButtonText: close?.textContent?.trim() ?? null,
       closeDataToggle: close?.dataset.toggle ?? null,
       display: window.getComputedStyle(form).display,

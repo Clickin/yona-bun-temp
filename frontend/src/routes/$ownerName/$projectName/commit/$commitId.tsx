@@ -1547,8 +1547,7 @@ function ReviewForm({
               activeOptions={{ exact: true }}
               className="avatar-wrap medium"
               data-placement="top"
-              title=""
-              data-original-title={currentUser.userLabel}
+              title={currentUser.userLabel}
             >
               <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
             </Link>
