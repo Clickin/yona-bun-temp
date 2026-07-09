@@ -630,10 +630,7 @@ function ProjectMemberListItem({
       <div className="member-setting">
         {!booleanField(member.isOwner) ? (
           <>
-            <div
-              className={`btn-group${isRoleMenuOpen ? " open" : ""}`}
-              data-name={`roleof-${loginId}`}
-            >
+            <div className={`btn-group${isRoleMenuOpen ? " open" : ""}`}>
               <button className="btn dropdown-toggle large" onClick={onRoleToggleClick}>
                 <span className="d-label">{roleLabel(members, stringField(member.role, ""))}</span>
                 <span className="d-caret">
