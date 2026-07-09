@@ -361,7 +361,7 @@ test("project board list tooltip markers are not React-owned DOM", async ({ page
 
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
-const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
+const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
   '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-search="labelIds" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
 const POSTING_HISTORY =
@@ -375,7 +375,7 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.r
   `<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><button type="button" class="btn-transparent ml10" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div>${EMPTY_CHILD_COMMENT_FORM}</li></ul>`,
 );
 
-const COMMENT_UPDATE_FORM = `<div id="comment-editform-21" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/post/3/comments/21" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="21"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button" data-mode="edit">Edit</button></li><li><button type="button" data-mode="preview">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-21" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-21">First **comment**</textarea></div></div><div id="preview-21" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-21" class="file-upload__label ybtn">File upload</label><input id="upload-21" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="21">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-21"></div><div class="attachment-files"></div><div id="upload-21" data-resourcetype="NONISSUE_COMMENT" data-resourceid="21"></div></div></form></div>`;
+const COMMENT_UPDATE_FORM = `<div id="comment-editform-21" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/post/3/comments/21" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="21"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-21" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-21">First **comment**</textarea></div></div><div id="preview-21" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-21" class="file-upload__label ybtn">File upload</label><input id="upload-21" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="21">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-21"></div><div class="attachment-files"></div><div id="upload-21" data-resourcetype="NONISSUE_COMMENT" data-resourceid="21"></div></div></form></div>`;
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT_UPDATE =
   EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT.replace(
@@ -1787,10 +1787,9 @@ test("project board detail submits legacy comment form through REST", async ({ p
     .locator("#comment-form .mt10:has(#editor-contents-contents)")
     .evaluate((editor) => {
       const nav = editor.querySelector(".nav-tabs") as HTMLElement;
-      const editButton = editor.querySelector('button[data-mode="edit"]') as HTMLButtonElement;
-      const previewButton = editor.querySelector(
-        'button[data-mode="preview"]',
-      ) as HTMLButtonElement;
+      const tabButtons = nav.querySelectorAll(":scope > li > button");
+      const editButton = tabButtons[0] as HTMLButtonElement;
+      const previewButton = tabButtons[1] as HTMLButtonElement;
       const taskButton = editor.querySelector(".add-task-list-button") as HTMLButtonElement;
       const clearButton = editor.querySelector("#button-clear-temporary") as HTMLButtonElement;
       const tabContent = editor.querySelector(".tab-content") as HTMLElement;
@@ -1852,6 +1851,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
         notificationClassName: notification.className,
         notificationDisplay: notificationStyle.display,
         notificationText: notificationTitle.textContent,
+        tabButtonDataModeCount: editor.querySelectorAll("button[data-mode]").length,
       };
     });
   expect(editorMetrics).toEqual({
@@ -1863,13 +1863,13 @@ test("project board detail submits legacy comment form through REST", async ({ p
     editType: "button",
     editHref: null,
     editToggle: null,
-    editMode: "edit",
+    editMode: null,
     editText: "Edit",
     previewTagName: "button",
     previewType: "button",
     previewHref: null,
     previewToggle: null,
-    previewMode: "preview",
+    previewMode: null,
     previewText: "Preview",
     taskButtonType: "button",
     taskButtonClassName: "add-task-list-button ybtn ybtn-small ybtn-danger-no-outline",
@@ -1896,12 +1896,16 @@ test("project board detail submits legacy comment form through REST", async ({ p
     notificationClassName: "notification-receiver",
     notificationDisplay: "none",
     notificationText: "Notification receivers ",
+    tabButtonDataModeCount: 0,
   });
   await expect(
     page.locator("#comment-form .mt10:has(#editor-contents-contents) a[href^='#']"),
   ).toHaveCount(0);
   await expect(
     page.locator("#comment-form .mt10:has(#editor-contents-contents) button[data-toggle='tab']"),
+  ).toHaveCount(0);
+  await expect(
+    page.locator("#comment-form .mt10:has(#editor-contents-contents) button[data-mode]"),
   ).toHaveCount(0);
   const commentEditorLayout = await page
     .locator("#comment-form .mt10:has(#editor-contents-contents)")
@@ -1931,7 +1935,11 @@ test("project board detail submits legacy comment form through REST", async ({ p
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-comment-editor";
   });
   const editorUrl = page.url();
-  await page.locator('#comment-form button[data-mode="preview"]').click();
+  await commentEditor
+    .locator(".nav-tabs > li")
+    .nth(1)
+    .getByRole("button", { name: "Preview" })
+    .click();
   await expect(page.locator("#comment-form #preview-contents")).toHaveClass(/active/);
   await expect(page.locator("#comment-form #edit-contents")).not.toHaveClass(/active/);
   await expect(page.locator("#comment-form #preview-contents")).toBeVisible();
@@ -1958,7 +1966,11 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).toBe("board-comment-editor");
-  await page.locator('#comment-form button[data-mode="edit"]').click();
+  await commentEditor
+    .locator(".nav-tabs > li")
+    .nth(0)
+    .getByRole("button", { name: "Edit" })
+    .click();
   await expect(page.locator("#comment-form #edit-contents")).toHaveClass(/active/);
   await expect(page.locator("#comment-form #edit-contents")).toBeVisible();
   await expect(page.locator("#comment-form #preview-contents")).toBeHidden();
@@ -2054,8 +2066,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     routeSource.indexOf("function AttachedFiles"),
   );
   expect(markdownEditorSource).not.toContain('data-toggle="markdown-editor"');
-  expect(markdownEditorSource).toContain('data-mode="edit"');
-  expect(markdownEditorSource).toContain('data-mode="preview"');
+  expect(markdownEditorSource).not.toContain("data-mode");
   expect(markdownEditorSource).not.toContain('data-toggle="tab"');
   expect(markdownEditorSource).toContain("setActiveMode(mode)");
   expect(markdownEditorSource).not.toContain("document.");
@@ -2063,12 +2074,20 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(markdownEditorSource).not.toContain("style.display");
 
   await page.locator("#comment-form textarea[name='contents']").fill("New **board** comment");
-  await page.locator('#comment-form button[data-mode="preview"]').click();
+  await commentEditor
+    .locator(".nav-tabs > li")
+    .nth(1)
+    .getByRole("button", { name: "Preview" })
+    .click();
   await expect(page.locator("#comment-form #preview-contents .markdown-preview")).toContainText(
     "New board comment",
   );
   await expect(page.locator("#comment-form #preview-contents strong")).toHaveText("board");
-  await page.locator('#comment-form button[data-mode="edit"]').click();
+  await commentEditor
+    .locator(".nav-tabs > li")
+    .nth(0)
+    .getByRole("button", { name: "Edit" })
+    .click();
   await page.locator("#comment-form button[type='submit']").click();
 
   await expect
@@ -2708,25 +2727,28 @@ test("project board detail renders legacy comment update form", async ({ page })
   await expect(
     page.locator("#comment-editform-21 .mt10:has(#editor-contents-21) button[data-toggle='tab']"),
   ).toHaveCount(0);
-  await expect(page.locator('#comment-editform-21 button[data-mode="edit"]')).toHaveText("Edit");
-  await expect(page.locator('#comment-editform-21 button[data-mode="preview"]')).toHaveText(
-    "Preview",
-  );
+  await expect(
+    page.locator("#comment-editform-21 .mt10:has(#editor-contents-21) button[data-mode]"),
+  ).toHaveCount(0);
+  const updateEditTab = updateEditor.locator(".nav-tabs > li > button").nth(0);
+  const updatePreviewTab = updateEditor.locator(".nav-tabs > li > button").nth(1);
+  await expect(updateEditTab).toHaveText("Edit");
+  await expect(updatePreviewTab).toHaveText("Preview");
   const updateEditorOrder = await page
     .locator("#comment-editform-21 .mt10:has(#editor-contents-21) .nav-tabs")
     .evaluate((nav) =>
       Array.from(nav.children).map((child) => ({
         active: child.classList.contains("active"),
-        mode: child.querySelector("button")?.getAttribute("data-mode") ?? null,
+        hasMode: child.querySelector("button")?.hasAttribute("data-mode") ?? false,
         text: child.textContent?.trim(),
       })),
     );
   expect(updateEditorOrder).toEqual([
-    { active: true, mode: "edit", text: "Edit" },
-    { active: false, mode: "preview", text: "Preview" },
-    { active: false, mode: null, text: "Add checklist" },
-    { active: false, mode: null, text: "Clear Temporary" },
-    { active: false, mode: null, text: "" },
+    { active: true, hasMode: false, text: "Edit" },
+    { active: false, hasMode: false, text: "Preview" },
+    { active: false, hasMode: false, text: "Add checklist" },
+    { active: false, hasMode: false, text: "Clear Temporary" },
+    { active: false, hasMode: false, text: "" },
   ]);
   await expect(page.locator("#upload-21[data-resourcetype='NONISSUE_COMMENT']")).toHaveAttribute(
     "data-resourceid",
@@ -2759,7 +2781,7 @@ test("project board detail renders legacy comment update form", async ({ page })
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "board-update-editor";
   });
   const editorUrl = page.url();
-  await page.locator('#comment-editform-21 button[data-mode="preview"]').click();
+  await updatePreviewTab.click();
   await expect(page.locator("#comment-editform-21 #preview-21")).toHaveClass(/active/);
   await expect(page.locator("#comment-editform-21 #edit-21")).not.toHaveClass(/active/);
   await expect(page.locator("#comment-editform-21 #preview-21")).toBeVisible();
@@ -2774,17 +2796,17 @@ test("project board detail renders legacy comment update form", async ({ page })
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).toBe("board-update-editor");
-  await page.locator('#comment-editform-21 button[data-mode="edit"]').click();
+  await updateEditTab.click();
   await expect(page.locator("#comment-editform-21 #edit-21")).toHaveClass(/active/);
   await expect(page.locator("#comment-editform-21 #edit-21")).toBeVisible();
   await expect(page.locator("#comment-editform-21 #preview-21")).toBeHidden();
   await page.locator("#editor-contents-21").fill("Updated **board** comment");
-  await page.locator('#comment-editform-21 button[data-mode="preview"]').click();
+  await updatePreviewTab.click();
   await expect(page.locator("#comment-editform-21 #preview-21 .markdown-preview")).toContainText(
     "Updated board comment",
   );
   await expect(page.locator("#comment-editform-21 #preview-21 strong")).toHaveText("board");
-  await page.locator('#comment-editform-21 button[data-mode="edit"]').click();
+  await updateEditTab.click();
   await page.locator("#comment-editform-21 button[type='submit']").click();
   await expect
     .poll(() => commentUpdateRequests)

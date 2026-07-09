@@ -1576,16 +1576,12 @@ function MarkdownEditor({
     <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeMode === "edit" ? "active" : undefined}>
-          <button type="button" data-mode="edit" onClick={(event) => selectMode("edit", event)}>
+          <button type="button" onClick={(event) => selectMode("edit", event)}>
             Edit
           </button>
         </li>
         <li className={activeMode === "preview" ? "active" : undefined}>
-          <button
-            type="button"
-            data-mode="preview"
-            onClick={(event) => selectMode("preview", event)}
-          >
+          <button type="button" onClick={(event) => selectMode("preview", event)}>
             Preview
           </button>
         </li>
