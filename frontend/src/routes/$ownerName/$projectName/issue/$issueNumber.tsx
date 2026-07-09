@@ -42,6 +42,7 @@ import {
 } from "../../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
+import { useRootToast } from "../../../__root";
 import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const LEGACY_LINK_PROPS = {
@@ -1419,6 +1420,28 @@ function IssueVoterListDialog({
   voters: VoterLike[];
 }) {
   const modalRef = useModalFocus(open);
+  const setRootToast = useRootToast();
+  const { t } = useLegacyMessages();
+  const emailText = voters.map(voterEmailListEntry).join("");
+  const copyEmailText = async (event: MouseEvent<HTMLButtonElement>) => {
+    insulateModalButtonClick(event);
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API is not available.");
+      }
+      await navigator.clipboard.writeText(emailText);
+      setRootToast({
+        key: `issue-voters-email-copy:${id}:${Date.now()}`,
+        message: t("button.copy.email.success.message"),
+      });
+    } catch {
+      setRootToast({
+        key: `issue-voters-email-copy-error:${id}:${Date.now()}`,
+        message: t("site.features.error.clipboard"),
+      });
+    }
+  };
+
   return (
     <>
       <div
@@ -1433,7 +1456,7 @@ function IssueVoterListDialog({
           <button type="button" className="close" onClick={onClose}>
             ×
           </button>
-          <h5 className="nm">Issue Voters</h5>
+          <h5 className="nm">{t("issue.voters")}</h5>
         </div>
         <div className="modal-body">
           <ul className="unstyled">
@@ -1461,25 +1484,21 @@ function IssueVoterListDialog({
           </ul>
         </div>
         <div className="modal-footer">
-          <button
-            id="copyEmailBtn"
-            className="ybtn ybtn-info ybtn-small"
-            data-clipboard-text={voters
-              .map(
-                (voter) => `${stringField(voter.userLabel)} <${stringField(voter.emailAddress)}>;`,
-              )
-              .join("")}
-          >
-            Copy email
+          <button id="copyEmailBtn" className="ybtn ybtn-info ybtn-small" onClick={copyEmailText}>
+            {t("button.copy.email")}
           </button>
           <button className="ybtn ybtn-info ybtn-small" onClick={onClose}>
-            Close
+            {t("button.close")}
           </button>
         </div>
       </div>
       {open ? <div className="modal-backdrop in" onClick={() => onClose?.()}></div> : null}
     </>
   );
+}
+
+function voterEmailListEntry(voter: VoterLike) {
+  return `${stringField(voter.userLabel)} <${stringField(voter.emailAddress)}>;`;
 }
 
 function IssueWeight({
