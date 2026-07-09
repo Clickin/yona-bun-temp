@@ -21,6 +21,11 @@ type MilestoneListSearch = {
   state?: string;
 };
 
+const LEGACY_MILESTONE_LIST_LINK_PROPS = {
+  activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
+  activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
+};
+
 export const Route = createFileRoute("/$ownerName/$projectName/milestones")({
   component: ProjectMilestonesRoute,
   validateSearch(search: Record<string, unknown>): MilestoneListSearch {
@@ -122,6 +127,7 @@ function ProjectMilestonesBody({
           {booleanField(project.viewerCanUpdate) ? (
             <div className="pull-right btns">
               <Link
+                {...LEGACY_MILESTONE_LIST_LINK_PROPS}
                 to="/$ownerName/$projectName/newMilestoneForm"
                 params={{ ownerName, projectName }}
                 className="ybtn ybtn-success"
@@ -135,6 +141,7 @@ function ProjectMilestonesBody({
             {["open", "closed", "all"].map((state) => (
               <li key={state} className={currentState === state ? "active" : ""}>
                 <Link
+                  {...LEGACY_MILESTONE_LIST_LINK_PROPS}
                   to="/$ownerName/$projectName/milestones"
                   params={{ ownerName, projectName }}
                   search={{ state }}
@@ -234,6 +241,7 @@ function SortLink({
 
   return (
     <Link
+      {...LEGACY_MILESTONE_LIST_LINK_PROPS}
       to="/$ownerName/$projectName/milestones"
       params={{ ownerName, projectName }}
       search={{ orderBy: fieldName, orderDir, state: search.state }}
@@ -280,6 +288,7 @@ function MilestoneRow({
         <div className="meta-info">
           <strong className="version"></strong>
           <Link
+            {...LEGACY_MILESTONE_LIST_LINK_PROPS}
             to="/$ownerName/$projectName/milestone/$milestoneId"
             params={{ ownerName, projectName, milestoneId: stringField(milestone.id) }}
             search={{}}
@@ -385,6 +394,7 @@ function MilestoneIssueLink({
 
   return (
     <Link
+      {...LEGACY_MILESTONE_LIST_LINK_PROPS}
       className="issue-link"
       to="/$ownerName/$projectName/issue/$issueNumber"
       params={{ ownerName, projectName, issueNumber }}

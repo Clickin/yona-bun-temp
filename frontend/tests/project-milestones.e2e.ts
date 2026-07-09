@@ -62,6 +62,10 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     "href",
     `${basePath}/admin/sample/issue/11`,
   );
+  await expect(page.locator(".page-wrap-outer a[aria-current]")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer a[data-status]")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer .nav-tabs a.active")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer .filters a.filter.active")).toHaveCount(1);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(page, EXPECTED_MILESTONES_BODY.replaceAll("__BASE_PATH__", basePath)),
@@ -158,6 +162,14 @@ test("project milestones route uses direct typed Link targets", () => {
   expect(routeSource).not.toContain('globalThis["document"]');
   expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
+  expect(routeSource).toContain("const LEGACY_MILESTONE_LIST_LINK_PROPS = {");
+  expect(routeSource).toContain(
+    "activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true }",
+  );
+  expect(routeSource).toContain(
+    'activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined }',
+  );
+  expect(routeSource).toContain("{...LEGACY_MILESTONE_LIST_LINK_PROPS}");
   expect(routeSource).toContain("orderBy: optionalStringSearch(search.orderBy)");
   expect(routeSource).toContain('const orderBy = search.orderBy ?? "dueDate"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestone/$milestoneId"');
