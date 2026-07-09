@@ -187,7 +187,7 @@ function commentUpdateForm(
   const attachmentMarkers = attachments
     .map(
       (file) =>
-        `<div class="attached-file attached-file-marker" data-name="${file.name}" data-mime="${file.mimeType}"><i class="mimetype"></i><strong class="name">${file.name}</strong><span class="size">${file.size}</span><button type="button" class="btn-transparent btn-delete" data-id="${file.id}">×</button></div>`,
+        `<div class="attached-file attached-file-marker" data-name="${file.name}" data-mime="${file.mimeType}"><i class="mimetype"></i><strong class="name">${file.name}</strong><span class="size">${file.size}</span><button type="button" class="btn-transparent btn-delete">×</button></div>`,
     )
     .join("");
 
@@ -206,6 +206,9 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("attachmentFileHtml");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-href={href}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("escapeHtml");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
+    /function AttachmentFileMarker[\s\S]{0,700}<button[^>]*className="btn-transparent btn-delete"[^>]*data-id=/u,
+  );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
     /className="attachment-files"[\s\S]{0,160}dangerouslySetInnerHTML/u,
   );
@@ -1763,7 +1766,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   const updateAttachmentDelete = updateAttachment.locator(
     'button[type="button"].btn-transparent.btn-delete',
   );
-  await expect(updateAttachmentDelete).toHaveAttribute("data-id", "701");
+  await expect(updateAttachmentDelete).not.toHaveAttribute("data-id", /.+/);
   await expect(updateAttachmentDelete).toHaveText("×");
   await expect(
     page.locator("#thread-88 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),

@@ -1407,7 +1407,6 @@ function CodeCommentUpdateForm({
 }
 
 function AttachmentFileMarker({ file }: { file: CodeReviewAttachment }) {
-  const id = String(file.id);
   const name = String(file.name);
   const mimeType = String(file.mimeType);
   const size = String(file.size);
@@ -1417,7 +1416,7 @@ function AttachmentFileMarker({ file }: { file: CodeReviewAttachment }) {
       <i className="mimetype"></i>
       <strong className="name">{name}</strong>
       <span className="size">{size}</span>
-      <button type="button" className="btn-transparent btn-delete" data-id={id}>
+      <button type="button" className="btn-transparent btn-delete">
         ×
       </button>
     </div>
