@@ -471,7 +471,6 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         to="/$user"
         params={{ user: event.senderLoginId }}
         className="usf-group"
-        data-placement="top"
         title={event.senderLoginId}
         {...LEGACY_LINK_PROPS}
       >
@@ -481,7 +480,6 @@ function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
         to="/$user"
         params={{ user: event.senderLoginId }}
         className="usf-group"
-        data-placement="top"
         title={event.senderLoginId}
         {...LEGACY_LINK_PROPS}
       >
@@ -687,7 +685,6 @@ export function PullRequestHeader({
                   to="/$user"
                   params={{ user: reviewer.loginId }}
                   className="usf-group"
-                  data-placement="top"
                   title={reviewer.userLabel}
                   {...LEGACY_LINK_PROPS}
                 >
@@ -730,7 +727,6 @@ export function PullRequestHeader({
             <button
               type="button"
               className="ybtn ybtn-disabled"
-              data-placement="top"
               title={disabledAcceptButtonTitle(pullRequest, t)}
             >
               {t("pullRequest.merge")}

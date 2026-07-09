@@ -5,14 +5,14 @@ const EXPECTED_PULL_REQUEST_OVERVIEW = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body"><div class="author-info left-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div><div class="content markdown-wrap"><p>Initial body</p></div><div class="attachments" data-attachments="[]"></div></div><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="board-footer board-actrow"><div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-watching="false">Watch</button></div><div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Close</button></div></div><hr class="nm"><div class="board-comment-wrap"></div><div class="right-txt"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Help</button></div></div></div><div id="helpMessage" class="modal hide fade pullreq-info"><div class="modal-header"><h5>You can check commits and descriptions on received code.</h5></div><div class="modal-body"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="/assets/images/fork-pull/merge.jpg"><br></div><div class="pull-left help-messages mt10"><p>If members of the original project accept the code, it will be merged into the original project.</p><p>You can't accept code if the code is not safe to merge.</p><p>When you can't accept code, you may postpone or delete the pull request.</p></div></div></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-small">Confirm</button></div></div>
 `;
 
-const EXPECTED_PULL_REQUEST_COMMIT_EVENT = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-94"><span class="state changed">Committed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> has committed.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-94" title="Jul 3, 2026">Jul 3, 2026</a></span><a href="__BASE_PATH__/admin/sample/compare/basehash...headhash" class="ybtn ybtn-mini">Additional changes</a><ul class="commit-list"><li class="comment-body commit-info outdated"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commit-id">1234567</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 3, 2026">Jul 3, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commitMsg short">Fix login</a></li><li class="comment-body commit-info"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commit-id">abcdef1</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 4, 2026">Jul 4, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commitMsg short">Add UI</a></li></ul></li></ul></div>`;
+const EXPECTED_PULL_REQUEST_COMMIT_EVENT = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-94"><span class="state changed">Committed</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> has committed.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-94" title="Jul 3, 2026">Jul 3, 2026</a></span><a href="__BASE_PATH__/admin/sample/compare/basehash...headhash" class="ybtn ybtn-mini">Additional changes</a><ul class="commit-list"><li class="comment-body commit-info outdated"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commit-id">1234567</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 3, 2026">Jul 3, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commitMsg short">Fix login</a></li><li class="comment-body commit-info"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commit-id">abcdef1</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 4, 2026">Jul 4, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commitMsg short">Add UI</a></li></ul></li></ul></div>`;
 
 const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_COMMIT_EVENT = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="board-comment-wrap"></div>`,
   EXPECTED_PULL_REQUEST_COMMIT_EVENT,
 );
 
-const EXPECTED_PULL_REQUEST_ANONYMOUS_COMMIT_AUTHOR_EVENT = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-95"><span class="state changed">Committed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> has committed.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-95" title="Jul 5, 2026">Jul 5, 2026</a></span><ul class="commit-list"><li class="comment-body commit-info"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/facefeed12345678" class="commit-id">facefee</a><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small hide-in-mobile"><div class="date hide-in-mobile" title="Jul 5, 2026">Jul 5, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/facefeed12345678" class="commitMsg short">Patch from mail</a></li></ul></li></ul></div>`;
+const EXPECTED_PULL_REQUEST_ANONYMOUS_COMMIT_AUTHOR_EVENT = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-95"><span class="state changed">Committed</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> has committed.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-95" title="Jul 5, 2026">Jul 5, 2026</a></span><ul class="commit-list"><li class="comment-body commit-info"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/facefeed12345678" class="commit-id">facefee</a><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small hide-in-mobile"><div class="date hide-in-mobile" title="Jul 5, 2026">Jul 5, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/facefeed12345678" class="commitMsg short">Patch from mail</a></li></ul></li></ul></div>`;
 
 const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_ANONYMOUS_COMMIT_AUTHOR =
   EXPECTED_PULL_REQUEST_OVERVIEW.replace(
@@ -20,7 +20,7 @@ const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_ANONYMOUS_COMMIT_AUTHOR =
     EXPECTED_PULL_REQUEST_ANONYMOUS_COMMIT_AUTHOR_EVENT,
   );
 
-const EXPECTED_PULL_REQUEST_STATE_EVENTS = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-101"><span class="state changed">Approve</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> completed a pull request review.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-101" title="Jul 5, 2026">Jul 5, 2026</a></span></li><li class="event" id="comment-102"><span class="state changed">Cancel review</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> withdrew a pull request review.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-102" title="Jul 6, 2026">Jul 6, 2026</a></span></li><li class="event" id="comment-103"><span class="state closed">Closed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> closed this pull request.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-103" title="Jul 7, 2026">Jul 7, 2026</a></span></li><li class="event" id="comment-104"><span class="state merged">Merged</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> merged commit (<a class="link" href="__BASE_PATH__/admin/sample/commit/mergedcommit123456" title="View commit">mergedc</a>)<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-104" title="Jul 8, 2026">Jul 8, 2026</a></span></li><li class="event" id="comment-105"><span class="state merged">Merged</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> merged commit ({1})<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-105" title="Jul 9, 2026">Jul 9, 2026</a></span></li></ul></div>`;
+const EXPECTED_PULL_REQUEST_STATE_EVENTS = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-101"><span class="state changed">Approve</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> completed a pull request review.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-101" title="Jul 5, 2026">Jul 5, 2026</a></span></li><li class="event" id="comment-102"><span class="state changed">Cancel review</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> withdrew a pull request review.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-102" title="Jul 6, 2026">Jul 6, 2026</a></span></li><li class="event" id="comment-103"><span class="state closed">Closed</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> closed this pull request.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-103" title="Jul 7, 2026">Jul 7, 2026</a></span></li><li class="event" id="comment-104"><span class="state merged">Merged</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> merged commit (<a class="link" href="__BASE_PATH__/admin/sample/commit/mergedcommit123456" title="View commit">mergedc</a>)<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-104" title="Jul 8, 2026">Jul 8, 2026</a></span></li><li class="event" id="comment-105"><span class="state merged">Merged</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> merged commit ({1})<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-105" title="Jul 9, 2026">Jul 9, 2026</a></span></li></ul></div>`;
 
 const EXPECTED_PULL_REQUEST_OVERVIEW_WITH_STATE_EVENTS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="board-comment-wrap"></div>`,
@@ -57,7 +57,7 @@ const EXPECTED_PULL_REQUEST_NO_WATCH_BUTTON = EXPECTED_PULL_REQUEST_OVERVIEW.rep
 
 const EXPECTED_PULL_REQUEST_REVIEWER_CONTROLS = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
-  `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" data-placement="top" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><button type="button" class="ybtn ybtn-default">Cancel review</button><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
+  `<div class="pull-right"><div id="reviewers" style="display:inline-block; margin-right:5px;"><span style="font-size: 13px; vertical-align: middle; margin: 0px 10px;"><strong>2</strong> participants</span><a href="__BASE_PATH__/admin" class="usf-group" title="Site Admin"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a></div><button type="button" class="ybtn ybtn-default">Cancel review</button><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
 );
 
 const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
@@ -66,7 +66,7 @@ const EXPECTED_PULL_REQUEST_CONFLICT_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.repl
 )
   .replace(
     `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
-    `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" data-placement="top" title="There are conflicts.">Merge</button></div>`,
+    `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" title="There are conflicts.">Merge</button></div>`,
   )
   .replace(
     `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
@@ -90,7 +90,7 @@ const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.repla
 )
   .replace(
     `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
-    `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" data-placement="top" title="This pull request is not open.">Merge</button></div>`,
+    `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" title="This pull request is not open.">Merge</button></div>`,
   )
   .replace(
     `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
@@ -103,7 +103,7 @@ const EXPECTED_PULL_REQUEST_CLOSED_REOPEN = EXPECTED_PULL_REQUEST_OVERVIEW.repla
 
 const EXPECTED_PULL_REQUEST_MERGING_STATE = EXPECTED_PULL_REQUEST_OVERVIEW.replace(
   `<div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div>`,
-  `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" data-placement="top" title="Now, it's checking the code.">Merge</button></div>`,
+  `<div class="pull-right"><button type="button" class="ybtn ybtn-disabled" title="Now, it's checking the code.">Merge</button></div>`,
 ).replace(
   `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div>`,
   `<div id="state" class="pullRequest-stateInfo"><div class="alert alert-warnning"><i class="yobicon-supportrequest mr5"></i><span>We are checking if the code is safe. Please wait for a while to complete this process.</span></div></div>`,
@@ -216,6 +216,7 @@ test("project pull request overview matches legacy git/view.scala.html empty-eve
     "data-toggle",
     /.+/u,
   );
+  await expectNoRouteTooltipPlacements(page);
   await expect(page.locator(".board-footer .mr5 .ybtn").first()).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/pullRequest/9/editform`,
@@ -513,6 +514,7 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).not.toContain("globalThis.document");
   expect(routeSource).not.toContain('data-original-title={t("pullRequest.from")}');
   expect(routeSource).not.toContain('data-original-title={t("pullRequest.to")}');
+  expect(routeSource).not.toContain("data-placement");
   expect(routeSource).toContain('className="from" title={t("pullRequest.from")}');
   expect(routeSource).toContain('className="to" title={t("pullRequest.to")}');
   expect(routeSource).not.toMatch(
@@ -674,10 +676,11 @@ test("project pull request overview renders legacy commit-changed event DOM", as
     text: "1234567",
   });
   await expectNoRouteTooltipInitializers(page);
-  await expect(event.locator("> a.usf-group").first()).toHaveAttribute("data-placement", "top");
+  await expect(event.locator("> a.usf-group").first()).not.toHaveAttribute("data-placement", /.+/u);
   await expect(event.locator("> a.usf-group").first()).toHaveAttribute("title", "dev");
-  await expect(event.locator("> a.usf-group").nth(1)).toHaveAttribute("data-placement", "top");
+  await expect(event.locator("> a.usf-group").nth(1)).not.toHaveAttribute("data-placement", /.+/u);
   await expect(event.locator("> a.usf-group").nth(1)).toHaveAttribute("title", "dev");
+  await expectNoRouteTooltipPlacements(page);
   await expectLegacyAnchor(event.locator(".avatar-wrap.small.hide-in-mobile").first(), {
     class: "avatar-wrap small hide-in-mobile",
     href: `${basePath}/dev`,
@@ -1407,22 +1410,23 @@ test("project pull request overview renders legacy reviewer controls DOM", async
   await expect(unreviewButton).not.toHaveAttribute("data-request-uri", /.+/u);
   await expect(unreviewButton).not.toHaveAttribute("data-request-method", /.+/u);
   await expectNoRouteTooltipInitializers(page);
-  await expect(page.locator("#reviewers > a.usf-group").first()).toHaveAttribute(
+  await expect(page.locator("#reviewers > a.usf-group").first()).not.toHaveAttribute(
     "data-placement",
-    "top",
+    /.+/u,
   );
   await expect(page.locator("#reviewers > a.usf-group").first()).toHaveAttribute(
     "title",
     "Site Admin",
   );
-  await expect(page.locator("#reviewers > a.usf-group").nth(1)).toHaveAttribute(
+  await expect(page.locator("#reviewers > a.usf-group").nth(1)).not.toHaveAttribute(
     "data-placement",
-    "top",
+    /.+/u,
   );
   await expect(page.locator("#reviewers > a.usf-group").nth(1)).toHaveAttribute(
     "title",
     "Dev Member",
   );
+  await expectNoRouteTooltipPlacements(page);
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -1452,9 +1456,10 @@ test("project pull request overview renders legacy conflict state DOM", async ({
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".badge-issue-conflict")).toHaveText("Conflict");
   await expect(page.locator(".ybtn-disabled")).toHaveAttribute("title", "There are conflicts.");
-  await expect(page.locator(".ybtn-disabled")).toHaveAttribute("data-placement", "top");
+  await expect(page.locator(".ybtn-disabled")).not.toHaveAttribute("data-placement", /.+/u);
   await expect(page.locator(".ybtn-disabled")).not.toHaveAttribute("data-toggle", /.+/u);
   await expectNoRouteTooltipInitializers(page);
+  await expectNoRouteTooltipPlacements(page);
   await expect(page.locator("#state .alert-error")).toContainText(
     "A conflict occurred when merging. This pull request cannot be merged safely.",
   );
@@ -1593,9 +1598,10 @@ test("project pull request overview renders legacy merging state DOM", async ({ 
     "title",
     "Now, it's checking the code.",
   );
-  await expect(page.locator(".ybtn-disabled")).toHaveAttribute("data-placement", "top");
+  await expect(page.locator(".ybtn-disabled")).not.toHaveAttribute("data-placement", /.+/u);
   await expect(page.locator(".ybtn-disabled")).not.toHaveAttribute("data-toggle", /.+/u);
   await expectNoRouteTooltipInitializers(page);
+  await expectNoRouteTooltipPlacements(page);
 
   expect(await canonicalizeAll(page, ".page-wrap-outer, #helpMessage")).toEqual(
     await canonicalizeHtmlAll(
@@ -2018,6 +2024,10 @@ async function expectLegacyAnchor(
 
 async function expectNoRouteTooltipInitializers(page: Page) {
   await expect(page.locator('.project-page-wrap [data-toggle="tooltip"]')).toHaveCount(0);
+}
+
+async function expectNoRouteTooltipPlacements(page: Page) {
+  await expect(page.locator(".project-page-wrap [data-placement]")).toHaveCount(0);
 }
 
 function projectCodeUrlWithLogin(
