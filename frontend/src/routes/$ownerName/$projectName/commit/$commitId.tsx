@@ -527,6 +527,7 @@ function SvnCommitDetailBody({
   const commit = detail.commit;
   const patch = detail.files[0]?.patch ?? "";
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+  const anonymousAuthorName = t("user.role.anonymous");
 
   return (
     <div className="page-wrap-outer">
@@ -586,7 +587,7 @@ function SvnCommitDetailBody({
             <span className="avatar-wrap">
               <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
             </span>
-            <strong>{commit?.authorName || commit?.authorEmail || "Anonymous"}</strong>
+            <strong>{commit?.authorName || commit?.authorEmail || anonymousAuthorName}</strong>
             <span className="ago" title={commit?.authorDate ?? ""}>
               {commit?.authorDate ?? ""}
             </span>
@@ -1424,6 +1425,8 @@ function AttachmentFileMarker({ file }: { file: CodeReviewAttachment }) {
 }
 
 function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
+  const { t } = useLegacyMessages();
+  const anonymousAuthorName = t("user.role.anonymous");
   const commit = detail.commit as
     | (NonNullable<CodeCommitDetailResponse["commit"]> & {
         authorAvatarUrl?: string;
@@ -1431,9 +1434,9 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
       })
     | null;
   if (!commit) {
-    return <strong>Anonymous</strong>;
+    return <strong>{anonymousAuthorName}</strong>;
   }
-  const authorName = commit.authorName || commit.authorEmail || "Anonymous";
+  const authorName = commit.authorName || commit.authorEmail || anonymousAuthorName;
 
   if (commit.authorLoginId) {
     return (

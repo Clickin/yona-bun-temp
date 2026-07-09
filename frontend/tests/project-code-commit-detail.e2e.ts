@@ -15,6 +15,10 @@ const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
   "utf8",
 );
+const LEGACY_MESSAGES_SOURCE = readFileSync(
+  new URL("../../yona-original/conf/messages", import.meta.url),
+  "utf8",
+);
 
 function withLegacyMarkdownHelp(html: string) {
   return html.replaceAll(
@@ -204,6 +208,14 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toMatch(
     /className="attachment-files"[\s\S]{0,160}dangerouslySetInnerHTML/u,
   );
+});
+
+test("project commit detail anonymous author fallback uses legacy message key", async () => {
+  expect(LEGACY_MESSAGES_SOURCE).toMatch(/^user\.role\.anonymous\s*=\s*Anonymous$/m);
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('t("user.role.anonymous")');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('|| "Anonymous"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("<strong>Anonymous</strong>");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('commit?.authorEmail || "Anonymous"');
 });
 
 test("project commit detail watch buttons are route-owned React controls", async () => {
@@ -913,6 +925,32 @@ test("project commit detail links known commit author avatar like legacy diff.sc
   await expect(authorAvatar.locator("img")).toHaveAttribute("width", "32");
   await expect(authorAvatar.locator("img")).toHaveAttribute("height", "32");
   await expect(page.locator(".commitAuthor > strong")).toHaveText("Dev Author");
+  expect(detailRequests).toEqual(["branch=main"]);
+});
+
+test("project commit detail renders no-author commit with legacy anonymous author copy", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    commit: {
+      authorDate: "Jul 1, 2026",
+      authorEmail: null,
+      authorName: null,
+      commentCount: 0,
+      commitId: "abcdef1234567890",
+      commitShortId: "abcdef1",
+      message: "Initial commit\nAdd README",
+      shortMessage: "Initial commit",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+  await expect(page.locator(".commitAuthor > strong")).toHaveText("Anonymous");
+  await expect(page.locator(".commitAuthor > .avatar-wrap.smaller")).not.toHaveAttribute("href");
+  await expect(page.locator(".commitAuthor > .avatar-wrap.smaller img")).toHaveAttribute("alt", "");
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
