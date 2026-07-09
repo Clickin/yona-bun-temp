@@ -659,7 +659,8 @@ test("global search result navigation keeps legacy hrefs through TanStack Router
   expect(searchScreenSource).not.toContain("LegacyHrefAnchor");
   expect(searchScreenSource).not.toContain("React.createElement");
   expect(searchScreenSource).not.toContain('data-toggle="tooltip"');
-  expect(searchScreenSource).toContain('data-placement="top"');
+  expect(searchScreenSource).not.toContain('data-placement="top"');
+  expect(searchScreenSource).not.toContain("data-placement=");
   expect(searchScreenSource).not.toContain("forwardRef");
   expect(searchScreenSource).not.toContain("router.history");
   expect(defaultErrorBodySource).not.toMatch(/<a[\s>]/u);
@@ -777,7 +778,7 @@ test("global search shared root sidebar tabs use React button state without Boot
     rootSource.indexOf('<div id="mySidenav"'),
     rootSource.indexOf('<ul className="gnb-usermenu">'),
   );
-  expect(rootSidebarSource).toContain('<button\n                    type="button"');
+  expect(rootSidebarSource).toContain('<button type="button"');
   expect(rootSidebarSource).not.toContain('data-toggle="tab"');
   expect(rootSidebarSource).not.toContain('href="#');
   expect(rootSidebarSource).not.toMatch(/<a[\s>]/u);
@@ -854,7 +855,9 @@ test("global user search renders legacy partial_users.scala.html populated row",
   await expect(avatarLink).toHaveAttribute("href", `${basePath}/alice`);
   await expect(avatarLink).toHaveAttribute("title", "alice");
   await expect(avatarLink).not.toHaveAttribute("data-toggle");
+  await expect(avatarLink).not.toHaveAttribute("data-placement");
   await expect(page.locator('.search-result-wrap [data-toggle="tooltip"]')).toHaveCount(0);
+  await expect(page.locator(".search-result-wrap [data-placement]")).toHaveCount(0);
   await expect(page.locator("#pagination")).toHaveAttribute("id", "pagination");
   await expect(page.locator("#pagination")).not.toHaveClass(/page-navigation-wrap/u);
   await expect(page.locator("#pagination .page-nums")).toHaveCount(0);
@@ -877,6 +880,14 @@ test("global user search renders legacy partial_users.scala.html default avatar 
   await expect(defaultAvatar).not.toHaveAttribute("alt");
   await expect(defaultAvatar).not.toHaveAttribute("width");
   await expect(defaultAvatar).not.toHaveAttribute("height");
+  await expect(page.locator(".search-list-item.project .avatar-wrap")).toHaveAttribute(
+    "title",
+    "default-member",
+  );
+  await expect(page.locator(".search-list-item.project .avatar-wrap")).not.toHaveAttribute(
+    "data-placement",
+  );
+  await expect(page.locator(".search-result-wrap [data-placement]")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -898,7 +909,9 @@ test("global issue search renders legacy partial_issues.scala.html populated row
   await expect(authorLink).toHaveAttribute("href", `${basePath}/alice`);
   await expect(authorLink).toHaveText("Alice");
   await expect(authorLink).not.toHaveAttribute("data-toggle");
+  await expect(authorLink).not.toHaveAttribute("data-placement");
   await expect(page.locator('.search-result-wrap [data-toggle="tooltip"]')).toHaveCount(0);
+  await expect(page.locator(".search-result-wrap [data-placement]")).toHaveCount(0);
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
@@ -2198,6 +2211,7 @@ async function canonicalizeScreenRoots(page: Page) {
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
             !isModernizedSearchResultTooltipAttribute(attr) &&
+            !isModernizedGlobalSidebarPinTooltipAttribute(attr) &&
             !isModernizedLegacySearchCategoryButtonType(attr) &&
             !isModernizedLegacyTabButtonType(attr) &&
             attr.name !== "data-login" &&
@@ -2263,6 +2277,16 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.ownerElement.closest(".search-result-wrap") !== null &&
         (attr.ownerElement.classList.contains("avatar-wrap") ||
           attr.ownerElement.classList.contains("meta-item"))
+      );
+    }
+
+    function isModernizedGlobalSidebarPinTooltipAttribute(attr: Attr) {
+      return (
+        attr.name === "data-toggle" &&
+        attr.value === "tooltip" &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("pin") &&
+        attr.ownerElement.closest(".gnb-inner") !== null
       );
     }
 
@@ -2355,6 +2379,7 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isEmptyModernizedTanStackRouterActiveClass(attr) &&
             !isModernizedLegacySearchCategoryAttribute(attr) &&
             !isModernizedSearchResultTooltipAttribute(attr) &&
+            !isModernizedGlobalSidebarPinTooltipAttribute(attr) &&
             !isModernizedLegacySearchCategoryButtonType(attr) &&
             !isModernizedLegacyTabButtonType(attr) &&
             attr.name !== "data-login" &&
@@ -2420,6 +2445,16 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.ownerElement.closest(".search-result-wrap") !== null &&
         (attr.ownerElement.classList.contains("avatar-wrap") ||
           attr.ownerElement.classList.contains("meta-item"))
+      );
+    }
+
+    function isModernizedGlobalSidebarPinTooltipAttribute(attr: Attr) {
+      return (
+        attr.name === "data-toggle" &&
+        attr.value === "tooltip" &&
+        attr.ownerElement instanceof Element &&
+        attr.ownerElement.classList.contains("pin") &&
+        attr.ownerElement.closest(".gnb-inner") !== null
       );
     }
 

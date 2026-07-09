@@ -343,7 +343,6 @@ function SearchResultList({
                   to={userLink.to}
                   hash={userLink.hash || undefined}
                   className="avatar-wrap"
-                  data-placement="top"
                   title={item.authorLoginId}
                 >
                   {isDefaultUserSearchAvatar(item.avatarUrl) ? (
@@ -456,7 +455,6 @@ function SearchResultList({
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
                       className="meta-item"
-                      data-placement="top"
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}

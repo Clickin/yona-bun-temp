@@ -40,20 +40,20 @@ const EXPECTED_PROFILE_SCREEN = `
                 <ul class="post-list-wrap my-issues row-fluid">
                   <li class="post-item title" id="issue-item-11" href="__BASE_PATH__/door/sample/issue/7">
                     <div class="span12 span-hard-wrap">
-                      <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#7</span></div>
+                      <div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" title="Project name">sample</a></span><span class="infos-item post-id">#7</span></div>
                       <div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/7" class="title">Open profile issue</a><span class="item-count-groups"><a href="__BASE_PATH__/door/sample/issue/7#comments" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">3</span></a></span><span class="for-subtask-progressbar"><div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width: 50%;" title="Subtask"></div></div><span class="subtask-progress completion-ratio">1/2</span></span><a href="__BASE_PATH__/door/sample/issues?state=open&labelIds=17" class="label issue-label list-label" data-label-id="17" style="background:rgb(244,67,54)">Bug</a><div class="child-issue-list hide"><div class="child-issues"><div class="issue-item  child-issue"><span class="state-label open"></span><a class="twoColumeModeTarget" href="__BASE_PATH__/door/sample/issue/13"><span class="item-name"><span class="subtask-number">#13</span><span>Open profile child</span><span> - Alice</span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="2026-07-03">2026-07-03</span></div><div class="issue-item  child-issue"><span class="state-label closed"><i class=" yobicon-checkmark"></i></span><a class="twoColumeModeTarget" href="__BASE_PATH__/door/sample/issue/14"><span class="item-name"><span class="subtask-number">#14</span><span>Closed profile child</span><span></span></span></a><span class="font12 no-border-at-child"></span><span class="child-issue-date" title="2026-07-04">2026-07-04</span></div></div></div></span></div>
-                      <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-placement="bottom" title="door">Door User</a></div>
-                      <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-placement="bottom" title="alice">Alice</a></div>
-                      <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" data-placement="bottom" title="alice">Alice</a></span><span class="infos-item" data-placement="bottom" title="2026-07-01">2026-07-01</span><span class="pull-right " data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>31 days</span></span></div>
+                      <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" title="door">Door User</a></div>
+                      <div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" title="alice">Alice</a></div>
+                      <div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><a href="__BASE_PATH__/alice" class="infos-item infos-link-item author-cell" title="alice">Alice</a></span><span class="infos-item" title="2026-07-01">2026-07-01</span><span class="pull-right " title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>31 days</span></span></div>
                     </div>
                   </li>
                 </ul>
               </div>
-              <div id="closedIssues" class="tab-pane "><ul class="post-list-wrap my-issues row-fluid"><li class="post-item title" id="issue-item-12" href="__BASE_PATH__/door/sample/issue/8"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" data-placement="bottom" title="Project name">sample</a></span><span class="infos-item post-id">#8</span></div><div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/8" class="title">Closed profile issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" data-placement="bottom" title="door">Door User</a></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item"></span></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><span class="infos-item"></span></span><span class="infos-item" data-placement="bottom" title="2026-06-29">2026-06-29</span><span class="mileston-tag"><a href="__BASE_PATH__/door/sample/milestone/3" data-placement="bottom" title="Milestone">v1.0</a></span><span class="pull-right " data-placement="top" title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>2026-08-01</span></span></div></div></li></ul></div>
+              <div id="closedIssues" class="tab-pane "><ul class="post-list-wrap my-issues row-fluid"><li class="post-item title" id="issue-item-12" href="__BASE_PATH__/door/sample/issue/8"><div class="span12 span-hard-wrap"><div class="span2 project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item project-name"><a href="__BASE_PATH__/door/sample" class="title project" title="Project name">sample</a></span><span class="infos-item post-id">#8</span></div><div class="title-wrap span5"><span class="title-cell"><a href="__BASE_PATH__/door/sample/issue/8" class="title">Closed profile issue</a><span class="for-subtask-progressbar"></span><div class="child-issue-list hide"></div></span></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><a href="__BASE_PATH__/door" class="infos-item infos-link-item author-cell" title="door">Door User</a></div><div class="span1 hide-in-mobile author project-name-in-my-issues fixed-height-my-issues-list"><span class="infos-item"></span></div><div class="infos span3 meta"><span class="meta-cell"><span class="hide show-in-mobile"><span class="infos-item"></span></span><span class="infos-item" title="2026-06-29">2026-06-29</span><span class="mileston-tag"><a href="__BASE_PATH__/door/sample/milestone/3" title="Milestone">v1.0</a></span><span class="pull-right " title="Due date: 2026-08-01"><i class="yobicon-clock2"></i>2026-08-01</span></span></div></div></li></ul></div>
             </div>
           </div>
           <div id="pullRequests" class="tab-pane ">
-            <ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="__BASE_PATH__/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="__BASE_PATH__/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="__BASE_PATH__/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="__BASE_PATH__/door" class="infos-item infos-link-item" data-placement="top" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="__BASE_PATH__/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="__BASE_PATH__/alice" class="avatar-wrap assinee" data-placement="top" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>
+            <ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="__BASE_PATH__/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="__BASE_PATH__/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="__BASE_PATH__/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="__BASE_PATH__/door" class="infos-item infos-link-item" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="__BASE_PATH__/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="__BASE_PATH__/alice" class="avatar-wrap assinee" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>
           </div>
           <div id="projects" class="tab-pane ">
             <ul class="user-streams all-projects"><li class="project"><div class="info-wrap"><div class="pull-left"><a href="__BASE_PATH__/door/sample" class="avatar-wrap small"><img src="/assets/images/project_default_logo.png"></a></div><div class="pull-left" style="margin-left: 10px;"><div class="header"><a href="__BASE_PATH__/door/sample" class="project-name">sample</a></div><div class="desc">Profile project</div><div class="name-tag"><i class="yobicon-friends yobicon-middle"></i><strong>3</strong> <a href="__BASE_PATH__/door" class="owner-name-small">door</a> <span title="2026-06-01">2026-06-01</span>,Latest code update<span title="2026-06-30">2026-06-30</span></div></div></div><div class="stats-wrap pull-right"><div class="stats"><a href="__BASE_PATH__/door/sample/watch" class="ybtn watchBtn"><i class="yobicon-eye-close yobicon-middle yobicon-white"></i>Watch<span class="num-badge">5</span></a></div></div></li></ul>
@@ -164,6 +164,7 @@ test("public user profile route source keeps navigation on TanStack Link", async
   expect(source).toContain('normalized === "google"');
   expect(source).toContain("/assets/images/provider-logo/btn_google_light_normal_ios.svg");
   expect(source).not.toContain('data-toggle="tooltip"');
+  expect(source).not.toContain("data-placement");
   expect(source).toContain("const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {");
   expect(source).toContain('className="popover top"');
   expect(source).toContain('role="tooltip"');
@@ -207,35 +208,20 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
     `${basePath}/door/sample/pullRequest/4#comments`,
   );
   await expect(page.locator('.user-box [data-toggle="tooltip"]')).toHaveCount(0);
-  await expect(page.locator("#issue-item-11 .title.project")).toHaveAttribute(
-    "data-placement",
-    "bottom",
-  );
+  await expect(page.locator(".user-box [data-placement]")).toHaveCount(0);
   await expect(page.locator("#issue-item-11 .title.project")).toHaveAttribute(
     "title",
     "Project name",
   );
   await expect(page.locator("#issue-item-11 .title.project")).toHaveText("sample");
   await expect(page.locator("#issue-item-11 .author-cell").first()).toHaveAttribute(
-    "data-placement",
-    "bottom",
-  );
-  await expect(page.locator("#issue-item-11 .author-cell").first()).toHaveAttribute(
     "title",
     "door",
   );
   await expect(page.locator("#issue-item-11 .author-cell").first()).toHaveText("Door User");
   await expect(page.locator("#issue-item-11 .meta-cell > .infos-item")).toHaveAttribute(
-    "data-placement",
-    "bottom",
-  );
-  await expect(page.locator("#issue-item-11 .meta-cell > .infos-item")).toHaveAttribute(
     "title",
     "2026-07-01",
-  );
-  await expect(page.locator("#issue-item-11 .meta-cell > .pull-right")).toHaveAttribute(
-    "data-placement",
-    "top",
   );
   await expect(page.locator("#issue-item-11 .meta-cell > .pull-right")).toHaveAttribute(
     "title",
@@ -243,24 +229,12 @@ test("public user profile matches legacy user/view.scala.html issues screen", as
   );
   await expect(page.locator("#issue-item-11 .meta-cell > .pull-right")).toContainText("31 days");
   await expect(page.locator("#issue-item-12 .mileston-tag a")).toHaveAttribute(
-    "data-placement",
-    "bottom",
-  );
-  await expect(page.locator("#issue-item-12 .mileston-tag a")).toHaveAttribute(
     "title",
     "Milestone",
   );
   await expect(page.locator("#issue-item-12 .mileston-tag a")).toHaveText("v1.0");
-  await expect(page.locator("#pullRequests .infos-link-item")).toHaveAttribute(
-    "data-placement",
-    "top",
-  );
   await expect(page.locator("#pullRequests .infos-link-item")).toHaveAttribute("title", "door");
   await expect(page.locator("#pullRequests .infos-link-item")).toHaveText("Door User");
-  await expect(page.locator("#pullRequests .avatar-wrap.assinee")).toHaveAttribute(
-    "data-placement",
-    "top",
-  );
   await expect(page.locator("#pullRequests .avatar-wrap.assinee")).toHaveAttribute(
     "title",
     "Alice",
@@ -1164,10 +1138,10 @@ function expectedProfileScreen({
       `<div id="pullRequests" class="tab-pane ${selected === "pullRequests" ? "active" : ""}">`,
     )
     .replace(
-      `<ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="${basePath}/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="${basePath}/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="${basePath}/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="${basePath}/door" class="infos-item infos-link-item" data-placement="top" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="${basePath}/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="${basePath}/alice" class="avatar-wrap assinee" data-placement="top" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>`,
+      `<ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="${basePath}/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="${basePath}/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="${basePath}/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="${basePath}/door" class="infos-item infos-link-item" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="${basePath}/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="${basePath}/alice" class="avatar-wrap assinee" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>`,
       pullRequestsEmpty
         ? `<div class="error-wrap"><p>recently No pull requests have been received</p></div><ul class="post-list-wrap  row-fluid"></ul>`
-        : `<ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="${basePath}/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="${basePath}/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="${basePath}/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="${basePath}/door" class="infos-item infos-link-item" data-placement="top" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="${basePath}/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="${basePath}/alice" class="avatar-wrap assinee" data-placement="top" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>`,
+        : `<ul class="post-list-wrap  row-fluid"><li class="post-item"><div class="span10"><a href="${basePath}/door/sample" class="avatar-wrap mlarge"><img src="/assets/images/project_default_logo.png"></a><div class="title-wrap"><a href="${basePath}/door/sample" class="title project">sample</a><span class="post-id">4</span><a href="${basePath}/door/sample/pullRequest/4" class="title ">Profile pull request</a></div><div class="infos"><a href="${basePath}/door" class="infos-item infos-link-item" title="door">Door User</a><span class="infos-item" title="2026-07-02">2026-07-02</span><a href="${basePath}/door/sample/pullRequest/4#comments" class="infos-item infos-icon-link"><i class="yobicon-comments"></i><span class="size">2</span></a></div></div><div class="span2"><div class="mt5 pull-right"><a href="${basePath}/alice" class="avatar-wrap assinee" title="Alice"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="state open pull-right">Open</div></div></li></ul>`,
     )
     .replace(
       '<div id="projects" class="tab-pane ">',

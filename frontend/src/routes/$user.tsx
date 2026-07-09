@@ -582,7 +582,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
               {...LEGACY_LINK_PROPS}
               to={projectPath}
               className="title project"
-              data-placement="bottom"
               title={t("project.name")}
             >
               {projectName}
@@ -644,11 +643,7 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 loginId={stringField(issue, "assigneeLoginId")}
               />
             </span>
-            <span
-              className="infos-item"
-              data-placement="bottom"
-              title={stringField(issue, "updatedLabel")}
-            >
+            <span className="infos-item" title={stringField(issue, "updatedLabel")}>
               {stringField(issue, "updatedLabel")}
             </span>
             {milestoneId > 0 && milestoneTitle ? (
@@ -656,7 +651,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 <Link
                   {...LEGACY_LINK_PROPS}
                   to={`${projectPath}/milestone/${milestoneId}`}
-                  data-placement="bottom"
                   title={t("milestone")}
                 >
                   {milestoneTitle}
@@ -666,7 +660,6 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             {dueDateLabel ? (
               <span
                 className={`pull-right ${dueDateOverdue ? "overdue" : ""}`}
-                data-placement="top"
                 title={`${t("issue.dueDate")}: ${dueDateLabel}`}
               >
                 <i className="yobicon-clock2"></i>
@@ -935,7 +928,6 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
             className="infos-item infos-link-item"
             label={stringField(pullRequest, "contributorLabel")}
             loginId={stringField(pullRequest, "contributorLoginId")}
-            placement="top"
           />
           <span className="infos-item" title={stringField(pullRequest, "updatedLabel")}>
             {stringField(pullRequest, "updatedLabel")}
@@ -960,7 +952,6 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
               {...LEGACY_LINK_PROPS}
               to={`/${receiverLoginId}`}
               className="avatar-wrap assinee"
-              data-placement="top"
               title={receiverLabel}
             >
               <img src={receiverAvatarUrl} width="32" height="32" alt={receiverLabel} />
@@ -1212,7 +1203,6 @@ function ProfilePersonLink({ label, loginId }: { label: string; loginId: string 
       className="infos-item infos-link-item author-cell"
       label={label}
       loginId={loginId}
-      placement="bottom"
     />
   );
 }
@@ -1221,24 +1211,16 @@ function ProfileTextLink({
   className,
   label,
   loginId,
-  placement,
 }: {
   className: string;
   label: string;
   loginId: string;
-  placement: "bottom" | "top";
 }) {
   if (!loginId) {
     return <span className="infos-item"></span>;
   }
   return (
-    <Link
-      {...LEGACY_LINK_PROPS}
-      to={`/${loginId}`}
-      className={className}
-      data-placement={placement}
-      title={loginId}
-    >
+    <Link {...LEGACY_LINK_PROPS} to={`/${loginId}`} className={className} title={loginId}>
       {label || loginId}
     </Link>
   );

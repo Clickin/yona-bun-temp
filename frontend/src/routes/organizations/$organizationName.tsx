@@ -481,7 +481,6 @@ function MemberPanel({
                     "data-status": undefined,
                   }}
                   className="avatar-wrap"
-                  data-placement="top"
                   params={{ user: stringField(member.loginId, "") }}
                   search={{}}
                   title={stringField(member.loginId, "")}
@@ -506,7 +505,6 @@ function MemberPanel({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  data-placement="top"
                   params={{ user: stringField(member.loginId, "") }}
                   search={{}}
                   title={stringField(member.loginId, "")}
