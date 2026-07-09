@@ -1685,12 +1685,12 @@ function Editor({
     <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={mode === "edit" ? "active" : undefined}>
-          <button type="button" data-mode="edit" onClick={() => setMode("edit")}>
+          <button type="button" onClick={() => setMode("edit")}>
             {t("common.editor.edit")}
           </button>
         </li>
         <li className={mode === "preview" ? "active" : undefined}>
-          <button type="button" data-mode="preview" onClick={() => setMode("preview")}>
+          <button type="button" onClick={() => setMode("preview")}>
             {t("common.editor.preview")}
           </button>
         </li>
