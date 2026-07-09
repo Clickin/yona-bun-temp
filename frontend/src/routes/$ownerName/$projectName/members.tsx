@@ -412,7 +412,6 @@ function ProjectMembersBody({
                   id="loginId"
                   name="loginId"
                   required
-                  data-provider="typeahead"
                   autoComplete="off"
                   placeholder={t("project.members.addMember")}
                   pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
