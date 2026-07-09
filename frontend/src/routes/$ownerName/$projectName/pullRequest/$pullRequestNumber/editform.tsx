@@ -166,7 +166,7 @@ function ProjectPullRequestEditBody({
               formOptions={formOptions}
               selected={formOptions.selected}
             />
-            <span id="pullRequestState" data-value={pullRequest.state}></span>
+            <span id="pullRequestState"></span>
             {pullRequest.state === "OPEN" || pullRequest.state === "open" ? (
               <div id="status" className={`alert mt20 mb20 ${status.cssClass}`}>
                 {status.message}
