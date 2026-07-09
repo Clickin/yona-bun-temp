@@ -785,7 +785,7 @@ export function PullRequestBranchInfo({
   return (
     <div className="pullRequest-branchInfo">
       <i className="yobicon-branch ml0"></i>
-      <code className="from" data-original-title={t("pullRequest.from")}>
+      <code className="from" title={t("pullRequest.from")}>
         <Link to="/$user" params={{ user: pullRequest.fromOwnerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.fromOwnerName}
         </Link>
@@ -815,7 +815,7 @@ export function PullRequestBranchInfo({
         </Link>
       </code>
       <i className="yobicon-right-2 ml10"></i>
-      <code className="to" data-original-title={t("pullRequest.to")}>
+      <code className="to" title={t("pullRequest.to")}>
         <Link to="/$user" params={{ user: pullRequest.ownerName }} {...LEGACY_LINK_PROPS}>
           {pullRequest.ownerName}
         </Link>
