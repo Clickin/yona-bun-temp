@@ -169,11 +169,40 @@ test("project code file history omits author tooltip marker but keeps metadata",
   await expect(authorAvatar).not.toHaveAttribute("data-toggle", /.*/u);
 });
 
+test("project code file history uses legacy anonymous author message", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyRequests: string[] = [];
+  await mockProjectCodeFileHistory(page, historyRequests, "README.md", {
+    commits: [
+      {
+        authorAvatarUrl: null,
+        authorDate: "Jul 2, 2026",
+        authorEmail: null,
+        authorLoginId: null,
+        authorName: null,
+        commentCount: 0,
+        commitId: "1234567890abcdef",
+        commitShortId: "1234567",
+        message: "Anonymous update",
+        shortMessage: "Anonymous update",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/commits/main/README.md?page=2`);
+
+  await expect(page.locator("#history .code-table.commits.mt10 tbody tr")).toHaveCount(1);
+  expect(historyRequests).toEqual(["branch=main&page=2&path=README.md"]);
+  await expect(page.locator("#history .author span")).toHaveText("Anonymous");
+  await expect(page.locator("#history .author .avatar-wrap")).toHaveCount(0);
+});
+
 test("project code file history route uses TanStack Link for internal anchors", () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx",
     "utf8",
   );
+  const legacyMessages = readFileSync("../yona-original/conf/messages", "utf8");
   const removedAdapterName = ["legacy", "Inactive", "Link", "Options"].join("");
 
   expect(routeSource).not.toMatch(/<a\b/u);
@@ -191,6 +220,10 @@ test("project code file history route uses TanStack Link for internal anchors", 
   expect(routeSource).not.toContain("toggleClass");
   expect(routeSource).not.toContain('data-toggle="tooltip"');
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
+  expect(routeSource).toContain('t("user.role.anonymous")');
+  expect(routeSource).not.toContain('commit.authorName || "Anonymous"');
+  expect(routeSource).not.toContain("commit.authorName || 'Anonymous'");
+  expect(legacyMessages).toMatch(/^user\.role\.anonymous = Anonymous$/mu);
   expect(routeSource).toContain('import { useRef, useState } from "react"');
   expect(routeSource).toContain('import { useRootToast } from "../../../../__root"');
   expect(routeSource).toContain("const [isExpanded, setIsExpanded] = useState(false)");
@@ -217,7 +250,25 @@ test("project code file history route uses TanStack Link for internal anchors", 
   expect(routeSource).toContain('"data-status": undefined');
 });
 
-async function mockProjectCodeFileHistory(page: Page, historyRequests: string[], filePath: string) {
+async function mockProjectCodeFileHistory(
+  page: Page,
+  historyRequests: string[],
+  filePath: string,
+  options: {
+    commits?: Array<{
+      authorAvatarUrl: string | null;
+      authorDate: string;
+      authorEmail: string | null;
+      authorLoginId: string | null;
+      authorName: string | null;
+      commentCount: number;
+      commitId: string;
+      commitShortId: string;
+      message: string;
+      shortMessage: string;
+    }>;
+  } = {},
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -270,7 +321,7 @@ async function mockProjectCodeFileHistory(page: Page, historyRequests: string[],
       body: JSON.stringify({
         branches: [{ name: "main" }, { name: "feature/release" }],
         breadcrumbs: breadcrumbsFor(filePath),
-        commits: [
+        commits: options.commits ?? [
           {
             authorAvatarUrl: "/assets/images/default-avatar-32.png",
             authorDate: "Jul 1, 2026",
