@@ -397,12 +397,7 @@ function ProjectPullRequestsBody({
                           </option>
                         ) : null}
                         {pullRequests.contributors.map((contributor) => (
-                          <option
-                            value={contributor.userId}
-                            data-avatar-url={contributor.avatarUrl}
-                            data-login-id={contributor.loginId}
-                            key={contributor.userId}
-                          >
+                          <option value={contributor.userId} key={contributor.userId}>
                             {contributor.userLabel}
                           </option>
                         ))}
