@@ -539,7 +539,6 @@ function ProjectSettingBody({
 
                     <div
                       id="welReviewerCount"
-                      data-value={String(booleanField(recordField(project).isUsingReviewerCount))}
                       className="hide"
                       style={{ display: reviewerCountEnabled ? "block" : "none" }}
                     >
