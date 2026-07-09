@@ -1245,8 +1245,8 @@ function readDiffSelectionBlock(
 
   const startLine = Number(firstRow.getAttribute("data-line") ?? "");
   const endLine = Number(lastRow.getAttribute("data-line") ?? "");
-  const startType = firstRow.getAttribute("data-type") ?? "context";
-  const endType = lastRow.getAttribute("data-type") ?? "context";
+  const startType = diffRowType(firstRow);
+  const endType = diffRowType(lastRow);
   if (!Number.isFinite(startLine) || !Number.isFinite(endLine)) {
     return null;
   }
@@ -1301,6 +1301,13 @@ function rowHasCodeCell(row: Element) {
   return cell?.firstElementChild instanceof HTMLElement && cell.firstElementChild.tagName === "PRE";
 }
 
+function diffRowType(row: Element): "add" | "context" | "remove" {
+  const className = row.getAttribute("class") ?? "";
+  if (/\badd\b/u.test(className)) return "add";
+  if (/\bremove\b/u.test(className)) return "remove";
+  return "context";
+}
+
 function siblingRows(startRow: Element, endRow: Element) {
   const parent = startRow.parentElement;
   if (!parent || parent !== endRow.parentElement) {
@@ -1343,7 +1350,6 @@ function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }
       data-line={line.lineNumber}
       data-line-key={diffLineKey(line)}
       data-side={line.type === "remove" ? "A" : "B"}
-      data-type={line.type}
     >
       <td className="linenum">
         <i className="yobicon-comments"></i>

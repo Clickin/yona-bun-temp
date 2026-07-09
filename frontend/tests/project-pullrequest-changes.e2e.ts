@@ -284,6 +284,7 @@ test("project pull request changes source keeps React-owned tab controls free of
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-toggle='markdown-editor'");
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="edit"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="preview"');
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-type={line.type}");
 });
 
 test("project pull request changes matches legacy git/viewChanges.scala.html empty diff DOM", async ({
@@ -469,17 +470,20 @@ test("project pull request changes renders normal file diffs as legacy table row
   await expect(diffTable.locator("tbody > tr").nth(1)).toHaveClass("context");
   await expect(diffTable.locator("tbody > tr").nth(1)).toHaveAttribute("data-line", "1");
   await expect(diffTable.locator("tbody > tr").nth(1)).toHaveAttribute("data-side", "B");
+  await expect(diffTable.locator("tbody > tr").nth(1)).not.toHaveAttribute("data-type", /.*/u);
   await expect(diffTable.locator("tbody > tr").nth(1).locator(".diff-partial-codeline")).toHaveText(
     " fn main() {",
   );
   await expect(diffTable.locator("tbody > tr").nth(2)).toHaveClass("remove");
   await expect(diffTable.locator("tbody > tr").nth(2)).toHaveAttribute("data-line", "2");
   await expect(diffTable.locator("tbody > tr").nth(2)).toHaveAttribute("data-side", "A");
+  await expect(diffTable.locator("tbody > tr").nth(2)).not.toHaveAttribute("data-type", /.*/u);
   await expect(diffTable.locator("tbody > tr").nth(2).locator(".linenum").nth(0)).toHaveText("2");
   await expect(diffTable.locator("tbody > tr").nth(2).locator(".linenum").nth(1)).toHaveText("");
   await expect(diffTable.locator("tbody > tr").nth(3)).toHaveClass("add");
   await expect(diffTable.locator("tbody > tr").nth(3)).toHaveAttribute("data-line", "2");
   await expect(diffTable.locator("tbody > tr").nth(3)).toHaveAttribute("data-side", "B");
+  await expect(diffTable.locator("tbody > tr").nth(3)).not.toHaveAttribute("data-type", /.*/u);
   await expect(diffTable.locator("tbody > tr").nth(3).locator(".linenum").nth(0)).toHaveText("");
   await expect(diffTable.locator("tbody > tr").nth(3).locator(".linenum").nth(1)).toHaveText("2");
 

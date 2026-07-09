@@ -48,7 +48,7 @@ const EXPECTED_COMMENT_DELETE_MODAL = `
 <div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div>
 `;
 
-const EXPECTED_FILE_DIFF = `<div id="src-main-rs" class="diff-partial-outer"><div class="diff-partial-inner"><div class="diff-partial-meta"><div class="diff-partial-commit"><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/1234567890abcdef/src/main.rs" title="1234567890abcdef" target="_blank">1234567</a></div><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/abcdef1234567890/src/main.rs" title="abcdef1234567890" target="_blank">abcdef1</a></div></div><div class="diff-partial-file"><span class="filename">src/main.rs</span></div></div><div class="diff-partial-code" data-hashcode="src/main.rs"><div class="patch-header"><div class="path">--- src/main.rs</div><div class="path">+++ src/main.rs</div></div><table class="diff-container show-comments" data-path-a="src/main.rs" data-path-b="src/main.rs" data-commit-a="1234567890abcdef" data-commit-b="abcdef1234567890" data-file-path="src/main.rs"><tbody><tr class="range"><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="hunk">@@ -1,2 +1,3 @@</td></tr><tr class="context" data-line="1" data-type="context" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="linenum"><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="code"><pre class="diff-partial-codeline"> fn main() {</pre></td></tr><tr class="remove" data-line="2" data-type="remove" data-side="A"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="linenum"><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="code"><pre class="diff-partial-codeline">-    println!("old");</pre></td></tr><tr class="add" data-line="2" data-type="add" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("new");</pre></td></tr><tr class="add" data-line="3" data-type="add" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="3"></div><span class="hidden">3</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("again");</pre></td></tr></tbody></table></div></div></div>`;
+const EXPECTED_FILE_DIFF = `<div id="src-main-rs" class="diff-partial-outer"><div class="diff-partial-inner"><div class="diff-partial-meta"><div class="diff-partial-commit"><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/1234567890abcdef/src/main.rs" title="1234567890abcdef" target="_blank">1234567</a></div><div class="diff-partial-commit-id"><a href="__BASE_PATH__/admin/sample/code/abcdef1234567890/src/main.rs" title="abcdef1234567890" target="_blank">abcdef1</a></div></div><div class="diff-partial-file"><span class="filename">src/main.rs</span></div></div><div class="diff-partial-code" data-hashcode="src/main.rs"><div class="patch-header"><div class="path">--- src/main.rs</div><div class="path">+++ src/main.rs</div></div><table class="diff-container show-comments" data-path-a="src/main.rs" data-path-b="src/main.rs" data-commit-a="1234567890abcdef" data-commit-b="abcdef1234567890" data-file-path="src/main.rs"><tbody><tr class="range"><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="linenum"><div class="line-number" data-line-num="..."><span class="hidden">...</span></div></td><td class="hunk">@@ -1,2 +1,3 @@</td></tr><tr class="context" data-line="1" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="linenum"><div class="line-number" data-line-num="1"></div><span class="hidden">1</span></td><td class="code"><pre class="diff-partial-codeline"> fn main() {</pre></td></tr><tr class="remove" data-line="2" data-side="A"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="linenum"><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="code"><pre class="diff-partial-codeline">-    println!("old");</pre></td></tr><tr class="add" data-line="2" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="2"></div><span class="hidden">2</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("new");</pre></td></tr><tr class="add" data-line="3" data-side="B"><td class="linenum"><i class="yobicon-comments"></i><div class="line-number" data-line-num=""></div><span class="hidden"></span></td><td class="linenum"><div class="line-number" data-line-num="3"></div><span class="hidden">3</span></td><td class="code"><pre class="diff-partial-codeline">+    println!("again");</pre></td></tr></tbody></table></div></div></div>`;
 
 const EXPECTED_INLINE_THREAD_ROW = `<tr class="comments board-comment-wrap" data-commit-id="abcdef1234567890"><td colspan="3"><div id="thread-77" data-state="open" class="comment-thread-wrap open" data-range-path="src/main.rs" data-range-startline="2" data-range-endline="2"><div class="btn-thread-here btn-thread-minimize"><button type="button" class="ybtn ybtn-default ybtn-small"><i class="yobicon-post2"></i></button></div><div class="thread-header"><span class="badge state open">Open</span><button type="button" class="ybtn ybtn-default ybtn-small btn-thread-minimize"><i class="yobicon-maximize"></i></button></div><ul class="comments"><li id="comment-501" class="comment"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-placement="top" title="Dev User"><img src="/avatars/dev.png" width="32" height="32" alt="dev"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author pull-left"><a href="__BASE_PATH__/dev" data-placement="top" title="Dev User"><strong>dev </strong></a></span><span class="ago"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890?branch=main#comment-501" title="Jul 1, 2026">Jul 1, 2026</a></span><span class="edit pull-right"><button class="btn-transparent pull-right close" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div class="comment-body markdown-wrap" data-via-email="false"><p>Line <strong>note</strong></p></div><div class="attachments" data-attachments="[]"></div></div></li></ul><div class="write-comment-form"><form action="__BASE_PATH__/admin/sample/commit/abcdef1234567890/comments" method="post" enctype="multipart/form-data" class="review-form" style="display:block"><input type="hidden" name="thread.id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="#edit-thread-77" data-toggle="tab" data-mode="edit">Edit</a></li><li><a href="#preview-thread-77" data-toggle="tab" data-mode="preview">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible"><div id="edit-thread-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="code-review-body" id="editor-contents-thread-77" markdown="true"></textarea></div></div><div id="preview-thread-77" class="tab-pane"><div class="markdown-preview markdown-wrap code-review-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="right-txt"><button type="button" class="ybtn ybtn-default ybtn-small">Close</button><button type="submit" class="ybtn ybtn-success ybtn-small">Add a comment</button></div></div></div></form></div></div></td></tr>`;
 
@@ -249,6 +249,45 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project commit detail diff lines drop legacy data-type while preserving line side hooks", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,2 +1,3 @@
+ fn main() {
+-    println!("old");
++    println!("new");
++    println!("again");`,
+      },
+    ],
+  });
+
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("data-type={line.type}");
+
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await expect(page.locator(".diff-container.show-comments tr[data-type]")).toHaveCount(0);
+  await expect(
+    page.locator(".diff-container.show-comments tr.context[data-line='1']"),
+  ).toHaveAttribute("data-side", "B");
+  await expect(
+    page.locator(".diff-container.show-comments tr.remove[data-line='2']"),
+  ).toHaveAttribute("data-side", "A");
+  await expect(page.locator(".diff-container.show-comments tr.add[data-line='2']")).toHaveAttribute(
+    "data-side",
+    "B",
+  );
+  expect(detailRequests).toEqual(["branch=main"]);
 });
 
 test("project commit detail React tab controls do not carry Bootstrap tab triggers", async () => {
@@ -476,7 +515,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
     .poll(() =>
-      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+      page.locator(".gnb-search-form .dropdown-menu button").evaluateAll((elements) =>
         elements.map((element) => ({
           hasDataAction: element.hasAttribute("data-action"),
           text: element.textContent?.trim() ?? "",
@@ -490,7 +529,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
 
   const commitUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await page.locator(".gnb-search-form .dropdown-menu button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(commitUrl);
@@ -520,7 +559,7 @@ test("project commit detail includes group search scope when project container h
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
+      page.locator(".gnb-search-form .dropdown-menu button").evaluateAll((elements) =>
         elements.map((element) => ({
           hasDataAction: element.hasAttribute("data-action"),
           text: element.textContent?.trim() ?? "",
@@ -535,7 +574,7 @@ test("project commit detail includes group search scope when project container h
 
   const commitUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await page.locator(".gnb-search-form .dropdown-menu button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -544,7 +583,7 @@ test("project commit detail includes group search scope when project container h
   await expect(page).toHaveURL(commitUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await page.locator(".gnb-search-form .dropdown-menu button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(commitUrl);

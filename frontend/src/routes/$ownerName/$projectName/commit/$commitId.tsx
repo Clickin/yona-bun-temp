@@ -906,7 +906,6 @@ function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }
     <tr
       className={line.type}
       data-line={line.lineNumber}
-      data-type={line.type}
       data-side={line.type === "remove" ? "A" : "B"}
     >
       <td className="linenum">

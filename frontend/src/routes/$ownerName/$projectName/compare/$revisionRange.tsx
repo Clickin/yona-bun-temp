@@ -302,7 +302,6 @@ function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }
       className={line.type}
       data-line={line.lineNumber}
       data-side={line.type === "remove" ? "A" : "B"}
-      data-type={line.type}
     >
       <td className="linenum">
         <i className="yobicon-comments"></i>
