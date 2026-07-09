@@ -181,10 +181,9 @@ function ProjectPullRequestEditBody({
                 className="text"
                 defaultValue={pullRequest.title}
                 placeholder={t("title")}
-                data-is-user-has-typed="true"
               />
               <div style={{ position: "relative" }}>
-                <PullRequestMarkdownEditor value={pullRequest.bodyMarkdown} isUserHasTyped />
+                <PullRequestMarkdownEditor value={pullRequest.bodyMarkdown} />
               </div>
               <PullRequestFileUploader resourceId={pullRequest.id} />
               <div className="actions">
@@ -214,7 +213,6 @@ function ProjectPullRequestEditBody({
                     commitDateLabel={t("code.commitDate")}
                     commitMessageLabel={t("code.commitMsg")}
                     commits={mergeResult.commits}
-                    conflict={mergeResult.conflict}
                     noChangesLabel={t("pullRequest.diff.noChanges")}
                     ownerName={sourceProjectOwnerName(formOptions)}
                     projectName={sourceProjectName(formOptions)}
@@ -381,15 +379,8 @@ function PullRequestDisabledBranchSelectors({
   );
 }
 
-function PullRequestMarkdownEditor({
-  isUserHasTyped = false,
-  value,
-}: {
-  isUserHasTyped?: boolean;
-  value: string;
-}) {
+function PullRequestMarkdownEditor({ value }: { value: string }) {
   const { t } = useLegacyMessages();
-  const userTypedAttr = isUserHasTyped ? { "data-is-user-has-typed": "true" } : {};
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
     <div className="mt10">
@@ -441,7 +432,6 @@ function PullRequestMarkdownEditor({
               data-editor-mode="content-body"
               id="editor-body-body"
               defaultValue={value}
-              {...userTypedAttr}
               {...{ markdown: "true" }}
             ></textarea>
           </div>
@@ -493,7 +483,6 @@ function MergeResult({
   commitDateLabel,
   commitMessageLabel,
   commits,
-  conflict,
   noChangesLabel,
   ownerName,
   projectName,
@@ -502,20 +491,13 @@ function MergeResult({
   commitDateLabel: string;
   commitMessageLabel: string;
   commits: PullRequestCommit[];
-  conflict: boolean;
   noChangesLabel: string;
   ownerName: string;
   projectName: string;
 }) {
   if (!commits.length) {
     return (
-      <div
-        id="mergeResult"
-        className="code-browser-wrap"
-        data-commits="0"
-        data-pullrequest-title=""
-        data-pullrequest-body=""
-      >
+      <div id="mergeResult" className="code-browser-wrap">
         <div>
           <h5>{noChangesLabel}</h5>
         </div>
@@ -524,14 +506,7 @@ function MergeResult({
   }
 
   return (
-    <div
-      id="mergeResult"
-      className="code-browser-wrap"
-      data-commits={String(commits.length)}
-      data-pullrequest-title=""
-      data-pullrequest-body=""
-      data-conflict={String(conflict)}
-    >
+    <div id="mergeResult" className="code-browser-wrap">
       <div className="commit-wrap">
         <table className="code-table commits">
           <thead className="thead">

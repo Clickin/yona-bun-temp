@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/7/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5" disabled=""><option value="8" selected="">dev/fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="8"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title" data-is-user-has-typed="true"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" data-is-user-has-typed="true">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap" data-commits="1" data-pullrequest-title="" data-pullrequest-body="" data-conflict="false"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/dev/fork/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequest/7/edit" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5" disabled=""><option value="8" selected="">dev/fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select><input type="hidden" name="fromProjectId" value="8"><input type="hidden" name="fromBranch" value="feature/ui"></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5" disabled=""><option value="7" selected="">admin/sample</option></select><select id="toBranch" name="toBranch" data-format="branch" disabled="" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select><input type="hidden" name="toProjectId" value="7"><input type="hidden" name="toBranch" value="main"></div></div><span id="pullRequestState" data-value="OPEN"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" value="Initial title" placeholder="Title"><div style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST" data-resource-id="90"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Save</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/dev/fork/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -38,8 +38,8 @@ function withLegacyFileUploader(html: string) {
 
 function withLegacyEditor(html: string) {
   return html.replace(
-    `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" data-is-user-has-typed="true">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" data-is-user-has-typed="true">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body">Initial body</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body">Initial body</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -143,8 +143,16 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator("#toBranch")).toHaveAttribute("data-placeholder", "Select branch");
   await expect(page.locator("#toBranch option:checked")).toHaveText("main");
   await expect(page.locator('input[type="hidden"][name="toBranch"]')).toHaveValue("main");
-  await expect(page.locator("#title")).toHaveAttribute("data-is-user-has-typed", "true");
-  await expect(page.locator("#editor-body-body")).toHaveAttribute("data-is-user-has-typed", "true");
+  expect(ROUTE_SOURCE).not.toContain("data-is-user-has-typed");
+  expect(ROUTE_SOURCE).not.toContain("data-commits");
+  expect(ROUTE_SOURCE).not.toContain("data-pullrequest-title");
+  expect(ROUTE_SOURCE).not.toContain("data-pullrequest-body");
+  expect(ROUTE_SOURCE).not.toContain("data-conflict");
+  await expect(page.locator("#title")).not.toHaveAttribute("data-is-user-has-typed", /.*/u);
+  await expect(page.locator("#editor-body-body")).not.toHaveAttribute(
+    "data-is-user-has-typed",
+    /.*/u,
+  );
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
   const editor = pullRequestEditMarkdownEditor(page);
   await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
@@ -201,8 +209,13 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   expect(ROUTE_SOURCE).toContain("pullRequestMergeResultQueryOptions");
   expect(ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/commit/$commitId"');
   expect(ROUTE_SOURCE).not.toContain("<a\n                    href={prefixBasePath");
-  await expect(page.locator("#mergeResult")).toHaveAttribute("data-commits", "1");
-  await expect(page.locator("#mergeResult")).toHaveAttribute("data-conflict", "false");
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-commits", /.*/u);
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-title", /.*/u);
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-body", /.*/u);
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-conflict", /.*/u);
+  await expect(page.locator("#numOfCommits")).toHaveText("1");
+  await expect(page.locator("#mergeResult .commit-wrap")).toBeVisible();
+  await expect(page.locator("#mergeResult .code-table.commits tbody tr")).toHaveCount(1);
   await expect(page.locator("#mergeResult .commit-id a")).toHaveAttribute(
     "href",
     `${basePath}/dev/fork/commit/abcdef1234567890`,
@@ -383,6 +396,11 @@ test("project pull request edit form drops markdown JS-only markers while preser
     "content-body",
   );
   await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
+  await expect(page.locator("#title")).not.toHaveAttribute("data-is-user-has-typed", /.*/u);
+  await expect(page.locator("#editor-body-body")).not.toHaveAttribute(
+    "data-is-user-has-typed",
+    /.*/u,
+  );
   await expect(page.locator("#preview-body .markdown-preview")).toHaveClass(
     /markdown-wrap content-body/,
   );
@@ -446,7 +464,13 @@ test("project pull request edit form blocks submit when merge result has no comm
   });
 
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
-  await expect(page.locator("#mergeResult")).toHaveAttribute("data-commits", "0");
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-commits", /.*/u);
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-title", /.*/u);
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-pullrequest-body", /.*/u);
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-conflict", /.*/u);
+  await expect(page.locator("#numOfCommits")).toHaveText("");
+  await expect(page.locator("#mergeResult h5")).toHaveText("No changes have been made.");
+  await expect(page.locator("#mergeResult .commit-wrap")).toHaveCount(0);
   await expect(page.locator("#status")).toHaveText("No changes have been made.");
   await expect(page.locator("#status")).toHaveClass(/alert-info/);
 
@@ -464,7 +488,8 @@ test("project pull request edit form blocks submit when legacy required title is
   await mockProjectPullRequestEditForm(page, patchRequests);
 
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
-  await expect(page.locator("#mergeResult")).toHaveAttribute("data-commits", "1");
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-commits", /.*/u);
+  await expect(page.locator("#numOfCommits")).toHaveText("1");
 
   await page.fill("#title", "   ");
   const alert = waitForDialog(page, "alert");
@@ -489,7 +514,9 @@ test("project pull request edit form confirms conflicting merge result before su
 
   await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
   const editFormUrl = page.url();
-  await expect(page.locator("#mergeResult")).toHaveAttribute("data-conflict", "true");
+  await expect(page.locator("#mergeResult")).not.toHaveAttribute("data-conflict", /.*/u);
+  await expect(page.locator("#numOfCommits")).toHaveText("1");
+  await expect(page.locator("#mergeResult .commit-wrap")).toBeVisible();
   await expect(page.locator("#status")).toHaveText(
     "A conflict occurred when merging. This pull request cannot be merged safely.",
   );
