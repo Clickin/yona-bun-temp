@@ -1086,7 +1086,6 @@ function CodeCommentThreadView({
                   params={{ user: comment.authorLoginId }}
                   activeOptions={{ exact: true }}
                   className="avatar-wrap"
-                  data-placement="top"
                   title={comment.authorLabel}
                 >
                   <img
@@ -1104,7 +1103,6 @@ function CodeCommentThreadView({
                       to="/$user"
                       params={{ user: comment.authorLoginId }}
                       activeOptions={{ exact: true }}
-                      data-placement="top"
                       title={comment.authorLabel}
                     >
                       <strong>{`${comment.authorLoginId} `}</strong>
@@ -1220,7 +1218,6 @@ function CodeCommentThreadView({
                 activeOptions={{ exact: true }}
                 className="avatar-wrap medium"
                 title={currentUser.userLabel}
-                data-placement="top"
               >
                 <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
               </Link>
@@ -1547,7 +1544,6 @@ function ReviewForm({
               params={{ user: currentUser.loginId }}
               activeOptions={{ exact: true }}
               className="avatar-wrap medium"
-              data-placement="top"
               title={currentUser.userLabel}
             >
               <img src={currentUser.avatarUrl} width="32" height="32" alt="" />
