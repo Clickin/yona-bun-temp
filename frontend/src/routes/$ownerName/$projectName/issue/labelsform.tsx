@@ -453,7 +453,6 @@ function ProjectLabelsBody({
                       name="category"
                       className="input-label mr5"
                       maxLength={250}
-                      data-provider="typeahead"
                       autoComplete="off"
                       placeholder={t("label.category")}
                       ref={newLabelCategoryInputRef}
