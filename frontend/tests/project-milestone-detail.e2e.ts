@@ -132,20 +132,20 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                 <div class="issue-item-row" for="issue-41">
                   <div class="title-wrap">
                     <a class="title" href="__BASE_PATH__/admin/sample/issue/11"><span class="post-id">#11</span></a>
-                    <span class="weight-up-arrow" data-placement="right" title="Issue weight 2"><i class="yobicon-angle-circled-up"></i></span>
+                    <span class="weight-up-arrow" title="Issue weight 2"><i class="yobicon-angle-circled-up"></i></span>
                     <button class="title-prefix" type="button">[UI]</button>
                     <a class="title" href="__BASE_PATH__/admin/sample/issue/11">Open milestone issue</a>
                   </div>
                   <div class="infos">
-                    <a class="infos-item infos-link-item" data-placement="bottom" href="__BASE_PATH__/dev" title="dev">Dev Member</a>
-                    <span class="infos-item" data-placement="bottom" title="2026-06-01">2026-06-01</span>
+                    <a class="infos-item infos-link-item" href="__BASE_PATH__/dev" title="dev">Dev Member</a>
+                    <span class="infos-item" title="2026-06-01">2026-06-01</span>
                     <div class="subtask-progress upload-progress red-outline"><div class="bar red" style="width:50%" title="Subtask"></div></div>
                     <span class="subtask-progress completion-ratio">1/2</span>
-                    <span class="mileston-tag"><a data-placement="bottom" href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>
+                    <span class="mileston-tag"><a href="__BASE_PATH__/admin/sample/milestone/5" title="Milestone">v1.0</a></span>
                     <span class="infos-item item-count-groups">
                       <a class="comments-count comments-count-color" href="__BASE_PATH__/admin/sample/issue/11#comments"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">2</span></a>
                       <a class="vote-count vote-color" href="__BASE_PATH__/admin/sample/issue/11#vote"><span class="count-groups item-icon"><i class="yobicon-hearts"></i></span><span class="count-groups item-count strong">1</span></a>
-                      <button class="sharer-color" data-placement="bottom" title="Issue Sharer" type="button"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">1</span></button>
+                      <button class="sharer-color" title="Issue Sharer" type="button"><span class="count-groups item-icon"><i class="yobicon-friends"></i></span><span class="count-groups item-count strong">1</span></button>
                     </span>
                     <button class="label issue-label list-label active" data-category-id="3" data-label-id="8" style="background:rgb(81,170,204)" type="button">bug</button>
                     <div class="child-issue-list hide">${MILESTONE_DETAIL_CHILD_ISSUES}</div>
@@ -153,8 +153,8 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_OPEN = `
                 </div>
               </div>
               <div class="span3 hide-in-mobile">
-                <div class="mt5 pull-right"><a class="avatar-wrap assinee" data-placement="top" href="__BASE_PATH__/dev" title="Assignee: Dev Member"><img height="32" src="/assets/images/dev-avatar.png" width="32"></a></div>
-                <div class="mr20 mt10 pull-right" data-placement="top" title="2026-06-20"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">3 days left</span></div>
+                <div class="mt5 pull-right"><a class="avatar-wrap assinee" href="__BASE_PATH__/dev" title="Assignee: Dev Member"><img height="32" src="/assets/images/dev-avatar.png" width="32"></a></div>
+                <div class="mr20 mt10 pull-right" title="2026-06-20"><i class="yobicon-clock2 mr3 vmiddle"></i><span class="vmiddle">3 days left</span></div>
               </div>
             </li>
           </ul>
@@ -666,9 +666,8 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     "Issue weight 2",
   );
   await expect(page.locator("#issue-item-41 .weight-up-arrow")).not.toHaveAttribute("data-toggle");
-  await expect(page.locator("#issue-item-41 .weight-up-arrow")).toHaveAttribute(
+  await expect(page.locator("#issue-item-41 .weight-up-arrow")).not.toHaveAttribute(
     "data-placement",
-    "right",
   );
   await expect(page.locator("#issue-item-41 .title-prefix")).toHaveText("[UI]");
   await expect(page.locator("#issue-item-41 button.title-prefix")).toHaveAttribute(
@@ -684,17 +683,15 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(page.locator("#issue-item-41 .infos-link-item")).toHaveAttribute("title", "dev");
   await expect(page.locator("#issue-item-41 .infos-link-item")).not.toHaveAttribute("data-toggle");
-  await expect(page.locator("#issue-item-41 .infos-link-item")).toHaveAttribute(
+  await expect(page.locator("#issue-item-41 .infos-link-item")).not.toHaveAttribute(
     "data-placement",
-    "bottom",
   );
   await expect(page.locator("#issue-item-41 .infos > .infos-item").nth(1)).toHaveText("2026-06-01");
   await expect(page.locator("#issue-item-41 .infos > .infos-item").nth(1)).not.toHaveAttribute(
     "data-toggle",
   );
-  await expect(page.locator("#issue-item-41 .infos > .infos-item").nth(1)).toHaveAttribute(
+  await expect(page.locator("#issue-item-41 .infos > .infos-item").nth(1)).not.toHaveAttribute(
     "data-placement",
-    "bottom",
   );
   await expect(page.locator("#issue-item-41 .infos > .infos-item").nth(1)).toHaveAttribute(
     "title",
@@ -715,7 +712,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   ).not.toHaveAttribute("data-toggle");
   await expect(
     page.locator('#issue-item-41 .mileston-tag a[href$="/milestone/5"]'),
-  ).toHaveAttribute("data-placement", "bottom");
+  ).not.toHaveAttribute("data-placement");
   await expect(
     page.locator('#issue-item-41 .mileston-tag a[href$="/milestone/5"]'),
   ).toHaveAttribute("title", "Milestone");
@@ -728,10 +725,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator("#issue-item-41 .sharer-color .item-count")).toHaveText("1");
   await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute("type", "button");
   await expect(page.locator("#issue-item-41 .sharer-color")).not.toHaveAttribute("data-toggle");
-  await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute(
-    "data-placement",
-    "bottom",
-  );
+  await expect(page.locator("#issue-item-41 .sharer-color")).not.toHaveAttribute("data-placement");
   await expect(page.locator("#issue-item-41 .sharer-color")).toHaveAttribute(
     "title",
     "Issue Sharer",
@@ -765,9 +759,8 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).not.toHaveAttribute(
     "data-toggle",
   );
-  await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).toHaveAttribute(
+  await expect(page.locator("#issue-item-41 .avatar-wrap.assinee")).not.toHaveAttribute(
     "data-placement",
-    "top",
   );
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee img")).toHaveAttribute(
     "alt",
@@ -784,14 +777,14 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).not.toHaveAttribute(
     "data-toggle",
   );
-  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).toHaveAttribute(
+  await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).not.toHaveAttribute(
     "data-placement",
-    "top",
   );
   await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right span.vmiddle")).toHaveText(
     "3 days left",
   );
   await expect(page.locator('#issue-item-41 [data-toggle="tooltip"]')).toHaveCount(0);
+  await expect(page.locator("#issue-item-41 [data-placement]")).toHaveCount(0);
   const shellMetrics = await milestoneDetailShellMetrics(page);
   expect(shellMetrics.headerHeight).toBeGreaterThanOrEqual(120);
   expect(shellMetrics.menuHeight).toBeGreaterThanOrEqual(39);
@@ -1349,10 +1342,7 @@ test("project milestone detail route uses direct Links", () => {
   expect(milestoneIssueRowSource).not.toContain('data-toggle="tooltip"');
   expect(milestoneIssueRowSource).not.toContain("data-toggle='tooltip'");
   expect(milestoneIssueRowSource).not.toContain('"data-toggle": "tooltip"');
-  expect(milestoneIssueRowSource).toContain('"data-placement": "top"');
-  expect(milestoneIssueRowSource).toContain('data-placement="right"');
-  expect(milestoneIssueRowSource).toContain('data-placement="bottom"');
-  expect(milestoneIssueRowSource).toContain('data-placement="top"');
+  expect(milestoneIssueRowSource).not.toContain("data-placement");
   expect(massUpdateStopPropagationCount).toBeGreaterThan(0);
   expect(massUpdatePreventDefaultCount).toBe(massUpdateStopPropagationCount);
   expect(routeSource).toContain('className={deleteConfirmOpen ? "modal hide fade in"');
