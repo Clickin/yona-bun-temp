@@ -265,7 +265,7 @@ function ProjectNewPullRequestBody({
                 }}
                 selected={formValues}
               />
-              <span id="pullRequestState" data-value="OPEN"></span>
+              <span id="pullRequestState"></span>
               <div id="status" className={`alert mt20 mb20 ${status.cssClass}`}>
                 {status.message}
               </div>
