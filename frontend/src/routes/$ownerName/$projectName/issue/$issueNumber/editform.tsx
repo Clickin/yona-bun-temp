@@ -363,7 +363,6 @@ function ProjectIssueEditFormBody({
                         placeholder={t("issue.noAssignee")}
                         defaultValue={stringField(issue.assigneeLoginId, "")}
                         style={{ width: "100%" }}
-                        title=""
                       />
                     </dd>
                   </dl>
