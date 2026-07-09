@@ -342,7 +342,6 @@ function ProjectHomeBody({
                 />
                 <button
                   className="ybtn project-clone-button"
-                  data-clipboard-target="cloneURL"
                   id="cloneURLBtn"
                   onClick={async () => {
                     await navigator.clipboard?.writeText(cloneUrl);
