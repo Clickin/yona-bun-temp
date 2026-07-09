@@ -216,6 +216,20 @@ test("project code history uses legacy project-scoped GNB search shell", async (
   expect(metrics!.menu.top).toBeGreaterThanOrEqual(metrics!.projectHeader.bottom - 1);
 });
 
+test("project code history branch route uses legacy anonymous author message", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeHistory(page, {
+    includeAnonymousCommit: true,
+  });
+
+  await page.goto(`${basePath}/admin/sample/commits/main`);
+
+  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(3);
+  await expect(
+    page.locator("#history .code-table.commits tbody tr").nth(2).locator(".author"),
+  ).toHaveText("Anonymous");
+});
+
 test("project bare code history renders default branch on the legacy commits URL", async ({
   page,
 }) => {
@@ -459,6 +473,9 @@ test("project code history route source has no internal raw anchor patterns", ()
   expect(source).toContain('data-placement="top"');
   expect(source).toContain("title={commit.authorLoginId}");
   expect(source).toContain("title={commit.authorEmail}");
+  expect(source).toContain('t("user.role.anonymous")');
+  expect(source).not.toContain('|| "Anonymous"');
+  expect(source).not.toContain("'Anonymous'");
   expect(source).not.toContain("createLink");
   expect(source).not.toMatch(/<a(?:\s|>)/u);
   expect(source).not.toContain("</a>");
