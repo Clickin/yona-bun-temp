@@ -873,7 +873,6 @@ function IssueDetailBody({
                       id="watch-button"
                       type="button"
                       className={`ybtn ${isWatchingIssue ? "ybtn-watching" : ""}`}
-                      data-placement="top"
                       title="Watch this issue"
                       data-watching={String(isWatchingIssue)}
                       onClick={() => watchIssueMutation.mutate()}
