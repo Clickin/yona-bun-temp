@@ -62,7 +62,7 @@ const EXPECTED_PROJECT_ISSUE_SEARCH = `
 <div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
 <div class="site-breadcrumb-outer"><div class="site-breadcrumb-inner"><h3>Search</h3></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class="active "><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">1</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">0</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/admin/sample/search"><input type="hidden" name="searchType" value="issue"><input type="text" id="searchKeyword" name="keyword" class="span11" value="sample"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Issues</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item"><div class="title-wrap"><span class="post-id">#11</span><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix <strong class="keyword">sample</strong> issue</a></div><div class="search-content"><p class="search-content-body"><strong class="keyword">Sample</strong>body.....</p></div><div class="search-meta-info"><a href="__BASE_PATH__/dev" class="meta-item" data-placement="top" title="dev">Dev Member</a><span class="meta-item" title="Jul 1, 2026">Jul 1, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="project-page-wrap"><div class="row-fluid"><div class="span2"><ul class="lst-stacked unstyled search-category-wrap"><li class="active "><a href="#" data-toggle="search-category" data-type="issue">Issues<span class="num-badge pull-right">1</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="user">Users<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post">Posts<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="milestone">Milestones<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="issue_comment">Issue Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="post_comment">Post Comments<span class="num-badge pull-right">0</span></a></li><li class=" empty"><a href="#" data-toggle="search-category" data-type="review">Code Reviews<span class="num-badge pull-right">0</span></a></li></ul></div><div class="span10"><div class="search-box-wrap"><form id="searchInnerForm" method="get" action="__BASE_PATH__/admin/sample/search"><input type="hidden" name="searchType" value="issue"><input type="text" id="searchKeyword" name="keyword" class="span11" value="sample"><button type="submit" class="ybtn">Search</button></form><h3 class="search-result-title">Found <strong>1</strong> result(s) in Issues</h3></div><div class="search-result-wrap"><ul class="search-list-wrap"><li class="search-list-item"><div class="title-wrap"><span class="post-id">#11</span><a href="__BASE_PATH__/admin/sample/issue/11" class="title">Fix <strong class="keyword">sample</strong> issue</a></div><div class="search-content"><p class="search-content-body"><strong class="keyword">Sample</strong>body.....</p></div><div class="search-meta-info"><a href="__BASE_PATH__/dev" class="meta-item" title="dev">Dev Member</a><span class="meta-item" title="Jul 1, 2026">Jul 1, 2026</span></div></li></ul><div id="pagination"></div></div></div></div></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -114,6 +114,7 @@ test("project search route source renders legacy projectLayout title without dir
   );
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("createLink");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
+  expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("data-placement");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('"data-toggle": "search-category"');
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('"data-type": searchCategoryType');
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("<a ");
@@ -164,7 +165,7 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   const author = row.locator(".search-meta-info a.meta-item");
   await expect(author).toHaveAttribute("href", `${basePath}/dev`);
   await expect(author).not.toHaveAttribute("data-toggle", "tooltip");
-  await expect(author).toHaveAttribute("data-placement", "top");
+  await expect(author).not.toHaveAttribute("data-placement");
   await expect(author).toHaveAttribute("title", "dev");
   await expect(author).toHaveText("Dev Member");
   await expect(row.locator(".search-meta-info span.meta-item")).toHaveAttribute(
@@ -260,7 +261,7 @@ test("project issue comment search renders legacy partial_issue_comments.scala.h
   const author = row.locator(".search-meta-info a.meta-item");
   await expect(author).toHaveAttribute("href", `${basePath}/dev`);
   await expect(author).not.toHaveAttribute("data-toggle", "tooltip");
-  await expect(author).toHaveAttribute("data-placement", "top");
+  await expect(author).not.toHaveAttribute("data-placement");
   await expect(author).toHaveAttribute("title", "dev");
   await expect(author).toHaveText("Dev Member");
   await expect(row.locator(".search-meta-info span.meta-item")).toHaveAttribute(
@@ -290,7 +291,7 @@ test("project user search preserves legacy tooltip metadata without Bootstrap in
   const avatar = row.locator("a.avatar-wrap");
   await expect(avatar).toHaveAttribute("href", `${basePath}/dev`);
   await expect(avatar).not.toHaveAttribute("data-toggle", "tooltip");
-  await expect(avatar).toHaveAttribute("data-placement", "top");
+  await expect(avatar).not.toHaveAttribute("data-placement");
   await expect(avatar).toHaveAttribute("title", "dev");
   await expect(avatar.locator("img")).toHaveAttribute(
     "src",
@@ -299,6 +300,7 @@ test("project user search preserves legacy tooltip metadata without Bootstrap in
   await expect(row.locator(".title-wrap a.title.user-link")).toHaveText("Dev Member (@dev)");
   await expect(row.locator(".infos .infos-item")).toHaveText("Member since Jul 1, 2026");
   await expect(page.locator('.search-result-wrap [data-toggle="tooltip"]')).toHaveCount(0);
+  await expect(page.locator(".search-result-wrap [data-placement]")).toHaveCount(0);
 });
 
 test("project search pins the live localhost issue-comment zero-result project shell", async ({

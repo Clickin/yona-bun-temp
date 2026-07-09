@@ -441,7 +441,6 @@ function ProjectSearchResultList({
                   to={userLink.to}
                   hash={userLink.hash || undefined}
                   className="avatar-wrap"
-                  data-placement="top"
                   title={item.authorLoginId}
                 >
                   {isDefaultProjectSearchAvatar(item.avatarUrl) ? (
@@ -551,7 +550,6 @@ function ProjectSearchResultList({
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
                       className="meta-item"
-                      data-placement="top"
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
