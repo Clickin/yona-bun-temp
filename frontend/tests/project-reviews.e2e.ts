@@ -8,7 +8,7 @@ const PROJECT_REVIEWS_ROUTE = `${PROJECT_ROUTE}/reviews`;
 const PROJECT_GROUP_SEARCH_ROUTE = `/organizations/${PROJECT_OWNER_NAME}/search`;
 
 const EXPECTED_PROJECT_REVIEWS_PAGE_WRAP = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" class="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button">Open<span class="num-badge">2</span></button></li><li class=""><button type="button">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" data-placement="top" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" data-placement="top" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" class="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button">Open<span class="num-badge">2</span></button></li><li class=""><button type="button">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
 `;
 
 test("project reviews list matches legacy reviewthread/list.scala.html shell", async ({ page }) => {
@@ -146,15 +146,24 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     "title",
     "dev",
   );
-  await expect(page.locator(".review-list-wrap .avatar-wrap").first()).toHaveAttribute(
+  await expect(page.locator(".review-list-wrap .avatar-wrap").first()).not.toHaveAttribute(
     "data-placement",
-    "top",
   );
   await expect(page.locator(".review-list-wrap .infos-link-item").first()).toHaveAttribute(
     "title",
     "dev",
   );
   await expect(page.locator(".review-list-wrap .infos-link-item").first()).toHaveText("Dev Member");
+  await expect(page.locator(".review-list-wrap .infos-link-item").first()).not.toHaveAttribute(
+    "data-placement",
+  );
+  await expect(
+    page.locator(".review-list-wrap .post-item").first().locator(".infos-item").nth(1),
+  ).toHaveAttribute("title", "Jul 1, 2026");
+  await expect(
+    page.locator(".review-list-wrap .post-item").first().locator(".infos-item").nth(1),
+  ).toHaveText("Jul 1, 2026");
+  await expect(page.locator(".review-list-wrap [data-placement]")).toHaveCount(0);
   expect(
     await nativeClickListenerCount(page, ".lst-stacked button, .filters button, .nav-tabs button"),
   ).toBe(0);
@@ -301,19 +310,24 @@ test("project reviews tooltip markers are not React-owned DOM", async ({ page })
     "title",
     "dev",
   );
-  await expect(page.locator(".review-list-wrap .avatar-wrap").first()).toHaveAttribute(
+  await expect(page.locator(".review-list-wrap .avatar-wrap").first()).not.toHaveAttribute(
     "data-placement",
-    "top",
   );
   await expect(page.locator(".review-list-wrap .infos-link-item").first()).toHaveAttribute(
     "title",
     "dev",
   );
-  await expect(page.locator(".review-list-wrap .infos-link-item").first()).toHaveAttribute(
-    "data-placement",
-    "top",
-  );
   await expect(page.locator(".review-list-wrap .infos-link-item").first()).toHaveText("Dev Member");
+  await expect(page.locator(".review-list-wrap .infos-link-item").first()).not.toHaveAttribute(
+    "data-placement",
+  );
+  await expect(
+    page.locator(".review-list-wrap .post-item").first().locator(".infos-item").nth(1),
+  ).toHaveAttribute("title", "Jul 1, 2026");
+  await expect(
+    page.locator(".review-list-wrap .post-item").first().locator(".infos-item").nth(1),
+  ).toHaveText("Jul 1, 2026");
+  await expect(page.locator(".review-list-wrap [data-placement]")).toHaveCount(0);
   await expect(
     page.locator(".review-list-wrap .post-item").first().locator(".title"),
   ).toHaveAttribute("href", `${projectBasePath}/pullRequest/3/changes#thread-31`);
@@ -324,7 +338,7 @@ test("project reviews tooltip markers are not React-owned DOM", async ({ page })
     source.indexOf("function ProjectReviewPagination("),
   );
   expect(rowSource).not.toContain('data-toggle="tooltip"');
-  expect(rowSource).toContain('data-placement="top"');
+  expect(rowSource).not.toContain("data-placement=");
 });
 
 test("project review row source uses TanStack Link for internal row navigation", () => {

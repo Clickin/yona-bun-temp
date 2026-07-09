@@ -351,12 +351,7 @@ function ProjectReviewRow({
 
   return (
     <li className="post-item">
-      <Link
-        to={authorRoute}
-        className="avatar-wrap mlarge hide-in-mobile"
-        data-placement="top"
-        title={authorLoginId}
-      >
+      <Link to={authorRoute} className="avatar-wrap mlarge hide-in-mobile" title={authorLoginId}>
         <img
           src={
             firstComment?.authorAvatarUrl ||
@@ -376,12 +371,7 @@ function ProjectReviewRow({
       </div>
       <div className="infos">
         {authorLabel ? (
-          <Link
-            to={authorRoute}
-            className="infos-item infos-link-item"
-            data-placement="top"
-            title={authorLoginId}
-          >
+          <Link to={authorRoute} className="infos-item infos-link-item" title={authorLoginId}>
             {authorLabel}
           </Link>
         ) : (
