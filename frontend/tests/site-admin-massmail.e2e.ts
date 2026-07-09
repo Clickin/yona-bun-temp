@@ -354,6 +354,25 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
     ]);
 });
 
+test("site admin mass mail typeahead click fills input before explicit add", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockSiteAdminSession(page);
+  await mockProjectTypeahead(page);
+
+  await page.goto(`${basePath}/sites/massmail`);
+  await page.locator("#mailtoPrj").click();
+  await page.locator("#input-project").fill("o");
+  await page.locator(".typeahead.dropdown-menu button").first().click();
+
+  await expect(page.locator("#input-project")).toHaveValue("admin/projectYobi");
+  await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+  await expect(page.locator(".typeahead.dropdown-menu")).toHaveCount(0);
+
+  await page.locator("#select-project").click();
+  await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  await expect(page.locator("#input-project")).toHaveValue("");
+});
+
 test("site admin mass mail route keeps legacy JS behavior out of route-local DOM APIs", () => {
   const routeSource = readFileSync("src/routes/sites/massmail.tsx", "utf8");
 
@@ -380,6 +399,12 @@ test("site admin mass mail route keeps legacy JS behavior out of route-local DOM
   expect(routeSource).not.toContain("data-loading-text");
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("to={item.href}");
+  expect(routeSource).toMatch(
+    /function selectProjectSuggestion\(projectName: string\) \{\s*setProjectQuery\(projectName\);\s*setProjectSuggestionMenuVisible\(false\);\s*projectInputRef\.current\?\.focus\(\);\s*\}/,
+  );
+  expect(routeSource).not.toMatch(
+    /function selectProjectSuggestion\(projectName: string\) \{\s*addProject\(projectName\)/,
+  );
 });
 
 test("site admin mass mail renders legacy update notification badge", async ({ page }) => {

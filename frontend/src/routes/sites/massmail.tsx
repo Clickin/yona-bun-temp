@@ -134,6 +134,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const [mailingType, setMailingType] = useState<"all" | "projects">("all");
   const [selectedProjects, setSelectedProjects] = useState<SelectedProject[]>([]);
   const [projectQuery, setProjectQuery] = useState("");
+  const [isProjectSuggestionMenuVisible, setProjectSuggestionMenuVisible] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const projectInputRef = useRef<HTMLInputElement>(null);
   const nextProjectId = useRef(1);
@@ -186,6 +187,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       { id: nextProjectId.current++, name: projectName },
     ]);
     setProjectQuery("");
+    setProjectSuggestionMenuVisible(false);
     setActiveSuggestionIndex(0);
   }
 
@@ -193,11 +195,13 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     setMailingType(nextMailingType);
     setSelectedProjects([]);
     setProjectQuery("");
+    setProjectSuggestionMenuVisible(false);
     setActiveSuggestionIndex(0);
   }
 
   function selectProjectSuggestion(projectName: string) {
-    addProject(projectName);
+    setProjectQuery(projectName);
+    setProjectSuggestionMenuVisible(false);
     projectInputRef.current?.focus();
   }
 
@@ -243,6 +247,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             value={projectQuery}
             onChange={(event) => {
               setProjectQuery(event.currentTarget.value);
+              setProjectSuggestionMenuVisible(true);
               setActiveSuggestionIndex(0);
             }}
             onKeyDown={(event) => {
@@ -276,7 +281,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           >
             <strong>{t("button.add")}</strong>
           </button>
-          {projectSuggestions.length > 0 ? (
+          {isProjectSuggestionMenuVisible && projectSuggestions.length > 0 ? (
             <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
               {projectSuggestions.map((projectName, index) => (
                 <li
