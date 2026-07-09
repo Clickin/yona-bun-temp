@@ -333,6 +333,21 @@ test("project issue detail route source uses shared markdown help, legacy copy k
     "issue.noAssignee",
     "issue.event.sharer.deleted.title",
     "label.select",
+    "milestone",
+    "issue.noMilestone",
+    "milestone.menu.new",
+    "milestone.state.open",
+    "milestone.state.closed",
+    "issue.weight",
+    "issue.weight.description",
+    "button.edit",
+    "button.show.original",
+    "button.delete",
+    "issue.can.not.be.deleted",
+    "issue.delete",
+    "post.delete.confirm",
+    "button.yes",
+    "button.no",
   ]) {
     expect(routeSource).toContain(`t("${key}")`);
   }
@@ -343,6 +358,23 @@ test("project issue detail route source uses shared markdown help, legacy copy k
   expect(routeSource).not.toContain('placeholder="No assignee"');
   expect(routeSource).not.toContain('placeholder="Select Issue Sharer"');
   expect(routeSource).not.toContain('data-placeholder="Select label"');
+  expect(routeSource).not.toContain(">Milestone<");
+  expect(routeSource).not.toContain(">No milestone<");
+  expect(routeSource).not.toContain(">New milestone<");
+  expect(routeSource).not.toContain('label="Open"');
+  expect(routeSource).not.toContain('label="Closed"');
+  expect(routeSource).not.toContain('content="Issue weight description"');
+  expect(routeSource).not.toContain('title="Issue weight: Upvote"');
+  expect(routeSource).not.toContain('title="Issue weight: Down vote"');
+  expect(routeSource).not.toContain('title="Edit"');
+  expect(routeSource).not.toContain('title="See text"');
+  expect(routeSource).not.toContain('title="Delete"');
+  expect(routeSource).not.toContain(
+    "content=\"Can\\'t be deleted because of other users\\' comments\"",
+  );
+  expect(routeSource).not.toContain(">Delete issue<");
+  expect(routeSource).not.toContain(">Yes<");
+  expect(routeSource).not.toContain(">No<");
   expect(routeSource).toMatch(
     /data-yobi-original-message-processed=\{viaEmail\s*\?\s*"true"\s*:\s*undefined\}/u,
   );
@@ -1690,7 +1722,11 @@ test("project issue detail renders React-owned top hover popovers for issue acti
     "#issue-share-button",
     "You can share this issue with a user or all members of a project. If this project is private, then shared users can only access this issue and its subtasks.",
   );
-  await expectLegacyTopHoverPopover(page, ".weight-number", "Issue weight description");
+  await expectLegacyTopHoverPopover(
+    page,
+    ".weight-number",
+    "Higher weight issues will be shown first in the list",
+  );
   await expectLegacyTopHoverPopover(
     page,
     ".span-left-pane > .board-actrow .act-row > button.disabled",
@@ -2227,6 +2263,12 @@ test("project issue detail deletes through legacy confirmation modal", async ({ 
   await trigger.first().click();
   await expect(page.locator("#deleteConfirm")).not.toHaveClass(/hide/);
   await expect(page.locator("#deleteConfirm")).toHaveClass("modal fade in");
+  await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete issue");
+  await expect(page.locator("#deleteConfirm .modal-body p")).toHaveText(
+    "Once you delete the post, you won't be able to recover it. Do you still want to delete this post?",
+  );
+  await expect(page.locator("#deleteConfirm .modal-footer .ybtn-danger")).toHaveText("Yes");
+  await expect(page.locator("#deleteConfirm .modal-footer .ybtn").last()).toHaveText("No");
   await expect(page.locator("#deleteConfirm .ybtn-danger")).not.toHaveAttribute(
     "data-request-uri",
     /.+/,

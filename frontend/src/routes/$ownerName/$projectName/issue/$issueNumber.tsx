@@ -1059,7 +1059,7 @@ function IssueDetailBody({
                 </dl>
                 {showMilestone ? (
                   <dl>
-                    <dt>Milestone</dt>
+                    <dt>{t("milestone")}</dt>
                     <dd>
                       {hasProjectMilestones ? (
                         canUpdate ? (
@@ -1072,7 +1072,7 @@ function IssueDetailBody({
                             {stringField(issue.milestoneTitle)}
                           </Link>
                         ) : (
-                          "No milestone"
+                          t("issue.noMilestone")
                         )
                       ) : (
                         <Link
@@ -1081,7 +1081,7 @@ function IssueDetailBody({
                           className="ybtn ybtn-small ybtn-fullsize"
                           target="_blank"
                         >
-                          New milestone
+                          {t("milestone.menu.new")}
                         </Link>
                       )}
                     </dd>
@@ -1172,7 +1172,11 @@ function IssueDetailBody({
         </div>
       </div>
       <DeleteConfirm
+        cancelLabel={t("button.no")}
+        confirmLabel={t("button.yes")}
+        message={t("post.delete.confirm")}
         open={deleteModalOpen}
+        title={t("issue.delete")}
         onCancel={() => setDeleteModalOpen(false)}
         onConfirm={() => deleteMutation.mutate()}
       />
@@ -1511,8 +1515,10 @@ function IssueWeight({
   runtimeConfig: RuntimeConfig;
   weight: number;
 }) {
+  const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const [currentWeight, setCurrentWeight] = useState(weight);
+  const weightLabel = t("issue.weight");
   const weightMutation = useMutation({
     mutationFn: async (direction: "downvote" | "upvote") => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -1544,7 +1550,7 @@ function IssueWeight({
         id="upvote-issue-weight"
         className="ybtn ybtn-small"
         onClick={() => weightMutation.mutate("upvote")}
-        title="Issue weight: Upvote"
+        title={`${weightLabel}: Upvote`}
       >
         <i className="yobicon-arrow-up-alt"></i>
       </button>
@@ -1552,11 +1558,11 @@ function IssueWeight({
         className="ybtn ybtn-small"
         id="down-vote-issue-weight"
         onClick={() => weightMutation.mutate("downvote")}
-        title="Issue weight: Down vote"
+        title={`${weightLabel}: Down vote`}
       >
         <i className="yobicon-arrow-down-alt"></i>
       </button>
-      <LegacyHoverPopover content="Issue weight description">
+      <LegacyHoverPopover content={t("issue.weight.description")}>
         {(popoverProps) => (
           <span className="weight-number" {...popoverProps}>
             {currentWeight}
@@ -1577,6 +1583,7 @@ function IssueMilestoneSelect({
     open: ProjectMilestone[];
   };
 }) {
+  const { t } = useLegacyMessages();
   const selectedMilestoneId = stringField(issue.milestoneId);
 
   return (
@@ -1587,8 +1594,8 @@ function IssueMilestoneSelect({
       data-container-css-class="fullsize"
       defaultValue={selectedMilestoneId || "-1"}
     >
-      <option value="-1">No milestone</option>
-      <optgroup label="Open">
+      <option value="-1">{t("issue.noMilestone")}</option>
+      <optgroup label={t("milestone.state.open")}>
         {milestones.open.map((milestone) => (
           <option
             key={stringField(milestone.id)}
@@ -1599,7 +1606,7 @@ function IssueMilestoneSelect({
           </option>
         ))}
       </optgroup>
-      <optgroup label="Closed">
+      <optgroup label={t("milestone.state.closed")}>
         {milestones.closed.map((milestone) => (
           <option
             key={stringField(milestone.id)}
@@ -2084,13 +2091,14 @@ function IssueActionButtons({
   projectName: string;
   wrap?: boolean;
 }) {
+  const { t } = useLegacyMessages();
   const buttons = (
     <span className="act-row">
       {canUpdate ? (
         <button
           type="button"
           className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-          title="Edit"
+          title={t("button.edit")}
           onClick={onEditClick}
         >
           <i className="yobicon-edit-2"></i>
@@ -2104,7 +2112,7 @@ function IssueActionButtons({
           <button
             type="button"
             className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
-            title="See text"
+            title={t("button.show.original")}
           >
             <i className="yobicon-edit-2"></i>
           </button>
@@ -2114,14 +2122,14 @@ function IssueActionButtons({
         <button
           type="button"
           className="icon btn-transparent-with-fontsize-lineheight ml6"
-          title="Delete"
+          title={t("button.delete")}
           onClick={onDeleteClick}
         >
           <i className="yobicon-trash"></i>
         </button>
       ) : null}
       {!canBeDeleted ? (
-        <LegacyHoverPopover content="Can't be deleted because of other users' comments" focusable>
+        <LegacyHoverPopover content={t("issue.can.not.be.deleted")} focusable>
           {(popoverProps) => (
             <button
               type="button"
@@ -3538,13 +3546,21 @@ function IssueIndexComment({
 }
 
 function DeleteConfirm({
+  cancelLabel,
+  confirmLabel,
+  message,
   onCancel,
   onConfirm,
   open,
+  title,
 }: {
+  cancelLabel: string;
+  confirmLabel: string;
+  message: string;
   onCancel: () => void;
   onConfirm: () => void;
   open: boolean;
+  title: string;
 }) {
   const closeDialog = (event: MouseEvent<HTMLButtonElement>) => {
     insulateModalButtonClick(event);
@@ -3569,17 +3585,17 @@ function DeleteConfirm({
           <button type="button" className="close" onClick={closeDialog}>
             ×
           </button>
-          <h3>Delete issue</h3>
+          <h3>{title}</h3>
         </div>
         <div className="modal-body">
-          <p>Are you sure you want to delete this post?</p>
+          <p>{message}</p>
         </div>
         <div className="modal-footer">
           <button type="button" className="ybtn ybtn-danger" onClick={confirmDelete}>
-            Yes
+            {confirmLabel}
           </button>
           <button type="button" className="ybtn" onClick={closeDialog}>
-            No
+            {cancelLabel}
           </button>
         </div>
       </div>
