@@ -405,7 +405,6 @@ function OrganizationPullRequestItem({
           params={{ user: pullRequest.contributorLoginId }}
           to="/$user"
           className="avatar-wrap mlarge"
-          data-placement="top"
           title={pullRequest.contributorLoginId}
         >
           <img src="/assets/images/default-avatar-32.png" alt="" />
@@ -436,7 +435,6 @@ function OrganizationPullRequestItem({
               params={{ user: pullRequest.contributorLoginId }}
               to="/$user"
               className="infos-item infos-link-item"
-              data-placement="top"
               title={pullRequest.contributorLoginId}
             >
               {pullRequest.contributorLabel}
@@ -480,7 +478,6 @@ function OrganizationPullRequestItem({
               params={{ user: pullRequest.receiverLoginId }}
               to="/$user"
               className="avatar-wrap assinee"
-              data-placement="top"
               title={pullRequest.receiverLabel}
             >
               <img
