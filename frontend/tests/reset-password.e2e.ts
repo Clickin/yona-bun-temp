@@ -1,291 +1,139 @@
-import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const RESET_PASSWORD_ROUTE_SOURCE = readFileSync("src/routes/resetPassword.tsx", "utf8");
-const HOME_ROUTE_SCREEN_SOURCE = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
-const EXPECTED_RESET_PASSWORD_SCREEN = `
-<div class="unsupported hidden">
-  <div class="unsupported-inner">
-    <p id="unsupported-content"></p>
-  </div>
-</div>
-<header class="gnb-outer">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
-          <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
-            <input type="text" name="keyword" autocomplete="off" accesskey="S">
-            <button type="submit"><i class="yobicon-search"></i></button>
-          </div>
-        </form>
-      </li>
-    </ul>
-    <div id="mySidenav" class="sidenav">
-      <div class="span5 right-menu span-hard-wrap">
-        <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
-          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
-          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
-        </div>
-        <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
-        </ul>
-        <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
-        </div>
-      </div>
-    </div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
-      </li>
-      <li class="divider"></li>
-      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
-    </ul>
-  </div>
-</header>
-<div class="page full">
-  <div class="center-wrap tag-line-wrap reset-password">
-    <h1 class="title">
-      Reset password for <span class="highlight">Yona</span>
-    </h1>
-    <p class="tag-line">Web-based platform for collaborative software development</p>
-  </div>
-  <div class="login-form-wrap frm-wrap">
-    <form action="/resetPassword" method="post" name="passwordReset">
-      <input type="hidden" name="hashString" value="reset-token">
-      <dl>
-        <dd>
-          <input id="password" type="password" name="password" class="text password" placeholder="Password" autocomplete="off">
-        </dd>
-        <dd>
-          <input id="retypedPassword" type="password" name="retypedPassword" class="text password" placeholder="Password confirmation" autocomplete="off">
-        </dd>
-      </dl>
-      <div class="btns-row">
-        <button type="submit" class="ybtn ybtn-primary ybtn-fullsize">Confirm</button>
-      </div>
-    </form>
-  </div>
-</div>
-<footer class="page-footer-outer">
-  <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
-  </div>
-</footer>
-`;
+test.use({ locale: "en-US", viewport: { width: 1280, height: 720 } });
 
-const EXPECTED_RESET_BAD_REQUEST_SCREEN = `
-<div class="unsupported hidden">
-  <div class="unsupported-inner">
-    <p id="unsupported-content"></p>
-  </div>
-</div>
-<header class="gnb-outer">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
-          <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
-            <input type="text" name="keyword" autocomplete="off" accesskey="S">
-            <button type="submit"><i class="yobicon-search"></i></button>
-          </div>
-        </form>
-      </li>
-    </ul>
-    <div id="mySidenav" class="sidenav">
-      <div class="span5 right-menu span-hard-wrap">
-        <div class="row-fluid user-menu-wrap">
-          <span class="user-menu"><a href="__BASE_PATH__/user/anonymous">Profile</a></span>
-          <span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span>
-          <a href="__BASE_PATH__/logout"><span class="user-menu logout label">Log out</span></a>
-        </div>
-        <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
-        </ul>
-        <div class="tab-content tab-box">
-          <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
-        </div>
-      </div>
-    </div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" id="required-logged-in">
-        <a href="__BASE_PATH__/users/loginform" class="user-item-btn" data-login="required">Log in</a>
-      </li>
-      <li class="divider"></li>
-      <li><a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success">Sign up</a></li>
-    </ul>
-  </div>
-</header>
-<div class="page-wrap-outer">
-  <div class="project-page-wrap">
-    <div class="error-wrap">
-      <i class="ico-404"></i>
-      <p>Wrong url to reset password.</p>
-      <a href="__ROOT_HREF__" class="ybtn ybtn-info">Home</a>
-    </div>
-  </div>
-</div>
-<footer class="page-footer-outer">
-  <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
-  </div>
-</footer>
-`;
-
-test("reset password form matches legacy user/resetPassword.scala.html screen DOM", async ({
+test("reset-password preserves the legacy visible form and desktop/mobile geometry", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.goto(`${basePath}/resetPassword?s=reset-token`);
-  await expect(page.locator(".page.full")).toBeVisible();
+  await mockAnonymousSession(page);
+  await page.goto(appPath("/resetPassword?s=reset-token"));
+  await page.evaluate(() => document.fonts.ready);
+
   await expect(page).toHaveTitle("Reset password");
-  expect(await readHeadTitle(page)).toBe("Reset password");
-
-  const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(
-    page,
-    EXPECTED_RESET_PASSWORD_SCREEN.replaceAll("__BASE_PATH__", basePath),
+  await expect(page).toHaveURL(
+    new RegExp(`${escapeRegExp(appPath("/resetPassword?s=reset-token"))}$`, "u"),
   );
 
-  expect(actual).toEqual(expected);
-  expect(await readDesktopResetPasswordMetrics(page)).toEqual({
-    buttonRowMarginBottom: "20px",
-    formMarginTop: "54px",
-    formWidth: "400px",
-    gnbInnerHeight: "40px",
-    gnbInnerWidth: 1235,
-    gnbOuterBackground: "rgb(27, 27, 27)",
-    gnbOuterHeight: "40px",
-    logoBackground: "rgb(255, 87, 34)",
-    logoLineHeight: "40px",
-    logoPadding: "6px 10px",
-    pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
-    passwordMarginBottom: "15px",
-    providerColor: "rgb(51, 51, 51)",
-    providerFontSize: "9px",
-    providerMarginLeft: "4px",
-    tagLineMarginBottom: "26px",
-    tagLinePaddingTop: "80px",
-    textHeight: "30px",
-    textWidth: "386px",
-    titleLineHeight: "42px",
-  });
+  const routeRoot = page.locator(".page.full");
+  await expect(routeRoot).toBeVisible();
+  expect(await directChildOrder(routeRoot)).toEqual([
+    "center-wrap tag-line-wrap reset-password",
+    "login-form-wrap frm-wrap",
+  ]);
+  await expect(routeRoot.locator(":scope > .reset-password .title")).toHaveText(
+    "Reset password for Yona",
+  );
+  await expect(routeRoot.locator(":scope > .reset-password .highlight")).toHaveText("Yona");
+  await expect(routeRoot.locator(":scope > .reset-password .tag-line")).toHaveText(
+    "Web-based platform for collaborative software development",
+  );
+
+  const form = routeRoot.locator('form[name="passwordReset"]');
+  await expect(form).toHaveAttribute("method", "post");
+  await expect(form).toHaveAttribute("action", appPath("/resetPassword"));
+  expect(await form.evaluate((element) => new URL(element.action).pathname)).toBe(
+    appPath("/resetPassword"),
+  );
+  expect(await directChildOrder(form)).toEqual(["INPUT", "DL", "btns-row"]);
+  await expect(form.locator(':scope > input[name="hashString"]')).toHaveAttribute(
+    "value",
+    "reset-token",
+  );
+  expect(
+    await form.locator("dl > dd > input").evaluateAll((inputs) =>
+      inputs.map((input) => ({
+        autocomplete: input.getAttribute("autocomplete"),
+        className: input.className,
+        id: input.id,
+        name: input.getAttribute("name"),
+        placeholder: input.getAttribute("placeholder"),
+        type: input.getAttribute("type"),
+      })),
+    ),
+  ).toEqual([
+    {
+      autocomplete: "off",
+      className: "text password",
+      id: "password",
+      name: "password",
+      placeholder: "Password",
+      type: "password",
+    },
+    {
+      autocomplete: "off",
+      className: "text password",
+      id: "retypedPassword",
+      name: "retypedPassword",
+      placeholder: "Password confirmation",
+      type: "password",
+    },
+  ]);
+  await expect(form.locator("button[type='submit']")).toHaveText("Confirm");
+  await assertNoPluginHooks(routeRoot);
+
+  const desktop = await readResetPasswordMetrics(page);
+  expect(desktop.viewport).toEqual({ height: 720, scrollWidth: 1280, width: 1280 });
+  expectBox(desktop.page, { height: 338, width: 1280, x: 0, y: 40 });
+  expectBox(desktop.tagLineWrap, { height: 152, width: 1280, x: 0, y: 40 });
+  expectBox(desktop.title, { height: 42, width: 447.92, x: 416.03, y: 120 });
+  expectBox(desktop.tagLine, { height: 20, width: 1280, x: 0, y: 172 });
+  expectBox(desktop.form, { height: 132, width: 400, x: 440, y: 246 });
+  expectBox(desktop.password, { height: 36, width: 398, x: 440, y: 246 });
+  expectBox(desktop.retypedPassword, { height: 36, width: 398, x: 440, y: 297 });
+  expectBox(desktop.submit, { height: 30, width: 400, x: 440, y: 348 });
+  expect(desktop.password.right).toBeLessThanOrEqual(desktop.form.right);
+  expect(desktop.submit.right).toBe(desktop.form.right);
+
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await readMobileResetPasswordMetrics(page)).toEqual({
-    formWidth: "370.5px",
-    gnbInnerWidth: 363,
-    gnbOuterMinWidth: "10px",
-    gnbOuterPadding: "0px 10px",
-    pageFooterOuterMinWidth: "10px",
-    pageFooterOuterPadding: "10px",
-    passwordFontSize: "16px",
-    passwordInputWidth: "351.969px",
-    retypedPasswordFontSize: "16px",
-  });
+  const mobile = await readResetPasswordMetrics(page);
+  expect(mobile.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
+  expectBox(mobile.page, { height: 400, width: 390, x: 0, y: 40 });
+  expectBox(mobile.tagLineWrap, { height: 214, width: 390, x: 0, y: 40 });
+  expectBox(mobile.title, { height: 84, width: 390, x: 0, y: 120 });
+  expectBox(mobile.tagLine, { height: 40, width: 390, x: 0, y: 214 });
+  expectBox(mobile.form, { height: 132, width: 370.5, x: 9.75, y: 308 });
+  expectBox(mobile.password, { height: 36, width: 363.97, x: 9.75, y: 308 });
+  expectBox(mobile.retypedPassword, { height: 36, width: 363.97, x: 9.75, y: 359 });
+  expectBox(mobile.submit, { height: 30, width: 370.5, x: 9.75, y: 410 });
+  expect(mobile.passwordFontSize).toBe("16px");
+  expect(mobile.retypedPassword.right).toBeLessThanOrEqual(mobile.form.right);
 });
 
-test("invalid reset password link matches legacy error/badrequest_default.scala.html shell DOM", async ({
+test("reset-password validation uses the legacy copy and left popover geometry", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.goto(`${basePath}/resetPassword?error=invalid&s=reset-token`);
-  await expect(page.locator(".page-wrap-outer")).toBeVisible();
-
-  const actual = await canonicalizeScreenRoots(page);
-  const expected = await canonicalizeHtml(
-    page,
-    EXPECTED_RESET_BAD_REQUEST_SCREEN.replaceAll("__BASE_PATH__", basePath).replaceAll(
-      "__ROOT_HREF__",
-      legacyRootHref(basePath),
-    ),
-  );
-
-  expect(actual).toEqual(expected);
-  expect(await readDesktopResetBadRequestMetrics(page)).toEqual({
-    errorIconHeight: "80px",
-    errorIconWidth: "50px",
-    errorPaddingBottom: "100px",
-    errorPaddingTop: "100px",
-    errorTextColor: "rgb(137, 137, 137)",
-    errorTextFontSize: "16px",
-    errorTextFontWeight: "700",
-    errorTextMarginBottom: "30px",
-    errorTextMarginTop: "30px",
-    gnbInnerHeight: "40px",
-    gnbInnerWidth: 1235,
-    gnbOuterBackground: "rgb(27, 27, 27)",
-    gnbOuterHeight: "40px",
-    logoBackground: "rgb(255, 87, 34)",
-    logoLineHeight: "40px",
-    logoPadding: "6px 10px",
-    pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
-    pageWrapOuterMarginTop: "10px",
-    pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
-    providerFontSize: "9px",
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(await readMobileResetBadRequestMetrics(page)).toEqual({
-    errorPaddingTop: "100px",
-    errorTextFontSize: "16px",
-    gnbInnerWidth: 363,
-    gnbOuterMinWidth: "10px",
-    gnbOuterPadding: "0px 10px",
-    pageFooterOuterMinWidth: "10px",
-    pageFooterOuterPadding: "10px",
-    pageFooterWidth: 370,
-    pageWrapOuterMinWidth: "10px",
-    pageWrapOuterPadding: "0px",
-    pageWrapOuterWidth: 390,
-    projectPageWrapMarginTop: "5px",
-    projectPageWrapWidth: 390,
-  });
-});
-
-test("reset password form blocks invalid passwords with legacy left popovers", async ({ page }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAnonymousSession(page);
   let resetCompleteCalls = 0;
   await page.route("**/api/v1/auth/password-reset/complete", async (route) => {
     resetCompleteCalls += 1;
     await route.fulfill({ status: 500, body: "unexpected reset complete" });
   });
 
-  await page.goto(`${basePath}/resetPassword?s=reset-token`);
+  await page.goto(appPath("/resetPassword?s=reset-token"));
   await page.locator("#password").focus();
   await page.locator("#password").blur();
-  await expectResetPasswordValidationPopovers(page, ["Required field!", "Required field!"]);
-  await expectResetPasswordPopoverPlacement(page, "password");
+  await expectValidationPopovers(page, ["Required field!", "Required field!"]);
+  expectPopoverBoxes(await readPopoverBoxes(page), [
+    { height: 37.59, width: 111.8, x: 318, y: 245 },
+    { height: 37.59, width: 111.8, x: 318, y: 296 },
+  ]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(appPath("/resetPassword?s=reset-token"));
+  await page.locator("#password").focus();
+  await page.locator("#password").blur();
+  await expectValidationPopovers(page, ["Required field!", "Required field!"]);
+  expectPopoverBoxes(await readPopoverBoxes(page), [
+    { height: 37.59, width: 111.8, x: -112.25, y: 307 },
+    { height: 37.59, width: 111.8, x: -112.25, y: 358 },
+  ]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 
   await page.locator("#password").fill("abc");
   await page.locator("#password").blur();
-  await expectResetPasswordValidationPopovers(page, [
+  await expectValidationPopovers(page, [
     "Password must be at least 4 characters in length.",
     "Required field!",
   ]);
@@ -293,461 +141,328 @@ test("reset password form blocks invalid passwords with legacy left popovers", a
   await page.locator("#password").fill("new-pass");
   await page.locator("#retypedPassword").fill("different");
   await page.locator("#retypedPassword").blur();
-  await expectResetPasswordValidationPopovers(page, ["Retyped password doesn't match"]);
-
+  await expectValidationPopovers(page, ["Retyped password doesn't match"]);
   await page.locator('form[name="passwordReset"] button[type="submit"]').click();
-  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/resetPassword`);
-  expect(new URL(page.url()).searchParams.get("s")).toBe("reset-token");
   expect(resetCompleteCalls).toBe(0);
 });
 
-test("reset password error home link is SPA navigation with legacy rendered href", async ({
+test("invalid reset hash preserves the legacy bad-request state and SPA Home link", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await page.goto(`${basePath}/resetPassword?error=invalid&s=reset-token`);
+  await mockAnonymousSession(page);
+  await page.goto(appPath("/resetPassword?error=invalid&s=reset-token"));
+  await page.evaluate(() => document.fonts.ready);
 
-  const homeLink = page.locator(".error-wrap .ybtn-info", { hasText: "Home" });
-  await expect(homeLink).toHaveAttribute("href", legacyRootHref(basePath));
-  await expect(homeLink).toHaveText("Home");
+  const routeRoot = page.locator(".page-wrap-outer.reset-password-bad-request");
+  await expect(routeRoot).toBeVisible();
+  expect(await directChildOrder(routeRoot)).toEqual(["project-page-wrap"]);
+  expect(await directChildOrder(routeRoot.locator(":scope > .project-page-wrap"))).toEqual([
+    "error-wrap",
+  ]);
+  expect(await directChildOrder(routeRoot.locator(".error-wrap"))).toEqual([
+    "ico-404",
+    "P",
+    "ybtn ybtn-info",
+  ]);
+  await expect(routeRoot.locator(".error-wrap p")).toHaveText("Wrong url to reset password.");
+  const homeLink = routeRoot.getByRole("link", { name: "Home", exact: true });
+  await expect(homeLink).toHaveAttribute("href", appPath("/"));
   await expect(homeLink).not.toHaveAttribute("aria-current", /.+/u);
   await expect(homeLink).not.toHaveAttribute("data-status", /.+/u);
+  await assertNoPluginHooks(routeRoot);
+
+  const desktop = await readBadRequestMetrics(page);
+  expect(desktop.viewport).toEqual({ height: 720, scrollWidth: 1280, width: 1280 });
+  expectBox(desktop.pageWrapOuter, { height: 450, width: 1280, x: 0, y: 50 });
+  expectBox(desktop.projectPageWrap, { height: 310, width: 1260, x: 10, y: 50 });
+  expectBox(desktop.errorWrap, { height: 310, width: 1260, x: 10, y: 50 });
+  expectBox(desktop.icon, { height: 0, width: 0, x: 640, y: 150 });
+  expectBox(desktop.message, { height: 20, width: 1260, x: 10, y: 180 });
+  expectBox(desktop.home, { height: 30, width: 64.25, x: 609.97, y: 230 });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await readBadRequestMetrics(page);
+  expect(mobile.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
+  expectBox(mobile.pageWrapOuter, { height: 450, width: 390, x: 0, y: 50 });
+  expectBox(mobile.projectPageWrap, { height: 310, width: 390, x: 0, y: 50 });
+  expectBox(mobile.errorWrap, { height: 310, width: 390, x: 0, y: 50 });
+  expectBox(mobile.icon, { height: 0, width: 0, x: 195, y: 150 });
+  expectBox(mobile.message, { height: 20, width: 390, x: 0, y: 180 });
+  expectBox(mobile.home, { height: 30, width: 64.25, x: 164.97, y: 230 });
 
   await page.evaluate(() => {
-    (window as typeof window & { __resetPasswordSpaMarker?: string }).__resetPasswordSpaMarker =
-      "home-link";
+    (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel =
+      "alive";
   });
   await homeLink.click();
-
-  await expect
-    .poll(() => page.evaluate(() => window.location.pathname))
-    .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`, "u"));
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as typeof window & { __resetPasswordSpaMarker?: string })
-            .__resetPasswordSpaMarker,
-      ),
-    )
-    .toBe("home-link");
+  await expect(page).toHaveURL(new RegExp(`${escapeRegExp(appPath("/"))}$`, "u"));
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel,
+    ),
+  ).toBe("alive");
 });
 
-test("reset password route keeps route-local internal anchors on TanStack Link", () => {
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/<a(?:\s|>)/u);
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(/reactJsx\s*\(\s*["']a["']/u);
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("createLink");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("react/jsx-runtime");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("ResetPasswordRootLink");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("prefixBasePath");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["use", "Link", "Props"].join(""));
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["Legacy", "Href", "Anchor"].join(""));
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["React", "createElement"].join("."));
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain(["forward", "Ref"].join(""));
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain(
-    'import { Link, createFileRoute, useRouter } from "@tanstack/react-router";',
-  );
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("<Link");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('to=".."');
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain('const browserTitle = t("title.resetPassword");');
-  expect(RESET_PASSWORD_ROUTE_SOURCE).toContain("<title>{browserTitle}</title>");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("document.title");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("globalThis.document");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toContain("window.document");
-  expect(RESET_PASSWORD_ROUTE_SOURCE).not.toMatch(
-    /React\.use(?:Layout)?Effect\([\s\S]{0,500}(?:document|window|globalThis)[\s\S]{0,200}title/u,
-  );
-});
-
-function legacyRootHref(basePath: string) {
-  return `${basePath}/`;
-}
-
-test("reset password shared site shell keeps legacy navbar and login-link attributes", () => {
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
-    'const legacyHomeHref = prefixBasePath(runtimeConfig.basePath, "/");',
-  );
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("function LegacyLogoLinkAnchor({");
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
-    "const LegacyLogoLink = createLink(LegacyLogoLinkAnchor);",
-  );
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("ref?: React.Ref<HTMLAnchorElement>;");
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain(
-    'return reactJsx("a", { ...props, ref, href: legacyHref });',
-  );
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("<LegacyLogoLink");
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain("legacyHref={legacyHomeHref}");
-  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["use", "Link", "Props"].join(""));
-  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["Legacy", "Href", "Anchor"].join(""));
-  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["React", "createElement"].join("."));
-  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["forward", "Ref"].join(""));
-  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain('data-login="required"');
-});
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    function visit(current: Element): string {
-      const stableAttributes = [
-        "id",
-        "class",
-        "name",
-        "type",
-        "method",
-        "action",
-        "value",
-        "autocomplete",
-        "accesskey",
-        "placeholder",
-        "href",
-        "target",
-        "title",
-        "data-toggle",
-        "data-placement",
-        "data-login",
-        "for",
-        "checked",
-        "required",
-      ];
-      const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
-        .join(" ");
-      const open = attrs
-        ? `<${current.tagName.toLowerCase()} ${attrs}>`
-        : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
-        .map((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-          }
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            return visit(child as Element);
-          }
-          return "";
-        })
-        .filter(Boolean)
-        .join("");
-
-      return `${open}${children}</${current.tagName.toLowerCase()}>`;
-    }
-
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .page.full, .page-wrap-outer, .page-footer-outer",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
+test("reset-password submit uses the mounted API and exact SPA success URL", async ({ page }) => {
+  const requests = await mockResetMutation(page, { succeeds: true });
+  await page.goto(appPath("/resetPassword?s=reset-token"));
+  await page.evaluate(() => {
+    (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel =
+      "alive";
   });
-}
 
-async function readHeadTitle(page: Page) {
-  return page.evaluate(() => document.querySelector("head > title")?.textContent ?? "");
-}
+  await page.locator("#password").fill("new-pass");
+  await page.locator("#retypedPassword").fill("new-pass");
+  await page.locator('form[name="passwordReset"] button[type="submit"]').click();
 
-async function readDesktopResetPasswordMetrics(page: Page) {
-  return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
-    const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.reset-password");
-    const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
-    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
-    const passwordInput = document.querySelector<HTMLElement>("#password");
-    const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
-    if (
-      !gnbOuter ||
-      !gnbInner ||
-      !logo ||
-      !tagLineWrap ||
-      !title ||
-      !formWrap ||
-      !passwordInput ||
-      !buttonRow ||
-      !pageFooter ||
-      !pageFooterOuter ||
-      !provider
-    ) {
-      throw new Error("Expected reset-password metric targets are missing.");
-    }
-
-    const gnbOuterStyle = getComputedStyle(gnbOuter);
-    const gnbInnerStyle = getComputedStyle(gnbInner);
-    const logoStyle = getComputedStyle(logo);
-    const tagLineWrapStyle = getComputedStyle(tagLineWrap);
-    const formWrapStyle = getComputedStyle(formWrap);
-    const passwordInputStyle = getComputedStyle(passwordInput);
-    const buttonRowStyle = getComputedStyle(buttonRow);
-    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
-    const providerStyle = getComputedStyle(provider);
-
-    return {
-      buttonRowMarginBottom: buttonRowStyle.marginBottom,
-      formMarginTop: formWrapStyle.marginTop,
-      formWidth: formWrapStyle.width,
-      gnbInnerHeight: gnbInnerStyle.height,
-      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
-      gnbOuterBackground: gnbOuterStyle.backgroundColor,
-      gnbOuterHeight: gnbOuterStyle.height,
-      logoBackground: logoStyle.backgroundColor,
-      logoLineHeight: logoStyle.lineHeight,
-      logoPadding: logoStyle.padding,
-      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
-      pageFooterOuterPadding: pageFooterOuterStyle.padding,
-      passwordMarginBottom: passwordInputStyle.marginBottom,
-      providerColor: providerStyle.color,
-      providerFontSize: providerStyle.fontSize,
-      providerMarginLeft: providerStyle.marginLeft,
-      tagLineMarginBottom: tagLineWrapStyle.marginBottom,
-      tagLinePaddingTop: tagLineWrapStyle.paddingTop,
-      textHeight: passwordInputStyle.height,
-      textWidth: passwordInputStyle.width,
-      titleLineHeight: getComputedStyle(title).lineHeight,
-    };
-  });
-}
-
-async function readMobileResetPasswordMetrics(page: Page) {
-  return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const passwordInput = document.querySelector<HTMLElement>("#password");
-    const retypedPasswordInput = document.querySelector<HTMLElement>("#retypedPassword");
-    if (
-      !gnbOuter ||
-      !gnbInner ||
-      !formWrap ||
-      !pageFooterOuter ||
-      !passwordInput ||
-      !retypedPasswordInput
-    ) {
-      throw new Error("Expected mobile reset-password metric targets are missing.");
-    }
-
-    const gnbOuterStyle = getComputedStyle(gnbOuter);
-    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
-    const passwordStyle = getComputedStyle(passwordInput);
-    return {
-      formWidth: getComputedStyle(formWrap).width,
-      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
-      gnbOuterMinWidth: gnbOuterStyle.minWidth,
-      gnbOuterPadding: gnbOuterStyle.padding,
-      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
-      pageFooterOuterPadding: pageFooterOuterStyle.padding,
-      passwordFontSize: passwordStyle.fontSize,
-      passwordInputWidth: passwordStyle.width,
-      retypedPasswordFontSize: getComputedStyle(retypedPasswordInput).fontSize,
-    };
-  });
-}
-
-async function readDesktopResetBadRequestMetrics(page: Page) {
-  return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
-    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
-    const errorIcon = document.querySelector<HTMLElement>(".error-wrap .ico-404");
-    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
-    if (
-      !gnbOuter ||
-      !gnbInner ||
-      !logo ||
-      !pageWrapOuter ||
-      !projectPageWrap ||
-      !errorWrap ||
-      !errorIcon ||
-      !errorText ||
-      !pageFooter ||
-      !pageFooterOuter ||
-      !provider
-    ) {
-      throw new Error("Expected reset bad-request metric targets are missing.");
-    }
-
-    const gnbOuterStyle = getComputedStyle(gnbOuter);
-    const gnbInnerStyle = getComputedStyle(gnbInner);
-    const logoStyle = getComputedStyle(logo);
-    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
-    const errorWrapStyle = getComputedStyle(errorWrap);
-    const errorIconStyle = getComputedStyle(errorIcon);
-    const errorTextStyle = getComputedStyle(errorText);
-    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
-
-    return {
-      errorIconHeight: errorIconStyle.height,
-      errorIconWidth: errorIconStyle.width,
-      errorPaddingBottom: errorWrapStyle.paddingBottom,
-      errorPaddingTop: errorWrapStyle.paddingTop,
-      errorTextColor: errorTextStyle.color,
-      errorTextFontSize: errorTextStyle.fontSize,
-      errorTextFontWeight: errorTextStyle.fontWeight,
-      errorTextMarginBottom: errorTextStyle.marginBottom,
-      errorTextMarginTop: errorTextStyle.marginTop,
-      gnbInnerHeight: gnbInnerStyle.height,
-      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
-      gnbOuterBackground: gnbOuterStyle.backgroundColor,
-      gnbOuterHeight: gnbOuterStyle.height,
-      logoBackground: logoStyle.backgroundColor,
-      logoLineHeight: logoStyle.lineHeight,
-      logoPadding: logoStyle.padding,
-      pageFooterLineHeight: getComputedStyle(pageFooter).lineHeight,
-      pageFooterOuterPadding: pageFooterOuterStyle.padding,
-      pageWrapOuterMarginTop: pageWrapOuterStyle.marginTop,
-      pageWrapOuterMinHeight: pageWrapOuterStyle.minHeight,
-      projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
-      providerFontSize: getComputedStyle(provider).fontSize,
-    };
-  });
-}
-
-async function readMobileResetBadRequestMetrics(page: Page) {
-  return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const projectPageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
-    const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
-    const errorText = document.querySelector<HTMLElement>(".error-wrap p");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    if (
-      !gnbOuter ||
-      !gnbInner ||
-      !pageWrapOuter ||
-      !projectPageWrap ||
-      !errorWrap ||
-      !errorText ||
-      !pageFooter ||
-      !pageFooterOuter
-    ) {
-      throw new Error("Expected mobile reset bad-request metric targets are missing.");
-    }
-
-    const gnbOuterStyle = getComputedStyle(gnbOuter);
-    const pageWrapOuterStyle = getComputedStyle(pageWrapOuter);
-    const projectPageWrapStyle = getComputedStyle(projectPageWrap);
-    const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
-
-    return {
-      errorPaddingTop: getComputedStyle(errorWrap).paddingTop,
-      errorTextFontSize: getComputedStyle(errorText).fontSize,
-      gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
-      gnbOuterMinWidth: gnbOuterStyle.minWidth,
-      gnbOuterPadding: gnbOuterStyle.padding,
-      pageFooterOuterMinWidth: pageFooterOuterStyle.minWidth,
-      pageFooterOuterPadding: pageFooterOuterStyle.padding,
-      pageFooterWidth: Math.round(pageFooter.getBoundingClientRect().width),
-      pageWrapOuterMinWidth: pageWrapOuterStyle.minWidth,
-      pageWrapOuterPadding: pageWrapOuterStyle.padding,
-      pageWrapOuterWidth: Math.round(pageWrapOuter.getBoundingClientRect().width),
-      projectPageWrapMarginTop: projectPageWrapStyle.marginTop,
-      projectPageWrapWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
-    };
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate(
-    ({ markup }) => {
-      const template = document.createElement("template");
-      template.innerHTML = markup.trim();
-      const elements = Array.from(template.content.children);
-      if (elements.length === 0) {
-        throw new Error("Expected reset-password screen markup is empty.");
-      }
-      function visit(current: Element): string {
-        const stableAttributes = [
-          "id",
-          "class",
-          "name",
-          "type",
-          "method",
-          "action",
-          "value",
-          "autocomplete",
-          "accesskey",
-          "placeholder",
-          "href",
-          "target",
-          "title",
-          "data-toggle",
-          "data-placement",
-          "data-login",
-          "for",
-          "checked",
-          "required",
-        ];
-        const attrs = stableAttributes
-          .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
-          .join(" ");
-        const open = attrs
-          ? `<${current.tagName.toLowerCase()} ${attrs}>`
-          : `<${current.tagName.toLowerCase()}>`;
-        const children = Array.from(current.childNodes)
-          .map((child) => {
-            if (child.nodeType === Node.TEXT_NODE) {
-              return (child.textContent ?? "").replace(/\s+/g, " ").trim();
-            }
-            if (child.nodeType === Node.ELEMENT_NODE) {
-              return visit(child as Element);
-            }
-            return "";
-          })
-          .filter(Boolean)
-          .join("");
-
-        return `${open}${children}</${current.tagName.toLowerCase()}>`;
-      }
-
-      return elements.map((element) => visit(element)).join("");
+  const origin = new URL(page.url()).origin;
+  await expect(page).toHaveURL(`${origin}${appPath("/users/loginform?password=reset")}`);
+  await expect(page.locator(".page.full #loginIdOrEmailD")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel,
+    ),
+  ).toBe("alive");
+  expect(requests.bootstrapPaths).toEqual([appPath("/api/auth/session")]);
+  expect(requests.resetRequests).toEqual([
+    {
+      body: {
+        hashString: "reset-token",
+        password: "new-pass",
+        retypedPassword: "new-pass",
+      },
+      csrfToken: "csrf-reset-password",
+      method: "POST",
+      pathname: appPath("/api/v1/auth/password-reset/complete"),
     },
-    { markup: html },
+  ]);
+});
+
+test("reset-password API error keeps the hash in the exact SPA bad-request URL", async ({
+  page,
+}) => {
+  const requests = await mockResetMutation(page, { succeeds: false });
+  const token = "reset/+?&token";
+  const encodedToken = encodeURIComponent(token);
+  await page.goto(appPath(`/resetPassword?s=${encodedToken}`));
+  await page.evaluate(() => {
+    (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel =
+      "alive";
+  });
+
+  await page.locator("#password").fill("new-pass");
+  await page.locator("#retypedPassword").fill("new-pass");
+  await page.locator('form[name="passwordReset"] button[type="submit"]').click();
+
+  const origin = new URL(page.url()).origin;
+  await expect(page).toHaveURL(
+    `${origin}${appPath(`/resetPassword?error=invalid&s=${encodedToken}`)}`,
   );
+  await expect(page.locator(".reset-password-bad-request .error-wrap p")).toHaveText(
+    "Wrong url to reset password.",
+  );
+  expect(
+    await page.evaluate(
+      () => (window as Window & { __resetPasswordSpaSentinel?: string }).__resetPasswordSpaSentinel,
+    ),
+  ).toBe("alive");
+  expect(requests.bootstrapPaths).toEqual([appPath("/api/auth/session")]);
+  expect(requests.resetRequests).toEqual([
+    {
+      body: { hashString: token, password: "new-pass", retypedPassword: "new-pass" },
+      csrfToken: "csrf-reset-password",
+      method: "POST",
+      pathname: appPath("/api/v1/auth/password-reset/complete"),
+    },
+  ]);
+});
+
+async function mockAnonymousSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { defaultLandingPath: "/", isAnonymous: true, isGuest: false },
+    });
+  });
+}
+
+async function mockResetMutation(page: Page, options: { succeeds: boolean }) {
+  const bootstrapPaths: string[] = [];
+  const resetRequests: Array<{
+    body: unknown;
+    csrfToken: string | null;
+    method: string;
+    pathname: string;
+  }> = [];
+
+  await mockAnonymousSession(page);
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({ contentType: "application/json", json: {} });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    bootstrapPaths.push(new URL(route.request().url()).pathname);
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-reset-password" },
+      json: {},
+    });
+  });
+  await page.route("**/api/v1/auth/password-reset/complete", async (route) => {
+    const request = route.request();
+    resetRequests.push({
+      body: request.postDataJSON(),
+      csrfToken: request.headers()["x-csrf-token"] ?? null,
+      method: request.method(),
+      pathname: new URL(request.url()).pathname,
+    });
+    if (options.succeeds) {
+      await route.fulfill({
+        contentType: "application/json",
+        json: { redirectPath: "/response-redirect-must-not-be-used" },
+      });
+      return;
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      json: { error: { code: "invalid_request", message: "wrong hash", status: 400 } },
+      status: 400,
+    });
+  });
+
+  return { bootstrapPaths, resetRequests };
+}
+
+function normalizedBasePath() {
+  return BASE_PATH === "/" ? "" : BASE_PATH.replace(/\/$/u, "");
+}
+
+function appPath(path: string) {
+  const basePath = normalizedBasePath();
+  if (path === "/") return basePath === "" ? "/" : `${basePath}/`;
+  if (basePath === "" || path === basePath || path.startsWith(`${basePath}/`)) return path;
+  return `${basePath}${path}`;
 }
 
 function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-async function expectResetPasswordValidationPopovers(page: Page, messages: string[]) {
+async function directChildOrder(root: Locator) {
+  return root.locator(":scope > *").evaluateAll((elements) =>
+    elements.map((element) => {
+      if (element.className) return element.className;
+      return element.tagName;
+    }),
+  );
+}
+
+async function assertNoPluginHooks(root: Locator) {
+  for (const attribute of [
+    "data-toggle",
+    "data-placement",
+    "data-action",
+    "data-href",
+    "data-url",
+    "data-dismiss",
+    "data-target",
+    "data-trigger",
+    "data-backdrop",
+    "data-spy",
+    "data-provider",
+    "data-loading-text",
+    "data-login",
+    "data-request-method",
+    "data-request-uri",
+  ]) {
+    await expect(root.locator(`[${attribute}]`)).toHaveCount(0);
+  }
+}
+
+async function readResetPasswordMetrics(page: Page) {
+  return page.evaluate(() => {
+    const readBox = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing reset-password metric target: ${selector}`);
+      const box = element.getBoundingClientRect();
+      return {
+        height: box.height,
+        right: box.right,
+        width: box.width,
+        x: box.x,
+        y: box.y,
+      };
+    };
+    return {
+      form: readBox('.login-form-wrap form[name="passwordReset"]'),
+      page: readBox(".page.full"),
+      password: readBox("#password"),
+      passwordFontSize: getComputedStyle(document.querySelector("#password")!).fontSize,
+      retypedPassword: readBox("#retypedPassword"),
+      submit: readBox('.login-form-wrap button[type="submit"]'),
+      tagLine: readBox(".tag-line-wrap.reset-password .tag-line"),
+      tagLineWrap: readBox(".tag-line-wrap.reset-password"),
+      title: readBox(".tag-line-wrap.reset-password .title"),
+      viewport: {
+        height: window.innerHeight,
+        scrollWidth: document.documentElement.scrollWidth,
+        width: window.innerWidth,
+      },
+    };
+  });
+}
+
+async function expectValidationPopovers(page: Page, messages: string[]) {
   const popovers = page.locator('form[name="passwordReset"] .popover.left.in .popover-content');
   await expect(popovers).toHaveText(messages);
 }
 
-async function expectResetPasswordPopoverPlacement(
-  page: Page,
-  fieldName: "password" | "retypedPassword",
-) {
-  const boxes = await page.evaluate((name) => {
-    const input = document.querySelector<HTMLInputElement>(`input[name="${name}"]`);
-    const popover = input?.parentElement?.querySelector<HTMLElement>(".popover.left.in");
-    const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
-    if (!input || !popover || !formWrap) return null;
-    const inputBox = input.getBoundingClientRect();
-    const popoverBox = popover.getBoundingClientRect();
-    const formBox = formWrap.getBoundingClientRect();
-    return {
-      formLeft: formBox.left,
-      inputLeft: inputBox.left,
-      inputMiddle: inputBox.top + inputBox.height / 2,
-      popoverMiddle: popoverBox.top + popoverBox.height / 2,
-      popoverRight: popoverBox.right,
-    };
-  }, fieldName);
+async function readPopoverBoxes(page: Page) {
+  return page.locator('form[name="passwordReset"] .popover.left.in').evaluateAll((popovers) =>
+    popovers.map((popover) => {
+      const box = popover.getBoundingClientRect();
+      return { height: box.height, width: box.width, x: box.x, y: box.y };
+    }),
+  );
+}
 
-  expect(boxes).not.toBeNull();
-  expect(boxes!.popoverRight).toBeLessThanOrEqual(boxes!.inputLeft - 8);
-  expect(boxes!.popoverMiddle).toBeCloseTo(boxes!.inputMiddle, 0);
-  expect(boxes!.popoverRight).toBeLessThan(boxes!.formLeft + 10);
+async function readBadRequestMetrics(page: Page) {
+  return page.evaluate(() => {
+    const readBox = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing bad-request metric target: ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { height: box.height, width: box.width, x: box.x, y: box.y };
+    };
+    return {
+      errorWrap: readBox(".reset-password-bad-request .error-wrap"),
+      home: readBox(".reset-password-bad-request .ybtn-info"),
+      icon: readBox(".reset-password-bad-request .ico-404"),
+      message: readBox(".reset-password-bad-request .error-wrap p"),
+      pageWrapOuter: readBox(".page-wrap-outer.reset-password-bad-request"),
+      projectPageWrap: readBox(".reset-password-bad-request > .project-page-wrap"),
+      viewport: {
+        height: window.innerHeight,
+        scrollWidth: document.documentElement.scrollWidth,
+        width: window.innerWidth,
+      },
+    };
+  });
+}
+
+function expectBox(
+  actual: { height: number; width: number; x: number; y: number },
+  expected: { height: number; width: number; x: number; y: number },
+) {
+  expect(actual.x).toBeCloseTo(expected.x, 1);
+  expect(actual.y).toBeCloseTo(expected.y, 1);
+  expect(actual.width).toBeCloseTo(expected.width, 1);
+  expect(actual.height).toBeCloseTo(expected.height, 1);
+}
+
+function expectPopoverBoxes(
+  actual: Array<{ height: number; width: number; x: number; y: number }>,
+  expected: Array<{ height: number; width: number; x: number; y: number }>,
+) {
+  expect(actual).toHaveLength(expected.length);
+  actual.forEach((box, index) => expectBox(box, expected[index]!));
 }

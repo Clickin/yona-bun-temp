@@ -1029,13 +1029,13 @@ button[type="submit"]:focus {
   font-size: 14px;
 }
 
-.page.full:has(.login-form-wrap form[action$="/lostPassword"])
+.page.full:has(.login-form-wrap form:is([action$="/lostPassword"], [action$="/resetPassword"]))
   .tag-line-wrap.reset-password
   .title {
   margin: 0;
 }
 
-.page.full:has(.login-form-wrap form[action$="/lostPassword"])
+.page.full:has(.login-form-wrap form:is([action$="/lostPassword"], [action$="/resetPassword"]))
   .tag-line-wrap.reset-password
   .tag-line {
   margin: 10px 0 0;
@@ -1063,7 +1063,9 @@ button[type="submit"]:focus {
   min-height: 0;
 }
 
-.page.full:has(.login-form-wrap form[action$="/lostPassword"]) .login-form-wrap .text {
+.page.full:has(.login-form-wrap form:is([action$="/lostPassword"], [action$="/resetPassword"]))
+  .login-form-wrap
+  .text {
   box-sizing: content-box;
   min-height: 0;
 }
@@ -4159,6 +4161,22 @@ h1 {
   width: 50px;
   height: 80px;
   background-position: -80px -160px;
+}
+
+.reset-password-bad-request > .project-page-wrap {
+  margin-top: 10px !important;
+}
+
+.reset-password-bad-request .ico-404 {
+  display: inline;
+  width: auto;
+  height: auto;
+  background: none;
+  vertical-align: baseline;
+}
+
+.reset-password-bad-request .ybtn-info {
+  margin-left: 0.3em;
 }
 
 .error-wrap p {

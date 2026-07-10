@@ -1,16 +1,15 @@
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { apiQueryKeys } from "../api/query-keys";
+import { useMutation } from "@tanstack/react-query";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
-  error: string;
-  s: string;
+  error?: string;
+  s?: string;
 };
 
 const legacyAnchorActiveOptions = {
@@ -26,8 +25,8 @@ const legacyAnchorActiveProps = {
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
   validateSearch: (search: Record<string, unknown>): ResetPasswordSearch => ({
-    error: typeof search.error === "string" ? search.error : "",
-    s: typeof search.s === "string" ? search.s : "",
+    ...(typeof search.error === "string" && search.error ? { error: search.error } : {}),
+    ...(typeof search.s === "string" && search.s ? { s: search.s } : {}),
   }),
 });
 
@@ -45,9 +44,9 @@ function ResetPasswordRoute() {
 
 function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { error, s } = Route.useSearch();
+  const resetToken = s ?? "";
   const { language, t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const navigate = useNavigate();
   const formRef = React.useRef<HTMLFormElement>(null);
   const passwordInputRef = React.useRef<HTMLInputElement>(null);
   const retypedPasswordInputRef = React.useRef<HTMLInputElement>(null);
@@ -59,6 +58,8 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],
   });
+  // Reset completion changes credentials without authenticating or changing the current session.
+  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   const resetMutation = useMutation({
     mutationFn: async (input: {
       hashString: string;
@@ -68,16 +69,13 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return completePasswordReset(runtimeConfig, csrfToken, input);
     },
-    onError() {
-      router.history.push(`/resetPassword?error=invalid&s=${encodeURIComponent(s)}`);
+    async onError() {
+      await navigate({
+        href: `/resetPassword?error=invalid&s=${encodeURIComponent(resetToken)}`,
+      });
     },
-    async onSuccess(response) {
-      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
-      const redirectPath =
-        typeof response.redirectPath === "string"
-          ? response.redirectPath
-          : "/users/loginform?password=reset";
-      router.history.push(redirectPath);
+    async onSuccess() {
+      await navigate({ href: "/users/loginform?password=reset" });
     },
   });
 
@@ -103,13 +101,13 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
         <div className="login-form-wrap frm-wrap">
           <form
-            action="/resetPassword"
+            action={prefixBasePath(runtimeConfig.basePath, "/resetPassword")}
             method="post"
             name="passwordReset"
             ref={formRef}
             onSubmit={(event) => void handleSubmit(event)}
           >
-            <input type="hidden" name="hashString" value={s} />
+            <input type="hidden" name="hashString" value={resetToken} />
             <dl>
               <dd>
                 <input
@@ -169,7 +167,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     }
 
     resetMutation.mutate({
-      hashString: s,
+      hashString: resetToken,
       password,
       retypedPassword,
     });
@@ -223,7 +221,7 @@ function FieldPopover({
       return;
     }
 
-    const left = anchor.offsetLeft - popover.offsetWidth - 10;
+    const left = anchor.offsetLeft - popover.offsetWidth;
     const top = anchor.offsetTop + (anchor.offsetHeight - popover.offsetHeight) / 2;
     setPlacement({ left, top });
   }, [anchorRef, message]);
@@ -257,7 +255,7 @@ function BadRequestPage({
   const { t } = useLegacyMessages();
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer reset-password-bad-request">
         <div className="project-page-wrap">
           <div className="error-wrap">
             <i className="ico-404" />
