@@ -25,6 +25,58 @@ const EXPECTED_PROJECT_SETTINGS = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+test("project settings prefixes empty logo and background fallbacks with the configured context path", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = basePath === "/" ? "" : basePath;
+  await mockProjectSettings(page, {
+    project: {
+      backgroundImageUrl: "",
+      backgroundUrl: "",
+      logoUrl: "",
+    },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample/settingform`);
+
+  await expect(page.locator(".project-header-outer")).toHaveAttribute(
+    "style",
+    expect.stringContaining(`${mountPrefix}/assets/images/bg-default-project.png`),
+  );
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/assets/images/project_default_logo.png`,
+  );
+  await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
+    "style",
+    expect.stringContaining(`${mountPrefix}/assets/images/project_default_logo.png`),
+  );
+  await test.info().attach("project-settings-fallback-desktop", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${mountPrefix}/admin/sample/settingform`);
+  await expect(page.locator(".project-header-outer")).toHaveAttribute(
+    "style",
+    expect.stringContaining(`${mountPrefix}/assets/images/bg-default-project.png`),
+  );
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/assets/images/project_default_logo.png`,
+  );
+  await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
+    "style",
+    expect.stringContaining(`${mountPrefix}/assets/images/project_default_logo.png`),
+  );
+  await test.info().attach("project-settings-fallback-mobile", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+});
+
 test("project settings matches legacy project/setting.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
