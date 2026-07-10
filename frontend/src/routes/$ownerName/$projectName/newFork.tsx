@@ -304,7 +304,10 @@ function ProjectForkBody({
                       <div className="pull-left">
                         <img
                           className="img-polaroid"
-                          src="/assets/images/fork-pull/fork.jpg"
+                          src={prefixBasePath(
+                            runtimeConfig.basePath,
+                            "/assets/images/fork-pull/fork.jpg",
+                          )}
                           alt=""
                         />
                         <br />
@@ -471,9 +474,12 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectId = stringField(project.id, "");
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+  const logoUrl =
+    stringField(project.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
   const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
+    stringField(project.backgroundImageUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
   const isForked = booleanField(project.isForkedFromOrigin);
   const originalOwnerName = stringField(project.originalOwnerName, "");
   const originalProjectName = stringField(project.originalProjectName, "");
