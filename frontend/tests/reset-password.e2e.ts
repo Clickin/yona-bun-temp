@@ -381,7 +381,7 @@ test("reset password shared site shell keeps legacy navbar and login-link attrib
   expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["Legacy", "Href", "Anchor"].join(""));
   expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["React", "createElement"].join("."));
   expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain(["forward", "Ref"].join(""));
-  expect(HOME_ROUTE_SCREEN_SOURCE).toContain('data-login="required"');
+  expect(HOME_ROUTE_SCREEN_SOURCE).not.toContain('data-login="required"');
 });
 
 async function canonicalizeScreenRoots(page: Page) {

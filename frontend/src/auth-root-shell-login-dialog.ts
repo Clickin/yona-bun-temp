@@ -13,10 +13,9 @@ export async function submitRootLoginDialogForm(
   state: RootLoginDialogSubmitState,
 ) {
   const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-  await signInWithPasswordRest(runtimeConfig, csrfToken, {
+  return signInWithPasswordRest(runtimeConfig, csrfToken, {
     identifier: state.identifier,
     password: state.password,
     rememberMe: state.rememberMe,
   });
-  window.location.reload();
 }

@@ -8,7 +8,7 @@ import type { YonaRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { useRootToast } from "./__root";
+import { useRootLoginDialog, useRootToast } from "./__root";
 
 type LegacyUserLinkSearch = {
   daysAgo: number;
@@ -1151,6 +1151,7 @@ function AuthenticatedSiteUserMenu({
 
 function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
   const { t } = useLegacyMessages();
+  const openRootLoginDialog = useRootLoginDialog();
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
     "favorite",
   );
@@ -1224,7 +1225,13 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
             to="/users/loginform"
             search={LEGACY_LOGIN_FORM_LINK_SEARCH}
             className="user-item-btn"
-            data-login="required"
+            aria-controls="loginDialog"
+            aria-haspopup="dialog"
+            onClick={(event) => {
+              if (openRootLoginDialog()) {
+                event.preventDefault();
+              }
+            }}
           >
             {t("title.login")}
           </Link>

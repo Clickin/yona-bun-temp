@@ -402,7 +402,9 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   });
   await page.goto(`${basePath}/users/login?from=legacy`);
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
-  await page.locator('[data-login="required"]').first().click();
+  const rootLoginLink = page.locator("#required-logged-in > a.user-item-btn");
+  await expect(rootLoginLink).not.toHaveAttribute("data-login");
+  await rootLoginLink.click();
 
   await expect(page.locator("#loginDialog")).toBeVisible();
   await expect(page.locator("#loginDialog")).toHaveClass("modal hide loginDialog in");
@@ -426,7 +428,7 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   expect(await readRootLoginDialogMetrics(page)).toEqual({
     actionRowMarginTop: "20px",
     actionRowTextAlign: "right",
-    backdropOpacity: "0.8",
+    backdropOpacity: "0.5",
     checkboxMarginTop: "4px",
     closeButtonFloat: "right",
     closeButtonFontSize: "20px",
@@ -740,7 +742,7 @@ function expectedRootLoginDialog(basePath: string, formBody: string) {
     <div class="pull-right">
       <button type="button" class="close" aria-hidden="true">×</button>
     </div>
-    <form action="/users/login" method="post" class="frm-wrap login-form-wrap">
+    <form action="${basePath}/users/login" method="post" class="frm-wrap login-form-wrap">
       ${formBody.replaceAll("__BASE_PATH__", basePath)}
     </form>
   </div>

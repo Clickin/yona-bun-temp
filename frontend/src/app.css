@@ -657,7 +657,6 @@ button[type="submit"]:focus {
 
 .gnb-nav a,
 .gnb-usermenu-item a {
-  display: block;
   color: #a2a2a2;
   text-decoration: none;
 }
@@ -873,6 +872,11 @@ button[type="submit"]:focus {
   outline: none;
   box-shadow: 0 3px 7px rgb(0 0 0 / 30%);
   background-clip: padding-box;
+}
+
+.modal-backdrop,
+.modal-backdrop.in {
+  opacity: 0.5;
 }
 
 .modal.fade {

@@ -7,10 +7,10 @@ const EXPECTED_AUTHENTICATED_HOME = `
     <p id="unsupported-content"></p>
   </div>
 </div>
-<div class="admin-logged-in-affix" data-spy="affix" data-offset-top="30">You are Admin now! <span class="small-font">With great power comes great responsibility</span></div>
+<div class="admin-logged-in-affix">You are Admin now! <span class="small-font">With great power comes great responsibility</span></div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-placement="bottom" title="Sidebar">
+    <div class="pin" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
     </div>
@@ -44,18 +44,18 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-item">
-        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration" data-placement="bottom">
+        <a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" title="Site administration">
           <i class="yobicon-wrench"></i>
         </a>
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button class="gnb-dropdown-toggle" type="button" data-placement="bottom" title="User menu, Shortcut (F)">
+        <button class="gnb-dropdown-toggle" type="button" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
         </button>
       </li>
@@ -532,7 +532,9 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(legacySources.siteLayout).toContain("@common.footer()");
 });
 
-test("anonymous home shell renders legacy login and signup link affordances", async ({ page }) => {
+test("anonymous home shell renders React-owned login and legacy signup Link affordances", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAnonymousSession(page);
 
@@ -545,13 +547,149 @@ test("anonymous home shell renders legacy login and signup link affordances", as
   await expect(loginLink).toHaveText("Log in");
   await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
   await expect(loginLink).toHaveAttribute("class", "user-item-btn");
-  await expect(loginLink).toHaveAttribute("data-login", "required");
+  await expect(loginLink).not.toHaveAttribute("data-login");
+  await expect(loginLink).toHaveAttribute("aria-controls", "loginDialog");
+  await expect(loginLink).toHaveAttribute("aria-haspopup", "dialog");
   await expect(signupMenuLink).toHaveText("Sign up");
   await expect(signupMenuLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(signupMenuLink).toHaveAttribute("class", "ybtn ybtn-success");
   await expect(landingSignupLink).toHaveText("Sign up for Yona");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(landingSignupLink).toHaveAttribute("class", "ybtn ybtn-success ybtn-padding");
+});
+
+test("root login submit refreshes the authenticated home shell without a document reload", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const sessionRequestPaths: string[] = [];
+  const signInRequests: Array<{ body: unknown; csrfToken: string | undefined }> = [];
+  let authenticated = false;
+
+  await page.route("**/api/v1/session", async (route) => {
+    sessionRequestPaths.push(new URL(route.request().url()).pathname);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        authenticated
+          ? {
+              actorId: 1,
+              avatarUrl: "/assets/images/default-avatar-32.png",
+              defaultLandingPath: "/",
+              emailAddress: "admin@example.com",
+              isAnonymous: false,
+              isConfirmed: true,
+              isGuest: false,
+              isSiteAdmin: true,
+              loginId: "admin",
+              userLabel: "Site Admin",
+            }
+          : {
+              actorId: null,
+              defaultLandingPath: "/",
+              emailAddress: "",
+              isAnonymous: true,
+              isConfirmed: false,
+              isSiteAdmin: false,
+              loginId: "",
+              userLabel: "",
+            },
+      ),
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-root-login" },
+      body: JSON.stringify({ isAnonymous: !authenticated }),
+    });
+  });
+  await page.route("**/api/v1/auth/sign-in", async (route) => {
+    signInRequests.push({
+      body: route.request().postDataJSON(),
+      csrfToken: route.request().headers()["x-csrf-token"],
+    });
+    authenticated = true;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        actorId: 1,
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      }),
+    });
+  });
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ enabledSocialProviders: [], socialLoginOnly: false }),
+    });
+  });
+  await page.route("**/api/v1/notifications?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ hasMore: false, items: [], total: 0 }),
+    });
+  });
+  await page.route("**/api/v1/workspace", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      }),
+    });
+  });
+
+  await page.goto(`${basePath}/`);
+  const initialUrl = page.url();
+  await page.evaluate(() => {
+    (window as Window & { __rootLoginSpaSentinel?: string }).__rootLoginSpaSentinel = "alive";
+  });
+
+  await page.locator("#required-logged-in a.user-item-btn").click();
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#passwordD").fill("password");
+  await page.locator("#loginDialog button[type='submit']").click();
+
+  await expect(page.locator(".gnb-usermenu a.user-item-btn.loggged-in")).toHaveText("My Issues");
+  await expect(page.locator("#loginDialog")).toBeHidden();
+  await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
+  await expect(page).toHaveURL(initialUrl);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __rootLoginSpaSentinel?: string }).__rootLoginSpaSentinel,
+      ),
+    )
+    .toBe("alive");
+  await expect
+    .poll(() => sessionRequestPaths)
+    .toEqual([`${basePath}/api/v1/session`, `${basePath}/api/v1/session`]);
+  expect(signInRequests).toEqual([
+    {
+      body: { identifier: "admin", password: "password", rememberMe: true },
+      csrfToken: "csrf-root-login",
+    },
+  ]);
 });
 
 test("authenticated home empty notifications matches legacy index notifications screen DOM", async ({
@@ -795,7 +933,7 @@ test("authenticated shell renders legacy custom navbar link before my issues", a
   );
   await expect(menuItems.nth(1).locator("a.user-item-btn.loggged-in")).toHaveText("My Issues");
   await expect(menuItems.nth(1)).not.toHaveAttribute("data-toggle");
-  await expect(menuItems.nth(1)).toHaveAttribute("data-placement", "bottom");
+  await expect(menuItems.nth(1)).not.toHaveAttribute("data-placement");
   await expect(menuItems.nth(1)).toHaveAttribute("title", "Shortcut (A)");
 });
 
@@ -827,9 +965,9 @@ test("authenticated shared shell drops route-owned tooltip initializers but keep
   expect(legacySources.scripts).toContain('"[data-toggle=tooltip]"');
   expect(siteLayoutShellSource).not.toContain('data-toggle="tooltip"');
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
-  expect(siteLayoutShellSource).toContain('data-placement="bottom"');
+  expect(siteLayoutShellSource).not.toContain('data-placement="bottom"');
   expect(siteLayoutShellSource).toContain('title="Sidebar"');
-  expect(authenticatedUserMenuSource).toContain('data-placement="bottom"');
+  expect(authenticatedUserMenuSource).not.toContain('data-placement="bottom"');
   expect(authenticatedUserMenuSource).toContain('title={`${t("title.shortcut")} (A)`}');
   expect(authenticatedUserMenuSource).toContain('title={t("menu.siteAdmin")}');
   expect(authenticatedUserMenuSource).toContain(
@@ -851,7 +989,7 @@ test("authenticated shared shell drops route-owned tooltip initializers but keep
 
   for (const { locator, title } of shellTooltipMetadata) {
     await expect(locator).not.toHaveAttribute("data-toggle");
-    await expect(locator).toHaveAttribute("data-placement", "bottom");
+    await expect(locator).not.toHaveAttribute("data-placement");
     await expect(locator).toHaveAttribute("title", title);
   }
 });
@@ -1009,7 +1147,7 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
   expect(authenticatedUserMenuSource).toContain('className="gnb-dropdown-toggle dropdwon-box-btn"');
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
-  expect(authenticatedUserMenuSource).toContain('data-placement="bottom"');
+  expect(authenticatedUserMenuSource).not.toContain('data-placement="bottom"');
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="dropdown"');
   expect(authenticatedUserMenuSource).not.toContain("document.addEventListener");
   expect(authenticatedUserMenuSource).not.toContain("classList");
@@ -2784,12 +2922,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-location",
         "data-organization-id",
         "data-project-id",
-        "data-toggle",
-        "data-placement",
-        "data-trigger",
-        "data-content",
-        "data-target",
-        "data-url",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -2862,12 +2994,6 @@ async function canonicalizeSelector(page: Page, selector: string) {
         "data-location",
         "data-organization-id",
         "data-project-id",
-        "data-toggle",
-        "data-placement",
-        "data-trigger",
-        "data-content",
-        "data-target",
-        "data-url",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -2933,12 +3059,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           "data-location",
           "data-organization-id",
           "data-project-id",
-          "data-toggle",
-          "data-placement",
-          "data-trigger",
-          "data-content",
-          "data-target",
-          "data-url",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))

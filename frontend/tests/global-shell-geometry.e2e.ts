@@ -43,10 +43,11 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
     "action",
     `${BASE_PATH}/search`,
   );
-  await expect(page.locator("#required-logged-in > a")).toHaveAttribute(
-    "href",
-    `${BASE_PATH}/users/loginform`,
-  );
+  const loginLink = page.locator("#required-logged-in > a.user-item-btn");
+  await expect(loginLink).toHaveAttribute("href", `${BASE_PATH}/users/loginform`);
+  await expect(loginLink).not.toHaveAttribute("data-login");
+  await expect(loginLink).toHaveAttribute("aria-controls", "loginDialog");
+  await expect(loginLink).toHaveAttribute("aria-haspopup", "dialog");
   await expect(page.locator(".gnb-usermenu .ybtn-success")).toHaveAttribute(
     "href",
     `${BASE_PATH}/users/signupform`,
@@ -85,6 +86,90 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(pin).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-right")).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-left")).toBeHidden();
+});
+
+test("anonymous home login Link opens and dismisses the legacy root dialog", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await mockSession(page, { isAnonymous: true });
+  await mockRootLoginCapabilities(page);
+
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+
+  const initialUrl = page.url();
+  const loginLink = page.locator("#required-logged-in > a.user-item-btn");
+  expectBox(await readElementBox(loginLink), { height: 27, width: 59.08, x: 1195.47, y: 6 });
+
+  await loginLink.click();
+
+  const dialog = page.locator("#loginDialog");
+  const backdrop = page.locator(".modal-backdrop.in");
+  await expect(page).toHaveURL(initialUrl);
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
+  await expect(page.locator("#loginDialog .error")).toBeHidden();
+  await expect(page.locator("#loginDialog form.login-form-wrap")).toHaveAttribute(
+    "action",
+    `${BASE_PATH}/users/login`,
+  );
+  await expect(backdrop).toHaveCount(1);
+
+  const metrics = await readLoginDialogMetrics(page);
+  expectBox(metrics.dialog, { height: 378, width: 462, x: 453, y: 90 });
+  expectBox(metrics.body, { height: 376, width: 460, x: 454, y: 91 });
+  expectBox(metrics.form, { height: 306, width: 400, x: 484, y: 126 });
+  expectBox(metrics.identifier, { height: 36, width: 398, x: 484, y: 126 });
+  expectBox(metrics.password, { height: 36, width: 398, x: 484, y: 172 });
+  expectBox(metrics.submit, { height: 30, width: 400, x: 484, y: 223 });
+  expectBox(metrics.backdrop, { height: 900, width: 1366, x: 0, y: 0 });
+  expect(metrics.backdropOpacity).toBe("0.5");
+  expect(metrics.backdropZIndex).toBe("1040");
+  expect(metrics.dialogZIndex).toBe("1050");
+
+  await page.locator("#loginDialog button.close").click();
+  await expect(dialog).toBeHidden();
+  await expect(backdrop).toHaveCount(0);
+  await expect(page).toHaveURL(initialUrl);
+
+  await loginLink.click();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(backdrop).toHaveCount(0);
+
+  await loginLink.click();
+  await backdrop.click({ position: { x: 4, y: 4 } });
+  await expect(dialog).toBeHidden();
+  await expect(backdrop).toHaveCount(0);
+  await expect(page).toHaveURL(initialUrl);
+});
+
+test("anonymous mobile home login dialog keeps legacy Korean geometry without overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installRuntimeConfig(page, { supportedLanguages: ["ko-KR"] });
+  await mockSession(page, { isAnonymous: true });
+  await mockRootLoginCapabilities(page);
+
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+
+  const loginLink = page.locator("#required-logged-in > a.user-item-btn");
+  await expect(loginLink).toHaveText("로그인");
+  await expect(loginLink).not.toHaveAttribute("data-login");
+  await loginLink.click();
+
+  const metrics = await readLoginDialogMetrics(page);
+  expectBox(await readElementBox(loginLink), { height: 27, width: 56.34, x: 228.42, y: 46 });
+  expectBox(metrics.dialog, { height: 378, width: 392, x: 0, y: 84.39 });
+  expectBox(metrics.body, { height: 376, width: 390, x: 1, y: 85.39 });
+  expectBox(metrics.form, { height: 306, width: 342, x: 25, y: 120.39 });
+  expectBox(metrics.identifier, { height: 36, width: 336.89, x: 25, y: 120.39 });
+  expectBox(metrics.backdrop, { height: 844, width: 390, x: 0, y: 0 });
+  expect(metrics.documentScrollWidth).toBe(390);
+  expect(metrics.identifierFontSize).toBe("16px");
+  await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
 });
 
 test("anonymous public shell keeps the live legacy mobile wrapping without overflow", async ({
@@ -211,6 +296,19 @@ async function mockSession(page: Page, overrides: Record<string, unknown>) {
   return requestPaths;
 }
 
+async function mockRootLoginCapabilities(page: Page) {
+  await page.route("**/api/v1/auth/capabilities", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        emailVerificationEnabled: false,
+        enabledSocialProviders: ["github", "google"],
+        socialLoginOnly: false,
+      }),
+    });
+  });
+}
+
 async function mockAuthenticatedHomeData(
   page: Page,
   profileOverrides: Record<string, unknown> = {},
@@ -320,4 +418,44 @@ function expectBox(
   expect(Math.abs(actual.y - expected.y)).toBeLessThanOrEqual(1);
   expect(Math.abs(actual.width - expected.width)).toBeLessThanOrEqual(1);
   expect(Math.abs(actual.height - expected.height)).toBeLessThanOrEqual(1);
+}
+
+async function readElementBox(locator: import("@playwright/test").Locator) {
+  return locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
+  });
+}
+
+async function readLoginDialogMetrics(page: Page) {
+  return page.evaluate(() => {
+    const elementBox = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing login dialog geometry target: ${selector}`);
+      }
+      const rect = element.getBoundingClientRect();
+      return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
+    };
+    const dialog = document.querySelector<HTMLElement>("#loginDialog");
+    const identifier = document.querySelector<HTMLElement>("#loginIdOrEmailD");
+    const backdrop = document.querySelector<HTMLElement>(".modal-backdrop.in");
+    if (!dialog || !identifier || !backdrop) {
+      throw new Error("Missing login dialog style target.");
+    }
+    return {
+      backdrop: elementBox(".modal-backdrop.in"),
+      backdropOpacity: getComputedStyle(backdrop).opacity,
+      backdropZIndex: getComputedStyle(backdrop).zIndex,
+      body: elementBox("#loginDialog .modal-body"),
+      dialog: elementBox("#loginDialog"),
+      dialogZIndex: getComputedStyle(dialog).zIndex,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      form: elementBox("#loginDialog form.login-form-wrap"),
+      identifier: elementBox("#loginIdOrEmailD"),
+      identifierFontSize: getComputedStyle(identifier).fontSize,
+      password: elementBox("#passwordD"),
+      submit: elementBox("#loginDialog button[type='submit']"),
+    };
+  });
 }
