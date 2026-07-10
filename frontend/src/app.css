@@ -1029,6 +1029,18 @@ button[type="submit"]:focus {
   font-size: 14px;
 }
 
+.page.full:has(.login-form-wrap form[action$="/lostPassword"])
+  .tag-line-wrap.reset-password
+  .title {
+  margin: 0;
+}
+
+.page.full:has(.login-form-wrap form[action$="/lostPassword"])
+  .tag-line-wrap.reset-password
+  .tag-line {
+  margin: 10px 0 0;
+}
+
 .login-form-wrap,
 .signup-form-wrap {
   position: relative;
@@ -1047,6 +1059,11 @@ button[type="submit"]:focus {
 }
 
 .page.full > .signup-form-wrap .text {
+  box-sizing: content-box;
+  min-height: 0;
+}
+
+.page.full:has(.login-form-wrap form[action$="/lostPassword"]) .login-form-wrap .text {
   box-sizing: content-box;
   min-height: 0;
 }

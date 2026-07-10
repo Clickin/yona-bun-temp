@@ -1,25 +1,28 @@
 import * as React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { apiQueryKeys } from "../api/query-keys";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
 import { readSessionBootstrap, requestPasswordReset } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
-import type { RuntimeConfig } from "../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type LostPasswordSearch = {
-  error: string;
-  requested: string;
+  error?: string;
+  requested?: number;
 };
 
 export const Route = createFileRoute("/lostPassword")({
   component: LostPasswordRoute,
-  validateSearch: (search: Record<string, unknown>): LostPasswordSearch => ({
-    error: search.error == null ? "" : String(search.error),
-    requested: search.requested == null ? "" : String(search.requested),
-  }),
+  validateSearch: (search: Record<string, unknown>): LostPasswordSearch => {
+    const error = search.error == null ? "" : String(search.error);
+    const requested = search.requested == null ? "" : String(search.requested);
+    return {
+      ...(error === "" ? {} : { error }),
+      ...(requested === "" ? {} : { requested: 1 }),
+    };
+  },
 });
 
 function LostPasswordRoute() {
@@ -37,8 +40,7 @@ function LostPasswordRoute() {
 function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { error, requested } = Route.useSearch();
   const { language, t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const navigate = useNavigate();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const [submitError, setSubmitError] = React.useState("");
   const siteName = runtimeConfig.siteName ?? "Yona";
@@ -46,7 +48,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],
   });
-  const isSent = requested !== "";
+  const isSent = requested !== undefined;
   const errorMessage = error ? lostPasswordErrorMessage(error, t) : submitError;
   const [isSuccessAlertDismissed, setIsSuccessAlertDismissed] = React.useState(false);
   const [isErrorAlertDismissed, setIsErrorAlertDismissed] = React.useState(false);
@@ -59,6 +61,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     shouldPrefillCurrentUser && typeof sessionQuery.data?.emailAddress === "string"
       ? sessionQuery.data.emailAddress
       : "";
+  // Requesting a reset email does not change cached session or auth state.
+  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   const requestMutation = useMutation({
     mutationFn: async (input: { emailAddress: string; loginId: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -71,13 +75,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           : t("site.resetPasswordEmail.invalidRequest"),
       );
     },
-    async onSuccess(response) {
-      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
-      const redirectPath =
-        typeof response.redirectPath === "string"
-          ? response.redirectPath
-          : "/lostPassword?requested=1";
-      router.history.push(redirectPath);
+    async onSuccess() {
+      await navigate({ to: "/lostPassword", search: { requested: 1 } });
     },
   });
   React.useEffect(() => {
@@ -127,7 +126,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           <form
             key={`${currentUserLoginId}:${currentUserEmail}`}
             method="post"
-            action="/lostPassword"
+            action={prefixBasePath(runtimeConfig.basePath, "/lostPassword")}
             onSubmit={(event) => void handleSubmit(event)}
           >
             <dl>
