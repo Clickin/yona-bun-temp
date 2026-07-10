@@ -12,8 +12,8 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import { useRootToast } from "../__root";
 
 type LoginFormSearch = {
-  password: string;
-  redirectUrl: string;
+  password?: string;
+  redirectUrl?: string;
 };
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
@@ -26,10 +26,14 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
-  validateSearch: (search: Record<string, unknown>): LoginFormSearch => ({
-    password: typeof search.password === "string" ? search.password : "",
-    redirectUrl: typeof search.redirectUrl === "string" ? search.redirectUrl : "",
-  }),
+  validateSearch: (search: Record<string, unknown>): LoginFormSearch => {
+    const password = nonEmptyString(search.password);
+    const redirectUrl = nonEmptyString(search.redirectUrl);
+    return {
+      ...(password === null ? {} : { password }),
+      ...(redirectUrl === null ? {} : { redirectUrl }),
+    };
+  },
 });
 
 function LoginFormRoute() {
@@ -45,7 +49,7 @@ function LoginFormRoute() {
 }
 
 function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { password, redirectUrl } = Route.useSearch();
+  const { password = "", redirectUrl = "" } = Route.useSearch();
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const navigate = useNavigate();

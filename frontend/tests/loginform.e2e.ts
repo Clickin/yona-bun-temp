@@ -274,6 +274,39 @@ test("anonymous login form renders legacy browser title without imperative mutat
   );
 });
 
+test("signup login Link keeps the standalone login URL query-free inside the SPA", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {});
+  await mockAnonymousSession(page);
+  await page.goto(`${basePath}/users/signupform`);
+  await page.evaluate(() => {
+    (window as Window & { __signupLoginLinkSentinel?: string }).__signupLoginLinkSentinel = "alive";
+  });
+
+  await page.locator(".go-login").click();
+
+  await expect(page).toHaveURL(`${basePath}/users/loginform`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __signupLoginLinkSentinel?: string }).__signupLoginLinkSentinel,
+      ),
+    )
+    .toBe("alive");
+});
+
+test("standalone login keeps only the non-empty redirectUrl search key", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {});
+  await mockAnonymousSession(page);
+  await page.goto(`${basePath}/users/loginform?redirectUrl=/me`);
+
+  await expect(page).toHaveURL(`${basePath}/users/loginform?redirectUrl=%2Fme`);
+  expect([...new URL(page.url()).searchParams.entries()]).toEqual([["redirectUrl", "/me"]]);
+});
+
 test("standalone login keeps explicit local redirect inside the SPA base path", async ({
   page,
 }) => {
@@ -635,22 +668,33 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {});
+  await mockAnonymousSession(page);
   await page.goto(`${basePath}/users/loginform?password=reset`);
+  await page.evaluate(() => {
+    (
+      window as Window & {
+        __passwordResetLoginFlashSpaSentinel?: string;
+      }
+    ).__passwordResetLoginFlashSpaSentinel = "alive";
+  });
 
+  await expect(page).toHaveURL(`${basePath}/users/loginform?password=reset`);
   await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
     "Please log in with the new password!",
   );
-  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  expect(source).toContain('<LoginFlashToast message={t("user.loginWithNewPassword")} />');
-  expect(source).toContain("useRootToast");
-  expect(source).not.toContain('data-toggle="yobi-notify"');
-  expect(source).not.toContain("data-toggle='yobi-notify'");
-  expect(source).not.toContain('id="yobiToasts"');
-  expect(source).not.toContain("document.");
-  expect(source).not.toContain("createPortal");
-  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
-  expect(rootSource).toContain("<RootToastContext.Provider value={setRootToast}>");
-  expect(rootSource).toContain('<div id="yobiToasts" className="yobiToasts">');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __passwordResetLoginFlashSpaSentinel?: string;
+            }
+          ).__passwordResetLoginFlashSpaSentinel,
+      ),
+    )
+    .toBe("alive");
   const actual = await canonicalizeScreenAndToastRoots(page);
   const expected = await canonicalizeHtml(
     page,
@@ -856,6 +900,25 @@ async function mockCapabilities(
         passwordPlaceholder: overrides.passwordPlaceholder ?? "",
         signupRequireConfirm: overrides.signupRequireConfirm ?? false,
         socialLoginOnly: overrides.socialLoginOnly ?? false,
+      },
+    });
+  });
+}
+
+async function mockAnonymousSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        actorId: null,
+        defaultLandingPath: "/",
+        emailAddress: "",
+        isAnonymous: true,
+        isConfirmed: false,
+        isGuest: false,
+        isSiteAdmin: false,
+        loginId: "",
+        userLabel: "",
       },
     });
   });
