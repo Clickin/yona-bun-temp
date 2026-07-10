@@ -47,6 +47,7 @@ pub type UpdateProjectOverviewRequestView<'a> = UpdateProjectOverviewRequest;
 pub type ToggleProjectWatchRequestView<'a> = ToggleProjectWatchRequest;
 pub type EnrollProjectRequestView<'a> = EnrollProjectRequest;
 pub type CancelEnrollProjectRequestView<'a> = CancelEnrollProjectRequest;
+pub type ToggleFavoriteOrganizationRequestView<'a> = ToggleFavoriteOrganizationRequest;
 pub type ToggleFavoriteProjectRequestView<'a> = ToggleFavoriteProjectRequest;
 pub type RecordRecentProjectVisitRequestView<'a> = RecordRecentProjectVisitRequest;
 pub type ListProjectsRequestView<'a> = ListProjectsRequest;
@@ -819,6 +820,8 @@ pub struct IssueAttachment {
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceMemberProjectItem {
     #[serde(default)]
+    pub project_id: i64,
+    #[serde(default)]
     pub owner_name: String,
     #[serde(default)]
     pub project_name: String,
@@ -833,6 +836,8 @@ pub struct WorkspaceMemberProjectItem {
     #[serde(default)]
     pub is_watching: bool,
     #[serde(default)]
+    pub is_favorited: bool,
+    #[serde(default)]
     pub last_pushed_label: String,
     #[serde(default)]
     pub member_count: u32,
@@ -846,6 +851,21 @@ pub struct WorkspaceMemberProjectItem {
     pub viewer_can_watch: bool,
     #[serde(default)]
     pub watch_count: u32,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceSidebarOrganizationItem {
+    #[serde(default)]
+    pub organization_id: i64,
+    #[serde(default)]
+    pub organization_name: String,
+    #[serde(default)]
+    pub project_count: Option<u32>,
+    #[serde(default)]
+    pub is_favorited: bool,
+    #[serde(default)]
+    pub projects: Vec<WorkspaceMemberProjectItem>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
@@ -1426,6 +1446,13 @@ pub struct ToggleFavoriteProjectRequest {
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ToggleFavoriteOrganizationRequest {
+    #[serde(default)]
+    pub organization_name: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToggleProjectWatchRequest {
     #[serde(default)]
     pub owner_name: String,
@@ -1733,6 +1760,12 @@ pub struct ReadWorkspaceOverviewResponse {
     #[serde(default)]
     pub member_projects: Vec<WorkspaceMemberProjectItem>,
     #[serde(default)]
+    pub own_projects: Vec<WorkspaceMemberProjectItem>,
+    #[serde(default)]
+    pub favorite_organizations: Vec<WorkspaceSidebarOrganizationItem>,
+    #[serde(default)]
+    pub organizations: Vec<WorkspaceSidebarOrganizationItem>,
+    #[serde(default)]
     pub days_ago: u32,
 }
 
@@ -1932,6 +1965,15 @@ pub struct ToggleFavoriteProjectResponse {
     pub owner_name: String,
     #[serde(default)]
     pub project_name: String,
+    #[serde(default)]
+    pub favorited: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToggleFavoriteOrganizationResponse {
+    #[serde(default)]
+    pub organization_name: String,
     #[serde(default)]
     pub favorited: bool,
 }

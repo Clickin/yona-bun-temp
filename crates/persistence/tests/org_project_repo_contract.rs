@@ -2,7 +2,7 @@ use sea_orm::{ActiveModelTrait, Database, EntityName, Set};
 use yoram_migration::Migrator;
 use yoram_persistence::{
     user_enrolled_organization, AppRepository, CreateOrganizationInput, CreateProjectInput,
-    CreateUserInput, UpdateOrganizationInput,
+    CreateUserInput, UpdateOrganizationInput, UpdateProjectInput,
 };
 
 #[test]
@@ -69,6 +69,83 @@ async fn creates_organizations_and_rewrites_org_owned_project_owner_on_rename() 
         .expect("read renamed project")
         .expect("renamed project exists");
     assert_eq!(project.owner_name, "weblabs");
+    let project = repo
+        .update_project(UpdateProjectInput {
+            current_owner_name: "weblabs".to_string(),
+            current_project_name: "projectYobi".to_string(),
+            is_code_accessible_member_only: None,
+            overview: Some("org project".to_string()),
+            project_name: "ProjectYobiNext".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .expect("rename project")
+        .expect("renamed project exists");
+    let own_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "Door".to_string(),
+            overview: None,
+            project_name: "ownProject".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create own project");
+    let favorite_organization = repo
+        .create_organization(CreateOrganizationInput {
+            description: None,
+            organization_name: "favorite-labs".to_string(),
+        })
+        .await
+        .expect("create favorite organization");
+    let favorite_organization_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: Some(favorite_organization.id),
+            owner_name: "favorite-labs".to_string(),
+            overview: None,
+            project_name: "favoriteProject".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create favorite organization project");
+    let unrelated_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "unrelated".to_string(),
+            overview: None,
+            project_name: "noise".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create unrelated project");
+    let catalog = repo
+        .list_workspace_project_catalog(&[project.id], Some("door"), &[favorite_organization.id])
+        .await
+        .expect("targeted workspace project catalog");
+    assert_eq!(catalog.len(), 3);
+    assert!(catalog.iter().any(|item| item.id == project.id));
+    assert!(catalog.iter().any(|item| item.id == own_project.id));
+    assert!(catalog
+        .iter()
+        .any(|item| item.id == favorite_organization_project.id));
+    assert!(!catalog.iter().any(|item| item.id == unrelated_project.id));
+    let catalog_project = catalog
+        .into_iter()
+        .find(|item| item.id == project.id)
+        .expect("renamed project in workspace catalog");
+    assert_eq!(catalog_project.owner_name, "weblabs");
+    assert_eq!(catalog_project.project_name, "ProjectYobiNext");
+    assert_eq!(
+        catalog_project.previous_owner_name.as_deref(),
+        Some("weblabs")
+    );
+    assert_eq!(
+        catalog_project.previous_project_name.as_deref(),
+        Some("projectYobi")
+    );
 }
 
 #[tokio::test]
@@ -160,6 +237,33 @@ async fn reads_project_members_enrollment_requests_and_workspace_project_lists()
         .await
         .expect("list recent");
     assert_eq!(recent.len(), 1);
+
+    let unfavorite = repo
+        .toggle_favorite_project(guest.id, "manager", "projectYobi")
+        .await
+        .expect("unfavorite project");
+    assert!(!unfavorite.favorited);
+    assert!(repo
+        .list_favorite_projects_for_user(guest.id)
+        .await
+        .expect("list favorites after unfavorite")
+        .is_empty());
+    assert!(repo
+        .list_recent_projects_for_user(guest.id)
+        .await
+        .expect("list recent after unfavorite")
+        .is_empty());
+
+    let refavorite = repo
+        .toggle_favorite_project(guest.id, "manager", "projectYobi")
+        .await
+        .expect("refavorite project");
+    assert!(refavorite.favorited);
+    assert!(repo
+        .list_recent_projects_for_user(guest.id)
+        .await
+        .expect("list recent after refavorite")
+        .is_empty());
 }
 
 #[tokio::test]

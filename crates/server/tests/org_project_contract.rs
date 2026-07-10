@@ -13,9 +13,9 @@ use tempfile::{tempdir, TempDir};
 use tower::ServiceExt;
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
-    MilestoneMutationInput, PostingMutationInput, ProjectMenuSettingsRecord,
-    PullRequestMutationInput, RepositoryConfig,
+    AppRepository, CreatePostingInput, CreateProjectInput, CreateProjectLabelInput,
+    CreatePullRequestInput, MilestoneMutationInput, PostingMutationInput,
+    ProjectMenuSettingsRecord, PullRequestMutationInput, RepositoryConfig,
 };
 use yoram_server::{create_router_with_repository_and_app_config, AppRuntimeConfig, RuntimeConfig};
 use yoram_vcs::{repository_path, svn_repository_path};
@@ -54,6 +54,14 @@ async fn build_app_with_repository_and_configs(
     app_config: AppRuntimeConfig,
     repository_config: RepositoryConfig,
 ) -> (axum::Router, AppRepository) {
+    build_app_with_repository_and_configs_at_base(app_config, repository_config, "/yona").await
+}
+
+async fn build_app_with_repository_and_configs_at_base(
+    app_config: AppRuntimeConfig,
+    repository_config: RepositoryConfig,
+    base_path: &str,
+) -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
@@ -62,7 +70,7 @@ async fn build_app_with_repository_and_configs(
     let app = create_router_with_repository_and_app_config(
         RuntimeConfig {
             allow_anonymous_access: true,
-            base_path: "/yona".to_string(),
+            base_path: base_path.to_string(),
             public_origin: String::new(),
         },
         app_repo.clone(),
@@ -81,11 +89,15 @@ async fn build_app_in_data_root(data_root: &Path) -> axum::Router {
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
+    bootstrap_at(app, "/yona").await
+}
+
+async fn bootstrap_at(app: axum::Router, base_path: &str) -> (String, String) {
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/api/auth/session")
+                .uri(format!("{base_path}/api/auth/session"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -131,11 +143,21 @@ async fn response_json(response: Response<Body>) -> String {
 }
 
 async fn register_user(app: axum::Router, cookie_header: &str, csrf: &str, login_id: &str) -> i64 {
+    register_user_at(app, "/yona", cookie_header, csrf, login_id).await
+}
+
+async fn register_user_at(
+    app: axum::Router,
+    base_path: &str,
+    cookie_header: &str,
+    csrf: &str,
+    login_id: &str,
+) -> i64 {
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .uri(format!("{base_path}/api/v1/_pilot/RegisterWithPassword"))
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, cookie_header)
                 .header("x-csrf-token", csrf)
@@ -167,11 +189,30 @@ async fn create_organization(
     organization_name: &str,
     description: &str,
 ) {
+    create_organization_at(
+        app,
+        "/yona",
+        cookie_header,
+        csrf,
+        organization_name,
+        description,
+    )
+    .await;
+}
+
+async fn create_organization_at(
+    app: axum::Router,
+    base_path: &str,
+    cookie_header: &str,
+    csrf: &str,
+    organization_name: &str,
+    description: &str,
+) {
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/api/v1/_pilot/CreateOrganization")
+                .uri(format!("{base_path}/api/v1/_pilot/CreateOrganization"))
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, cookie_header)
                 .header("x-csrf-token", csrf)
@@ -195,11 +236,34 @@ async fn create_project(
     overview: &str,
     project_scope: &str,
 ) {
+    create_project_at(
+        app,
+        "/yona",
+        cookie_header,
+        csrf,
+        owner_name,
+        project_name,
+        overview,
+        project_scope,
+    )
+    .await;
+}
+
+async fn create_project_at(
+    app: axum::Router,
+    base_path: &str,
+    cookie_header: &str,
+    csrf: &str,
+    owner_name: &str,
+    project_name: &str,
+    overview: &str,
+    project_scope: &str,
+) {
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/api/v1/_pilot/CreateProject")
+                .uri(format!("{base_path}/api/v1/_pilot/CreateProject"))
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, cookie_header)
                 .header("x-csrf-token", csrf)
@@ -1326,6 +1390,659 @@ async fn project_create_form_options_expose_legacy_owner_selector_choices() {
     assert_eq!(json["ownerOptions"][1]["organization"], true);
     assert_eq!(json["ownerOptions"][1]["selected"], true);
     assert_eq!(json["ownerOptions"][1]["avatarUrl"], "");
+}
+
+#[tokio::test]
+async fn canonical_sidebar_favorites_persist_under_an_arbitrary_context_path() {
+    let base_path = "/tenant/yoram";
+    let (app, repository) = build_app_with_repository_and_configs_at_base(
+        AppRuntimeConfig::default(),
+        RepositoryConfig::default(),
+        base_path,
+    )
+    .await;
+
+    let (admin_csrf, admin_cookie) = bootstrap_at(app.clone(), base_path).await;
+    let admin_id =
+        register_user_at(app.clone(), base_path, &admin_cookie, &admin_csrf, "admin").await;
+    let (visitor_csrf, visitor_cookie) = bootstrap_at(app.clone(), base_path).await;
+    let visitor_id = register_user_at(
+        app.clone(),
+        base_path,
+        &visitor_cookie,
+        &visitor_csrf,
+        "visitor",
+    )
+    .await;
+    let (guest_csrf, guest_cookie) = bootstrap_at(app.clone(), base_path).await;
+    let guest_id =
+        register_user_at(app.clone(), base_path, &guest_cookie, &guest_csrf, "guest").await;
+    repository
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("mark guest user");
+
+    for organization_name in ["tooling", "weblabs"] {
+        create_organization_at(
+            app.clone(),
+            base_path,
+            &admin_cookie,
+            &admin_csrf,
+            organization_name,
+            organization_name,
+        )
+        .await;
+    }
+    create_organization_at(
+        app.clone(),
+        base_path,
+        &visitor_cookie,
+        &visitor_csrf,
+        "visitorlabs",
+        "Visitor labs",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &visitor_cookie,
+        &visitor_csrf,
+        "visitorlabs",
+        "secret",
+        "Site admin visibility",
+        "private",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "portal",
+        "Public portal",
+        "public",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "privatePortal",
+        "Private portal",
+        "private",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "privateManager",
+        "Private manager project",
+        "private",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &admin_cookie,
+        &admin_csrf,
+        "tooling",
+        "cli",
+        "Command line tools",
+        "public",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &admin_cookie,
+        &admin_csrf,
+        "tooling",
+        "ProtectedCli",
+        "Protected command line tools",
+        "protected",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &admin_cookie,
+        &admin_csrf,
+        "tooling",
+        "privateCli",
+        "Private command line tools",
+        "private",
+    )
+    .await;
+    create_project_at(
+        app.clone(),
+        base_path,
+        &visitor_cookie,
+        &visitor_csrf,
+        "visitor",
+        "notes",
+        "Personal notes",
+        "private",
+    )
+    .await;
+    for project_name in ["Zulu", "alpha"] {
+        create_project_at(
+            app.clone(),
+            base_path,
+            &visitor_cookie,
+            &visitor_csrf,
+            "visitor",
+            project_name,
+            project_name,
+            "private",
+        )
+        .await;
+    }
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "Visitor".to_string(),
+            overview: Some("Mixed-case stored owner".to_string()),
+            project_name: "mixedOwner".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("create mixed-case owner project");
+
+    let tooling = repository
+        .read_organization_by_name("tooling")
+        .await
+        .expect("read tooling organization")
+        .expect("tooling organization");
+    repository
+        .add_organization_membership(tooling.id, visitor_id, "org_member")
+        .await
+        .expect("add visitor tooling membership");
+    for (project_name, role) in [("privatePortal", "member"), ("privateManager", "manager")] {
+        let project = repository
+            .read_project_by_owner_and_name("weblabs", project_name)
+            .await
+            .expect("read private project")
+            .expect("private project");
+        repository
+            .add_project_membership(project.id, visitor_id, role)
+            .await
+            .expect("add explicit private project membership");
+    }
+
+    let portal = repository
+        .read_project_by_owner_and_name("weblabs", "portal")
+        .await
+        .expect("read portal")
+        .expect("portal project");
+    let portal_logo = repository
+        .create_user_attachment_upload(
+            admin_id,
+            "admin",
+            "portal-logo.png",
+            "image/png",
+            128,
+            "sidebar-portal-logo-hash",
+        )
+        .await
+        .expect("portal logo upload");
+    repository
+        .set_project_logo_attachment(portal.id, portal_logo.id, admin_id)
+        .await
+        .expect("set portal logo")
+        .expect("portal logo attachment");
+    let notes = repository
+        .read_project_by_owner_and_name("visitor", "notes")
+        .await
+        .expect("read notes")
+        .expect("notes project");
+    let notes_logo = repository
+        .create_user_attachment_upload(
+            visitor_id,
+            "visitor",
+            "notes-logo.png",
+            "image/png",
+            128,
+            "sidebar-notes-logo-hash",
+        )
+        .await
+        .expect("notes logo upload");
+    repository
+        .set_project_logo_attachment(notes.id, notes_logo.id, visitor_id)
+        .await
+        .expect("set notes logo")
+        .expect("notes logo attachment");
+    let favorite_organization_path = format!("{base_path}/api/v1/organizations/weblabs/favorite");
+    let wrong_context = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/organizations/weblabs/favorite")
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(wrong_context.status(), StatusCode::NOT_FOUND);
+
+    let anonymous = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&favorite_organization_path)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+
+    let missing_csrf = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&favorite_organization_path)
+                .header(http::header::COOKIE, &visitor_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing_csrf.status(), StatusCode::FORBIDDEN);
+
+    let guest_favorited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&favorite_organization_path)
+                .header(http::header::COOKIE, &guest_cookie)
+                .header("x-csrf-token", &guest_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(guest_favorited.status(), StatusCode::OK);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&response_json(guest_favorited).await).unwrap(),
+        json!({ "organizationName": "weblabs", "favorited": true })
+    );
+    let guest_unfavorited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&favorite_organization_path)
+                .header(http::header::COOKIE, &guest_cookie)
+                .header("x-csrf-token", &guest_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(guest_unfavorited.status(), StatusCode::OK);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&response_json(guest_unfavorited).await).unwrap(),
+        json!({ "organizationName": "weblabs", "favorited": false })
+    );
+
+    let missing_organization = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("{base_path}/api/v1/organizations/missing/favorite"))
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing_organization.status(), StatusCode::NOT_FOUND);
+
+    let favorited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&favorite_organization_path)
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(favorited.status(), StatusCode::OK);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&response_json(favorited).await).unwrap(),
+        json!({ "organizationName": "weblabs", "favorited": true })
+    );
+
+    for (owner_name, project_name) in [
+        ("tooling", "cli"),
+        ("weblabs", "portal"),
+        ("weblabs", "privatePortal"),
+    ] {
+        let favorite_project = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri(format!(
+                        "{base_path}/api/v1/owners/{owner_name}/projects/{project_name}/favorite"
+                    ))
+                    .header(http::header::COOKIE, &visitor_cookie)
+                    .header("x-csrf-token", &visitor_csrf)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(favorite_project.status(), StatusCode::OK);
+        let payload: serde_json::Value =
+            serde_json::from_str(&response_json(favorite_project).await).unwrap();
+        assert_eq!(payload["ownerName"], owner_name);
+        assert_eq!(payload["projectName"], project_name);
+        assert_eq!(payload["favorited"], true);
+    }
+
+    let recent_visit = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("{base_path}/api/v1/workspace/recent-projects"))
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::from(
+                    r#"{"ownerName":"weblabs","projectName":"portal"}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(recent_visit.status(), StatusCode::OK);
+
+    let watched = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!(
+                    "{base_path}/api/v1/owners/weblabs/projects/portal/watch"
+                ))
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(watched.status(), StatusCode::OK);
+
+    let workspace = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("{base_path}/api/v1/workspace"))
+                .header(http::header::COOKIE, &visitor_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(workspace.status(), StatusCode::OK);
+    let workspace: serde_json::Value =
+        serde_json::from_str(&response_json(workspace).await).unwrap();
+
+    let own_projects = workspace["ownProjects"].as_array().unwrap();
+    assert_eq!(
+        own_projects
+            .iter()
+            .map(|project| project["projectName"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["alpha", "mixedOwner", "notes", "Zulu"]
+    );
+    let notes_item = own_projects
+        .iter()
+        .find(|project| project["projectName"] == "notes")
+        .unwrap();
+    assert_eq!(notes_item["ownerName"], "visitor");
+    assert_eq!(notes_item["isFavorited"], false);
+    assert!(notes_item["projectId"].as_i64().is_some_and(|id| id > 0));
+    assert_eq!(
+        notes_item["logoUrl"],
+        format!("{base_path}/files/{}", notes_logo.id)
+    );
+
+    assert_eq!(
+        workspace["favoriteOrganizations"].as_array().unwrap().len(),
+        1
+    );
+    assert_eq!(
+        workspace["favoriteOrganizations"][0]["organizationName"],
+        "weblabs"
+    );
+    assert_eq!(workspace["favoriteOrganizations"][0]["isFavorited"], true);
+    assert_eq!(
+        workspace["favoriteOrganizations"][0]["projectCount"],
+        json!(null)
+    );
+    let favorite_organization_projects = workspace["favoriteOrganizations"][0]["projects"]
+        .as_array()
+        .unwrap();
+    assert_eq!(
+        favorite_organization_projects
+            .iter()
+            .map(|project| project["projectName"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["portal", "privateManager", "privatePortal"]
+    );
+    let nested_portal = favorite_organization_projects
+        .iter()
+        .find(|project| project["projectName"] == "portal")
+        .unwrap();
+    assert_eq!(nested_portal["isFavorited"], true);
+    assert_eq!(
+        nested_portal["logoUrl"],
+        format!("{base_path}/files/{}", portal_logo.id)
+    );
+    assert_eq!(
+        favorite_organization_projects
+            .iter()
+            .find(|project| project["projectName"] == "privatePortal")
+            .unwrap()["isFavorited"],
+        true
+    );
+
+    assert_eq!(workspace["organizations"].as_array().unwrap().len(), 1);
+    assert_eq!(workspace["organizations"][0]["organizationName"], "tooling");
+    assert_eq!(workspace["organizations"][0]["isFavorited"], false);
+    assert_eq!(
+        workspace["organizations"][0]["projects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|project| project["projectName"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["cli", "ProtectedCli"]
+    );
+    assert_eq!(
+        workspace["organizations"][0]["projects"][0]["isFavorited"],
+        true
+    );
+
+    assert_eq!(workspace["favoriteProjects"].as_array().unwrap().len(), 3);
+    assert!(workspace["favoriteProjects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|project| project["isFavorited"] == true));
+    let favorite_portal = workspace["favoriteProjects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|project| project["projectName"] == "portal")
+        .unwrap();
+    assert_eq!(
+        favorite_portal["logoUrl"],
+        format!("{base_path}/files/{}", portal_logo.id)
+    );
+    assert_eq!(workspace["recentProjects"][0]["ownerName"], "weblabs");
+    assert_eq!(workspace["recentProjects"][0]["isFavorited"], true);
+    assert_eq!(
+        workspace["recentProjects"][0]["logoUrl"],
+        format!("{base_path}/files/{}", portal_logo.id)
+    );
+    let member_projects = workspace["memberProjects"].as_array().unwrap();
+    assert!(member_projects
+        .iter()
+        .any(|project| project["ownerName"] == "visitor"));
+    assert_eq!(
+        member_projects
+            .iter()
+            .find(|project| project["projectName"] == "privatePortal")
+            .unwrap()["isFavorited"],
+        true
+    );
+    assert!(workspace["watchedProjects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|project| project["ownerName"] == "weblabs"));
+    assert!(workspace["issueItems"].is_array());
+
+    let admin_favorite_path = format!("{base_path}/api/v1/organizations/visitorlabs/favorite");
+    let admin_favorited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&admin_favorite_path)
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(admin_favorited.status(), StatusCode::OK);
+    let admin_workspace = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("{base_path}/api/v1/workspace"))
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(admin_workspace.status(), StatusCode::OK);
+    let admin_workspace: serde_json::Value =
+        serde_json::from_str(&response_json(admin_workspace).await).unwrap();
+    assert_eq!(admin_workspace["profile"]["isSiteAdmin"], true);
+    let admin_favorite_organization = &admin_workspace["favoriteOrganizations"][0];
+    assert_eq!(
+        admin_favorite_organization["organizationName"],
+        "visitorlabs"
+    );
+    assert_eq!(admin_favorite_organization["projectCount"], 1);
+    assert_eq!(
+        admin_favorite_organization["projects"][0]["projectName"],
+        "secret"
+    );
+    assert_eq!(
+        admin_favorite_organization["projects"][0]["projectScope"],
+        "private"
+    );
+
+    repository
+        .toggle_favorite_project(guest_id, "tooling", "cli")
+        .await
+        .expect("seed guest favorite");
+    let guest_workspace = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("{base_path}/api/v1/workspace"))
+                .header(http::header::COOKIE, &guest_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(guest_workspace.status(), StatusCode::OK);
+    let guest_workspace: serde_json::Value =
+        serde_json::from_str(&response_json(guest_workspace).await).unwrap();
+    assert!(guest_workspace["favoriteProjects"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert!(guest_workspace["organizations"][0]["projects"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+
+    let unfavorited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&favorite_organization_path)
+                .header(http::header::COOKIE, &visitor_cookie)
+                .header("x-csrf-token", &visitor_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unfavorited.status(), StatusCode::OK);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&response_json(unfavorited).await).unwrap(),
+        json!({ "organizationName": "weblabs", "favorited": false })
+    );
+
+    let persisted_workspace = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("{base_path}/api/v1/workspace"))
+                .header(http::header::COOKIE, &visitor_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let persisted_workspace: serde_json::Value =
+        serde_json::from_str(&response_json(persisted_workspace).await).unwrap();
+    assert!(persisted_workspace["favoriteOrganizations"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert!(persisted_workspace["organizations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|organization| organization["organizationName"] == "weblabs"));
 }
 
 #[tokio::test]

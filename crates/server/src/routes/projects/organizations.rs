@@ -122,6 +122,39 @@ pub(crate) async fn organization_create(
     ))
 }
 
+pub(crate) async fn organization_favorite_toggle(
+    service: &PilotServiceImpl,
+    ctx: Context,
+    request: OwnedView<ToggleFavoriteOrganizationRequestView<'static>>,
+) -> Result<(ToggleFavoriteOrganizationResponse, Context), ConnectError> {
+    let session = require_session(&service.session_manager, &ctx.headers)?;
+    require_valid_csrf(&service.session_manager, &ctx.headers, &session)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(ConnectError::unimplemented(
+            "organization requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id).await?;
+    let authorization = repository
+        .read_organization_authorization(&request.organization_name, Some(actor.id))
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+    let favorited = repository
+        .toggle_favorite_organization(actor.id, authorization.organization.id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+
+    Ok((
+        ToggleFavoriteOrganizationResponse {
+            organization_name: authorization.organization.organization_name,
+            favorited,
+        },
+        ctx,
+    ))
+}
+
 pub(crate) async fn organization_update(
     service: &PilotServiceImpl,
     ctx: Context,
@@ -931,6 +964,19 @@ pub(crate) async fn rest_create_organization(
     };
     let request = rest_owned_view::<CreateOrganizationRequestView<'static>>(&request)?;
     let (payload, ctx) = organization_create(&service, Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+pub(crate) async fn rest_toggle_favorite_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ToggleFavoriteOrganizationRequest { organization_name };
+    let request = rest_owned_view::<ToggleFavoriteOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = organization_favorite_toggle(&service, Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))

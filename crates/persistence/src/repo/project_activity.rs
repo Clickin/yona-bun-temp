@@ -304,14 +304,20 @@ impl AppRepositoryImpl<'_> {
             return Err(DbErr::Custom("Project not found.".to_string()));
         };
 
+        let txn = self.db.begin().await?;
         let favorited = if let Some(existing) = favorite_project::Entity::find()
             .filter(favorite_project::Column::UserId.eq(Some(user_id)))
             .filter(favorite_project::Column::ProjectId.eq(Some(project.id)))
-            .one(&self.db)
+            .one(&txn)
             .await?
         {
             favorite_project::Entity::delete_by_id(existing.id)
-                .exec(&self.db)
+                .exec(&txn)
+                .await?;
+            recent_project::Entity::delete_many()
+                .filter(recent_project::Column::UserId.eq(Some(user_id)))
+                .filter(recent_project::Column::ProjectId.eq(Some(project.id)))
+                .exec(&txn)
                 .await?;
             false
         } else {
@@ -322,10 +328,11 @@ impl AppRepositoryImpl<'_> {
                 owner: Set(Some(project.owner_name.clone())),
                 project_name: Set(Some(project.project_name.clone())),
             }
-            .insert(&self.db)
+            .insert(&txn)
             .await?;
             true
         };
+        txn.commit().await?;
 
         Ok(ToggleFavoriteProjectResult {
             favorited,
@@ -378,34 +385,15 @@ impl AppRepositoryImpl<'_> {
         &self,
         user_id: i64,
     ) -> Result<Vec<ProjectListEntry>, DbErr> {
-        let rows = favorite_project::Entity::find()
-            .filter(favorite_project::Column::UserId.eq(Some(user_id)))
-            .order_by_desc(favorite_project::Column::Id)
-            .all(&self.db)
-            .await?;
-        let mut projects = Vec::new();
-        for row in rows {
-            let Some(project_id) = row.project_id else {
-                continue;
-            };
-
-            let project_row = project::Entity::find_by_id(project_id)
-                .one(&self.db)
-                .await?;
-            let owner_name = row
-                .owner
-                .or_else(|| project_row.as_ref().and_then(|item| item.owner.clone()));
-            let project_name = row
-                .project_name
-                .or_else(|| project_row.as_ref().and_then(|item| item.name.clone()));
-            if let (Some(owner_name), Some(project_name)) = (owner_name, project_name) {
-                projects.push(ProjectListEntry {
-                    owner_name,
-                    project_name,
-                });
-            }
-        }
-        Ok(projects)
+        Ok(self
+            .list_legacy_favorite_projects_for_user(user_id)
+            .await?
+            .into_iter()
+            .map(|(_, owner_name, project_name)| ProjectListEntry {
+                owner_name,
+                project_name,
+            })
+            .collect())
     }
 
     pub async fn list_legacy_favorite_projects_for_user(
@@ -417,26 +405,70 @@ impl AppRepositoryImpl<'_> {
             .order_by_desc(favorite_project::Column::Id)
             .all(&self.db)
             .await?;
+        let project_rows = project::Entity::find()
+            .filter(project::Column::Id.is_in(rows.iter().filter_map(|row| row.project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| (row.id, row))
+            .collect::<HashMap<_, _>>();
         let mut projects = Vec::new();
         for row in rows {
             let Some(project_id) = row.project_id else {
                 continue;
             };
 
-            let project_row = project::Entity::find_by_id(project_id)
-                .one(&self.db)
-                .await?;
+            let project_row = project_rows.get(&project_id);
             let owner_name = row
                 .owner
-                .or_else(|| project_row.as_ref().and_then(|item| item.owner.clone()));
+                .or_else(|| project_row.and_then(|item| item.owner.clone()));
             let project_name = row
                 .project_name
-                .or_else(|| project_row.as_ref().and_then(|item| item.name.clone()));
+                .or_else(|| project_row.and_then(|item| item.name.clone()));
             if let (Some(owner_name), Some(project_name)) = (owner_name, project_name) {
                 projects.push((project_id, owner_name, project_name));
             }
         }
         Ok(projects)
+    }
+
+    pub async fn list_favorite_organization_ids_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<i64>, DbErr> {
+        Ok(favorite_organization::Entity::find()
+            .filter(favorite_organization::Column::UserId.eq(Some(user_id)))
+            .order_by_desc(favorite_organization::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.organization_id)
+            .collect())
+    }
+
+    pub async fn list_favorite_project_ids_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<i64>, DbErr> {
+        Ok(favorite_project::Entity::find()
+            .filter(favorite_project::Column::UserId.eq(Some(user_id)))
+            .order_by_desc(favorite_project::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.project_id)
+            .collect())
+    }
+
+    pub async fn list_recent_project_ids_for_user(&self, user_id: i64) -> Result<Vec<i64>, DbErr> {
+        Ok(recent_project::Entity::find()
+            .filter(recent_project::Column::UserId.eq(Some(user_id)))
+            .order_by_desc(recent_project::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.project_id)
+            .collect())
     }
 
     pub async fn list_recent_projects_for_user(
@@ -448,21 +480,26 @@ impl AppRepositoryImpl<'_> {
             .order_by_desc(recent_project::Column::Id)
             .all(&self.db)
             .await?;
+        let project_rows = project::Entity::find()
+            .filter(project::Column::Id.is_in(rows.iter().filter_map(|row| row.project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| (row.id, row))
+            .collect::<HashMap<_, _>>();
         let mut projects = Vec::new();
         for row in rows {
             let Some(project_id) = row.project_id else {
                 continue;
             };
 
-            let project_row = project::Entity::find_by_id(project_id)
-                .one(&self.db)
-                .await?;
+            let project_row = project_rows.get(&project_id);
             let owner_name = row
                 .owner
-                .or_else(|| project_row.as_ref().and_then(|item| item.owner.clone()));
+                .or_else(|| project_row.and_then(|item| item.owner.clone()));
             let project_name = row
                 .project_name
-                .or_else(|| project_row.as_ref().and_then(|item| item.name.clone()));
+                .or_else(|| project_row.and_then(|item| item.name.clone()));
             if let (Some(owner_name), Some(project_name)) = (owner_name, project_name) {
                 projects.push(ProjectListEntry {
                     owner_name,
@@ -502,6 +539,130 @@ impl AppRepositoryImpl<'_> {
                 .map(|value| value.format("%b %d, %Y").to_string())
                 .unwrap_or_default(),
         }))
+    }
+
+    pub async fn list_workspace_project_catalog(
+        &self,
+        project_ids: &[i64],
+        owner_name: Option<&str>,
+        organization_ids: &[i64],
+    ) -> Result<Vec<ProjectRecord>, DbErr> {
+        let owner_name = owner_name
+            .map(normalize_identity)
+            .filter(|owner_name| !owner_name.is_empty());
+        if project_ids.is_empty() && owner_name.is_none() && organization_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut scope = Condition::any();
+        if !project_ids.is_empty() {
+            scope = scope.add(project::Column::Id.is_in(project_ids.iter().copied()));
+        }
+        if let Some(owner_name) = owner_name {
+            scope = scope.add(
+                Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                    project::Column::Owner,
+                )))
+                .eq(owner_name),
+            );
+        }
+        if !organization_ids.is_empty() {
+            scope = scope.add(
+                project::Column::OrganizationId.is_in(organization_ids.iter().copied().map(Some)),
+            );
+        }
+
+        let rows = project::Entity::find().filter(scope).all(&self.db).await?;
+        let mut projects = Vec::with_capacity(rows.len());
+        for row in rows {
+            let owner_name = row.owner.unwrap_or_default();
+            let project_name = row.name.unwrap_or_default();
+            if owner_name.is_empty() || project_name.is_empty() {
+                continue;
+            }
+            projects.push(ProjectRecord {
+                created_date: row.created_date,
+                default_reviewer_count: row.default_reviewer_count.unwrap_or_default().max(0)
+                    as u32,
+                is_code_accessible_member_only: row
+                    .is_code_accessible_member_only
+                    .unwrap_or_default()
+                    != 0,
+                is_using_reviewer_count: row.is_using_reviewer_count.unwrap_or_default() != 0,
+                last_pushed_date: row.last_pushed_date,
+                id: row.id,
+                original_project_id: row.original_project_id,
+                organization_id: row.organization_id,
+                organization_name: row.organization_id.map(|_| owner_name.clone()),
+                owner_name,
+                overview: row.overview,
+                previous_owner_name: row.previous_owner_login_id,
+                previous_project_name: row.previous_name,
+                project_name,
+                project_scope: row.project_scope.unwrap_or_else(|| "public".to_string()),
+                vcs: row.vcs.unwrap_or_else(|| "GIT".to_string()),
+            });
+        }
+        Ok(projects)
+    }
+
+    pub async fn list_workspace_organizations_for_user(
+        &self,
+        user_id: i64,
+        organization_ids: &[i64],
+    ) -> Result<Vec<(OrganizationRecord, String)>, DbErr> {
+        if organization_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let organizations = organization::Entity::find()
+            .filter(organization::Column::Id.is_in(organization_ids.iter().copied()))
+            .all(&self.db)
+            .await?;
+        let memberships = organization_user::Entity::find()
+            .filter(organization_user::Column::UserId.eq(Some(user_id)))
+            .filter(
+                organization_user::Column::OrganizationId
+                    .is_in(organization_ids.iter().copied().map(Some)),
+            )
+            .all(&self.db)
+            .await?;
+        let role_names = role::Entity::find()
+            .filter(
+                role::Column::Id.is_in(
+                    memberships
+                        .iter()
+                        .filter_map(|membership| membership.role_id),
+                ),
+            )
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|role| (role.id, role.name.unwrap_or_default()))
+            .collect::<HashMap<_, _>>();
+        let mut role_names_by_organization = memberships
+            .into_iter()
+            .filter_map(|membership| {
+                Some((
+                    membership.organization_id?,
+                    role_names
+                        .get(&membership.role_id?)
+                        .cloned()
+                        .unwrap_or_default(),
+                ))
+            })
+            .collect::<HashMap<_, _>>();
+
+        Ok(organizations
+            .into_iter()
+            .filter_map(|organization| self.organization_record_from_model(organization))
+            .map(|organization| {
+                let role_name = role_names_by_organization
+                    .remove(&organization.id)
+                    .unwrap_or_default();
+                (organization, role_name)
+            })
+            .collect())
     }
 
     pub async fn list_member_projects_for_user(

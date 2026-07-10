@@ -85,8 +85,9 @@ use organizations::{
     rest_delete_organization_member, rest_enroll_organization, rest_leave_organization,
     rest_list_organizations, rest_read_organization_admin, rest_read_organization_container,
     rest_read_organization_detail, rest_read_organization_members, rest_read_organization_settings,
-    rest_update_organization, rest_update_organization_member_role, RestOrganizationBody,
-    RestOrganizationMemberBody, RestOrganizationMemberRoleBody,
+    rest_toggle_favorite_organization, rest_update_organization,
+    rest_update_organization_member_role, RestOrganizationBody, RestOrganizationMemberBody,
+    RestOrganizationMemberRoleBody,
 };
 pub(crate) use participation::recent_project_visit_record;
 use participation::{
@@ -2226,6 +2227,18 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path(organization_name): Path<String>| {
                     let service = service.clone();
                     async move { rest_read_organization_admin(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/favorite",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move {
+                        rest_toggle_favorite_organization(headers, organization_name, service).await
+                    }
                 }
             }),
         )

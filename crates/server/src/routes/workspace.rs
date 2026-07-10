@@ -8,7 +8,7 @@ use axum::{
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
 use http::header::SET_COOKIE;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use yoram_domain::{
@@ -57,24 +57,154 @@ fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
 
 pub(crate) const WORKSPACE_DAYS_AGO: u32 = 14;
 
-fn workspace_project_item_from_entry(
-    item: &persistence::ProjectListEntry,
-) -> WorkspaceMemberProjectItem {
-    WorkspaceMemberProjectItem {
-        owner_name: item.owner_name.clone(),
-        project_name: item.project_name.clone(),
-        ..Default::default()
+struct WorkspaceProjectCatalog {
+    current_identity: HashMap<(String, String), i64>,
+    previous_identity: HashMap<(String, String), i64>,
+    projects_by_id: HashMap<i64, persistence::ProjectRecord>,
+}
+
+impl WorkspaceProjectCatalog {
+    fn new(projects: Vec<persistence::ProjectRecord>) -> Self {
+        let mut current_identity = HashMap::new();
+        let mut previous_identity = HashMap::new();
+        let mut projects_by_id = HashMap::new();
+
+        for project in projects {
+            current_identity.insert(
+                workspace_project_identity(&project.owner_name, &project.project_name),
+                project.id,
+            );
+            if let (Some(previous_owner_name), Some(previous_project_name)) = (
+                project.previous_owner_name.as_deref(),
+                project.previous_project_name.as_deref(),
+            ) {
+                previous_identity.insert(
+                    workspace_project_identity(previous_owner_name, previous_project_name),
+                    project.id,
+                );
+            }
+            projects_by_id.insert(project.id, project);
+        }
+
+        Self {
+            current_identity,
+            previous_identity,
+            projects_by_id,
+        }
     }
+
+    fn find_by_id(&self, project_id: i64) -> Option<&persistence::ProjectRecord> {
+        self.projects_by_id.get(&project_id)
+    }
+
+    fn find_by_identity(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Option<&persistence::ProjectRecord> {
+        let identity = workspace_project_identity(owner_name, project_name);
+        self.current_identity
+            .get(&identity)
+            .or_else(|| self.previous_identity.get(&identity))
+            .and_then(|project_id| self.projects_by_id.get(project_id))
+    }
+
+    fn projects(&self) -> impl Iterator<Item = &persistence::ProjectRecord> {
+        self.projects_by_id.values()
+    }
+}
+
+fn workspace_project_identity(owner_name: &str, project_name: &str) -> (String, String) {
+    (
+        normalize_identifier(owner_name),
+        normalize_identifier(project_name),
+    )
+}
+
+#[derive(Clone, Copy, Default)]
+struct WorkspaceOrganizationAccess {
+    is_admin: bool,
+    is_member: bool,
+}
+
+struct WorkspaceProjectAccess {
+    is_guest: bool,
+    is_site_admin: bool,
+    member_project_ids: HashSet<i64>,
+    normalized_login_id: String,
+    organizations: HashMap<i64, WorkspaceOrganizationAccess>,
+}
+
+impl WorkspaceProjectAccess {
+    fn read_allowed(&self, project: &persistence::ProjectRecord) -> Result<bool, ConnectError> {
+        let organization = project
+            .organization_id
+            .and_then(|organization_id| self.organizations.get(&organization_id))
+            .copied()
+            .unwrap_or_default();
+
+        Ok(authorize_project_access(
+            &ProjectAccessFacts {
+                is_anonymous: false,
+                is_guest: self.is_guest,
+                is_organization_admin: organization.is_admin,
+                is_organization_member: organization.is_member,
+                is_project_manager: normalize_identifier(&project.owner_name)
+                    == self.normalized_login_id,
+                is_project_member: self.member_project_ids.contains(&project.id),
+                is_site_admin: self.is_site_admin,
+                project_scope: map_project_scope(&project.project_scope)?,
+            },
+            ProjectOperation::Read,
+        )
+        .allowed)
+    }
+}
+
+async fn cached_workspace_project_logo_url(
+    repository: &PilotRepository,
+    base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
+    project_id: i64,
+) -> Result<String, ConnectError> {
+    if let Some(logo_url) = logo_urls.get(&project_id) {
+        return Ok(logo_url.clone());
+    }
+    let logo_url = project_logo_url(repository, base_path, project_id).await?;
+    logo_urls.insert(project_id, logo_url.clone());
+    Ok(logo_url)
+}
+
+async fn workspace_project_item_from_catalog(
+    repository: &PilotRepository,
+    base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
+    project: &persistence::ProjectRecord,
+    is_favorited: bool,
+) -> Result<WorkspaceMemberProjectItem, ConnectError> {
+    Ok(WorkspaceMemberProjectItem {
+        is_favorited,
+        logo_url: cached_workspace_project_logo_url(repository, base_path, logo_urls, project.id)
+            .await?,
+        owner_name: project.owner_name.clone(),
+        overview: project.overview.clone().unwrap_or_default(),
+        project_id: project.id,
+        project_name: project.project_name.clone(),
+        project_scope: project.project_scope.clone(),
+        ..Default::default()
+    })
 }
 
 async fn workspace_member_project_item_from_record(
     repository: &PilotRepository,
     base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
     viewer_id: Option<i64>,
     viewer_login_id: &str,
     subject_user_id: i64,
     subject_login_id: &str,
     item: &persistence::WorkspaceMemberProjectRecord,
+    is_favorited: bool,
 ) -> Result<WorkspaceMemberProjectItem, ConnectError> {
     let is_watching = match viewer_id {
         Some(user_id) => repository
@@ -92,13 +222,21 @@ async fn workspace_member_project_item_from_record(
 
     Ok(WorkspaceMemberProjectItem {
         created_label: item.created_label.clone(),
+        is_favorited,
         is_watching,
         last_pushed_label: item.last_pushed_label.clone(),
-        logo_url: project_logo_url(repository, base_path, item.project_id).await?,
+        logo_url: cached_workspace_project_logo_url(
+            repository,
+            base_path,
+            logo_urls,
+            item.project_id,
+        )
+        .await?,
         member_count: item.member_count,
         origin_owner_name: item.origin_owner_name.clone(),
         origin_project_name: item.origin_project_name.clone(),
         owner_name: item.owner_name.clone(),
+        project_id: item.project_id,
         project_name: item.project_name.clone(),
         overview: item.overview.clone(),
         project_scope: item.project_scope.clone(),
@@ -261,32 +399,73 @@ fn workspace_pull_request_item_from_record(
     }
 }
 
-async fn load_workspace_project_lists(
+async fn workspace_project_items_from_ids(
     repository: &PilotRepository,
-    user_id: i64,
-) -> Result<
-    (
-        Vec<WorkspaceMemberProjectItem>,
-        Vec<WorkspaceMemberProjectItem>,
-    ),
-    ConnectError,
-> {
-    let favorite_projects = repository
-        .list_favorite_projects_for_user(user_id)
-        .await
-        .map_err(internal_error)?
-        .iter()
-        .map(workspace_project_item_from_entry)
-        .collect();
-    let recent_projects = repository
-        .list_recent_projects_for_user(user_id)
-        .await
-        .map_err(internal_error)?
-        .iter()
-        .map(workspace_project_item_from_entry)
-        .collect();
+    base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
+    catalog: &WorkspaceProjectCatalog,
+    access: &WorkspaceProjectAccess,
+    project_ids: &[i64],
+    favorite_project_ids: &HashSet<i64>,
+) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
+    let mut projects = Vec::new();
+    for project_id in project_ids {
+        let Some(project) = catalog.find_by_id(*project_id) else {
+            continue;
+        };
+        if access.read_allowed(project)? {
+            projects.push(
+                workspace_project_item_from_catalog(
+                    repository,
+                    base_path,
+                    logo_urls,
+                    project,
+                    favorite_project_ids.contains(project_id),
+                )
+                .await?,
+            );
+        }
+    }
+    Ok(projects)
+}
 
-    Ok((favorite_projects, recent_projects))
+async fn workspace_member_project_items_from_records(
+    repository: &PilotRepository,
+    base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
+    catalog: &WorkspaceProjectCatalog,
+    access: &WorkspaceProjectAccess,
+    user_id: i64,
+    login_id: &str,
+    records: Vec<persistence::WorkspaceMemberProjectRecord>,
+    favorite_project_ids: &HashSet<i64>,
+) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
+    let mut projects = Vec::new();
+    for record in records {
+        let Some(project) = catalog
+            .find_by_id(record.project_id)
+            .or_else(|| catalog.find_by_identity(&record.owner_name, &record.project_name))
+        else {
+            continue;
+        };
+        if access.read_allowed(project)? {
+            projects.push(
+                workspace_member_project_item_from_record(
+                    repository,
+                    base_path,
+                    logo_urls,
+                    Some(user_id),
+                    login_id,
+                    user_id,
+                    login_id,
+                    &record,
+                    favorite_project_ids.contains(&project.id),
+                )
+                .await?,
+            );
+        }
+    }
+    Ok(projects)
 }
 
 async fn load_workspace_settings_data(
@@ -332,30 +511,25 @@ async fn load_workspace_dashboard_data(
         Option<WorkspaceProfile>,
         Vec<WorkspaceIssueItem>,
         Vec<WorkspacePullRequestItem>,
-        Vec<WorkspaceMemberProjectItem>,
     ),
     ConnectError,
 > {
     let days_ago = u64::from(WORKSPACE_DAYS_AGO);
-    let mut subject_login_id = String::new();
     let profile = match repository
         .read_workspace_profile_for_user(user_id)
         .await
         .map_err(internal_error)?
     {
-        Some(record) => {
-            subject_login_id = record.login_id.clone();
-            Some(workspace_profile_from_record(
-                &record,
-                workspace_avatar_url(
-                    repository,
-                    user_id,
-                    &record.primary_email_address,
-                    base_path,
-                )
-                .await?,
-            ))
-        }
+        Some(record) => Some(workspace_profile_from_record(
+            &record,
+            workspace_avatar_url(
+                repository,
+                user_id,
+                &record.primary_email_address,
+                base_path,
+            )
+            .await?,
+        )),
         None => None,
     };
     let issue_items = filter_workspace_issue_items_by_read_acl(
@@ -376,20 +550,8 @@ async fn load_workspace_dashboard_data(
             .map_err(internal_error)?,
     )
     .await?;
-    let member_projects = repository
-        .list_member_projects_for_user(user_id)
-        .await
-        .map_err(internal_error)?;
-    let member_projects = filter_workspace_member_projects_by_read_acl(
-        repository,
-        base_path,
-        user_id,
-        &subject_login_id,
-        member_projects,
-    )
-    .await?;
 
-    Ok((profile, issue_items, pull_request_items, member_projects))
+    Ok((profile, issue_items, pull_request_items))
 }
 
 pub(crate) async fn filter_workspace_issue_items_by_read_acl(
@@ -398,6 +560,15 @@ pub(crate) async fn filter_workspace_issue_items_by_read_acl(
     items: Vec<persistence::WorkspaceIssueListItemRecord>,
 ) -> Result<Vec<WorkspaceIssueItem>, ConnectError> {
     filter_workspace_issue_items_by_read_acl_for_viewer(repository, Some(user_id), items).await
+}
+
+async fn filter_workspace_pull_request_items_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspacePullRequestListItemRecord>,
+) -> Result<Vec<WorkspacePullRequestItem>, ConnectError> {
+    filter_workspace_pull_request_items_by_read_acl_for_viewer(repository, Some(user_id), items)
+        .await
 }
 
 pub(crate) async fn filter_workspace_issue_items_by_read_acl_for_viewer(
@@ -423,15 +594,6 @@ pub(crate) async fn filter_workspace_issue_items_by_read_acl_for_viewer(
     Ok(visible)
 }
 
-async fn filter_workspace_pull_request_items_by_read_acl(
-    repository: &PilotRepository,
-    user_id: i64,
-    items: Vec<persistence::WorkspacePullRequestListItemRecord>,
-) -> Result<Vec<WorkspacePullRequestItem>, ConnectError> {
-    filter_workspace_pull_request_items_by_read_acl_for_viewer(repository, Some(user_id), items)
-        .await
-}
-
 pub(crate) async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
     repository: &PilotRepository,
     viewer_id: Option<i64>,
@@ -455,25 +617,6 @@ pub(crate) async fn filter_workspace_pull_request_items_by_read_acl_for_viewer(
     Ok(visible)
 }
 
-async fn filter_workspace_member_projects_by_read_acl(
-    repository: &PilotRepository,
-    base_path: &str,
-    user_id: i64,
-    subject_login_id: &str,
-    items: Vec<persistence::WorkspaceMemberProjectRecord>,
-) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
-    filter_workspace_member_projects_by_read_acl_for_viewer(
-        repository,
-        base_path,
-        Some(user_id),
-        subject_login_id,
-        user_id,
-        subject_login_id,
-        items,
-    )
-    .await
-}
-
 pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
     repository: &PilotRepository,
     base_path: &str,
@@ -484,25 +627,28 @@ pub(crate) async fn filter_workspace_member_projects_by_read_acl_for_viewer(
     items: Vec<persistence::WorkspaceMemberProjectRecord>,
 ) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
     let mut visible = Vec::new();
+    let mut logo_urls = HashMap::new();
 
     for item in items {
-        if workspace_project_read_allowed_for_viewer(
-            repository,
-            viewer_id,
-            &item.owner_name,
-            &item.project_name,
-        )
-        .await?
-        {
+        let Some(authorization) = repository
+            .read_project_authorization(&item.owner_name, &item.project_name, viewer_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if workspace_project_authorization_read_allowed(&authorization, viewer_id)? {
             visible.push(
                 workspace_member_project_item_from_record(
                     repository,
                     base_path,
+                    &mut logo_urls,
                     viewer_id,
                     viewer_login_id,
                     subject_user_id,
                     subject_login_id,
                     &item,
+                    authorization.is_favorited,
                 )
                 .await?,
             );
@@ -526,6 +672,13 @@ async fn workspace_project_read_allowed_for_viewer(
         return Ok(false);
     };
 
+    workspace_project_authorization_read_allowed(&authorization, viewer_id)
+}
+
+fn workspace_project_authorization_read_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    viewer_id: Option<i64>,
+) -> Result<bool, ConnectError> {
     Ok(authorize_project_access(
         &ProjectAccessFacts {
             is_anonymous: viewer_id.is_none(),
@@ -540,6 +693,172 @@ async fn workspace_project_read_allowed_for_viewer(
         ProjectOperation::Read,
     )
     .allowed)
+}
+
+fn workspace_project_name_cmp(
+    left: &WorkspaceMemberProjectItem,
+    right: &WorkspaceMemberProjectItem,
+) -> std::cmp::Ordering {
+    left.project_name
+        .to_lowercase()
+        .cmp(&right.project_name.to_lowercase())
+        .then_with(|| left.project_name.cmp(&right.project_name))
+        .then_with(|| left.project_id.cmp(&right.project_id))
+}
+
+async fn load_workspace_sidebar_organizations(
+    repository: &PilotRepository,
+    base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
+    catalog: &WorkspaceProjectCatalog,
+    access: &WorkspaceProjectAccess,
+    organizations_by_id: &HashMap<i64, persistence::OrganizationRecord>,
+    favorite_organization_ids: &[i64],
+    favorite_project_ids: &HashSet<i64>,
+) -> Result<
+    (
+        Vec<WorkspaceMemberProjectItem>,
+        Vec<WorkspaceSidebarOrganizationItem>,
+        Vec<WorkspaceSidebarOrganizationItem>,
+    ),
+    ConnectError,
+> {
+    let mut own_projects = Vec::new();
+    for project in catalog.projects() {
+        if normalize_identifier(&project.owner_name) == access.normalized_login_id
+            && access.read_allowed(project)?
+        {
+            own_projects.push(
+                workspace_project_item_from_catalog(
+                    repository,
+                    base_path,
+                    logo_urls,
+                    project,
+                    favorite_project_ids.contains(&project.id),
+                )
+                .await?,
+            );
+        }
+    }
+    own_projects.sort_by(workspace_project_name_cmp);
+
+    let regular_organization_ids = catalog
+        .projects()
+        .filter(|project| favorite_project_ids.contains(&project.id))
+        .filter_map(|project| project.organization_id)
+        .collect::<HashSet<_>>();
+    let mut projects_by_organization = HashMap::<i64, Vec<_>>::new();
+    for project in catalog.projects() {
+        if let Some(organization_id) = project.organization_id {
+            projects_by_organization
+                .entry(organization_id)
+                .or_default()
+                .push(project);
+        }
+    }
+
+    let mut favorite_organization_id_set = HashSet::new();
+    let mut favorite_organizations = Vec::new();
+    for organization_id in favorite_organization_ids {
+        if !favorite_organization_id_set.insert(*organization_id) {
+            continue;
+        }
+        let Some(organization) = organizations_by_id.get(organization_id) else {
+            continue;
+        };
+        favorite_organizations.push(
+            workspace_sidebar_organization_item(
+                repository,
+                base_path,
+                logo_urls,
+                access,
+                organization,
+                projects_by_organization
+                    .remove(organization_id)
+                    .unwrap_or_default(),
+                favorite_project_ids,
+                true,
+            )
+            .await?,
+        );
+    }
+
+    let mut regular_organization_records = regular_organization_ids
+        .into_iter()
+        .filter(|organization_id| !favorite_organization_id_set.contains(organization_id))
+        .filter_map(|organization_id| organizations_by_id.get(&organization_id))
+        .collect::<Vec<_>>();
+    regular_organization_records.sort_by(|left, right| {
+        left.organization_name
+            .to_lowercase()
+            .cmp(&right.organization_name.to_lowercase())
+            .then_with(|| left.organization_name.cmp(&right.organization_name))
+    });
+
+    let mut organizations = Vec::new();
+    for organization in regular_organization_records {
+        let organization_id = organization.id;
+        organizations.push(
+            workspace_sidebar_organization_item(
+                repository,
+                base_path,
+                logo_urls,
+                access,
+                organization,
+                projects_by_organization
+                    .remove(&organization_id)
+                    .unwrap_or_default(),
+                favorite_project_ids,
+                false,
+            )
+            .await?,
+        );
+    }
+
+    Ok((own_projects, favorite_organizations, organizations))
+}
+
+async fn workspace_sidebar_organization_item(
+    repository: &PilotRepository,
+    base_path: &str,
+    logo_urls: &mut HashMap<i64, String>,
+    access: &WorkspaceProjectAccess,
+    organization: &persistence::OrganizationRecord,
+    projects: Vec<&persistence::ProjectRecord>,
+    favorite_project_ids: &HashSet<i64>,
+    is_favorited: bool,
+) -> Result<WorkspaceSidebarOrganizationItem, ConnectError> {
+    let organization_access = access
+        .organizations
+        .get(&organization.id)
+        .copied()
+        .unwrap_or_default();
+    let project_count = (organization_access.is_admin || access.is_site_admin)
+        .then_some(u32::try_from(projects.len()).unwrap_or(u32::MAX));
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        if access.read_allowed(project)? {
+            visible_projects.push(
+                workspace_project_item_from_catalog(
+                    repository,
+                    base_path,
+                    logo_urls,
+                    project,
+                    favorite_project_ids.contains(&project.id),
+                )
+                .await?,
+            );
+        }
+    }
+    visible_projects.sort_by(workspace_project_name_cmp);
+
+    Ok(WorkspaceSidebarOrganizationItem {
+        is_favorited,
+        organization_id: organization.id,
+        organization_name: organization.organization_name.clone(),
+        project_count,
+        projects: visible_projects,
+    })
 }
 
 pub(crate) async fn build_workspace_overview_response(
@@ -562,12 +881,157 @@ pub(crate) async fn build_workspace_overview_response(
             "missing authenticated session",
         ));
     }
-    let (favorite_projects, recent_projects) =
-        load_workspace_project_lists(repository, user_id).await?;
+    let favorite_project_id_list = repository
+        .list_favorite_project_ids_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
+    let favorite_project_ids = favorite_project_id_list
+        .iter()
+        .copied()
+        .collect::<HashSet<_>>();
+    let recent_project_ids = repository
+        .list_recent_project_ids_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
+    let favorite_organization_ids = repository
+        .list_favorite_organization_ids_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
+    let member_project_records = repository
+        .list_member_projects_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
+    let seed_project_ids = favorite_project_id_list
+        .iter()
+        .chain(recent_project_ids.iter())
+        .copied()
+        .chain(
+            member_project_records
+                .iter()
+                .map(|project| project.project_id),
+        )
+        .collect::<Vec<_>>();
+    let mut catalog_projects = repository
+        .list_workspace_project_catalog(&seed_project_ids, Some(&response.login_id), &[])
+        .await
+        .map_err(internal_error)?;
+    let mut sidebar_organization_ids = favorite_organization_ids
+        .iter()
+        .copied()
+        .collect::<HashSet<_>>();
+    for project in &catalog_projects {
+        if favorite_project_ids.contains(&project.id) {
+            if let Some(organization_id) = project.organization_id {
+                sidebar_organization_ids.insert(organization_id);
+            }
+        }
+    }
+    let sidebar_organization_id_list = sidebar_organization_ids.iter().copied().collect::<Vec<_>>();
+    catalog_projects.extend(
+        repository
+            .list_workspace_project_catalog(&[], None, &sidebar_organization_id_list)
+            .await
+            .map_err(internal_error)?,
+    );
+    let catalog = WorkspaceProjectCatalog::new(catalog_projects);
+    let member_project_ids = member_project_records
+        .iter()
+        .filter_map(|project| {
+            catalog
+                .find_by_id(project.project_id)
+                .or_else(|| catalog.find_by_identity(&project.owner_name, &project.project_name))
+                .map(|project| project.id)
+        })
+        .collect::<HashSet<_>>();
+    let relevant_organization_ids = favorite_organization_ids
+        .iter()
+        .copied()
+        .chain(
+            catalog
+                .projects()
+                .filter_map(|project| project.organization_id),
+        )
+        .collect::<HashSet<_>>();
+    let relevant_organization_id_list = relevant_organization_ids
+        .iter()
+        .copied()
+        .collect::<Vec<_>>();
+    let mut organizations_by_id = HashMap::new();
+    let mut organization_access = HashMap::new();
+    for (organization, role_name) in repository
+        .list_workspace_organizations_for_user(user_id, &relevant_organization_id_list)
+        .await
+        .map_err(internal_error)?
+    {
+        let role_name = normalize_identifier(&role_name);
+        let is_admin = role_name == "org_admin";
+        organization_access.insert(
+            organization.id,
+            WorkspaceOrganizationAccess {
+                is_admin,
+                is_member: is_admin || role_name == "org_member",
+            },
+        );
+        organizations_by_id.insert(organization.id, organization);
+    }
+    let normalized_login_id = normalize_identifier(&response.login_id);
+    let access = WorkspaceProjectAccess {
+        is_guest: response.is_guest,
+        is_site_admin: response.is_site_admin,
+        member_project_ids,
+        normalized_login_id,
+        organizations: organization_access,
+    };
+
+    let (profile, issue_items, pull_request_items) =
+        load_workspace_dashboard_data(repository, user_id, base_path).await?;
+    let mut logo_urls = HashMap::new();
+    let member_projects = workspace_member_project_items_from_records(
+        repository,
+        base_path,
+        &mut logo_urls,
+        &catalog,
+        &access,
+        user_id,
+        &response.login_id,
+        member_project_records,
+        &favorite_project_ids,
+    )
+    .await?;
+    let favorite_projects = workspace_project_items_from_ids(
+        repository,
+        base_path,
+        &mut logo_urls,
+        &catalog,
+        &access,
+        &favorite_project_id_list,
+        &favorite_project_ids,
+    )
+    .await?;
+    let recent_projects = workspace_project_items_from_ids(
+        repository,
+        base_path,
+        &mut logo_urls,
+        &catalog,
+        &access,
+        &recent_project_ids,
+        &favorite_project_ids,
+    )
+    .await?;
     let (api_token, emails, watched_projects) =
         load_workspace_settings_data(repository, user_id).await?;
-    let (profile, issue_items, pull_request_items, member_projects) =
-        load_workspace_dashboard_data(repository, user_id, base_path).await?;
+    let (own_projects, favorite_organizations, organizations) =
+        load_workspace_sidebar_organizations(
+            repository,
+            base_path,
+            &mut logo_urls,
+            &catalog,
+            &access,
+            &organizations_by_id,
+            &favorite_organization_ids,
+            &favorite_project_ids,
+        )
+        .await?;
 
     Ok(ReadWorkspaceOverviewResponse {
         api_token,
@@ -575,8 +1039,11 @@ pub(crate) async fn build_workspace_overview_response(
         default_landing_path: response.default_landing_path.clone(),
         emails,
         favorite_projects,
+        favorite_organizations,
         issue_items,
         member_projects,
+        organizations,
+        own_projects,
         profile: profile.into(),
         pull_request_items,
         recent_projects,
