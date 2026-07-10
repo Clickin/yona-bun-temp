@@ -5016,7 +5016,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     )
     .await;
     assert_eq!(overview["session"]["loginId"], "owner");
-    assert_eq!(overview["defaultLandingPath"], "/me");
+    assert_eq!(overview["defaultLandingPath"], "/");
 
     let set_default = ok_json(
         rest(

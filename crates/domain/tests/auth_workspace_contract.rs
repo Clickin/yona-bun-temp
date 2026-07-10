@@ -59,7 +59,40 @@ fn default_landing_allows_me_search_and_project_routes_only() {
 }
 
 #[test]
-fn post_auth_redirect_prefers_query_then_saved_default_then_me() {
+fn legacy_relative_default_landing_paths_normalize_without_unsafe_fallbacks() {
+    assert_eq!(
+        normalize_default_landing_path(Some("notifications")),
+        Some("/notifications".to_string()),
+    );
+    assert_eq!(
+        normalize_default_landing_path(Some("user/issues")),
+        Some("/user/issues".to_string()),
+    );
+    assert_eq!(
+        normalize_default_landing_path(Some("user/files")),
+        Some("/user/files".to_string()),
+    );
+    assert_eq!(
+        normalize_default_landing_path(Some("/notifications")),
+        Some("/notifications".to_string()),
+    );
+
+    for path in [
+        "https://evil.example/notifications",
+        "//evil.example/notifications",
+        "../notifications",
+        "user/../issues",
+        "/owner/../issues",
+        "login",
+        "/login",
+        "/users/loginform",
+    ] {
+        assert_eq!(normalize_default_landing_path(Some(path)), None, "{path}");
+    }
+}
+
+#[test]
+fn post_auth_redirect_prefers_query_then_saved_default_then_root() {
     assert_eq!(
         resolve_post_auth_landing_path(
             Some("/owner/project/pulls/1"),
@@ -71,8 +104,10 @@ fn post_auth_redirect_prefers_query_then_saved_default_then_me() {
         resolve_post_auth_landing_path(None, Some("/search?scope=global&pageSize=20")),
         "/search?pageSize=20&scope=global".to_string(),
     );
+    assert_eq!(resolve_post_auth_landing_path(None, Some("/me")), "/me");
     assert_eq!(
-        resolve_post_auth_landing_path(None, None),
-        "/me".to_string()
+        resolve_post_auth_landing_path(None, Some("notifications")),
+        "/notifications",
     );
+    assert_eq!(resolve_post_auth_landing_path(None, None), "/");
 }

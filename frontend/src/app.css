@@ -545,10 +545,13 @@ button[type="submit"]:focus {
   margin-right: 5px;
   color: #3e2723;
   font-size: 18px;
+  line-height: 18px;
+  text-align: left;
   background-color: #03a9f4;
   border: 0;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
+  box-shadow: none;
   appearance: none;
 }
 
@@ -558,14 +561,27 @@ button[type="submit"]:focus {
   padding: 4px 0 4px 5px;
 }
 
+.pin i.yobicon-arrow-right {
+  display: inline-block;
+}
+
 .pin:hover,
 .pin i:hover {
   color: #fff;
   cursor: pointer;
 }
 
+.pin:hover,
+.pin:focus {
+  background-color: #03a9f4;
+  border: 0;
+  box-shadow: none;
+}
+
 .gnb-outer {
+  box-sizing: border-box;
   height: 40px;
+  padding: 0 10px;
   color: #788ba7;
   background-color: #1b1b1b;
 }
@@ -578,6 +594,11 @@ button[type="submit"]:focus {
   background-color: rgb(0 0 0 / 35%);
 }
 
+.gnb-outer.project-header .gnb-inner .logo::before,
+.gnb-outer.project-header .gnb-inner .logo::after {
+  display: none;
+}
+
 .gnb-inner {
   box-sizing: border-box;
   width: 98%;
@@ -587,14 +608,6 @@ button[type="submit"]:focus {
 }
 
 @media (min-width: 901px) {
-  body:has(.siteintro-bg) .gnb-inner {
-    width: 1176px;
-  }
-
-  body:has(.site-breadcrumb-outer) .gnb-inner {
-    width: 1058px;
-  }
-
   body:has(.site-breadcrumb-outer) .page-wrap {
     width: 1080px;
   }
@@ -605,8 +618,6 @@ button[type="submit"]:focus {
 }
 
 .gnb-inner .logo {
-  display: block;
-  float: left;
   width: 44px;
   height: 40px;
   background-repeat: no-repeat;
@@ -689,15 +700,26 @@ button[type="submit"]:focus {
 .gnb-usermenu .divider {
   width: auto;
   height: auto;
-  margin: 0 4px;
   background: transparent;
+}
+
+.gnb-nav .divider {
+  font-size: 12px;
+  line-height: 40px;
+}
+
+.gnb-usermenu .divider {
+  line-height: 30px;
 }
 
 .gnb-nav .divider::after,
 .gnb-usermenu .divider::after {
-  color: #a2a2a2;
   content: "|";
   opacity: 0.35;
+}
+
+.gnb-usermenu .divider::after {
+  color: #788ba7;
 }
 
 .gnb-search-form {
@@ -721,8 +743,10 @@ button[type="submit"]:focus {
 }
 
 .gnb-search-form input[type="text"] {
+  box-sizing: content-box;
   width: 50px;
-  min-height: 30px;
+  height: 20px;
+  min-height: 0;
   padding: 5px 10px;
   margin-bottom: 3px;
   line-height: 30px;
@@ -774,6 +798,7 @@ button[type="submit"]:focus {
   outline: 0 none;
   box-shadow: none;
   color: #333;
+  font-size: 12px;
 }
 
 .dropdown-menu {
@@ -1985,11 +2010,17 @@ span.issue-label {
   border-top-color: #fff;
 }
 
+@media (max-width: 720px) {
+  .gnb-usermenu-item,
+  .gnb-usermenu-dropdown {
+    color: #5dbbe0 !important;
+  }
+}
+
 .siteintro {
   border-bottom: 1px solid #333;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
-    url("/yona/legacy-assets/images/bg-samples/photo-svetacreative.jpg");
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), var(--siteintro-background-image);
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -2034,6 +2065,7 @@ span.issue-label {
   font-family: sans-serif;
   font-size: 34px;
   font-weight: normal;
+  line-height: 40px;
   color: #fafafa;
   opacity: 0.9;
 }

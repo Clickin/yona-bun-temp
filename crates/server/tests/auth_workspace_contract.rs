@@ -641,7 +641,7 @@ async fn legacy_oauth_callback_creates_local_user_persists_provider_and_signs_in
             .headers()
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
-        Some("/yona/me")
+        Some("/yona/")
     );
     let callback_cookie_header = cookie_header_from_set_cookie_response(&callback);
     assert!(!callback_cookie_header.is_empty());
@@ -810,7 +810,7 @@ async fn legacy_oauth_callback_exchanges_github_code_for_provider_identity() {
             .headers()
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
-        Some("/yona/me")
+        Some("/yona/")
     );
     let user = repository
         .find_user_by_identifier("provider-octo@example.com")
@@ -925,6 +925,10 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
         })
         .await
         .unwrap();
+    repository
+        .set_default_landing_path(existing.id, Some("notifications".to_string()))
+        .await
+        .unwrap();
     let (_, cookie_header) = bootstrap(app.clone()).await;
 
     let callback = app
@@ -940,6 +944,13 @@ async fn legacy_oauth_callback_links_existing_local_user_by_email() {
         .await
         .unwrap();
     assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        callback
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/notifications")
+    );
 
     let user = repository
         .find_user_by_identifier("door@example.com")
@@ -1318,7 +1329,7 @@ async fn secret_admin_setup_rest_updates_legacy_default_admin_and_form_post_is_n
 // supplied by router bootstrap; no process env mutation is needed for defaults.
 async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redirect_and_authenticate(
 ) {
-    let (app, _, _) = build_auth_router().await;
+    let (app, repository, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
     let signup = app
@@ -1345,7 +1356,7 @@ async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redi
             .headers()
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
-        Some("/yona/me")
+        Some("/yona/")
     );
     let signup_cookie_header = cookie_header_from_set_cookie_response(&signup);
     assert!(!signup_cookie_header.is_empty());
@@ -1363,9 +1374,64 @@ async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redi
         .await
         .unwrap();
     assert_eq!(signed_up_session.status(), StatusCode::OK);
-    assert!(response_text(signed_up_session)
+    let signed_up_session_json: serde_json::Value =
+        serde_json::from_str(&response_text(signed_up_session).await).unwrap();
+    assert_eq!(signed_up_session_json["loginId"], "door");
+    assert_eq!(signed_up_session_json["defaultLandingPath"], "/");
+
+    let user = repository
+        .find_user_by_identifier("door")
         .await
-        .contains("\"loginId\":\"door\""));
+        .unwrap()
+        .expect("registered user");
+    repository
+        .set_default_landing_path(user.id, Some("notifications".to_string()))
+        .await
+        .unwrap();
+    let migrated_session = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(http::header::COOKIE, &signup_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(migrated_session.status(), StatusCode::OK);
+    let migrated_session_json: serde_json::Value =
+        serde_json::from_str(&response_text(migrated_session).await).unwrap();
+    assert_eq!(
+        migrated_session_json["defaultLandingPath"],
+        "/notifications"
+    );
+    assert_eq!(migrated_session_json["isGuest"], false);
+
+    let migrated_workspace = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/workspace")
+                .header(http::header::COOKIE, &signup_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(migrated_workspace.status(), StatusCode::OK);
+    let migrated_workspace_json: serde_json::Value =
+        serde_json::from_str(&response_text(migrated_workspace).await).unwrap();
+    assert_eq!(
+        migrated_workspace_json["defaultLandingPath"],
+        "/notifications"
+    );
+    assert_eq!(
+        migrated_workspace_json["session"]["defaultLandingPath"],
+        "/notifications"
+    );
 
     let (login_csrf, login_cookie_header) = bootstrap(app.clone()).await;
     let login = app
@@ -1414,6 +1480,34 @@ async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redi
         .await
         .contains("\"loginId\":\"door\""));
 
+    let (default_csrf, default_cookie_header) = bootstrap(app.clone()).await;
+    let default_redirect_login = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/users/login")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &default_cookie_header)
+                .body(Body::from(format!(
+                    "csrfToken={default_csrf}&loginIdOrEmail=door&password=doorpass1"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(default_redirect_login.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        default_redirect_login
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/notifications")
+    );
+
     let (unsafe_csrf, unsafe_cookie_header) = bootstrap(app.clone()).await;
     let unsafe_redirect_login = app
         .oneshot(
@@ -1438,7 +1532,7 @@ async fn direct_legacy_login_and_signup_form_routes_accept_legacy_form_csrf_redi
             .headers()
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
-        Some("/yona/me")
+        Some("/yona/notifications")
     );
 }
 
@@ -2344,6 +2438,9 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
         .unwrap();
 
     assert_eq!(register.status(), StatusCode::OK);
+    let registered_session: serde_json::Value =
+        serde_json::from_str(&response_text(register).await).unwrap();
+    assert_eq!(registered_session["isGuest"], true);
     let registered_user = n4user::Entity::find()
         .filter(n4user::Column::LoginId.eq(Some("pt-door".to_string())))
         .one(&db)
@@ -3408,6 +3505,30 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
         Some("/search?pageSize=20&scope=global")
     );
 
+    let relative_set_default = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/user/defultLoginPage?path=notifications")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(relative_set_default.status(), StatusCode::OK);
+    let relative_set_default_json = response_text(relative_set_default).await;
+    assert!(relative_set_default_json.contains("\"defaultLoginPage\":\"/notifications\""));
+    assert_eq!(
+        repository
+            .read_default_landing_path(user.id)
+            .await
+            .unwrap()
+            .as_deref(),
+        Some("/notifications")
+    );
+
     let legacy_set_default = app
         .oneshot(
             Request::builder()
@@ -3798,7 +3919,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     assert_eq!(workspace_overview.status(), StatusCode::OK);
     let workspace_overview_json = response_text(workspace_overview).await;
     assert!(workspace_overview_json.contains("\"loginId\":\"door\""));
-    assert!(workspace_overview_json.contains("\"defaultLandingPath\":\"/me\""));
+    assert!(workspace_overview_json.contains("\"defaultLandingPath\":\"/\""));
 
     let empty_profile_name = app
         .clone()
@@ -4417,7 +4538,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
     let overview_body = overview.into_body().collect().await.unwrap().to_bytes();
     let overview_json = String::from_utf8(overview_body.to_vec()).unwrap();
     assert!(overview_json.contains("\"loginId\":\"door\""));
-    assert!(overview_json.contains("\"defaultLandingPath\":\"/me\""));
+    assert!(overview_json.contains("\"defaultLandingPath\":\"/\""));
 
     let set_default = app
         .clone()

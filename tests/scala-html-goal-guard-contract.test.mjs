@@ -603,6 +603,24 @@ test("blocks multiple frontend goal audit rows in one route commit", () => {
   assert.match(formatScalaHtmlGoalGuardSummary(result), /multi-screen frontend goal work/u);
 });
 
+test("does not count an EOF newline-only audit row re-add as a second new row", () => {
+  const existingEofRow =
+    "| 2026-07-01 | historical issue list | `issue/list.scala.html` | prior implementation | prior verification |";
+  const newAuditRow =
+    "| 2026-07-02 | `/admin/sample/issues` | `issue/list.scala.html` | `frontend/src/routes/$ownerName/$projectName/issues.tsx` rebuild | `frontend/tests/project-issues-empty.e2e.ts` E2E |";
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/routes/$ownerName/$projectName/issues.tsx",
+      "frontend/tests/project-issues-empty.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch: `-${existingEofRow}\n\\ No newline at end of file\n+${existingEofRow}\n+${newAuditRow}\n`,
+    env: { YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1" },
+  });
+
+  assert.equal(result.blocked, false);
+});
+
 test("allows explicitly marked multi-screen frontend goal commits", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

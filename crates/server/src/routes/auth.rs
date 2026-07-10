@@ -10,6 +10,7 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use yoram_domain::resolve_post_auth_landing_path;
 
 use crate::api_types::*;
 use crate::assets::serve_frontend_page;
@@ -927,42 +928,11 @@ fn legacy_form_checkbox_checked(form: &HashMap<String, String>, key: &str) -> bo
         .unwrap_or(false)
 }
 
-fn has_absolute_url_scheme(value: &str) -> bool {
-    let Some(index) = value.find("://") else {
-        return false;
-    };
-    let scheme = &value[..index];
-    let mut chars = scheme.chars();
-    let Some(first) = chars.next() else {
-        return false;
-    };
-    first.is_ascii_alphabetic()
-        && chars.all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '+' | '.' | '-')
-        })
-}
-
-fn safe_legacy_auth_redirect_path(value: Option<&String>) -> Option<String> {
-    let trimmed = value?.trim();
-    if trimmed.is_empty()
-        || !trimmed.starts_with('/')
-        || trimmed.starts_with("//")
-        || has_absolute_url_scheme(trimmed)
-    {
-        return None;
-    }
-    Some(trimmed.to_string())
-}
-
-fn post_auth_landing_path(redirect_path: Option<&String>, default_landing_path: &str) -> String {
-    safe_legacy_auth_redirect_path(redirect_path).unwrap_or_else(|| {
-        let trimmed = default_landing_path.trim();
-        if trimmed.is_empty() {
-            "/me".to_string()
-        } else {
-            trimmed.to_string()
-        }
-    })
+fn post_auth_landing_path(
+    redirect_path: Option<&String>,
+    default_landing_path: Option<&str>,
+) -> String {
+    resolve_post_auth_landing_path(redirect_path.map(String::as_str), default_landing_path)
 }
 
 fn redirect_with_context_headers(base_path: &str, path: &str, ctx: &Context) -> Response {
@@ -1000,7 +970,7 @@ pub(crate) async fn direct_legacy_login(
         Ok((payload, ctx)) => {
             let redirect_path = post_auth_landing_path(
                 form.get("redirectUrl").or_else(|| form.get("redirect")),
-                &payload.default_landing_path,
+                Some(&payload.default_landing_path),
             );
             redirect_with_context_headers(&service.base_path, &redirect_path, &ctx)
         }
@@ -1046,15 +1016,11 @@ pub(crate) async fn direct_legacy_signup(
                 } else {
                     "/users/loginform"
                 }
+                .to_string()
             } else {
-                payload.default_landing_path.trim()
+                post_auth_landing_path(None, Some(&payload.default_landing_path))
             };
-            let redirect_path = if redirect_path.is_empty() {
-                "/me"
-            } else {
-                redirect_path
-            };
-            redirect_with_context_headers(&service.base_path, redirect_path, &ctx)
+            redirect_with_context_headers(&service.base_path, &redirect_path, &ctx)
         }
         Err(error) => RestRouteError::from_connect_error(error).into_response(),
     }
@@ -1451,9 +1417,9 @@ pub(crate) async fn direct_authenticate_provider(
         .read_default_landing_path(user.id)
         .await
         .ok()
-        .flatten()
-        .unwrap_or_else(|| "/me".to_string());
-    let redirect_path = post_auth_landing_path(query.get("redirectUrl"), &default_landing_path);
+        .flatten();
+    let redirect_path =
+        post_auth_landing_path(query.get("redirectUrl"), default_landing_path.as_deref());
     let mut response =
         Redirect::to(&base_path_href(&service.base_path, &redirect_path)).into_response();
     for cookie in service

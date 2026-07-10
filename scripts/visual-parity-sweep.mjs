@@ -2,10 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
-import {
-  buildVisualComparison,
-  summarizeVisualComparison,
-} from "./visual-parity-comparison.mjs";
+import { buildVisualComparison, summarizeVisualComparison } from "./visual-parity-comparison.mjs";
 import { buildLegacyAuditCorpus } from "./visual-parity-sweep-corpus.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -258,7 +255,7 @@ const alwaysScreenshotPaths = new Set([
 
 function localSettledSelectorForPath(path) {
   if (path.endsWith("/issueform") || path.endsWith("/editform")) {
-    return "[data-toggle=markdown-editor]";
+    return ".textarea-box";
   }
   if (/\/code(?:\/|$)/u.test(path)) {
     return ".project-header-outer";
@@ -537,10 +534,7 @@ async function registerLocalAccount(page, baseUrl, { emailAddress, loginId, name
 
 async function ensureLocalAccountSession(page, baseUrl, account) {
   const registered = await registerLocalAccount(page, baseUrl, account);
-  return (
-    registered ||
-    (await signInLocalAccount(page, baseUrl, account.loginId, account.password))
-  );
+  return registered || (await signInLocalAccount(page, baseUrl, account.loginId, account.password));
 }
 
 async function bootstrapLocalAccount(page, baseUrl) {
@@ -914,6 +908,53 @@ async function inspectLocalDirectApiSurfaces(page, baseUrl) {
   };
 }
 
+function waitForNavigationSessionResponse(page, baseUrl) {
+  const sessionUrl = new URL(`${baseUrl}/api/v1/session`);
+  return page
+    .waitForResponse(
+      (response) => {
+        const responseUrl = new URL(response.url());
+        return (
+          response.request().method() === "GET" &&
+          responseUrl.origin === sessionUrl.origin &&
+          responseUrl.pathname === sessionUrl.pathname
+        );
+      },
+      { timeout: 3_000 },
+    )
+    .catch(() => page.request.get(sessionUrl.toString()).catch(() => null));
+}
+
+async function waitForLocalSessionResolution(page, path, sessionResponsePromise) {
+  const response = await sessionResponsePromise;
+  let session = null;
+  if (response?.ok()) {
+    session = await response.json().catch(() => null);
+  }
+
+  if (path === "/") {
+    const resolvedSelector =
+      session?.isAnonymous === false
+        ? "#sidebar-open-btn, .gnb-usermenu .avatar-wrap"
+        : session?.isAnonymous === true
+          ? "#required-logged-in"
+          : "#required-logged-in, #sidebar-open-btn, .gnb-usermenu .avatar-wrap";
+    await page
+      .waitForSelector(resolvedSelector, { state: "visible", timeout: 10_000 })
+      .catch(() => {});
+  }
+
+  // The response body can settle before React Query commits the matching tree.
+  await page
+    .evaluate(
+      () =>
+        new Promise((resolveFrame) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
+        }),
+    )
+    .catch(() => {});
+}
+
 async function inspectPage(page, baseUrl, path, label) {
   const consoleErrors = [];
   const requestFailures = [];
@@ -941,6 +982,8 @@ async function inspectPage(page, baseUrl, path, label) {
   };
   page.on("console", onConsole);
   page.on("requestfailed", onRequestFailed);
+  const localSessionResponsePromise =
+    label === "local" ? waitForNavigationSessionResponse(page, baseUrl) : null;
   let response = null;
   try {
     response = await page.goto(urlFor(baseUrl, path), {
@@ -963,6 +1006,10 @@ async function inspectPage(page, baseUrl, path, label) {
       };
     }
     return { path, ok: false, errors: [`navigation failed: ${error.message}`] };
+  }
+
+  if (localSessionResponsePromise) {
+    await waitForLocalSessionResolution(page, path, localSessionResponsePromise);
   }
 
   await page
@@ -1040,11 +1087,35 @@ async function inspectPage(page, baseUrl, path, label) {
       }
       const rect = element.getBoundingClientRect();
       const style = getComputedStyle(element);
+      const opacity = Number.parseFloat(style.opacity);
       return {
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        right: Math.round(rect.right),
+        bottom: Math.round(rect.bottom),
         width: Math.round(rect.width),
         height: Math.round(rect.height),
         display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        visible:
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          style.visibility !== "collapse" &&
+          opacity > 0 &&
+          rect.width > 0 &&
+          rect.height > 0 &&
+          element.getClientRects().length > 0,
         position: style.position,
+        overflowX: style.overflowX,
+        overflowY: style.overflowY,
+        scrollWidth: element.scrollWidth,
+        scrollHeight: element.scrollHeight,
+        clientWidth: element.clientWidth,
+        clientHeight: element.clientHeight,
+        hasHorizontalOverflow: element.scrollWidth > element.clientWidth + 1,
+        hasVerticalOverflow: element.scrollHeight > element.clientHeight + 1,
+        escapesViewportHorizontally: rect.left < -1 || rect.right > window.innerWidth + 1,
         fontSize: style.fontSize,
         backgroundColor: style.backgroundColor,
       };
@@ -1064,6 +1135,9 @@ async function inspectPage(page, baseUrl, path, label) {
       hasStylesheetError: stylesheets.some((sheet) => sheet.rules === -1),
       gnb: selectorState(".gnb-outer"),
       gnbInner: selectorState(".gnb-inner"),
+      gnbPin: selectorState(".gnb-inner > .pin"),
+      gnbLogoLetter: selectorState(".logo-letter"),
+      gnbSearchForm: selectorState(".gnb-search-form"),
       gnbUsermenu: selectorState(".gnb-usermenu"),
       sidenav: selectorState("#mySidenav"),
       projectHeader: selectorState(".project-header-outer"),
@@ -1083,7 +1157,7 @@ async function inspectPage(page, baseUrl, path, label) {
       postListWrap: selectorState(".post-list-wrap"),
       postItemTitle: selectorState(".post-item.title"),
       contentFormWrap: selectorState(".content-wrap.frm-wrap"),
-      markdownEditor: selectorState("[data-toggle=markdown-editor]"),
+      markdownEditor: selectorState(".textarea-box"),
       markdownPreview: selectorState(".markdown-preview.markdown-wrap"),
       uploadWrap: selectorState(".upload-wrap.content-footer"),
       issueUpdateForm: selectorState("#issueUpdateForm"),
@@ -1094,6 +1168,9 @@ async function inspectPage(page, baseUrl, path, label) {
       issueBodyTextLength: selectorTextLength("[id^='issue-body-'] .content.markdown-wrap"),
       commentBodyTextLength: selectorTextLength(".comment-body.markdown-wrap"),
       loginDialog: selectorState("#loginDialog, .loginDialog"),
+      siteintroCover: selectorState(".siteintro-cover"),
+      siteHeading: selectorState(".site-heading"),
+      signupButton: selectorState(".signup-btn"),
       footer: selectorState("footer.page-footer-outer"),
       userProfile: selectorState(".user-profile-page"),
       isErrorPage: [document.title, body.innerText].some(
@@ -1212,6 +1289,9 @@ async function inspectPage(page, baseUrl, path, label) {
       stylesheetRules: metrics.stylesheetRules,
       gnb: metrics.gnb,
       gnbInner: metrics.gnbInner,
+      gnbPin: metrics.gnbPin,
+      gnbLogoLetter: metrics.gnbLogoLetter,
+      gnbSearchForm: metrics.gnbSearchForm,
       gnbUsermenu: metrics.gnbUsermenu,
       sidenav: metrics.sidenav,
       projectHeader: metrics.projectHeader,
@@ -1242,6 +1322,9 @@ async function inspectPage(page, baseUrl, path, label) {
       issueBodyTextLength: metrics.issueBodyTextLength,
       commentBodyTextLength: metrics.commentBodyTextLength,
       loginDialog: metrics.loginDialog,
+      siteintroCover: metrics.siteintroCover,
+      siteHeading: metrics.siteHeading,
+      signupButton: metrics.signupButton,
       footer: metrics.footer,
       userProfile: metrics.userProfile,
       isErrorPage: metrics.isErrorPage,
@@ -1302,7 +1385,8 @@ async function runTarget(label, baseUrl) {
       viewport: { width: viewportProfile.width, height: viewportProfile.height },
     });
     const page = await context.newPage();
-    const loggedIn = label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
+    const loggedIn =
+      label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
     const useRequestedPaths = requestedSweepPaths.length > 0;
     const directApiSurfaces =
       label === "local" && loggedIn && !useRequestedPaths

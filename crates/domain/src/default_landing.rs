@@ -14,10 +14,51 @@ fn normalize_pathname(pathname: &str) -> String {
 fn safe_segment(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= MAX_DEFAULT_LANDING_PATH_LENGTH
+        && value != "."
+        && value != ".."
         && !value.contains('/')
         && value
             .chars()
             .all(|char| char.is_ascii_alphanumeric() || matches!(char, '-' | '_' | '.'))
+}
+
+fn legacy_relative_default_landing_path(path: &str) -> Option<String> {
+    match path {
+        "notifications" => Some("/notifications".to_string()),
+        "user/issues" => Some("/user/issues".to_string()),
+        "user/files" => Some("/user/files".to_string()),
+        _ => None,
+    }
+}
+
+fn is_auth_path(pathname: &str) -> bool {
+    matches!(
+        pathname,
+        "/login"
+            | "/register"
+            | "/forgot-password"
+            | "/reset-password"
+            | "/users/login"
+            | "/users/loginform"
+            | "/users/signup"
+            | "/users/signupform"
+            | "/lostPassword"
+            | "/resetPassword"
+            | "/logout"
+            | "/users/logout"
+    ) || pathname.starts_with("/authenticate/")
+        || pathname.starts_with("/verify/")
+}
+
+fn is_safe_absolute_app_path(path: &str) -> bool {
+    let pathname = path.split(['?', '#']).next().unwrap_or(path);
+    pathname.starts_with('/')
+        && !pathname.starts_with("//")
+        && !pathname.contains('\\')
+        && !path.chars().any(char::is_control)
+        && !pathname
+            .split('/')
+            .any(|segment| matches!(segment, "." | ".."))
 }
 
 fn safe_positive_segment(value: &str) -> bool {
@@ -181,10 +222,13 @@ fn normalize_project_or_profile_path(pathname: &str) -> Option<String> {
 
 pub fn normalize_default_landing_path(path: Option<&str>) -> Option<String> {
     let trimmed = path?.trim();
-    if trimmed.is_empty()
-        || trimmed.len() > MAX_DEFAULT_LANDING_PATH_LENGTH
-        || !trimmed.starts_with('/')
-    {
+    if trimmed.is_empty() || trimmed.len() > MAX_DEFAULT_LANDING_PATH_LENGTH {
+        return None;
+    }
+    if !trimmed.starts_with('/') {
+        return legacy_relative_default_landing_path(trimmed);
+    }
+    if !is_safe_absolute_app_path(trimmed) {
         return None;
     }
 
@@ -193,15 +237,19 @@ pub fn normalize_default_landing_path(path: Option<&str>) -> Option<String> {
         .map_or((trimmed, ""), |(pathname, query)| (pathname, query));
     let pathname = normalize_pathname(pathname);
 
-    if matches!(
-        pathname.as_str(),
-        "/" | "/protected" | "/login" | "/register" | "/forgot-password" | "/reset-password"
-    ) {
+    if matches!(pathname.as_str(), "/" | "/protected") || is_auth_path(&pathname) {
         return None;
     }
 
     if pathname == "/me" {
         return Some("/me".to_string());
+    }
+
+    if matches!(
+        pathname.as_str(),
+        "/notifications" | "/user/issues" | "/user/files"
+    ) {
+        return Some(pathname);
     }
 
     if pathname == "/search" {
@@ -212,11 +260,23 @@ pub fn normalize_default_landing_path(path: Option<&str>) -> Option<String> {
     (normalized.len() <= MAX_DEFAULT_LANDING_PATH_LENGTH).then_some(normalized)
 }
 
+fn normalize_post_auth_redirect_path(path: Option<&str>) -> Option<String> {
+    let trimmed = path?.trim();
+    if trimmed.is_empty()
+        || trimmed.len() > MAX_DEFAULT_LANDING_PATH_LENGTH
+        || !is_safe_absolute_app_path(trimmed)
+    {
+        return None;
+    }
+    let pathname = trimmed.split(['?', '#']).next().unwrap_or(trimmed);
+    (!is_auth_path(pathname)).then(|| trimmed.to_string())
+}
+
 pub fn resolve_post_auth_landing_path(
     redirect_path: Option<&str>,
     saved_default_landing_path: Option<&str>,
 ) -> String {
-    normalize_default_landing_path(redirect_path)
+    normalize_post_auth_redirect_path(redirect_path)
         .or_else(|| normalize_default_landing_path(saved_default_landing_path))
         .unwrap_or_else(|| DEFAULT_LANDING_FALLBACK_PATH.to_string())
 }

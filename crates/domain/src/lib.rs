@@ -1,7 +1,7 @@
 pub mod default_landing;
 pub mod org_project;
 
-pub const DEFAULT_LANDING_FALLBACK_PATH: &str = "/me";
+pub const DEFAULT_LANDING_FALLBACK_PATH: &str = "/";
 
 pub use default_landing::{normalize_default_landing_path, resolve_post_auth_landing_path};
 pub use org_project::{

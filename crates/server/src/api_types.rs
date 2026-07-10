@@ -267,6 +267,8 @@ pub struct ReadCurrentSessionResponse {
     #[serde(default)]
     pub is_anonymous: bool,
     #[serde(default)]
+    pub is_guest: bool,
+    #[serde(default)]
     pub actor_id: i64,
     #[serde(default)]
     pub login_id: String,

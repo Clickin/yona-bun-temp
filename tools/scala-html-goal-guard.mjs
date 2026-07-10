@@ -10,6 +10,7 @@ const UI_PARITY_REPORT_PATTERN = /^docs\/provenance\/ui-parity-reports\/.+\.md$/
 const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
 const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
 const ADDED_AUDIT_ROW_PATTERN = /^\+\|(?! --- )(.*)$/gmu;
+const REMOVED_AUDIT_ROW_PATTERN = /^-\|(?! --- )(.*)$/gmu;
 const E2E_VERIFICATION_PATTERN = /frontend\/tests\/.+\.e2e\.ts\b/u;
 const E2E_VERIFICATION_GLOBAL_PATTERN = /frontend\/tests\/.+?\.e2e\.ts\b/gu;
 const SCALA_HTML_SOURCE_PATTERN =
@@ -65,7 +66,21 @@ function addedAuditRows(auditPatch) {
     return [];
   }
 
-  return [...auditPatch.matchAll(ADDED_AUDIT_ROW_PATTERN)].map((match) => match[1]);
+  const removedRowCounts = new Map();
+  for (const match of auditPatch.matchAll(REMOVED_AUDIT_ROW_PATTERN)) {
+    removedRowCounts.set(match[1], (removedRowCounts.get(match[1]) ?? 0) + 1);
+  }
+
+  return [...auditPatch.matchAll(ADDED_AUDIT_ROW_PATTERN)]
+    .map((match) => match[1])
+    .filter((row) => {
+      const removedCount = removedRowCounts.get(row) ?? 0;
+      if (removedCount === 0) {
+        return true;
+      }
+      removedRowCounts.set(row, removedCount - 1);
+      return false;
+    });
 }
 
 function rowNamesChangedFocusedE2E(row, frontendE2EFiles) {

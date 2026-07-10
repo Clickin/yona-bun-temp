@@ -25,8 +25,8 @@ use crate::{
 };
 use yoram_domain::{
     authorize_project_access, can_create_organization_project, can_request_project_enrollment,
-    can_update_organization, ProjectAccessFacts, ProjectOperation, ProjectScope,
-    DEFAULT_LANDING_FALLBACK_PATH,
+    can_update_organization, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
+    ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
 
 pub(crate) fn normalize_identifier(value: &str) -> String {
@@ -779,11 +779,12 @@ pub(crate) fn current_session_response_from_user(
 ) -> ReadCurrentSessionResponse {
     ReadCurrentSessionResponse {
         actor_id: user.id,
-        default_landing_path: default_landing_path
+        default_landing_path: normalize_default_landing_path(default_landing_path.as_deref())
             .unwrap_or_else(|| DEFAULT_LANDING_FALLBACK_PATH.to_string()),
         email_address: user.email_address.clone(),
         is_anonymous: false,
         is_confirmed: user.is_confirmed,
+        is_guest: user.is_guest,
         is_site_admin: user.is_site_admin,
         login_id: user.login_id.clone(),
         user_label: user.display_name.clone(),
@@ -794,6 +795,7 @@ pub(crate) fn current_session_response_from_user(
 pub(crate) fn anonymous_current_session_response() -> ReadCurrentSessionResponse {
     ReadCurrentSessionResponse {
         is_anonymous: true,
+        is_guest: false,
         default_landing_path: DEFAULT_LANDING_FALLBACK_PATH.to_string(),
         ..Default::default()
     }

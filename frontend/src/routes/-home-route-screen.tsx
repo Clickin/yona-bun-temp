@@ -67,7 +67,6 @@ const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
 const LEGACY_AUTHENTICATED_LOGOUT_PATH: string = "/users/logout";
 const LEGACY_ANONYMOUS_LOGOUT_PATH: string = "/logout";
-const LEGACY_FEEDBACK_URL: string = "https://github.com/yona-projects/yona/issues";
 const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS";
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
@@ -479,7 +478,14 @@ function HomeScreen({
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <HomeFlashToast message={flashMessage} />
       <div className="siteintro-bg row">
-        <div className="siteintro">
+        <div
+          className="siteintro"
+          style={
+            {
+              "--siteintro-background-image": `url("${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/bg-samples/photo-svetacreative.jpg")}")`,
+            } as React.CSSProperties
+          }
+        >
           <div className="siteintro-cover">
             <div className="siteintro-wrap">
               <h1 className="site-heading">21st Century Software Development Platform</h1>
@@ -672,7 +678,6 @@ export function SiteLayoutShell({
   children,
   projectSearchScope,
   runtimeConfig,
-  showLegacyProjectHeaderLinks = false,
 }: {
   activeMenu?: "projects";
   children: React.ReactNode;
@@ -683,10 +688,18 @@ export function SiteLayoutShell({
   const { t } = useLegacyMessages();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const session = sessionQuery.data;
-  const shouldRenderAnonymousUserMenu = sessionQuery.data?.isAnonymous !== false;
-  const shouldRenderSiteAdminAffix =
-    sessionQuery.data?.isAnonymous === false &&
-    booleanField(sessionQuery.data, "isSiteAdmin", false);
+  const navbarWorkspaceQuery = useQuery({
+    enabled: session?.isAnonymous === false,
+    queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
+    queryKey: ["workspace", "overview", "sidebar"],
+  });
+  const workspaceProfile = recordValue(navbarWorkspaceQuery.data?.profile);
+  const shouldRenderAnonymousUserMenu = session?.isAnonymous !== false;
+  const isGuest = session
+    ? booleanField(session, "isGuest", booleanField(workspaceProfile, "isGuest", false))
+    : false;
+  const isSiteAdmin = session ? booleanField(session, "isSiteAdmin", false) : false;
+  const shouldRenderSiteAdminAffix = session?.isAnonymous === false && isSiteAdmin;
   const projectSearchAction =
     projectSearchScope?.ownerName && projectSearchScope.projectName
       ? prefixBasePath(
@@ -702,16 +715,10 @@ export function SiteLayoutShell({
     : null;
   const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
   const hasScopedSearch = Boolean(projectSearchAction || groupSearchAction);
-  const shouldRenderProjectListingLink =
-    runtimeConfig.hideProjectListing !== true &&
-    (sessionQuery.data?.isAnonymous === false || showLegacyProjectHeaderLinks);
+  const shouldRenderProjectListingLink = runtimeConfig.hideProjectListing !== true && !isGuest;
   const shouldRenderAllProjectsSearchScope =
-    runtimeConfig.hideProjectListing !== true &&
-    (sessionQuery.data?.isAnonymous === false ||
-      showLegacyProjectHeaderLinks ||
-      (session ? booleanField(session, "isSiteAdmin", false) : false));
-  const legacyProjectHeaderFeedbackUrl =
-    showLegacyProjectHeaderLinks && (runtimeConfig.feedbackUrl || LEGACY_FEEDBACK_URL);
+    (runtimeConfig.hideProjectListing !== true && !isGuest) || isSiteAdmin;
+  const feedbackUrl = runtimeConfig.feedbackUrl?.trim() ?? "";
   const initialSearchScope = projectSearchAction ? "project" : groupSearchAction ? "group" : "all";
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
     initialSearchScope,
@@ -760,17 +767,17 @@ export function SiteLayoutShell({
         </div>
       </div>
       {shouldRenderSiteAdminAffix ? (
-        <div className="admin-logged-in-affix" data-spy="affix" data-offset-top="30">
+        <div className="admin-logged-in-affix">
           {t("user.siteAdminLoggedInAffix")}{" "}
           <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
         </div>
       ) : null}
       <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
         <div className="gnb-inner">
-          <div className="pin" data-placement="bottom" title="Sidebar">
-            <i className="yobicon-arrow-left" />
-            <i className="yobicon-arrow-right" />
-          </div>
+          <span className="pin" title="Sidebar">
+            <i className="yobicon-arrow-left" aria-hidden="true" />
+            <i className="yobicon-arrow-right" aria-hidden="true" />
+          </span>
           <ul className="gnb-nav">
             <li>
               <Link
@@ -792,8 +799,7 @@ export function SiteLayoutShell({
                 Y
               </Link>
             </li>
-            {shouldRenderProjectListingLink &&
-            (showLegacyProjectHeaderLinks || activeMenu === "projects") ? (
+            {shouldRenderProjectListingLink ? (
               <>
                 <li className={activeMenu === "projects" ? "active" : undefined}>
                   <Link
@@ -807,13 +813,9 @@ export function SiteLayoutShell({
                 <li className="divider"></li>
               </>
             ) : null}
-            {legacyProjectHeaderFeedbackUrl ? (
+            {feedbackUrl ? (
               <li>
-                <Link
-                  to={legacyProjectHeaderFeedbackUrl}
-                  href={legacyProjectHeaderFeedbackUrl}
-                  target="_blank"
-                >
+                <Link to={feedbackUrl} href={feedbackUrl} target="_blank">
                   {t("title.yobi.feedback")}
                 </Link>
               </li>
@@ -1058,11 +1060,7 @@ function AuthenticatedSiteUserMenu({
             </Link>
           </li>
         ) : null}
-        <li
-          className="gnb-usermenu-item"
-          data-placement="bottom"
-          title={`${t("title.shortcut")} (A)`}
-        >
+        <li className="gnb-usermenu-item" title={`${t("title.shortcut")} (A)`}>
           <Link
             to="/user/issues"
             search={LEGACY_USER_ISSUES_LINK_SEARCH}
@@ -1079,7 +1077,6 @@ function AuthenticatedSiteUserMenu({
                 to="/sites/userList"
                 search={LEGACY_SITE_USER_LIST_LINK_SEARCH}
                 title={t("menu.siteAdmin")}
-                data-placement="bottom"
                 className="usermenu-icon-button show-progress-bar"
               >
                 <i className="yobicon-wrench" />
@@ -1092,8 +1089,9 @@ function AuthenticatedSiteUserMenu({
           <button
             type="button"
             className="gnb-dropdown-toggle"
-            data-placement="bottom"
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
+            aria-controls="mySidenav"
+            aria-expanded={isSidebarOpen}
             onClick={handleSidebarToggleClick}
           >
             <span className="avatar-wrap smaller">
@@ -1760,6 +1758,10 @@ function recordArray(value: unknown): YonaRecord[] {
   return Array.isArray(value)
     ? value.filter((item): item is YonaRecord => typeof item === "object" && item !== null)
     : [];
+}
+
+function recordValue(value: unknown): YonaRecord {
+  return typeof value === "object" && value !== null ? (value as YonaRecord) : {};
 }
 
 function hasSidebarFavoriteData(workspace: YonaRecord) {

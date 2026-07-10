@@ -28,6 +28,16 @@ Every resumed goal turn must restate this directive before choosing work:
   are behavior evidence only: do not preserve them as raw anchors or as
   `Link href="#"`; translate non-navigation side effects to
   `button type="button"` plus React `onClick`/state/mutation logic.
+- User-visible role, copy, order, geometry, and interaction are the parity gate;
+  jQuery/plugin implementation attributes are not. The removal list is
+  non-exhaustive and includes `data-toggle`, `data-placement`, `data-action`,
+  `data-href`, `data-url`, every `data-request-*`, `data-dismiss`, `data-target`,
+  `data-trigger`, `data-backdrop`, `data-spy`, `data-provider`, and
+  `data-loading-text`. When React owns the behavior, E2E must assert these
+  attributes are absent. User-visible or accessible `title`, `aria-*`, and
+  tooltip copy remain part of parity and must be preserved through React-owned
+  markup and behavior. The gate must not require raw legacy anchors for controls
+  translated to `button type="button"` side effects.
 - Frontend route TSX/E2E implementation for this goal must be delegated to a
   spawned subagent. The main agent selects the target, supplies the legacy
   sources and rules, reviews the patch, integrates only accepted work, runs
@@ -293,8 +303,16 @@ The test must:
   navigation path exists
 - use rendered links/buttons for every intermediate page movement
 - compare the whole stable screen container against canonicalized legacy DOM
-- preserve tag names, child order, nesting, classes, ids, names, types,
-  placeholders, hrefs, srcs, layout-relevant `data-*`, and stable visible text
+- preserve tag names where semantics remain anchors/forms/content, child order,
+  nesting, classes, ids, names, types, placeholders, meaningful hrefs, srcs,
+  non-plugin layout-relevant `data-*`, and stable visible text
+- canonicalize away the non-exhaustive set of jQuery/plugin control metadata,
+  including `data-toggle`, `data-placement`, `data-action`, `data-href`,
+  `data-url`, every `data-request-*`, `data-dismiss`, `data-target`,
+  `data-trigger`, `data-backdrop`, `data-spy`, `data-provider`, and
+  `data-loading-text`; assert their absence when React owns the translated
+  interaction while preserving user-visible or accessible `title`, `aria-*`,
+  and tooltip copy through React-owned markup and behavior
 - normalize only documented differences from
   `docs/plans/2026-06-30-scala-html-sot-frontend-rebuild.md`
 - fail RED because the React implementation is missing or incomplete
@@ -315,6 +333,8 @@ legacy placeholder hrefs:
   expected next DOM/location
 - legacy `href="#"` or `href="javascript:..."` side-effect controls render as
   buttons and do not expose placeholder hrefs
+- a side-effect control is compared by visible role, copy, order, geometry, and
+  interaction, not by requiring the legacy raw anchor tag
 
 ### 3. Copy Scala HTML Into One TSX Skeleton
 
@@ -443,6 +463,12 @@ A screen rebuild goal is complete only when all are true:
 - legacy JS/DOM-control behavior is translated to React state/events/components
   and TanStack Router/Query rather than copied as jQuery, direct DOM mutation,
   or HTML fragment insertion
+- canonical DOM evidence excludes the non-exhaustive jQuery/plugin control
+  metadata set (`data-toggle`, `data-placement`, `data-action`, `data-href`,
+  `data-url`, `data-request-*`, `data-dismiss`, `data-target`, `data-trigger`,
+  `data-backdrop`, `data-spy`, `data-provider`, `data-loading-text`) and focused
+  E2E asserts their absence when React owns the behavior; visible/accessibility
+  `title`, `aria-*`, and tooltip copy remain React-owned parity evidence
 - no view-model layer decides page DOM shape
 - component decomposition is done after GREEN or documented as unnecessary
 - focused checks pass
