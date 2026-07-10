@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -11,6 +17,19 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code")({
+  beforeLoad: ({ location, params }) => {
+    if (location.pathname === `/${params.ownerName}/${params.projectName}/code/`) {
+      throw redirect({
+        params: {
+          ownerName: params.ownerName,
+          projectName: params.projectName,
+        },
+        replace: true,
+        statusCode: 303,
+        to: "/$ownerName/$projectName/code",
+      });
+    }
+  },
   component: ProjectCodeRoute,
 });
 

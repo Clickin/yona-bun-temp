@@ -66,6 +66,24 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
   });
 });
 
+test("project trailing-slash code root replaces to the canonical legacy code URL", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeNoHead(page);
+
+  await page.goto(`${basePath}/admin/sample/code?previous=1`);
+  await expect(page.locator(".alert.alert-block h4")).toHaveText("The repository is empty!");
+
+  await page.goto(`${basePath}/admin/sample/code/?probe=1`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code`);
+  await expect(page.locator(".alert.alert-block h4")).toHaveText("The repository is empty!");
+
+  await page.goBack();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code?previous=1`);
+});
+
 test("project empty git repository title is rendered by the nohead route", () => {
   const source = readFileSync(CODE_ROUTE_SOURCE, "utf8");
 
