@@ -9,12 +9,14 @@ const EXPECTED_LOGIN_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
-      <i class="yobicon-arrow-left"></i>
-      <i class="yobicon-arrow-right"></i>
-    </div>
+    <span class="pin" title="Sidebar">
+      <i class="yobicon-arrow-left" aria-hidden="true"></i>
+      <i class="yobicon-arrow-right" aria-hidden="true"></i>
+    </span>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -60,7 +62,7 @@ const EXPECTED_LOGIN_SCREEN = `
   </div>
   <div class="login-form-wrap frm-wrap">
     __EMAIL_VERIFICATION_HELP__
-    <form action="/users/login" method="POST">
+    <form action="__BASE_PATH__/users/login" method="POST">
       <input type="hidden" name="redirectUrl" value="__REDIRECT_URL__">
       __FORM_BODY__
     </form>
@@ -270,6 +272,89 @@ test("anonymous login form renders legacy browser title without imperative mutat
   expect(source).not.toMatch(
     /use(?:Layout)?Effect\s*\([\s\S]*?(?:document\s*\.\s*title|globalThis\s*\.\s*document|window\s*\.\s*document|title\s*=)/u,
   );
+});
+
+test("standalone login keeps explicit local redirect inside the SPA base path", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const login = await mockStandalonePasswordLogin(page, { defaultLandingPath: "/" });
+  await page.goto(`${basePath}/users/loginform?redirectUrl=%2Fme`);
+
+  const form = page.locator(".page.full .login-form-wrap > form");
+  await expect(form).toHaveAttribute("action", `${basePath === "/" ? "" : basePath}/users/login`);
+  await expect.poll(() => login.sessionRequestPaths.length).toBe(1);
+  await page.evaluate(() => {
+    (window as Window & { __standaloneLoginSpaSentinel?: string }).__standaloneLoginSpaSentinel =
+      "alive";
+  });
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath === "/" ? "" : basePath}/me`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __standaloneLoginSpaSentinel?: string })
+            .__standaloneLoginSpaSentinel,
+      ),
+    )
+    .toBe("alive");
+  await expect.poll(() => login.sessionRequestPaths.length).toBe(3);
+  expect(login.signInRequests).toEqual([
+    {
+      body: { identifier: "admin", password: "password", rememberMe: true },
+      csrfToken: "csrf-standalone-login",
+    },
+  ]);
+});
+
+test("standalone login without a landing preference uses the legacy root", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const login = await mockStandalonePasswordLogin(page, {});
+  await page.goto(`${basePath}/users/loginform`);
+  await page.evaluate(() => {
+    (window as Window & { __standaloneLoginSpaSentinel?: string }).__standaloneLoginSpaSentinel =
+      "alive";
+  });
+
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(basePath === "/" ? "/" : `${basePath}/`);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __standaloneLoginSpaSentinel?: string })
+            .__standaloneLoginSpaSentinel,
+      ),
+    )
+    .toBe("alive");
+  await expect.poll(() => login.sessionRequestPaths.length).toBe(3);
+});
+
+test("standalone login does not duplicate an already-prefixed landing path", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const expectedPath = `${basePath === "/" ? "" : basePath}/me`;
+  await mockStandalonePasswordLogin(page, { defaultLandingPath: expectedPath });
+  await page.goto(`${basePath}/users/loginform`);
+
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect.poll(() => new URL(page.url()).pathname).toBe(expectedPath);
+  if (basePath !== "/") {
+    expect(new URL(page.url()).pathname).not.toContain(`${basePath}${basePath}`);
+  }
 });
 
 test("social-login-only form matches legacy user/login.scala.html screen DOM", async ({ page }) => {
@@ -776,6 +861,116 @@ async function mockCapabilities(
   });
 }
 
+async function mockStandalonePasswordLogin(
+  page: Page,
+  signInSessionOverrides: Record<string, unknown>,
+) {
+  const sessionRequestPaths: string[] = [];
+  const signInRequests: Array<{ body: unknown; csrfToken: string | undefined }> = [];
+  let authenticated = false;
+  const authenticatedSession = {
+    actorId: 1,
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    defaultLandingPath: "/",
+    emailAddress: "admin@example.com",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: false,
+    loginId: "admin",
+    userLabel: "Site Admin",
+  };
+
+  await mockCapabilities(page, {});
+  await page.route("**/api/v1/session", async (route) => {
+    sessionRequestPaths.push(new URL(route.request().url()).pathname);
+    await route.fulfill({
+      contentType: "application/json",
+      json: authenticated
+        ? authenticatedSession
+        : {
+            actorId: null,
+            defaultLandingPath: "/",
+            emailAddress: "",
+            isAnonymous: true,
+            isConfirmed: false,
+            isGuest: false,
+            isSiteAdmin: false,
+            loginId: "",
+            userLabel: "",
+          },
+    });
+  });
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-standalone-login" },
+      json: { isAnonymous: !authenticated },
+    });
+  });
+  await page.route("**/api/v1/auth/sign-in", async (route) => {
+    signInRequests.push({
+      body: route.request().postDataJSON(),
+      csrfToken: route.request().headers()["x-csrf-token"],
+    });
+    authenticated = true;
+    const { defaultLandingPath: _currentLandingPath, ...sessionWithoutLandingPath } =
+      authenticatedSession;
+    await route.fulfill({
+      contentType: "application/json",
+      json: { ...sessionWithoutLandingPath, ...signInSessionOverrides },
+    });
+  });
+  await page.route("**/api/v1/workspace", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          displayName: "Site Admin",
+          isGuest: false,
+          isSiteAdmin: false,
+          loginId: "admin",
+        },
+        pullRequestItems: [],
+        recentProjects: [],
+        watchedProjects: [],
+      },
+    });
+  });
+  await page.route("**/api/v1/notifications?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { hasMore: false, items: [], total: 0 },
+    });
+  });
+  await page.route("**/api/v1/users/me/profile?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        daysAgo: 14,
+        issueItems: [],
+        memberProjects: [],
+        ownProjects: [],
+        profile: {
+          avatarUrl: "/assets/images/default-avatar-128.png",
+          displayName: "Site Admin",
+          loginId: "me",
+        },
+        pullRequestItems: [],
+        selected: "issues",
+      },
+    });
+  });
+
+  return { sessionRequestPaths, signInRequests };
+}
+
 async function assertOAuthProviderLinks(page: Page, basePath: string) {
   const github = page.locator(".oauth-login-btn").nth(0);
   const google = page.locator(".oauth-login-btn").nth(1);
@@ -809,8 +1004,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "title",
         "aria-hidden",
         "version",
-        "data-toggle",
-        "data-placement",
         "for",
         "checked",
       ];
@@ -1013,8 +1206,6 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
         "title",
         "aria-hidden",
         "version",
-        "data-toggle",
-        "data-placement",
         "for",
         "checked",
         "tabindex",
@@ -1470,8 +1661,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           "title",
           "aria-hidden",
           "version",
-          "data-toggle",
-          "data-placement",
           "for",
           "checked",
           "tabindex",

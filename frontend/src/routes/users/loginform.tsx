@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
@@ -48,7 +48,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { password, redirectUrl } = Route.useSearch();
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [submitError, setSubmitError] = React.useState("");
   const capabilitiesQuery = useQuery({
     queryFn: () => readAuthUiCapabilitiesRest(runtimeConfig),
@@ -81,8 +81,9 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     async onSuccess(session) {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
       const defaultLandingPath =
-        typeof session.defaultLandingPath === "string" ? session.defaultLandingPath : "/me";
-      router.history.push(safeLocalPath(redirectUrl) ?? safeLocalPath(defaultLandingPath) ?? "/me");
+        typeof session.defaultLandingPath === "string" ? session.defaultLandingPath : "";
+      const destination = safeLocalPath(redirectUrl) ?? safeLocalPath(defaultLandingPath) ?? "/";
+      await navigate({ href: destination });
     },
   });
 
@@ -104,7 +105,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               </div>
             ) : null}
             <form
-              action="/users/login"
+              action={prefixBasePath(runtimeConfig.basePath, "/users/login")}
               method="POST"
               onSubmit={(event) => void handleSubmit(event)}
             >
