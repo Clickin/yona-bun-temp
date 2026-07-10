@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   cancelEnrollProjectRest,
@@ -277,7 +277,14 @@ function ProjectHomeBody({
                 <h3>
                   <span id="project-description" className="markdown-wrap">
                     {overviewText ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{overviewText}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        urlTransform={(url) =>
+                          projectMarkdownUrlTransform(runtimeConfig.basePath, url)
+                        }
+                      >
+                        {overviewText}
+                      </ReactMarkdown>
                     ) : (
                       t("project.description.placeholder")
                     )}
@@ -696,7 +703,12 @@ function ReadmePane({
             ) : null}
           </header>
           <div className="readme-body markdown-wrap">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{readmeBody}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              urlTransform={(url) => projectMarkdownUrlTransform(basePath, url)}
+            >
+              {readmeBody}
+            </ReactMarkdown>
           </div>
         </div>
       ) : (
@@ -1884,6 +1896,11 @@ function projectWatchingCountValue(project: ProjectContainer) {
     }
   }
   return undefined;
+}
+
+function projectMarkdownUrlTransform(basePath: string, url: string) {
+  const safeUrl = defaultUrlTransform(url);
+  return url.startsWith("/") && !url.startsWith("//") ? prefixBasePath(basePath, safeUrl) : safeUrl;
 }
 
 function normalizeHistoryHref(basePath: string, href: string) {

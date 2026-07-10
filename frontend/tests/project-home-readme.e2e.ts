@@ -229,6 +229,45 @@ test("project home README tab renders project overview as legacy Markdown", asyn
   expect(metrics.paragraphTop).toBeLessThanOrEqual(metrics.headerBottom);
 });
 
+test("project home README Markdown keeps the configured application context on URLs", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = basePath === "/" ? "" : basePath;
+  await mockProjectHome(page, {
+    project: {
+      overview: "[overview issue](/admin/sample/issue/1) ![overview attachment](/files/7)",
+    },
+    readmeFile: {
+      bodyHtml: "<p>Server HTML should not render</p>",
+      bodyMarkdown:
+        "[issue](/admin/sample/issue/1) ![attachment](/files/7) [relative](docs/readme) [hash](#readme) [external](https://example.test/readme) [cdn](//cdn.example.test/readme) [unsafe](javascript:alert(1))",
+      name: "README.md",
+    },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample?tabId=readme`);
+
+  await expect(page.locator("#project-description a")).toHaveAttribute(
+    "href",
+    `${mountPrefix}/admin/sample/issue/1`,
+  );
+  await expect(page.locator("#project-description img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/files/7`,
+  );
+  await expect(page.locator(".readme-body a").nth(0)).toHaveAttribute(
+    "href",
+    `${mountPrefix}/admin/sample/issue/1`,
+  );
+  await expect(page.locator(".readme-body img")).toHaveAttribute("src", `${mountPrefix}/files/7`);
+  await expect(page.locator('.readme-body a[href="docs/readme"]')).toHaveCount(1);
+  await expect(page.locator('.readme-body a[href="#readme"]')).toHaveCount(1);
+  await expect(page.locator('.readme-body a[href="https://example.test/readme"]')).toHaveCount(1);
+  await expect(page.locator('.readme-body a[href="//cdn.example.test/readme"]')).toHaveCount(1);
+  await expect(page.locator('.readme-body a[href^="javascript:"]')).toHaveCount(0);
+});
+
 test("project home README tab renders README Markdown instead of compatibility HTML", async ({
   page,
 }) => {
