@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  redirect,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
@@ -27,6 +34,19 @@ const legacyCodeHistoryLinkActiveProps = {
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/commits")({
+  beforeLoad: ({ location, params }) => {
+    if (location.pathname === `/${params.ownerName}/${params.projectName}/commits/`) {
+      throw redirect({
+        params: {
+          ownerName: params.ownerName,
+          projectName: params.projectName,
+        },
+        replace: true,
+        statusCode: 303,
+        to: "/$ownerName/$projectName/commits",
+      });
+    }
+  },
   component: ProjectCodeHistoryRoute,
   validateSearch(search): ProjectCodeHistorySearch {
     const page = typeof search.page === "number" ? search.page : Number(search.page);
@@ -38,7 +58,8 @@ function ProjectCodeHistoryRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isProjectCodeHistoryRoot = pathname === `/${ownerName}/${projectName}/commits`;
+  const commitsRootPath = `/${ownerName}/${projectName}/commits`;
+  const isProjectCodeHistoryRoot = pathname === commitsRootPath;
 
   if (!isProjectCodeHistoryRoot) {
     return (

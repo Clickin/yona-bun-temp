@@ -338,6 +338,25 @@ test("project bare code history renders default branch on the legacy commits URL
   expect(boxes!.olderTop).toBeGreaterThan(boxes!.historyTop);
 });
 
+test("project trailing-slash history replaces to the canonical legacy commits URL", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const historyRequestUrls: string[] = [];
+  await mockProjectCodeHistory(page, {
+    onHistoryRequest: (requestUrl) => historyRequestUrls.push(requestUrl.href),
+  });
+
+  await page.goto(`${basePath}/admin/sample/commits/?page=2`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample/commits`);
+  await expect(page.locator("#history .code-table.commits tbody tr")).toHaveCount(2);
+  expect(historyRequestUrls).toHaveLength(1);
+  const historyRequest = new URL(historyRequestUrls[0]);
+  expect(historyRequest.searchParams.get("branch")).toBeNull();
+  expect(historyRequest.searchParams.get("path")).toBeNull();
+});
+
 test("project bare code history uses legacy project-scoped GNB search shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const historyPageUrl = `${basePath}/admin/sample/commits`;
