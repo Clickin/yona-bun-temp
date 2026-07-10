@@ -346,6 +346,104 @@ test("standalone login keeps explicit local redirect inside the SPA base path", 
   ]);
 });
 
+test("standalone login returns to a same-origin absolute legacy Referer", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const login = await mockStandalonePasswordLogin(page, {});
+  await page.goto(`${basePath}/users/loginform`);
+  const redirectUrl = `${new URL(page.url()).origin}${basePath}/admin/sample/issues?state=open#issue-list`;
+  await page.goto(`${basePath}/users/loginform?redirectUrl=${encodeURIComponent(redirectUrl)}`);
+
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath === "/" ? "" : basePath}/admin/sample/issues`);
+  await expect.poll(() => new URL(page.url()).search).toMatch(/^\?state=open(?:&|$)/u);
+  await expect.poll(() => new URL(page.url()).hash).toBe("#issue-list");
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+});
+
+test("standalone login strips an exact configured base from an absolute redirect", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const login = await mockStandalonePasswordLogin(page, {});
+  await page.goto(`${basePath}/users/loginform`);
+  const redirectUrl = `${new URL(page.url()).origin}${basePath}?x=1#h`;
+  await page.goto(`${basePath}/users/loginform?redirectUrl=${encodeURIComponent(redirectUrl)}`);
+
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect(page).toHaveURL(`${basePath === "/" ? "" : basePath}/?x=1#h`);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+});
+
+test("standalone login rejects a cross-origin absolute redirect", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const login = await mockStandalonePasswordLogin(page, { defaultLandingPath: "/me" });
+  await page.goto(
+    `${basePath}/users/loginform?redirectUrl=${encodeURIComponent("https://evil.example/yona/me")}`,
+  );
+  const localOrigin = new URL(page.url()).origin;
+
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect.poll(() => new URL(page.url()).origin).toBe(localOrigin);
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath === "/" ? "" : basePath}/me`);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+});
+
+test("standalone login rejects a protocol-relative redirect", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const login = await mockStandalonePasswordLogin(page, { defaultLandingPath: "/me" });
+  await page.goto(
+    `${basePath}/users/loginform?redirectUrl=${encodeURIComponent("//evil.example/yona/me")}`,
+  );
+  const localOrigin = new URL(page.url()).origin;
+
+  await page.locator("#loginIdOrEmailD").fill("admin");
+  await page.locator("#password").fill("password");
+  await page.locator(".page.full button[type='submit']").click();
+
+  await expect.poll(() => new URL(page.url()).origin).toBe(localOrigin);
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(`${basePath === "/" ? "" : basePath}/me`);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+});
+
+for (const [label, unsafePath] of [
+  ["doubled-slash", "//evil.example/yona/me"],
+  ["backslash-normalized", "\\\\evil.example\\\\yona\\\\me"],
+] as const) {
+  test(`standalone login rejects same-origin ${label} redirect`, async ({ page }) => {
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    const login = await mockStandalonePasswordLogin(page, { defaultLandingPath: "/me" });
+    await page.goto(`${basePath}/users/loginform`);
+    const redirectUrl = `${new URL(page.url()).origin}${basePath}${unsafePath}`;
+    const localOrigin = new URL(page.url()).origin;
+    await page.goto(`${basePath}/users/loginform?redirectUrl=${encodeURIComponent(redirectUrl)}`);
+
+    await page.locator("#loginIdOrEmailD").fill("admin");
+    await page.locator("#password").fill("password");
+    await page.locator(".page.full button[type='submit']").click();
+
+    await expect.poll(() => new URL(page.url()).origin).toBe(localOrigin);
+    await expect
+      .poll(() => new URL(page.url()).pathname)
+      .toBe(`${basePath === "/" ? "" : basePath}/me`);
+    await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+  });
+}
+
 test("standalone login without a landing preference uses the legacy root", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const login = await mockStandalonePasswordLogin(page, {});

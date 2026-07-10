@@ -86,7 +86,10 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
       const defaultLandingPath =
         typeof session.defaultLandingPath === "string" ? session.defaultLandingPath : "";
-      const destination = safeLocalPath(redirectUrl) ?? safeLocalPath(defaultLandingPath) ?? "/";
+      const destination =
+        safeLocalPath(redirectUrl, runtimeConfig.basePath) ??
+        safeLocalPath(defaultLandingPath, runtimeConfig.basePath) ??
+        "/";
       await navigate({ href: destination });
     },
   });
@@ -281,9 +284,45 @@ function nonEmptyString(value: unknown) {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
-function safeLocalPath(value: string) {
-  if (!value.startsWith("/") || value.startsWith("//")) {
+function safeLocalPath(value: string, basePath: string) {
+  if (value.startsWith("//")) {
     return null;
   }
-  return value;
+
+  const isAbsolute = /^[a-z][a-z0-9+.-]*:/i.test(value);
+  const origin =
+    typeof globalThis.location === "undefined" ? "http://yona.local" : globalThis.location.origin;
+  let url: URL;
+  try {
+    url = new URL(value, origin);
+  } catch {
+    return null;
+  }
+
+  if (url.origin !== origin || (!isAbsolute && !value.startsWith("/"))) {
+    return null;
+  }
+
+  const normalizedBase = basePath === "/" ? "" : basePath.replace(/\/+$/u, "");
+  if (isAbsolute) {
+    if (
+      normalizedBase &&
+      url.pathname !== normalizedBase &&
+      !url.pathname.startsWith(`${normalizedBase}/`)
+    ) {
+      return null;
+    }
+    url.pathname = normalizedBase ? url.pathname.slice(normalizedBase.length) || "/" : url.pathname;
+  } else if (
+    normalizedBase &&
+    (url.pathname === normalizedBase || url.pathname.startsWith(`${normalizedBase}/`))
+  ) {
+    url.pathname = url.pathname.slice(normalizedBase.length) || "/";
+  }
+
+  if (url.pathname.startsWith("//")) {
+    return null;
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }
