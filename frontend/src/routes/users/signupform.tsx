@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { readAuthUiCapabilitiesRest, registerWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
@@ -36,7 +36,7 @@ function SignupFormRoute() {
 function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const navigate = useNavigate();
   const loginIdRef = React.useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<SignupField, string>>>({});
   const [submitError, setSubmitError] = React.useState("");
@@ -70,22 +70,19 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     },
     async onSuccess(response) {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
-      const redirectPath =
-        typeof response.redirectPath === "string"
-          ? response.redirectPath
-          : signupRequireConfirm
-            ? "/?signup=requested"
-            : capabilities?.emailVerificationEnabled === true
-              ? "/?verify=sent"
-              : "/";
-      const localPath = safeLocalPath(redirectPath) ?? "/";
-      if (localPath === "/?signup=requested") {
-        await router.navigate({ to: "/", search: { signup: "requested" } });
-      } else if (localPath === "/?verify=sent") {
-        await router.navigate({ to: "/", search: { verify: "sent" } });
-      } else {
-        router.history.push(prefixBasePath(runtimeConfig.basePath, localPath));
+      if (response.isAnonymous === true && signupRequireConfirm) {
+        await navigate({ to: "/", search: { signup: "requested" } });
+        return;
       }
+      if (response.isAnonymous === true && capabilities?.emailVerificationEnabled === true) {
+        await navigate({ to: "/", search: { verify: "sent" } });
+        return;
+      }
+
+      const defaultLandingPath =
+        typeof response.defaultLandingPath === "string" ? response.defaultLandingPath : "/";
+      const localPath = safeLocalPath(defaultLandingPath) ?? "/";
+      await navigate({ href: localPath });
     },
   });
 
@@ -115,7 +112,12 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           ) : null}
 
           <div className="signup-form-wrap frm-wrap">
-            <form action="/users/signup" method="post" name="signup" onSubmit={handleSubmit}>
+            <form
+              action={prefixBasePath(runtimeConfig.basePath, "/users/signup")}
+              method="post"
+              name="signup"
+              onSubmit={handleSubmit}
+            >
               {socialLoginOnly ? (
                 <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
               ) : (
