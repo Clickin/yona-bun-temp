@@ -43,6 +43,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   const queryClient = useQueryClient();
   const router = useRouter();
   const siteName = runtimeConfig.siteName ?? "Yona";
+  const contextRoot = runtimeConfig.basePath === "/" ? "/" : `${runtimeConfig.basePath}/`;
   const welcome = lookupLegacyMessage(language, "app.welcome", { args: [siteName] });
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
   const capabilitiesQuery = useQuery({
@@ -119,7 +120,12 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
             </div>
 
             <div className="signup-form-wrap frm-wrap">
-              <form action="/" method="post" className="input-append" onSubmit={handleSubmit}>
+              <form
+                action={contextRoot}
+                method="post"
+                className="input-append"
+                onSubmit={handleSubmit}
+              >
                 <dl>
                   <dt>
                     <label htmlFor="loginId">{t("user.signupId")}</label>

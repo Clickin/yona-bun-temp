@@ -19,7 +19,7 @@ const EXPECTED_SECRET_SCREEN = `
         </div>
       </div>
       <div class="signup-form-wrap frm-wrap">
-        <form action="/" method="post" class="input-append">
+        <form action="__CONTEXT_ROOT__" method="post" class="input-append">
           <dl>
             <dt><label for="loginId">User ID (lower case)</label></dt>
             <dd>
@@ -56,6 +56,13 @@ const EXPECTED_SECRET_SCREEN = `
   </div>
 </footer>
 `;
+
+const EXPECTED_FORM_ACTIONS = {
+  "": "/",
+  "/": "/",
+  "/yona": "/yona/",
+  "/team/yoram": "/team/yoram/",
+} as const;
 
 const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
 <header class="gnb-outer">
@@ -121,10 +128,18 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   await expect(page).toHaveTitle("Tada! Welcome to Yona!");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
+  const expectedFormAction = expectedFormActionFor(basePath);
+  await expect(page.locator(".signup-form-wrap form")).toHaveAttribute(
+    "action",
+    expectedFormAction,
+  );
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
     page,
-    EXPECTED_SECRET_SCREEN.replace("__ROOT_HREF__", legacyRootHref(basePath)),
+    EXPECTED_SECRET_SCREEN.replace("__ROOT_HREF__", legacyRootHref(basePath)).replace(
+      "__CONTEXT_ROOT__",
+      expectedFormAction,
+    ),
   );
 
   expect(actual).toEqual(expected);
@@ -724,8 +739,22 @@ async function readMobileSecretMetrics(page: Page) {
   });
 }
 
+function expectedFormActionFor(basePath: string) {
+  const expectedAction = Object.entries(EXPECTED_FORM_ACTIONS).find(
+    ([mount]) => mount === basePath,
+  )?.[1];
+  if (!expectedAction) {
+    throw new Error(`Unsupported test mount: ${basePath}`);
+  }
+  return expectedAction;
+}
+
+function contextRoot(basePath: string) {
+  return basePath === "/" ? "/" : `${basePath}/`;
+}
+
 function legacyRootHref(basePath: string) {
-  return `${basePath}/`;
+  return contextRoot(basePath);
 }
 
 async function canonicalizeScreenRoots(page: Page) {
