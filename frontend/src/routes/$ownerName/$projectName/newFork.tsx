@@ -244,10 +244,10 @@ function ProjectForkBody({
       return;
     }
     const timeout = window.setTimeout(() => {
-      router.history.push(cloneProgress.redirectPath);
+      router.history.push(prefixBasePath(runtimeConfig.basePath, cloneProgress.redirectPath));
     }, 3000);
     return () => window.clearTimeout(timeout);
-  }, [cloneProgress, router.history]);
+  }, [cloneProgress, router.history, runtimeConfig.basePath]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

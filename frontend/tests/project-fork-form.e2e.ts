@@ -471,6 +471,20 @@ test("project fork submit renders legacy git/clone.scala.html progress state", a
   });
 });
 
+test("project fork clone completion preserves the configured base path", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+  await mockForkSubmit(page);
+  await page.clock.install();
+
+  await page.goto(`${basePath}/admin/sample/newFork`);
+  await page.fill("#inputName", "sample-fork");
+  await page.click(".content-wrap.frm-wrap button[type=submit]");
+  await page.clock.fastForward(3000);
+
+  await expect(page).toHaveURL(`${basePath}/admin/sample-fork`);
+});
+
 test("project fork header favorite star posts and toggles starred class", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const favoriteRequests: { hasCsrfToken: boolean; method: string }[] = [];
