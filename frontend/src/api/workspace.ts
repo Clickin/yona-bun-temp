@@ -2,6 +2,10 @@ import type {
   ReadCurrentSessionResponse,
   ReadWorkspaceOverviewResponse,
   RecordRecentProjectVisitResponse,
+  WorkspaceMemberProjectItem,
+  WorkspaceSidebarOrganizationItem,
+  WorkspaceSidebarProjectItem,
+  YonaRecord,
 } from "./types";
 import type { RuntimeConfig } from "../runtime-config";
 import { restFetch, type RestFetchOptions } from "./rest-client";
@@ -50,15 +54,90 @@ type WorkspaceProfileWithGuest = NonNullable<ReadWorkspaceOverviewResponse["prof
   isGuest?: boolean;
 };
 
+function normalizeSidebarProject(project: YonaRecord): WorkspaceSidebarProjectItem {
+  const ownerName = typeof project.ownerName === "string" ? project.ownerName : "";
+  const projectName = typeof project.projectName === "string" ? project.projectName : "";
+  const projectScope =
+    typeof project.projectScope === "string"
+      ? project.projectScope
+      : project.isPrivate === true
+        ? "PRIVATE"
+        : "";
+  return {
+    ...project,
+    isFavorited:
+      typeof project.isFavorited === "boolean" ? project.isFavorited : project.favored === true,
+    logoUrl: typeof project.logoUrl === "string" ? project.logoUrl : "",
+    overview: typeof project.overview === "string" ? project.overview : "",
+    ownerName,
+    projectId:
+      (project.projectId as bigint | number | string | undefined) ??
+      (project.id as bigint | number | string | undefined) ??
+      `${ownerName}/${projectName}`,
+    projectName,
+    projectScope,
+  };
+}
+
+function normalizeSidebarProjects(value: unknown): WorkspaceSidebarProjectItem[] {
+  return Array.isArray(value)
+    ? value
+        .filter((project): project is YonaRecord => typeof project === "object" && project !== null)
+        .map(normalizeSidebarProject)
+    : [];
+}
+
+function normalizeSidebarOrganizations(value: unknown): WorkspaceSidebarOrganizationItem[] {
+  return Array.isArray(value)
+    ? value
+        .filter(
+          (organization): organization is YonaRecord =>
+            typeof organization === "object" && organization !== null,
+        )
+        .map((organization) => {
+          const organizationName =
+            typeof organization.organizationName === "string"
+              ? organization.organizationName
+              : typeof organization.name === "string"
+                ? organization.name
+                : "";
+          return {
+            ...organization,
+            isFavorited:
+              typeof organization.isFavorited === "boolean"
+                ? organization.isFavorited
+                : organization.favored === true,
+            organizationId:
+              (organization.organizationId as bigint | number | string | undefined) ??
+              (organization.id as bigint | number | string | undefined) ??
+              organizationName,
+            organizationName,
+            projectCount:
+              typeof organization.projectCount === "number" ? organization.projectCount : null,
+            projects: normalizeSidebarProjects(organization.projects),
+          };
+        })
+    : [];
+}
+
 function normalizeWorkspaceOverview(
   response: ReadWorkspaceOverviewResponse,
 ): ReadWorkspaceOverviewResponse {
   return {
     ...response,
     emails: response.emails ?? [],
-    favoriteProjects: response.favoriteProjects ?? [],
+    favoriteOrganizations: normalizeSidebarOrganizations(response.favoriteOrganizations),
+    favoriteProjects: normalizeSidebarProjects(response.favoriteProjects),
     issueItems: response.issueItems ?? [],
-    memberProjects: response.memberProjects ?? [],
+    memberProjects: normalizeSidebarProjects(response.memberProjects).map(
+      (project) =>
+        ({
+          ...project,
+          notifications: Array.isArray(project.notifications) ? project.notifications : [],
+        }) as WorkspaceMemberProjectItem,
+    ),
+    organizations: normalizeSidebarOrganizations(response.organizations),
+    ownProjects: normalizeSidebarProjects(response.ownProjects),
     profile: response.profile
       ? ({
           ...response.profile,
@@ -75,11 +154,14 @@ function normalizeWorkspaceOverview(
         } as NonNullable<ReadWorkspaceOverviewResponse["profile"]>)
       : undefined,
     pullRequestItems: response.pullRequestItems ?? [],
-    recentProjects: response.recentProjects ?? [],
-    watchedProjects: (response.watchedProjects ?? []).map((project) => ({
-      ...project,
-      notifications: project.notifications ?? [],
-    })),
+    recentProjects: normalizeSidebarProjects(response.recentProjects),
+    watchedProjects: normalizeSidebarProjects(response.watchedProjects).map(
+      (project) =>
+        ({
+          ...project,
+          notifications: Array.isArray(project.notifications) ? project.notifications : [],
+        }) as WorkspaceMemberProjectItem,
+    ),
   };
 }
 

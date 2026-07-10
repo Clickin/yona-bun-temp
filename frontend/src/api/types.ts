@@ -84,18 +84,39 @@ export type WorkspaceIssueItem = YonaRecord & {
 
 export type WorkspacePullRequestItem = YonaRecord;
 
-export type WorkspaceMemberProjectItem = YonaRecord & {
+export type WorkspaceSidebarProjectItem = YonaRecord & {
+  isFavorited: boolean;
+  logoUrl: string;
+  overview: string;
+  ownerName: string;
+  projectId: bigint | number | string;
+  projectName: string;
+  projectScope: string;
+};
+
+export type WorkspaceSidebarOrganizationItem = YonaRecord & {
+  isFavorited: boolean;
+  organizationId: bigint | number | string;
+  organizationName: string;
+  projectCount: null | number;
+  projects: WorkspaceSidebarProjectItem[];
+};
+
+export type WorkspaceMemberProjectItem = WorkspaceSidebarProjectItem & {
   notifications: YonaRecord[];
 };
 
 export type ReadWorkspaceOverviewResponse = YonaRecord & {
   emails: YonaRecord[];
-  favoriteProjects: YonaRecord[];
+  favoriteOrganizations: WorkspaceSidebarOrganizationItem[];
+  favoriteProjects: WorkspaceSidebarProjectItem[];
   issueItems: WorkspaceIssueItem[];
   memberProjects: WorkspaceMemberProjectItem[];
+  organizations: WorkspaceSidebarOrganizationItem[];
+  ownProjects: WorkspaceSidebarProjectItem[];
   profile?: WorkspaceProfile;
   pullRequestItems: WorkspacePullRequestItem[];
-  recentProjects: YonaRecord[];
+  recentProjects: WorkspaceSidebarProjectItem[];
   watchedProjects: WorkspaceMemberProjectItem[];
 };
 
@@ -146,7 +167,16 @@ export type ReadCodeBrowserResponse = YonaRecord & {
 
 export type ProjectContainer = ProjectDetail;
 
-export type ToggleFavoriteProjectResponse = YonaRecord;
+export type ToggleFavoriteProjectResponse = YonaRecord & {
+  favorited: boolean;
+  ownerName: string;
+  projectName: string;
+};
+
+export type ToggleFavoriteOrganizationResponse = YonaRecord & {
+  favorited: boolean;
+  organizationName: string;
+};
 
 export type RecordRecentProjectVisitResponse = YonaRecord;
 

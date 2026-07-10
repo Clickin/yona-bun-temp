@@ -3524,12 +3524,65 @@ h1 {
   vertical-align: text-top;
 }
 
-.user-project-list .star-project {
+.user-project-list button.star-project,
+.user-project-list button.star-org {
+  box-sizing: border-box;
+  width: 29px;
+  height: 29px;
+  min-height: 0;
   padding: 0;
+  margin: 0;
+  color: #eee;
+  line-height: 29px;
+  cursor: pointer;
+  appearance: none;
   background: transparent;
   border: 0;
   box-shadow: none;
+  text-align: center;
+}
+
+.user-project-list button.star-project:hover,
+.user-project-list button.star-project:focus,
+.user-project-list button.star-org:hover,
+.user-project-list button.star-org:focus {
+  color: #e91e63;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.user-project-list .organization-toggle {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
   text-align: left;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.user-project-list .project-list,
+.user-project-list .org-list {
+  position: relative;
+}
+
+.user-project-list .project-list > .sidebar-project-link,
+.user-project-list .org-list:has(> button.star-org) > .organization-toggle {
+  margin-right: 29px;
+}
+
+.user-project-list .project-list > button.star-project,
+.user-project-list .org-list > button.star-org {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
 }
 
 .user-project-list .starred {

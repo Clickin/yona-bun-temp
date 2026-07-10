@@ -10,6 +10,7 @@ import type {
   ProjectDetail,
   ReadOrganizationMembersResponse,
   ReadProjectMembersResponse,
+  ToggleFavoriteOrganizationResponse,
   ToggleFavoriteProjectResponse,
 } from "./types";
 import { queryOptions } from "@tanstack/react-query";
@@ -1163,6 +1164,23 @@ export function toggleFavoriteProjectRest(
   return restFetch<ToggleFavoriteProjectResponse>(
     runtimeConfig,
     projectPath(ownerName, projectName, "/favorite"),
+    {
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function toggleFavoriteOrganizationRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ToggleFavoriteOrganizationResponse> {
+  return restFetch<ToggleFavoriteOrganizationResponse>(
+    runtimeConfig,
+    organizationPath(organizationName, "/favorite"),
     {
       csrfToken,
       fetchImpl,

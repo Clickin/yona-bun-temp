@@ -2,9 +2,11 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
+import { toggleFavoriteOrganizationRest, toggleFavoriteProjectRest } from "../api/org-project";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
 import type { YonaRecord } from "../api/types";
+import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -812,6 +814,7 @@ export function SiteLayoutShell({
           onClose={handleLeftSidebarClose}
           onRefresh={handleLeftSidebarRefresh}
           onTabChange={handleLeftSidebarTabChange}
+          runtimeConfig={runtimeConfig}
           session={session ?? {}}
           workspace={navbarWorkspaceQuery.data}
         />
@@ -1004,6 +1007,7 @@ function LegacyFramedSidebar({
   onClose,
   onRefresh,
   onTabChange,
+  runtimeConfig,
   session,
   workspace,
 }: {
@@ -1012,6 +1016,7 @@ function LegacyFramedSidebar({
   onClose: () => void;
   onRefresh: () => void;
   onTabChange: (tab: SidebarTab) => void;
+  runtimeConfig: RuntimeConfig;
   session: YonaRecord;
   workspace: YonaRecord | undefined;
 }) {
@@ -1108,6 +1113,7 @@ function LegacyFramedSidebar({
             <SidebarTabContent
               activeTab={activeTab}
               idPrefix="left-sidebar"
+              runtimeConfig={runtimeConfig}
               sessionLoginId={loginId}
               workspace={workspace}
             />
@@ -1235,6 +1241,7 @@ function AuthenticatedSiteUserMenu({
               {workspace ? (
                 <SidebarTabContent
                   activeTab={activeSidebarTab}
+                  runtimeConfig={runtimeConfig}
                   sessionLoginId={loginId}
                   workspace={workspace}
                 />
@@ -1448,14 +1455,17 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
 function SidebarTabContent({
   activeTab,
   idPrefix,
+  runtimeConfig,
   sessionLoginId,
   workspace,
 }: {
   activeTab: SidebarTab;
   idPrefix?: string;
+  runtimeConfig: RuntimeConfig;
   sessionLoginId: string;
   workspace: YonaRecord;
 }) {
+  const [searchQuery, setSearchQuery] = React.useState("");
   return (
     <>
       <div
@@ -1465,6 +1475,9 @@ function SidebarTabContent({
         {hasSidebarFavoriteData(workspace) ? (
           <SidebarOrganizationList
             idPrefix={idPrefix}
+            onSearchQueryChange={setSearchQuery}
+            runtimeConfig={runtimeConfig}
+            searchQuery={searchQuery}
             sessionLoginId={sessionLoginId}
             workspace={workspace}
           />
@@ -1476,49 +1489,181 @@ function SidebarTabContent({
         className={`tab-pane user-project-list${activeTab === "project" ? " active" : ""}`}
         id={sidebarDomId(idPrefix, "myProjectList")}
       >
-        <SidebarProjectList idPrefix={idPrefix} workspace={workspace} />
+        <SidebarProjectList
+          idPrefix={idPrefix}
+          onSearchQueryChange={setSearchQuery}
+          runtimeConfig={runtimeConfig}
+          searchQuery={searchQuery}
+          workspace={workspace}
+        />
       </div>
       <div
         className={`tab-pane user-project-list${activeTab === "recent" ? " active" : ""}`}
         id={sidebarDomId(idPrefix, "myRecentIssueList")}
       >
-        <SidebarRecentIssueList idPrefix={idPrefix} workspace={workspace} />
+        <SidebarRecentIssueList
+          idPrefix={idPrefix}
+          onSearchQueryChange={setSearchQuery}
+          searchQuery={searchQuery}
+          workspace={workspace}
+        />
       </div>
     </>
   );
 }
 
+type SidebarFavoriteTarget =
+  | { organizationName: string; type: "organization" }
+  | { ownerName: string; projectName: string; type: "project" };
+
+function SidebarFavoriteButton({
+  initialFavorited,
+  label,
+  runtimeConfig,
+  target,
+}: {
+  initialFavorited: boolean;
+  label: string;
+  runtimeConfig: RuntimeConfig;
+  target: SidebarFavoriteTarget;
+}) {
+  const queryClient = useQueryClient();
+  const [isFavorited, setIsFavorited] = React.useState(initialFavorited);
+  const requestPending = React.useRef(false);
+  const favoriteMutation = useMutation({
+    mutationFn: async () => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return target.type === "project"
+        ? toggleFavoriteProjectRest(runtimeConfig, csrfToken, target.ownerName, target.projectName)
+        : toggleFavoriteOrganizationRest(runtimeConfig, csrfToken, target.organizationName);
+    },
+    onError(error) {
+      window.alert(`Update failed: ${error instanceof Error ? error.message : String(error)}`);
+    },
+    onSettled() {
+      requestPending.current = false;
+    },
+    onSuccess(response) {
+      setIsFavorited((current) => {
+        if (typeof response.favorited === "boolean") {
+          return response.favorited;
+        }
+        return typeof response.favored === "boolean" ? response.favored : !current;
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["workspace", "overview", "sidebar"],
+        refetchType: "none",
+      });
+    },
+  });
+  const toggleFavorite = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (requestPending.current || favoriteMutation.isPending) {
+      return;
+    }
+    requestPending.current = true;
+    favoriteMutation.mutate();
+  };
+
+  return (
+    <button
+      aria-label={`${isFavorited ? "Remove" : "Add"} ${label} ${
+        isFavorited ? "from" : "to"
+      } favorites`}
+      aria-pressed={isFavorited}
+      className={`${target.type === "project" ? "star-project" : "star-org"} flex-item`}
+      disabled={favoriteMutation.isPending}
+      onClick={toggleFavorite}
+      type="button"
+    >
+      <i
+        aria-hidden="true"
+        className={isFavorited ? "star starred material-icons" : "star material-icons"}
+      >
+        star
+      </i>
+    </button>
+  );
+}
+
 function SidebarOrganizationList({
   idPrefix,
+  onSearchQueryChange,
+  runtimeConfig,
+  searchQuery,
   sessionLoginId,
   workspace,
 }: {
   idPrefix?: string;
+  onSearchQueryChange: (query: string) => void;
+  runtimeConfig: RuntimeConfig;
+  searchQuery: string;
   sessionLoginId: string;
   workspace: YonaRecord;
 }) {
   const { t } = useLegacyMessages();
+  const [isOwnProjectsExpanded, setIsOwnProjectsExpanded] = React.useState(false);
   const ownProjects = recordArray(workspace.ownProjects);
   const favoriteOrganizations = recordArray(workspace.favoriteOrganizations);
   const organizations = recordArray(workspace.organizations);
-  const favoriteProjects = recordArray(workspace.favoriteProjects);
   const loginId = valueString(
     workspace.loginId ?? (workspace.profile as YonaRecord | undefined)?.loginId,
     sessionLoginId,
   );
   const favoriteOrganizationKeys = new Set(favoriteOrganizations.map(organizationKey));
+  const lastFavoriteOrganizationKey = favoriteOrganizations.length
+    ? organizationKey(favoriteOrganizations[favoriteOrganizations.length - 1])
+    : "";
+  const organizationOwners = new Set(
+    [...favoriteOrganizations, ...organizations].map((organization) =>
+      valueString(organization.organizationName ?? organization.name, "").toLocaleLowerCase(),
+    ),
+  );
   const regularOrganizations: YonaRecord[] = [];
   for (const organization of organizations) {
     if (!favoriteOrganizationKeys.has(organizationKey(organization))) {
       regularOrganizations.push(organization);
     }
   }
+  const directFavoriteProjects: YonaRecord[] = [];
+  const directFavoriteKeys = new Set<string>();
+  for (const project of recordArray(workspace.favoriteProjects)) {
+    const ownerName = valueString(project.ownerName ?? project.owner, "");
+    const key = projectKey(project);
+    if (
+      ownerName.toLocaleLowerCase() === loginId.toLocaleLowerCase() ||
+      organizationOwners.has(ownerName.toLocaleLowerCase()) ||
+      directFavoriteKeys.has(key)
+    ) {
+      continue;
+    }
+    directFavoriteKeys.add(key);
+    directFavoriteProjects.push(project);
+  }
+  const normalizedQuery = normalizedSidebarQuery(searchQuery);
+  const showOwnProjects =
+    normalizedQuery === "" ||
+    loginId.toLocaleLowerCase().includes(normalizedQuery) ||
+    ownProjects.some((project) => sidebarNestedProjectMatches(project, normalizedQuery));
+  const visibleOwnProjects = normalizedQuery
+    ? ownProjects.filter((project) => sidebarNestedProjectMatches(project, normalizedQuery))
+    : ownProjects;
+  const visibleFavoriteOrganizations = favoriteOrganizations.filter((organization) =>
+    sidebarOrganizationMatches(organization, normalizedQuery),
+  );
+  const visibleRegularOrganizations = regularOrganizations.filter((organization) =>
+    sidebarOrganizationMatches(organization, normalizedQuery),
+  );
+  const visibleDirectFavorites = directFavoriteProjects.filter((project) =>
+    sidebarProjectMatches(project, normalizedQuery),
+  );
 
   if (
     ownProjects.length === 0 &&
     favoriteOrganizations.length === 0 &&
     organizations.length === 0 &&
-    favoriteProjects.length === 0
+    directFavoriteProjects.length === 0
   ) {
     return (
       <div className="search-result">
@@ -1527,7 +1672,9 @@ function SidebarOrganizationList({
             className="search-input org-search"
             type="text"
             autoComplete="off"
+            onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
             placeholder={t("title.type.name")}
+            value={searchQuery}
           />
           <span className="bar"></span>
         </div>
@@ -1545,54 +1692,73 @@ function SidebarOrganizationList({
           className="search-input org-search"
           type="text"
           autoComplete="off"
+          onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
           placeholder={t("title.type.name")}
+          value={searchQuery}
         />
         <span className="bar"></span>
       </div>
       <ul className="tab-pane user-ul " id={sidebarDomId(idPrefix, "organizations")}>
-        {ownProjects.length > 0 ? (
+        {ownProjects.length > 0 && showOwnProjects ? (
           <li className="org-li">
             <div className="org-list project-flex-container all-orgs">
-              <div className="project-item project-item-container">
+              <button
+                aria-expanded={isOwnProjectsExpanded}
+                className="project-item project-item-container organization-toggle"
+                onClick={() => setIsOwnProjectsExpanded((expanded) => !expanded)}
+                type="button"
+              >
                 <div className="flex-item site-logo">
                   <i className="yobicon-angle-right"></i>
                 </div>
                 <div className="projectName-owner all-org-names flex-item">
                   <div className="project-name org-name flex-item">{loginId}</div>
-                  <div className="project-owner flex-item sub-project-counter"></div>
+                  <div className="project-owner flex-item sub-project-counter">
+                    {ownProjects.length}
+                  </div>
                 </div>
-              </div>
+              </button>
               <div className="star-org flex-item"></div>
             </div>
             <ul className="project-ul">
-              {ownProjects.map((project) => (
+              {visibleOwnProjects.map((project) => (
                 <SidebarAllProjectItem
-                  favored={booleanValue(project.favored)}
+                  favored={sidebarIsFavorited(project)}
                   key={projectKey(project)}
                   project={project}
+                  runtimeConfig={runtimeConfig}
+                  showNonFavorite={normalizedQuery !== "" || isOwnProjectsExpanded}
                 />
               ))}
             </ul>
           </li>
         ) : null}
-        {favoriteOrganizations.map((organization, index) => (
+        {visibleFavoriteOrganizations.map((organization) => (
           <SidebarOrganizationItem
-            favored
-            isLast={index === favoriteOrganizations.length - 1}
+            favored={sidebarIsFavorited(organization, true)}
+            isLast={organizationKey(organization) === lastFavoriteOrganizationKey}
             key={organizationKey(organization)}
+            normalizedQuery={normalizedQuery}
             organization={organization}
+            runtimeConfig={runtimeConfig}
           />
         ))}
-        {regularOrganizations.map((organization) => (
+        {visibleRegularOrganizations.map((organization) => (
           <SidebarOrganizationItem
-            favored={false}
+            favored={sidebarIsFavorited(organization, false)}
             key={organizationKey(organization)}
+            normalizedQuery={normalizedQuery}
             organization={organization}
+            runtimeConfig={runtimeConfig}
           />
         ))}
         <ul className="etc-favorites"></ul>
-        {favoriteProjects.map((project) => (
-          <SidebarProjectItem key={projectKey(project)} project={project} />
+        {visibleDirectFavorites.map((project) => (
+          <SidebarProjectItem
+            key={projectKey(project)}
+            project={project}
+            runtimeConfig={runtimeConfig}
+          />
         ))}
       </ul>
     </div>
@@ -1602,25 +1768,33 @@ function SidebarOrganizationList({
 function SidebarOrganizationItem({
   favored,
   isLast = false,
+  normalizedQuery,
   organization,
+  runtimeConfig,
 }: {
   favored: boolean;
   isLast?: boolean;
+  normalizedQuery: string;
   organization: YonaRecord;
+  runtimeConfig: RuntimeConfig;
 }) {
+  const [showNonFavoriteProjects, setShowNonFavoriteProjects] = React.useState(false);
   const organizationName = valueString(organization.organizationName ?? organization.name, "");
-  const projectCount = valueString(
-    organization.projectCount ??
-      organization.projectsCount ??
-      recordArray(organization.projects).length,
-    "",
-  );
+  const projectCount = valueString(organization.projectCount, "");
   const projects = recordArray(organization.projects);
+  const visibleProjects = normalizedQuery
+    ? projects.filter((project) => sidebarNestedProjectMatches(project, normalizedQuery))
+    : projects;
 
   return (
     <li className={`org-li${isLast ? " favored" : ""}`}>
       <div className="org-list project-flex-container all-orgs">
-        <div className="project-item project-item-container">
+        <button
+          aria-expanded={showNonFavoriteProjects}
+          className="project-item project-item-container organization-toggle"
+          onClick={() => setShowNonFavoriteProjects((expanded) => !expanded)}
+          type="button"
+        >
           <div className="flex-item site-logo">
             <i className="yobicon-angle-right"></i>
           </div>
@@ -1628,17 +1802,23 @@ function SidebarOrganizationItem({
             <div className="project-name org-name flex-item">{organizationName}</div>
             <div className="project-owner flex-item">{projectCount}</div>
           </div>
-        </div>
-        <div className="star-org flex-item">
-          <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
-        </div>
+        </button>
+        <SidebarFavoriteButton
+          initialFavorited={favored}
+          key={`organization-favorite-${organizationKey(organization)}-${String(favored)}`}
+          label={organizationName}
+          runtimeConfig={runtimeConfig}
+          target={{ organizationName, type: "organization" }}
+        />
       </div>
       <ul className="project-ul">
-        {projects.map((project) => (
+        {visibleProjects.map((project) => (
           <SidebarAllProjectItem
-            favored={booleanValue(project.favored)}
+            favored={sidebarIsFavorited(project)}
             key={projectKey(project)}
             project={project}
+            runtimeConfig={runtimeConfig}
+            showNonFavorite={normalizedQuery !== "" || showNonFavoriteProjects}
           />
         ))}
       </ul>
@@ -1646,15 +1826,25 @@ function SidebarOrganizationItem({
   );
 }
 
-function SidebarAllProjectItem({ favored, project }: { favored: boolean; project: YonaRecord }) {
+function SidebarAllProjectItem({
+  favored,
+  project,
+  runtimeConfig,
+  showNonFavorite,
+}: {
+  favored: boolean;
+  project: YonaRecord;
+  runtimeConfig: RuntimeConfig;
+  showNonFavorite: boolean;
+}) {
   const ownerName = valueString(project.ownerName ?? project.owner, "");
   const projectName = valueString(project.projectName ?? project.name, "");
   const overview = valueString(project.overview, "");
   const logoUrl = valueString(project.logoUrl ?? project.projectLogoUrl, "");
-  const isPrivate = booleanValue(project.isPrivate);
+  const isPrivate = sidebarProjectIsPrivate(project);
 
   return (
-    <li className={`user-li ${favored ? "show-always" : "hide"}`}>
+    <li className={`user-li${favored ? " show-always" : showNonFavorite ? "" : " hide"}`}>
       <SidebarHoverPopover content={overview}>
         <Link
           className="project-item project-item-container sidebar-project-link sidebar-row-link"
@@ -1676,15 +1866,31 @@ function SidebarAllProjectItem({ favored, project }: { favored: boolean; project
             </div>
           </div>
         </Link>
-        <div className="star-project flex-item">
-          <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
-        </div>
+        <SidebarFavoriteButton
+          initialFavorited={favored}
+          key={`project-favorite-${projectKey(project)}-${String(favored)}`}
+          label={`${ownerName}/${projectName}`}
+          runtimeConfig={runtimeConfig}
+          target={{ ownerName, projectName, type: "project" }}
+        />
       </SidebarHoverPopover>
     </li>
   );
 }
 
-function SidebarProjectList({ idPrefix, workspace }: { idPrefix?: string; workspace: YonaRecord }) {
+function SidebarProjectList({
+  idPrefix,
+  onSearchQueryChange,
+  runtimeConfig,
+  searchQuery,
+  workspace,
+}: {
+  idPrefix?: string;
+  onSearchQueryChange: (query: string) => void;
+  runtimeConfig: RuntimeConfig;
+  searchQuery: string;
+  workspace: YonaRecord;
+}) {
   const { t } = useLegacyMessages();
   const [activeSubtab, setActiveSubtab] = React.useState<
     "recentlyVisited" | "createdByMe" | "watching" | "joinmember"
@@ -1692,6 +1898,7 @@ function SidebarProjectList({ idPrefix, workspace }: { idPrefix?: string; worksp
   const recentProjects = recordArray(workspace.recentProjects);
   const watchedProjects = recordArray(workspace.watchedProjects);
   const memberProjects = recordArray(workspace.memberProjects);
+  const ownProjects = recordArray(workspace.ownProjects);
 
   return (
     <div>
@@ -1703,7 +1910,9 @@ function SidebarProjectList({ idPrefix, workspace }: { idPrefix?: string; worksp
               type="text"
               id={sidebarDomId(idPrefix, "query")}
               autoComplete="off"
+              onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
               placeholder={t("title.type.name")}
+              value={searchQuery}
             />
             <span className="bar"></span>
           </div>
@@ -1737,24 +1946,32 @@ function SidebarProjectList({ idPrefix, workspace }: { idPrefix?: string; worksp
               id="recentlyVisited"
               idPrefix={idPrefix}
               projects={recentProjects}
+              runtimeConfig={runtimeConfig}
+              searchQuery={searchQuery}
             />
             <SidebarProjectPane
               active={activeSubtab === "watching"}
               id="watching"
               idPrefix={idPrefix}
               projects={watchedProjects}
+              runtimeConfig={runtimeConfig}
+              searchQuery={searchQuery}
             />
             <SidebarProjectPane
               active={activeSubtab === "createdByMe"}
               id="createdByMe"
               idPrefix={idPrefix}
-              projects={[]}
+              projects={ownProjects}
+              runtimeConfig={runtimeConfig}
+              searchQuery={searchQuery}
             />
             <SidebarProjectPane
               active={activeSubtab === "joinmember"}
               id="joinmember"
               idPrefix={idPrefix}
               projects={memberProjects}
+              runtimeConfig={runtimeConfig}
+              searchQuery={searchQuery}
             />
           </div>
         </div>
@@ -1768,14 +1985,22 @@ function SidebarProjectPane({
   id,
   idPrefix,
   projects,
+  runtimeConfig,
+  searchQuery,
 }: {
   active?: boolean;
   id: string;
   idPrefix?: string;
   projects: YonaRecord[];
+  runtimeConfig: RuntimeConfig;
+  searchQuery: string;
 }) {
   const { t } = useLegacyMessages();
   const paneId = sidebarDomId(idPrefix, id);
+  const normalizedQuery = normalizedSidebarQuery(searchQuery);
+  const visibleProjects = projects.filter((project) =>
+    sidebarProjectMatches(project, normalizedQuery),
+  );
   if (projects.length === 0) {
     return (
       <div id={paneId} className={`no-result tab-pane user-ul ${active ? "active" : ""}`}>
@@ -1785,18 +2010,29 @@ function SidebarProjectPane({
   }
   return (
     <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={paneId}>
-      {projects.map((project) => (
-        <SidebarProjectItem key={projectKey(project)} project={project} />
+      {visibleProjects.map((project) => (
+        <SidebarProjectItem
+          key={projectKey(project)}
+          project={project}
+          runtimeConfig={runtimeConfig}
+        />
       ))}
     </ul>
   );
 }
 
-function SidebarProjectItem({ project }: { project: YonaRecord }) {
+function SidebarProjectItem({
+  project,
+  runtimeConfig,
+}: {
+  project: YonaRecord;
+  runtimeConfig: RuntimeConfig;
+}) {
   const ownerName = valueString(project.ownerName ?? project.owner, "");
   const projectName = valueString(project.projectName ?? project.name, "");
   const logoUrl = valueString(project.logoUrl ?? project.projectLogoUrl, "");
-  const isPrivate = booleanValue(project.isPrivate);
+  const isPrivate = sidebarProjectIsPrivate(project);
+  const isFavorited = sidebarIsFavorited(project);
 
   return (
     <li className="user-li">
@@ -1822,9 +2058,13 @@ function SidebarProjectItem({ project }: { project: YonaRecord }) {
             <div className="project-owner flex-item">{ownerName}</div>
           </div>
         </Link>
-        <div className="star-project flex-item">
-          <i className="star material-icons">star</i>
-        </div>
+        <SidebarFavoriteButton
+          initialFavorited={isFavorited}
+          key={`project-favorite-${projectKey(project)}-${String(isFavorited)}`}
+          label={`${ownerName}/${projectName}`}
+          runtimeConfig={runtimeConfig}
+          target={{ ownerName, projectName, type: "project" }}
+        />
       </div>
     </li>
   );
@@ -1832,13 +2072,19 @@ function SidebarProjectItem({ project }: { project: YonaRecord }) {
 
 function SidebarRecentIssueList({
   idPrefix,
+  onSearchQueryChange,
+  searchQuery,
   workspace,
 }: {
   idPrefix?: string;
+  onSearchQueryChange: (query: string) => void;
+  searchQuery: string;
   workspace: YonaRecord;
 }) {
   const { t } = useLegacyMessages();
   const issues = recordArray(workspace.issueItems);
+  const normalizedQuery = normalizedSidebarQuery(searchQuery);
+  const visibleIssues = issues.filter((issue) => sidebarIssueMatches(issue, normalizedQuery));
 
   return (
     <div>
@@ -1850,7 +2096,9 @@ function SidebarRecentIssueList({
               type="text"
               id={sidebarDomId(idPrefix, "recent-issue-query")}
               autoComplete="off"
+              onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
               placeholder={t("title.type.name")}
+              value={searchQuery}
             />
             <span className="bar"></span>
           </div>
@@ -1867,7 +2115,7 @@ function SidebarRecentIssueList({
                 className="tab-pane user-ul active"
                 id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}
               >
-                {issues.map((issue) => (
+                {visibleIssues.map((issue) => (
                   <SidebarRecentIssueItem issue={issue} key={recentIssueKey(issue)} />
                 ))}
               </ul>
@@ -2013,6 +2261,76 @@ function recordValue(value: unknown): YonaRecord {
   return typeof value === "object" && value !== null ? (value as YonaRecord) : {};
 }
 
+function normalizedSidebarQuery(value: string) {
+  return value.trim().toLocaleLowerCase();
+}
+
+function sidebarIsFavorited(record: YonaRecord, fallback = false) {
+  return typeof record.isFavorited === "boolean"
+    ? record.isFavorited
+    : typeof record.favored === "boolean"
+      ? record.favored
+      : fallback;
+}
+
+function sidebarProjectIsPrivate(project: YonaRecord) {
+  return valueString(project.projectScope, "").toLocaleUpperCase() === "PRIVATE";
+}
+
+function sidebarProjectMatches(project: YonaRecord, normalizedQuery: string) {
+  if (normalizedQuery === "") {
+    return true;
+  }
+  return [project.ownerName, project.owner, project.projectName, project.name]
+    .map((value) => valueString(value, "").toLocaleLowerCase())
+    .some((value) => value.includes(normalizedQuery));
+}
+
+function sidebarNestedProjectMatches(project: YonaRecord, normalizedQuery: string) {
+  if (normalizedQuery === "") {
+    return true;
+  }
+  return [project.projectName, project.name]
+    .map((value) => valueString(value, "").toLocaleLowerCase())
+    .some((value) => value.includes(normalizedQuery));
+}
+
+function sidebarOrganizationMatches(organization: YonaRecord, normalizedQuery: string) {
+  if (normalizedQuery === "") {
+    return true;
+  }
+  const organizationName = valueString(
+    organization.organizationName ?? organization.name,
+    "",
+  ).toLocaleLowerCase();
+  return (
+    organizationName.includes(normalizedQuery) ||
+    recordArray(organization.projects).some((project) =>
+      sidebarNestedProjectMatches(project, normalizedQuery),
+    )
+  );
+}
+
+function sidebarIssueMatches(issue: YonaRecord, normalizedQuery: string) {
+  if (normalizedQuery === "") {
+    return true;
+  }
+  return [
+    issue.title,
+    issue.ownerName,
+    issue.owner_name,
+    issue.owner,
+    issue.projectName,
+    issue.project_name,
+    issue.project,
+    issue.issueNumber,
+    issue.issue_number,
+    issue.number,
+  ]
+    .map((value) => valueString(value, "").toLocaleLowerCase())
+    .some((value) => value.includes(normalizedQuery));
+}
+
 function hasSidebarFavoriteData(workspace: YonaRecord) {
   return (
     Array.isArray(workspace.ownProjects) ||
@@ -2024,7 +2342,8 @@ function hasSidebarFavoriteData(workspace: YonaRecord) {
 
 function projectKey(project: YonaRecord) {
   return valueString(
-    project.id ??
+    project.projectId ??
+      project.id ??
       `${valueString(project.ownerName ?? project.owner, "")}/${valueString(project.projectName ?? project.name, "")}`,
     "project",
   );
@@ -2032,8 +2351,8 @@ function projectKey(project: YonaRecord) {
 
 function organizationKey(organization: YonaRecord) {
   return valueString(
-    organization.id ??
-      organization.organizationId ??
+    organization.organizationId ??
+      organization.id ??
       organization.organizationName ??
       organization.name,
     "organization",
@@ -2046,10 +2365,6 @@ function recentIssueKey(issue: YonaRecord) {
       `${valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "")}/${valueString(issue.projectName ?? issue.project_name ?? issue.project, "")}/${valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "")}`,
     "issue",
   );
-}
-
-function booleanValue(value: unknown): boolean {
-  return value === true || value === "true" || value === 1;
 }
 
 function booleanField(record: YonaRecord, key: string, fallback: boolean): boolean {

@@ -16,6 +16,8 @@ const EXPECTED_AUTHENTICATED_HOME = `
     </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
+      <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -161,19 +163,19 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
 <div class="tab-pane user-project-list active" id="myOrganizationList">
   <div class="search-result">
     <div class="group">
-      <input class="search-input org-search" type="text" autocomplete="off" placeholder="Type name">
+      <input class="search-input org-search" type="text" value="" autocomplete="off" placeholder="Type name">
       <span class="bar"></span>
     </div>
     <ul class="tab-pane user-ul " id="organizations">
       <li class="org-li">
         <div class="org-list project-flex-container all-orgs">
-          <div class="project-item project-item-container">
+          <button class="project-item project-item-container organization-toggle" type="button">
             <div class="flex-item site-logo"><i class="yobicon-angle-right"></i></div>
             <div class="projectName-owner all-org-names flex-item">
               <div class="project-name org-name flex-item">admin</div>
-              <div class="project-owner flex-item sub-project-counter"></div>
+              <div class="project-owner flex-item sub-project-counter">1</div>
             </div>
-          </div>
+          </button>
           <div class="star-org flex-item"></div>
         </div>
         <ul class="project-ul">
@@ -183,21 +185,21 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
                 <div class="flex-item site-logo all-project-names"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
                 <div class="projectName-owner flex-item"><div class="project-name flex-item">sample </div></div>
               </a>
-              <div class="star-project flex-item"><i class="star starred material-icons">star</i></div>
+              <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
             </div>
           </li>
         </ul>
       </li>
       <li class="org-li favored">
         <div class="org-list project-flex-container all-orgs">
-          <div class="project-item project-item-container">
+          <button class="project-item project-item-container organization-toggle" type="button">
             <div class="flex-item site-logo"><i class="yobicon-angle-right"></i></div>
             <div class="projectName-owner all-org-names flex-item">
               <div class="project-name org-name flex-item">weblabs</div>
               <div class="project-owner flex-item">1</div>
             </div>
-          </div>
-          <div class="star-org flex-item"><i class="star starred material-icons">star</i></div>
+          </button>
+          <button class="star-org flex-item" type="button"><i class="star starred material-icons">star</i></button>
         </div>
         <ul class="project-ul">
           <li class="user-li hide">
@@ -206,7 +208,7 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
                 <div class="flex-item site-logo all-project-names"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                 <div class="projectName-owner flex-item"><div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div></div>
               </a>
-              <div class="star-project flex-item"><i class="star material-icons">star</i></div>
+              <button class="star-project flex-item" type="button"><i class="star material-icons">star</i></button>
             </div>
           </li>
         </ul>
@@ -214,14 +216,14 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
       <ul class="etc-favorites"></ul>
       <li class="user-li">
         <div class="project-list project-flex-container">
-          <a href="__BASE_PATH__/admin/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
+          <a href="__BASE_PATH__/external/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
             <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
             <div class="projectName-owner flex-item">
               <div class="project-name flex-item">member </div>
-              <div class="project-owner flex-item">admin</div>
+              <div class="project-owner flex-item">external</div>
             </div>
           </a>
-          <div class="star-project flex-item"><i class="star material-icons">star</i></div>
+          <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
         </div>
       </li>
     </ul>
@@ -235,7 +237,7 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
     <div class="search-result">
       <div class="tab-pane myproject-list-wrap">
         <div class="group">
-          <input class="search-input project-search" type="text" id="query" autocomplete="off" placeholder="Type name">
+          <input class="search-input project-search" type="text" id="query" value="" autocomplete="off" placeholder="Type name">
           <span class="bar"></span>
         </div>
         <div class="subtab-wrap subtab-group">
@@ -257,7 +259,7 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
                     <div class="project-owner flex-item">admin</div>
                   </div>
                 </a>
-                <div class="star-project flex-item"><i class="star material-icons">star</i></div>
+                <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
               </div>
             </li>
           </ul>
@@ -271,22 +273,35 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
                     <div class="project-owner flex-item">weblabs</div>
                   </div>
                 </a>
-                <div class="star-project flex-item"><i class="star material-icons">star</i></div>
+                <button class="star-project flex-item" type="button"><i class="star material-icons">star</i></button>
               </div>
             </li>
           </ul>
-          <div id="createdByMe" class="no-result tab-pane user-ul ">No results</div>
-          <ul class="tab-pane user-ul " id="joinmember">
+          <ul class="tab-pane user-ul " id="createdByMe">
             <li class="user-li">
               <div class="project-list project-flex-container">
-                <a href="__BASE_PATH__/admin/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
-                  <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+                <a href="__BASE_PATH__/admin/sample" class="project-item project-item-container sidebar-project-link sidebar-row-link">
+                  <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
                   <div class="projectName-owner flex-item">
-                    <div class="project-name flex-item">member </div>
+                    <div class="project-name flex-item">sample </div>
                     <div class="project-owner flex-item">admin</div>
                   </div>
                 </a>
-                <div class="star-project flex-item"><i class="star material-icons">star</i></div>
+                <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
+              </div>
+            </li>
+          </ul>
+          <ul class="tab-pane user-ul " id="joinmember">
+            <li class="user-li">
+              <div class="project-list project-flex-container">
+              <a href="__BASE_PATH__/external/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
+                  <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+                  <div class="projectName-owner flex-item">
+                    <div class="project-name flex-item">member </div>
+                  <div class="project-owner flex-item">external</div>
+                  </div>
+                </a>
+                <button class="star-project flex-item" type="button"><i class="star starred material-icons">star</i></button>
               </div>
             </li>
           </ul>
@@ -303,7 +318,7 @@ const EXPECTED_SIDEBAR_RECENT_ISSUE_TAB = `
     <div class="search-result">
       <div class="tab-pane myproject-list-wrap">
         <div class="group">
-          <input class="search-input project-search" type="text" id="recent-issue-query" autocomplete="off" placeholder="Type name">
+          <input class="search-input project-search" type="text" id="recent-issue-query" value="" autocomplete="off" placeholder="Type name">
           <span class="bar"></span>
         </div>
         <div class="tab-content">
@@ -1112,6 +1127,190 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await assertSidebarRightPopover(page, sampleProjectRow, "Sample project");
 });
 
+test("authenticated sidebar translates legacy favorite search and organization behavior to React", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  const favoriteApi = await mockWorkspaceSidebarFavoriteInteractions(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "true");
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/`);
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  await page.evaluate(() => {
+    (window as Window & { __sidebarFavoriteSpaSentinel?: string }).__sidebarFavoriteSpaSentinel =
+      "alive";
+  });
+
+  const favoriteRoot = page.locator("#myOrganizationList");
+  const ownOrganization = favoriteRoot.locator("#organizations > .org-li", {
+    has: page.locator(".org-name", { hasText: "admin" }),
+  });
+  await expect(ownOrganization.locator(".sub-project-counter")).toHaveText("2");
+  await expect(favoriteRoot.locator("#organizations > .user-li")).toHaveCount(1);
+  await expect(favoriteRoot.locator("#organizations > .user-li a")).toHaveAttribute(
+    "href",
+    `${basePath}/external/shared`,
+  );
+  await expect(favoriteRoot.locator("#organizations > .user-li .yobicon-lock")).toHaveCount(1);
+
+  const weblabsOrganization = favoriteRoot.locator(".org-li", { hasText: "weblabs" });
+  await expect(weblabsOrganization.locator(":scope > .org-list .project-owner")).toHaveText("");
+  const hiddenWip = weblabsOrganization.locator(".user-li", { hasText: "internal-wip" });
+  const favoriteDocs = weblabsOrganization.locator(".user-li", { hasText: "docs" });
+  await expect(hiddenWip).toBeHidden();
+  await expect(favoriteDocs).toBeVisible();
+  await weblabsOrganization.locator(":scope > .org-list .organization-toggle").click();
+  await expect(hiddenWip).toBeVisible();
+  await expect(favoriteDocs).toBeVisible();
+  await weblabsOrganization.locator(":scope > .org-list .organization-toggle").click();
+  await expect(hiddenWip).toBeHidden();
+  await expect(favoriteDocs).toBeVisible();
+
+  const orgSearch = favoriteRoot.locator(".org-search");
+  await orgSearch.fill("internal-wip");
+  await expect(weblabsOrganization).toBeVisible();
+  await expect(hiddenWip).toBeVisible();
+  await expect(favoriteDocs).toBeHidden();
+  await orgSearch.fill("weblabs");
+  await expect(weblabsOrganization).toBeVisible();
+  await expect(hiddenWip).toBeHidden();
+  await expect(favoriteDocs).toBeHidden();
+  await orgSearch.fill("platform");
+  const platformSearchResult = favoriteRoot.locator(".org-li", { hasText: "platform" });
+  await expect(platformSearchResult).toBeVisible();
+  await expect(platformSearchResult).not.toHaveClass(/favored/);
+  await expect(ownOrganization).toBeHidden();
+  await expect(weblabsOrganization).toBeHidden();
+  await orgSearch.fill("external");
+  await expect(favoriteRoot.locator("#organizations > .user-li")).toBeVisible();
+  await expect(favoriteRoot.locator("#organizations > .org-li:visible")).toHaveCount(0);
+  await orgSearch.fill("");
+
+  const directFavoriteButton = favoriteRoot.locator(
+    "#organizations > .user-li button.star-project",
+  );
+  const memberFavoriteButton = page.locator(
+    "#myProjectList #joinmember .user-li:has(a[href$='/external/shared']) button.star-project",
+  );
+  const directOrderBefore = await favoriteRoot
+    .locator("#organizations > .user-li a.sidebar-project-link")
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  await expect(directFavoriteButton).toHaveAttribute("aria-pressed", "true");
+  await expect(memberFavoriteButton).toHaveAttribute("aria-pressed", "true");
+  await directFavoriteButton.evaluate((button) => {
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+  });
+  await expect(directFavoriteButton).toBeDisabled();
+  await expect.poll(() => favoriteApi.projectRequests.length).toBe(1);
+  favoriteApi.releaseProjectFavorite();
+  await expect(directFavoriteButton).toHaveAttribute("aria-pressed", "false");
+  await expect(memberFavoriteButton).toHaveAttribute("aria-pressed", "true");
+  expect(
+    await favoriteRoot
+      .locator("#organizations > .user-li a.sidebar-project-link")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  ).toEqual(directOrderBefore);
+
+  const rightWeblabsFavorite = weblabsOrganization.locator(":scope > .org-list button.star-org");
+  const leftWeblabsFavorite = page.locator(
+    "#left-sidebar-myOrganizationList .org-li:has-text('weblabs') > .org-list button.star-org",
+  );
+  await rightWeblabsFavorite.click();
+  await expect(rightWeblabsFavorite).toHaveAttribute("aria-pressed", "false");
+  await expect(leftWeblabsFavorite).toHaveAttribute("aria-pressed", "true");
+
+  const sampleFavorite = favoriteRoot.locator(
+    ".user-li:has(a[href$='/admin/sample']) button.star-project",
+  );
+  const projectFailure = page.waitForEvent("dialog");
+  await sampleFavorite.click();
+  const projectDialog = await projectFailure;
+  expect(projectDialog.message()).toBe("Update failed: project denied");
+  await projectDialog.dismiss();
+  await expect(sampleFavorite).toHaveAttribute("aria-pressed", "true");
+
+  const platformOrganization = favoriteRoot.locator(".org-li", { hasText: "platform" });
+  await expect(platformOrganization.locator(":scope > .org-list .project-owner")).toHaveText("1");
+  const platformFavorite = platformOrganization.locator(":scope > .org-list button.star-org");
+  const orgFailure = page.waitForEvent("dialog");
+  await platformFavorite.click();
+  const organizationDialog = await orgFailure;
+  expect(organizationDialog.message()).toBe("Update failed: organization denied");
+  await organizationDialog.dismiss();
+  await expect(platformFavorite).toHaveAttribute("aria-pressed", "false");
+
+  await page.locator("#mySidenav .myProjectList > button").click();
+  await page.locator("#myProjectList .nav-subtab button", { hasText: "Create" }).click();
+  await expect(page.locator("#myProjectList #createdByMe .user-li")).toHaveCount(2);
+  await page.locator("#myProjectList .project-search").fill("sample");
+  await expect(page.locator("#myProjectList #createdByMe .user-li:visible")).toHaveCount(1);
+  await expect(page.locator("#myProjectList #createdByMe .user-li:visible")).toContainText(
+    "sample",
+  );
+
+  await page.locator("#mySidenav .myRecentIssueList > button").click();
+  const recentIssueSearch = page.locator("#myRecentIssueList .project-search");
+  await expect(recentIssueSearch).toHaveValue("sample");
+  await recentIssueSearch.fill("onboarding");
+  await expect(page.locator("#myRecentIssueList .user-li:visible")).toHaveCount(1);
+  await expect(page.locator("#myRecentIssueList .user-li:visible")).toContainText(
+    "Review onboarding copy",
+  );
+
+  await recentIssueSearch.fill("");
+  await page.locator("#mySidenav .myOrganizationList > button").click();
+  expect(
+    await favoriteRoot
+      .locator("button.star-project, button.star-org")
+      .first()
+      .evaluate((button) => {
+        const box = button.getBoundingClientRect();
+        return { height: Math.round(box.height), width: Math.round(box.width) };
+      }),
+  ).toEqual({ height: 29, width: 29 });
+  expect(
+    await page.locator("#mySidenav .right-menu").evaluate((menu) => ({
+      clientWidth: menu.clientWidth,
+      scrollWidth: menu.scrollWidth,
+    })),
+  ).toMatchObject({ clientWidth: 350, scrollWidth: 350 });
+  expect(favoriteApi.projectRequests).toEqual([
+    {
+      csrfToken: "csrf-sidebar-favorites",
+      path: `${basePath}/api/v1/owners/external/projects/shared/favorite`,
+    },
+    {
+      csrfToken: "csrf-sidebar-favorites",
+      path: `${basePath}/api/v1/owners/admin/projects/sample/favorite`,
+    },
+  ]);
+  expect(favoriteApi.organizationRequests).toEqual([
+    {
+      csrfToken: "csrf-sidebar-favorites",
+      path: `${basePath}/api/v1/organizations/weblabs/favorite`,
+    },
+    {
+      csrfToken: "csrf-sidebar-favorites",
+      path: `${basePath}/api/v1/organizations/platform/favorite`,
+    },
+  ]);
+  const organizationApiSource = readFileSync("src/api/org-project.ts", "utf8");
+  expect(organizationApiSource).toContain("encodeURIComponent(organizationName)");
+  expect(organizationApiSource).toContain('organizationPath(organizationName, "/favorite")');
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __sidebarFavoriteSpaSentinel?: string }).__sidebarFavoriteSpaSentinel,
+    ),
+  ).toBe("alive");
+});
+
 test("authenticated root user menu toggles stay route-local buttons without navigation", async ({
   page,
 }) => {
@@ -1603,7 +1802,7 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   await page.locator(".myProjectList button").click();
   await expect(page.locator(".myProjectList")).toHaveClass(/active/);
   await expect(page.locator("#myProjectList .project-search")).toBeVisible();
-  await expect(page.locator("#myProjectList .user-li")).toHaveCount(3);
+  await expect(page.locator("#myProjectList .user-li")).toHaveCount(4);
   expect(page.url()).toBe(sidebarTabUrl);
   await page.locator(".myRecentIssueList button").click();
   await expect(page.locator(".myRecentIssueList")).toHaveClass(/active/);
@@ -1652,7 +1851,7 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
     activePaneDisplay: "block",
     logoWidth: 26,
     ownerFontSize: "12px",
-    projectCount: 3,
+    projectCount: 4,
     projectRowDisplay: "flex",
     projectRowHeight: 26,
     rootWidth: 350,
@@ -2966,29 +3165,31 @@ async function mockWorkspaceSidebarProjects(page: Page) {
         emails: [],
         favoriteOrganizations: [
           {
-            id: 11,
-            name: "weblabs",
+            isFavorited: true,
+            organizationId: 11,
+            organizationName: "weblabs",
             projectCount: 1,
             projects: [
               {
-                favored: false,
-                id: 8,
-                isPrivate: true,
+                isFavorited: false,
                 logoUrl: "",
                 overview: "Internal playground",
                 ownerName: "weblabs",
+                projectId: 8,
                 projectName: "playground",
+                projectScope: "PRIVATE",
               },
             ],
           },
         ],
         favoriteProjects: [
           {
-            id: 9,
-            isPrivate: false,
+            isFavorited: true,
             logoUrl: "",
-            ownerName: "admin",
+            ownerName: "external",
+            projectId: 9,
             projectName: "member",
+            projectScope: "PUBLIC",
           },
         ],
         issueItems: [
@@ -3007,11 +3208,12 @@ async function mockWorkspaceSidebarProjects(page: Page) {
         ],
         memberProjects: [
           {
-            id: 9,
-            isPrivate: false,
+            isFavorited: true,
             logoUrl: "",
-            ownerName: "admin",
+            ownerName: "external",
+            projectId: 9,
             projectName: "member",
+            projectScope: "PUBLIC",
           },
         ],
         profile: {
@@ -3028,37 +3230,200 @@ async function mockWorkspaceSidebarProjects(page: Page) {
         pullRequestItems: [],
         ownProjects: [
           {
-            favored: true,
-            id: 7,
-            isPrivate: false,
+            isFavorited: true,
             logoUrl: projectLogoUrl,
             overview: "Sample project",
             ownerName: "admin",
+            projectId: 7,
             projectName: "sample",
+            projectScope: "PUBLIC",
           },
         ],
         recentProjects: [
           {
-            id: 7,
-            isPrivate: false,
+            isFavorited: true,
             logoUrl: projectLogoUrl,
             ownerName: "admin",
+            projectId: 7,
             projectName: "sample",
+            projectScope: "PUBLIC",
           },
         ],
         watchedProjects: [
           {
-            id: 8,
-            isPrivate: true,
+            isFavorited: false,
             logoUrl: "",
             ownerName: "weblabs",
+            projectId: 8,
             projectName: "playground",
+            projectScope: "PRIVATE",
           },
         ],
       }),
     });
   });
   return state;
+}
+
+async function mockWorkspaceSidebarFavoriteInteractions(page: Page) {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  let releaseProjectFavorite = () => {};
+  const projectFavoriteGate = new Promise<void>((resolve) => {
+    releaseProjectFavorite = resolve;
+  });
+  const projectRequests: Array<{ csrfToken: string | undefined; path: string }> = [];
+  const organizationRequests: Array<{ csrfToken: string | undefined; path: string }> = [];
+  const project = (
+    projectId: number,
+    ownerName: string,
+    projectName: string,
+    options: { isFavorited?: boolean; overview?: string; projectScope?: string } = {},
+  ) => ({
+    isFavorited: options.isFavorited ?? false,
+    logoUrl: "",
+    overview: options.overview ?? "",
+    ownerName,
+    projectId,
+    projectName,
+    projectScope: options.projectScope ?? "PUBLIC",
+  });
+
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-sidebar-favorites" },
+      json: { isAnonymous: false },
+    });
+  });
+  await page.route("**/api/v1/owners/*/projects/*/favorite", async (route) => {
+    const url = new URL(route.request().url());
+    projectRequests.push({
+      csrfToken: route.request().headers()["x-csrf-token"],
+      path: url.pathname,
+    });
+    if (url.pathname.endsWith("/owners/admin/projects/sample/favorite")) {
+      await route.fulfill({
+        contentType: "application/json",
+        json: {
+          error: { code: "forbidden", message: "project denied", status: 403 },
+        },
+        status: 403,
+      });
+      return;
+    }
+    await projectFavoriteGate;
+    await route.fulfill({
+      contentType: "application/json",
+      json: { favorited: false, ownerName: "external", projectName: "shared" },
+    });
+  });
+  await page.route("**/api/v1/organizations/*/favorite", async (route) => {
+    const url = new URL(route.request().url());
+    organizationRequests.push({
+      csrfToken: route.request().headers()["x-csrf-token"],
+      path: url.pathname,
+    });
+    if (url.pathname.endsWith("/organizations/platform/favorite")) {
+      await route.fulfill({
+        contentType: "application/json",
+        json: {
+          error: { code: "forbidden", message: "organization denied", status: 403 },
+        },
+        status: 403,
+      });
+      return;
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      json: { favorited: false, organizationName: "weblabs" },
+    });
+  });
+  await page.route("**/api/v1/workspace", async (route) => {
+    const ownProjects = [
+      project(7, "admin", "sample", {
+        isFavorited: true,
+        overview: "Sample project",
+      }),
+      project(12, "admin", "alpha"),
+    ];
+    const organizationProject = project(8, "weblabs", "internal-wip", {
+      overview: "Internal work",
+      projectScope: "PRIVATE",
+    });
+    const favoriteOrganizationProject = project(13, "weblabs", "docs", {
+      isFavorited: true,
+    });
+    const directFavorite = project(9, "external", "shared", {
+      isFavorited: true,
+      projectScope: "PRIVATE",
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        emails: [],
+        favoriteOrganizations: [
+          {
+            isFavorited: true,
+            organizationId: 11,
+            organizationName: "weblabs",
+            projectCount: null,
+            projects: [organizationProject, favoriteOrganizationProject],
+          },
+        ],
+        favoriteProjects: [
+          ownProjects[0],
+          organizationProject,
+          directFavorite,
+          { ...directFavorite },
+        ],
+        issueItems: [
+          {
+            issueNumber: 42,
+            ownerName: "admin",
+            projectName: "sample",
+            title: "Crash on login",
+          },
+          {
+            issueNumber: 7,
+            ownerName: "weblabs",
+            projectName: "internal-wip",
+            title: "Review onboarding copy",
+          },
+        ],
+        memberProjects: [directFavorite],
+        organizations: [
+          {
+            isFavorited: false,
+            organizationId: 15,
+            organizationName: "platform",
+            projectCount: 1,
+            projects: [project(14, "platform", "runtime")],
+          },
+        ],
+        ownProjects,
+        profile: {
+          avatarUrl: `${basePath}/legacy-assets/images/default-avatar-34.png`,
+          connectedSocialProviders: [],
+          displayName: "Site Admin",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: true,
+          loginId: "admin",
+          primaryEmailAddress: "admin@example.com",
+          sinceLabel: "",
+        },
+        pullRequestItems: [],
+        recentProjects: [ownProjects[0]],
+        watchedProjects: [organizationProject],
+      },
+    });
+  });
+
+  return {
+    organizationRequests,
+    projectRequests,
+    releaseProjectFavorite,
+  };
 }
 
 async function mockSiteUsers(page: Page) {
