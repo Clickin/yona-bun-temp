@@ -23,9 +23,9 @@ const EXPECTED_PROJECT_FORK_FORM = `
     </ul>
   </div>
 </header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
+<div class="project-header-outer" style="background-image:url('__BASE_PATH__/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="__BASE_PATH__/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"></ul></div></div></div></div>
 <div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="admin"><fieldset><legend><h4 style="padding-top:10px">admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="/assets/images/fork-pull/fork.jpg"><br></div><div class="pull-left help-messages"><p class="lead">Fork this project's repository.</p><p>"Forking" is a great way to contribute to someone else's project even without write access to it.</p><p>Once you fork a project, you can contribute your code by sending pull requests.</p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/fork" method="post" class="form-horizontal nm"><input type="hidden" name="owner" value="admin"><fieldset><legend><h4 style="padding-top:10px">admin / sample Fork</h4></legend><div id="helpMessage" class="well"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="__BASE_PATH__/assets/images/fork-pull/fork.jpg"><br></div><div class="pull-left help-messages"><p class="lead">Fork this project's repository.</p><p>"Forking" is a great way to contribute to someone else's project even without write access to it.</p><p>Once you fork a project, you can contribute your code by sending pull requests.</p></div></div></div><div class="control-group"><label class="control-label" for="inputOwner">Owner Name</label><div class="controls"><select id="project-owner" name="owner"><option value="admin">admin</option><option value="devs">devs</option></select></div></div><div class="control-group"><label class="control-label" for="inputName">Project name</label><div class="controls"><input type="text" id="inputName" name="name" value="sample"><span class="help-inline">Enter name in alphabetnumerical or symbol characters(_-.)</span></div></div><div class="control-group"><label class="control-label">Share Options</label><div class="controls"><input name="projectScope" type="radio" id="public" value="PUBLIC" class="radio-btn" checked=""><label for="public" class="bg-radiobtn label-public">PUBLIC</label><input name="projectScope" type="radio" id="private" value="PRIVATE" class="radio-btn"><label for="private" class="bg-radiobtn label-private">PRIVATE</label></div></div><div class="control-group"><div class="controls"><button type="submit" class="ybtn ybtn-info">Fork</button><a href="__BASE_PATH__/admin/sample/pullRequests" class="ybtn">Cancel</a></div></div></fieldset></form></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -114,6 +114,33 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   expect(metrics.searchBox.top).toBe(metrics.scope.top);
   expect(metrics.searchBox.bottom).toBe(metrics.scope.bottom);
 });
+
+for (const viewport of [
+  { name: "desktop", width: 1280, height: 720 },
+  { name: "mobile", width: 390, height: 844 },
+]) {
+  test(`project fork fallback assets preserve the context path on ${viewport.name}`, async ({
+    page,
+  }) => {
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockProjectAdmin(page);
+    await page.goto(`${basePath}/admin/sample/newFork`);
+
+    await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+      "src",
+      `${basePath}/assets/images/project_default_logo.png`,
+    );
+    await expect(page.locator("#helpMessage img")).toHaveAttribute(
+      "src",
+      `${basePath}/assets/images/fork-pull/fork.jpg`,
+    );
+    await expect(page.locator(".project-header-outer")).toHaveAttribute(
+      "style",
+      new RegExp(`${basePath}/assets/images/bg-default-project\\.png`),
+    );
+  });
+}
 
 test("project fork form exposes group and all-project search scopes without leaving newFork", async ({
   page,
@@ -813,7 +840,7 @@ function nonGitProjectForkOptions() {
 
 function sourceProject() {
   return {
-    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    backgroundImageUrl: "",
     enrolledUsers: [],
     enrollmentRequestCount: 0,
     id: 7,
@@ -822,7 +849,7 @@ function sourceProject() {
     isForkedFromOrigin: false,
     isPrivate: false,
     isProtected: false,
-    logoUrl: "/assets/images/project_default_logo.png",
+    logoUrl: "",
     menuSetting: {
       board: true,
       code: true,
