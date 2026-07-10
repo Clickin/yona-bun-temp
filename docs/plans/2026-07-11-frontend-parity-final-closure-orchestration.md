@@ -70,7 +70,10 @@ There are four logical slots:
 Use only one writer in the shared worktree at a time. The mandatory turn hook
 uses `git add -A`; multiple concurrent writers would mix independent screens
 into one commit and violate the one-screen Scala HTML guard. Parallelize
-read-only mapping and verification, not shared-worktree writes.
+read-only mapping of legacy evidence or a different future target, not
+shared-worktree writes. The verifier for the current target starts only after
+the writer has stopped and the main agent has captured the candidate diff; it
+must never inspect a route while that route is still changing.
 
 The main agent must:
 
@@ -138,8 +141,30 @@ Assign three read-only workers in parallel:
 - A3: inspect the latest legacy/local desktop and mobile artifacts and produce
   a route/state rerun queue; do not treat `diffFailures: 0` as pixel parity
 
-The main agent consolidates these into a short ordered queue. No evidence-only
-commit is created.
+The main agent consolidates these into a short ordered queue. Do not create an
+E2E/CSS/UI-parity evidence-only commit. The closure-matrix planning document
+below may be committed in a main-supervised documentation turn, but it does not
+count as a screen rebuild.
+
+Before dispatching a writer, the main agent must also materialize a finite
+closure matrix at `docs/provenance/frontend-parity-closure-matrix.md`. Its
+initial route set is the refreshed legacy HTML audit plus every active legacy
+route discovered from links/controllers. Each route lists only applicable
+entries in four explicit layers:
+
+1. route-state: applicable role, empty/populated/loading/error/permission,
+   validation, modal, and mutation success/failure states
+2. viewport: desktop and mobile where the legacy screen is responsive
+3. context path: `/`, `/yona`, and `/team/yoram`
+4. language: all configured legacy languages for raw-key/overflow/navigation;
+   en-US and ko-KR full visual comparison plus ja-JP, ru-RU, and uz-UZ fragile
+   navbar/form checks
+
+This matrix is the only finite meaning of “complete matrix” below. It is not a
+literal Cartesian product: inapplicable combinations must have a legacy-backed
+reason, and no applicable entry may be silently sampled away. Create or refresh
+the matrix in a main-supervised documentation turn, then use its rows as the
+screen queue. Do not count that documentation turn as a screen rebuild.
 
 ### Stage B: Close Cross-Cutting Functional Gaps
 
@@ -158,8 +183,17 @@ prove the same behavior. Do not create a new routing abstraction speculatively.
 
 ### Stage C: Restore a Green Typed Router Boundary
 
-Use the A1 clustering result. Fix one route owner at a time with its focused E2E
-and audit row. Prioritize errors that indicate real behavior risk:
+Use the A1 clustering result. Classify every cluster as either
+`behavior-linked` or `compile-only` before assigning it. Fix one route owner at
+a time with its focused E2E and audit row.
+
+For a behavior-linked error, the focused browser mismatch is RED. For a
+compile-only error with no DOM/UX difference, the TypeScript diagnostic itself
+is RED and the existing focused E2E must remain green as regression evidence.
+The provenance row must explicitly say that rendered behavior is unchanged.
+Do not invent a user-visible failure merely to satisfy the RED workflow.
+
+Prioritize errors that indicate real behavior risk:
 
 - wrong React event types
 - missing or invalid TanStack search parameters
@@ -175,6 +209,11 @@ reports zero errors.
 ### Stage D: Rebuild/Re-verify High-Risk Screens
 
 Use one writer at a time. Read-only mapper/verifier roles may run in parallel.
+
+The numbered items below are queue families, not worker assignments. Before
+dispatch, the main agent must split a family into exactly one route, one role,
+one data/interaction state, and one focused E2E target. Routes sharing a TSX or
+test file are serialized. No worker receives an entire numbered family.
 
 1. Project issue list
    - empty/loading/error and permission states
@@ -205,12 +244,12 @@ After all screen commits:
 1. run the full frontend typecheck, unit tests, production build, and every E2E
    file
 2. run route, anchor, Scala HTML, design, RC UX, and legacy parity contracts
-3. run the current HEAD against legacy `:9000` and Yoram at `/`, `/yona`, and
-   `/team/yoram`
-4. compare desktop and mobile for every active page family and every fragile
-   state
-5. run all supported languages for raw-key, overflow, and navigation smoke;
-   perform full side-by-side visual review for en-US and ko-KR and fragile
+3. execute every applicable context-path entry in
+   `docs/provenance/frontend-parity-closure-matrix.md` against legacy `:9000`
+   and Yoram at `/`, `/yona`, and `/team/yoram`
+4. execute every applicable desktop/mobile route-state entry in that matrix
+5. execute its language layer: all configured languages for raw-key, overflow,
+   and navigation; full side-by-side visual review for en-US and ko-KR; fragile
    navbar/form checks for ja-JP, ru-RU, and uz-UZ
 6. classify every legacy non-2xx/sample-data difference; leave no unclassified
    status delta
@@ -228,6 +267,7 @@ state.
 Objective:
 - Route/state: [EXACT URL, role, data state, viewport, language]
 - User-visible defect: [ONE concrete mismatch]
+- Defect class: [behavior-linked OR compile-only]
 
 Legacy source of truth:
 - Root Scala HTML: [PATH]
@@ -260,7 +300,9 @@ Implementation rules:
 Required steps:
 1. Read every listed legacy source before editing.
 2. State the expected legacy DOM/order/behavior in five or fewer bullets.
-3. Add or update a focused E2E and demonstrate RED for the stated mismatch.
+3. Add or update a focused E2E. For behavior-linked work, demonstrate a
+   user-visible RED. For explicitly assigned compile-only work, capture the
+   TypeScript diagnostic as RED and keep the focused E2E green before and after.
 4. Implement only the stated screen state.
 5. Run focused E2E, oxfmt, oxlint, and changed-file TypeScript diagnostics.
 6. Capture desktop/mobile legacy and local metrics plus screenshots when the
@@ -273,7 +315,9 @@ Stop and report without editing if:
 - the fix requires a sibling route/shared abstraction not granted above,
 - current user changes overlap an allowed file,
 - the legacy behavior is ambiguous,
-- the focused E2E cannot establish a user-visible RED state.
+- the focused E2E cannot establish a user-visible RED state, unless the main
+  agent explicitly classified the assignment as compile-only and supplied the
+  exact TypeScript diagnostic.
 
 Do not stage or commit.
 ```
@@ -312,12 +356,17 @@ For every accepted screen:
 
 Never use Scala HTML exception markers in unattended work.
 
-## 9. Definition Of 100% Frontend Parity
+## 9. Definitions Of Completion Claims
 
-Do not use “100%” until all conditions hold on the same current HEAD:
+### 100% First-Priority App-Runtime Frontend Parity
 
-- zero active user-visible `gap`, `deviation`, or unclassified `deferred` rows
-  inside the claimed scope
+This narrower claim may exclude only the second-priority surfaces explicitly
+listed in `AGENTS.md` and `SPEC.md`. Every exclusion must be named in the
+release statement; it cannot be hidden behind the word “100%”. Do not use this
+claim until all conditions hold on the same current HEAD:
+
+- zero active user-visible `gap`, `deviation`, or `deferred` rows inside the
+  first-priority claimed scope
 - all generated legacy routes are mapped and every active route/state has
   rendered E2E evidence
 - all expected legacy visible signals are covered or explicitly proven dormant
@@ -325,13 +374,19 @@ Do not use “100%” until all conditions hold on the same current HEAD:
   parity contracts are green
 - integrated legacy/local sweep has zero unexplained local failures, missing
   imported audit pages, and unclassified status deltas
-- desktop/mobile, role, language, and context-path matrices are complete
+- every applicable row in
+  `docs/provenance/frontend-parity-closure-matrix.md` is green
 - every active screen family has real legacy/local visual confirmation, not
   only selector or bounding-box evidence
 - all known context-path and authentication redirect gaps are closed
-- second-priority legacy product functions are either implemented or excluded
-  explicitly from the claim; “100% legacy product” cannot silently exclude
-  `/migration` or another user-visible legacy feature
+
+### 100% Legacy-Product Frontend Parity
+
+This literal product-wide claim requires every condition above plus zero
+user-visible `gap`, `deviation`, or `deferred` item in second-priority scope.
+`/migration` and every other user-visible legacy function must be implemented
+and verified. A documented exclusion is not sufficient for this stronger
+claim.
 
 Until then, report the narrower truth: “implemented broadly, verified per
 closed screen, global parity closure still in progress.”
@@ -356,6 +411,6 @@ did not expose.
 Start with Stage A read-only audits. Use only one shared-worktree writer at a
 time. Give every writer the exact mechanical prompt contract from Section 6.
 You own review, visual comparison, provenance integration, all verification,
-and every commit. Continue until the Definition of 100% Frontend Parity is
-satisfied or a concrete user decision is required.
+and every commit. Continue until the requested completion claim in Section 9
+is satisfied or a concrete user decision is required.
 ```
