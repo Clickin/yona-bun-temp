@@ -11,7 +11,7 @@ import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
-import type { RuntimeConfig } from "../../../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/$ownerName/$projectName/statistics")({
@@ -80,9 +80,12 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectId = stringField(project.id, "");
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+  const logoUrl =
+    stringField(project.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
   const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
+    stringField(project.backgroundImageUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
   const isForked = booleanField(project.isForkedFromOrigin);
   const originalOwnerName = stringField(project.originalOwnerName, "");
   const originalProjectName = stringField(project.originalProjectName, "");

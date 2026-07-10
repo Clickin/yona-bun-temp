@@ -55,6 +55,49 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
   });
 });
 
+test("project statistics empty header assets stay inside configured application context", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = configuredBasePath === "/" ? "" : configuredBasePath;
+  await mockProjectAdmin(page, {
+    project: { logoUrl: "", backgroundImageUrl: "" },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/assets/images/project_default_logo.png`,
+  );
+  expect(await page.locator(".project-header-outer").getAttribute("style")).toContain(
+    `${mountPrefix}/assets/images/bg-default-project.png`,
+  );
+  expect(await page.locator(".project-header-outer").getAttribute("style")).not.toContain(
+    "url('/assets/",
+  );
+});
+
+test("project statistics empty header assets stay contextual on mobile", async ({ page }) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = configuredBasePath === "/" ? "" : configuredBasePath;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectAdmin(page, {
+    project: { logoUrl: "", backgroundImageUrl: "" },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/assets/images/project_default_logo.png`,
+  );
+  expect(await page.locator(".project-header-outer").getAttribute("style")).toContain(
+    `${mountPrefix}/assets/images/bg-default-project.png`,
+  );
+});
+
 test("project statistics header links keep legacy hrefs without TanStack active markers", async ({
   page,
 }) => {
