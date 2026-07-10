@@ -198,6 +198,51 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
   expect(metrics!.input.right).toBeLessThanOrEqual(metrics!.searchBox.right);
 });
 
+test("project labels renders default project header assets under the configured context", async ({
+  page,
+}, testInfo) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = configuredBasePath === "/" ? "" : configuredBasePath;
+  await mockProjectLabels(page, [], {
+    project: { backgroundImageUrl: "", backgroundUrl: "", logoUrl: "" },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample/issue/labelsform`);
+
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    new RegExp(`${mountPrefix}/assets/images/project_default_logo\\.png$`),
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator(".project-header-outer")
+        .evaluate((element) => getComputedStyle(element).backgroundImage),
+    )
+    .toContain(`${mountPrefix}/assets/images/bg-default-project.png`);
+  await page.screenshot({
+    path: testInfo.outputPath("labels-header-default-desktop.png"),
+    fullPage: true,
+  });
+
+  await page.setViewportSize({ height: 844, width: 390 });
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    new RegExp(`${mountPrefix}/assets/images/project_default_logo\\.png$`),
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator(".project-header-outer")
+        .evaluate((element) => getComputedStyle(element).backgroundImage),
+    )
+    .toContain(`${mountPrefix}/assets/images/bg-default-project.png`);
+  await page.screenshot({
+    path: testInfo.outputPath("labels-header-default-mobile.png"),
+    fullPage: true,
+  });
+});
+
 test("project labels renders legacy projectLayout browser title through React head", async ({
   page,
 }) => {
