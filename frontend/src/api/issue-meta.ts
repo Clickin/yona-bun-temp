@@ -15,6 +15,37 @@ type ProjectScopeInput = {
   projectName: string;
 };
 
+export type IssueFormProjectOption = {
+  logoUrl: string;
+  ownerName: string;
+  projectId: number;
+  projectName: string;
+};
+
+export type ProjectIssueFormOptionsResponse = {
+  canCreateIssueAssignee: boolean;
+  canCreateIssueMilestone: boolean;
+  canManageIssueLabels: boolean;
+  currentProject: IssueFormProjectOption;
+  issueTemplateMarkdown: string;
+  movableIssueProjects: IssueFormProjectOption[];
+};
+
+export type ProjectTitleHeadItem = {
+  category: string;
+  categoryId?: number;
+  frequency: number;
+  id?: number;
+  isExclusive?: boolean;
+  labelColor?: string;
+  name: string;
+  searchText: string;
+};
+
+export type ProjectTitleHeadsResponse = {
+  result: ProjectTitleHeadItem[];
+};
+
 type IssueCommentScopeInput = IssueScopeInput & {
   commentId: bigint | number;
 };
@@ -50,6 +81,11 @@ export type ProjectIssueSearchUsersInput = ProjectScopeInput & {
 };
 
 export type ProjectIssueReferencesInput = ProjectScopeInput & {
+  query: string;
+};
+
+export type ProjectMentionUsersInput = ProjectScopeInput & {
+  context: IssueMentionUserSearchContext | string;
   query: string;
 };
 
@@ -120,6 +156,32 @@ export type MentionReferenceMetadata = {
   projectName: string;
 };
 
+export type MarkdownIssueReference = IssueReferenceMetadata & {
+  token: string;
+};
+
+export type MarkdownMentionReference = MentionReferenceMetadata & {
+  token: string;
+};
+
+export type MarkdownCommitReference = {
+  commitId: string;
+  ownerName: string;
+  projectName: string;
+  shortId: string;
+  token: string;
+};
+
+export type ProjectMarkdownReferencesInput = ProjectScopeInput & {
+  bodyMarkdown: string;
+};
+
+export type ProjectMarkdownReferencesResponse = {
+  commitReferences: MarkdownCommitReference[];
+  issueReferences: MarkdownIssueReference[];
+  mentionReferences: MarkdownMentionReference[];
+};
+
 export type ProjectIssueReferencesResponse = {
   items: ProjectIssueReferenceItem[];
   total: number;
@@ -139,6 +201,12 @@ function projectPath(input: ProjectScopeInput, suffix = ""): string {
   return `/owners/${encodeURIComponent(input.ownerName)}/projects/${encodeURIComponent(
     input.projectName,
   )}${suffix}`;
+}
+
+function projectIssuesPath(input: ProjectScopeInput, suffix = ""): string {
+  return `/projects/${encodeURIComponent(input.ownerName)}/${encodeURIComponent(
+    input.projectName,
+  )}/issues${suffix}`;
 }
 
 function issuePath(input: IssueScopeInput, suffix = ""): string {
@@ -258,6 +326,77 @@ function normalizeIssueAssignableUsersResponse(
   };
 }
 
+function normalizeIssueFormProjectOption(
+  project: Partial<IssueFormProjectOption> | undefined,
+): IssueFormProjectOption {
+  return {
+    logoUrl: project?.logoUrl ?? "",
+    ownerName: project?.ownerName ?? "",
+    projectId: Number(project?.projectId ?? 0),
+    projectName: project?.projectName ?? "",
+  };
+}
+
+function normalizeProjectIssueFormOptionsResponse(
+  response: Partial<ProjectIssueFormOptionsResponse>,
+): ProjectIssueFormOptionsResponse {
+  return {
+    canCreateIssueAssignee: response.canCreateIssueAssignee ?? false,
+    canCreateIssueMilestone: response.canCreateIssueMilestone ?? false,
+    canManageIssueLabels: response.canManageIssueLabels ?? false,
+    currentProject: normalizeIssueFormProjectOption(response.currentProject),
+    issueTemplateMarkdown: response.issueTemplateMarkdown ?? "",
+    movableIssueProjects: (response.movableIssueProjects ?? []).map((project) =>
+      normalizeIssueFormProjectOption(project),
+    ),
+  };
+}
+
+function normalizeProjectTitleHeadsResponse(
+  response: Partial<ProjectTitleHeadsResponse>,
+): ProjectTitleHeadsResponse {
+  return {
+    result: (response.result ?? []).map((item) => ({
+      category: item.category ?? "",
+      categoryId:
+        item.categoryId === undefined || item.categoryId === null
+          ? undefined
+          : Number(item.categoryId),
+      frequency: Number(item.frequency ?? 0),
+      id: item.id === undefined || item.id === null ? undefined : Number(item.id),
+      isExclusive: item.isExclusive ?? false,
+      labelColor: item.labelColor ?? "",
+      name: item.name ?? "",
+      searchText: item.searchText ?? item.name ?? "",
+    })),
+  };
+}
+
+export function readProjectIssueFormOptionsRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectIssueFormOptionsResponse> {
+  return restFetch<Partial<ProjectIssueFormOptionsResponse>>(
+    runtimeConfig,
+    projectIssuesPath(input, "/form-options"),
+    { fetchImpl },
+  ).then(normalizeProjectIssueFormOptionsResponse);
+}
+
+export function searchProjectTitleHeadsRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { query: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectTitleHeadsResponse> {
+  const query = new URLSearchParams({ query: input.query });
+  return restFetch<Partial<ProjectTitleHeadsResponse>>(
+    runtimeConfig,
+    `${projectPath(input, "/title-heads")}?${query.toString()}`,
+    { fetchImpl },
+  ).then(normalizeProjectTitleHeadsResponse);
+}
+
 function normalizeIssueMentionUsersResponse(
   response: Partial<IssueMentionUsersResponse>,
 ): IssueMentionUsersResponse {
@@ -301,6 +440,36 @@ function normalizeProjectIssueReferencesResponse(
     items,
     total: response.total ?? items.length,
     truncated: response.truncated ?? false,
+  };
+}
+
+function normalizeProjectMarkdownReferencesResponse(
+  response: Partial<ProjectMarkdownReferencesResponse>,
+): ProjectMarkdownReferencesResponse {
+  return {
+    commitReferences: (response.commitReferences ?? []).map((reference) => ({
+      commitId: reference.commitId ?? "",
+      ownerName: reference.ownerName ?? "",
+      projectName: reference.projectName ?? "",
+      shortId: reference.shortId ?? "",
+      token: reference.token ?? "",
+    })),
+    issueReferences: (response.issueReferences ?? []).map((reference) => ({
+      issueNumber: Number(reference.issueNumber ?? 0),
+      ownerName: reference.ownerName ?? "",
+      projectName: reference.projectName ?? "",
+      state: reference.state ?? "",
+      title: reference.title ?? "",
+      token: reference.token ?? "",
+    })),
+    mentionReferences: (response.mentionReferences ?? []).map((reference) => ({
+      kind: reference.kind ?? "",
+      label: reference.label ?? "",
+      loginId: reference.loginId ?? "",
+      ownerName: reference.ownerName ?? "",
+      projectName: reference.projectName ?? "",
+      token: reference.token ?? "",
+    })),
   };
 }
 
@@ -510,6 +679,21 @@ export function searchProjectAssignableUsersRest(
   ).then(normalizeIssueAssignableUsersResponse);
 }
 
+export function searchProjectMentionUsersRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectMentionUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueMentionUsersResponse> {
+  const query = new URLSearchParams();
+  query.set("query", input.query);
+  query.set("context", input.context);
+  return restFetch<Partial<IssueMentionUsersResponse>>(
+    runtimeConfig,
+    `${projectPath(input, "/mention-users")}?${query.toString()}`,
+    { fetchImpl },
+  ).then(normalizeIssueMentionUsersResponse);
+}
+
 export function listProjectIssueSearchUsersRest(
   runtimeConfig: RuntimeConfig,
   input: ProjectIssueSearchUsersInput,
@@ -540,6 +724,22 @@ export function searchProjectIssueReferencesRest(
       fetchImpl,
     },
   ).then(normalizeProjectIssueReferencesResponse);
+}
+
+export function readProjectMarkdownReferencesRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectMarkdownReferencesInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMarkdownReferencesResponse> {
+  return restFetch<Partial<ProjectMarkdownReferencesResponse>>(
+    runtimeConfig,
+    projectPath(input, "/markdown-references"),
+    {
+      body: { bodyMarkdown: input.bodyMarkdown },
+      fetchImpl,
+      method: "POST",
+    },
+  ).then(normalizeProjectMarkdownReferencesResponse);
 }
 
 export type ProjectIssueReferencesQueryOptions = {

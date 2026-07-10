@@ -827,54 +827,33 @@ fn direct_mention_user_item(
     item
 }
 
-fn direct_mention_project_item(project: &persistence::ProjectRecord) -> HashMap<String, String> {
+fn direct_mention_project_item(
+    project: &persistence::ProjectRecord,
+    image: impl Into<String>,
+) -> HashMap<String, String> {
     let login_id = format!("{}/{}", project.owner_name, project.project_name);
     let mut item = direct_mention_user_item(
         login_id.clone(),
         "@project all:",
         format!("{login_id}/project/member/all"),
-        String::new(),
+        image,
     );
     item.insert("username".to_string(), project.project_name.clone());
     item
 }
 
-fn direct_mention_organization_item(organization_name: &str) -> HashMap<String, String> {
+fn direct_mention_organization_item(
+    organization_name: &str,
+    image: impl Into<String>,
+) -> HashMap<String, String> {
     let mut item = direct_mention_user_item(
         organization_name,
         "@group all: ",
         format!("{organization_name}/group/org/member/all"),
-        String::new(),
+        image,
     );
     item.insert("username".to_string(), organization_name.to_string());
     item
-}
-
-fn direct_mention_text_matches(item: &HashMap<String, String>, query: &str) -> bool {
-    let query = query.trim();
-    if query.is_empty() {
-        return true;
-    }
-    let normalized_query = query.to_ascii_lowercase();
-    item.values()
-        .any(|value| value.to_ascii_lowercase().contains(&normalized_query))
-}
-
-fn append_direct_project_mention_targets(
-    project: &persistence::ProjectRecord,
-    query: &str,
-    items: &mut Vec<HashMap<String, String>>,
-) {
-    let project_item = direct_mention_project_item(project);
-    if direct_mention_text_matches(&project_item, query) {
-        items.push(project_item);
-    }
-    if let Some(organization_name) = project.organization_name.as_deref() {
-        let organization_item = direct_mention_organization_item(organization_name);
-        if direct_mention_text_matches(&organization_item, query) {
-            items.push(organization_item);
-        }
-    }
 }
 
 async fn direct_project_mention_list(
@@ -908,7 +887,7 @@ async fn direct_project_mention_list(
                 Err(error) => return direct_status_from_connect_error(error).into_response(),
             };
         match repository
-            .list_project_issue_references(search_project.id, needle, 10)
+            .list_project_issue_references(search_project.id, needle, 20)
             .await
         {
             Ok(record) => record
@@ -926,14 +905,13 @@ async fn direct_project_mention_list(
             Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     } else if mention_type.eq_ignore_ascii_case("user") {
-        let mut items = Vec::new();
         let issue_number = query.number.unwrap_or_default();
         let is_issue_post = query
             .resource_type
             .as_deref()
             .is_some_and(|resource_type| resource_type.eq_ignore_ascii_case("ISSUE_POST"));
-        if issue_number > 0 && is_issue_post {
-            match repository
+        let record = if issue_number > 0 && is_issue_post {
+            repository
                 .list_issue_mention_users(
                     &owner_name,
                     &project_name,
@@ -941,55 +919,108 @@ async fn direct_project_mention_list(
                     actor_id,
                     needle,
                     "issue-comment",
-                    20,
+                    10,
                 )
                 .await
-            {
-                Ok(Some(record)) => {
-                    items.extend(record.items.into_iter().map(|user| {
-                        if user.item_type == "project" {
-                            direct_mention_project_item(&authorization.project)
-                        } else if user.item_type == "organization" {
-                            direct_mention_organization_item(&user.login_id)
-                        } else {
-                            direct_mention_user_item(
-                                user.login_id,
-                                user.display_name,
-                                user.search_text,
-                                user.avatar_url,
-                            )
-                        }
-                    }));
-                }
-                Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-            }
         } else {
-            match repository
-                .list_project_assignable_users(&owner_name, &project_name, actor_id, needle, "", 20)
+            repository
+                .list_project_mention_users(&owner_name, &project_name, actor_id, needle, 10)
                 .await
-            {
-                Ok(Some(record)) => {
-                    items.extend(record.items.into_iter().map(|user| {
-                        direct_mention_user_item(
-                            user.login_id.clone(),
-                            user.display_name.clone(),
-                            format!(
-                                "{}{}{}",
-                                user.display_name, user.pure_name_only, user.login_id
-                            ),
-                            user.avatar_url,
-                        )
-                    }));
-                    append_direct_project_mention_targets(
+        };
+        let record = match record {
+            Ok(Some(record)) => record,
+            Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
+        let user_login_ids = record
+            .items
+            .iter()
+            .filter(|user| user.item_type == "user")
+            .map(|user| user.login_id.clone())
+            .collect::<Vec<_>>();
+        let avatar_inputs = match repository
+            .list_mention_user_avatar_inputs(&user_login_ids)
+            .await
+        {
+            Ok(avatar_inputs) => avatar_inputs,
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
+        let mut items = Vec::with_capacity(record.items.len());
+        for user in record.items {
+            let item = match user.item_type.as_str() {
+                "project" => {
+                    let logo_url = match project_logo_url(
+                        repository,
+                        &service.base_path,
+                        authorization.project.id,
+                    )
+                    .await
+                    {
+                        Ok(logo_url) => logo_url,
+                        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+                    };
+                    direct_mention_project_item(
                         &authorization.project,
-                        needle,
-                        &mut items,
-                    );
+                        if logo_url.is_empty() {
+                            base_path_href(
+                                &service.base_path,
+                                "/legacy-assets/images/project_default_logo.png",
+                            )
+                        } else {
+                            logo_url
+                        },
+                    )
                 }
-                Ok(None) => return StatusCode::NOT_FOUND.into_response(),
-                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-            }
+                "organization" => {
+                    let logo_url = match authorization.project.organization_id {
+                        Some(organization_id) => match organization_logo_url(
+                            repository,
+                            &service.base_path,
+                            organization_id,
+                        )
+                        .await
+                        {
+                            Ok(logo_url) => logo_url,
+                            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+                        },
+                        None => String::new(),
+                    };
+                    direct_mention_organization_item(
+                        &user.login_id,
+                        if logo_url.is_empty() {
+                            base_path_href(
+                                &service.base_path,
+                                "/legacy-assets/images/group_default.png",
+                            )
+                        } else {
+                            logo_url
+                        },
+                    )
+                }
+                _ => {
+                    let avatar_url = avatar_inputs
+                        .get(&user.login_id)
+                        .map(|(email, attachment_id)| {
+                            attachment_id.map_or_else(
+                                || gravatar_url(email),
+                                |attachment_id| {
+                                    base_path_href(
+                                        &service.base_path,
+                                        &format!("/files/{attachment_id}"),
+                                    )
+                                },
+                            )
+                        })
+                        .unwrap_or_else(|| gravatar_url(""));
+                    direct_mention_user_item(
+                        user.login_id,
+                        user.display_name,
+                        user.search_text,
+                        avatar_url,
+                    )
+                }
+            };
+            items.push(item);
         }
         items
     } else {
@@ -2403,6 +2434,27 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/owners/{owner_name}/projects/{project_name}/title-heads",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<ProjectTitleHeadsQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_project_title_heads(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/owners/{owner_name}/projects/{project_name}/settings",
             get({
                 let service = service.clone();
@@ -2886,7 +2938,7 @@ pub(crate) fn routes(
             get(
                 move |headers: HeaderMap,
                       Path((owner, project_name)): Path<(String, String)>,
-                      Query(query): Query<LegacyProjectTitleHeadsQuery>| {
+                      Query(query): Query<ProjectTitleHeadsQuery>| {
                     async move {
                         legacy_project_title_heads(
                             headers,
@@ -3452,15 +3504,121 @@ async fn legacy_external_watchers(
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
-struct LegacyProjectTitleHeadsQuery {
+struct ProjectTitleHeadsQuery {
     query: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectTitleHeadOption {
+    name: String,
+    frequency: i32,
+    category: String,
+    search_text: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectLabelTitleHeadOption {
+    name: String,
+    frequency: i32,
+    category: String,
+    category_id: Option<i64>,
+    id: i64,
+    label_color: String,
+    is_exclusive: bool,
+    search_text: String,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum ProjectTitleHeadResultItem {
+    TitleHead(ProjectTitleHeadOption),
+    Label(ProjectLabelTitleHeadOption),
+}
+
+#[derive(Serialize)]
+struct ProjectTitleHeadsResponse {
+    result: Vec<ProjectTitleHeadResultItem>,
+}
+
+async fn build_project_title_heads_response(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    query: &str,
+) -> Result<ProjectTitleHeadsResponse, RestRouteError> {
+    let title_heads = repository
+        .list_legacy_project_title_heads(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+            query,
+        )
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let labels = repository
+        .list_project_labels(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    let mut result = Vec::with_capacity(title_heads.len() + labels.len());
+    result.extend(title_heads.into_iter().map(|title_head| {
+        let search_text = title_head.name.clone();
+        ProjectTitleHeadResultItem::TitleHead(ProjectTitleHeadOption {
+            name: title_head.name,
+            frequency: title_head.frequency,
+            category: String::new(),
+            search_text,
+        })
+    }));
+    result.extend(labels.into_iter().map(|label| {
+        let search_text = format!("{}/{}", label.name, label.category_name);
+        ProjectTitleHeadResultItem::Label(ProjectLabelTitleHeadOption {
+            name: label.name,
+            frequency: 0,
+            category: label.category_name,
+            category_id: label.category_id,
+            id: label.id,
+            label_color: label.color,
+            is_exclusive: label.category_is_exclusive,
+            search_text,
+        })
+    }));
+    Ok(ProjectTitleHeadsResponse { result })
+}
+
+async fn rest_project_title_heads(
+    headers: HeaderMap,
+    owner: String,
+    project_name: String,
+    query: ProjectTitleHeadsQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<ProjectTitleHeadsResponse>, RestRouteError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project title heads require repository backend",
+        ));
+    };
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization = require_project_read(repository, &owner, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let query = query.query.unwrap_or_default();
+    Ok(Json(
+        build_project_title_heads_response(repository, &authorization, &query).await?,
+    ))
 }
 
 async fn legacy_project_title_heads(
     headers: HeaderMap,
     owner: String,
     project_name: String,
-    query: LegacyProjectTitleHeadsQuery,
+    query: ProjectTitleHeadsQuery,
     service: PilotServiceImpl,
 ) -> Response {
     if !accepts_legacy_json(&headers) {
@@ -3481,47 +3639,10 @@ async fn legacy_project_title_heads(
         };
 
     let query = query.query.unwrap_or_default();
-    let title_heads = match repository
-        .list_legacy_project_title_heads(&owner, &project_name, &query)
-        .await
-    {
-        Ok(title_heads) => title_heads,
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-    let labels = match repository
-        .list_project_labels(
-            &authorization.project.owner_name,
-            &authorization.project.project_name,
-        )
-        .await
-    {
-        Ok(labels) => labels,
-        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
-    };
-
-    let mut result = Vec::new();
-    for title_head in title_heads {
-        result.push(serde_json::json!({
-            "name": title_head.name,
-            "frequency": title_head.frequency,
-            "category": "",
-            "searchText": title_head.name,
-        }));
+    match build_project_title_heads_response(repository, &authorization, &query).await {
+        Ok(response) => Json(response).into_response(),
+        Err(error) => error.into_response(),
     }
-    for label in labels {
-        result.push(serde_json::json!({
-            "name": label.name,
-            "frequency": 0,
-            "category": label.category_name,
-            "categoryId": label.category_id,
-            "id": label.id,
-            "labelColor": label.color,
-            "isExclusive": label.category_is_exclusive,
-            "searchText": format!("{}/{}", label.name, label.category_name),
-        }));
-    }
-
-    Json(serde_json::json!({ "result": result })).into_response()
 }
 
 fn legacy_project_label_json(

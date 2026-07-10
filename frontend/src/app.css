@@ -4357,7 +4357,7 @@ h1 {
 .error-wrap .ico,
 .error-wrap .ico-404 {
   display: inline-block;
-  background-image: url("/yona/legacy-assets/images/sprite.png");
+  background-image: url("/legacy-assets/images/sprite.png");
   background-repeat: no-repeat;
   vertical-align: middle;
 }
@@ -8315,5 +8315,631 @@ div.markdown-preview {
   #searchKeyword,
   #searchInnerForm .ybtn {
     width: 100%;
+  }
+}
+
+/* Legacy issue create geometry with React-owned controls. */
+.issue-form-page-wrap .project-page-wrap {
+  margin-top: 5px !important;
+}
+
+.issue-form-page-wrap .content-wrap {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0;
+}
+
+.issue-form-page-wrap #issue-form {
+  position: relative;
+  width: 100%;
+}
+
+.issue-form-page-wrap .issue-title-row,
+.issue-form-page-wrap .issue-form-columns {
+  width: 100%;
+}
+
+.issue-form-page-wrap .markdown-help .markdown-help-nav {
+  padding: 0;
+  margin: 0;
+}
+
+.issue-form-page-wrap .markdown-help .markdown-help-nav .markdown-help-nav-button {
+  vertical-align: baseline;
+}
+
+.issue-form-page-wrap .issue-title-field {
+  position: relative;
+}
+
+.issue-form-page-wrap .subtask-message {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  min-height: 30px;
+  font-family: inherit;
+  background: #fff;
+  border-radius: 0;
+}
+
+.issue-form-page-wrap .subtask-wrap.show {
+  display: block;
+  clear: both;
+  min-height: 30px;
+  margin-bottom: 10px;
+}
+
+.issue-form-page-wrap .subtask-parent-control[hidden] {
+  display: none;
+}
+
+.issue-form-page-wrap .subtask-wrap select,
+.issue-form-page-wrap .right-menu select,
+.issue-form-page-wrap .issue-combobox > input,
+.issue-form-page-wrap .issue-label-trigger {
+  width: 100%;
+}
+
+.issue-form-page-wrap .issue-editor-cell {
+  position: relative;
+}
+
+.issue-form-page-wrap .issue-markdown-editor {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.issue-form-page-wrap .issue-markdown-editor > .nav-tabs {
+  margin-bottom: 0;
+}
+
+.issue-form-page-wrap .issue-markdown-editor > .nav-tabs > li > button {
+  display: block;
+  box-sizing: border-box;
+  min-height: 29px;
+  padding: 4px 15px;
+  margin-right: 2px;
+  color: #3592b5;
+  font: inherit;
+  font-weight: bold;
+  line-height: 20px;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+}
+
+.issue-form-page-wrap .issue-markdown-editor > .nav-tabs > li.active > button {
+  color: #555;
+  cursor: default;
+  background: #fff;
+  border-color: #ddd #ddd transparent;
+}
+
+.issue-form-page-wrap .task-list-button {
+  margin-top: 2px;
+}
+
+.issue-form-page-wrap .editor-notice-label {
+  padding: 4px 15px;
+}
+
+.issue-form-page-wrap .editor-notice-label .saved {
+  padding: 2px 4px;
+  color: #62962a;
+  border: 1px solid #8bc34a;
+  border-radius: 3px;
+}
+
+.issue-form-page-wrap .issue-editor-tab-content {
+  position: relative;
+  overflow: visible;
+}
+
+.issue-form-page-wrap .textarea-box {
+  padding-right: 0;
+}
+
+.issue-form-page-wrap #editor-body-body {
+  width: 100%;
+  height: 310px;
+  min-height: 310px;
+  overflow-y: hidden;
+}
+
+.issue-form-page-wrap #preview-body .markdown-preview {
+  min-height: 280px;
+}
+
+.issue-form-page-wrap #preview-body video {
+  max-width: 100%;
+}
+
+.issue-form-page-wrap #upload {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 70px;
+  padding: 10px !important;
+}
+
+.issue-form-page-wrap .attached-files.has-files {
+  display: block;
+}
+
+.issue-form-page-wrap #upload .help-pastable {
+  display: block;
+}
+
+.issue-form-page-wrap #upload .fake-file-wrap.nbtn.medium {
+  display: block;
+  padding: 6px 20px;
+  margin-bottom: 0;
+}
+
+.issue-form-page-wrap #upload .fake-file-wrap .file {
+  box-sizing: content-box;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+}
+
+.issue-form-page-wrap #upload > .attach-save-help {
+  display: block;
+}
+
+.issue-form-page-wrap .attached-file {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 32px;
+  padding: 0 6px;
+  cursor: default;
+}
+
+.issue-form-page-wrap .attached-file-main {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  max-width: calc(100% - 36px);
+  min-height: 30px;
+  padding: 0 4px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  border: 0;
+}
+
+.issue-form-page-wrap .attached-file-main:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.issue-form-page-wrap .attached-file .upload-progress {
+  display: inline-block;
+  width: 100px;
+  height: 7px;
+  margin: 0;
+  overflow: hidden;
+  vertical-align: middle;
+  background: #f0f0f0;
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 25%);
+}
+
+.issue-form-page-wrap .attached-file .upload-progress .bar {
+  display: block;
+  height: 100%;
+  background: #f36c22;
+}
+
+.issue-form-page-wrap .attached-file-main > i {
+  display: inline-block;
+  width: auto;
+  margin: 0 3px 0 0;
+}
+
+.issue-form-page-wrap .attached-file-main .name {
+  min-width: 0;
+}
+
+.issue-form-page-wrap .attached-file .btn-insert-copy {
+  margin-left: 8px;
+  color: #666;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.issue-form-page-wrap .attached-file .upload-error {
+  display: inline-block;
+  max-width: 240px;
+  overflow: hidden;
+  color: #b94a48;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.issue-form-page-wrap .attached-file .btn-delete {
+  display: inline-block;
+  min-height: 30px;
+}
+
+.issue-form-page-wrap .issue-form-cancel {
+  margin-left: 0;
+}
+
+.issue-form-page-wrap .right-menu {
+  position: relative;
+  overflow: visible;
+}
+
+.issue-form-page-wrap .issue-combobox,
+.issue-form-page-wrap .title-head-combobox {
+  position: relative;
+}
+
+.issue-form-page-wrap #title {
+  box-sizing: content-box;
+  width: calc(97% - 12px);
+  min-height: 0;
+}
+
+.issue-form-page-wrap .issue-assignee-control,
+.issue-form-page-wrap .issue-assignee-control > input {
+  height: 30px;
+}
+
+.issue-form-page-wrap .issue-assignee-control > input {
+  display: block;
+}
+
+.issue-form-page-wrap .issue-combobox-options {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  left: 0;
+  z-index: 1060;
+  max-height: 240px;
+  padding: 4px 0;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 18%);
+}
+
+.issue-form-page-wrap .issue-combobox-options > button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 30px;
+  padding: 5px 8px;
+  color: #333;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+}
+
+.issue-form-page-wrap .issue-combobox-options > button:hover,
+.issue-form-page-wrap .issue-combobox-options > button:focus,
+.issue-form-page-wrap .issue-combobox-options > button.active {
+  color: #fff;
+  background: #51aacc;
+  outline: 0;
+}
+
+.issue-form-page-wrap .issue-combobox-options > button small {
+  margin-left: auto;
+  color: #888;
+  font-size: 11px;
+}
+
+.issue-form-page-wrap .issue-combobox-options > button:hover small,
+.issue-form-page-wrap .issue-combobox-options > button:focus small,
+.issue-form-page-wrap .issue-combobox-options > button.active small {
+  color: #fff;
+}
+
+.issue-form-page-wrap .title-head-options {
+  top: calc(100% - 13px);
+}
+
+.issue-form-page-wrap .title-head-options > button small {
+  margin-left: 0;
+}
+
+.issue-form-page-wrap .editor-mention-options {
+  right: auto;
+  width: min(420px, calc(100% - 16px));
+}
+
+.issue-form-page-wrap .editor-mention-mirror {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  left: 1px;
+  box-sizing: border-box;
+  min-height: 310px;
+  padding: 4px 6px;
+  overflow-wrap: break-word;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
+  font-size: 1em;
+  line-height: normal;
+  white-space: pre-wrap;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+@media (max-width: 720px) {
+  .issue-form-page-wrap .editor-mention-mirror {
+    font-size: 16px;
+  }
+}
+
+.issue-form-page-wrap .editor-mention-marker {
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+}
+
+.issue-form-page-wrap .issue-assignee-selection {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 30px;
+  padding: 0 26px 0 8px;
+  margin: 0;
+  overflow: hidden;
+  color: #444;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: linear-gradient(to top, #eee 0%, #fff 50%);
+  border: 1px solid #aaa;
+  border-radius: 4px;
+}
+
+.issue-form-page-wrap .issue-assignee-selection:focus {
+  border-color: #5897fb;
+  outline: 0;
+  box-shadow: 0 0 5px rgb(0 0 0 / 30%);
+}
+
+.issue-form-page-wrap .issue-assignee-selection.open {
+  background: linear-gradient(to top, #fff 0%, #eee 50%);
+  border-bottom-color: transparent;
+  border-radius: 4px 4px 0 0;
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.issue-form-page-wrap .issue-assignee-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.issue-form-page-wrap .issue-assignee-arrow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-block;
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to top, #ccc 0%, #eee 60%);
+  border-left: 1px solid #aaa;
+  border-radius: 0 4px 4px 0;
+}
+
+.issue-form-page-wrap .issue-assignee-arrow > span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin: -2px 0 0 -4px;
+  border-top: 5px solid #333;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.issue-form-page-wrap .issue-assignee-selection.open .issue-assignee-arrow {
+  background: transparent;
+  border-left-color: transparent;
+}
+
+.issue-form-page-wrap .issue-assignee-selection.open .issue-assignee-arrow > span {
+  margin-top: -3px;
+  border-top: 0;
+  border-bottom: 5px solid #333;
+}
+
+.issue-form-page-wrap .issue-assignee-dropdown-search {
+  box-sizing: border-box;
+  width: calc(100% - 8px);
+  height: 30px;
+  margin: 0 4px 4px;
+}
+
+.issue-form-page-wrap .issue-label-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 30px;
+  padding: 2px;
+  margin: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.issue-form-page-wrap .issue-label-token {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  box-sizing: border-box;
+  height: 24px;
+  min-height: 24px;
+  padding: 1px 3px 1px 6px;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.issue-form-page-wrap .issue-label-token .btn-transparent {
+  min-height: 20px;
+  padding: 0 3px;
+}
+
+.issue-form-page-wrap .issue-label-color {
+  display: inline-block;
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.issue-form-page-wrap .issue-label-trigger {
+  flex: 1 1 24px;
+  width: auto;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 1px 4px;
+  color: #777;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.issue-form-page-wrap .issue-due-date-option .search-bar {
+  position: relative;
+}
+
+.issue-form-page-wrap .issue-due-date-option #issueDueDate {
+  box-sizing: border-box;
+  width: 100%;
+  padding-right: 34px;
+}
+
+.issue-form-page-wrap .issue-due-date-option .btn-calendar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  box-sizing: border-box;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.issue-form-page-wrap .issue-due-date-native-picker {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 1px;
+  min-width: 1px;
+  height: 1px;
+  min-height: 1px;
+  padding: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+}
+
+.issue-form-page-wrap .issue-form-error,
+.issue-form-load-error {
+  clear: both;
+  margin-top: 10px;
+  color: #b94a48;
+  font-weight: bold;
+}
+
+.issue-project-utility-menu {
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .issue-form-project-header {
+    height: 120px;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-menu-outer,
+  .app-shell:has(.issue-form-page-wrap) .project-menu-inner,
+  .app-shell:has(.issue-form-page-wrap) .project-menu-nav {
+    height: 39px;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-menu-gruop {
+    float: left;
+    margin-left: 0;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-menu-nav > li {
+    float: left;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-setting {
+    float: right;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-menu-nav > li > a {
+    display: inline-block;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-menu-nav .menu-name {
+    display: none;
+  }
+
+  .app-shell:has(.issue-form-page-wrap) .project-menu-nav .short-menu {
+    display: block;
+  }
+
+  .issue-form-page-wrap .content-wrap {
+    padding: 0;
+  }
+
+  .issue-form-page-wrap .issue-form-columns > .span-left-pane {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .issue-form-page-wrap .issue-form-columns > .right-menu {
+    width: 95% !important;
+    min-width: 0 !important;
+    margin-top: 10px;
+    margin-left: 2.127659574468085% !important;
+  }
+
+  .issue-form-page-wrap #upload {
+    min-height: 100px;
+  }
+
+  .issue-form-page-wrap .upload-wrap .attach-wrap {
+    min-height: 58px;
+  }
+
+  .issue-form-page-wrap .editor-mention-options {
+    max-width: calc(100vw - 16px);
   }
 }

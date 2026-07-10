@@ -33,14 +33,14 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
   );
   await expect(page.locator("#gnb-search-scope-title")).toBeVisible();
   await expect(
-    page.locator('.gnb-search-form [data-toggle="search-scope"]').first(),
-  ).toHaveAttribute("data-action", `${basePath}/admin/sample/search`);
+    page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
+  ).toHaveCount(0);
   await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("admin");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("sample");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Issue");
   await expect(page.locator("#issue-form")).toHaveAttribute(
     "action",
-    `${basePath}/admin/sample/issues`,
+    `${basePath}/admin/sample/issues/latest`,
   );
   await expect(page.locator(".subtask-wrap")).toHaveClass(/show/);
   await expect(page.locator(".subtask-message")).toHaveClass(/option-on/);
@@ -74,9 +74,7 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
   expect(boxes!.rightMenu.top).toBeCloseTo(boxes!.leftPane.top + 10, 0);
   expect(boxes!.rightMenu.left).toBeGreaterThan(boxes!.leftPane.right - 5);
 
-  await page
-    .locator('[data-toggle="markdown-editor"] .nav-tabs button[type="button"][data-mode="preview"]')
-    .click();
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
   await expect
     .poll(() => currentLocationState(page))
     .toEqual({
@@ -120,7 +118,7 @@ test("user direct issue form keeps the comment reference body on /user/issues/ne
   );
   await expect(page.locator("#issue-form")).toHaveAttribute(
     "action",
-    `${basePath}/admin/sample/issues`,
+    `${basePath}/admin/sample/issues/latest`,
   );
   await expect(page.locator(".subtask-wrap")).toHaveClass(/show/);
   await expect(page.locator('input[name="referCommentId"]')).toHaveValue("77");
@@ -157,14 +155,15 @@ test("user direct mine issue form keeps /user/issues/new/mine while selecting th
     "action",
     `${basePath}/dev/inbox/search`,
   );
+  await expect(page.locator("#gnb-search-scope-title")).toBeVisible();
   await expect(
-    page.locator('.gnb-search-form [data-toggle="search-scope"]').first(),
-  ).toHaveAttribute("data-action", `${basePath}/dev/inbox/search`);
+    page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
+  ).toHaveCount(0);
   await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("dev");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("inbox");
   await expect(page.locator("#issue-form")).toHaveAttribute(
     "action",
-    `${basePath}/dev/inbox/issues`,
+    `${basePath}/dev/inbox/issues/latest`,
   );
   await expect(page.locator(".subtask-wrap")).toHaveClass(/show/);
   await expect(page.locator(".subtask-message")).toHaveClass(/option-on/);
@@ -257,6 +256,29 @@ async function mockDirectIssueForm(
       body: JSON.stringify(projectContainer(ownerName, projectName)),
     });
   });
+  await page.route("**/api/v1/projects/*/*/issues/form-options", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const match = path.match(/\/projects\/([^/]+)\/([^/]+)\/issues\/form-options$/u);
+    const ownerName = match?.[1] ?? selectedProject.ownerName;
+    const projectName = match?.[2] ?? selectedProject.projectName;
+    const project = projectContainer(ownerName, projectName);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        canCreateIssueAssignee: true,
+        canCreateIssueMilestone: true,
+        canManageIssueLabels: true,
+        currentProject: {
+          logoUrl: project.logoUrl,
+          ownerName,
+          projectId: project.projectId,
+          projectName,
+        },
+        issueTemplateMarkdown: "",
+        movableIssueProjects: [],
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/*/projects/*/labels", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -311,26 +333,46 @@ async function mockDirectIssueForm(
 
 function projectContainer(ownerName: string, projectName: string) {
   return {
-    backgroundImageUrl: "/assets/images/bg-default-project.png",
+    backgroundUrl: "/assets/images/bg-default-project.png",
+    boardCount: 1,
+    cloneUrl: `git@example.com:${ownerName}/${projectName}.git`,
+    codeMemberOnly: false,
+    currentMilestone: null,
+    defaultTab: "projectHome",
     enrollmentRequestCount: 0,
-    id: ownerName === "dev" ? 9 : 7,
-    isFavorite: false,
-    isForkedFromOrigin: false,
-    isPrivate: ownerName === "dev",
-    isProtected: false,
+    enrollmentRequested: false,
+    isFavorited: false,
+    isForked: false,
+    isWatching: false,
     logoUrl: "/assets/images/project_default_logo.png",
-    menuSetting: {
-      board: true,
-      code: true,
-      issue: true,
-      milestone: true,
-      pullRequest: true,
-      review: true,
-    },
+    memberCount: 1,
+    members: [],
+    openIssueCount: 0,
+    openPullRequestCount: 0,
+    organizationName: "",
+    originOwnerName: "",
+    originProjectName: "",
+    overview: "Sample project",
+    overviewEditable: true,
     ownerName,
+    projectId: ownerName === "dev" ? 9 : 7,
     projectName,
+    projectScope: ownerName === "dev" ? "PRIVATE" : "PUBLIC",
+    reviewCount: 0,
+    showAdmin: true,
+    showBoard: true,
+    showCode: true,
+    showIssue: true,
+    showMilestone: true,
+    showPullRequest: true,
+    showReview: true,
     vcs: "GIT",
+    viewerCanEnroll: true,
+    viewerCanLeave: false,
     viewerCanUpdate: true,
+    viewerCanWatch: true,
+    viewerUserId: 1,
+    watchCount: 0,
   };
 }
 

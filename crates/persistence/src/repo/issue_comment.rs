@@ -47,6 +47,16 @@ impl AppRepositoryImpl<'_> {
         &self,
         input: CreateIssueCommentInput,
     ) -> Result<Option<IssueRecord>, DbErr> {
+        Ok(self
+            .create_issue_comment_with_record(input)
+            .await?
+            .map(|(issue, _)| issue))
+    }
+
+    pub async fn create_issue_comment_with_record(
+        &self,
+        input: CreateIssueCommentInput,
+    ) -> Result<Option<(IssueRecord, IssueCommentRecord)>, DbErr> {
         let Some((project_record, issue_model)) = self
             .read_project_issue_model(&input.owner_name, &input.project_name, input.issue_number)
             .await?
@@ -72,14 +82,30 @@ impl AppRepositoryImpl<'_> {
             &input.contents_markdown,
         )
         .await?;
-        self.sync_mentions_and_notify(
+        let mentioned_user_ids = self
+            .mentioned_active_user_ids(&input.contents_markdown)
+            .await?;
+        self.sync_mentions_for_resource("issue_comment", created.id, mentioned_user_ids)
+            .await?;
+        let receiver_ids = self
+            .issue_comment_notification_receiver_ids(
+                &input.owner_name,
+                &input.project_name,
+                input.issue_number,
+                input.actor_id,
+                &input.contents_markdown,
+                input.parent_comment_id,
+            )
+            .await?
+            .ok_or_else(|| DbErr::Custom("issue comment parent issue not found".to_string()))?;
+        self.create_notification_event_for_receivers(
             input.actor_id,
             "issue_comment",
-            created.id,
-            &input.contents_markdown,
+            &created.id.to_string(),
             "NEW_COMMENT",
             "",
             &input.contents_markdown,
+            &receiver_ids,
         )
         .await?;
         self.bind_attachments(
@@ -90,16 +116,25 @@ impl AppRepositoryImpl<'_> {
         )
         .await?;
         self.recount_issue_comments(issue_model.id).await?;
-        self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
-            .await
+        let issue = self
+            .read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
+            .await?
+            .ok_or_else(|| DbErr::Custom("created issue comment parent missing".to_string()))?;
+        let comment = issue
+            .comments
+            .iter()
+            .find(|comment| comment.id == created.id)
+            .cloned()
+            .ok_or_else(|| DbErr::Custom("created issue comment missing".to_string()))?;
+        Ok(Some((issue, comment)))
     }
 
     pub async fn create_issue_comment_via_email(
         &self,
         input: CreateIssueCommentViaEmailInput,
     ) -> Result<Option<IssueRecord>, DbErr> {
-        let issue = self
-            .create_issue_comment(CreateIssueCommentInput {
+        let created = self
+            .create_issue_comment_with_record(CreateIssueCommentInput {
                 actor_display_name: input.actor_display_name,
                 actor_id: input.actor_id,
                 actor_login_id: input.actor_login_id,
@@ -111,19 +146,8 @@ impl AppRepositoryImpl<'_> {
                 project_name: input.project_name.clone(),
             })
             .await?;
-        let Some(issue) = issue else {
+        let Some((_issue, comment)) = created else {
             return Ok(None);
-        };
-        let Some(comment) = issue
-            .comments
-            .iter()
-            .filter(|comment| {
-                comment.author_id == Some(input.actor_id)
-                    && comment.contents_markdown == input.contents_markdown
-            })
-            .max_by_key(|comment| comment.id)
-        else {
-            return Ok(Some(issue));
         };
         self.record_original_email(
             ISSUE_COMMENT_ATTACHMENT_CONTAINER,

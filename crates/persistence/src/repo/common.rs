@@ -253,10 +253,29 @@ pub(super) fn site_user_record_from_model(
     }
 }
 
-pub(super) fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUserRecord {
+pub(super) fn issue_mention_user_record_for_language(
+    user: n4user::Model,
+    requester_language: Option<&str>,
+) -> IssueMentionUserRecord {
     let login_id = user.login_id.unwrap_or_default();
-    let display_name = user.name.unwrap_or_else(|| login_id.clone());
-    let search_text = format!("{display_name}{login_id}");
+    let native_name = user
+        .name
+        .filter(|name| !name.trim().is_empty())
+        .unwrap_or_else(|| login_id.clone());
+    let english_name = user.english_name.filter(|name| !name.trim().is_empty());
+    let display_name = if requester_language.is_some_and(|language| language.starts_with("en"))
+        && user.lang.is_some()
+        && english_name.is_some()
+    {
+        format!(
+            "{} {}",
+            english_name.as_deref().unwrap_or_default(),
+            legacy_user_department_part(&native_name)
+        )
+    } else {
+        native_name.clone()
+    };
+    let search_text = format!("{native_name}{display_name}{login_id}");
     IssueMentionUserRecord {
         avatar_url: String::new(),
         display_name,
@@ -266,12 +285,37 @@ pub(super) fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUser
     }
 }
 
+fn legacy_user_department_part(native_name: &str) -> String {
+    let mut department = native_name.to_string();
+    for splitter in ['[', '('] {
+        if department.contains(splitter) {
+            department = native_name
+                .find(splitter)
+                .map(|index| native_name[index..].to_string())
+                .unwrap_or_else(|| native_name.to_string());
+        }
+    }
+    department
+}
+
 pub(super) fn mention_text_matches(record: &IssueMentionUserRecord, query: &str) -> bool {
-    let normalized = normalize_identity(query);
+    let normalized = query.trim().to_lowercase();
     normalized.is_empty()
-        || normalize_identity(&record.login_id).contains(&normalized)
-        || normalize_identity(&record.display_name).contains(&normalized)
-        || normalize_identity(&record.search_text).contains(&normalized)
+        || record.login_id.to_lowercase().contains(&normalized)
+        || record.display_name.to_lowercase().contains(&normalized)
+        || record.search_text.to_lowercase().contains(&normalized)
+}
+
+pub(super) fn mention_user_model_matches(user: &n4user::Model, query: &str) -> bool {
+    let normalized_query = query.trim().to_lowercase();
+    let contains_query = |value: Option<&str>| {
+        value.is_some_and(|value| value.to_lowercase().contains(&normalized_query))
+    };
+    normalized_query.is_empty()
+        || contains_query(user.login_id.as_deref())
+        || contains_query(user.name.as_deref())
+        || contains_query(user.english_name.as_deref())
+        || contains_query(user.email.as_deref())
 }
 
 pub(super) fn project_issue_reference_record(model: &issue::Model) -> ProjectIssueReferenceRecord {

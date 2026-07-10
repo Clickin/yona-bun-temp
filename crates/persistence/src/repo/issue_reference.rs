@@ -8,75 +8,31 @@ impl AppRepositoryImpl<'_> {
         limit: usize,
     ) -> Result<ProjectIssueReferenceSearchRecord, DbErr> {
         let query = query.trim();
-        let normalized_query = normalize_identity(query);
+        let normalized_query = query.to_lowercase();
         let mut models = issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .order_by_desc(issue::Column::CreatedDate)
             .all(&self.db)
             .await?;
 
-        if query.is_empty() {
-            models.sort_by(|left, right| {
-                right.created_date.cmp(&left.created_date).then_with(|| {
-                    right
-                        .number
-                        .unwrap_or_default()
-                        .cmp(&left.number.unwrap_or_default())
-                })
-            });
-            let total = models.len() as u32;
-            let truncated = models.len() > limit;
-            models.truncate(limit);
-            return Ok(ProjectIssueReferenceSearchRecord {
-                items: models.iter().map(project_issue_reference_record).collect(),
-                total,
-                truncated,
-            });
-        }
-
-        let mut matches = models
-            .into_iter()
-            .filter_map(|model| {
+        if !query.is_empty() {
+            models.retain(|model| {
                 let issue_number = model.number.unwrap_or_default().to_string();
-                let exact_number_match = issue_number == normalized_query;
                 let number_prefix_match = issue_number.starts_with(&normalized_query);
                 let title_match = model
                     .title
                     .as_deref()
-                    .is_some_and(|title| normalize_identity(title).contains(&normalized_query));
-                (number_prefix_match || title_match).then_some((
-                    model,
-                    exact_number_match,
-                    number_prefix_match,
-                    title_match,
-                ))
-            })
-            .collect::<Vec<_>>();
+                    .is_some_and(|title| title.to_lowercase().contains(&normalized_query));
+                number_prefix_match || title_match
+            });
+        }
 
-        matches.sort_by(|left, right| {
-            right
-                .1
-                .cmp(&left.1)
-                .then_with(|| right.2.cmp(&left.2))
-                .then_with(|| right.3.cmp(&left.3))
-                .then_with(|| right.0.created_date.cmp(&left.0.created_date))
-                .then_with(|| {
-                    right
-                        .0
-                        .number
-                        .unwrap_or_default()
-                        .cmp(&left.0.number.unwrap_or_default())
-                })
-        });
-
-        let total = matches.len() as u32;
-        let truncated = matches.len() > limit;
-        matches.truncate(limit);
+        let total = models.len() as u32;
+        let truncated = models.len() > limit;
+        models.truncate(limit);
 
         Ok(ProjectIssueReferenceSearchRecord {
-            items: matches
-                .iter()
-                .map(|(model, _, _, _)| project_issue_reference_record(model))
-                .collect(),
+            items: models.iter().map(project_issue_reference_record).collect(),
             total,
             truncated,
         })

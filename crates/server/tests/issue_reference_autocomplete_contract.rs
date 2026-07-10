@@ -244,27 +244,19 @@ async fn issue_reference_autocomplete_contract_searches_and_orders_project_issue
     )
     .await;
 
-    for title in [
-        "Exact issue",
-        "Title contains 1 token",
-        "Third issue",
-        "Fourth issue",
-        "Needle title",
-        "Sixth issue",
-        "Seventh issue",
-        "Eighth issue",
-        "Ninth issue",
-        "Tenth issue",
-        "Eleventh issue",
-        "Twelfth issue",
-    ] {
+    for number in 1..=25 {
+        let title = if number == 5 {
+            "Needle title 1 24".to_string()
+        } else {
+            format!("Issue candidate 1 24 number {number}")
+        };
         create_issue(
             app.clone(),
             &owner_cookie,
             &owner_csrf,
             "owner",
             "projectYobi",
-            title,
+            &title,
         )
         .await;
     }
@@ -279,13 +271,13 @@ async fn issue_reference_autocomplete_contract_searches_and_orders_project_issue
         .await,
     )
     .await;
-    assert_eq!(blank["total"], 12);
+    assert_eq!(blank["total"], 25);
     assert_eq!(blank["truncated"], true);
-    assert_eq!(item_numbers(&blank), vec![12, 11, 10, 9, 8, 7, 6, 5, 4, 3]);
-    assert_eq!(blank["items"][0]["title"], "Twelfth issue");
+    assert_eq!(item_numbers(&blank), (6..=25).rev().collect::<Vec<_>>());
+    assert_eq!(blank["items"][0]["issueNumber"], 25);
     assert_eq!(blank["items"][0]["state"], "open");
 
-    let numeric = response_json(
+    let old_exact = response_json(
         rest(
             app.clone(),
             Method::GET,
@@ -295,16 +287,42 @@ async fn issue_reference_autocomplete_contract_searches_and_orders_project_issue
         .await,
     )
     .await;
-    let numeric_numbers = item_numbers(&numeric);
-    assert_eq!(numeric_numbers[0], 1);
-    assert_eq!(&numeric_numbers[1..4], &[12, 11, 10]);
-    assert!(
-        numeric_numbers
-            .iter()
-            .position(|number| *number == 2)
-            .unwrap()
-            > 3
-    );
+    assert_eq!(old_exact["total"], 25);
+    assert_eq!(item_numbers(&old_exact), (6..=25).rev().collect::<Vec<_>>());
+    assert!(!item_numbers(&old_exact).contains(&1));
+
+    let recent_exact = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issue-references?query=24",
+            None,
+        )
+        .await,
+    )
+    .await;
+    let recent_numbers = item_numbers(&recent_exact);
+    assert_eq!(recent_numbers[0], 25);
+    assert_eq!(recent_numbers[1], 24);
+    assert_eq!(recent_exact["total"], 25);
+    assert_eq!(recent_exact["truncated"], true);
+
+    let direct_recent_exact = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/owner/projectYobi/mentionList?mentionType=issue&query=24",
+            None,
+        )
+        .await,
+    )
+    .await;
+    let direct_items = direct_recent_exact["result"]
+        .as_array()
+        .expect("direct issue reference items");
+    assert_eq!(direct_items.len(), 20);
+    assert_eq!(direct_items[0]["issueNo"], "25");
+    assert!(direct_items.iter().any(|item| item["issueNo"] == "24"));
 
     let title = response_json(
         rest(
@@ -317,7 +335,7 @@ async fn issue_reference_autocomplete_contract_searches_and_orders_project_issue
     )
     .await;
     assert_eq!(item_numbers(&title), vec![5]);
-    assert_eq!(title["items"][0]["title"], "Needle title");
+    assert_eq!(title["items"][0]["title"], "Needle title 1 24");
     assert_eq!(title["total"], 1);
     assert_eq!(title["truncated"], false);
 }

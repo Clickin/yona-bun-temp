@@ -1,12 +1,14 @@
 use axum::{http::HeaderMap, Json};
 use serde::{Deserialize, Serialize};
 
+use crate::routes::utils::gravatar_url;
 use crate::{
-    internal_error, persistence, require_project_read, ConnectError, ErrorCode, PilotBackend,
-    PilotRepository, PilotServiceImpl, RestIssueAssignableUsersQuery, RestRouteError,
+    base_path_href, internal_error, organization_logo_url, persistence, require_project_read,
+    ConnectError, ErrorCode, PilotBackend, PilotRepository, PilotServiceImpl,
+    RestIssueAssignableUsersQuery, RestRouteError,
 };
 
-use super::read_issue_access;
+use super::{project_issue_form_logo_url, read_issue_access};
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -176,6 +178,61 @@ fn rest_issue_assignable_users_response(
         total: record.total,
         truncated: record.truncated,
     }
+}
+
+async fn enrich_rest_issue_mention_avatars(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+    base_path: &str,
+    response: &mut RestIssueMentionUsersResponse,
+) -> Result<(), RestRouteError> {
+    let login_ids = response
+        .items
+        .iter()
+        .filter(|item| item.r#type == "user")
+        .map(|item| item.login_id.clone())
+        .collect::<Vec<_>>();
+    let avatar_inputs = repository
+        .list_mention_user_avatar_inputs(&login_ids)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    for item in &mut response.items {
+        match item.r#type.as_str() {
+            "user" => {
+                item.avatar_url = avatar_inputs
+                    .get(&item.login_id)
+                    .map(|(email, attachment_id)| {
+                        attachment_id.map_or_else(
+                            || gravatar_url(email),
+                            |attachment_id| {
+                                base_path_href(base_path, &format!("/files/{attachment_id}"))
+                            },
+                        )
+                    })
+                    .unwrap_or_else(|| gravatar_url(""));
+            }
+            "project" => {
+                item.avatar_url = project_issue_form_logo_url(repository, base_path, project.id)
+                    .await
+                    .map_err(RestRouteError::from_connect_error)?;
+            }
+            "organization" => {
+                if let Some(organization_id) = project.organization_id {
+                    let logo_url = organization_logo_url(repository, base_path, organization_id)
+                        .await
+                        .map_err(RestRouteError::from_connect_error)?;
+                    item.avatar_url = if logo_url.is_empty() {
+                        base_path_href(base_path, "/legacy-assets/images/group_default.png")
+                    } else {
+                        logo_url
+                    };
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 pub(super) async fn rest_list_project_assignable_users(
@@ -389,6 +446,57 @@ fn rest_issue_mention_users_response(
     }
 }
 
+pub(super) async fn rest_list_project_mention_users(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestIssueMentionUsersQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestIssueMentionUsersResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid project mention users request",
+        ));
+    }
+    let context = query.context.trim();
+    if !context.is_empty() && context != "issue-body" {
+        return Err(RestRouteError::bad_request("invalid issue mention context"));
+    }
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project mention users require repository backend",
+        ));
+    };
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_project_mention_users(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+            actor_id,
+            &query.query,
+            10,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot project not found"))?;
+    let mut response = rest_issue_mention_users_response(record);
+    enrich_rest_issue_mention_avatars(
+        repository,
+        &authorization.project,
+        &service.base_path,
+        &mut response,
+    )
+    .await?;
+    Ok(Json(response))
+}
+
 pub(super) async fn rest_list_issue_mention_users(
     headers: HeaderMap,
     owner_name: String,
@@ -421,7 +529,7 @@ pub(super) async fn rest_list_issue_mention_users(
         .session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    read_issue_access(
+    let access = read_issue_access(
         repository,
         &owner_name,
         &project_name,
@@ -445,7 +553,15 @@ pub(super) async fn rest_list_issue_mention_users(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
 
-    Ok(Json(rest_issue_mention_users_response(record)))
+    let mut response = rest_issue_mention_users_response(record);
+    enrich_rest_issue_mention_avatars(
+        repository,
+        &access.authorization.project,
+        &service.base_path,
+        &mut response,
+    )
+    .await?;
+    Ok(Json(response))
 }
 
 fn rest_project_issue_references_response(
@@ -533,7 +649,7 @@ pub(super) async fn rest_list_project_issue_references(
             .await
             .map_err(RestRouteError::from_connect_error)?;
     let record = repository
-        .list_project_issue_references(search_project.id, &query.query, 10)
+        .list_project_issue_references(search_project.id, &query.query, 20)
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;

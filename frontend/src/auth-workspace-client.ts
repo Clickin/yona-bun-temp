@@ -40,8 +40,12 @@ import {
   searchIssueMentionUsersRest,
   searchIssueSharableUsersRest,
   listProjectIssueSearchUsersRest,
+  readProjectMarkdownReferencesRest,
+  readProjectIssueFormOptionsRest,
   searchProjectAssignableUsersRest,
+  searchProjectMentionUsersRest,
   searchProjectIssueReferencesRest,
+  searchProjectTitleHeadsRest,
   shareIssueRest,
   toggleFavoriteIssueRest,
   unshareIssueRest,
@@ -57,10 +61,15 @@ import {
   type IssueMentionUsersResponse,
   type IssueSharableUsersInput,
   type ProjectAssignableUsersInput,
+  type ProjectMentionUsersInput,
+  type ProjectMarkdownReferencesInput,
+  type ProjectMarkdownReferencesResponse,
+  type ProjectIssueFormOptionsResponse,
   type ProjectIssueSearchUsersInput,
   type ProjectIssueSearchUsersResponse,
   type ProjectIssueReferencesInput,
   type ProjectIssueReferencesResponse,
+  type ProjectTitleHeadsResponse,
 } from "./api/issue-meta";
 import {
   closeProjectMilestoneRest,
@@ -607,6 +616,7 @@ function issueMutationRestBody(input: IssueMutationRestInput) {
     milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
     parentIssueId: input.parentIssueId ? input.parentIssueId : undefined,
     referCommentId,
+    targetProjectId: input.targetProjectId ? input.targetProjectId : undefined,
     title: input.title ?? "",
   };
 }
@@ -764,6 +774,25 @@ export async function listIssueParentOptions(
     })}`,
     { fetchImpl },
   );
+}
+
+export async function readProjectIssueFormOptions(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectIssueFormOptionsResponse> {
+  return readProjectIssueFormOptionsRest(runtimeConfig, { ownerName, projectName }, fetchImpl);
+}
+
+export async function searchProjectTitleHeads(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  query: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectTitleHeadsResponse> {
+  return searchProjectTitleHeadsRest(runtimeConfig, { ownerName, projectName, query }, fetchImpl);
 }
 
 export async function updateIssueState(
@@ -1120,6 +1149,14 @@ export async function searchProjectAssignableUsers(
   return searchProjectAssignableUsersRest(runtimeConfig, input, fetchImpl);
 }
 
+export async function searchProjectMentionUsers(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectMentionUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueMentionUsersResponse> {
+  return searchProjectMentionUsersRest(runtimeConfig, input, fetchImpl);
+}
+
 export async function listProjectIssueSearchUsers(
   runtimeConfig: RuntimeConfig,
   input: ProjectIssueSearchUsersInput,
@@ -1134,6 +1171,14 @@ export async function searchProjectIssueReferences(
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectIssueReferencesResponse> {
   return searchProjectIssueReferencesRest(runtimeConfig, input, fetchImpl);
+}
+
+export async function readProjectMarkdownReferences(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectMarkdownReferencesInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMarkdownReferencesResponse> {
+  return readProjectMarkdownReferencesRest(runtimeConfig, input, fetchImpl);
 }
 
 export async function listNotifications(

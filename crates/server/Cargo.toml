@@ -36,6 +36,8 @@ axum = { workspace = true, features = ["multipart"] }
 base64.workspace = true
 bcrypt.workspace = true
 bytes.workspace = true
+chardetng.workspace = true
+encoding_rs.workspace = true
 futures.workspace = true
 http.workspace = true
 http-body.workspace = true

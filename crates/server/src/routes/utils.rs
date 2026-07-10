@@ -640,6 +640,14 @@ impl RestRouteError {
         }
     }
 
+    pub(crate) fn payload_too_large(message: impl Into<String>) -> Self {
+        Self {
+            code: None,
+            message: message.into(),
+            status: StatusCode::PAYLOAD_TOO_LARGE,
+        }
+    }
+
     pub(crate) fn not_found(message: impl Into<String>) -> Self {
         Self {
             code: None,
@@ -687,6 +695,7 @@ impl IntoResponse for RestRouteError {
             StatusCode::FORBIDDEN => "forbidden",
             StatusCode::NOT_FOUND => "not_found",
             StatusCode::CONFLICT => "already_exists",
+            StatusCode::PAYLOAD_TOO_LARGE => "payload_too_large",
             StatusCode::NOT_IMPLEMENTED => "not_implemented",
             _ => "internal_error",
         });
@@ -1837,7 +1846,9 @@ pub(crate) enum ProjectCreatableResource {
     BoardPost,
     CommitComment,
     Fork,
+    IssueAssignee,
     IssueComment,
+    IssueMilestone,
     IssuePost,
     NonIssueComment,
     ReviewComment,

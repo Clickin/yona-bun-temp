@@ -6,19 +6,25 @@ use http_body_util::BodyExt;
 // replaced with module-local imports.
 use sea_orm::{
     entity::prelude::{DateTime, DateTimeUtc},
-    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
-    Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, Database, DatabaseConnection, EntityTrait,
+    NotSet, QueryFilter, Set, Statement,
 };
 use serde_json::json;
 use serde_json::Value;
+use std::path::Path;
+use std::process::Command;
 use std::time::{Duration, SystemTime};
+use tempfile::tempdir;
 use tower::ServiceExt;
+use yoram_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yoram_migration::Migrator;
 use yoram_persistence::{
-    email, issue, title_head, user_project_notification, watch, AppRepository,
-    CreateIssueCommentInput, CreateIssueInput, CreatePostingCommentInput, CreatePostingInput,
-    CreateProjectInput, CreateProjectLabelInput, CreatePullRequestInput, CreatePullRequestResult,
-    IssueMutationInput, MilestoneMutationInput, PostingMutationInput, PullRequestMutationInput,
+    email, issue, n4user, notification_event, notification_event_n4user, title_head,
+    user_project_notification, watch, AppRepository, CreateIssueCommentInput, CreateIssueInput,
+    CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestInput,
+    CreatePullRequestResult, CreateUserInput, IssueMutationInput, MilestoneMutationInput,
+    PostingMutationInput, PullRequestMutationInput,
 };
 use yoram_server::{
     create_router, create_router_with_app_repository, create_router_with_repository_and_app_config,
@@ -92,6 +98,30 @@ async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, Dat
     (app, app_repo, db)
 }
 
+async fn build_app_at_base_with_repository_and_db(
+    base_path: &str,
+    data_root: &Path,
+) -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_repository_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: base_path.to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+        AppRuntimeConfig {
+            data_root: data_root.to_path_buf(),
+            ..AppRuntimeConfig::default()
+        },
+    );
+    (app, app_repo, db)
+}
+
 async fn build_app_with_repository_and_db_and_translation_config(
     translation_proxy: TranslationProxyConfig,
 ) -> (axum::Router, AppRepository, DatabaseConnection) {
@@ -102,6 +132,66 @@ async fn build_app_with_repository_and_db_and_translation_config(
     let app_repo = AppRepository::new(db.clone());
     let app = build_app_with_repository_and_translation_config(app_repo.clone(), translation_proxy);
     (app, app_repo, db)
+}
+
+fn commit_git_file_bytes(repository_path: &Path, path: &str, contents: &[u8]) {
+    let work_dir = tempdir().expect("git byte commit worktree");
+    let run_git = |arguments: &[&str]| {
+        let output = Command::new("git")
+            .args(arguments)
+            .output()
+            .expect("run git command");
+        assert!(
+            output.status.success(),
+            "git {:?}: {}",
+            arguments,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    };
+    run_git(&[
+        "clone",
+        repository_path.to_str().expect("repository path"),
+        work_dir.path().to_str().expect("worktree path"),
+    ]);
+    run_git(&[
+        "-C",
+        work_dir.path().to_str().expect("worktree path"),
+        "config",
+        "user.name",
+        "owner",
+    ]);
+    run_git(&[
+        "-C",
+        work_dir.path().to_str().expect("worktree path"),
+        "config",
+        "user.email",
+        "owner@example.com",
+    ]);
+    let target = work_dir.path().join(path);
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).expect("git byte commit parent");
+    }
+    std::fs::write(target, contents).expect("write git byte fixture");
+    run_git(&[
+        "-C",
+        work_dir.path().to_str().expect("worktree path"),
+        "add",
+        path,
+    ]);
+    run_git(&[
+        "-C",
+        work_dir.path().to_str().expect("worktree path"),
+        "commit",
+        "-m",
+        "Update byte fixture",
+    ]);
+    run_git(&[
+        "-C",
+        work_dir.path().to_str().expect("worktree path"),
+        "push",
+        "origin",
+        "HEAD",
+    ]);
 }
 
 async fn response_text(response: axum::response::Response) -> String {
@@ -155,11 +245,15 @@ async fn assert_legacy_external_unauthorized(response: axum::response::Response)
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
+    bootstrap_at(app, "/yona").await
+}
+
+async fn bootstrap_at(app: axum::Router, base_path: &str) -> (String, String) {
     let response = app
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/api/auth/session")
+                .uri(format!("{base_path}/api/auth/session"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -294,6 +388,27 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
             "password": "doorpass1",
             "retypedPassword": "doorpass1"
         }),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    (csrf, cookie_header)
+}
+
+async fn register_user_at(app: axum::Router, base_path: &str, login_id: &str) -> (String, String) {
+    let (csrf, cookie_header) = bootstrap_at(app.clone(), base_path).await;
+    let response = rest(
+        app,
+        Method::POST,
+        &format!("{base_path}/api/v1/auth/register"),
+        Some(&cookie_header),
+        Some(&csrf),
+        Some(json!({
+            "loginId": login_id,
+            "name": login_id,
+            "emailAddress": format!("{login_id}@example.com"),
+            "password": "doorpass1",
+            "retypedPassword": "doorpass1"
+        })),
     )
     .await;
     assert_eq!(response.status(), StatusCode::OK);
@@ -631,7 +746,7 @@ async fn rest_issue_create_update_persists_legacy_parent_issue_id() {
         .await,
     )
     .await;
-    assert_eq!(parent["issueNumber"], "1");
+    assert_eq!(parent["issueNumber"], 1);
 
     let parent_options = ok_json(
         rest(
@@ -814,7 +929,7 @@ async fn rest_issue_draft_save_and_publish_follow_legacy_visibility_and_numberin
     .await;
     assert_eq!(draft["isDraft"], true);
     assert_eq!(draft["state"], "draft");
-    assert_eq!(draft["issueNumber"], "1");
+    assert_eq!(draft["issueNumber"], 1);
 
     let forbidden = rest(
         app.clone(),
@@ -864,7 +979,7 @@ async fn rest_issue_draft_save_and_publish_follow_legacy_visibility_and_numberin
     .await;
     assert_eq!(published["isDraft"], false);
     assert_eq!(published["state"], "open");
-    assert_eq!(published["issueNumber"], "2");
+    assert_eq!(published["issueNumber"], 2);
 
     let published_read = ok_json(
         rest(
@@ -4504,7 +4619,7 @@ async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
         "Owner public issue",
     )
     .await;
-    assert_eq!(owner_issue["issueNumber"], "1");
+    assert_eq!(owner_issue["issueNumber"], 1);
 
     let empty_issue_title = rpc(
         app.clone(),
@@ -4593,7 +4708,7 @@ async fn rest_project_read_denies_legacy_guest_nonmember_on_public_project() {
         "Guest-created public issue",
     )
     .await;
-    assert_eq!(guest_issue["issueNumber"], "2");
+    assert_eq!(guest_issue["issueNumber"], 2);
 
     let guest_post = ok_json(
         rest(
@@ -4742,7 +4857,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
         "comment worth agreeing with",
     )
     .await;
-    let comment_id = commented["comments"][0]["id"].as_str().unwrap();
+    let comment_id = commented["comments"][0]["id"].as_i64().unwrap();
     let child_commented = ok_json(
         rest(
             app.clone(),
@@ -4752,7 +4867,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
             Some(&owner_csrf),
             Some(json!({
                 "contentsMarkdown": "one-line child reply",
-                "parentCommentId": comment_id.parse::<i64>().unwrap()
+                "parentCommentId": comment_id
             })),
         )
         .await,
@@ -4762,7 +4877,7 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
         .as_array()
         .unwrap()
         .iter()
-        .any(|link| link["parentCommentId"] == comment_id.parse::<i64>().unwrap()));
+        .any(|link| link["parentCommentId"] == comment_id));
 
     let anonymous_watch = rest(
         app.clone(),
@@ -5329,7 +5444,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
     )
     .await;
     assert_eq!(changed_password["isAnonymous"], true);
-    assert_eq!(changed_password["loginId"], serde_json::Value::Null);
+    assert_eq!(changed_password["loginId"], "");
 
     let (fresh_csrf, fresh_cookie) = bootstrap(app.clone()).await;
     let signed_in = ok_json(
@@ -5905,6 +6020,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
 #[tokio::test]
 async fn rest_workspace_routes_preserve_error_status_and_envelope() {
     let (app, repository, _) = build_app_with_repository_and_db().await;
+    register_user(app.clone(), "admin").await;
     let (csrf, cookie_header) = register_user(app.clone(), "door").await;
     let public_project = repository
         .create_project(CreateProjectInput {
@@ -6017,7 +6133,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
         .await,
     )
     .await;
-    let category_id = created_category["category"]["id"].as_str().unwrap();
+    let category_id = created_category["category"]["id"].as_i64().unwrap();
     assert_eq!(created_category["created"], true);
 
     let created_label = ok_json(
@@ -6037,7 +6153,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
         .await,
     )
     .await;
-    let label_id = created_label["label"]["id"].as_str().unwrap();
+    let label_id = created_label["label"]["id"].as_i64().unwrap();
     assert_eq!(created_label["label"]["name"], "Bug");
     let legacy_created_response = rest(
         app.clone(),
@@ -6162,19 +6278,11 @@ async fn rest_label_routes_manage_labels_and_categories() {
     assert_eq!(legacy_title_heads["result"][1]["category"], "Type");
     assert_eq!(
         legacy_title_heads["result"][1]["categoryId"],
-        json!(created_label["label"]["categoryId"]
-            .as_str()
-            .unwrap()
-            .parse::<i64>()
-            .unwrap())
+        json!(created_label["label"]["categoryId"].as_i64().unwrap())
     );
     assert_eq!(
         legacy_title_heads["result"][1]["id"],
-        json!(created_label["label"]["id"]
-            .as_str()
-            .unwrap()
-            .parse::<i64>()
-            .unwrap())
+        json!(created_label["label"]["id"].as_i64().unwrap())
     );
     assert_eq!(legacy_title_heads["result"][1]["labelColor"], "#f44336");
     assert_eq!(legacy_title_heads["result"][1]["isExclusive"], true);
@@ -6308,7 +6416,7 @@ async fn rest_label_routes_manage_labels_and_categories() {
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "categoryId": created_label["label"]["categoryId"].as_str().unwrap().parse::<i64>().unwrap(),
+                "categoryId": created_label["label"]["categoryId"].as_i64().unwrap(),
                 "labelColor": "#00ff00",
                 "labelName": "Task"
             })),
@@ -6526,4 +6634,1915 @@ async fn rest_milestone_routes_manage_crud_and_state() {
             .unwrap_or_default(),
         0
     );
+}
+
+#[tokio::test]
+async fn rest_issue_create_supports_legacy_target_project_semantics() {
+    static WEBHOOK_OUTBOX_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _webhook_outbox_guard = WEBHOOK_OUTBOX_LOCK.lock().unwrap();
+    clear_test_webhook_outbox();
+    let (app, repository, db) = build_app_with_repository_and_db().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (reporter_csrf, reporter_cookie) = register_user(app.clone(), "reporter").await;
+
+    for (project_name, scope) in [
+        ("sourceProject", "public"),
+        ("targetProject", "public"),
+        ("privateTarget", "private"),
+    ] {
+        create_project_rest(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            "owner",
+            project_name,
+            "target project issue parity",
+            scope,
+        )
+        .await;
+    }
+
+    let source_project = repository
+        .read_project_by_owner_and_name("owner", "sourceProject")
+        .await
+        .unwrap()
+        .expect("source project");
+    let target_project = repository
+        .read_project_by_owner_and_name("owner", "targetProject")
+        .await
+        .unwrap()
+        .expect("target project");
+    let private_target = repository
+        .read_project_by_owner_and_name("owner", "privateTarget")
+        .await
+        .unwrap()
+        .expect("private target project");
+    let reporter = repository
+        .find_user_by_identifier("reporter")
+        .await
+        .unwrap()
+        .expect("reporter");
+    let owner = repository
+        .find_user_by_identifier("owner")
+        .await
+        .unwrap()
+        .expect("owner");
+    let (source_label, _) = repository
+        .create_project_label(CreateProjectLabelInput {
+            category_is_exclusive: false,
+            category_name: "Type".to_string(),
+            label_color: "#f44336".to_string(),
+            label_name: "Source only".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "sourceProject".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("source label");
+
+    let same_project = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Same-project target",
+                "bodyMarkdown": "same project",
+                "targetProjectId": source_project.id,
+                "labelIds": [source_label.id]
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(same_project["ownerName"], "owner");
+    assert_eq!(same_project["projectName"], "sourceProject");
+    assert_eq!(same_project["labels"][0]["id"], source_label.id);
+    assert_eq!(same_project["labels"][0]["name"], "Source only");
+
+    let target_parent = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/targetProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Target parent",
+                "bodyMarkdown": "target parent"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let target_parent_id = target_parent["issueId"].as_i64().expect("target parent id");
+    let attachment = repository
+        .create_user_attachment_upload(
+            reporter.id,
+            "reporter",
+            "target-draft.txt",
+            "text/plain",
+            12,
+            "target-draft-hash",
+        )
+        .await
+        .expect("target draft attachment");
+
+    let cross_project_draft = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Cross-project draft",
+                "bodyMarkdown": "cross project",
+                "targetProjectId": target_project.id,
+                "labelIds": [source_label.id],
+                "parentIssueId": target_parent_id,
+                "attachmentIds": [attachment.id],
+                "isDraft": true
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(cross_project_draft["ownerName"], "owner");
+    assert_eq!(cross_project_draft["projectName"], "targetProject");
+    assert_eq!(cross_project_draft["isDraft"], true);
+    assert_eq!(cross_project_draft["state"], "draft");
+    assert_eq!(cross_project_draft["parentIssueId"], target_parent_id);
+    assert_eq!(cross_project_draft["attachments"][0]["id"], attachment.id);
+    assert!(cross_project_draft["labels"]
+        .as_array()
+        .expect("cross-project labels")
+        .is_empty());
+
+    let source_origin = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Reference origin",
+                "bodyMarkdown": "reference origin"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let source_origin_number = source_origin["issueNumber"]
+        .as_i64()
+        .or_else(|| {
+            source_origin["issueNumber"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
+        .expect("source origin number");
+    let source_with_comment = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!(
+                "/yona/api/v1/projects/owner/sourceProject/issues/{source_origin_number}/comments"
+            ),
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "contentsMarkdown": "Create a derived issue from this comment"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let refer_comment_id = source_with_comment["comments"]
+        .as_array()
+        .expect("source comments")
+        .iter()
+        .find(|comment| comment["contentsMarkdown"] == "Create a derived issue from this comment")
+        .and_then(|comment| comment["id"].as_i64())
+        .expect("reference comment id");
+
+    let stale_refer_draft = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Draft ignores stale refer comment",
+                "bodyMarkdown": "draft body",
+                "referCommentId": 9_999_998,
+                "isDraft": true
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(stale_refer_draft["isDraft"], true);
+    let source_after_draft = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/sourceProject/issues/{source_origin_number}"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        source_after_draft["comments"]
+            .as_array()
+            .expect("source comments after draft")
+            .len(),
+        1
+    );
+
+    for (project_id, payload_url) in [
+        (target_project.id, "https://hooks.example/derived-target"),
+        (source_project.id, "https://hooks.example/derived-source"),
+    ] {
+        repository
+            .create_project_webhook(CreateProjectWebhookInput {
+                git_push: false,
+                payload_url: payload_url.to_string(),
+                project_id,
+                secret: String::new(),
+                webhook_type: 1,
+            })
+            .await
+            .expect("derived issue webhook fixture");
+    }
+    clear_test_webhook_outbox();
+
+    let cross_project_refer = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            &[
+                (http::header::COOKIE.as_str(), reporter_cookie.as_str()),
+                ("x-csrf-token", reporter_csrf.as_str()),
+                (http::header::ACCEPT_LANGUAGE.as_str(), "en-US"),
+            ],
+            Some(json!({
+                "title": "Cross-project derived issue",
+                "bodyMarkdown": "derived target body",
+                "targetProjectId": target_project.id,
+                "referCommentId": refer_comment_id
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(cross_project_refer["projectName"], "targetProject");
+    assert_eq!(cross_project_refer["issueNumber"], 3);
+
+    let source_after_refer = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/sourceProject/issues/{source_origin_number}"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let derived_comment = source_after_refer["comments"]
+        .as_array()
+        .expect("source comments after derived issue")
+        .iter()
+        .find(|comment| {
+            comment["contentsMarkdown"]
+                .as_str()
+                .is_some_and(|contents| contents.contains("/yona/owner/targetProject/issue/"))
+        })
+        .expect("derived issue comment");
+    let derived_comment_id = derived_comment["id"].as_i64().expect("derived comment id");
+    assert_eq!(
+        derived_comment["contentsMarkdown"],
+        "Derived issue: http://localhost:3001/yona/owner/targetProject/issue/3"
+    );
+    assert!(source_after_refer["commentParentLinks"]
+        .as_array()
+        .expect("comment parent links")
+        .iter()
+        .any(|link| {
+            link["id"] == derived_comment_id && link["parentCommentId"] == refer_comment_id
+        }));
+    let derived_deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(derived_deliveries.len(), 2);
+    assert_eq!(derived_deliveries[0].event_type, "NEW_ISSUE");
+    assert_eq!(
+        derived_deliveries[0].payload_url,
+        "https://hooks.example/derived-target"
+    );
+    let target_webhook_payload: Value =
+        serde_json::from_str(&derived_deliveries[0].body).expect("derived target webhook payload");
+    assert!(target_webhook_payload["text"]
+        .as_str()
+        .is_some_and(|text| text
+            .contains("/yona/owner/targetProject/issue/3|#3: Cross-project derived issue")));
+    assert_eq!(
+        target_webhook_payload["attachments"][0]["text"],
+        "derived target body"
+    );
+    assert_eq!(derived_deliveries[1].event_type, "NEW_COMMENT");
+    assert_eq!(
+        derived_deliveries[1].payload_url,
+        "https://hooks.example/derived-source"
+    );
+    let source_webhook_payload: Value =
+        serde_json::from_str(&derived_deliveries[1].body).expect("derived source webhook payload");
+    assert!(source_webhook_payload["text"]
+        .as_str()
+        .is_some_and(|text| text.contains(&format!(
+            "/yona/owner/sourceProject/issue/{source_origin_number}#comment-{derived_comment_id}|"
+        ))));
+    assert_eq!(
+        source_webhook_payload["attachments"][0]["text"],
+        "Derived issue: http://localhost:3001/yona/owner/targetProject/issue/3"
+    );
+
+    let korean_derived = ok_json(
+        rest_with_headers(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            &[
+                (http::header::COOKIE.as_str(), reporter_cookie.as_str()),
+                ("x-csrf-token", reporter_csrf.as_str()),
+                (http::header::ACCEPT_LANGUAGE.as_str(), "ko-KR"),
+            ],
+            Some(json!({
+                "title": "Korean derived issue",
+                "bodyMarkdown": "localized derived target body",
+                "targetProjectId": target_project.id,
+                "referCommentId": refer_comment_id
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(korean_derived["issueNumber"], 4);
+    let source_after_korean_refer = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/sourceProject/issues/{source_origin_number}"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(source_after_korean_refer["comments"]
+        .as_array()
+        .expect("source comments after Korean derived issue")
+        .iter()
+        .any(|comment| {
+            comment["contentsMarkdown"]
+                == "파생 이슈: http://localhost:3001/yona/owner/targetProject/issue/4"
+        }));
+
+    clear_test_webhook_outbox();
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "CREATE TRIGGER fail_derived_issue_comment_insert BEFORE INSERT ON issue_comment \
+         WHEN NEW.parent_comment_id IS NOT NULL \
+         BEGIN SELECT RAISE(FAIL, 'forced derived issue comment failure'); END"
+            .to_string(),
+    ))
+    .await
+    .expect("install derived comment failure trigger");
+    let new_comment_notifications_before_rollback = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("NEW_COMMENT".to_string())))
+        .all(&db)
+        .await
+        .expect("notifications before derived rollback")
+        .len();
+    let failed_derived = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/projects/owner/sourceProject/issues",
+        Some(&reporter_cookie),
+        Some(&reporter_csrf),
+        Some(json!({
+            "title": "Rolled back derived issue",
+            "bodyMarkdown": "must roll back",
+            "targetProjectId": target_project.id,
+            "referCommentId": refer_comment_id
+        })),
+    )
+    .await;
+    assert_eq!(failed_derived.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(snapshot_test_webhook_outbox().is_empty());
+    assert!(repository
+        .read_issue_detail("owner", "targetProject", 5)
+        .await
+        .expect("read rolled-back issue")
+        .is_none());
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(notification_event::Column::EventType.eq(Some("NEW_COMMENT".to_string())))
+            .all(&db)
+            .await
+            .expect("notifications after derived rollback")
+            .len(),
+        new_comment_notifications_before_rollback
+    );
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        "DROP TRIGGER fail_derived_issue_comment_insert".to_string(),
+    ))
+    .await
+    .expect("remove derived comment failure trigger");
+    let after_rollback = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Issue number after rollback",
+                "bodyMarkdown": "counter also rolled back",
+                "targetProjectId": target_project.id
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(after_rollback["issueNumber"], 5);
+
+    repository
+        .record_recent_project_visit(reporter.id, "owner", "sourceProject")
+        .await
+        .expect("direct issue target project visit");
+    let private_origin = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/privateTarget/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Private shared reference origin",
+                "bodyMarkdown": "private shared reference origin"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let private_origin_id = private_origin["issueId"]
+        .as_i64()
+        .expect("private reference origin id");
+    let private_origin_number = private_origin["issueNumber"]
+        .as_i64()
+        .expect("private reference origin number");
+    let private_with_comment = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!(
+                "/yona/api/v1/projects/owner/privateTarget/issues/{private_origin_number}/comments"
+            ),
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "Private comment shared directly"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let private_comment_id = private_with_comment["comments"]
+        .as_array()
+        .expect("private source comments")
+        .iter()
+        .find(|comment| comment["contentsMarkdown"] == "Private comment shared directly")
+        .and_then(|comment| comment["id"].as_i64())
+        .expect("private source comment id");
+
+    let unreadable_form = rest(
+        app.clone(),
+        Method::GET,
+        &format!("/yona/api/v1/user/issues/new-options?commentId={private_comment_id}"),
+        Some(&reporter_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(unreadable_form.status(), StatusCode::FORBIDDEN);
+    let unreadable_create = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/projects/owner/sourceProject/issues",
+        Some(&reporter_cookie),
+        Some(&reporter_csrf),
+        Some(json!({
+            "title": "Unreadable derived source",
+            "bodyMarkdown": "must not be created",
+            "referCommentId": private_comment_id
+        })),
+    )
+    .await;
+    assert_eq!(unreadable_create.status(), StatusCode::FORBIDDEN);
+
+    repository
+        .add_issue_sharer(private_origin_id, reporter.id, &reporter.login_id)
+        .await
+        .expect("share private origin issue")
+        .then_some(())
+        .expect("new private origin share");
+    let shared_form = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/user/issues/new-options?commentId={private_comment_id}"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        shared_form["referCommentId"],
+        private_comment_id.to_string()
+    );
+    assert!(shared_form["bodyMarkdown"]
+        .as_str()
+        .is_some_and(|body| body.contains("Private comment shared directly")));
+
+    let shared_derived = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/sourceProject/issues",
+            Some(&reporter_cookie),
+            Some(&reporter_csrf),
+            Some(json!({
+                "title": "Direct-share derived issue",
+                "bodyMarkdown": "direct-share target body",
+                "referCommentId": private_comment_id
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(shared_derived["projectName"], "sourceProject");
+    let private_after_derived = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/privateTarget/issues/{private_origin_number}"),
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let shared_derived_comment = private_after_derived["comments"]
+        .as_array()
+        .expect("private comments after shared derivation")
+        .iter()
+        .find(|comment| {
+            comment["contentsMarkdown"]
+                .as_str()
+                .is_some_and(|contents| contents.contains("/yona/owner/sourceProject/issue/"))
+        })
+        .expect("direct-share derived source comment");
+    let shared_derived_comment_id = shared_derived_comment["id"]
+        .as_i64()
+        .expect("direct-share derived comment id");
+    let shared_comment_notification = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("NEW_COMMENT".to_string())))
+        .filter(notification_event::Column::ResourceType.eq(Some("issue_comment".to_string())))
+        .filter(
+            notification_event::Column::ResourceId.eq(Some(shared_derived_comment_id.to_string())),
+        )
+        .one(&db)
+        .await
+        .expect("read direct-share derived notification")
+        .expect("direct-share derived notification event");
+    assert!(notification_event_n4user::Entity::find_by_id((
+        shared_comment_notification.id,
+        owner.id,
+    ))
+    .one(&db)
+    .await
+    .expect("read direct-share notification receiver")
+    .is_some());
+
+    let forbidden = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/projects/owner/sourceProject/issues",
+        Some(&reporter_cookie),
+        Some(&reporter_csrf),
+        Some(json!({
+            "title": "Forbidden target",
+            "bodyMarkdown": "must not be created",
+            "targetProjectId": private_target.id
+        })),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let missing = rest(
+        app,
+        Method::POST,
+        "/yona/api/v1/projects/owner/sourceProject/issues",
+        Some(&reporter_cookie),
+        Some(&reporter_csrf),
+        Some(json!({
+            "title": "Missing target",
+            "bodyMarkdown": "must not be created",
+            "targetProjectId": 9_999_999
+        })),
+    )
+    .await;
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
+async fn rest_issue_form_options_and_title_heads_preserve_scoped_legacy_contract() {
+    const BASE_PATH: &str = "/tenant/yona";
+    let data_dir = tempdir().expect("issue form data root");
+    let (app, repository, db) =
+        build_app_at_base_with_repository_and_db(BASE_PATH, data_dir.path()).await;
+    let (_owner_csrf, owner_cookie) = register_user_at(app.clone(), BASE_PATH, "owner").await;
+    let (_reporter_csrf, reporter_cookie) =
+        register_user_at(app.clone(), BASE_PATH, "reporter").await;
+    let reporter = repository
+        .find_user_by_identifier("reporter")
+        .await
+        .unwrap()
+        .expect("reporter");
+    let mention_organization = repository
+        .create_organization(CreateOrganizationInput {
+            description: None,
+            organization_name: "MentionTeam".to_string(),
+        })
+        .await
+        .expect("mention organization");
+    let mention_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: Some(mention_organization.id),
+            owner_name: mention_organization.organization_name.clone(),
+            overview: None,
+            project_name: "MentionProject".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("mention project");
+    let mut mention_members = Vec::new();
+    for index in 0..10 {
+        mention_members.push(
+            repository
+                .create_user(CreateUserInput {
+                    display_name: format!("Mention Member {index}"),
+                    email_address: format!("mention-member-{index}@example.com"),
+                    is_confirmed: true,
+                    is_site_admin: false,
+                    login_id: format!("mentionmember{index}"),
+                    password_hash: String::new(),
+                })
+                .await
+                .expect("mention member"),
+        );
+    }
+    n4user::ActiveModel {
+        id: Set(reporter.id),
+        lang: Set(Some("en-US".to_string())),
+        ..Default::default()
+    }
+    .update(&db)
+    .await
+    .expect("English mention viewer language");
+    for (index, member) in mention_members.iter().enumerate() {
+        n4user::ActiveModel {
+            id: Set(member.id),
+            created_date: Set(Some(
+                DateTimeUtc::from(SystemTime::UNIX_EPOCH + Duration::from_secs(index as u64 + 1))
+                    .naive_utc(),
+            )),
+            english_name: if index == 0 {
+                Set(Some("Member Zero".to_string()))
+            } else {
+                NotSet
+            },
+            lang: if index == 0 {
+                Set(Some("ko-KR".to_string()))
+            } else {
+                NotSet
+            },
+            name: if index == 0 {
+                Set(Some("멤버 제로 [검색팀]".to_string()))
+            } else {
+                NotSet
+            },
+            ..Default::default()
+        }
+        .update(&db)
+        .await
+        .expect("mention member locale fixture");
+    }
+    let lower_admin = repository
+        .create_user(CreateUserInput {
+            display_name: "Lowercase admin".to_string(),
+            email_address: "lowercase-admin@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "admin".to_string(),
+            password_hash: String::new(),
+        })
+        .await
+        .expect("lowercase admin mention fixture");
+    let upper_admin = repository
+        .create_user(CreateUserInput {
+            display_name: "Uppercase Admin".to_string(),
+            email_address: "uppercase-admin@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "upperadmin".to_string(),
+            password_hash: String::new(),
+        })
+        .await
+        .expect("uppercase Admin mention fixture");
+    n4user::ActiveModel {
+        id: Set(upper_admin.id),
+        login_id: Set(Some("Admin".to_string())),
+        ..Default::default()
+    }
+    .update(&db)
+    .await
+    .expect("preserve uppercase Admin login");
+    let _accented_mention_user = repository
+        .create_user(CreateUserInput {
+            display_name: "Élodie Exemple".to_string(),
+            email_address: "accented-mention@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "accentedmention".to_string(),
+            password_hash: String::new(),
+        })
+        .await
+        .expect("accented mention fixture");
+    let _cyrillic_mention_user = repository
+        .create_user(CreateUserInput {
+            display_name: "Жанна Тест".to_string(),
+            email_address: "cyrillic-mention@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "cyrillicmention".to_string(),
+            password_hash: String::new(),
+        })
+        .await
+        .expect("Cyrillic mention fixture");
+    let uppercase_active_user = repository
+        .create_user(CreateUserInput {
+            display_name: "Uppercase Active User".to_string(),
+            email_address: "uppercase-active@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "uppercaseactive".to_string(),
+            password_hash: String::new(),
+        })
+        .await
+        .expect("uppercase ACTIVE mention fixture");
+    n4user::ActiveModel {
+        id: Set(uppercase_active_user.id),
+        state: Set(Some("ACTIVE".to_string())),
+        ..Default::default()
+    }
+    .update(&db)
+    .await
+    .expect("preserve uppercase ACTIVE state");
+    for index in 0..301 {
+        repository
+            .create_user(CreateUserInput {
+                display_name: format!("Newer Noise User {index}"),
+                email_address: format!("newer-noise-{index}@example.com"),
+                is_confirmed: true,
+                is_site_admin: false,
+                login_id: format!("mentionnoise{index}"),
+                password_hash: String::new(),
+            })
+            .await
+            .expect("newer Unicode fallback noise fixture");
+    }
+    let protected_last_user = repository
+        .create_user(CreateUserInput {
+            display_name: "Protected Last User".to_string(),
+            email_address: "protected-last@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "protectedlast".to_string(),
+            password_hash: String::new(),
+        })
+        .await
+        .expect("protected last mention fixture");
+    repository
+        .add_project_membership(mention_project.id, mention_members[0].id, "member")
+        .await
+        .expect("first mention member");
+    repository
+        .add_project_membership(mention_project.id, reporter.id, "member")
+        .await
+        .expect("mention actor membership");
+    let protected_mention_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: None,
+            project_name: "ProtectedMentions".to_string(),
+            project_scope: "protected".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .expect("protected mention project");
+    for member in &mention_members {
+        repository
+            .add_project_membership(protected_mention_project.id, member.id, "member")
+            .await
+            .expect("protected mention member");
+    }
+    repository
+        .add_project_membership(protected_mention_project.id, reporter.id, "member")
+        .await
+        .expect("protected mention actor");
+    repository
+        .add_project_membership(protected_mention_project.id, lower_admin.id, "member")
+        .await
+        .expect("protected lowercase admin member");
+    repository
+        .add_project_membership(protected_mention_project.id, upper_admin.id, "member")
+        .await
+        .expect("protected uppercase Admin member");
+    repository
+        .add_project_membership(
+            protected_mention_project.id,
+            protected_last_user.id,
+            "member",
+        )
+        .await
+        .expect("protected last mention member");
+
+    let current_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "MiXeDOwner".to_string(),
+            overview: Some("current issue form project".to_string()),
+            project_name: "MainIssue".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let member_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "AlphaOwner".to_string(),
+            overview: None,
+            project_name: "alphaProject".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let recent_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "AlphaOwner".to_string(),
+            overview: None,
+            project_name: "BetaProject".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let duplicate_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "zetaOwner".to_string(),
+            overview: None,
+            project_name: "alphaProject".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let forbidden_candidate = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "NopeOwner".to_string(),
+            overview: None,
+            project_name: "Hidden".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let unseeded_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "NoiseOwner".to_string(),
+            overview: None,
+            project_name: "NotVisited".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let private_title_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "SecretOwner".to_string(),
+            overview: None,
+            project_name: "SecretTitle".to_string(),
+            project_scope: "private".to_string(),
+            vcs: "GIT".to_string(),
+        })
+        .await
+        .unwrap();
+    let svn_template_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "LegacyOwner".to_string(),
+            overview: None,
+            project_name: "SvnTemplate".to_string(),
+            project_scope: "public".to_string(),
+            vcs: "Subversion".to_string(),
+        })
+        .await
+        .unwrap();
+
+    repository
+        .add_project_membership(member_project.id, reporter.id, "member")
+        .await
+        .expect("member project membership");
+    repository
+        .add_project_membership(duplicate_project.id, reporter.id, "member")
+        .await
+        .expect("deduplicated project membership");
+    repository
+        .toggle_favorite_project(
+            reporter.id,
+            &duplicate_project.owner_name,
+            &duplicate_project.project_name,
+        )
+        .await
+        .expect("favorite duplicate project");
+    repository
+        .record_recent_project_visit(
+            reporter.id,
+            &duplicate_project.owner_name,
+            &duplicate_project.project_name,
+        )
+        .await
+        .expect("visit duplicate project");
+    repository
+        .record_recent_project_visit(
+            reporter.id,
+            &recent_project.owner_name,
+            &recent_project.project_name,
+        )
+        .await
+        .expect("visit recent project");
+    repository
+        .toggle_favorite_project(
+            reporter.id,
+            &forbidden_candidate.owner_name,
+            &forbidden_candidate.project_name,
+        )
+        .await
+        .expect("favorite forbidden candidate fixture");
+    repository
+        .toggle_favorite_project(
+            reporter.id,
+            &current_project.owner_name,
+            &current_project.project_name,
+        )
+        .await
+        .expect("favorite current project fixture");
+
+    let logo = repository
+        .create_user_attachment_upload(
+            reporter.id,
+            "reporter",
+            "candidate-logo.png",
+            "image/png",
+            16,
+            "candidate-logo-hash",
+        )
+        .await
+        .expect("candidate logo upload");
+    repository
+        .set_project_logo_attachment(duplicate_project.id, logo.id, reporter.id)
+        .await
+        .expect("bind candidate logo")
+        .expect("candidate logo binding");
+
+    let repository_path = yoram_vcs::repository_path(data_dir.path(), current_project.id);
+    yoram_vcs::create_bare_repository(&repository_path).expect("current project repository");
+    yoram_vcs::commit_text_file(
+        &repository_path,
+        None,
+        "ISSUE_TEMPLATE.md",
+        "## Issue form template\n",
+        "Add issue template",
+        "owner",
+        "owner@example.com",
+    )
+    .expect("commit issue template");
+
+    let (label, _) = repository
+        .create_project_label(CreateProjectLabelInput {
+            category_is_exclusive: true,
+            category_name: "Type".to_string(),
+            label_color: "#f44336".to_string(),
+            label_name: "Bug".to_string(),
+            owner_name: current_project.owner_name.clone(),
+            project_name: current_project.project_name.clone(),
+        })
+        .await
+        .unwrap()
+        .expect("title-head label");
+    title_head::ActiveModel {
+        id: NotSet,
+        project_id: Set(Some(current_project.id)),
+        head_keyword: Set(Some("Bugfix".to_string())),
+        frequency: Set(Some(3)),
+    }
+    .insert(&db)
+    .await
+    .expect("canonical title head");
+
+    let form_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        form_options["issueTemplateMarkdown"],
+        "## Issue form template\n"
+    );
+    assert_eq!(
+        form_options["currentProject"]["projectId"],
+        current_project.id
+    );
+    assert_eq!(form_options["currentProject"]["ownerName"], "MiXeDOwner");
+    assert_eq!(form_options["currentProject"]["projectName"], "MainIssue");
+    assert_eq!(
+        form_options["currentProject"]["logoUrl"],
+        format!("{BASE_PATH}/legacy-assets/images/project_default_logo.png")
+    );
+    assert_eq!(form_options["canCreateIssueAssignee"], false);
+    assert_eq!(form_options["canCreateIssueMilestone"], false);
+    assert_eq!(form_options["canManageIssueLabels"], false);
+    let site_admin_form_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(site_admin_form_options["canManageIssueLabels"], false);
+
+    let movable = form_options["movableIssueProjects"]
+        .as_array()
+        .expect("movable issue projects");
+    assert_eq!(movable.len(), 6);
+    assert_eq!(
+        movable
+            .iter()
+            .map(|project| format!(
+                "{}/{}",
+                project["ownerName"].as_str().unwrap(),
+                project["projectName"].as_str().unwrap()
+            ))
+            .collect::<Vec<_>>(),
+        vec![
+            "AlphaOwner/alphaProject",
+            "AlphaOwner/BetaProject",
+            "MentionTeam/MentionProject",
+            "NopeOwner/Hidden",
+            "owner/ProtectedMentions",
+            "zetaOwner/alphaProject"
+        ]
+    );
+    assert_eq!(
+        movable
+            .iter()
+            .filter(|project| project["projectId"] == duplicate_project.id)
+            .count(),
+        1
+    );
+    assert_eq!(
+        movable
+            .iter()
+            .find(|project| project["projectId"] == duplicate_project.id)
+            .expect("logo project")["logoUrl"],
+        format!("{BASE_PATH}/files/{}", logo.id)
+    );
+    assert!(movable
+        .iter()
+        .any(|project| project["projectId"] == forbidden_candidate.id));
+    assert!(!movable.iter().any(|project| {
+        project["projectId"] == current_project.id || project["projectId"] == unseeded_project.id
+    }));
+
+    commit_git_file_bytes(
+        &repository_path,
+        "ISSUE_TEMPLATE.md",
+        b"\xEF\xBB\xBF## UTF-8 BOM template\n",
+    );
+    let bom_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        bom_template_options["issueTemplateMarkdown"],
+        "## UTF-8 BOM template\n"
+    );
+
+    let cp949_template = "## 레거시 이슈 템플릿\n";
+    let (cp949_contents, _, had_encoding_errors) = encoding_rs::EUC_KR.encode(cp949_template);
+    assert!(!had_encoding_errors);
+    commit_git_file_bytes(
+        &repository_path,
+        "ISSUE_TEMPLATE.md",
+        cp949_contents.as_ref(),
+    );
+    let cp949_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        cp949_template_options["issueTemplateMarkdown"],
+        cp949_template
+    );
+
+    let shift_jis_template =
+        "## 問題テンプレート\n再現手順、期待する結果、実際の結果を詳しく記載してください。\n";
+    let (shift_jis_contents, _, had_encoding_errors) =
+        encoding_rs::SHIFT_JIS.encode(shift_jis_template);
+    assert!(!had_encoding_errors);
+    commit_git_file_bytes(
+        &repository_path,
+        "ISSUE_TEMPLATE.md",
+        shift_jis_contents.as_ref(),
+    );
+    let shift_jis_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        shift_jis_template_options["issueTemplateMarkdown"],
+        shift_jis_template
+    );
+
+    let windows_1252_template = "## Modèle d’incident\nDécrivez déjà précisément le problème, l’étape échouée et le résultat attendu — sans ambiguïté.\n";
+    let (windows_1252_contents, _, had_encoding_errors) =
+        encoding_rs::WINDOWS_1252.encode(windows_1252_template);
+    assert!(!had_encoding_errors);
+    commit_git_file_bytes(
+        &repository_path,
+        "ISSUE_TEMPLATE.md",
+        windows_1252_contents.as_ref(),
+    );
+    let windows_1252_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        windows_1252_template_options["issueTemplateMarkdown"],
+        windows_1252_template
+    );
+
+    let large_template = format!("## Large template\n{}", "x".repeat(1_200_000));
+    yoram_vcs::commit_text_file(
+        &repository_path,
+        None,
+        "ISSUE_TEMPLATE.md",
+        &large_template,
+        "Add large issue template",
+        "owner",
+        "owner@example.com",
+    )
+    .expect("commit large issue template");
+    let large_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        large_template_options["issueTemplateMarkdown"],
+        large_template
+    );
+
+    let oversized_template = "x".repeat(yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES + 1);
+    yoram_vcs::commit_text_file(
+        &repository_path,
+        None,
+        "ISSUE_TEMPLATE.md",
+        &oversized_template,
+        "Add oversized issue template",
+        "owner",
+        "owner@example.com",
+    )
+    .expect("commit oversized issue template");
+    let oversized_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(oversized_template_options["issueTemplateMarkdown"], "");
+
+    let svn_available = yoram_vcs::ensure_svnadmin_available().is_ok()
+        && Command::new(yoram_vcs::svn_executable("svn"))
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success());
+    if svn_available {
+        let svn_repository_path =
+            yoram_vcs::svn_repository_path(data_dir.path(), svn_template_project.id);
+        yoram_vcs::create_svn_repository(&svn_repository_path)
+            .expect("create SVN template repository");
+        yoram_vcs::svn_put_file(
+            &svn_repository_path,
+            "ISSUE_TEMPLATE.md",
+            cp949_contents.as_ref(),
+            "Add legacy issue template",
+        )
+        .expect("commit SVN issue template");
+        let svn_template_options = ok_json(
+            rest(
+                app.clone(),
+                Method::GET,
+                &format!(
+                    "{BASE_PATH}/api/v1/projects/{}/{}/issues/form-options",
+                    svn_template_project.owner_name, svn_template_project.project_name
+                ),
+                Some(&reporter_cookie),
+                None,
+                None,
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(
+            svn_template_options["issueTemplateMarkdown"],
+            cp949_template
+        );
+    }
+
+    repository
+        .add_project_membership(current_project.id, reporter.id, "member")
+        .await
+        .expect("current project member capability fixture");
+    let member_form_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(member_form_options["canCreateIssueAssignee"], true);
+    assert_eq!(member_form_options["canCreateIssueMilestone"], true);
+    assert_eq!(member_form_options["canManageIssueLabels"], false);
+
+    repository
+        .add_project_membership(current_project.id, reporter.id, "manager")
+        .await
+        .expect("current project manager capability fixture");
+    let manager_form_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("{BASE_PATH}/api/v1/projects/mixedowner/mainissue/issues/form-options"),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(manager_form_options["canManageIssueLabels"], true);
+
+    let missing_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/projects/{}/{}/issues/form-options",
+                recent_project.owner_name, recent_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(missing_template_options["issueTemplateMarkdown"], "");
+
+    let mention_users = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let mention_items = mention_users["items"].as_array().expect("mention items");
+    let first_member_index = mention_items
+        .iter()
+        .position(|item| item["loginId"] == "mentionmember0")
+        .expect("first mention member");
+    assert_eq!(
+        mention_items[first_member_index]["displayName"],
+        "Member Zero [검색팀]"
+    );
+    let actor_index = mention_items
+        .iter()
+        .position(|item| item["loginId"] == "reporter")
+        .expect("mention actor");
+    assert!(actor_index > first_member_index);
+    assert_eq!(mention_items[actor_index]["displayName"], "reporter");
+    assert_ne!(
+        mention_items[actor_index]["displayName"],
+        "issue.assignToMe"
+    );
+    let actor_avatar_url = mention_items[actor_index]["avatarUrl"]
+        .as_str()
+        .expect("mention actor avatar");
+    assert!(
+        actor_avatar_url.starts_with(&format!("{BASE_PATH}/files/"))
+            || actor_avatar_url.contains("gravatar.com/avatar")
+    );
+    let project_mention = mention_items
+        .iter()
+        .find(|item| item["type"] == "project")
+        .expect("project mention target");
+    assert_eq!(project_mention["loginId"], "MentionTeam/MentionProject");
+    assert_eq!(project_mention["displayName"], "@project all:");
+    assert_eq!(
+        project_mention["avatarUrl"],
+        format!("{BASE_PATH}/legacy-assets/images/project_default_logo.png")
+    );
+    let organization_mention = mention_items
+        .iter()
+        .find(|item| item["type"] == "organization")
+        .expect("organization mention target");
+    assert_eq!(organization_mention["loginId"], "MentionTeam");
+    assert_eq!(organization_mention["displayName"], "@group all: ");
+    assert_eq!(
+        organization_mention["avatarUrl"],
+        format!("{BASE_PATH}/legacy-assets/images/group_default.png")
+    );
+
+    let searched_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=mentionmember9",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(searched_mentions["items"]
+        .as_array()
+        .expect("searched mention items")
+        .iter()
+        .any(|item| item["type"] == "user" && item["loginId"] == "mentionmember9"));
+
+    let ordered_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=mentionmember",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let ordered_items = ordered_mentions["items"]
+        .as_array()
+        .expect("ordered public mention items");
+    assert_eq!(ordered_items[0]["loginId"], "mentionmember9");
+    assert_eq!(ordered_items[1]["loginId"], "mentionmember8");
+    assert!(!ordered_items
+        .iter()
+        .any(|item| item["loginId"] == "reporter"));
+    assert!(!ordered_items
+        .iter()
+        .any(|item| { matches!(item["loginId"].as_str(), Some("admin" | "anonymous")) }));
+    let direct_ordered_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/{}/{}/mentionList?mentionType=user&query=mentionmember",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let direct_ordered_items = direct_ordered_mentions["result"]
+        .as_array()
+        .expect("direct ordered public mention items");
+    assert_eq!(direct_ordered_items.len(), 10);
+    assert!(!direct_ordered_items
+        .iter()
+        .any(|item| item["loginid"] == "reporter"));
+
+    let admin_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=admin",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let admin_items = admin_mentions["items"]
+        .as_array()
+        .expect("admin mention items");
+    assert!(!admin_items.iter().any(|item| item["loginId"] == "admin"));
+    assert!(admin_items.iter().any(|item| item["loginId"] == "Admin"));
+
+    let uppercase_active_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=uppercaseactive",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(uppercase_active_mentions["items"]
+        .as_array()
+        .expect("uppercase ACTIVE mention items")
+        .iter()
+        .any(|item| item["loginId"] == "uppercaseactive"));
+
+    for (query, expected_login) in [
+        ("%C3%A9lodie", "accentedmention"),
+        ("%D0%B6%D0%B0%D0%BD%D0%BD%D0%B0", "cyrillicmention"),
+    ] {
+        let unicode_mentions = ok_json(
+            rest(
+                app.clone(),
+                Method::GET,
+                &format!(
+                    "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query={query}",
+                    mention_project.owner_name, mention_project.project_name
+                ),
+                Some(&reporter_cookie),
+                None,
+                None,
+            )
+            .await,
+        )
+        .await;
+        assert!(unicode_mentions["items"]
+            .as_array()
+            .expect("Unicode mention items")
+            .iter()
+            .any(|item| item["loginId"] == expected_login));
+    }
+
+    let site_manager_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=owner",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(!site_manager_mentions["items"]
+        .as_array()
+        .expect("site manager mention items")
+        .iter()
+        .any(|item| item["loginId"] == "owner"));
+
+    for (query, expected_type) in [
+        ("project/member/all", "project"),
+        ("group/org/member/all", "organization"),
+    ] {
+        let target_mentions = ok_json(
+            rest(
+                app.clone(),
+                Method::GET,
+                &format!(
+                    "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query={query}",
+                    mention_project.owner_name, mention_project.project_name
+                ),
+                Some(&reporter_cookie),
+                None,
+                None,
+            )
+            .await,
+        )
+        .await;
+        let target_items = target_mentions["items"]
+            .as_array()
+            .expect("target mention items");
+        assert_eq!(target_items.len(), 1);
+        assert_eq!(target_items[0]["type"], expected_type);
+
+        let direct_target_mentions = ok_json(
+            rest(
+                app.clone(),
+                Method::GET,
+                &format!(
+                    "{BASE_PATH}/{}/{}/mentionList?mentionType=user&query={query}",
+                    mention_project.owner_name, mention_project.project_name
+                ),
+                Some(&reporter_cookie),
+                None,
+                None,
+            )
+            .await,
+        )
+        .await;
+        let direct_target_items = direct_target_mentions["result"]
+            .as_array()
+            .expect("direct target mention items");
+        assert_eq!(direct_target_items.len(), 1);
+        assert_eq!(
+            direct_target_items[0]["loginid"],
+            if expected_type == "project" {
+                "MentionTeam/MentionProject"
+            } else {
+                "MentionTeam"
+            }
+        );
+    }
+
+    for member in mention_members.iter().skip(1) {
+        repository
+            .add_project_membership(mention_project.id, member.id, "member")
+            .await
+            .expect("additional mention member");
+    }
+    let limited_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let limited_items = limited_mentions["items"]
+        .as_array()
+        .expect("limited mention items");
+    assert_eq!(limited_items.len(), 10);
+    assert_eq!(limited_mentions["truncated"], true);
+    assert_eq!(
+        limited_items
+            .iter()
+            .filter(|item| item["type"] == "user")
+            .count(),
+        8
+    );
+    assert_eq!(limited_items[8]["type"], "project");
+    assert_eq!(limited_items[9]["type"], "organization");
+
+    let direct_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/{}/{}/mentionList?mentionType=user&query=",
+                mention_project.owner_name, mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let direct_items = direct_mentions["result"]
+        .as_array()
+        .expect("direct mention items");
+    assert_eq!(direct_items.len(), 10);
+    assert_eq!(direct_items[8]["loginid"], "MentionTeam/MentionProject");
+    assert_eq!(direct_items[9]["loginid"], "MentionTeam");
+    assert!(direct_items.iter().all(|item| item["image"]
+        .as_str()
+        .is_some_and(|image| !image.is_empty())));
+
+    let protected_blank_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body",
+                protected_mention_project.owner_name, protected_mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let protected_blank_items = protected_blank_mentions["items"]
+        .as_array()
+        .expect("protected blank mention items");
+    assert_eq!(protected_blank_items.len(), 10);
+    assert_eq!(
+        protected_blank_items
+            .iter()
+            .filter(|item| item["type"] == "user")
+            .count(),
+        9
+    );
+    assert_eq!(protected_blank_items[9]["type"], "project");
+    assert!(!protected_blank_items
+        .iter()
+        .any(|item| item["type"] == "organization"));
+
+    let protected_exact_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=protectedlast",
+                protected_mention_project.owner_name, protected_mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let protected_exact_items = protected_exact_mentions["items"]
+        .as_array()
+        .expect("protected exact mention items");
+    assert_eq!(protected_exact_items.len(), 1);
+    assert_eq!(protected_exact_items[0]["loginId"], "protectedlast");
+
+    let protected_admin_mentions = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body&query=admin",
+                protected_mention_project.owner_name, protected_mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let protected_admin_items = protected_admin_mentions["items"]
+        .as_array()
+        .expect("protected admin mention items");
+    assert!(!protected_admin_items
+        .iter()
+        .any(|item| item["loginId"] == "admin"));
+    assert!(protected_admin_items
+        .iter()
+        .any(|item| item["loginId"] == "Admin"));
+
+    let protected_direct_blank = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/{}/{}/mentionList?mentionType=user&query=",
+                protected_mention_project.owner_name, protected_mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let protected_direct_blank_items = protected_direct_blank["result"]
+        .as_array()
+        .expect("protected direct blank mention items");
+    assert_eq!(protected_direct_blank_items.len(), 10);
+    assert_eq!(
+        protected_direct_blank_items[9]["loginid"],
+        "owner/ProtectedMentions"
+    );
+
+    let protected_direct_exact = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/{}/{}/mentionList?mentionType=user&query=protectedlast",
+                protected_mention_project.owner_name, protected_mention_project.project_name
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let protected_direct_exact_items = protected_direct_exact["result"]
+        .as_array()
+        .expect("protected direct exact mention items");
+    assert_eq!(protected_direct_exact_items.len(), 1);
+    assert_eq!(protected_direct_exact_items[0]["loginid"], "protectedlast");
+
+    let forbidden_mentions = rest(
+        app.clone(),
+        Method::GET,
+        &format!(
+            "{BASE_PATH}/api/v1/owners/{}/projects/{}/mention-users?context=issue-body",
+            private_title_project.owner_name, private_title_project.project_name
+        ),
+        Some(&reporter_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(forbidden_mentions.status(), StatusCode::FORBIDDEN);
+
+    let title_heads = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!(
+                "{BASE_PATH}/api/v1/owners/mixedowner/projects/mainissue/title-heads?query=bug"
+            ),
+            Some(&reporter_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let title_heads = title_heads["result"]
+        .as_array()
+        .expect("title-head results");
+    assert_eq!(title_heads.len(), 2);
+    assert_eq!(title_heads[0]["name"], "Bugfix");
+    assert_eq!(title_heads[0]["frequency"], 3);
+    assert_eq!(title_heads[0]["category"], "");
+    assert_eq!(title_heads[0]["searchText"], "Bugfix");
+    assert_eq!(title_heads[1]["name"], "Bug");
+    assert_eq!(title_heads[1]["frequency"], 0);
+    assert_eq!(title_heads[1]["category"], "Type");
+    assert_eq!(
+        title_heads[1]["categoryId"],
+        label.category_id.expect("label category id")
+    );
+    assert_eq!(title_heads[1]["id"], label.id);
+    assert_eq!(title_heads[1]["labelColor"], "#f44336");
+    assert_eq!(title_heads[1]["isExclusive"], true);
+    assert_eq!(title_heads[1]["searchText"], "Bug/Type");
+
+    let forbidden_title_heads = rest(
+        app,
+        Method::GET,
+        &format!(
+            "{BASE_PATH}/api/v1/owners/{}/projects/{}/title-heads",
+            private_title_project.owner_name, private_title_project.project_name
+        ),
+        Some(&reporter_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(forbidden_title_heads.status(), StatusCode::FORBIDDEN);
 }

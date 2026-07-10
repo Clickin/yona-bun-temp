@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 pub const CRATE_OWNER: &str = "vcs";
 pub const HISTORY_ITEM_LIMIT: usize = 25;
+pub const MAX_ISSUE_TEMPLATE_BYTES: usize = 2 * 1024 * 1024;
 pub const MAX_TEXT_FILE_BYTES: i64 = 1024 * 1024;
 pub const MAX_SMART_HTTP_RPC_BYTES: usize = 100 * 1024 * 1024;
 
@@ -147,6 +148,12 @@ pub struct ProjectHistoryCommitRecord {
     pub commit_id: String,
     pub commit_short_id: String,
     pub short_message: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GitCommitReferenceRecord {
+    pub commit_id: String,
+    pub commit_short_id: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -505,6 +512,24 @@ pub fn svn_cat_file(
     revision: Option<i64>,
     path: &str,
 ) -> Result<Vec<u8>, VcsError> {
+    svn_cat_file_with_limit(repo_path, revision, path, None)
+}
+
+pub fn svn_cat_file_bounded(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+    max_bytes: usize,
+) -> Result<Vec<u8>, VcsError> {
+    svn_cat_file_with_limit(repo_path, revision, path, Some(max_bytes))
+}
+
+fn svn_cat_file_with_limit(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+    max_bytes: Option<usize>,
+) -> Result<Vec<u8>, VcsError> {
     if !repo_path.exists() || !repo_path.is_dir() {
         return Err(VcsError::NotFound);
     }
@@ -518,11 +543,29 @@ pub fn svn_cat_file(
     if let Some(revision) = revision {
         command.args(["-r", &revision.to_string()]);
     }
-    let output = command
+    command
         .arg(repo_path)
         .arg(&clean_path)
-        .output()
-        .map_err(|_| VcsError::SvnLookUnavailable)?;
+        .stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped());
+    let (output, exceeded) = capture_command_output(
+        command,
+        Duration::from_secs(5),
+        max_bytes,
+        max_bytes.map(|_| 64 * 1024),
+    )
+    .map_err(|error| match error {
+        CommandCaptureError::Unavailable => VcsError::SvnLookUnavailable,
+        CommandCaptureError::TimedOut => {
+            VcsError::SvnLookFailed("svnlook command timed out".to_string())
+        }
+    })?;
+    if exceeded {
+        return Err(VcsError::SvnLookFailed(
+            "svnlook command output exceeded the configured limit".to_string(),
+        ));
+    }
     if output.status.success() {
         return Ok(output.stdout);
     }
@@ -2056,6 +2099,24 @@ pub fn read_file_bytes(
     revision: &str,
     path: &str,
 ) -> Result<CodeFileBytesRecord, VcsError> {
+    read_file_bytes_with_limit(repo_path, revision, path, None)
+}
+
+pub fn read_file_bytes_bounded(
+    repo_path: &Path,
+    revision: &str,
+    path: &str,
+    max_bytes: usize,
+) -> Result<CodeFileBytesRecord, VcsError> {
+    read_file_bytes_with_limit(repo_path, revision, path, Some(max_bytes))
+}
+
+fn read_file_bytes_with_limit(
+    repo_path: &Path,
+    revision: &str,
+    path: &str,
+    max_bytes: Option<usize>,
+) -> Result<CodeFileBytesRecord, VcsError> {
     if !repo_path.exists() {
         return Err(VcsError::NotFound);
     }
@@ -2072,7 +2133,10 @@ pub fn read_file_bytes(
     if object_type.trim() != "blob" {
         return Err(VcsError::NotFound);
     }
-    let bytes = git_bytes(repo_path, &["show", &spec])?;
+    let bytes = match max_bytes {
+        Some(max_bytes) => git_bytes_bounded(repo_path, &["show", &spec], max_bytes)?,
+        None => git_bytes(repo_path, &["show", &spec])?,
+    };
     Ok(CodeFileBytesRecord {
         bytes,
         mime_type: mime_guess::from_path(&clean_path)
@@ -2192,6 +2256,38 @@ pub fn read_project_history_commits(
             })
         })
         .collect())
+}
+
+pub fn resolve_git_commit_reference(
+    repo_path: &Path,
+    revision: &str,
+) -> Result<GitCommitReferenceRecord, VcsError> {
+    let revision = revision.trim();
+    if !(7..=40).contains(&revision.len())
+        || !revision
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
+        || !repo_path.is_dir()
+    {
+        return Err(VcsError::NotFound);
+    }
+
+    let spec = format!("{revision}^{{commit}}");
+    let commit_id = git_output(repo_path, &["rev-parse", "--verify", &spec])?
+        .trim()
+        .to_string();
+    if commit_id.len() != 40
+        || !commit_id
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
+    {
+        return Err(VcsError::NotFound);
+    }
+
+    Ok(GitCommitReferenceRecord {
+        commit_short_id: commit_id[..7].to_string(),
+        commit_id,
+    })
 }
 
 pub fn read_commit_detail(
@@ -3433,29 +3529,49 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
     command_bytes(command, Duration::from_secs(5))
 }
 
+fn git_bytes_bounded(
+    repo_path: &Path,
+    args: &[&str],
+    max_bytes: usize,
+) -> Result<Vec<u8>, VcsError> {
+    let mut command = git_command();
+    command
+        .arg("--git-dir")
+        .arg(repo_path)
+        .args(args)
+        .stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped());
+    command_bytes_with_limit(command, Duration::from_secs(5), Some(max_bytes))
+}
+
 fn git_command() -> Command {
     let mut command = Command::new("git");
     command.env_remove("GIT_DIR").env_remove("GIT_WORK_TREE");
     command
 }
 
-fn command_bytes(mut command: Command, timeout: Duration) -> Result<Vec<u8>, VcsError> {
-    let mut child = command.spawn().map_err(|_| VcsError::GitUnavailable)?;
-    let start = Instant::now();
-    loop {
-        match child.try_wait().map_err(|_| VcsError::GitUnavailable)? {
-            Some(_) => break,
-            None if start.elapsed() > timeout => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(VcsError::GitTimedOut);
-            }
-            None => thread::sleep(Duration::from_millis(10)),
-        }
+fn command_bytes(command: Command, timeout: Duration) -> Result<Vec<u8>, VcsError> {
+    command_bytes_with_limit(command, timeout, None)
+}
+
+fn command_bytes_with_limit(
+    command: Command,
+    timeout: Duration,
+    max_bytes: Option<usize>,
+) -> Result<Vec<u8>, VcsError> {
+    let (output, exceeded) =
+        capture_command_output(command, timeout, max_bytes, max_bytes.map(|_| 64 * 1024)).map_err(
+            |error| match error {
+                CommandCaptureError::Unavailable => VcsError::GitUnavailable,
+                CommandCaptureError::TimedOut => VcsError::GitTimedOut,
+            },
+        )?;
+    if exceeded {
+        return Err(VcsError::GitFailed(
+            "git command output exceeded the configured limit".to_string(),
+        ));
     }
-    let output = child
-        .wait_with_output()
-        .map_err(|_| VcsError::GitUnavailable)?;
     if output.status.success() {
         return Ok(output.stdout);
     }
@@ -3470,6 +3586,90 @@ fn command_bytes(mut command: Command, timeout: Duration) -> Result<Vec<u8>, Vcs
     } else {
         Err(VcsError::GitFailed(stderr))
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CommandCaptureError {
+    Unavailable,
+    TimedOut,
+}
+
+struct CapturedStream {
+    bytes: Vec<u8>,
+    exceeded: bool,
+}
+
+fn read_stream(mut stream: impl Read, max_bytes: Option<usize>) -> std::io::Result<CapturedStream> {
+    let mut bytes = Vec::new();
+    let mut exceeded = false;
+    let mut buffer = [0_u8; 8192];
+    loop {
+        let count = stream.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        match max_bytes {
+            Some(max_bytes) => {
+                let remaining = max_bytes.saturating_sub(bytes.len());
+                bytes.extend_from_slice(&buffer[..count.min(remaining)]);
+                exceeded |= count > remaining;
+            }
+            None => bytes.extend_from_slice(&buffer[..count]),
+        }
+    }
+    Ok(CapturedStream { bytes, exceeded })
+}
+
+fn capture_command_output(
+    mut command: Command,
+    timeout: Duration,
+    max_stdout_bytes: Option<usize>,
+    max_stderr_bytes: Option<usize>,
+) -> Result<(std::process::Output, bool), CommandCaptureError> {
+    let mut child = command
+        .spawn()
+        .map_err(|_| CommandCaptureError::Unavailable)?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or(CommandCaptureError::Unavailable)?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or(CommandCaptureError::Unavailable)?;
+    let stdout_reader = thread::spawn(move || read_stream(stdout, max_stdout_bytes));
+    let stderr_reader = thread::spawn(move || read_stream(stderr, max_stderr_bytes));
+    let start = Instant::now();
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break Ok(status),
+            Ok(None) if start.elapsed() > timeout => {
+                break Err(CommandCaptureError::TimedOut);
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(10)),
+            Err(_) => break Err(CommandCaptureError::Unavailable),
+        }
+    };
+    if status.is_err() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+    let stdout = stdout_reader.join();
+    let stderr = stderr_reader.join();
+    let status = status?;
+    let stdout = stdout
+        .map_err(|_| CommandCaptureError::Unavailable)?
+        .map_err(|_| CommandCaptureError::Unavailable)?;
+    let stderr = stderr
+        .map_err(|_| CommandCaptureError::Unavailable)?
+        .map_err(|_| CommandCaptureError::Unavailable)?;
+    let exceeded = stdout.exceeded || stderr.exceeded;
+    let output = std::process::Output {
+        status,
+        stdout: stdout.bytes,
+        stderr: stderr.bytes,
+    };
+    Ok((output, exceeded))
 }
 
 fn git_error_text(output: &std::process::Output) -> String {
@@ -3565,6 +3765,102 @@ fn find_delimiter(buffer: &[u8], delimiter: &[u8]) -> Option<(usize, usize)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn read_file_bytes_drains_git_output_larger_than_a_pipe_buffer() {
+        let data_dir = tempdir().expect("large blob tempdir");
+        let repo_path = data_dir.path().join("large.git");
+        create_bare_repository(&repo_path).expect("create bare repository");
+        let contents = "x".repeat(MAX_TEXT_FILE_BYTES as usize + 1);
+        commit_text_file(
+            &repo_path,
+            None,
+            "ISSUE_TEMPLATE.md",
+            &contents,
+            "Add large template",
+            "Template Author",
+            "template@example.com",
+        )
+        .expect("commit large template");
+
+        let file =
+            read_file_bytes(&repo_path, "HEAD", "ISSUE_TEMPLATE.md").expect("read large template");
+        assert_eq!(file.bytes, contents.as_bytes());
+        assert!(matches!(
+            read_file_bytes_bounded(
+                &repo_path,
+                "HEAD",
+                "ISSUE_TEMPLATE.md",
+                contents.len() - 1,
+            ),
+            Err(VcsError::GitFailed(message)) if message.contains("output exceeded")
+        ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn bounded_command_capture_drains_both_streams_and_times_out_children() {
+        let mut noisy = Command::new("sh");
+        noisy
+            .args([
+                "-c",
+                "dd if=/dev/zero bs=65536 count=2 2>/dev/null; dd if=/dev/zero bs=65536 count=2 1>&2 2>/dev/null",
+            ])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        let (output, exceeded) =
+            capture_command_output(noisy, Duration::from_secs(2), Some(1024), Some(1024))
+                .expect("capture bounded stdout and stderr");
+        assert!(output.status.success());
+        assert!(exceeded);
+        assert_eq!(output.stdout.len(), 1024);
+        assert_eq!(output.stderr.len(), 1024);
+
+        let mut sleeping = Command::new("sh");
+        sleeping
+            .args(["-c", "sleep 1"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        assert_eq!(
+            capture_command_output(sleeping, Duration::from_millis(20), Some(1024), Some(1024),)
+                .expect_err("sleeping child must time out"),
+            CommandCaptureError::TimedOut
+        );
+    }
+
+    #[test]
+    fn git_commit_reference_resolver_returns_canonical_and_legacy_short_ids() {
+        let data_dir = tempdir().expect("git commit reference tempdir");
+        let repo_path = data_dir.path().join("reference.git");
+        create_bare_repository(&repo_path).expect("create bare repository");
+        let commit_id = commit_text_file(
+            &repo_path,
+            None,
+            "README.md",
+            "reference\n",
+            "Seed reference",
+            "Reference Author",
+            "reference@example.com",
+        )
+        .expect("commit reference fixture")
+        .expect("commit id");
+
+        let reference = resolve_git_commit_reference(&repo_path, &commit_id[..7])
+            .expect("resolve abbreviated commit reference");
+        assert_eq!(reference.commit_id, commit_id);
+        assert_eq!(reference.commit_short_id, commit_id[..7]);
+        assert!(matches!(
+            resolve_git_commit_reference(&repo_path, "ABCDEF0"),
+            Err(VcsError::NotFound)
+        ));
+        assert!(matches!(
+            resolve_git_commit_reference(&repo_path, "abcdef"),
+            Err(VcsError::NotFound)
+        ));
+    }
 
     #[test]
     fn parse_svnlook_changed_preserves_action_path_and_kind() {

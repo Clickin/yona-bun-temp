@@ -383,6 +383,111 @@ impl AppRepositoryImpl<'_> {
         }))
     }
 
+    pub async fn list_project_mention_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        actor_id: Option<i64>,
+        query: &str,
+        limit: usize,
+    ) -> Result<Option<IssueMentionUserSearchRecord>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let query = query.trim();
+        let requester_language = match actor_id {
+            Some(actor_id) => self
+                .find_user_model_by_id(actor_id)
+                .await?
+                .and_then(|user| user.lang),
+            None => None,
+        };
+        let mut user_ids = Vec::new();
+        let mut seen = HashSet::new();
+        if !query.is_empty() && normalize_identity(&project_record.project_scope) == "public" {
+            for user_id in self.legacy_public_mention_user_ids(query).await? {
+                push_unique_user_id(&mut user_ids, &mut seen, Some(user_id));
+            }
+        } else {
+            for membership in project_user::Entity::find()
+                .filter(project_user::Column::ProjectId.eq(Some(project_record.id)))
+                .order_by_asc(project_user::Column::Id)
+                .all(&self.db)
+                .await?
+            {
+                push_unique_user_id(&mut user_ids, &mut seen, membership.user_id);
+            }
+            if let Some(organization_id) = project_record.organization_id {
+                for membership in organization_user::Entity::find()
+                    .filter(organization_user::Column::OrganizationId.eq(Some(organization_id)))
+                    .order_by_asc(organization_user::Column::Id)
+                    .all(&self.db)
+                    .await?
+                {
+                    push_unique_user_id(&mut user_ids, &mut seen, membership.user_id);
+                }
+            }
+            for issue in issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(project_record.id)))
+                .order_by_asc(issue::Column::Id)
+                .all(&self.db)
+                .await?
+            {
+                push_unique_user_id(&mut user_ids, &mut seen, issue.author_id);
+            }
+            for posting in posting::Entity::find()
+                .filter(posting::Column::ProjectId.eq(Some(project_record.id)))
+                .order_by_asc(posting::Column::Id)
+                .all(&self.db)
+                .await?
+            {
+                push_unique_user_id(&mut user_ids, &mut seen, posting.author_id);
+            }
+            for pull_request in pull_request::Entity::find()
+                .filter(pull_request::Column::ToProjectId.eq(Some(project_record.id)))
+                .order_by_asc(pull_request::Column::Id)
+                .all(&self.db)
+                .await?
+            {
+                push_unique_user_id(&mut user_ids, &mut seen, pull_request.contributor_id);
+            }
+            for watcher in watch::Entity::find()
+                .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+                .filter(watch::Column::ResourceId.eq(Some(project_record.id.to_string())))
+                .order_by_asc(watch::Column::Id)
+                .all(&self.db)
+                .await?
+            {
+                push_unique_user_id(&mut user_ids, &mut seen, watcher.user_id);
+            }
+        }
+        if let Some(actor_id) = actor_id {
+            user_ids.retain(|user_id| *user_id != actor_id);
+            user_ids.push(actor_id);
+        }
+
+        let mut users = self
+            .mention_user_records_from_ids(user_ids, requester_language.as_deref())
+            .await?;
+        if !query.is_empty() {
+            users.retain(|user| mention_text_matches(user, query));
+        }
+        let mut targets = Vec::new();
+        self.append_project_mention_targets(&project_record, query, &mut targets)
+            .await?;
+        let total = (users.len() + targets.len()) as u32;
+        users.truncate(limit.saturating_sub(targets.len()));
+        users.extend(targets);
+        Ok(Some(IssueMentionUserSearchRecord {
+            truncated: total > users.len() as u32,
+            total,
+            items: users,
+        }))
+    }
+
     pub async fn list_issue_mention_users(
         &self,
         owner_name: &str,
@@ -401,31 +506,42 @@ impl AppRepositoryImpl<'_> {
         };
 
         let query = query.trim();
+        let requester_language = match actor_id {
+            Some(actor_id) => self
+                .find_user_model_by_id(actor_id)
+                .await?
+                .and_then(|user| user.lang),
+            None => None,
+        };
         let mut records =
             if query.is_empty() || normalize_identity(&project_record.project_scope) != "public" {
-                self.contextual_issue_mention_users(&project_record, &issue_model, actor_id)
-                    .await?
+                self.contextual_issue_mention_users(
+                    &project_record,
+                    &issue_model,
+                    actor_id,
+                    requester_language.as_deref(),
+                )
+                .await?
             } else {
-                n4user::Entity::find()
-                    .order_by_asc(n4user::Column::LoginId)
-                    .all(&self.db)
+                let mut user_ids = self.legacy_public_mention_user_ids(query).await?;
+                if let Some(actor_id) = actor_id {
+                    user_ids.retain(|user_id| *user_id != actor_id);
+                    user_ids.push(actor_id);
+                }
+                self.mention_user_records_from_ids(user_ids, requester_language.as_deref())
                     .await?
-                    .into_iter()
-                    .filter(n4user_is_active)
-                    .filter(|user| issue_assignable_user_matches(user, query, ""))
-                    .map(issue_mention_user_record)
-                    .collect::<Vec<_>>()
             };
-
         if !query.is_empty() {
             records.retain(|record| mention_text_matches(record, query));
         }
-        self.append_project_mention_targets(&project_record, query, &mut records)
-            .await?;
 
-        let total = records.len() as u32;
-        let truncated = records.len() > limit;
-        records.truncate(limit);
+        let mut targets = Vec::new();
+        self.append_project_mention_targets(&project_record, query, &mut targets)
+            .await?;
+        let total = (records.len() + targets.len()) as u32;
+        records.truncate(limit.saturating_sub(targets.len()));
+        records.extend(targets);
+        let truncated = total > records.len() as u32;
 
         Ok(Some(IssueMentionUserSearchRecord {
             items: records,

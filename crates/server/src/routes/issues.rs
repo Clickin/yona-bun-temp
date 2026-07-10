@@ -7,7 +7,7 @@ use axum::{
     Form, Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[cfg(debug_assertions)]
 use super::utils::organization_issue_list_item_to_api;
@@ -17,9 +17,11 @@ use super::utils::{
     legacy_external_attachment_result, legacy_external_authenticated_user_id,
     legacy_external_post_author, legacy_external_temporary_upload_file_ids,
     legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, project_issue_list_item_to_api,
+    legacy_issue_update_body_from_value, legacy_json_find_value, preferred_language_from_headers,
+    project_issue_list_item_to_api,
 };
 use crate::api_types::*;
+use crate::markdown::{rest_markdown_references, RestMarkdownReferencesBody};
 use crate::{
     absolute_app_url, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     deserialize_optional_i64_from_string_or_number, direct_project_update_allowed,
@@ -29,13 +31,13 @@ use crate::{
     markdown_issue_references_for_project, markdown_mention_references,
     mention_reference_metadata_from_resolved, normalize_identifier, normalize_issue_label_color,
     parse_attachment_ids, parse_milestone_due_date, parse_rest_query_i64, parse_rest_query_u32,
-    persistence, project_read_allowed, project_update_allowed, redirect_to,
-    require_authenticated_user, require_project_authorization, require_project_read,
-    require_project_resource_create, require_session, require_valid_csrf, rest_json_response,
-    rest_owned_view, user_issue_filter_name, user_issue_state, visible_projects_for_organization,
-    ConnectError, Context, MarkdownIssueReference, MarkdownMentionReference, PilotBackend,
-    PilotRepository, PilotServiceImpl, ProjectCreatableResource, RestIssueAssignableUsersQuery,
-    RestRouteError,
+    persistence, project_logo_url, project_read_allowed, project_resource_create_allowed,
+    project_update_allowed, redirect_to, require_authenticated_user, require_project_authorization,
+    require_project_read, require_project_resource_create, require_session, require_valid_csrf,
+    rest_json_response, rest_owned_view, user_issue_filter_name, user_issue_state,
+    visible_projects_for_organization, ConnectError, Context, MarkdownIssueReference,
+    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
+    ProjectCreatableResource, RestIssueAssignableUsersQuery, RestRouteError,
 };
 
 mod comments;
@@ -85,8 +87,9 @@ use lookups::{
     rest_list_issue_assignable_users, rest_list_issue_mention_users,
     rest_list_issue_parent_options, rest_list_issue_sharable_users,
     rest_list_project_assignable_users, rest_list_project_issue_references,
-    rest_list_project_issue_search_users, RestIssueMentionUsersQuery, RestIssueParentOptionsQuery,
-    RestProjectIssueReferencesQuery, RestProjectIssueSearchUsersQuery,
+    rest_list_project_issue_search_users, rest_list_project_mention_users,
+    RestIssueMentionUsersQuery, RestIssueParentOptionsQuery, RestProjectIssueReferencesQuery,
+    RestProjectIssueSearchUsersQuery,
 };
 use meta::{
     direct_issue_participation, rest_assign_issue, rest_issue_comment_participation,
@@ -130,6 +133,26 @@ pub(crate) struct RestDirectIssueFormQuery {
 struct RestDirectIssueFormProject {
     owner_name: String,
     project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueFormProject {
+    project_id: i64,
+    owner_name: String,
+    project_name: String,
+    logo_url: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueFormOptionsResponse {
+    issue_template_markdown: String,
+    current_project: RestProjectIssueFormProject,
+    movable_issue_projects: Vec<RestProjectIssueFormProject>,
+    can_create_issue_assignee: bool,
+    can_create_issue_milestone: bool,
+    can_manage_issue_labels: bool,
 }
 
 #[derive(Serialize)]
@@ -317,6 +340,11 @@ struct RestIssueMutationBody {
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
     )]
     refer_comment_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    target_project_id: Option<i64>,
     title: String,
 }
 
@@ -815,6 +843,182 @@ fn rest_issue_mutation_input_from_body(
     })
 }
 
+async fn project_issue_template_markdown(
+    service: &PilotServiceImpl,
+    project: &persistence::ProjectRecord,
+) -> String {
+    let data_root = service.data_root.clone();
+    let project_id = project.id;
+    let is_subversion = project.vcs.eq_ignore_ascii_case("subversion");
+    tokio::task::spawn_blocking(move || {
+        let contents = if is_subversion {
+            let repository_path = yoram_vcs::svn_repository_path(&data_root, project_id);
+            yoram_vcs::svn_cat_file_bounded(
+                &repository_path,
+                None,
+                "ISSUE_TEMPLATE.md",
+                yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES,
+            )
+            .ok()
+        } else {
+            let repository_path = yoram_vcs::repository_path(&data_root, project_id);
+            yoram_vcs::read_file_bytes_bounded(
+                &repository_path,
+                "HEAD",
+                "ISSUE_TEMPLATE.md",
+                yoram_vcs::MAX_ISSUE_TEMPLATE_BYTES,
+            )
+            .ok()
+            .map(|file| file.bytes)
+        };
+        contents
+            .as_deref()
+            .map(decode_issue_template_markdown)
+            .unwrap_or_default()
+    })
+    .await
+    .unwrap_or_default()
+}
+
+fn decode_issue_template_markdown(contents: &[u8]) -> String {
+    if let Some((encoding, bom_length)) = encoding_rs::Encoding::for_bom(contents) {
+        return encoding
+            .decode_without_bom_handling(&contents[bom_length..])
+            .0
+            .into_owned();
+    }
+    if let Ok(contents) = std::str::from_utf8(contents) {
+        return contents.to_string();
+    }
+    let mut detector = chardetng::EncodingDetector::new();
+    detector.feed(contents, true);
+    detector
+        .guess(None, false)
+        .decode_without_bom_handling(contents)
+        .0
+        .into_owned()
+}
+
+async fn project_issue_form_logo_url(
+    repository: &PilotRepository,
+    base_path: &str,
+    project_id: i64,
+) -> Result<String, ConnectError> {
+    let logo_url = project_logo_url(repository, base_path, project_id).await?;
+    Ok(if logo_url.is_empty() {
+        base_path_href(base_path, "/legacy-assets/images/project_default_logo.png")
+    } else {
+        logo_url
+    })
+}
+
+async fn rest_read_project_issue_form_options(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestProjectIssueFormOptionsResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue form options require repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_resource_create(
+        repository,
+        &owner_name,
+        &project_name,
+        session.user_id,
+        ProjectCreatableResource::IssuePost,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+
+    let favorite_project_ids = repository
+        .list_favorite_project_ids_for_user(actor.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let recent_project_ids = repository
+        .list_recent_project_ids_for_user(actor.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let member_project_ids = repository
+        .list_member_project_ids_for_user(actor.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let candidate_project_ids = favorite_project_ids
+        .iter()
+        .chain(recent_project_ids.iter())
+        .chain(member_project_ids.iter())
+        .copied()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let candidate_projects = repository
+        .list_workspace_project_catalog(&candidate_project_ids, None, &[])
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let mut movable_issue_projects = Vec::new();
+    for project in candidate_projects {
+        if project.id == authorization.project.id {
+            continue;
+        }
+        let logo_url = project_issue_form_logo_url(repository, &service.base_path, project.id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+        movable_issue_projects.push(RestProjectIssueFormProject {
+            project_id: project.id,
+            owner_name: project.owner_name,
+            project_name: project.project_name,
+            logo_url,
+        });
+    }
+    movable_issue_projects.sort_by(|left, right| {
+        normalize_identifier(&left.owner_name)
+            .cmp(&normalize_identifier(&right.owner_name))
+            .then_with(|| {
+                normalize_identifier(&left.project_name)
+                    .cmp(&normalize_identifier(&right.project_name))
+            })
+            .then_with(|| left.owner_name.cmp(&right.owner_name))
+            .then_with(|| left.project_name.cmp(&right.project_name))
+            .then_with(|| left.project_id.cmp(&right.project_id))
+    });
+
+    let can_create_issue_assignee =
+        project_resource_create_allowed(&authorization, ProjectCreatableResource::IssueAssignee);
+    let can_create_issue_milestone =
+        project_resource_create_allowed(&authorization, ProjectCreatableResource::IssueMilestone);
+    Ok(Json(RestProjectIssueFormOptionsResponse {
+        issue_template_markdown: project_issue_template_markdown(&service, &authorization.project)
+            .await,
+        current_project: RestProjectIssueFormProject {
+            project_id: authorization.project.id,
+            owner_name: authorization.project.owner_name.clone(),
+            project_name: authorization.project.project_name.clone(),
+            logo_url: project_issue_form_logo_url(
+                repository,
+                &service.base_path,
+                authorization.project.id,
+            )
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+        },
+        movable_issue_projects,
+        can_create_issue_assignee,
+        can_create_issue_milestone,
+        can_manage_issue_labels: authorization.viewer.is_project_manager,
+    }))
+}
+
 pub(crate) fn rest_project_issue_filter_from_query(
     query: RestProjectIssuesQuery,
 ) -> Result<persistence::IssueListFilter, ConnectError> {
@@ -893,6 +1097,46 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     async move {
                         rest_mass_update_issues(headers, owner_name, project_name, body, service)
                             .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/form-options",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_project_issue_form_options(
+                            headers,
+                            owner_name,
+                            project_name,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/markdown-references",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestMarkdownReferencesBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_markdown_references(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            service,
+                        )
+                        .await
                     }
                 }
             }),
@@ -1304,6 +1548,27 @@ pub(crate) fn rest_routes(service: PilotServiceImpl) -> Router {
                     let service = service.clone();
                     async move {
                         rest_list_project_issue_references(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/mention-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestIssueMentionUsersQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_mention_users(
                             headers,
                             owner_name,
                             project_name,
@@ -2806,11 +3071,12 @@ pub(crate) async fn rest_read_direct_issue_form_options(
             .map_err(internal_error)
             .map_err(RestRouteError::from_connect_error)?
             .ok_or_else(|| RestRouteError::not_found("issue comment not found"))?;
-        require_project_read(
+        read_issue_access(
             repository,
             &origin.owner_name,
             &origin.project_name,
-            session.user_id,
+            origin.issue_number,
+            Some(actor.id),
         )
         .await
         .map_err(RestRouteError::from_connect_error)?;
@@ -2983,7 +3249,7 @@ async fn rest_create_issue(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let authorization = require_project_resource_create(
+    let source_authorization = require_project_resource_create(
         repository,
         &owner_name,
         &project_name,
@@ -2992,64 +3258,135 @@ async fn rest_create_issue(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    let refer_comment_id = body.refer_comment_id.filter(|comment_id| *comment_id > 0);
-    let refer_comment_origin = match refer_comment_id {
-        Some(comment_id) => {
-            let origin = repository
-                .read_issue_comment_origin(comment_id)
+    let creation_authorization = match body.target_project_id {
+        Some(target_project_id) if target_project_id != source_authorization.project.id => {
+            let target_project = repository
+                .read_project_by_id(target_project_id)
                 .await
                 .map_err(internal_error)
                 .map_err(RestRouteError::from_connect_error)?
-                .ok_or_else(|| RestRouteError::not_found("issue comment not found"))?;
-            require_project_read(
+                .ok_or_else(|| RestRouteError::not_found("target project not found"))?;
+            require_project_resource_create(
                 repository,
-                &origin.owner_name,
-                &origin.project_name,
+                &target_project.owner_name,
+                &target_project.project_name,
                 session.user_id,
+                ProjectCreatableResource::IssuePost,
             )
             .await
-            .map_err(RestRouteError::from_connect_error)?;
-            Some(origin)
+            .map_err(RestRouteError::from_connect_error)?
         }
-        None => None,
+        _ => source_authorization.clone(),
     };
-    let issue = repository
-        .create_issue(persistence::CreateIssueInput {
-            actor_display_name: actor.display_name.clone(),
-            actor_id: actor.id,
-            actor_login_id: actor.login_id.clone(),
-            owner_name,
-            project_name,
-            values: rest_issue_mutation_input_from_body(body)
-                .map_err(RestRouteError::from_connect_error)?,
-        })
+    let refer_comment_id = body.refer_comment_id.filter(|comment_id| *comment_id > 0);
+    let mut values =
+        rest_issue_mutation_input_from_body(body).map_err(RestRouteError::from_connect_error)?;
+    if creation_authorization.project.id != source_authorization.project.id {
+        values.label_ids.clear();
+    }
+    let refer_comment_origin = if values.is_draft {
+        None
+    } else {
+        match refer_comment_id {
+            Some(comment_id) => {
+                let origin = repository
+                    .read_issue_comment_origin(comment_id)
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?
+                    .ok_or_else(|| RestRouteError::not_found("issue comment not found"))?;
+                let source_access = read_issue_access(
+                    repository,
+                    &origin.owner_name,
+                    &origin.project_name,
+                    origin.issue_number,
+                    Some(actor.id),
+                )
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
+                source_access.viewer_can_comment().then_some(origin)
+            }
+            None => None,
+        }
+    };
+    let derived_issue_label = super::messages::legacy_message(
+        preferred_language_from_headers(&headers, &service.supported_languages).as_deref(),
+        "issue.derived",
+    );
+    let transaction = repository
+        .begin_transaction()
         .await
         .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-    if !issue.is_draft {
-        if let (Some(origin), Some(parent_comment_id)) = (refer_comment_origin, refer_comment_id) {
-            repository
-                .create_issue_comment(persistence::CreateIssueCommentInput {
+        .map_err(RestRouteError::from_connect_error)?;
+    let transaction_result: Result<
+        (
+            persistence::IssueRecord,
+            Option<(persistence::IssueRecord, persistence::IssueCommentRecord)>,
+        ),
+        RestRouteError,
+    > = {
+        let transaction_repository = repository.with_transaction(&transaction);
+        async {
+            let issue = transaction_repository
+                .create_issue(persistence::CreateIssueInput {
                     actor_display_name: actor.display_name.clone(),
                     actor_id: actor.id,
                     actor_login_id: actor.login_id.clone(),
-                    attachment_ids: Vec::new(),
-                    contents_markdown: derived_issue_comment_markdown(
-                        &issue,
-                        &service.public_origin,
-                        &service.base_path,
-                    ),
-                    issue_number: origin.issue_number,
-                    owner_name: origin.owner_name,
-                    parent_comment_id: Some(parent_comment_id),
-                    project_name: origin.project_name,
+                    owner_name: creation_authorization.project.owner_name.clone(),
+                    project_name: creation_authorization.project.project_name.clone(),
+                    values,
                 })
                 .await
                 .map_err(internal_error)
                 .map_err(RestRouteError::from_connect_error)?
-                .ok_or_else(|| RestRouteError::not_found("source issue not found"))?;
+                .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+            let derived_source = if let (Some(origin), Some(parent_comment_id)) =
+                (refer_comment_origin, refer_comment_id)
+            {
+                let (source_issue, source_comment) = transaction_repository
+                    .create_issue_comment_with_record(persistence::CreateIssueCommentInput {
+                        actor_display_name: actor.display_name.clone(),
+                        actor_id: actor.id,
+                        actor_login_id: actor.login_id.clone(),
+                        attachment_ids: Vec::new(),
+                        contents_markdown: derived_issue_comment_markdown(
+                            &issue,
+                            &service.public_origin,
+                            &service.base_path,
+                            &derived_issue_label,
+                        ),
+                        issue_number: origin.issue_number,
+                        owner_name: origin.owner_name,
+                        parent_comment_id: Some(parent_comment_id),
+                        project_name: origin.project_name,
+                    })
+                    .await
+                    .map_err(internal_error)
+                    .map_err(RestRouteError::from_connect_error)?
+                    .ok_or_else(|| RestRouteError::not_found("source issue not found"))?;
+                Some((source_issue, source_comment))
+            } else {
+                None
+            };
+            Ok((issue, derived_source))
         }
+        .await
+    };
+    let (issue, derived_source) = match transaction_result {
+        Ok(result) => {
+            transaction
+                .commit()
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?;
+            result
+        }
+        Err(error) => {
+            let _ = transaction.rollback().await;
+            return Err(error);
+        }
+    };
+    if !issue.is_draft {
         dispatch_issue_webhooks(
             repository,
             &issue,
@@ -3063,11 +3400,26 @@ async fn rest_create_issue(
         )
         .await;
     }
+    if let Some((source_issue, source_comment)) = derived_source {
+        let target_fragment = format!("#comment-{}", source_comment.id);
+        dispatch_issue_webhooks(
+            repository,
+            &source_issue,
+            &actor,
+            "NEW_COMMENT",
+            &source_comment.contents_markdown,
+            Some(&target_fragment),
+            &service.public_origin,
+            &service.base_path,
+            &service,
+        )
+        .await;
+    }
     Ok(Json(
         rest_issue_detail_response_from_record_with_authorization_issue_references(
             repository,
             &issue,
-            &authorization,
+            &creation_authorization,
             true,
             true,
             session.user_id,
@@ -3520,7 +3872,8 @@ impl IssueAccessContext {
     }
 
     pub(crate) fn viewer_can_comment(&self) -> bool {
-        self.actor.is_some() && (self.project_can_read || self.share_status.direct)
+        self.actor.is_some()
+            && (self.project_can_read || self.share_status.direct || self.viewer_can_manage())
     }
 }
 

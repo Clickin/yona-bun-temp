@@ -471,6 +471,16 @@ impl AppRepositoryImpl<'_> {
             .collect())
     }
 
+    pub async fn list_member_project_ids_for_user(&self, user_id: i64) -> Result<Vec<i64>, DbErr> {
+        Ok(project_user::Entity::find()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.project_id)
+            .collect())
+    }
+
     pub async fn list_recent_projects_for_user(
         &self,
         user_id: i64,

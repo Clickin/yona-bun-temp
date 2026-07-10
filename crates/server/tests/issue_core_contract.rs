@@ -2152,7 +2152,7 @@ async fn issue_core_contract_restores_direct_issue_from_comment_flow() {
             .iter()
             .any(|comment| {
                 comment["contentsMarkdown"]
-                    == "issue.derived:http://localhost:3001/yona/owner/projectYobi/issue/2"
+                    == "Derived issue: http://localhost:3001/yona/owner/projectYobi/issue/2"
             }),
         "{source}"
     );

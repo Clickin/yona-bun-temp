@@ -1,6 +1,11 @@
 use axum::{response::IntoResponse, routing::get, Router};
 
 const LEGACY_DEFAULT_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages");
+const LEGACY_JAPANESE_MESSAGES: &str =
+    include_str!("../../../../yona-original/conf/messages.ja-JP");
+const LEGACY_KOREAN_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages.ko-KR");
+const LEGACY_RUSSIAN_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages.ru-RU");
+const LEGACY_UZBEK_MESSAGES: &str = include_str!("../../../../yona-original/conf/messages.uz-UZ");
 
 pub(crate) fn routes() -> Router {
     Router::new().route("/messages.js", get(legacy_js_messages))
@@ -43,6 +48,34 @@ async fn legacy_js_messages() -> impl IntoResponse {
         .into_response()
 }
 
+pub(crate) fn legacy_message(language: Option<&str>, key: &str) -> String {
+    let localized_messages = match language
+        .unwrap_or_default()
+        .split_once('-')
+        .map(|(prefix, _)| prefix)
+        .unwrap_or_else(|| language.unwrap_or_default())
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "ja" => Some(LEGACY_JAPANESE_MESSAGES),
+        "ko" => Some(LEGACY_KOREAN_MESSAGES),
+        "ru" => Some(LEGACY_RUSSIAN_MESSAGES),
+        "uz" => Some(LEGACY_UZBEK_MESSAGES),
+        _ => None,
+    };
+    localized_messages
+        .and_then(|source| legacy_message_value(source, key))
+        .or_else(|| legacy_message_value(LEGACY_DEFAULT_MESSAGES, key))
+        .unwrap_or(key)
+        .to_string()
+}
+
+fn legacy_message_value<'a>(source: &'a str, key: &str) -> Option<&'a str> {
+    parse_legacy_messages(source)
+        .into_iter()
+        .find_map(|(candidate, value)| (candidate == key).then_some(value))
+}
+
 fn parse_legacy_messages(source: &str) -> Vec<(&str, &str)> {
     source
         .lines()
@@ -81,7 +114,9 @@ fn js_string_literal(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{js_string_literal, parse_legacy_messages, LEGACY_DEFAULT_MESSAGES};
+    use super::{
+        js_string_literal, legacy_message, parse_legacy_messages, LEGACY_DEFAULT_MESSAGES,
+    };
 
     #[test]
     fn parses_legacy_default_messages_without_new_keyspace() {
@@ -100,5 +135,15 @@ mod tests {
     #[test]
     fn escapes_message_values_for_javascript() {
         assert_eq!(js_string_literal("a\"b\\c\n"), "\"a\\\"b\\\\c\\n\"");
+    }
+
+    #[test]
+    fn resolves_localized_legacy_messages_with_default_fallback() {
+        assert_eq!(legacy_message(Some("ko-KR"), "issue.derived"), "파생 이슈");
+        assert_eq!(
+            legacy_message(Some("en-US"), "issue.derived"),
+            "Derived issue"
+        );
+        assert_eq!(legacy_message(None, "issue.derived"), "Derived issue");
     }
 }

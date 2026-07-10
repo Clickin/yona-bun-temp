@@ -165,7 +165,46 @@ export type ReadCodeBrowserResponse = YonaRecord & {
   entries: YonaRecord[];
 };
 
-export type ProjectContainer = ProjectDetail;
+export type ProjectContainer = ProjectDetail & {
+  backgroundUrl: string;
+  boardCount: number;
+  cloneUrl: string;
+  codeMemberOnly: boolean;
+  currentMilestone: YonaRecord | null;
+  defaultTab: string;
+  enrollmentRequested: boolean;
+  isFavorited: boolean;
+  isForked: boolean;
+  isWatching: boolean;
+  logoUrl: string;
+  memberCount: number;
+  openIssueCount: number;
+  openPullRequestCount: number;
+  organizationName: string;
+  originOwnerName: string;
+  originProjectName: string;
+  overview: string;
+  overviewEditable: boolean;
+  ownerName: string;
+  projectId: bigint | number | string;
+  projectName: string;
+  projectScope: string;
+  reviewCount: number;
+  showAdmin: boolean;
+  showBoard: boolean;
+  showCode: boolean;
+  showIssue: boolean;
+  showMilestone: boolean;
+  showPullRequest: boolean;
+  showReview: boolean;
+  vcs: string;
+  viewerCanEnroll: boolean;
+  viewerCanLeave: boolean;
+  viewerCanUpdate: boolean;
+  viewerCanWatch: boolean;
+  viewerUserId: bigint | number | string;
+  watchCount: number;
+};
 
 export type ToggleFavoriteProjectResponse = YonaRecord & {
   favorited: boolean;

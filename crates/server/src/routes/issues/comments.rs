@@ -451,13 +451,14 @@ pub(super) fn derived_issue_comment_markdown(
     issue: &persistence::IssueRecord,
     public_origin: &str,
     base_path: &str,
+    label: &str,
 ) -> String {
     let path = format!(
         "/{}/{}/issue/{}",
         issue.owner_name, issue.project_name, issue.issue_number
     );
     format!(
-        "issue.derived:{}",
+        "{label}: {}",
         absolute_app_url(public_origin, base_path, &path)
     )
 }

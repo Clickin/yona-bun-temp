@@ -486,6 +486,49 @@ impl AppRepositoryImpl<'_> {
         }))
     }
 
+    pub async fn list_mention_user_avatar_inputs(
+        &self,
+        login_ids: &[String],
+    ) -> Result<HashMap<String, (String, Option<i64>)>, DbErr> {
+        if login_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let users = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.is_in(login_ids.iter().cloned().map(Some)))
+            .all(&self.db)
+            .await?;
+        if users.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let user_ids = users.iter().map(|user| user.id).collect::<Vec<_>>();
+        let mut avatar_ids = attachment::Entity::find()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.is_in(user_ids))
+            .order_by_desc(attachment::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .fold(HashMap::new(), |mut avatar_ids, attachment| {
+                avatar_ids
+                    .entry(attachment.container_id)
+                    .or_insert(attachment.id);
+                avatar_ids
+            });
+        Ok(users
+            .into_iter()
+            .filter_map(|user| {
+                let login_id = user.login_id?;
+                Some((
+                    login_id,
+                    (user.email.unwrap_or_default(), avatar_ids.remove(&user.id)),
+                ))
+            })
+            .collect())
+    }
+
     pub async fn read_project_logo_attachment(
         &self,
         project_id: i64,

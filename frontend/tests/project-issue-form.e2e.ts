@@ -1,1069 +1,2113 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
-const EXPECTED_ISSUE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap "><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize" disabled=""><option value="7">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize" disabled=""><option value="" selected="">??? Select parent issue ???</option><option value="42">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn" title="Only you can see it until you publish">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%"></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value=""><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
-`;
+const CHECKLIST = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
+const CSRF_TOKEN = "csrf-issue-form";
 
-const EXPECTED_PARENT_ISSUE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/issues" id="issue-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><div class="span12"><div class="span11"><input type="text" id="title" name="title" value="" class="text title " maxlength="250" tabindex="1" placeholder="Title" autocomplete="off" title="press Tab or Enter to move cursor to content area"></div><div class="span1 subtask-message">Option</div></div><div class="subtask-wrap show"><div class="span3"><select id="targetProjectId" name="targetProjectId" data-format="projects" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="7">sample</option></select></div><div class="span6"><select id="parentId" name="parentIssueId" data-format="issues" data-placeholder="Choose projects" data-container-css-class="fullsize"><option value="">??? Select parent issue ???</option><option value="42" selected="">#11.Existing parent</option></select></div></div></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actrow right-txt"><button type="submit" id="button-save" class="ybtn ybtn-success">Save</button><button type="button" id="draft-save-btn" class="ybtn ybtn-watching draft-save-btn" title="Only you can see it until you publish">Draft Save</button><button type="button" class="ybtn">Cancel</button></div></div><div class="span3 span-hard-wrap right-menu"><dl class="issue-option"><dt>Assignee</dt><dd><input type="hidden" class="bigdrop" id="assignee" name="assigneeLoginId" placeholder="No assignee" value="" style="width:100%"></dd></dl><dl id="milestoneOption" class="issue-option"><dt>Milestone</dt><dd><select id="milestoneId" name="milestoneId" data-format="milestone" data-container-css-class="fullsize"><option value="-1" selected="">No milestone</option><option value="5" data-state="open">Sprint 1</option></select></dd></dl><dl class="issue-option"><dt>Due date</dt><dd><div class="search search-bar"><input type="text" id="issueDueDate" name="dueDate" class="textbox full"><button type="button" class="search-btn btn-calendar"><i class="yobicon-calendar2"></i></button></div></dd></dl><dl class="issue-option"><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option></optgroup></select></dd></dl><input type="hidden" name="referCommentId" value="55"><input type="hidden" id="isDraft" name="isDraft" value="false"></div></div></div></form></div>
-`;
-const LEGACY_MARKDOWN_HELP = readFileSync(
-  new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
-  "utf8",
-)
-  .replace(/@Messages\("title\.markdown\.help"\)/g, "Markdown help")
-  .replace(/@\{"@"\}/g, "@")
-  .replace(/<script[\s\S]*$/u, "")
-  .replace(/^[\s\S]*?<div class="markdown-help">/u, '<div class="markdown-help">')
-  .replaceAll(' data-toggle="markdown-help"', "")
-  .replace(/\sdata-target="markdown[^"]+"/g, "")
-  .replace(/<\/div>\s*$/u, "</div>");
-
-const EXPECTED_MARKDOWN_HEADER_SAMPLE = `
-# This is an H1
-## This is an H2
-### This is an H3
-`;
-
-const EXPECTED_MARKDOWN_LIST_SAMPLE = `
-- Red
-    1. White
-    2. Blue
-- Green.
-`;
-
-const EXPECTED_MARKDOWN_CODE_SAMPLE = `
-\`function test() {console.log("hello world");}\`
-
-\`\`\`javascript
-function test() {
-  console.log("hello world");
-}
-\`\`\`
-`;
-
-const EXPECTED_MARKDOWN_TABLE_SAMPLE = `
-| Default      | Align center | Align right |
-| ------------ | :----------: | ------: |
-| Carrot       | Red          | 1,000   |
-| Banana       | Yellow       | 32,000  |
-`;
-
-function withLegacyEditor(html: string) {
-  return html.replace(
-    `<div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
-  );
-}
-
-function withLegacyFileUploader(html: string) {
-  return html.replace(
-    `<div class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="ISSUE_POST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
-  );
-}
-
-test("project issue create form matches legacy issue/create.scala.html core form DOM", async ({
+test("project issue form preserves legacy controls, subtask behavior, shell mutations, and desktop geometry", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
+  const basePath = appBasePath();
+  const state = await mockIssueForm(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issueform?parentIssueId=42&commentId=55`);
 
-  await page.goto(`${basePath}/admin/sample/issueform`);
-  await expect(page.locator("#issue-form")).toBeVisible();
+  const form = page.locator("#issue-form");
+  const body = page.locator("#editor-body-body");
+  await expect(form).toBeVisible();
+  await expect(page).toHaveTitle("New issue - admin/sample");
+  await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/issues/latest`);
   await expect(page.locator("#title")).toBeFocused();
-  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
-  await page.locator("#title").press("Enter");
-  await expect(page.locator("#editor-body-body")).toBeFocused();
-  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
-  const labelEdit = page.locator("dt .label-edit");
-  await expect(labelEdit).toHaveAttribute("href", `${basePath}/admin/sample/issue/labelsform`);
-  await expect(labelEdit).toHaveAttribute("target", "_blank");
-  await expect(labelEdit).toHaveAttribute("class", "label-edit");
-  await expect(labelEdit).toHaveText("[Edit]");
-  await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
-  await expect(page.locator("#labelIds optgroup")).toHaveAttribute(
-    "data-category-is-exclusive",
-    "false",
-  );
-  await expectIssueFormSelect2InitializerHooksDropped(page);
-  await expect(page.locator("input#assignee.bigdrop[name=assigneeLoginId]")).toHaveAttribute(
-    "type",
-    "hidden",
-  );
-  await expect(page.locator("input#assignee.bigdrop[name=assigneeLoginId]")).toHaveAttribute(
-    "placeholder",
-    "No assignee",
-  );
-  await expect(page.locator("input#assignee.bigdrop[name=assigneeLoginId]")).toHaveAttribute(
-    "style",
-    "width: 100%;",
-  );
-  await expect(page.locator("input#assignee.bigdrop[name=assigneeLoginId][title]")).toHaveCount(0);
-  await expect(page.locator("#milestoneOption > dt")).toHaveText("Milestone");
-  await expect(page.locator("#milestoneId")).toHaveAttribute("data-format", "milestone");
-  await expect(page.locator("#milestoneId")).toHaveAttribute(
-    "data-container-css-class",
-    "fullsize",
-  );
-  await expect(page.locator("#milestoneId")).toHaveValue("-1");
-  await expect(page.locator("#milestoneId option").first()).toHaveText("No milestone");
-  await expect(page.locator('#milestoneId option[value="5"]')).toHaveAttribute(
-    "data-state",
-    "open",
-  );
-  await expect(page.locator('#milestoneId option[value="5"]')).toHaveText("Sprint 1");
-  const dueDateInput = page.locator("#issueDueDate");
-  await expect(dueDateInput).toHaveAttribute("name", "dueDate");
-  await expect(dueDateInput).toHaveClass("textbox full");
-  await expect(dueDateInput).not.toHaveAttribute("data-toggle", "calendar");
-  await expect(page.locator("#issueDueDate[data-toggle='calendar']")).toHaveCount(0);
-  await expect(page.locator(".issue-option .search.search-bar #issueDueDate")).toHaveCount(1);
-  await expect(
-    page.locator(".issue-option .search.search-bar .search-btn.btn-calendar"),
-  ).toHaveCount(1);
-  const dueDateMetrics = await issueDueDateSearchBarMetrics(page);
-  expect(dueDateMetrics.buttonInsideSearchBar).toBe(true);
-  expect(dueDateMetrics.searchBarHasStableBox).toBe(true);
-  expect(dueDateMetrics.searchBarLeftAlignedWithOption).toBe(true);
-  expect(dueDateMetrics.searchBarBelowLabel).toBe(true);
-  await expect(page.locator("#editor-body-body")).toHaveAttribute("markdown", "true");
-  await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
-  await expect(page.locator('[data-toggle="markdown-editor"]')).toHaveCount(0);
-  await expect(page.locator(".mt10:has(#editor-body-body)")).toHaveCount(1);
-  await expect(
-    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#edit-body"]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#preview-body"]'),
-  ).toHaveCount(0);
-  await expect(
-    page.locator('.mt10:has(#editor-body-body) .nav-tabs [data-toggle="tab"]'),
-  ).toHaveCount(0);
-  await expect(page.locator(".mt10:has(#editor-body-body) .nav-tabs [data-mode]")).toHaveCount(0);
-  const editorTabs = page.locator(".mt10:has(#editor-body-body) .nav-tabs > li");
-  const editTab = editorTabs
-    .nth(0)
-    .locator('button[type="button"]')
-    .filter({ hasText: /^Edit$/u });
-  const previewTab = editorTabs
-    .nth(1)
-    .locator('button[type="button"]')
-    .filter({ hasText: /^Preview$/u });
-  await expect(editTab).toHaveText("Edit");
-  await expect(previewTab).toHaveText("Preview");
-  await expect
-    .poll(() =>
-      page
-        .locator(".mt10:has(#editor-body-body) .nav-tabs > li")
-        .evaluateAll((items) =>
-          items.map((item) => item.textContent?.replace(/\s+/g, " ").trim() ?? ""),
-        ),
-    )
-    .toEqual(["Edit", "Preview", "Add checklist", "Clear Temporary", ""]);
-  await expect(editorTabs.nth(0)).toHaveClass(/active/);
-  await expect(page.locator("#edit-body")).toHaveClass(/active/);
-  await expect(page.locator("#edit-body")).toBeVisible();
-  await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
-  await expect(page.locator("#preview-body")).not.toBeVisible();
-  const initialEditorMetrics = await issueEditorTabMetrics(page);
-  expect(initialEditorMetrics.tabCount).toBe(5);
-  expect(initialEditorMetrics.editBeforePreview).toBe(true);
-  expect(initialEditorMetrics.tabsContainedByWrap).toBe(true);
-  expect(initialEditorMetrics.panesContainedByWrap).toBe(true);
-  expect(initialEditorMetrics.textareaContainedByEditPane).toBe(true);
-  expect(initialEditorMetrics.previewContainedByPreviewPane).toBe(true);
-  expect(initialEditorMetrics.contentStartsBelowTabs).toBe(true);
-  await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
-  await expect(page.locator(".markdown-help-wrap > li")).toHaveCount(10);
-  await expectMarkdownHelpPreText(page, ".markdownHeaders", EXPECTED_MARKDOWN_HEADER_SAMPLE);
-  await expectMarkdownHelpPreText(page, ".markdownLists", EXPECTED_MARKDOWN_LIST_SAMPLE);
-  await expectMarkdownHelpPreText(page, ".markdownCodes", EXPECTED_MARKDOWN_CODE_SAMPLE);
-  await expectMarkdownHelpPreText(page, ".markdownTables", EXPECTED_MARKDOWN_TABLE_SAMPLE);
-  const markdownHelp = page.locator(".markdown-help");
-  const markdownHelpNavItems = markdownHelp.locator(".markdown-help-nav > .help-nav");
-  const linkNav = markdownHelpNavItems.filter({ hasText: /^Link$/u });
-  const listNav = markdownHelpNavItems.filter({ hasText: /^List$/u });
-  await expect(markdownHelp.locator(".help-nav[data-target]")).toHaveCount(0);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
-  await linkNav.click();
-  await expect(linkNav).toHaveClass(/active/);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownHeaders")).not.toHaveClass(
-    /active/,
-  );
-  await listNav.click();
-  await expect(linkNav).not.toHaveClass(/active/);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).not.toHaveClass(
-    /active/,
-  );
-  await expect(listNav).toHaveClass(/active/);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toHaveClass(/active/);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).toBeVisible();
-  await listNav.click();
-  await expect(listNav).not.toHaveClass(/active/);
-  await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
-    /active/,
-  );
-  const uploader = page.locator("#upload.upload-wrap.content-footer");
-  await expect(uploader).toHaveAttribute("data-resource-type", "ISSUE_POST");
-  await expect(uploader.locator(".attach-wrap")).toBeVisible();
-  await expect(uploader.locator(".help.help-droppable")).toHaveText(
-    "Drag & Drop files to attach here or",
-  );
-  await expect(uploader.locator(".fake-file-wrap")).toContainText("File upload");
-  await expect(uploader.locator('input.file[name="filePath"]')).toHaveAttribute("multiple", "");
-  await expect(uploader.locator("ul.attached-files.unstyled")).toHaveCount(1);
-  await expect(uploader.locator(".help.help-pastable")).toHaveText("Paste the clipboard image");
-  await expect(uploader.locator("p.right-txt.help")).toContainText(
-    "Selected file will be attached when your comment is saved.",
-  );
-  await expect(page.locator('#issue-form script[type="text/x-jquery-tmpl"]')).toHaveCount(0);
-  await expect(
-    page.locator("#issue-form #tplAttachedFile, #issue-form #tplDropFilesHere"),
-  ).toHaveCount(0);
-  const cancelButton = await expectModernCancelControl(page);
-  const issueFormUrl = page.url();
+  await expect(body).toHaveValue("");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Issue");
+  await expect(page.locator(".project-breadcrumb .project-private")).toBeVisible();
+  await expect(page.locator("#targetProjectId option")).toHaveText(["sample", "weblabs / api"]);
+  await expect(page.locator("#targetProjectId")).toHaveValue("7");
+  await expect(page.locator("#parentId")).toHaveValue("42");
+  await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
 
-  await page.evaluate(() => {
-    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
-      "tab-kept";
-  });
-  await previewTab.click();
-  await expect(page).toHaveURL(issueFormUrl);
-  await expect(editorTabs.nth(1)).toHaveClass(/active/);
-  await expect(page.locator("#preview-body")).toHaveClass(/active/);
-  await expect(page.locator("#preview-body")).toBeVisible();
-  await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
-  await expect(page.locator("#edit-body")).not.toBeVisible();
-  const previewEditorMetrics = await issueEditorTabMetrics(page);
-  expect(previewEditorMetrics.tabsContainedByWrap).toBe(true);
-  expect(previewEditorMetrics.panesContainedByWrap).toBe(true);
-  expect(previewEditorMetrics.previewContainedByPreviewPane).toBe(true);
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
-      ),
-    )
-    .toBe("tab-kept");
-  await editTab.click();
-  await expect(page).toHaveURL(issueFormUrl);
-  await expect(editorTabs.nth(0)).toHaveClass(/active/);
-  await expect(page.locator("#edit-body")).toHaveClass(/active/);
-  await expect(page.locator("#edit-body")).toBeVisible();
-  await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
-  await expect(page.locator("#preview-body")).not.toBeVisible();
+  const favoriteButton = page.locator(".project-breadcrumb .star-project");
+  await expect(favoriteButton).toHaveAccessibleName("Favorite");
+  await favoriteButton.click();
+  await expect.poll(() => state.favoriteRequests).toBe(1);
+  await expect(page.locator(".project-breadcrumb .star")).not.toHaveClass(/starred/u);
+  await page.locator(".watch-btn > .down-arrow").click();
+  await expect(page.locator(".issue-project-utility-menu")).toContainText("Unwatch");
+  await page.locator(".watchBtn").click();
+  await expect.poll(() => state.watchRequests).toEqual([false]);
+  await expect(page.locator(".watcher-count")).toHaveText("2");
 
-  expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
-    await canonicalizeHtml(
-      page,
-      withLegacyFileUploader(withLegacyEditor(EXPECTED_ISSUE_FORM_BODY)).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
-    ),
-  );
-
-  await page.evaluate((url) => {
-    (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
-    window.history.pushState({ cancelTest: true }, "", url);
-  }, `${basePath}/admin/sample/issueform?cancel-test=1`);
-  await expect(page).toHaveURL(`${basePath}/admin/sample/issueform?cancel-test=1`);
-  await cancelButton.click();
-  await expect(page).toHaveURL(issueFormUrl);
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
-      ),
-    )
-    .toBe("kept");
-});
-
-test("project issue create form drops the legacy calendar hook while keeping due-date layout", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
-
-  await page.goto(`${basePath}/admin/sample/issueform`);
-  const dueDateInput = page.locator("#issueDueDate");
-  await expect(dueDateInput).toHaveAttribute("name", "dueDate");
-  await expect(dueDateInput).toHaveClass("textbox full");
-  await expect(dueDateInput).not.toHaveAttribute("data-toggle", "calendar");
-  await expect(page.locator("#issueDueDate[data-toggle='calendar']")).toHaveCount(0);
-  await expect(page.locator(".issue-option .search.search-bar #issueDueDate")).toHaveCount(1);
-  await expect(
-    page.locator(".issue-option .search.search-bar .search-btn.btn-calendar"),
-  ).toHaveCount(1);
-
-  const dueDateMetrics = await issueDueDateSearchBarMetrics(page);
-  expect(dueDateMetrics.buttonInsideSearchBar).toBe(true);
-  expect(dueDateMetrics.searchBarHasStableBox).toBe(true);
-  expect(dueDateMetrics.searchBarLeftAlignedWithOption).toBe(true);
-  expect(dueDateMetrics.searchBarBelowLabel).toBe(true);
-});
-
-test("project issue create form drops legacy select2 initializer hooks while keeping selector metadata", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
-
-  await page.goto(`${basePath}/admin/sample/issueform`);
-  await expectIssueFormSelect2InitializerHooksDropped(page);
-
-  await expect(page.locator("#milestoneId")).toHaveValue("-1");
+  const optionButton = page.getByRole("button", { name: "Option" });
+  await optionButton.click();
+  await expect(page.locator(".subtask-wrap")).not.toHaveClass(/show/u);
   await expect(page.locator("#targetProjectId")).toBeDisabled();
   await expect(page.locator("#parentId")).toBeDisabled();
-  await expect(page.locator("#labelIds optgroup")).toHaveAttribute(
-    "data-category-is-exclusive",
-    "false",
-  );
+  await optionButton.click();
+  await expect(page.locator(".subtask-wrap")).toHaveClass(/show/u);
+  await expect(optionButton).toHaveClass(/option-on/u);
 
-  await page.locator(".subtask-message").click();
-  await expect(page.locator("#targetProjectId")).toBeEnabled();
+  await page.locator("#targetProjectId").selectOption("9");
+  await expect(page.locator("#parentId")).toBeDisabled();
+  await expect(page.locator(".subtask-parent-control")).toBeHidden();
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "Issue will be moved or written to 'api'",
+  );
+  await page.locator("#targetProjectId").selectOption("7");
+  await expect(page.locator(".subtask-parent-control")).toBeVisible();
   await expect(page.locator("#parentId")).toBeEnabled();
-  await expectIssueFormSelect2InitializerHooksDropped(page);
+  await expect(page.locator("#parentId")).toHaveValue("");
+  await page.locator("#parentId").selectOption("42");
+
+  const initialRightControls = await rightControlMetrics(page);
+  expect(initialRightControls.assigneeHeight).toBeCloseTo(30, 0);
+  expect(initialRightControls.labelHeight).toBeCloseTo(30, 0);
+  const assignee = page.getByRole("combobox", { name: "Assignee" });
+  await expect(assignee).toContainText("No assignee");
+  expect(await assigneeArrowMetrics(page)).toMatchObject({
+    arrowHeight: 28,
+    arrowRightInset: 1,
+    arrowWidth: 19,
+    selectionHeight: 30,
+  });
+  await assignee.click();
+  await expect.poll(() => state.assigneeQueries.at(-1)).toBe("");
+  await expect(page.getByRole("option", { name: "Assign to me (admin)" })).toBeVisible();
+  await page.locator("#issueDueDate").focus();
+  await expect(page.locator("#assignee-options")).toHaveCount(0);
+  await assignee.click();
+  const assigneeSearch = page.locator(".issue-assignee-dropdown-search");
+  await expect(assigneeSearch).toBeFocused();
+  await assigneeSearch.fill("ali");
+  await expect.poll(() => state.assigneeQueries.at(-1)).toBe("ali");
+  await assigneeSearch.press("ArrowDown");
+  await assigneeSearch.press("Enter");
+  await expect(page.locator('input[type="hidden"][name="assigneeLoginId"]')).toHaveValue("alice");
+  await expect(page.locator(".issue-assignee-selection")).toContainText("Alice Example");
+  await expect(page.getByRole("button", { name: /clear assignee/iu })).toHaveCount(0);
+  await page.locator(".issue-assignee-selection").click();
+  await page.getByRole("option", { name: /No assignee/iu }).click();
+  await expect(page.locator('input[type="hidden"][name="assigneeLoginId"]')).toHaveValue("");
+  await expect(page.locator(".issue-assignee-selection")).toContainText("No assignee");
+  await assignee.click();
+  await assigneeSearch.fill("ali");
+  await page.getByRole("option", { name: "Alice Example (alice)" }).click();
+  await expect(page.locator('input[type="hidden"][name="assigneeLoginId"]')).toHaveValue("alice");
+
+  const labelSelector = page.getByRole("combobox", { name: "Select label" });
+  await labelSelector.click();
+  await expect(page.locator("#issue-label-options")).toBeVisible();
+  await page.locator("#issueDueDate").focus();
+  await expect(page.locator("#issue-label-options")).toHaveCount(0);
+  await labelSelector.click();
+  await page.getByRole("option", { name: "High" }).click();
+  await page.getByRole("option", { name: "Low" }).click();
+  await expect(page.locator(".issue-label-token", { hasText: "high" })).toHaveCount(0);
+  await expect(page.locator(".issue-label-token", { hasText: "low" })).toBeVisible();
+  await expect(page.locator('input[type="hidden"][name="labelIds"]')).toHaveValue("10");
+  const selectedRightControls = await rightControlMetrics(page);
+  expect(selectedRightControls.assigneeHeight).toBeCloseTo(30, 0);
+  expect(selectedRightControls.labelHeight).toBeCloseTo(30, 0);
+  expect(selectedRightControls.rightMenuHeight).toBeCloseTo(
+    initialRightControls.rightMenuHeight,
+    0,
+  );
+  await page.getByRole("button", { name: "Delete low" }).click();
+  await expect(page.locator('input[type="hidden"][name="labelIds"]')).toHaveCount(0);
+  await expect(page.locator(".label-edit")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/labelsform`,
+  );
+
+  const duePicker = page.getByLabel("Choose due date", { exact: true });
+  await page.getByRole("button", { name: "Due date", exact: true }).click();
+  await expect(duePicker).toBeFocused();
+  await setNativeDate(page, "2026-07-21");
+  await expect(page.locator("#issueDueDate")).toHaveValue("2026-07-21");
+  await page.locator("#issueDueDate").fill("July 21, 2026");
+  await expect(
+    page.locator("[data-toggle], [data-format], [data-editor-mode], [markdown]"),
+  ).toHaveCount(0);
+
+  const metrics = await issueFormMetrics(page);
+  const uploadMetrics = await issueUploadMetrics(page);
+  expect(metrics.headerHeight).toBeCloseTo(120, 0);
+  expect(metrics.menuHeight).toBeCloseTo(40, 0);
+  expect(metrics.formLeft).toBeCloseTo(10, 0);
+  expect(metrics.formWidth).toBeCloseTo(1260, 0);
+  expect(metrics.leftWidth).toBeCloseTo(938.3, 0);
+  expect(metrics.rightLeft).toBeCloseTo(975.1, 0);
+  expect(metrics.rightWidth).toBeCloseTo(294.9, 0);
+  expect(metrics.editorWidth).toBeCloseTo(metrics.leftWidth, 0);
+  expect(metrics.editorHeight).toBeGreaterThanOrEqual(370);
+  expect(metrics.editorHeight).toBeLessThanOrEqual(382);
+  expect(metrics.textareaHeight).toBeCloseTo(310, 0);
+  expect(metrics.uploadTop).toBeCloseTo(metrics.editorBottom, 0);
+  expect(metrics.uploadWidth).toBeCloseTo(metrics.leftWidth, 0);
+  expect(metrics.uploadHeight).toBeCloseTo(70, 0);
+  expect(uploadMetrics).toMatchObject({
+    attachHeight: 50,
+    buttonHeight: 30,
+    buttonPadding: "6px 20px",
+    fileInputHeight: 30,
+    fileInputOpacity: "0",
+    pasteDisplay: "block",
+    pasteHeight: 20,
+    uploadPadding: "10px",
+  });
+  expect(uploadMetrics.attachWidth).toBeCloseTo(metrics.uploadWidth - 20, 0);
+  expect(uploadMetrics.pasteWidth).toBeCloseTo(uploadMetrics.attachWidth, 0);
+
+  await page.locator("#title").fill("Parent issue");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect.poll(() => state.createBodies.length).toBe(1);
+  expect(state.createBodies[0]).toMatchObject({
+    assigneeLoginId: "alice",
+    dueDate: "2026-07-21",
+    isDraft: false,
+    parentIssueId: 42,
+    referCommentId: "55",
+    targetProjectId: 7,
+    title: "Parent issue",
+  });
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/91`);
+  expectAllAppRequestsStayMounted(state.requests, basePath);
+  expectMutationCsrf(state.requests);
 });
 
-test("project issue create form parent state matches legacy partial_select_subtask.scala.html", async ({
+test("React editor restores drafts and translates title heads, mentions, markdown, and attachments", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
+  const basePath = appBasePath();
+  const draftKey = `${basePath}/admin/sample/issueform`;
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: draftKey,
+    value: "Recovered draft",
+  });
+  const state = await mockIssueForm(page, {
+    createDelayMs: 300,
+    pastedImageResponseName: "server-pasted.png",
+    uploadDelayMs: 500,
+  });
+  await page.goto(`${basePath}/admin/sample/issueform`);
 
-  await page.goto(`${basePath}/admin/sample/issueform?parentIssueId=42&commentId=55`);
-  await expect(page.locator(".subtask-wrap")).toHaveClass("subtask-wrap show");
-  await expect(page.locator("#targetProjectId")).toBeEnabled();
-  await expect(page.locator("#parentId")).toHaveValue("42");
-  await expect(page.locator("#targetProjectId option[data-avatar-url]")).toHaveCount(0);
-  await expectIssueFormSelect2InitializerHooksDropped(page);
-  await expectModernCancelControl(page);
+  const body = page.locator("#editor-body-body");
+  const title = page.locator("#title");
+  await expect(body).toHaveValue("Recovered draft");
+  await expect(page.locator(".editor-clear-temporary")).toBeHidden();
+  await body.fill("");
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), draftKey)).toBeNull();
+  await expect(page.locator(".editor-notice-label")).toBeEmpty();
 
-  expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
-    await canonicalizeHtml(
-      page,
-      withLegacyFileUploader(withLegacyEditor(EXPECTED_PARENT_ISSUE_FORM_BODY)).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
+  await title.fill("Keyboard focus");
+  await title.press("Enter");
+  await expect(body).toBeFocused();
+  await body.fill("BeforeAfter");
+  await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(6, 6));
+  await page.getByRole("button", { name: "Add checklist", exact: true }).click();
+  await expect(body).toHaveValue(`Before${CHECKLIST}After`);
+  expect(await body.evaluate((textarea: HTMLTextAreaElement) => textarea.selectionStart)).toBe(
+    6 + CHECKLIST.length,
+  );
+
+  await body.fill("Existing body");
+  await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(0, 0));
+  await page.getByRole("button", { name: "Add checklist", exact: true }).click();
+  await expect(body).toHaveValue(`Existing body${CHECKLIST}`);
+  expect(await body.evaluate((textarea: HTMLTextAreaElement) => textarea.selectionStart)).toBe(
+    `Existing body${CHECKLIST}`.length,
+  );
+
+  await body.fill("one\ntwo");
+  await body.evaluate((textarea: HTMLTextAreaElement) =>
+    textarea.setSelectionRange(0, textarea.value.length),
+  );
+  await body.press("Tab");
+  await expect(body).toHaveValue("    one\n    two");
+  await expect.poll(() => body.evaluate((textarea) => textarea.selectionStart)).toBe(0);
+  await body.press("Shift+Tab");
+  await expect(body).toHaveValue("one\ntwo");
+  await body.fill("word");
+  await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(2, 2));
+  await body.press("Tab");
+  await expect(body).toHaveValue("wo    rd");
+  await expect.poll(() => body.evaluate((textarea) => textarea.selectionStart)).toBe(6);
+  await body.press("Shift+Tab");
+  await expect(body).toHaveValue("word");
+  await expect.poll(() => body.evaluate((textarea) => textarea.selectionStart)).toBe(2);
+
+  const initialTextareaHeight = (await body.boundingBox())?.height ?? 0;
+  expect(initialTextareaHeight).toBeCloseTo(310, 0);
+  await body.fill(Array.from({ length: 40 }, (_, index) => `Line ${index}`).join("\n"));
+  await expect.poll(async () => (await body.boundingBox())?.height ?? 0).toBeGreaterThan(310);
+  await body.fill("Short again");
+  await expect.poll(async () => (await body.boundingBox())?.height ?? 0).toBeCloseTo(310, 0);
+
+  await body.fill(
+    `Line one\nLine two\n${CHECKLIST}\n\nSee #11 and @alice and [external](https://example.com/docs)\n\n<video class="video-js" controls><source src="${basePath}/files/preview-video" type="video/mp4"></video><script>unsafe()</script>`,
+  );
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await expect(page.locator("#preview-body input[type=checkbox]")).toHaveCount(3);
+  await expect(page.locator("#preview-body p").first().locator("br")).toHaveCount(1);
+  await expect(page.locator('#preview-body a[href$="/admin/sample/issue/11"]')).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/11`,
+  );
+  await expect(page.locator('#preview-body a[href$="/alice"]')).toHaveAttribute(
+    "href",
+    `${basePath}/alice`,
+  );
+  await expect(page.getByRole("link", { name: "external" })).toHaveAttribute(
+    "href",
+    "https://example.com/docs",
+  );
+  await expect(page.getByRole("link", { name: "external" })).not.toHaveAttribute("target", /.+/u);
+  await expect(page.getByRole("link", { name: "external" })).not.toHaveAttribute("rel", /.+/u);
+  await expect(page.locator("#preview-body video.video-js[controls]")).toBeVisible();
+  await expect(page.locator("#preview-body video source")).toHaveAttribute(
+    "src",
+    `${basePath}/files/preview-video`,
+  );
+  await expect(page.locator("#preview-body video source")).toHaveAttribute("type", "video/mp4");
+  await expect(page.locator("#preview-body script")).toHaveCount(0);
+  await expect(page.locator("#preview-body")).not.toContainText("unsafe()");
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(page.locator(".markdown-help-nav .label")).toHaveText("Markdown help");
+  await page.locator(".markdown-help-nav .help-nav", { hasText: "Header" }).click();
+  await expect(page.locator(".markdown-help-item.markdownHeaders")).toHaveClass(/active/u);
+  const markdownHelpHeading = page.locator(".markdown-help-item.markdownHeaders h1");
+  await expect(markdownHelpHeading).toContainText("This is an H1");
+  await expect(markdownHelpHeading).toHaveAttribute("id", "yb-header-this-is-an-h1");
+  await expect(markdownHelpHeading.locator(".head-anchor")).toHaveAttribute(
+    "href",
+    /#yb-header-this-is-an-h1$/u,
+  );
+  await page.locator(".markdown-help-nav .help-nav", { hasText: "Image" }).click();
+  const markdownHelpImagePath = `${basePath}/legacy-assets/images/ico-like-small.png`;
+  await expect(page.locator(".markdown-help-item.markdownImages img")).toHaveAttribute(
+    "src",
+    markdownHelpImagePath,
+  );
+  const markdownHelpImageResponse = await page.request.get(
+    new URL(markdownHelpImagePath, page.url()).toString(),
+  );
+  expect(markdownHelpImageResponse.status()).toBe(200);
+  expect(markdownHelpImageResponse.headers()["content-type"]).toMatch(/^image\//u);
+
+  await body.fill("Notify @");
+  await expect.poll(() => state.mentionQueries.at(-1)).toBe("");
+  await page.getByRole("option", { name: "@project all: admin/sample" }).click();
+  await expect(body).toHaveValue("Notify @admin/sample ");
+
+  await body.fill("Hello @al");
+  await expect.poll(() => state.mentionQueries.at(-1)).toBe("al");
+  await expect(page.getByRole("option", { name: "Alice Example alice" })).toBeVisible();
+  const mentionPopup = await mentionPopupMetrics(page);
+  expect(mentionPopup.left).toBeGreaterThanOrEqual(mentionPopup.textareaLeft);
+  expect(mentionPopup.right).toBeLessThanOrEqual(mentionPopup.textareaRight);
+  expect(mentionPopup.top).toBeGreaterThanOrEqual(4);
+  expect(mentionPopup.bottom).toBeLessThanOrEqual(mentionPopup.viewportHeight - 4);
+  expect(
+    Math.min(
+      Math.abs(mentionPopup.top - mentionPopup.markerBottom),
+      Math.abs(mentionPopup.bottom - mentionPopup.markerTop),
     ),
+  ).toBeLessThanOrEqual(6);
+  await title.focus();
+  await expect(page.getByRole("option", { name: "Alice Example alice" })).toHaveCount(0);
+  await body.focus();
+  await body.press("i");
+  await expect.poll(() => state.mentionQueries.at(-1)).toBe("ali");
+  await expect(page.getByRole("option", { name: "Alice Example alice" })).toBeVisible();
+  await expect(page.getByRole("option", { name: "Ali Decoy decoy" })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: "@project all: admin/sample" })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: "@group all: team" })).toHaveCount(0);
+  await body.press("Escape");
+  await expect(body).toHaveValue("Hello @ali");
+  await expect(page.getByRole("option", { name: "Alice Example alice" })).toHaveCount(0);
+  await page.waitForTimeout(350);
+  await expect(page.getByRole("option", { name: "Alice Example alice" })).toHaveCount(0);
+  await body.press("c");
+  await expect.poll(() => state.mentionQueries.at(-1)).toBe("alic");
+  await body.press("ArrowDown");
+  await body.press("Enter");
+  await expect(body).toHaveValue("Hello @alice ");
+
+  await body.fill("See #11");
+  await expect.poll(() => state.issueReferenceQueries.at(-1)).toBe("11");
+  await expect(page.getByRole("option", { name: "#11 Existing parent" })).toBeVisible();
+  await expect(page.locator("#editor-mention-options [role=option]").first()).toHaveAttribute(
+    "aria-label",
+    "#11 Existing parent",
   );
-});
+  await body.press("Enter");
+  await expect(body).toHaveValue("See #11 ");
 
-test("project issue create form renders movable project options without Select2 avatar residue", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page, {
-    project: {
-      movableIssueProjects: [
-        {
-          id: 7,
-          logoUrl: "/assets/images/current-duplicate.png",
-          ownerName: "admin",
-          projectName: "sample",
-        },
-        {
-          id: 9,
-          logoUrl: "/avatars/weblabs-portal.png",
-          ownerName: "weblabs",
-          projectName: "portal",
-        },
-        {
-          id: 11,
-          logoUrl: "",
-          owner: "qa",
-          name: "triage",
-        },
-      ],
-    },
+  await body.fill("Ship :smi");
+  await expect(page.getByRole("option", { name: /smile/u }).first()).toBeVisible();
+  await body.press("Enter");
+  await expect(body).toHaveValue(/Ship 🙂/u);
+
+  await body.fill("Deliver :택배");
+  await expect(page.getByRole("option", { name: /택배 parcel/u })).toBeVisible();
+  await body.press("Enter");
+  await expect(body).toHaveValue(/Deliver 📦 /u);
+
+  await title.fill("Implement [b");
+  await expect.poll(() => state.titleQueries.at(-1)).toBe("b");
+  await expect(page.locator(".title-head-options")).toBeVisible();
+  await page.locator("#issueDueDate").focus();
+  await expect(page.locator(".title-head-options")).toHaveCount(0);
+  await title.focus();
+  await title.press("u");
+  await expect.poll(() => state.titleQueries.at(-1)).toBe("bu");
+  await title.press("Escape");
+  await expect(title).toHaveValue("Implement [bu");
+  await expect(page.locator(".title-head-options")).toHaveCount(0);
+  await page.waitForTimeout(350);
+  await expect(page.locator(".title-head-options")).toHaveCount(0);
+  await title.press("g");
+  await expect.poll(() => state.titleQueries.at(-1)).toBe("bug");
+  await expect(page.getByRole("option", { name: /type.*bug/iu })).toBeVisible();
+  await expect(page.locator(".title-head-options [role=option]").first()).toContainText("bug");
+  await title.press("ArrowDown");
+  await title.press("Enter");
+  await expect(title).toHaveValue("Implement ");
+  await expect(page.locator(".issue-label-token", { hasText: "bug" })).toBeVisible();
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText("Label: bug");
+  await page.getByRole("button", { name: "Delete bug" }).click();
+  await title.fill("Implement [Bug");
+  await expect.poll(() => state.titleQueries.at(-1)).toBe("Bug");
+  await title.press("Enter");
+  await expect(title).toHaveValue("Implement [Bugfix]");
+  const titleQueryCount = state.titleQueries.length;
+  await title.fill(`Implement [${"x".repeat(21)}`);
+  await page.waitForTimeout(350);
+  expect(state.titleQueries).toHaveLength(titleQueryCount);
+  await expect(page.locator(".title-head-options")).toHaveCount(0);
+
+  const fileInput = page.locator('#upload input[type="file"]');
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect(page.locator("#upload .attach-save-help")).toHaveCount(0);
+  await body.fill("Files: ");
+  await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(7, 7));
+  await fileInput.setInputFiles({
+    buffer: Buffer.from("attachment body"),
+    mimeType: "text/plain",
+    name: "notes.txt",
   });
-
-  await page.goto(`${basePath}/admin/sample/issueform?parentIssueId=42`);
-  await expect(page.locator("#targetProjectId")).toBeEnabled();
-  await expectIssueFormSelect2InitializerHooksDropped(page);
-
-  await expect
-    .poll(() =>
-      page.locator("#targetProjectId option").evaluateAll((options) =>
-        options.map((option) => ({
-          owner: option.getAttribute("data-owner"),
-          text: option.textContent?.trim(),
-          value: option.getAttribute("value"),
-        })),
-      ),
-    )
-    .toEqual([
-      {
-        owner: null,
-        text: "sample",
-        value: "7",
-      },
-      {
-        owner: "weblabs /",
-        text: "portal",
-        value: "9",
-      },
-      {
-        owner: "qa /",
-        text: "triage",
-        value: "11",
-      },
-    ]);
-  await expect(page.locator("#targetProjectId option[data-avatar-url]")).toHaveCount(0);
-});
-
-test("project issue create form keeps the legacy protected project title and group search scope", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const ownerName = "weblabs";
-  const projectName = "portal";
-  await mockProjectIssueForm(page, {
-    ownerName,
-    project: {
-      isProtected: true,
-      organizationName: ownerName,
-      projectScope: "protected",
-    },
-    projectName,
-  });
-
-  await page.goto(`${basePath}/${ownerName}/${projectName}/issueform`);
-  await expect(page).toHaveTitle("New issue - weblabs/portal");
-
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/${ownerName}/${projectName}/search`,
-  );
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(
+    page.locator(".attached-file", { hasText: "notes.txt" }).locator(".upload-progress"),
+  ).toBeVisible();
   await expect
     .poll(() =>
       page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+        .locator(".attached-file", { hasText: "notes.txt" })
+        .locator(".upload-progress .bar")
+        .evaluate((bar: HTMLElement) => Number.parseFloat(bar.style.width) || 0),
     )
-    .toEqual([
-      `${basePath}/${ownerName}/${projectName}/search`,
-      `${basePath}/organizations/${ownerName}/search`,
-      `${basePath}/search`,
-    ]);
-
-  const headerMetrics = await protectedIssueFormHeaderSearchScopeMetrics(page);
-  expect(headerMetrics.gnbClassName).toBe("gnb-outer project-header");
-  expect(headerMetrics.pageWrapTopAtOrBelowMenu).toBe(true);
-  expect(headerMetrics.scopeTopWithinNavbar).toBe(true);
-  expect(headerMetrics.scopeBottomWithinNavbar).toBe(true);
-  expect(headerMetrics.searchTopWithinNavbar).toBe(true);
-  expect(headerMetrics.searchBottomWithinNavbar).toBe(true);
-  expect(headerMetrics.searchLeftWithinNavbar).toBe(true);
-  expect(headerMetrics.searchRightWithinNavbar).toBe(true);
-
-  await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
-  await expect(page.locator(".gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/organizations/${ownerName}/search`,
+    .toBeGreaterThan(0);
+  await expect(page.locator("#upload .attach-save-help")).toHaveText(
+    "Selected file will be attached when your comment is saved.",
   );
+  await expect(page.locator(".attached-file", { hasText: "notes.txt" })).toContainText("15 bytes");
+  await expect(page.locator(".attached-file", { hasText: "notes.txt" })).toContainText(
+    "Click to post",
+  );
+  await expect(page.locator(".attached-file", { hasText: "notes.txt" })).toHaveClass(/complete/u);
+  await page.locator(".attached-file", { hasText: "notes.txt" }).getByText("notes.txt").click();
+  await expect(body).toHaveValue(new RegExp(`Files: \\[notes\\.txt\\]\\(${basePath}/files/501\\)`));
+
+  await fileInput.setInputFiles({
+    buffer: Buffer.from("png"),
+    mimeType: "image/png",
+    name: "diagram.png",
+  });
+  await page.locator(".attached-file", { hasText: "diagram.png" }).getByText("diagram.png").click();
+  await expect(body).toHaveValue(new RegExp(`!\\[diagram\\.png\\]\\(${basePath}/files/502\\)`));
+  await page.getByRole("button", { name: "Delete notes.txt" }).click();
+  await expect.poll(() => state.deletedAttachmentIds).toEqual([501]);
+  await expect(body).not.toHaveValue(/notes\.txt/u);
+
+  await fileInput.setInputFiles({
+    buffer: Buffer.alloc(1_024),
+    mimeType: "application/octet-stream",
+    name: "kilobyte.bin",
+  });
+  await expect(page.locator(".attached-file", { hasText: "normalized.bin" })).toContainText(
+    "1.00 Kb",
+  );
+  await fileInput.setInputFiles({
+    buffer: Buffer.from("video"),
+    mimeType: "video/mp4",
+    name: "demo.mp4",
+  });
+  await page.locator(".attached-file", { hasText: "demo.mp4" }).getByText("demo.mp4").click();
+  await expect(body).toHaveValue(
+    /<video class="video-js" data-setup="\{\}" controls><source src=.*type="video\/mp4"><\/video>\[demo\.mp4\]/u,
+  );
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await expect(page.locator("#preview-body video.video-js")).toHaveAttribute("data-setup", "{}");
+  await expect(page.locator("#preview-body video.video-js source")).toHaveAttribute(
+    "src",
+    `${basePath}/files/504`,
+  );
+  await expect(page.locator("#preview-body video.video-js source")).toHaveAttribute(
+    "type",
+    "video/mp4",
+  );
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("button", { name: "Delete demo.mp4" }).click();
+  await expect(body).not.toHaveValue(/video-js/u);
+
+  const beforeUploadBoxDrop = await body.inputValue();
+  await dispatchDroppedFile(page, "dropped.txt", "dropped");
+  await expect(page.locator(".attached-file", { hasText: "dropped.txt" })).toBeVisible();
+  await expect(body).toHaveValue(beforeUploadBoxDrop);
+
+  await body.fill("Drop: tail");
+  await body.evaluate((textarea: HTMLTextAreaElement) =>
+    textarea.setSelectionRange(6, textarea.value.length),
+  );
+  await dispatchTextareaDroppedFiles(page, [
+    { content: "first", mimeType: "text/plain", name: "first.txt" },
+    { content: "second", mimeType: "image/png", name: "second.png" },
+  ]);
+  await expect(body).toHaveValue(/Drop: <!--_upload-\d+_--><!--_upload-\d+_-->tail/u);
+  await expect(body).toHaveValue(
+    `Drop: [first.txt](${basePath}/files/506) ![second.png](${basePath}/files/507) tail`,
+  );
+  await expect
+    .poll(() => body.evaluate((textarea: HTMLTextAreaElement) => textarea.selectionStart))
+    .toBe((await body.inputValue()).indexOf("tail"));
+  await body.evaluate((textarea: HTMLTextAreaElement) =>
+    textarea.setSelectionRange(textarea.value.indexOf("tail"), textarea.value.length),
+  );
+  await dispatchPastedFile(page, "pasted.png", "image/png", "paste");
+  await expect
+    .poll(() => state.uploadedNames.at(-1))
+    .toMatch(/^\d{1,5}-\d{4}-\d{1,2}-\d{1,2}-\d{1,2}-\d{1,2}\.png$/u);
+  await expect(page.locator(".attached-file", { hasText: "server-pasted.png" })).toBeVisible();
+  await expect(body).toHaveValue(
+    `Drop: [first.txt](${basePath}/files/506) ![second.png](${basePath}/files/507) ![server-pasted.png](${basePath}/files/508) tail`,
+  );
+
+  await body.fill("Debounced local draft");
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), draftKey), { timeout: 6_500 })
+    .toBe("Debounced local draft");
+  await expect(page.locator(".editor-notice-label")).toContainText("Draft saved");
+
+  await page.getByRole("button", { name: "Option" }).click();
+  await page.locator("#targetProjectId").selectOption("9");
+  await title.fill("Move this issue");
+  const save = page.getByRole("button", { name: "Save", exact: true });
+  await save.click();
+  await expect(save).toBeDisabled();
+  await expect.poll(() => state.createBodies.length).toBe(1);
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), draftKey)).toBeNull();
+  expect(state.createBodies[0]).toMatchObject({
+    attachmentIds: [502, 503, 505, 506, 507, 508],
+    isDraft: false,
+    labelIds: [],
+    targetProjectId: 9,
+    title: "Move this issue",
+  });
+  expect(state.createBodies[0]).not.toHaveProperty("parentIssueId");
+  await expect(page).toHaveURL(`${basePath}/weblabs/api/issue/91`);
+  expectAllAppRequestsStayMounted(state.requests, basePath);
+  expectMutationCsrf(state.requests);
 });
 
-test("project issue create form empty title submit uses legacy alert and refocus behavior", async ({
+test("closing the option panel submits to the source project after selecting another target", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
-  let createRequestCount = 0;
-  await page.route("**/api/v1/owners/admin/projects/sample/issues", async (route) => {
-    createRequestCount += 1;
-    await route.fulfill({
-      contentType: "application/json",
-      status: 500,
-      body: JSON.stringify({ message: "unexpected create request" }),
-    });
-  });
-
+  const basePath = appBasePath();
+  const state = await mockIssueForm(page);
   await page.goto(`${basePath}/admin/sample/issueform`);
-  await expect(page.locator("#title")).toHaveClass("text title ");
-  await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
-  await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
 
-  const dialogMessages: string[] = [];
-  page.once("dialog", async (dialog) => {
-    dialogMessages.push(dialog.message());
-    await dialog.accept();
-  });
-  await page.locator("#button-save").click();
+  const optionButton = page.getByRole("button", { name: "Option" });
+  await optionButton.click();
+  await page.locator("#targetProjectId").selectOption("9");
+  await expect(page.locator("#targetProjectId")).toHaveValue("9");
+  await optionButton.click();
+  await expect(page.locator("#targetProjectId")).toBeDisabled();
 
-  expect(dialogMessages).toEqual(["Issue title is a required field."]);
-  await expect(page.locator("#title")).toHaveClass("text title ");
-  await expect(page.locator("#title")).toBeFocused();
-  await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
-  expect(createRequestCount).toBe(0);
-
-  await page.locator("#title").fill("Legacy title");
-  await expect(page.locator("#title")).toHaveClass("text title ");
-  await expect(page.locator("#issue-form dd > div.message")).toHaveCount(0);
+  await page.locator("#title").fill("Stay in source project");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect.poll(() => state.createBodies.length).toBe(1);
+  expect(state.createBodies[0]).not.toHaveProperty("targetProjectId");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/91`);
+  expectAllAppRequestsStayMounted(state.requests, basePath);
+  expectMutationCsrf(state.requests);
 });
 
-test("project issue create form invalid due date uses legacy notification and refocus behavior", async ({
+test("Markdown preview keeps legacy heading anchors, hash-route state, and scheme-relative links", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
-  let createRequestCount = 0;
-  await page.route("**/api/v1/projects/admin/sample/issues", async (route) => {
-    createRequestCount += 1;
-    await route.fulfill({
-      contentType: "application/json",
-      status: 500,
-      body: JSON.stringify({ message: "unexpected create request" }),
-    });
+  const basePath = appBasePath();
+  await mockIssueForm(page);
+  await page.goto(`${basePath}/admin/sample/issueform?parentIssueId=42&commentId=55`);
+  await page
+    .locator("#editor-body-body")
+    .fill(
+      [
+        "# Hello, Yona!",
+        "# Hello Yona",
+        "# Reference #11",
+        "[Jump](#yb-header-hello-yona)",
+        "[Protocol relative](//example.com/path)",
+      ].join("\n\n"),
+    );
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
+
+  const preview = page.locator("#preview-body");
+  const headings = preview.locator("h1");
+  await expect(headings.nth(0)).toHaveAttribute("id", "yb-header-hello-yona");
+  await expect(headings.nth(1)).toHaveAttribute("id", "yb-header-hello-yona-1");
+  await expect(headings.nth(2)).toHaveAttribute("id", "yb-header-reference-11");
+  const headingAnchor = headings.nth(0).locator("a.head-anchor");
+  await expect(headingAnchor).toHaveText("#");
+  const fragmentLink = preview.getByRole("link", { name: "Jump" });
+  const fragmentHref = await fragmentLink.getAttribute("href");
+  expect(fragmentHref).not.toBeNull();
+  const fragmentUrl = new URL(fragmentHref ?? "", page.url());
+  expect(fragmentUrl.pathname).toBe(`${basePath}/admin/sample/issueform`);
+  expect(fragmentUrl.searchParams.get("commentId")).toBe("55");
+  expect(fragmentUrl.searchParams.get("parentIssueId")).toBe("42");
+  expect(fragmentUrl.hash).toBe("#yb-header-hello-yona");
+  const schemeRelativeHref = await preview
+    .getByRole("link", { name: "Protocol relative" })
+    .getAttribute("href");
+  expect(schemeRelativeHref).not.toBeNull();
+  const schemeRelativeUrl = new URL(schemeRelativeHref ?? "", page.url());
+  expect(schemeRelativeUrl.protocol).toBe(new URL(page.url()).protocol);
+  expect(schemeRelativeUrl.hostname).toBe("example.com");
+  expect(schemeRelativeUrl.pathname).toBe("/path");
+
+  await page.locator("html").evaluate((element) => {
+    element.dataset.issueFormSpaSentinel = "alive";
+  });
+  let confirmCalls = 0;
+  page.on("dialog", async (dialog) => {
+    confirmCalls += 1;
+    await dialog.dismiss();
+  });
+  await fragmentLink.click();
+  await expect.poll(() => new URL(page.url()).hash).toBe("#yb-header-hello-yona");
+  expect(confirmCalls).toBe(0);
+  await expect.poll(() => new URL(page.url()).searchParams.get("commentId")).toBe("55");
+  await expect.poll(() => new URL(page.url()).searchParams.get("parentIssueId")).toBe("42");
+  const currentUrl = new URL(page.url());
+  expect(currentUrl.pathname).toBe(`${basePath}/admin/sample/issueform`);
+  expect(currentUrl.searchParams.get("commentId")).toBe("55");
+  expect(currentUrl.searchParams.get("parentIssueId")).toBe("42");
+  await expect(page.locator("html")).toHaveAttribute("data-issue-form-spa-sentinel", "alive");
+
+  await page.getByRole("button", { name: "Header", exact: true }).click();
+  const helpHeadingLink = page.locator(".markdown-help-item.markdownHeaders h1 a.head-anchor");
+  const helpHeadingHref = await helpHeadingLink.getAttribute("href");
+  expect(helpHeadingHref).not.toBeNull();
+  const helpHeadingUrl = new URL(helpHeadingHref ?? "", page.url());
+  expect(helpHeadingUrl.pathname).toBe(`${basePath}/admin/sample/issueform`);
+  expect(helpHeadingUrl.searchParams.get("commentId")).toBe("55");
+  expect(helpHeadingUrl.searchParams.get("parentIssueId")).toBe("42");
+  expect(helpHeadingUrl.hash).toBe("#yb-header-this-is-an-h1");
+  await helpHeadingLink.click();
+  await expect.poll(() => new URL(page.url()).hash).toBe("#yb-header-this-is-an-h1");
+  expect(confirmCalls).toBe(0);
+  await expect.poll(() => new URL(page.url()).searchParams.get("commentId")).toBe("55");
+  await expect.poll(() => new URL(page.url()).searchParams.get("parentIssueId")).toBe("42");
+  await expect(page.locator("html")).toHaveAttribute("data-issue-form-spa-sentinel", "alive");
+});
+
+test("Preview resolves only backend-approved issue, commit, and mention references on the mounted API", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await setBrowserLanguage(page, "ko-KR");
+  const markdownReferences = {
+    commitReferences: [
+      {
+        commitId: "abcdef1234567890",
+        ownerName: "admin",
+        projectName: "sample",
+        shortId: "abcdef1",
+        token: "abcdef1",
+      },
+      {
+        commitId: "fedcba9876543210",
+        ownerName: "other",
+        projectName: "cross",
+        shortId: "fedcba9",
+        token: "other/cross@fedcba9",
+      },
+    ],
+    issueReferences: [
+      {
+        issueNumber: 11,
+        ownerName: "admin",
+        projectName: "sample",
+        state: "open",
+        title: "Local <img src=x onerror=bad>",
+        token: "#11",
+      },
+      {
+        issueNumber: 12,
+        ownerName: "other",
+        projectName: "sample",
+        state: "closed",
+        title: "Owner shortcut",
+        token: "other#12",
+      },
+      {
+        issueNumber: 13,
+        ownerName: "other",
+        projectName: "cross",
+        state: "open",
+        title: "Cross project",
+        token: "other/cross#13",
+      },
+      {
+        issueNumber: 14,
+        ownerName: "other",
+        projectName: "sample",
+        state: "open",
+        title: "At owner shortcut",
+        token: "@other#14",
+      },
+    ],
+    mentionReferences: [
+      {
+        kind: "user",
+        label: "Alice Example",
+        loginId: "alice",
+        ownerName: "",
+        projectName: "",
+        token: "@alice",
+      },
+      {
+        kind: "organization",
+        label: "Team",
+        loginId: "team",
+        ownerName: "",
+        projectName: "",
+        token: "@team",
+      },
+      {
+        kind: "project",
+        label: "other/cross",
+        loginId: "other/cross",
+        ownerName: "other",
+        projectName: "cross",
+        token: "@other/cross",
+      },
+      {
+        kind: "user",
+        label: "Korean Mention",
+        loginId: "koreanmention",
+        ownerName: "",
+        projectName: "",
+        token: "@koreanmention",
+      },
+    ],
+  };
+  const state = await mockIssueForm(page, { markdownReferences });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  const body = page.locator("#editor-body-body");
+  const markdown = [
+    "Issues #11 other#12 other/cross#13 @other#14 invalid #999.",
+    "Commits abcdef1 other/cross@fedcba9 invalid deadbeef.",
+    "Mentions @alice @team @other/cross 한@koreanmention invalid @missing.",
+    "Wrapped A#11B x@alice zabcdef1y.",
+    "`#11 @alice abcdef1` and [#11 @alice](https://example.com/ref)",
+  ].join("\n\n");
+  await body.fill(markdown);
+  expect(state.markdownReferenceBodies).toEqual([]);
+
+  await page.getByRole("button", { name: "미리보기", exact: true }).click();
+  await expect.poll(() => state.markdownReferenceBodies).toEqual([markdown]);
+  const metadataRequest = state.requests.find((request) =>
+    request.pathname.endsWith("/markdown-references"),
+  );
+  expect(metadataRequest).toMatchObject({
+    method: "POST",
+    pathname: `${basePath}/api/v1/owners/admin/projects/sample/markdown-references`,
   });
 
-  await page.goto(`${basePath}/admin/sample/issueform`);
-  await page.locator("#title").fill("Legacy title");
-  await page.locator("#issueDueDate").fill("not-a-date");
-  await page.locator("#button-save").click();
+  const preview = page.locator("#preview-body");
+  await expect(preview.locator("a.issueLink")).toHaveCount(4);
+  const localIssue = preview.locator(`a.issueLink[href="${basePath}/admin/sample/issue/11"]`);
+  await expect(localIssue).toContainText("#11.Local <img src=x onerror=bad>");
+  await expect(localIssue.locator("img")).toHaveCount(0);
+  await expect(localIssue.locator(".issue-state.open")).toHaveText("열림");
+  await expect(
+    preview.locator(`a.issueLink[href="${basePath}/other/sample/issue/12"]`),
+  ).toContainText("other#12.Owner shortcutother#12.Owner shortcut");
+  await expect(
+    preview.locator(`a.issueLink[href="${basePath}/other/sample/issue/12"] .issue-state.closed`),
+  ).toHaveText("닫힘");
+  await expect(
+    preview.locator(`a.issueLink[href="${basePath}/other/cross/issue/13"]`),
+  ).toContainText("other/cross#13.Cross projectother/cross#13.Cross project");
+  await expect(
+    preview.locator(`a.issueLink[href="${basePath}/other/sample/issue/14"]`),
+  ).toContainText("other#14.At owner shortcutother#14.At owner shortcut");
+  await expect(
+    preview.locator(`a[href="${basePath}/admin/sample/commit/abcdef1234567890"]`),
+  ).toHaveText("abcdef1");
+  await expect(
+    preview.locator(`a[href="${basePath}/other/cross/commit/fedcba9876543210"]`),
+  ).toHaveText("other/cross@fedcba9");
+  await expect(preview.locator(`a[href="${basePath}/alice"]`)).toHaveText("@Alice Example");
+  await expect(preview.locator(`a[href="${basePath}/organizations/team"]`)).toHaveText("@Team");
+  await expect(preview.locator(`a[href="${basePath}/other/cross"]`)).toHaveText("@other/cross");
+  await expect(preview.locator(`a[href="${basePath}/koreanmention"]`)).toHaveText(
+    "@Korean Mention",
+  );
+  await expect(preview.locator("p", { hasText: "Wrapped" }).locator("a")).toHaveCount(0);
+  await expect(preview.locator("code").locator("a")).toHaveCount(0);
+  const explicitLink = preview.locator('a[href="https://example.com/ref"]');
+  await expect(explicitLink).toHaveText("#11 @alice");
+  await expect(explicitLink).not.toHaveAttribute("target", /.+/u);
+  await expect(preview).toContainText("invalid #999");
+  await expect(preview).toContainText("invalid deadbeef");
+  await expect(preview).toContainText("invalid @missing");
 
-  await expect(page.locator(".yobiToasts .toast .msg")).toHaveText(
+  await page.getByRole("button", { name: "편집", exact: true }).click();
+  const updatedMarkdown = `${markdown}\n\n#14`;
+  await body.fill(updatedMarkdown);
+  await page.getByRole("button", { name: "미리보기", exact: true }).click();
+  await expect.poll(() => state.markdownReferenceBodies).toEqual([markdown, updatedMarkdown]);
+  await expect(preview).toContainText("#14");
+});
+
+test("Markdown preview keeps the legacy sanitizer allowlist and blocks scripts and event handlers", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await mockIssueForm(page);
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await page
+    .locator("#editor-body-body")
+    .fill(
+      [
+        '<a href="https://example.com/explicit" name="legacy-name" target="_self" rel="nofollow">explicit</a>',
+        '<a href="https://example.com/rel-only" rel="nofollow">rel only</a>',
+        '<a href="zpl://printer/job">zpl link</a>',
+        '<video class="video-js" data-setup="{}" controls preload="auto" type="video/mp4" autoplay responsive="true" height="120" width="200" fluid="true" liveui="true" src="file:///tmp/movie.mp4"><source src="zpl://printer/movie" type="video/mp4" target="preview"></video>',
+        '<input type="checkbox" disabled checked>',
+        '<ol start="3"><li>third</li></ol>',
+        `<iframe width="320" height="180" src="${basePath}/safe-frame" frameborder="0" allow="fullscreen" allowfullscreen></iframe>`,
+        '<span class="legacy-span" id="legacy-id" style="color:red; position:fixed; inset:0; z-index:999999; background-image:url(javascript:alert(1)); behavior:url(x); width:expression(alert(1))" width="10" height="20">styled</span>',
+        "<script>danger()</script>",
+        '<a href="javascript:alert(1)" onclick="danger()">blocked link</a>',
+        '<img src="javascript:alert(2)" onerror="danger()" alt="blocked image">',
+      ].join("\n"),
+    );
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  const preview = page.locator("#preview-body");
+
+  const explicit = preview.getByRole("link", { name: "explicit" });
+  await expect(explicit).toHaveAttribute("target", "_self");
+  await expect(explicit).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(explicit).toHaveAttribute("name", "legacy-name");
+  await expect(preview.getByRole("link", { name: "rel only" })).not.toHaveAttribute("rel", /.+/u);
+  const zplLink = preview.getByRole("link", { name: "zpl link" });
+  await expect(zplLink).toHaveAttribute("href", "zpl://printer/job");
+  await expect(zplLink).not.toHaveAttribute("target", /.+/u);
+  await expect(zplLink).not.toHaveAttribute("rel", /.+/u);
+  const video = preview.locator("video.video-js");
+  await expect(video).toHaveAttribute("data-setup", "{}");
+  await expect(video).toHaveAttribute("preload", "auto");
+  await expect(video).toHaveAttribute("src", "file:///tmp/movie.mp4");
+  await expect(video).toHaveAttribute("responsive", "true");
+  await expect(video.locator("source")).toHaveAttribute("src", "zpl://printer/movie");
+  await expect(video.locator("source")).toHaveAttribute("target", "preview");
+  await expect(preview.locator('input[type="checkbox"][disabled][checked]')).toHaveCount(1);
+  await expect(preview.locator("ol")).toHaveAttribute("start", "3");
+  const iframe = preview.locator("iframe");
+  await expect(iframe).toHaveAttribute("src", `${basePath}/safe-frame`);
+  await expect(iframe).toHaveAttribute("frameborder", "0");
+  await expect(iframe).toHaveAttribute("allowfullscreen", "");
+  const span = preview.locator("span#legacy-id.legacy-span");
+  await expect(span).toHaveCSS("color", "rgb(255, 0, 0)");
+  await expect(span).toHaveAttribute("width", "10");
+  await expect(span).toHaveAttribute("height", "20");
+  const sanitizedStyle = (await span.getAttribute("style")) ?? "";
+  expect(sanitizedStyle).toMatch(/color:\s*red/iu);
+  expect(sanitizedStyle).not.toMatch(
+    /position|inset|z-index|background-image|behavior|expression|javascript/iu,
+  );
+
+  await expect(preview.locator("script")).toHaveCount(0);
+  await expect(preview).not.toContainText("danger()");
+  const blockedLink = preview.getByText("blocked link");
+  await expect(blockedLink).not.toHaveAttribute("href", /javascript:/iu);
+  await expect(blockedLink).not.toHaveAttribute("onclick", /.+/u);
+  const blockedImage = preview.locator('img[alt="blocked image"]');
+  await expect(blockedImage).not.toHaveAttribute("src", /javascript:/iu);
+  await expect(blockedImage).not.toHaveAttribute("onerror", /.+/u);
+});
+
+test("Excel clipboard text plus image inserts the legacy Markdown table without uploading the image", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  const state = await mockIssueForm(page);
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  const body = page.locator("#editor-body-body");
+  await body.fill("BEGIN selected tail");
+  await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(6, 14));
+  const clipboardText = "^lName\t^cRole\t^rScore\r\nAda\nLovelace\tEngineer\t9\r\nBob\tCTO\t100";
+  await dispatchPastedTextAndImage(page, clipboardText, "ignored.png", "image/png", "image");
+
+  const table = [
+    `| ${"Name".padEnd(12)} | ${"Role".padEnd(8)} | ${"Score".padEnd(5)} |`,
+    `|${"-".repeat(14)}|:${"-".repeat(8)}:|${"-".repeat(6)}:|`,
+    `| ${"Ada Lovelace".padEnd(12)} | ${"Engineer".padEnd(8)} | ${"9".padEnd(5)} |`,
+    `| ${"Bob".padEnd(12)} | ${"CTO".padEnd(8)} | ${"100".padEnd(5)} |`,
+  ].join("\n");
+  await expect(body).toHaveValue(`BEGIN ${table}selected tail`);
+  await expect
+    .poll(() => body.evaluate((textarea) => textarea.selectionStart))
+    .toBe(6 + table.length);
+  await expect(body).toBeFocused();
+  expect(state.uploadedNames).toEqual([]);
+  await expect(page.locator(".attached-file")).toHaveCount(0);
+});
+
+test("draft submit is pending guarded and sends the legacy isDraft payload", async ({ page }) => {
+  const basePath = appBasePath();
+  const state = await mockIssueForm(page, { createDelayMs: 1_500 });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await page.locator("#title").fill("Private draft");
+  await page.locator("#editor-body-body").fill("Only me");
+
+  const draft = page.getByRole("button", { name: "Draft Save", exact: true });
+  await expect(draft).toHaveAttribute("title", "Only you can see it until you publish");
+  await draft.click();
+  await expect(draft).toBeDisabled();
+  await expect(page.locator("#button-save")).toBeDisabled();
+  await expect.poll(() => state.createBodies.length).toBe(1);
+  expect(state.createBodies[0]).toMatchObject({ isDraft: true, title: "Private draft" });
+  await expect(page.locator("#isDraft")).toHaveValue("true");
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/91`);
+  expectAllAppRequestsStayMounted(state.requests, basePath);
+  expectMutationCsrf(state.requests);
+});
+
+test("legacy validation uses alert and toast, server errors stay in the form, and cancel honors dirty blocking", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  const state = await mockIssueForm(page, {
+    createStatus: 422,
+    deleteFailures: 1,
+    failUploadNames: ["broken.txt"],
+    uploadDelayMs: 300,
+  });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+
+  await page.locator(".project-name a").click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+  await page.goto(`${basePath}/projects`);
+  await page.goto(`${basePath}/admin/sample/issueform`);
+
+  const title = page.locator("#title");
+  const save = page.getByRole("button", { name: "Save", exact: true });
+  const alertMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await save.click();
+  await expect(alertMessage).resolves.toBe("Issue title is a required field.");
+  await expect(title).toBeFocused();
+  expect(state.createBodies).toHaveLength(0);
+
+  await title.fill("Invalid date");
+  await page.locator("#issueDueDate").fill("2026-02-30");
+  await save.click();
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
     "Issue due date is not valid date type.",
   );
   await expect(page.locator("#issueDueDate")).toBeFocused();
-  expect(createRequestCount).toBe(0);
-});
+  expect(state.createBodies).toHaveLength(0);
 
-test("project issue create form submits draft intent without mutating legacy hidden input DOM", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page);
-  const createPayloads: Array<Record<string, unknown>> = [];
-  await page.route("**/api/v1/projects/admin/sample/issues", async (route) => {
-    createPayloads.push(route.request().postDataJSON() as Record<string, unknown>);
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ issueNumber: 101 }),
+  await page.locator("#issueDueDate").fill("");
+  await title.fill("Server error");
+  await save.click();
+  await expect(page.locator(".issue-form-error")).toHaveText("Issue could not be created");
+  const errorPosition = await page.evaluate(() => {
+    const titleBox = document.querySelector<HTMLElement>("#title")!.getBoundingClientRect();
+    const errorBox = document
+      .querySelector<HTMLElement>(".issue-form-error")!
+      .getBoundingClientRect();
+    const editorBox = document
+      .querySelector<HTMLElement>(".issue-markdown-editor")!
+      .getBoundingClientRect();
+    return { editorTop: editorBox.top, errorTop: errorBox.top, titleBottom: titleBox.bottom };
+  });
+  expect(errorPosition.errorTop).toBeGreaterThanOrEqual(errorPosition.titleBottom);
+  expect(errorPosition.errorTop).toBeLessThan(errorPosition.editorTop);
+
+  const body = page.locator("#editor-body-body");
+  await body.fill("Keep");
+  await body.evaluate((textarea: HTMLTextAreaElement) => textarea.setSelectionRange(4, 4));
+  await dispatchTextareaDroppedFiles(page, [
+    { content: "broken", mimeType: "text/plain", name: "broken.txt" },
+  ]);
+  await expect(body).toHaveValue(/Keep<!--_upload-\d+_-->/u);
+  await expect(body).toHaveValue("Keep");
+  await expect(page.locator(".attached-file", { hasText: "broken.txt" })).toHaveCount(0);
+
+  await page.locator('#upload input[type="file"]').setInputFiles({
+    buffer: Buffer.from("broken"),
+    mimeType: "text/plain",
+    name: "broken.txt",
+  });
+  await expect(page.locator(".attached-file", { hasText: "broken.txt" })).toHaveCount(0);
+  await expect(page.locator("#yobiToasts .toast .msg")).toContainText("Failed to upload");
+
+  await page.locator('#upload input[type="file"]').setInputFiles({
+    buffer: Buffer.from("retry"),
+    mimeType: "text/plain",
+    name: "retry.txt",
+  });
+  await page.getByRole("button", { name: "Delete retry.txt" }).click();
+  await expect(page.locator(".attached-file", { hasText: "retry.txt" })).toBeVisible();
+  await expect(page.locator("#yobiToasts .toast .msg")).toContainText("Failed to delete");
+  await page.getByRole("button", { name: "Delete retry.txt" }).click();
+  await expect(page.locator(".attached-file", { hasText: "retry.txt" })).toHaveCount(0);
+
+  await body.fill("");
+  await page.goto(`${basePath}/projects`);
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await page.locator("#editor-body-body").fill("Dirty body");
+  const beforeUnloadCopy =
+    "Issue is not saved yet. Would you like to exit this page without saving?";
+  const dismissMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.dismiss();
     });
   });
+  await page.locator(".project-name a").click();
+  expect(await dismissMessage).toBe(beforeUnloadCopy);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issueform`);
 
+  const acceptMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await page.locator(".project-name a").click();
+  expect(await acceptMessage).toBe(beforeUnloadCopy);
+  await expect(page).toHaveURL(`${basePath}/admin/sample`);
+
+  await page.goto(`${basePath}/projects`);
   await page.goto(`${basePath}/admin/sample/issueform`);
-  await expect(page.locator('input#isDraft[name="isDraft"]')).toHaveAttribute("value", "false");
-  await expect(page.locator("#draft-save-btn")).toHaveAttribute(
-    "title",
-    "Only you can see it until you publish",
+  await page.locator("#editor-body-body").fill("Dirty body");
+  const cancelDismissMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.dismiss();
+    });
+  });
+  await page.getByRole("button", { name: "Cancel" }).click();
+  expect(await cancelDismissMessage).toBe(beforeUnloadCopy);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/admin/sample/issueform`);
+
+  const cancelAcceptMessage = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await page.getByRole("button", { name: "Cancel" }).click();
+  expect(await cancelAcceptMessage).toBe(beforeUnloadCopy);
+  expect(new URL(page.url()).pathname).toBe(`${basePath}/projects`);
+});
+
+test("form capability branches preserve empty milestones, label ACL, blank labels, and mounted asset fallbacks", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await mockIssueForm(page, {
+    formOptions: {
+      canCreateIssueAssignee: false,
+      canCreateIssueMilestone: true,
+      canManageIssueLabels: false,
+    },
+    milestones: [],
+    project: { backgroundUrl: "", logoUrl: "" },
+  });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+
+  await expect(page.getByRole("combobox", { name: "Assignee" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "New milestone" })).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/newMilestoneForm`,
   );
-  await page.locator("#title").fill("Normal save");
-  await page.locator("#issueDueDate").fill("2026-07-09");
-  await page.locator("#labelIds").evaluate((select) => {
-    const labelSelect = select as HTMLSelectElement;
-    for (const option of Array.from(labelSelect.options)) {
-      option.selected = option.value === "8";
-    }
-    labelSelect.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  await page.locator("#button-save").click();
-  await expect.poll(() => createPayloads.length).toBe(1);
-  expect(createPayloads[0]?.isDraft).toBe(false);
-  expect(createPayloads[0]?.assigneeLoginId).toBe("");
-  expect(createPayloads[0]?.dueDate).toBe("2026-07-09");
-  expect(createPayloads[0]?.labelIds).toEqual([8]);
+  await expect(page.locator(".label-edit")).toHaveCount(0);
+  const fallbackLogoPath = `${basePath}/legacy-assets/images/project_default_logo.png`;
+  const fallbackBackgroundPath = `${basePath}/legacy-assets/images/project_default.jpg`;
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute("src", fallbackLogoPath);
+  await expect(page.locator(".project-header-outer")).toHaveCSS(
+    "background-image",
+    new RegExp(`${escapeRegex(basePath)}/legacy-assets/images/project_default\\.jpg`),
+  );
+  expect((await page.request.get(new URL(fallbackLogoPath, page.url()).toString())).status()).toBe(
+    200,
+  );
+  expect(
+    (await page.request.get(new URL(fallbackBackgroundPath, page.url()).toString())).status(),
+  ).toBe(200);
 
+  await page.unrouteAll({ behavior: "wait" });
+  await mockIssueForm(page, {
+    formOptions: { canCreateIssueMilestone: false },
+    labels: [],
+  });
   await page.goto(`${basePath}/admin/sample/issueform`);
-  await expect(page.locator('input#isDraft[name="isDraft"]')).toHaveAttribute("value", "false");
-  await page.locator("#title").fill("Draft save");
-  await page.locator("#issueDueDate").fill("2026-07-10");
-  await page.locator("#draft-save-btn").click();
-  await expect.poll(() => createPayloads.length).toBe(2);
-  expect(createPayloads[1]?.isDraft).toBe(true);
-  expect(createPayloads[1]?.assigneeLoginId).toBe("");
-  expect(createPayloads[1]?.dueDate).toBe("2026-07-10");
+  await expect(page.getByRole("combobox", { name: "Select label" })).toHaveCount(0);
+  await expect(page.locator("#milestoneOption")).toHaveCount(0);
 });
 
-test("project issue create form renders legacy new milestone button when no open milestones exist", async ({
+test("uploader exposes paste help, enforces the configured size limit, and reports XHR progress", async ({
   page,
 }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectIssueForm(page, { milestones: [] });
-
+  const basePath = appBasePath();
+  await page.addInitScript(
+    ({ configuredBasePath, maxUploadedFileSize }) => {
+      (
+        window as Window & {
+          __YONA_RUNTIME_CONFIG__?: Record<string, unknown>;
+        }
+      ).__YONA_RUNTIME_CONFIG__ = {
+        basePath: configuredBasePath,
+        maxUploadedFileSize,
+      };
+    },
+    { configuredBasePath: basePath, maxUploadedFileSize: 5 },
+  );
+  const state = await mockIssueForm(page, { uploadDelayMs: 1_000 });
   await page.goto(`${basePath}/admin/sample/issueform`);
 
-  await expect(page.locator("#milestoneOption > dt")).toHaveText("Milestone");
-  await expect(page.locator("#milestoneId")).toHaveCount(0);
-  const newMilestone = page.locator("#milestoneOption .ybtn.ybtn-small.ybtn-fullsize");
-  await expect(newMilestone).toHaveText("New milestone");
-  await expect(newMilestone).toHaveAttribute("href", `${basePath}/admin/sample/newMilestoneForm`);
-  await expect(newMilestone).toHaveAttribute("target", "_blank");
+  const fileInput = page.locator('#upload input[type="file"]');
+  await expect(page.locator("#upload .help-pastable")).toHaveText("Paste the clipboard image");
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect(page.locator("#upload .attach-save-help")).toHaveCount(0);
+
+  await fileInput.setInputFiles({
+    buffer: Buffer.from("123456"),
+    mimeType: "text/plain",
+    name: "too-large.txt",
+  });
+  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+    "Wow, that's huge! Please submit file smaller than 5 bytes.",
+  );
+  expect(state.uploadedNames).toEqual([]);
+  await expect(page.locator(".attached-file", { hasText: "too-large.txt" })).toHaveCount(0);
+
+  await fileInput.setInputFiles({
+    buffer: Buffer.from("1234"),
+    mimeType: "text/plain",
+    name: "ok.txt",
+  });
+  const row = page.locator(".attached-file", { hasText: "ok.txt" });
+  await expect(row.locator(".upload-progress")).toBeVisible();
+  await expect
+    .poll(() =>
+      row
+        .locator(".upload-progress .bar")
+        .evaluate((bar: HTMLElement) => Number.parseFloat(bar.style.width) || 0),
+    )
+    .toBeGreaterThan(0);
+  await expect.poll(() => state.uploadedNames).toEqual(["ok.txt"]);
+  await expect(row).toHaveClass(/complete/u);
+  await expect(page.locator("#upload .attach-save-help")).toBeVisible();
 });
 
-test("project issue create form falls back to the legacy default header logo when project logo is blank", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  const consoleErrors: string[] = [];
-  page.on("console", (message) => {
-    if (message.type() === "error") {
-      consoleErrors.push(message.text());
-    }
-  });
-  await mockProjectIssueForm(page, { project: { logoUrl: "" } });
-
+test("issue form keeps the legacy 9:3 side-by-side columns at 800px", async ({ page }) => {
+  const basePath = appBasePath();
+  await mockIssueForm(page);
+  await page.setViewportSize({ width: 800, height: 900 });
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator("#issue-form")).toBeVisible();
-  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
-    "src",
-    "/assets/images/project_default_logo.png",
-  );
-  await expect(page.locator('.project-header-avatar img[src=""]')).toHaveCount(0);
-  await expect(page.locator("#targetProjectId option[data-avatar-url]")).toHaveCount(0);
-  expect(
-    consoleErrors.find((message) =>
-      message.includes('An empty string ("") was passed to the src attribute'),
-    ),
-  ).toBeUndefined();
+
+  const metrics = await issueFormMetrics(page);
+  expect(metrics.documentWidth).toBe(800);
+  expect(metrics.formLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.formRight).toBeLessThanOrEqual(800);
+  expect(metrics.leftWidth).toBeGreaterThan(metrics.rightWidth * 2.5);
+  expect(metrics.rightLeft).toBeGreaterThanOrEqual(metrics.leftRight);
+  expect(metrics.rightRight).toBeLessThanOrEqual(metrics.formRight);
+  expect(metrics.rightTop).toBeCloseTo(metrics.leftTop + 10, 0);
+  expect(metrics.rightTop).toBeLessThan(metrics.leftBottom);
 });
 
-test("project issue create form source uses TanStack Link and no uploader template remnants", () => {
-  const source = readFileSync(
-    new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
-    "utf8",
+test("anonymous project form response redirects to the typed mounted login route", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await mockIssueForm(page, { formOptionsStatus: 401 });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page).toHaveURL(
+    `${basePath}/users/loginform?redirectUrl=%2Fadmin%2Fsample%2Fissueform`,
   );
-  const sharedMarkdownHelpSource = readFileSync(
-    new URL("../src/routes/-legacy-markdown-help.tsx", import.meta.url),
-    "utf8",
-  );
-
-  expect(source).toContain("<Link");
-  expect(source).toContain(
-    '<title>{`${t("issue.menu.new")} - ${ownerName}/${projectName}`}</title>',
-  );
-  expect(source).toContain('className="label-edit"');
-  expect(source).toContain('import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";');
-  expect(source).toContain("router.history.back()");
-  expect(source).toContain('t("issue.error.emptyTitle")');
-  expect(source).toContain('t("issue.error.invalid.duedate")');
-  expect(source).toContain('name="assigneeLoginId"');
-  expect(source).toContain('placeholder={t("issue.noAssignee")}');
-  expect(source).toContain("function issueMovableProjects(project: ProjectContainer)");
-  expect(source).toContain("(project as YonaRecord).movableIssueProjects");
-  expect(source).toContain("id === currentProjectId");
-  expect(source).not.toContain("data-avatar-url");
-  expect(source).not.toContain("useProjectIssueFormDocumentTitle");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain('globalThis["document"]');
-  expect(source).not.toContain("window.history.back()");
-  expect(source).not.toContain('t("validation.required")');
-  expect(source).not.toContain('querySelector<HTMLInputElement>("#isDraft")');
-  expect(source).not.toContain('setAttribute("value", "true")');
-  expect(source).not.toContain('title=""');
-  expect(source).not.toMatch(/setAttribute\(["']tabindex["']/u);
-  expect(source).toContain("tabIndex={1}");
-  expect(source).toContain("tabIndex={2}");
-  expect(source).not.toContain('data-toggle="markdown-editor"');
-  expect(source).toContain('className="mt10"');
-  expect(source).not.toContain('data-toggle="select2"');
-  expect(source).not.toContain('data-toggle="tab"');
-  expect(source).not.toMatch(/<a\b[^>]*className="label-edit"/u);
-  expect(source).not.toContain("dangerouslySetInnerHTML");
-  expect(source).not.toContain("legacyMarkdownHelpHtml");
-  expect(source).not.toContain("legacyMarkdownHelpTemplate");
-  expect(source).not.toContain("markdown.scala.html?raw");
-  expect(source).not.toContain("__html");
-  expect(source).not.toContain("document.");
-  expect(source).not.toContain("addEventListener");
-  expect(source).not.toContain("classList");
-  expect(source).not.toContain("style.display");
-  expect(source).not.toContain("tippy(");
-  expect(source).not.toContain(".replace(/@Messages");
-  expect(source).not.toContain(".replace(/<script");
-  expect(source).not.toContain("attachedFileTemplate");
-  expect(source).not.toContain("dropFilesHereTemplate");
-  expect(source).not.toContain("text/x-jquery-tmpl");
-  expect(source).not.toContain("tplAttachedFile");
-  expect(source).not.toContain("tplDropFilesHere");
-  expect(sharedMarkdownHelpSource).not.toMatch(/<a\b/u);
-  expect(sharedMarkdownHelpSource).not.toContain("document.");
-  expect(sharedMarkdownHelpSource).not.toContain("addEventListener");
-  expect(sharedMarkdownHelpSource).not.toContain("classList");
-  expect(sharedMarkdownHelpSource).not.toContain("style.display");
-  expect(sharedMarkdownHelpSource).toContain('<Link to="http://demo.yobi.io/yobi/yobi/issue/2">');
 });
 
-async function mockProjectIssueForm(
-  page: Page,
-  options: {
-    ownerName?: string;
-    milestones?: Array<Record<string, unknown>>;
-    project?: Record<string, unknown>;
-    projectName?: string;
-  } = {},
-) {
-  const ownerName = options.ownerName ?? "admin";
-  const projectName = options.projectName ?? "sample";
-  await page.route("**/api/v1/session", async (route) => {
-    await route.fulfill({
+test("issue form matches observed 390px stacking and removes legacy implementation attributes", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await setBrowserLanguage(page, "ko-KR");
+  await mockIssueForm(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator("#issue-form")).toBeVisible();
+
+  const metrics = await issueFormMetrics(page);
+  const markdownHelp = await markdownHelpMetrics(page);
+  const uploadMetrics = await issueUploadMetrics(page);
+  expect(markdownHelp).toMatchObject({
+    rowCount: 3,
+    shortLinkRow: 3,
+  });
+  expect(markdownHelp.height).toBeCloseTo(91, 0);
+  expect(metrics.documentWidth).toBe(390);
+  expect(metrics.adminTop).toBeCloseTo(0, 0);
+  expect(metrics.adminHeight).toBeCloseTo(43, 0);
+  expect(metrics.gnbTop).toBeCloseTo(43, 0);
+  expect(metrics.gnbHeight).toBeCloseTo(40, 0);
+  expect(metrics.headerTop).toBeCloseTo(metrics.gnbTop, 0);
+  expect(metrics.headerHeight).toBeCloseTo(120, 0);
+  expect(metrics.menuTop).toBeCloseTo(163, 0);
+  expect(metrics.menuHeight).toBeCloseTo(40, 0);
+  expect(metrics.formTop).toBeCloseTo(213, 0);
+  expect(metrics.titleRowTop).toBeCloseTo(metrics.formTop, 0);
+  expect(metrics.titleRowHeight, JSON.stringify(metrics)).toBeCloseTo(59, 0);
+  expect(metrics.formLeft).toBeCloseTo(0, 0);
+  expect(metrics.formWidth).toBeCloseTo(390, 0);
+  expect(metrics.titleWidth).toBeGreaterThanOrEqual(345);
+  expect(metrics.titleWidth).toBeLessThanOrEqual(352);
+  expect(metrics.optionWidth).toBeCloseTo(24.9, 0);
+  expect(metrics.leftTop).toBeCloseTo(272, 0);
+  expect(metrics.leftWidth).toBeCloseTo(390, 0);
+  expect(metrics.editorWidth).toBeCloseTo(390, 0);
+  expect(metrics.textareaHeight).toBeCloseTo(310, 0);
+  expect(metrics.textareaTop).toBeCloseTo(408, 0);
+  expect(metrics.uploadWidth).toBeCloseTo(390, 0);
+  expect(metrics.uploadHeight).toBeCloseTo(100, 0);
+  expect(metrics.uploadTop).toBeCloseTo(718, 0);
+  expect(metrics.leftBottom).toBeCloseTo(868, 0);
+  expect(metrics.rightLeft).toBeCloseTo(8.3, 0);
+  expect(metrics.rightWidth).toBeCloseTo(370.5, 0);
+  expect(metrics.rightTop).toBeCloseTo(878, 0);
+  expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom + 8);
+  expect(metrics.rightTop).toBeLessThanOrEqual(metrics.leftBottom + 12);
+  expect(metrics.formRight).toBeLessThanOrEqual(390);
+  expect(uploadMetrics).toMatchObject({
+    attachHeight: 80,
+    attachWidth: 370,
+    buttonHeight: 30,
+    buttonPadding: "6px 20px",
+    fileInputHeight: 30,
+    fileInputOpacity: "0",
+    pasteDisplay: "block",
+    pasteHeight: 20,
+    pasteWidth: 370,
+    uploadPadding: "10px",
+  });
+  expect(uploadMetrics.buttonWidth).toBeCloseTo(104.4, 0);
+  const assignee = page.getByRole("combobox", { name: "담당자" });
+  await expect(assignee).toContainText("담당자 없음");
+  expect(await assigneeArrowMetrics(page)).toMatchObject({
+    arrowHeight: 28,
+    arrowRightInset: 1,
+    arrowWidth: 19,
+    selectionHeight: 30,
+  });
+  await expect(page.locator("#upload .help-droppable")).toHaveText("첨부할 파일을 끌어다 놓거나");
+  await expect(page.locator("#upload .fake-file-wrap")).toContainText("파일 올리기");
+  await expect(page.locator("#upload .plain")).toHaveText("버튼을 클릭해서 선택하세요");
+  await expect(page.locator("#upload .help-pastable")).toHaveText(
+    "클립보드 이미지를 붙여 넣을 수도 있습니다",
+  );
+  await page.locator('#upload input[type="file"]').setInputFiles({
+    name: "ko-accessible.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("ko accessible attachment"),
+  });
+  await expect(
+    page.getByRole("button", { name: "본문에 넣기 ko-accessible.txt", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "삭제 ko-accessible.txt", exact: true }),
+  ).toBeVisible();
+
+  await page.getByRole("combobox", { name: "라벨 선택" }).click();
+  await page.getByRole("option", { name: "High" }).click();
+  await expect(page.getByRole("button", { name: "삭제 high", exact: true })).toBeVisible();
+
+  await page.locator("#editor-body-body").fill("@ali");
+  await expect(page.getByRole("option", { name: "Alice Example alice" })).toBeVisible();
+  const popup = await mentionPopupMetrics(page);
+  expect(popup.left).toBeGreaterThanOrEqual(popup.textareaLeft);
+  expect(popup.right).toBeLessThanOrEqual(popup.textareaRight);
+  expect(popup.bottom).toBeLessThanOrEqual(popup.viewportHeight - 4);
+
+  await expect(page.locator("[data-attachment-id], [data-label-id]")).toHaveCount(0);
+
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
+  const markdownHelpSource = readFileSync("src/routes/-legacy-markdown-help.tsx", "utf8");
+  const appCssSource = readFileSync("src/app.css", "utf8");
+  for (const forbidden of [
+    "document.",
+    "querySelector",
+    "addEventListener",
+    "classList",
+    "style.display",
+    "dangerouslySetInnerHTML",
+    "<a ",
+    "data-toggle",
+    "data-format",
+    "data-editor-mode",
+    "data-resource-type",
+    "data-attachment-id",
+    "data-label-id",
+    'markdown: "true"',
+  ]) {
+    expect(routeSource, forbidden).not.toContain(forbidden);
+  }
+  expect(routeSource).toContain('t("title.newIssue")');
+  expect(routeSource).not.toContain(".style.setProperty");
+  expect(appCssSource).toMatch(
+    /\.issue-form-page-wrap #editor-body-body\s*\{[^}]*height:\s*310px;/u,
+  );
+  expect(markdownHelpSource).not.toContain('markdown: "true"');
+  expect(appCssSource).not.toContain("/yona/legacy-assets");
+});
+
+type MockOptions = {
+  createDelayMs?: number;
+  createStatus?: number;
+  deleteFailures?: number;
+  failUploadNames?: string[];
+  formOptions?: Partial<{
+    canCreateIssueAssignee: boolean;
+    canCreateIssueMilestone: boolean;
+    canManageIssueLabels: boolean;
+  }>;
+  formOptionsStatus?: number;
+  labels?: ReturnType<typeof labels>;
+  markdownReferences?: {
+    commitReferences: Array<Record<string, unknown>>;
+    issueReferences: Array<Record<string, unknown>>;
+    mentionReferences: Array<Record<string, unknown>>;
+  };
+  milestones?: Array<Record<string, unknown>>;
+  pastedImageResponseName?: string;
+  project?: Partial<ReturnType<typeof projectContainer>>;
+  uploadDelayMs?: number;
+};
+
+type RecordedRequest = {
+  csrf: string;
+  method: string;
+  pathname: string;
+};
+
+async function mockIssueForm(page: Page, options: MockOptions = {}) {
+  const state = {
+    assigneeQueries: [] as string[],
+    createBodies: [] as Array<Record<string, unknown>>,
+    deletedAttachmentIds: [] as number[],
+    favoriteRequests: 0,
+    issueReferenceQueries: [] as string[],
+    markdownReferenceBodies: [] as string[],
+    mentionQueries: [] as string[],
+    requests: [] as RecordedRequest[],
+    titleQueries: [] as string[],
+    uploadedNames: [] as string[],
+    watchRequests: [] as boolean[],
+  };
+  let nextAttachmentId = 501;
+  let remainingDeleteFailures = options.deleteFailures ?? 0;
+  const record = (route: Route) => {
+    const request = route.request();
+    state.requests.push({
+      csrf: request.headers()["x-csrf-token"] ?? "",
+      method: request.method(),
+      pathname: new URL(request.url()).pathname,
+    });
+  };
+
+  await page.route("**/api/v1/session", (route) => {
+    record(route);
+    return route.fulfill({ contentType: "application/json", body: JSON.stringify(session()) });
+  });
+  await page.route("**/api/auth/session", (route) => {
+    record(route);
+    return route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": CSRF_TOKEN },
+      body: JSON.stringify({ session: null, user: null }),
+    });
+  });
+  await page.route("**/api/v1/workspace", (route) => {
+    record(route);
+    return route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
-        isAnonymous: false,
-        isConfirmed: true,
-        isSiteAdmin: true,
-        loginId: "admin",
-        userLabel: "Site Admin",
+        emails: [],
+        favoriteOrganizations: [],
+        favoriteProjects: [],
+        issueItems: [],
+        memberProjects: [],
+        organizations: [],
+        ownProjects: [],
+        profile: null,
+        pullRequestItems: [],
+        recentProjects: [],
+        session: session(),
+        watchedProjects: [],
       }),
     });
   });
-  await page.route(
-    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
-    async (route) => {
-      await route.fulfill({
+  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) => {
+    record(route);
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...projectContainer(), ...options.project }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/labels", (route) => {
+    record(route);
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ labels: options.labels ?? labels() }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues/form-options", (route) => {
+    record(route);
+    if (options.formOptionsStatus === 401) {
+      return route.fulfill({
+        status: 401,
         contentType: "application/json",
         body: JSON.stringify({
-          backgroundImageUrl: "/assets/images/bg-default-project.png",
-          enrollmentRequestCount: 0,
-          id: 7,
-          isFavorite: false,
-          isForkedFromOrigin: false,
-          isPrivate: false,
-          isProtected: false,
-          logoUrl: "/assets/images/project_default_logo.png",
-          menuSetting: {
-            board: true,
-            code: true,
-            issue: true,
-            milestone: true,
-            pullRequest: true,
-            review: true,
+          error: { code: "unauthorized", message: "Login required", status: 401 },
+        }),
+      });
+    }
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        canCreateIssueAssignee: true,
+        canCreateIssueMilestone: true,
+        canManageIssueLabels: true,
+        currentProject: {
+          logoUrl: `${appBasePath()}/assets/images/project_default_logo.png`,
+          ownerName: "admin",
+          projectId: 7,
+          projectName: "sample",
+        },
+        issueTemplateMarkdown: "Template body",
+        movableIssueProjects: [
+          {
+            logoUrl: `${appBasePath()}/files/900`,
+            ownerName: "weblabs",
+            projectId: 9,
+            projectName: "api",
           },
-          ownerName,
-          projectName,
-          vcs: "GIT",
-          viewerCanUpdate: true,
-          ...options.project,
-        }),
-      });
-    },
-  );
-  await page.route(
-    `**/api/v1/owners/${ownerName}/projects/${projectName}/labels`,
-    async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          labels: [
+        ],
+        ...options.formOptions,
+      }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues/parent-options**", (route) => {
+    record(route);
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", (route) => {
+    record(route);
+    return route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        milestones: options.milestones ?? [{ id: 5, state: "open", title: "Sprint 1" }],
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/assignable-users**", async (route) => {
+    record(route);
+    const query = new URL(route.request().url()).searchParams.get("query") ?? "";
+    state.assigneeQueries.push(query);
+    const items = query
+      ? [
+          {
+            avatarUrl: `${appBasePath()}/assets/images/default-avatar-32.png`,
+            displayName: "Alice Example",
+            loginId: "alice",
+            pureNameOnly: "Alice Example",
+            type: "user",
+            userId: "2",
+          },
+        ]
+      : [
+          {
+            avatarUrl: "",
+            displayName: "issue.assignToMe",
+            loginId: "admin",
+            pureNameOnly: "",
+            type: "user",
+            userId: "1",
+          },
+          {
+            avatarUrl: "",
+            displayName: "issue.noAssignee",
+            loginId: "",
+            pureNameOnly: "",
+            type: "user",
+            userId: "",
+          },
+        ];
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ items, total: items.length, truncated: false }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/title-heads**", async (route) => {
+    record(route);
+    const query = new URL(route.request().url()).searchParams.get("query") ?? "";
+    state.titleQueries.push(query);
+    const result =
+      query === "Bug"
+        ? [{ category: "", frequency: 3, name: "Bugfix", searchText: "Bugfix" }]
+        : [
             {
-              categoryId: "3",
-              categoryIsExclusive: false,
-              categoryName: "type",
-              color: "#51aacc",
-              id: "8",
+              category: "irrelevant",
+              frequency: 99,
+              name: "feature",
+              searchText: "feature",
+            },
+            {
+              category: "type",
+              categoryId: 3,
+              frequency: 5,
+              id: 8,
+              isExclusive: false,
+              labelColor: "#51aacc",
               name: "bug",
+              searchText: "bug",
             },
-          ],
-        }),
-      });
-    },
-  );
-  await page.route(
-    `**/api/v1/projects/${ownerName}/${projectName}/issues/parent-options**`,
-    async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
-        }),
-      });
-    },
-  );
-  await page.route(
-    `**/api/v1/owners/${ownerName}/projects/${projectName}/milestones**`,
-    async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          milestones: options.milestones ?? [
             {
-              attachments: [],
-              closedIssueCount: 0,
-              closedIssues: [],
-              completionPercent: 0,
-              contentsHtml: "",
-              contentsMarkdown: "",
-              dueDateLabel: "",
-              id: "5",
-              openIssueCount: 0,
-              openIssues: [],
+              category: "zeta",
+              frequency: 5,
+              name: "bug later",
+              searchText: "bug later",
+            },
+          ];
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ result }) });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/mention-users**", async (route) => {
+    record(route);
+    const url = new URL(route.request().url());
+    const query = url.searchParams.get("query") ?? "";
+    state.mentionQueries.push(query);
+    expect(url.searchParams.get("context")).toBe("issue-body");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          {
+            avatarUrl: `${appBasePath()}/assets/images/default-avatar-32.png`,
+            displayName: "Alice Example",
+            loginId: "alice",
+            searchText: "Alice Example alice",
+            type: "user",
+          },
+          {
+            avatarUrl: `${appBasePath()}/assets/images/default-avatar-32.png`,
+            displayName: "Ali Decoy",
+            loginId: "decoy",
+            searchText: "unrelated",
+            type: "user",
+          },
+          {
+            avatarUrl: `${appBasePath()}/assets/images/project_default_logo.png`,
+            displayName: "@project all:",
+            loginId: "admin/sample",
+            searchText: "admin/sample/project/member/all",
+            type: "project",
+          },
+          {
+            avatarUrl: `${appBasePath()}/assets/images/group_default.png`,
+            displayName: "@group all: ",
+            loginId: "team",
+            searchText: "team/group/org/member/all",
+            type: "organization",
+          },
+        ],
+        total: 1,
+        truncated: false,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/issue-references**", async (route) => {
+    record(route);
+    const query = new URL(route.request().url()).searchParams.get("query") ?? "";
+    state.issueReferenceQueries.push(query);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          { issueNumber: 211, state: "open", title: "Contains 11" },
+          { issueNumber: 11, state: "open", title: "Existing parent" },
+          { issueNumber: 111, state: "open", title: "Starts with 11" },
+        ],
+        total: 3,
+        truncated: false,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/markdown-references", async (route) => {
+    record(route);
+    const requestBody = (route.request().postDataJSON() ?? {}) as Record<string, unknown>;
+    state.markdownReferenceBodies.push(String(requestBody.bodyMarkdown ?? ""));
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        options.markdownReferences ?? {
+          commitReferences: [],
+          issueReferences: [
+            {
+              issueNumber: 11,
+              ownerName: "admin",
+              projectName: "sample",
               state: "open",
-              title: "Sprint 1",
-              viewerCanDelete: true,
-              viewerCanUpdate: true,
+              title: "Existing parent",
+              token: "#11",
             },
           ],
+          mentionReferences: [
+            {
+              kind: "user",
+              label: "Alice Example",
+              loginId: "alice",
+              ownerName: "",
+              projectName: "",
+              token: "@alice",
+            },
+          ],
+        },
+      ),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
+    record(route);
+    state.favoriteRequests += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: false, ownerName: "admin", projectName: "sample" }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/watch", async (route) => {
+    record(route);
+    state.watchRequests.push(route.request().method() === "POST");
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ...projectContainer(), isWatching: false, watchCount: 2 }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/enroll", async (route) => {
+    record(route);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ enrollmentRequested: route.request().method() === "POST" }),
+    });
+  });
+  await page.route("**/files", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+    record(route);
+    const body = route.request().postDataBuffer()?.toString("utf8") ?? "";
+    const name = body.match(/filename="([^"]+)"/u)?.[1] ?? "upload.bin";
+    const mimeType = body.match(/Content-Type: ([^\r\n]+)/u)?.[1] ?? "application/octet-stream";
+    state.uploadedNames.push(name);
+    const id = nextAttachmentId++;
+    if (options.uploadDelayMs) {
+      await new Promise((resolve) => setTimeout(resolve, options.uploadDelayMs));
+    }
+    if (options.failUploadNames?.includes(name)) {
+      await route.fulfill({ status: 500, body: "upload failed" });
+      return;
+    }
+    const isPastedImage = /^\d{1,5}-\d{4}-\d{1,2}-\d{1,2}-\d{1,2}-\d{1,2}\.png$/u.test(name);
+    const responseName =
+      isPastedImage && options.pastedImageResponseName
+        ? options.pastedImageResponseName
+        : name === "kilobyte.bin"
+          ? "normalized.bin"
+          : name;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id,
+        mimeType,
+        name: responseName,
+        size:
+          name === "notes.txt" ? 15 : name === "kilobyte.bin" ? 1_024 : Math.max(3, name.length),
+        url: `${appBasePath()}/files/${id}`,
+      }),
+    });
+  });
+  await page.route("**/files/*", async (route) => {
+    if (route.request().method() !== "DELETE") {
+      await route.continue();
+      return;
+    }
+    record(route);
+    if (remainingDeleteFailures > 0) {
+      remainingDeleteFailures -= 1;
+      await route.fulfill({ status: 500, body: "delete failed" });
+      return;
+    }
+    state.deletedAttachmentIds.push(
+      Number(new URL(route.request().url()).pathname.split("/").at(-1)),
+    );
+    await route.fulfill({ status: 204 });
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+    record(route);
+    const requestBody = (route.request().postDataJSON() ?? {}) as Record<string, unknown>;
+    state.createBodies.push(requestBody);
+    if (options.createDelayMs) {
+      await new Promise((resolve) => setTimeout(resolve, options.createDelayMs));
+    }
+    if (options.createStatus && options.createStatus >= 400) {
+      await route.fulfill({
+        status: options.createStatus,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "invalid_issue",
+            message: "Issue could not be created",
+            status: options.createStatus,
+          },
         }),
       });
+      return;
+    }
+    const moved = requestBody.targetProjectId === 9;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        issueNumber: 91,
+        ownerName: moved ? "weblabs" : "admin",
+        projectName: moved ? "api" : "sample",
+      }),
+    });
+  });
+
+  return state;
+}
+
+function session() {
+  return {
+    actorId: 1,
+    avatarUrl: `${appBasePath()}/assets/images/default-avatar-32.png`,
+    defaultLandingPath: "/",
+    emailAddress: "admin@example.com",
+    isAnonymous: false,
+    isConfirmed: true,
+    isSiteAdmin: true,
+    loginId: "admin",
+    userLabel: "Site Admin",
+  };
+}
+
+function projectContainer() {
+  return {
+    backgroundUrl: `${appBasePath()}/assets/images/bg-default-project.png`,
+    boardCount: 1,
+    cloneUrl: "git@example.com:admin/sample.git",
+    codeMemberOnly: false,
+    currentMilestone: null,
+    defaultTab: "projectHome",
+    enrollmentRequestCount: 0,
+    enrollmentRequested: false,
+    isFavorited: true,
+    isForked: false,
+    isWatching: true,
+    logoUrl: `${appBasePath()}/assets/images/project_default_logo.png`,
+    memberCount: 1,
+    members: [],
+    openIssueCount: 1,
+    openPullRequestCount: 0,
+    organizationName: "",
+    originOwnerName: "",
+    originProjectName: "",
+    overview: "Sample project",
+    overviewEditable: true,
+    ownerName: "admin",
+    projectId: 7,
+    projectName: "sample",
+    projectScope: "PRIVATE",
+    reviewCount: 0,
+    showAdmin: true,
+    showBoard: true,
+    showCode: true,
+    showIssue: true,
+    showMilestone: true,
+    showPullRequest: true,
+    showReview: true,
+    vcs: "GIT",
+    viewerCanEnroll: true,
+    viewerCanLeave: false,
+    viewerCanUpdate: true,
+    viewerCanWatch: true,
+    viewerUserId: 1,
+    watchCount: 3,
+  };
+}
+
+function labels() {
+  return [
+    {
+      categoryId: 3,
+      categoryIsExclusive: false,
+      categoryName: "type",
+      color: "#51aacc",
+      id: 8,
+      name: "bug",
     },
+    {
+      categoryId: 4,
+      categoryIsExclusive: true,
+      categoryName: "priority",
+      color: "#f36c22",
+      id: 9,
+      name: "high",
+    },
+    {
+      categoryId: 4,
+      categoryIsExclusive: true,
+      categoryName: "priority",
+      color: "#8bc34a",
+      id: 10,
+      name: "low",
+    },
+  ];
+}
+
+function appBasePath() {
+  return process.env.YONA_DEV_BASE_PATH ?? "/yona";
+}
+
+async function setNativeDate(page: Page, value: string) {
+  await page.getByLabel("Choose due date", { exact: true }).evaluate((input, nextValue) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    setter?.call(input, nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, value);
+}
+
+async function setBrowserLanguage(page: Page, language: string) {
+  await page.addInitScript((nextLanguage) => {
+    Object.defineProperty(navigator, "language", {
+      configurable: true,
+      get: () => nextLanguage,
+    });
+    Object.defineProperty(navigator, "languages", {
+      configurable: true,
+      get: () => [nextLanguage],
+    });
+  }, language);
+}
+
+async function dispatchDroppedFile(page: Page, name: string, content: string) {
+  const dataTransfer = await page.evaluateHandle(
+    ({ fileContent, fileName }) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([fileContent], fileName, { type: "text/plain" }));
+      return transfer;
+    },
+    { fileContent: content, fileName: name },
+  );
+  await page.locator("#upload").dispatchEvent("drop", { dataTransfer });
+}
+
+type BrowserFile = {
+  content: string;
+  mimeType: string;
+  name: string;
+};
+
+async function dispatchTextareaDroppedFiles(page: Page, files: BrowserFile[]) {
+  const dataTransfer = await page.evaluateHandle((droppedFiles) => {
+    const transfer = new DataTransfer();
+    droppedFiles.forEach((file) => {
+      transfer.items.add(new File([file.content], file.name, { type: file.mimeType }));
+    });
+    return transfer;
+  }, files);
+  await page.locator("#editor-body-body").dispatchEvent("drop", { dataTransfer });
+}
+
+async function dispatchPastedFile(page: Page, name: string, mimeType: string, content: string) {
+  await page.locator("#editor-body-body").evaluate(
+    (target, file) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([file.content], file.name, { type: file.mimeType }));
+      target.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, clipboardData: transfer }));
+    },
+    { content, mimeType, name },
   );
 }
 
-async function protectedIssueFormHeaderSearchScopeMetrics(page: Page) {
-  return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
-    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
-    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
-    if (!navbar || !menu || !pageWrap || !scope || !search) {
-      throw new Error("Missing protected issue form shell elements");
-    }
+async function dispatchPastedTextAndImage(
+  page: Page,
+  text: string,
+  name: string,
+  mimeType: string,
+  content: string,
+) {
+  await page.locator("#editor-body-body").evaluate(
+    (target, clipboard) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(clipboard.text, "text/plain");
+      transfer.items.add(
+        new File([clipboard.content], clipboard.name, { type: clipboard.mimeType }),
+      );
+      target.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, clipboardData: transfer }));
+    },
+    { content, mimeType, name, text },
+  );
+}
 
-    const navbarRect = navbar.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
-    const pageWrapRect = pageWrap.getBoundingClientRect();
-    const scopeRect = scope.getBoundingClientRect();
-    const searchRect = search.getBoundingClientRect();
+async function rightControlMetrics(page: Page) {
+  return page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing issue form metric target: ${selector}`);
+      }
+      return element.getBoundingClientRect();
+    };
+    const assignee = required(".issue-assignee-control");
+    const label = required(".issue-label-control");
+    const rightMenu = required("#issue-form .right-menu");
     return {
-      gnbClassName: navbar.className,
-      pageWrapTopAtOrBelowMenu: Math.round(pageWrapRect.top) >= Math.round(menuRect.bottom),
-      scopeBottomWithinNavbar: Math.round(scopeRect.bottom) <= Math.round(navbarRect.bottom),
-      scopeTopWithinNavbar: Math.round(scopeRect.top) >= Math.round(navbarRect.top),
-      searchBottomWithinNavbar: Math.round(searchRect.bottom) <= Math.round(navbarRect.bottom),
-      searchLeftWithinNavbar: Math.round(searchRect.left) >= Math.round(navbarRect.left),
-      searchRightWithinNavbar: Math.round(searchRect.right) <= Math.round(navbarRect.right),
-      searchTopWithinNavbar: Math.round(searchRect.top) >= Math.round(navbarRect.top),
+      assigneeHeight: assignee.height,
+      labelHeight: label.height,
+      rightMenuHeight: rightMenu.height,
     };
   });
 }
 
-async function issueDueDateSearchBarMetrics(page: Page) {
+async function assigneeArrowMetrics(page: Page) {
   return page.evaluate(() => {
-    const option = document.querySelector<HTMLElement>(".issue-option:has(#issueDueDate)");
-    const label = document.querySelector<HTMLElement>(".issue-option:has(#issueDueDate) > dt");
-    const searchBar = document.querySelector<HTMLElement>(
-      ".issue-option .search.search-bar:has(#issueDueDate)",
+    const selection = document.querySelector<HTMLElement>(".issue-assignee-selection");
+    const arrow = document.querySelector<HTMLElement>(".issue-assignee-arrow");
+    if (!selection || !arrow) {
+      throw new Error("Missing assignee arrow metric target.");
+    }
+    const selectionRect = selection.getBoundingClientRect();
+    const arrowRect = arrow.getBoundingClientRect();
+    return {
+      arrowHeight: arrowRect.height,
+      arrowRightInset: selectionRect.right - arrowRect.right,
+      arrowWidth: arrowRect.width,
+      selectionHeight: selectionRect.height,
+    };
+  });
+}
+
+async function markdownHelpMetrics(page: Page) {
+  return page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>(".markdown-help-nav");
+    const items = Array.from(document.querySelectorAll<HTMLElement>(".markdown-help-nav > li"));
+    const shortLink = items.find((item) => item.textContent?.trim() === "Short Link");
+    if (!nav || !shortLink) {
+      throw new Error("Missing Markdown help metric target.");
+    }
+    const rowTops = [...new Set(items.map((item) => item.getBoundingClientRect().top))].sort(
+      (left, right) => left - right,
     );
-    const button = document.querySelector<HTMLElement>(
-      ".issue-option .search.search-bar .search-btn.btn-calendar",
-    );
-    if (!option || !label || !searchBar || !button) {
-      throw new Error("Missing issue due-date search-bar elements");
-    }
-
-    const optionRect = option.getBoundingClientRect();
-    const labelRect = label.getBoundingClientRect();
-    const searchBarRect = searchBar.getBoundingClientRect();
-    const buttonRect = button.getBoundingClientRect();
+    const shortLinkTop = shortLink.getBoundingClientRect().top;
     return {
-      buttonInsideSearchBar:
-        Math.round(buttonRect.top) >= Math.round(searchBarRect.top) &&
-        Math.round(buttonRect.bottom) <= Math.round(searchBarRect.bottom) &&
-        Math.round(buttonRect.right) <= Math.round(searchBarRect.right),
-      searchBarBelowLabel: Math.round(searchBarRect.top) >= Math.round(labelRect.bottom),
-      searchBarHasStableBox:
-        Math.round(searchBarRect.width) >= 100 && Math.round(searchBarRect.height) >= 20,
-      searchBarLeftAlignedWithOption: Math.round(searchBarRect.left) >= Math.round(optionRect.left),
+      height: nav.getBoundingClientRect().height,
+      rowCount: rowTops.length,
+      shortLinkRow: rowTops.findIndex((top) => Math.abs(top - shortLinkTop) < 0.5) + 1,
     };
   });
 }
 
-async function issueEditorTabMetrics(page: Page) {
+async function mentionPopupMetrics(page: Page) {
   return page.evaluate(() => {
-    const textarea = document.querySelector<HTMLElement>("#editor-body-body");
-    const wrap = textarea?.closest<HTMLElement>(".mt10") ?? null;
-    const tabs = wrap?.querySelector<HTMLElement>(".nav-tabs") ?? null;
-    const tabItems = Array.from(wrap?.querySelectorAll<HTMLElement>(".nav-tabs > li") ?? []);
-    const editButton = tabItems[0]?.querySelector<HTMLElement>('button[type="button"]') ?? null;
-    const previewButton = tabItems[1]?.querySelector<HTMLElement>('button[type="button"]') ?? null;
-    const tabContent = wrap?.querySelector<HTMLElement>(".tab-content") ?? null;
-    const editPane = document.querySelector<HTMLElement>("#edit-body");
-    const previewPane = document.querySelector<HTMLElement>("#preview-body");
-    const preview = document.querySelector<HTMLElement>("#preview-body .markdown-preview");
-    if (
-      !wrap ||
-      !tabs ||
-      !editButton ||
-      !previewButton ||
-      !tabContent ||
-      !editPane ||
-      !previewPane ||
-      !textarea ||
-      !preview
-    ) {
-      throw new Error("Missing issue form editor elements");
-    }
-
-    const wrapRect = wrap.getBoundingClientRect();
-    const tabsRect = tabs.getBoundingClientRect();
-    const editButtonRect = editButton.getBoundingClientRect();
-    const previewButtonRect = previewButton.getBoundingClientRect();
-    const tabContentRect = tabContent.getBoundingClientRect();
-    const editPaneRect = editPane.getBoundingClientRect();
-    const previewPaneRect = previewPane.getBoundingClientRect();
-    const textareaRect = textarea.getBoundingClientRect();
-    const previewRect = preview.getBoundingClientRect();
+    const popup = document
+      .querySelector<HTMLElement>(".editor-mention-options")!
+      .getBoundingClientRect();
+    const marker = document
+      .querySelector<HTMLElement>(".editor-mention-marker")!
+      .getBoundingClientRect();
+    const textarea = document
+      .querySelector<HTMLElement>("#editor-body-body")!
+      .getBoundingClientRect();
     return {
-      contentStartsBelowTabs: Math.round(tabContentRect.top) >= Math.round(tabsRect.bottom),
-      editBeforePreview: Math.round(editButtonRect.right) <= Math.round(previewButtonRect.left),
-      panesContainedByWrap:
-        Math.round(tabContentRect.left) >= Math.round(wrapRect.left) &&
-        Math.round(tabContentRect.right) <= Math.round(wrapRect.right),
-      previewContainedByPreviewPane:
-        Math.round(previewRect.left) >= Math.round(previewPaneRect.left) &&
-        Math.round(previewRect.right) <= Math.round(previewPaneRect.right),
-      tabCount: tabItems.length,
-      tabsContainedByWrap:
-        Math.round(tabsRect.left) >= Math.round(wrapRect.left) &&
-        Math.round(tabsRect.right) <= Math.round(wrapRect.right),
-      textareaContainedByEditPane:
-        Math.round(textareaRect.left) >= Math.round(editPaneRect.left) &&
-        Math.round(textareaRect.right) <= Math.round(editPaneRect.right),
+      bottom: popup.bottom,
+      left: popup.left,
+      markerBottom: marker.bottom,
+      markerTop: marker.top,
+      right: popup.right,
+      textareaLeft: textarea.left,
+      textareaRight: textarea.right,
+      top: popup.top,
+      viewportHeight: innerHeight,
     };
   });
 }
 
-async function expectModernCancelControl(page: Page) {
-  await expect(page.locator('.actrow a[href^="javascript:"]')).toHaveCount(0);
-  const cancel = page
-    .locator('.actrow > button[type="button"].ybtn')
-    .filter({ hasText: /^Cancel$/u });
-  await expect(cancel).toHaveCount(1);
-  await expect(cancel).toHaveText("Cancel");
-  return cancel;
+function expectAllAppRequestsStayMounted(requests: RecordedRequest[], basePath: string) {
+  const applicationRequests = requests.filter(
+    (request) => request.pathname.includes("/api/") || request.pathname.includes("/files"),
+  );
+  expect(applicationRequests.length).toBeGreaterThan(0);
+  expect(applicationRequests.every((request) => request.pathname.startsWith(`${basePath}/`))).toBe(
+    true,
+  );
 }
 
-async function expectIssueFormSelect2InitializerHooksDropped(page: Page) {
-  const selectors = ["#milestoneId", "#targetProjectId", "#parentId", "#labelIds"] as const;
-  for (const selector of selectors) {
-    const control = page.locator(selector);
-    await expect(control).not.toHaveAttribute("data-toggle", "select2");
-  }
-
-  await expect(page.locator("#milestoneId")).toHaveAttribute("name", "milestoneId");
-  await expect(page.locator("#milestoneId")).toHaveAttribute("data-format", "milestone");
-  await expect(page.locator("#milestoneId")).toHaveAttribute(
-    "data-container-css-class",
-    "fullsize",
+function expectMutationCsrf(requests: RecordedRequest[]) {
+  const mutations = requests.filter(
+    (request) =>
+      ["DELETE", "PATCH", "POST", "PUT"].includes(request.method) &&
+      !request.pathname.endsWith("/markdown-references"),
   );
-  await expect(page.locator("#targetProjectId")).toHaveAttribute("name", "targetProjectId");
-  await expect(page.locator("#targetProjectId")).toHaveAttribute("data-format", "projects");
-  await expect(page.locator("#targetProjectId")).toHaveAttribute(
-    "data-placeholder",
-    "Choose projects",
-  );
-  await expect(page.locator("#targetProjectId")).toHaveAttribute(
-    "data-container-css-class",
-    "fullsize",
-  );
-  await expect(page.locator("#parentId")).toHaveAttribute("name", "parentIssueId");
-  await expect(page.locator("#parentId")).toHaveAttribute("data-format", "issues");
-  await expect(page.locator("#parentId")).toHaveAttribute("data-placeholder", "Choose projects");
-  await expect(page.locator("#parentId")).toHaveAttribute("data-container-css-class", "fullsize");
-  await expect(page.locator("#labelIds")).toHaveAttribute("name", "labelIds");
-  await expect(page.locator("#labelIds")).toHaveAttribute("multiple", "");
-  await expect(page.locator("#labelIds")).not.toHaveAttribute("data-search", "labelIds");
-  await expect(page.locator("#labelIds[data-search]")).toHaveCount(0);
-  await expect(page.locator("#labelIds")).toHaveAttribute("data-format", "issuelabel");
-  await expect(page.locator("#labelIds")).toHaveAttribute("data-allow-clear", "true");
-  await expect(page.locator("#labelIds")).toHaveAttribute(
-    "data-dropdown-css-class",
-    "issue-labels",
-  );
-  await expect(page.locator("#labelIds")).toHaveAttribute(
-    "data-container-css-class",
-    "issue-labels bordered fullsize",
-  );
-  await expect(page.locator("#labelIds")).toHaveAttribute("data-placeholder", "Select label");
-  await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
+  expect(mutations.length).toBeGreaterThan(0);
+  expect(mutations.every((request) => request.csrf === CSRF_TOKEN)).toBe(true);
 }
 
-async function expectMarkdownHelpPreText(page: Page, sectionSelector: string, expected: string) {
-  await expect
-    .poll(() =>
-      page
-        .locator(`.markdown-help-item${sectionSelector} .markdwon-syntax pre`)
-        .evaluate((node) => node.textContent ?? ""),
-    )
-    .toBe(expected);
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
+async function issueFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing issue form metric target: ${selector}`);
       }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
-    }
+      return element.getBoundingClientRect();
+    };
+    const admin = required(".admin-logged-in-affix");
+    const gnb = required(".gnb-outer");
+    const header = required(".project-header-outer");
+    const menu = required(".project-menu-outer");
+    const form = required("#issue-form");
+    const titleRow = required(".issue-title-row");
+    const titleField = required(".issue-title-field");
+    const titleWrapper = required(".title-head-combobox");
+    const title = required("#title");
+    const option = required(".subtask-message");
+    const left = required("#issue-form .span-left-pane");
+    const right = required("#issue-form .right-menu");
+    const editor = required(".issue-markdown-editor");
+    const textarea = required("#editor-body-body");
+    const upload = required("#upload");
+    return {
+      adminHeight: admin.height,
+      adminTop: admin.top,
+      documentWidth: document.documentElement.scrollWidth,
+      editorBottom: editor.bottom,
+      editorHeight: editor.height,
+      editorWidth: editor.width,
+      formLeft: form.left,
+      formRight: form.right,
+      formTop: form.top,
+      formWidth: form.width,
+      gnbHeight: gnb.height,
+      gnbTop: gnb.top,
+      headerHeight: header.height,
+      headerTop: header.top,
+      leftBottom: left.bottom,
+      leftRight: left.right,
+      leftTop: left.top,
+      leftWidth: left.width,
+      menuHeight: menu.height,
+      menuTop: menu.top,
+      optionWidth: option.width,
+      rightLeft: right.left,
+      rightRight: right.right,
+      rightTop: right.top,
+      rightWidth: right.width,
+      textareaHeight: textarea.height,
+      textareaTop: textarea.top,
+      titleWidth: title.width,
+      titleBottom: title.bottom,
+      titleFieldBottom: titleField.bottom,
+      titleFieldHeight: titleField.height,
+      titleFieldTop: titleField.top,
+      titleHeight: title.height,
+      titleRowHeight: titleRow.height,
+      titleRowTop: titleRow.top,
+      titleTop: title.top,
+      titleWrapperBottom: titleWrapper.bottom,
+      titleWrapperHeight: titleWrapper.height,
+      titleWrapperTop: titleWrapper.top,
+      uploadHeight: upload.height,
+      uploadTop: upload.top,
+      uploadWidth: upload.width,
+    };
   });
 }
 
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
+async function issueUploadMetrics(page: Page) {
+  return page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing upload metric target: ${selector}`);
       }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
-    }
-  }, html);
+      return element;
+    };
+    const upload = required("#upload");
+    const attach = required("#upload .attach-wrap");
+    const button = required("#upload .fake-file-wrap");
+    const fileInput = required('#upload input[type="file"]');
+    const pasteHelp = required("#upload .help-pastable");
+    const uploadStyle = getComputedStyle(upload);
+    const buttonStyle = getComputedStyle(button);
+    const fileInputStyle = getComputedStyle(fileInput);
+    const pasteStyle = getComputedStyle(pasteHelp);
+    return {
+      attachHeight: attach.getBoundingClientRect().height,
+      attachWidth: attach.getBoundingClientRect().width,
+      buttonHeight: button.getBoundingClientRect().height,
+      buttonPadding: buttonStyle.padding,
+      buttonWidth: button.getBoundingClientRect().width,
+      fileInputHeight: fileInput.getBoundingClientRect().height,
+      fileInputOpacity: fileInputStyle.opacity,
+      pasteDisplay: pasteStyle.display,
+      pasteHeight: pasteHelp.getBoundingClientRect().height,
+      pasteWidth: pasteHelp.getBoundingClientRect().width,
+      uploadPadding: uploadStyle.padding,
+    };
+  });
 }

@@ -1,11 +1,136 @@
 use super::*;
 
 impl AppRepositoryImpl<'_> {
+    pub(super) async fn legacy_public_mention_user_ids(
+        &self,
+        query: &str,
+    ) -> Result<Vec<i64>, DbErr> {
+        let normalized_query = query.trim().to_lowercase();
+        let pattern = format!("%{normalized_query}%");
+        let db_matches = Condition::any()
+            .add(
+                Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                    n4user::Column::LoginId,
+                )))
+                .like(pattern.clone()),
+            )
+            .add(
+                Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                    n4user::Column::Name,
+                )))
+                .like(pattern.clone()),
+            )
+            .add(
+                Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                    n4user::Column::EnglishName,
+                )))
+                .like(pattern.clone()),
+            )
+            .add(
+                Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                    n4user::Column::Email,
+                )))
+                .like(pattern),
+            );
+        let mut users = n4user::Entity::find()
+            .filter(
+                Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                    n4user::Column::State,
+                )))
+                .eq("active"),
+            )
+            .filter(n4user::Column::Id.ne(1))
+            .filter(n4user::Column::LoginId.ne(Some(LEGACY_ANONYMOUS_LOGIN_ID.to_string())))
+            .filter(db_matches)
+            .order_by_desc(n4user::Column::CreatedDate)
+            .order_by_desc(n4user::Column::Id)
+            .limit(SITE_USER_PAGE_SIZE as u64)
+            .all(&self.db)
+            .await?;
+
+        if !normalized_query.is_ascii() {
+            let batch_size = (SITE_USER_PAGE_SIZE * 4) as u64;
+            let mut offset = 0_u64;
+            let mut unicode_matches = Vec::with_capacity(SITE_USER_PAGE_SIZE);
+            loop {
+                let batch = n4user::Entity::find()
+                    .filter(
+                        Expr::expr(sea_orm::sea_query::Func::lower(Expr::col(
+                            n4user::Column::State,
+                        )))
+                        .eq("active"),
+                    )
+                    .filter(n4user::Column::Id.ne(1))
+                    .filter(n4user::Column::LoginId.ne(Some(LEGACY_ANONYMOUS_LOGIN_ID.to_string())))
+                    .order_by_desc(n4user::Column::CreatedDate)
+                    .order_by_desc(n4user::Column::Id)
+                    .offset(offset)
+                    .limit(batch_size)
+                    .all(&self.db)
+                    .await?;
+                let batch_len = batch.len();
+                for user in batch {
+                    if mention_user_model_matches(&user, query) {
+                        unicode_matches.push(user);
+                        if unicode_matches.len() == SITE_USER_PAGE_SIZE {
+                            break;
+                        }
+                    }
+                }
+                if unicode_matches.len() == SITE_USER_PAGE_SIZE || batch_len < batch_size as usize {
+                    break;
+                }
+                offset += batch_len as u64;
+            }
+            users = unicode_matches;
+        }
+
+        Ok(users.into_iter().map(|user| user.id).collect())
+    }
+
+    pub(super) async fn mention_user_records_from_ids(
+        &self,
+        user_ids: Vec<i64>,
+        requester_language: Option<&str>,
+    ) -> Result<Vec<IssueMentionUserRecord>, DbErr> {
+        let mut unique_user_ids = Vec::new();
+        let mut emitted = HashSet::new();
+        for user_id in user_ids {
+            if emitted.insert(user_id) {
+                unique_user_ids.push(user_id);
+            }
+        }
+        if unique_user_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut users_by_id = n4user::Entity::find()
+            .filter(n4user::Column::Id.is_in(unique_user_ids.iter().copied()))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|user| (user.id, user))
+            .collect::<HashMap<_, _>>();
+        let mut records = Vec::with_capacity(unique_user_ids.len());
+        for user_id in unique_user_ids {
+            if let Some(user) = users_by_id.remove(&user_id) {
+                let is_admin = user.login_id.as_deref() == Some("admin");
+                if n4user_is_active(&user) && !is_admin {
+                    records.push(issue_mention_user_record_for_language(
+                        user,
+                        requester_language,
+                    ));
+                }
+            }
+        }
+        Ok(records)
+    }
+
     pub(super) async fn contextual_issue_mention_users(
         &self,
         project_record: &ProjectRecord,
         issue_model: &issue::Model,
         actor_id: Option<i64>,
+        requester_language: Option<&str>,
     ) -> Result<Vec<IssueMentionUserRecord>, DbErr> {
         let mut user_ids = Vec::new();
         let mut seen = HashSet::new();
@@ -52,19 +177,8 @@ impl AppRepositoryImpl<'_> {
             user_ids.push(actor_id);
         }
 
-        let mut records = Vec::new();
-        let mut emitted = HashSet::new();
-        for user_id in user_ids {
-            if !emitted.insert(user_id) {
-                continue;
-            }
-            if let Some(user) = self.find_user_model_by_id(user_id).await? {
-                if n4user_is_active(&user) {
-                    records.push(issue_mention_user_record(user));
-                }
-            }
-        }
-        Ok(records)
+        self.mention_user_records_from_ids(user_ids, requester_language)
+            .await
     }
 
     pub(super) async fn append_project_mention_targets(
@@ -79,7 +193,7 @@ impl AppRepositoryImpl<'_> {
         );
         let project_record_item = IssueMentionUserRecord {
             avatar_url: String::new(),
-            display_name: project_record.project_name.clone(),
+            display_name: "@project all:".to_string(),
             login_id: project_login_id.clone(),
             search_text: format!("{project_login_id}/project/member/all"),
             item_type: "project".to_string(),
@@ -91,7 +205,7 @@ impl AppRepositoryImpl<'_> {
         if let Some(organization_name) = project_record.organization_name.as_deref() {
             let organization_record_item = IssueMentionUserRecord {
                 avatar_url: String::new(),
-                display_name: organization_name.to_string(),
+                display_name: "@group all: ".to_string(),
                 login_id: organization_name.to_string(),
                 search_text: format!("{organization_name}/group/org/member/all"),
                 item_type: "organization".to_string(),
@@ -138,12 +252,8 @@ impl AppRepositoryImpl<'_> {
         Ok(sharers)
     }
 
-    /// Previews the legacy notification receivers for a new issue comment.
-    ///
-    /// # Errors
-    ///
-    /// Returns a database error when the issue or receiver rows cannot be read.
-    pub async fn list_issue_comment_notification_receivers(
+    /// Resolves the legacy notification receiver ids for a new issue comment.
+    pub(super) async fn issue_comment_notification_receiver_ids(
         &self,
         owner_name: &str,
         project_name: &str,
@@ -151,7 +261,7 @@ impl AppRepositoryImpl<'_> {
         actor_id: i64,
         comment_markdown: &str,
         parent_comment_id: Option<i64>,
-    ) -> Result<Option<Vec<IssueCommentNotificationReceiverRecord>>, DbErr> {
+    ) -> Result<Option<Vec<i64>>, DbErr> {
         let Some((project, issue)) = self
             .read_project_issue_model(owner_name, project_name, issue_number)
             .await?
@@ -221,6 +331,36 @@ impl AppRepositoryImpl<'_> {
             }
         }
 
+        Ok(Some(receiver_ids))
+    }
+
+    /// Previews the legacy notification receivers for a new issue comment.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the issue or receiver rows cannot be read.
+    pub async fn list_issue_comment_notification_receivers(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        actor_id: i64,
+        comment_markdown: &str,
+        parent_comment_id: Option<i64>,
+    ) -> Result<Option<Vec<IssueCommentNotificationReceiverRecord>>, DbErr> {
+        let Some(receiver_ids) = self
+            .issue_comment_notification_receiver_ids(
+                owner_name,
+                project_name,
+                issue_number,
+                actor_id,
+                comment_markdown,
+                parent_comment_id,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
         let mut receivers = Vec::new();
         for user_id in receiver_ids {
             let Some(user) = self.find_user_by_id(user_id).await? else {
