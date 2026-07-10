@@ -484,6 +484,41 @@ button[type="submit"]:focus {
   border-right: 1px solid #000;
 }
 
+.legacy-framed-shell,
+.legacy-framed-main {
+  width: 100%;
+  min-width: 0;
+}
+
+.legacy-framed-main {
+  background-color: #fff;
+}
+
+.legacy-framed-shell.is-open {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.legacy-framed-shell.is-open > #sidebar {
+  box-sizing: content-box;
+  flex: 0 0 270px;
+  width: 270px;
+  height: 100vh;
+  color: #fff;
+}
+
+.legacy-framed-shell.is-open > .legacy-framed-main {
+  flex: 1 1 auto;
+  width: auto;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+body:has(.legacy-framed-shell.is-open) {
+  overflow: hidden;
+}
+
 .sidebar .nav {
   width: 270px;
 }
@@ -496,22 +531,40 @@ button[type="submit"]:focus {
   margin-bottom: -2px;
 }
 
-.sidebar .nav-tabs li a {
+.sidebar .nav-tabs li a,
+.sidebar .nav-tabs li button {
+  display: block;
   padding: 8px 10px;
+  margin-right: 2px;
   color: lightgray;
+  font: inherit;
+  font-weight: bold;
+  line-height: 20px;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
   border: none;
+  border-radius: 4px 4px 0 0;
+  box-shadow: none;
 }
 
-.sidebar .nav-tabs li a:hover {
+.sidebar .nav-tabs li a:hover,
+.sidebar .nav-tabs li button:hover,
+.sidebar .nav-tabs li button:focus {
   color: #f36c22;
   background-color: #000;
   border: none;
+  box-shadow: none;
 }
 
-.sidebar .nav-tabs .active a {
+.sidebar .nav-tabs .active a,
+.sidebar .nav-tabs .active button,
+.sidebar .nav-tabs .active button:hover,
+.sidebar .nav-tabs .active button:focus {
   color: #f36c22;
   background-color: #000;
   border: none;
+  box-shadow: none;
 }
 
 .sidebar .user-menu-wrap {
@@ -526,6 +579,90 @@ button[type="submit"]:focus {
 
 .sidebar .user-menu {
   padding: 5px;
+}
+
+.pin-in-sidebar {
+  position: absolute;
+  top: 9px;
+  right: -5px;
+  padding: 0 1px;
+  margin-right: 5px;
+  color: #3e2723;
+  font-size: 18px;
+  line-height: 18px;
+  background-color: #03a9f4;
+  border: 0;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  box-shadow: none;
+  appearance: none;
+}
+
+.pin-in-sidebar i.yobicon-arrow-right,
+.pin-in-sidebar i.yobicon-arrow-left {
+  display: inline-block;
+  padding: 4px 2px;
+}
+
+.pin-in-sidebar:hover,
+.pin-in-sidebar:focus {
+  color: #fff;
+  background-color: #03a9f4;
+  border: 0;
+  box-shadow: none;
+}
+
+.sidebar .nav-tabs li > .refresh-button {
+  box-sizing: border-box;
+  height: 29px;
+  padding: 12px 0 0 6px;
+  margin-right: 0;
+  color: inherit;
+  font: inherit;
+  line-height: 13px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sidebar .refresh-button:hover,
+.sidebar .refresh-button:focus {
+  color: #03a9f4;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.sidebar-bottom {
+  position: absolute;
+  right: 15px;
+  bottom: 8px;
+  color: gray;
+}
+
+.sidebar-bottom .yobicon-hearts {
+  color: red;
+  vertical-align: middle;
+}
+
+.sidebar-row-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sidebar-row-link:hover,
+.sidebar-row-link:focus {
+  text-decoration: none;
+}
+
+.user-project-list .search-input {
+  box-sizing: content-box;
+}
+
+.sidebar-project-link {
+  height: 18px;
+  line-height: 16px;
 }
 
 .pin-move-to-right {
@@ -1906,6 +2043,28 @@ span.issue-label {
 
   .hide-in-mobile {
     display: none !important;
+  }
+
+  .legacy-framed-shell.is-open {
+    position: relative;
+    display: block;
+    height: 100vh;
+  }
+
+  .legacy-framed-shell.is-open > .sidebar.hide-in-mobile {
+    position: absolute;
+    z-index: 1001;
+    display: block !important;
+  }
+
+  .sidebar .nav-tabs li button {
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+
+  .legacy-framed-shell.is-open > .legacy-framed-main {
+    width: 100%;
+    height: 100vh;
   }
 
   input[type="text"],

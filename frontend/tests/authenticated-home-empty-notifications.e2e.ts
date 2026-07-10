@@ -10,10 +10,10 @@ const EXPECTED_AUTHENTICATED_HOME = `
 <div class="admin-logged-in-affix">You are Admin now! <span class="small-font">With great power comes great responsibility</span></div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" title="Sidebar">
+    <button class="pin" type="button" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li>
@@ -56,7 +56,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
         <button class="gnb-dropdown-toggle" type="button" title="User menu, Shortcut (F)">
-          <span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span>
+          <span class="avatar-wrap smaller"><img src="__BASE_PATH__/legacy-assets/images/default-avatar-34.png"></span><span class="caret"></span>
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
@@ -158,7 +158,7 @@ const EXPECTED_DIRECT_NOTIFICATIONS_WITH_NOTIFICATION = EXPECTED_DIRECT_NOTIFICA
 );
 
 const EXPECTED_SIDEBAR_FAVORITE_TAB = `
-<div id="usermenu-tab-content-list" class="tab-content">
+<div class="tab-pane user-project-list active" id="myOrganizationList">
   <div class="search-result">
     <div class="group">
       <input class="search-input org-search" type="text" autocomplete="off" placeholder="Type name">
@@ -177,13 +177,13 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
           <div class="star-org flex-item"></div>
         </div>
         <ul class="project-ul">
-          <li class="user-li show-always" data-location="__BASE_PATH__/admin/sample">
+          <li class="user-li show-always">
             <div class="project-list project-flex-container">
-              <div class="project-item project-item-container">
-                <div class="flex-item site-logo all-project-names"><i class="project-avatar"><img class="logo" src="/assets/images/project_default_logo.png"></i></div>
+              <a href="__BASE_PATH__/admin/sample" class="project-item project-item-container sidebar-project-link sidebar-row-link">
+                <div class="flex-item site-logo all-project-names"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
                 <div class="projectName-owner flex-item"><div class="project-name flex-item">sample </div></div>
-              </div>
-              <div class="star-project flex-item" data-project-id="7"><i class="star starred material-icons">star</i></div>
+              </a>
+              <div class="star-project flex-item"><i class="star starred material-icons">star</i></div>
             </div>
           </li>
         </ul>
@@ -197,31 +197,31 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
               <div class="project-owner flex-item">1</div>
             </div>
           </div>
-          <div class="star-org flex-item" data-organization-id="11"><i class="star starred material-icons">star</i></div>
+          <div class="star-org flex-item"><i class="star starred material-icons">star</i></div>
         </div>
         <ul class="project-ul">
-          <li class="user-li hide" data-location="__BASE_PATH__/weblabs/playground">
+          <li class="user-li hide">
             <div class="project-list project-flex-container">
-              <div class="project-item project-item-container">
+              <a href="__BASE_PATH__/weblabs/playground" class="project-item project-item-container sidebar-project-link sidebar-row-link">
                 <div class="flex-item site-logo all-project-names"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                 <div class="projectName-owner flex-item"><div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div></div>
-              </div>
-              <div class="star-project flex-item" data-project-id="8"><i class="star material-icons">star</i></div>
+              </a>
+              <div class="star-project flex-item"><i class="star material-icons">star</i></div>
             </div>
           </li>
         </ul>
       </li>
       <ul class="etc-favorites"></ul>
-      <li class="user-li" data-location="__BASE_PATH__/admin/member">
+      <li class="user-li">
         <div class="project-list project-flex-container">
-          <div class="project-item project-item-container">
+          <a href="__BASE_PATH__/admin/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
             <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
             <div class="projectName-owner flex-item">
               <div class="project-name flex-item">member </div>
-              <div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div>
+              <div class="project-owner flex-item">admin</div>
             </div>
-          </div>
-          <div class="star-project flex-item" data-project-id="9"><i class="star material-icons">star</i></div>
+          </a>
+          <div class="star-project flex-item"><i class="star material-icons">star</i></div>
         </div>
       </li>
     </ul>
@@ -230,7 +230,7 @@ const EXPECTED_SIDEBAR_FAVORITE_TAB = `
 `;
 
 const EXPECTED_SIDEBAR_PROJECT_TAB = `
-<div id="usermenu-tab-content-list" class="tab-content">
+<div class="tab-pane user-project-list active" id="myProjectList">
   <div>
     <div class="search-result">
       <div class="tab-pane myproject-list-wrap">
@@ -248,45 +248,45 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
         </div>
         <div class="tab-content">
           <ul class="tab-pane user-ul active" id="recentlyVisited">
-            <li class="user-li" data-location="__BASE_PATH__/admin/sample">
+            <li class="user-li">
               <div class="project-list project-flex-container">
-                <div class="project-item project-item-container">
-                  <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="/assets/images/project_default_logo.png"></i></div>
+                <a href="__BASE_PATH__/admin/sample" class="project-item project-item-container sidebar-project-link sidebar-row-link">
+                  <div class="flex-item site-logo"><i class="project-avatar"><img class="logo" src="__BASE_PATH__/legacy-assets/images/project_default_logo.png"></i></div>
                   <div class="projectName-owner flex-item">
                     <div class="project-name flex-item">sample </div>
-                    <div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div>
+                    <div class="project-owner flex-item">admin</div>
                   </div>
-                </div>
-                <div class="star-project flex-item" data-project-id="7"><i class="star material-icons">star</i></div>
+                </a>
+                <div class="star-project flex-item"><i class="star material-icons">star</i></div>
               </div>
             </li>
           </ul>
           <ul class="tab-pane user-ul " id="watching">
-            <li class="user-li" data-location="__BASE_PATH__/weblabs/playground">
+            <li class="user-li">
               <div class="project-list project-flex-container">
-                <div class="project-item project-item-container">
+                <a href="__BASE_PATH__/weblabs/playground" class="project-item project-item-container sidebar-project-link sidebar-row-link">
                   <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                   <div class="projectName-owner flex-item">
                     <div class="project-name flex-item">playground <i class="yobicon-lock yobicon-small"></i></div>
-                    <div class="project-owner flex-item"><a href="__BASE_PATH__/weblabs">weblabs</a></div>
+                    <div class="project-owner flex-item">weblabs</div>
                   </div>
-                </div>
-                <div class="star-project flex-item" data-project-id="8"><i class="star material-icons">star</i></div>
+                </a>
+                <div class="star-project flex-item"><i class="star material-icons">star</i></div>
               </div>
             </li>
           </ul>
           <div id="createdByMe" class="no-result tab-pane user-ul ">No results</div>
           <ul class="tab-pane user-ul " id="joinmember">
-            <li class="user-li" data-location="__BASE_PATH__/admin/member">
+            <li class="user-li">
               <div class="project-list project-flex-container">
-                <div class="project-item project-item-container">
+                <a href="__BASE_PATH__/admin/member" class="project-item project-item-container sidebar-project-link sidebar-row-link">
                   <div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
                   <div class="projectName-owner flex-item">
                     <div class="project-name flex-item">member </div>
-                    <div class="project-owner flex-item"><a href="__BASE_PATH__/admin">admin</a></div>
+                    <div class="project-owner flex-item">admin</div>
                   </div>
-                </div>
-                <div class="star-project flex-item" data-project-id="9"><i class="star material-icons">star</i></div>
+                </a>
+                <div class="star-project flex-item"><i class="star material-icons">star</i></div>
               </div>
             </li>
           </ul>
@@ -298,32 +298,32 @@ const EXPECTED_SIDEBAR_PROJECT_TAB = `
 `;
 
 const EXPECTED_SIDEBAR_RECENT_ISSUE_TAB = `
-<div id="usermenu-tab-content-list" class="tab-content">
+<div class="tab-pane user-project-list active" id="myRecentIssueList">
   <div>
     <div class="search-result">
       <div class="tab-pane myproject-list-wrap">
         <div class="group">
-          <input class="search-input project-search" type="text" id="query" autocomplete="off" placeholder="Type name">
+          <input class="search-input project-search" type="text" id="recent-issue-query" autocomplete="off" placeholder="Type name">
           <span class="bar"></span>
         </div>
         <div class="tab-content">
           <ul class="tab-pane user-ul active" id="recentlyVisitedIssues">
-            <li class="user-li" data-location="__BASE_PATH__/admin/sample/issue/42">
+            <li class="user-li">
               <div class="project-list project-flex-container">
-                <div class="project-item project-item-container">
+                <a href="__BASE_PATH__/admin/sample/issue/42" class="project-item project-item-container sidebar-row-link">
                   <div class="issue-item projectName-owner flex-item">
                     <div class="issue-title-start">-</div><div class="issue-title flex-item">Crash on login</div>
                   </div>
-                </div>
+                </a>
               </div>
             </li>
-            <li class="user-li" data-location="__BASE_PATH__/weblabs/playground/issue/7">
+            <li class="user-li">
               <div class="project-list project-flex-container">
-                <div class="project-item project-item-container">
+                <a href="__BASE_PATH__/weblabs/playground/issue/7" class="project-item project-item-container sidebar-row-link">
                   <div class="issue-item projectName-owner flex-item">
                     <div class="issue-title-start">-</div><div class="issue-title flex-item">Review onboarding copy</div>
                   </div>
-                </div>
+                </a>
               </div>
             </li>
           </ul>
@@ -638,7 +638,7 @@ test("root login submit refreshes the authenticated home shell without a documen
         authenticated
           ? {
               actorId: 1,
-              avatarUrl: "/assets/images/default-avatar-32.png",
+              avatarUrl: "/legacy-assets/images/default-avatar-34.png",
               defaultLandingPath: "/",
               emailAddress: "admin@example.com",
               isAnonymous: false,
@@ -710,7 +710,7 @@ test("root login submit refreshes the authenticated home shell without a documen
         memberProjects: [],
         ownProjects: [],
         profile: {
-          avatarUrl: "/assets/images/default-avatar-32.png",
+          avatarUrl: "/legacy-assets/images/default-avatar-34.png",
           displayName: "Site Admin",
           isGuest: false,
           isSiteAdmin: true,
@@ -1075,43 +1075,35 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await expect(page.locator("#usermenu-tab-content-list [data-placement='right']")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list [data-content]")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list .popover.right")).toHaveCount(0);
+  await expect(
+    page.locator("#usermenu-tab-content-list > .tab-pane.user-project-list"),
+  ).toHaveCount(3);
+  await expect(
+    page.locator("#usermenu-tab-content-list > .user-project-list.active"),
+  ).toHaveAttribute("id", "myOrganizationList");
 
-  expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
+  expect(await canonicalizeSelector(page, "#myOrganizationList")).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_SIDEBAR_FAVORITE_TAB.replaceAll("__BASE_PATH__", basePath),
     ),
   );
   expect(await readSidebarFavoriteTabMetrics(page)).toEqual({
-    logoWidth: 350,
+    logoWidth: 48,
     organizationCount: 2,
-    organizationRowDisplay: "block",
-    organizationRowHeight: 40,
+    organizationRowDisplay: "flex",
+    organizationRowHeight: 25,
     projectCount: 3,
-    projectRowDisplay: "block",
-    projectRowHeight: 49,
+    projectRowDisplay: "flex",
+    projectRowHeight: 26,
     rootWidth: 350,
-    searchHeight: 30,
+    searchHeight: 42,
     searchPadding: "4px 6px",
-    starWidth: 350,
+    starWidth: 29,
   });
 
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const allProjectItemSource = routeSource.slice(
-    routeSource.indexOf("function SidebarAllProjectItem"),
-    routeSource.indexOf("function SidebarProjectList"),
-  );
-  expect(allProjectItemSource).toContain("<SidebarHoverPopover content={overview}>");
-  expect(allProjectItemSource).not.toContain('data-toggle="popover"');
-  expect(allProjectItemSource).not.toContain('data-trigger="hover"');
-  expect(allProjectItemSource).not.toContain('data-placement="right"');
-  expect(allProjectItemSource).not.toContain("data-content={overview}");
-  expect(routeSource).toContain("function SidebarHoverPopover({");
-  expect(routeSource).toContain('className="popover right"');
-  expect(routeSource).toContain("onMouseEnter={showPopover}");
-
   const sampleProjectRow = page.locator(
-    "#usermenu-tab-content-list .user-li[data-location$='/admin/sample'] > .project-list",
+    "#myOrganizationList .user-li:has(a[href$='/admin/sample']) > .project-list",
   );
   await expect(sampleProjectRow).not.toHaveAttribute("data-toggle");
   await expect(sampleProjectRow).not.toHaveAttribute("data-trigger");
@@ -1337,40 +1329,248 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
     .toBe("mine");
 });
 
-test("authenticated root keeps retired legacy index/sidebar framed shell absent", async ({
+test("authenticated left framed sidebar matches legacy desktop and mobile geometry", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
   await mockWorkspaceSidebarProjects(page);
+  await page.addInitScript(() => {
+    localStorage.removeItem("shallWeOpenLeftNavigation");
+    localStorage.removeItem("sidebarActiveMenu");
+  });
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/`);
-  await expect(page.locator("body#html-body")).not.toHaveClass(/framed-body/);
-  await expect(page.locator("#sidebar, #sidebar-bottom, #mainFrame, #mainFrameId")).toHaveCount(0);
+  await page.evaluate(() => {
+    (
+      window as Window & {
+        __leftFramedSidebarSpaSentinel?: string;
+      }
+    ).__leftFramedSidebarSpaSentinel = "alive";
+  });
+
+  const openPin = page.locator(".gnb-inner > .pin");
+  await expect(openPin).toHaveJSProperty("tagName", "BUTTON");
+  await expect(openPin).toHaveAttribute("type", "button");
+  await expect(openPin).toHaveAttribute("title", "Sidebar");
+  await expect(openPin.locator(".yobicon-arrow-right")).toBeVisible();
+  await expect(openPin.locator(".yobicon-arrow-left")).toBeHidden();
+  await expect(page.locator("#sidebar")).toHaveCount(0);
+  expect(await readDesktopClosedLeftSidebarMetrics(page)).toEqual({
+    mainWidth: 1366,
+    mainX: 0,
+    pinHeight: 26,
+    pinWidth: 25,
+    pinX: -6,
+    pinY: 6,
+  });
+
+  await openPin.click();
+
+  const leftSidebar = page.locator("#sidebar");
+  const closePin = leftSidebar.locator(".pin-in-sidebar");
+  await expect(leftSidebar).toBeVisible();
+  await expect(leftSidebar.locator(".avatar-wrap img")).toHaveAttribute(
+    "src",
+    `${basePath}/legacy-assets/images/default-avatar-34.png`,
+  );
+  await expect(page.locator(".gnb-usermenu .avatar-wrap img")).toHaveAttribute(
+    "src",
+    `${basePath}/legacy-assets/images/default-avatar-34.png`,
+  );
+  await expect(closePin).toHaveJSProperty("tagName", "BUTTON");
+  await expect(closePin).toHaveAttribute("type", "button");
+  await expect(closePin).toHaveAttribute("title", "Sidebar");
+  await expect(closePin.locator(".yobicon-arrow-left")).toBeVisible();
+  await expect(closePin.locator(".yobicon-arrow-right")).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCount(1);
   await expect(page.locator('iframe[name="mainFrame"]')).toHaveCount(0);
   await expect(page.locator('[target="mainFrame"]')).toHaveCount(0);
-  await expect(page.locator("#mySidenav")).toHaveCount(1);
-  expect(await readDesktopClosedSidebarMetrics(page)).toEqual({
-    closedWidth: 0,
-    profileRowTextAlign: "right",
+  await expect(
+    leftSidebar.locator(
+      "[data-toggle], [data-placement], [data-location], [data-organization-id], [data-project-id]",
+    ),
+  ).toHaveCount(0);
+  expect(await readDesktopOpenLeftSidebarMetrics(page)).toEqual({
+    leftAvatarNaturalWidth: 34,
+    mainBackground: "rgb(255, 255, 255)",
+    mainHeight: 900,
+    mainWidth: 1095,
+    mainX: 271,
+    pinHeight: 26,
+    pinWidth: 24,
+    pinX: 246,
+    pinY: 9,
+    rightAvatarNaturalWidth: 34,
+    sidebarHeight: 900,
+    sidebarWidth: 271,
+    sidebarX: 0,
+    sidebarY: 0,
   });
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
-  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  expect(await readDesktopOpenSidebarMetrics(page)).toEqual({
-    openRight: 0,
-    openTop: 40,
-    openWidth: 362,
-    tabContentTop: 167,
-    tabRowTop: 92,
+  expect(await readLeftSidebarTabMetrics(page)).toEqual({
+    contentTop: 105,
+    firstThreeFontWeights: ["700", "700", "700"],
+    navHeight: 61,
+    refreshHeight: 29,
+    refreshPadding: "12px 0px 0px 6px",
+    refreshWidth: 19,
+    searchHeight: 42,
+    searchTop: 105,
+    tabTops: [44, 44, 44, 78],
+    tabWidths: [74, 68, 118, 19],
   });
 
-  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  expect(await readMobileOpenSidebarMetrics(page)).toEqual({
-    openRight: 0,
-    openTop: 40,
-    openWidth: 392,
+  await expect(leftSidebar).toBeVisible();
+  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await expect(page.locator("#mySidenav")).not.toHaveClass(/sidenav-open/);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readMobileOpenLeftSidebarMetrics(page)).toEqual({
+    leftAvatarNaturalWidth: 34,
+    mainBackground: "rgb(255, 255, 255)",
+    mainHeight: 844,
+    mainWidth: 390,
+    mainX: 0,
+    rightAvatarNaturalWidth: 34,
+    sidebarHeight: 844,
+    sidebarPosition: "absolute",
+    sidebarWidth: 271,
+    sidebarX: 0,
+    sidebarY: 0,
   });
+  expect(await readLeftSidebarTabMetrics(page)).toEqual({
+    contentTop: 78,
+    firstThreeFontWeights: ["700", "700", "700"],
+    navHeight: 34,
+    refreshHeight: 29,
+    refreshPadding: "12px 0px 0px 6px",
+    refreshWidth: 19,
+    searchHeight: 42,
+    searchTop: 78,
+    tabTops: [44, 44, 44, 44],
+    tabWidths: [64, 58, 108, 19],
+  });
+  await expect(page.locator(".modal-backdrop, .sidebar-backdrop")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(leftSidebar).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
+
+  const beforeCloseUrl = page.url();
+  await closePin.click();
+  await expect(leftSidebar).toHaveCount(0);
+  await expect(page).toHaveURL(beforeCloseUrl);
+  expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe(
+    "false",
+  );
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __leftFramedSidebarSpaSentinel?: string;
+          }
+        ).__leftFramedSidebarSpaSentinel,
+    ),
+  ).toBe("alive");
+});
+
+test("authenticated left framed sidebar persists tabs refreshes Query and keeps SPA Links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedEmptyNotifications(page);
+  const workspace = await mockWorkspaceSidebarProjects(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "true");
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/`);
+
+  const leftSidebar = page.locator("#sidebar");
+  const leftTabs = leftSidebar.locator(":scope > .nav.nav-tabs.nm");
+  await expect(leftSidebar).toBeVisible();
+  await expect(leftTabs.locator(".myOrganizationList")).toHaveClass(/active/);
+  await expect(leftTabs.locator(".myProjectList")).not.toHaveClass(/active/);
+  await expect(page.locator("#left-sidebar-tab-content-list")).toHaveCount(1);
+  await expect(page.locator("#usermenu-tab-content-list")).toHaveCount(1);
+  await expect(
+    page.locator("#left-sidebar-tab-content-list > .tab-pane.user-project-list"),
+  ).toHaveCount(3);
+  await expect(
+    page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
+  ).toHaveAttribute("id", "left-sidebar-myOrganizationList");
+  expect(await duplicateSidebarIds(page)).toEqual([]);
+
+  await leftTabs.locator(".myProjectList > button").click();
+  await expect(leftTabs.locator(".myProjectList")).toHaveClass(/active/);
+  expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
+    "myProjectList",
+  );
+  await page.reload();
+  await expect(page.locator("#sidebar .myProjectList")).toHaveClass(/active/);
+  await expect(
+    page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
+  ).toHaveAttribute("id", "left-sidebar-myProjectList");
+  expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
+
+  const requestCountBeforeRefresh = workspace.requestCount;
+  await page.locator("#sidebar .refresh-button").click();
+  await expect.poll(() => workspace.requestCount).toBeGreaterThan(requestCountBeforeRefresh);
+
+  await page.locator("#sidebar .myRecentIssueList > button").click();
+  expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
+    "myRecentIssueList",
+  );
+  await page.reload();
+  await expect(page.locator("#sidebar .myRecentIssueList")).toHaveClass(/active/);
+  await expect(
+    page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
+  ).toHaveAttribute("id", "left-sidebar-myRecentIssueList");
+  expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
+    "myRecentIssueList",
+  );
+
+  await expect(page.locator("#sidebar a[href$='/admin/sample/issue/42']")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issue/42`,
+  );
+  await page.locator("#sidebar .myProjectList > button").click();
+  const projectLink = page.locator("#left-sidebar-myProjectList a[href$='/admin/sample']").first();
+  await expect(projectLink).toHaveAttribute("href", `${basePath}/admin/sample`);
+  await page.evaluate(() => {
+    (
+      window as Window & {
+        __leftSidebarLinkSpaSentinel?: string;
+      }
+    ).__leftSidebarLinkSpaSentinel = "alive";
+  });
+  await projectLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin/sample`);
+  await expect(page.locator("#sidebar")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __leftSidebarLinkSpaSentinel?: string;
+          }
+        ).__leftSidebarLinkSpaSentinel,
+    ),
+  ).toBe("alive");
+
+  const accountLink = page.locator("#sidebar .user-menu a[href$='/user/editform']");
+  await expect(accountLink).toHaveAttribute("href", `${basePath}/user/editform`);
+  await accountLink.click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/editform`);
+  await expect(page.locator("#sidebar")).toBeVisible();
+  await expect(
+    page.locator("[data-location], [data-organization-id], [data-project-id]"),
+  ).toHaveCount(0);
 });
 
 test("authenticated root sidebar project tab matches legacy index/myProjectList DOM", async ({
@@ -1402,8 +1602,8 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   });
   await page.locator(".myProjectList button").click();
   await expect(page.locator(".myProjectList")).toHaveClass(/active/);
-  await expect(page.locator("#usermenu-tab-content-list .project-search")).toBeVisible();
-  await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(3);
+  await expect(page.locator("#myProjectList .project-search")).toBeVisible();
+  await expect(page.locator("#myProjectList .user-li")).toHaveCount(3);
   expect(page.url()).toBe(sidebarTabUrl);
   await page.locator(".myRecentIssueList button").click();
   await expect(page.locator(".myRecentIssueList")).toHaveClass(/active/);
@@ -1439,7 +1639,10 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
     await expect(tabButton).not.toHaveAttribute("href");
   }
 
-  expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
+  await expect(
+    page.locator("#usermenu-tab-content-list > .user-project-list.active"),
+  ).toHaveAttribute("id", "myProjectList");
+  expect(await canonicalizeSelector(page, "#myProjectList")).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_SIDEBAR_PROJECT_TAB.replaceAll("__BASE_PATH__", basePath),
@@ -1447,19 +1650,19 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   );
   expect(await readSidebarProjectTabMetrics(page)).toEqual({
     activePaneDisplay: "block",
-    logoWidth: 350,
-    ownerFontSize: "13px",
+    logoWidth: 26,
+    ownerFontSize: "12px",
     projectCount: 3,
-    projectRowDisplay: "block",
-    projectRowHeight: 69,
+    projectRowDisplay: "flex",
+    projectRowHeight: 26,
     rootWidth: 350,
-    searchHeight: 30,
+    searchHeight: 42,
     searchPadding: "4px 6px",
     subtabDisplay: "block",
     subtabMarginTop: "0px",
   });
 
-  const projectSearch = page.locator("#usermenu-tab-content-list .project-search");
+  const projectSearch = page.locator("#myProjectList .project-search");
   await projectSearch.fill("sample");
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -1489,18 +1692,6 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
       )
       .toBe("home-project-subtabs");
   }
-
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const authenticatedUserMenuSource = routeSource.slice(
-    routeSource.indexOf("function AuthenticatedSiteUserMenu"),
-    routeSource.indexOf("function AnonymousSiteUserMenu"),
-  );
-  const sidebarProjectListSource = routeSource.slice(
-    routeSource.indexOf("function SidebarProjectList"),
-    routeSource.indexOf("function SidebarProjectPane"),
-  );
-  expect(authenticatedUserMenuSource).not.toContain('data-toggle="tab"');
-  expect(sidebarProjectListSource).not.toContain('data-toggle="tab"');
 });
 
 test("authenticated root sidebar recent issue tab matches legacy index/myRecentIssueList DOM", async ({
@@ -1515,14 +1706,17 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await page.locator(".myRecentIssueList button").click();
   await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toBeVisible();
-  await expect(page.locator("#usermenu-tab-content-list .user-li")).toHaveCount(2);
+  await expect(page.locator("#myRecentIssueList .user-li")).toHaveCount(2);
   await expect(page.locator("#usermenu-tab-content-list [data-toggle='popover']")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list [data-trigger='hover']")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list [data-placement='right']")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list [data-content]")).toHaveCount(0);
   await expect(page.locator("#usermenu-tab-content-list .popover.right")).toHaveCount(0);
 
-  expect(await canonicalizeSelector(page, "#usermenu-tab-content-list")).toEqual(
+  await expect(
+    page.locator("#usermenu-tab-content-list > .user-project-list.active"),
+  ).toHaveAttribute("id", "myRecentIssueList");
+  expect(await canonicalizeSelector(page, "#myRecentIssueList")).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_SIDEBAR_RECENT_ISSUE_TAB.replaceAll("__BASE_PATH__", basePath),
@@ -1531,29 +1725,18 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   expect(await readSidebarRecentIssueTabMetrics(page)).toEqual({
     activePaneDisplay: "block",
     issueCount: 2,
-    issueRowDisplay: "block",
-    issueRowHeight: 40,
+    issueRowDisplay: "flex",
+    issueRowHeight: 27,
     issueTitleColor: "rgb(0, 0, 0)",
-    issueTitleDisplay: "block",
-    issueTitleStartWidth: 350,
+    issueTitleDisplay: "inline-block",
+    issueTitleStartWidth: 10,
     rootWidth: 350,
-    searchHeight: 30,
+    searchHeight: 42,
     searchPadding: "4px 6px",
   });
 
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const recentIssueItemSource = routeSource.slice(
-    routeSource.indexOf("function SidebarRecentIssueItem"),
-    routeSource.indexOf("function SidebarHoverPopover"),
-  );
-  expect(recentIssueItemSource).toContain("<SidebarHoverPopover content={issueNumber}>");
-  expect(recentIssueItemSource).not.toContain('data-toggle="popover"');
-  expect(recentIssueItemSource).not.toContain('data-trigger="hover"');
-  expect(recentIssueItemSource).not.toContain('data-placement="right"');
-  expect(recentIssueItemSource).not.toContain("data-content={issueNumber}");
-
   const issueRow = page.locator(
-    "#recentlyVisitedIssues .user-li[data-location$='/admin/sample/issue/42'] > .project-list",
+    "#myRecentIssueList .user-li:has(a[href$='/admin/sample/issue/42']) > .project-list",
   );
   await expect(issueRow).not.toHaveAttribute("data-toggle");
   await expect(issueRow).not.toHaveAttribute("data-trigger");
@@ -2187,67 +2370,149 @@ async function readMobileAuthenticatedHomeMetrics(page: Page) {
   });
 }
 
-async function readDesktopClosedSidebarMetrics(page: Page) {
+async function readDesktopClosedLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
-    const sideNav = document.querySelector<HTMLElement>("#mySidenav");
-    const userMenuWrap = document.querySelector<HTMLElement>("#mySidenav .user-menu-wrap");
-    if (!sideNav || !userMenuWrap) {
-      throw new Error("Expected closed SPA sidebar metric targets are missing.");
+    const main = document.querySelector<HTMLElement>(".legacy-framed-main");
+    const pin = document.querySelector<HTMLElement>(".gnb-inner > .pin");
+    if (!main || !pin) {
+      throw new Error("Expected closed legacy framed sidebar metric targets are missing.");
     }
 
+    const mainBox = main.getBoundingClientRect();
+    const pinBox = pin.getBoundingClientRect();
     return {
-      closedWidth: Math.round(sideNav.getBoundingClientRect().width),
-      profileRowTextAlign: getComputedStyle(userMenuWrap).textAlign,
+      mainWidth: Math.round(mainBox.width),
+      mainX: Math.round(mainBox.x),
+      pinHeight: Math.round(pinBox.height),
+      pinWidth: Math.round(pinBox.width),
+      pinX: Math.round(pinBox.x),
+      pinY: Math.round(pinBox.y),
     };
   });
 }
 
-async function readDesktopOpenSidebarMetrics(page: Page) {
+async function readDesktopOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
-    const sideNav = document.querySelector<HTMLElement>("#mySidenav");
-    const tabRow = document.querySelector<HTMLElement>("#mySidenav .nav.nav-tabs.nm");
-    const tabContent = document.querySelector<HTMLElement>("#mySidenav .tab-content.tab-box");
-    if (!sideNav || !tabRow || !tabContent) {
-      throw new Error("Expected open SPA sidebar metric targets are missing.");
+    const sidebar = document.querySelector<HTMLElement>("#sidebar");
+    const main = document.querySelector<HTMLElement>(".legacy-framed-main");
+    const pin = document.querySelector<HTMLElement>("#sidebar .pin-in-sidebar");
+    const leftAvatar = document.querySelector<HTMLImageElement>("#sidebar .avatar-wrap img");
+    const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
+    if (!sidebar || !main || !pin || !leftAvatar || !rightAvatar) {
+      throw new Error("Expected open legacy framed sidebar metric targets are missing.");
     }
 
-    const openBox = sideNav.getBoundingClientRect();
+    const sidebarBox = sidebar.getBoundingClientRect();
+    const mainBox = main.getBoundingClientRect();
+    const pinBox = pin.getBoundingClientRect();
     return {
-      openRight: Math.round(window.innerWidth - openBox.right),
-      openTop: Math.round(openBox.top),
-      openWidth: Math.round(openBox.width),
-      tabContentTop: Math.round(tabContent.getBoundingClientRect().top),
-      tabRowTop: Math.round(tabRow.getBoundingClientRect().top),
+      leftAvatarNaturalWidth: leftAvatar.naturalWidth,
+      mainBackground: getComputedStyle(main).backgroundColor,
+      mainHeight: Math.round(mainBox.height),
+      mainWidth: Math.round(mainBox.width),
+      mainX: Math.round(mainBox.x),
+      pinHeight: Math.round(pinBox.height),
+      pinWidth: Math.round(pinBox.width),
+      pinX: Math.round(pinBox.x),
+      pinY: Math.round(pinBox.y),
+      rightAvatarNaturalWidth: rightAvatar.naturalWidth,
+      sidebarHeight: Math.round(sidebarBox.height),
+      sidebarWidth: Math.round(sidebarBox.width),
+      sidebarX: Math.round(sidebarBox.x),
+      sidebarY: Math.round(sidebarBox.y),
     };
   });
 }
 
-async function readMobileOpenSidebarMetrics(page: Page) {
+async function readMobileOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
-    const sideNav = document.querySelector<HTMLElement>("#mySidenav");
-    if (!sideNav) {
-      throw new Error("Expected mobile SPA sidebar metric target is missing.");
+    const sidebar = document.querySelector<HTMLElement>("#sidebar");
+    const main = document.querySelector<HTMLElement>(".legacy-framed-main");
+    const leftAvatar = document.querySelector<HTMLImageElement>("#sidebar .avatar-wrap img");
+    const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
+    if (!sidebar || !main || !leftAvatar || !rightAvatar) {
+      throw new Error("Expected mobile legacy framed sidebar metric targets are missing.");
     }
 
-    const openBox = sideNav.getBoundingClientRect();
+    const sidebarBox = sidebar.getBoundingClientRect();
+    const mainBox = main.getBoundingClientRect();
     return {
-      openRight: Math.round(window.innerWidth - openBox.right),
-      openTop: Math.round(openBox.top),
-      openWidth: Math.round(openBox.width),
+      leftAvatarNaturalWidth: leftAvatar.naturalWidth,
+      mainBackground: getComputedStyle(main).backgroundColor,
+      mainHeight: Math.round(mainBox.height),
+      mainWidth: Math.round(mainBox.width),
+      mainX: Math.round(mainBox.x),
+      rightAvatarNaturalWidth: rightAvatar.naturalWidth,
+      sidebarHeight: Math.round(sidebarBox.height),
+      sidebarPosition: getComputedStyle(sidebar).position,
+      sidebarWidth: Math.round(sidebarBox.width),
+      sidebarX: Math.round(sidebarBox.x),
+      sidebarY: Math.round(sidebarBox.y),
     };
+  });
+}
+
+async function readLeftSidebarTabMetrics(page: Page) {
+  return page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>("#sidebar > .nav-tabs");
+    const content = document.querySelector<HTMLElement>("#sidebar > .tab-content");
+    const search = document.querySelector<HTMLElement>(
+      "#left-sidebar-myOrganizationList .org-search",
+    );
+    const tabs = Array.from(document.querySelectorAll<HTMLElement>("#sidebar > .nav-tabs > li"));
+    const buttons = tabs.map((tab) => tab.querySelector<HTMLButtonElement>(":scope > button"));
+    const refresh = buttons.at(-1);
+    if (
+      !nav ||
+      !content ||
+      !search ||
+      tabs.length !== 4 ||
+      buttons.some((button) => !button) ||
+      !refresh
+    ) {
+      throw new Error("Expected legacy framed sidebar tab targets are missing.");
+    }
+
+    const refreshBox = refresh.getBoundingClientRect();
+    const searchBox = search.getBoundingClientRect();
+    return {
+      contentTop: Math.round(content.getBoundingClientRect().top),
+      firstThreeFontWeights: buttons
+        .slice(0, 3)
+        .map((button) => getComputedStyle(button!).fontWeight),
+      navHeight: Math.round(nav.getBoundingClientRect().height),
+      refreshHeight: Math.round(refreshBox.height),
+      refreshPadding: getComputedStyle(refresh).padding,
+      refreshWidth: Math.round(refreshBox.width),
+      searchHeight: Math.round(searchBox.height),
+      searchTop: Math.round(searchBox.top),
+      tabTops: tabs.map((tab) => Math.round(tab.getBoundingClientRect().top)),
+      tabWidths: tabs.map((tab) => Math.round(tab.getBoundingClientRect().width)),
+    };
+  });
+}
+
+async function duplicateSidebarIds(page: Page) {
+  return page.evaluate(() => {
+    const sidebar = document.querySelector("#sidebar");
+    const userMenu = document.querySelector("#mySidenav");
+    if (!sidebar || !userMenu) {
+      throw new Error("Expected left and right sidebar roots are missing.");
+    }
+    return Array.from(document.querySelectorAll<HTMLElement>("#sidebar [id], #mySidenav [id]"))
+      .map((element) => element.id)
+      .filter((id) => document.querySelectorAll(`[id=${JSON.stringify(id)}]`).length !== 1);
   });
 }
 
 async function readSidebarFavoriteTabMetrics(page: Page) {
   return page.evaluate(() => {
-    const root = document.querySelector<HTMLElement>("#usermenu-tab-content-list");
-    const search = document.querySelector<HTMLElement>("#usermenu-tab-content-list .org-search");
-    const organization = document.querySelector<HTMLElement>("#usermenu-tab-content-list .org-li");
-    const organizationRow = document.querySelector<HTMLElement>(
-      "#usermenu-tab-content-list .org-list",
-    );
+    const root = document.querySelector<HTMLElement>("#myOrganizationList");
+    const search = root?.querySelector<HTMLElement>(".org-search");
+    const organization = root?.querySelector<HTMLElement>(".org-li");
+    const organizationRow = root?.querySelector<HTMLElement>(".org-list");
     const project = document.querySelector<HTMLElement>(
-      "#usermenu-tab-content-list .user-li[data-location$='/admin/sample']",
+      "#myOrganizationList .user-li:has(a[href$='/admin/sample'])",
     );
     const projectRow = project?.querySelector<HTMLElement>(".project-list");
     const logo = project?.querySelector<HTMLElement>(".site-logo");
@@ -2334,13 +2599,11 @@ async function readSidebarRightPopoverMetrics(page: Page) {
 
 async function readSidebarProjectTabMetrics(page: Page) {
   return page.evaluate(() => {
-    const root = document.querySelector<HTMLElement>("#usermenu-tab-content-list");
-    const search = document.querySelector<HTMLElement>(
-      "#usermenu-tab-content-list .project-search",
-    );
-    const subtab = document.querySelector<HTMLElement>("#usermenu-tab-content-list .subtab-wrap");
-    const activePane = document.querySelector<HTMLElement>("#recentlyVisited");
-    const project = document.querySelector<HTMLElement>("#recentlyVisited .user-li");
+    const root = document.querySelector<HTMLElement>("#myProjectList");
+    const search = root?.querySelector<HTMLElement>(".project-search");
+    const subtab = root?.querySelector<HTMLElement>(".subtab-wrap");
+    const activePane = root?.querySelector<HTMLElement>("#recentlyVisited");
+    const project = activePane?.querySelector<HTMLElement>(".user-li");
     const projectRow = project?.querySelector<HTMLElement>(".project-list");
     const logo = project?.querySelector<HTMLElement>(".site-logo");
     const owner = project?.querySelector<HTMLElement>(".project-owner");
@@ -2381,12 +2644,10 @@ async function readSidebarProjectTabMetrics(page: Page) {
 
 async function readSidebarRecentIssueTabMetrics(page: Page) {
   return page.evaluate(() => {
-    const root = document.querySelector<HTMLElement>("#usermenu-tab-content-list");
-    const search = document.querySelector<HTMLElement>(
-      "#usermenu-tab-content-list .project-search",
-    );
-    const activePane = document.querySelector<HTMLElement>("#recentlyVisitedIssues");
-    const issue = document.querySelector<HTMLElement>("#recentlyVisitedIssues .user-li");
+    const root = document.querySelector<HTMLElement>("#myRecentIssueList");
+    const search = root?.querySelector<HTMLElement>(".project-search");
+    const activePane = root?.querySelector<HTMLElement>("#recentlyVisitedIssues");
+    const issue = activePane?.querySelector<HTMLElement>(".user-li");
     const issueRow = issue?.querySelector<HTMLElement>(".project-list");
     const issueTitle = issue?.querySelector<HTMLElement>(".issue-title");
     const issueTitleStart = issue?.querySelector<HTMLElement>(".issue-title-start");
@@ -2694,7 +2955,11 @@ async function mockAnonymousSession(page: Page) {
 }
 
 async function mockWorkspaceSidebarProjects(page: Page) {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const projectLogoUrl = `${basePath}/legacy-assets/images/project_default_logo.png`;
+  const state = { requestCount: 0 };
   await page.route("**/api/v1/workspace", async (route) => {
+    state.requestCount += 1;
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -2750,7 +3015,7 @@ async function mockWorkspaceSidebarProjects(page: Page) {
           },
         ],
         profile: {
-          avatarUrl: "/assets/images/default-avatar-32.png",
+          avatarUrl: `${basePath}/legacy-assets/images/default-avatar-34.png`,
           connectedSocialProviders: [],
           displayName: "Site Admin",
           englishName: "",
@@ -2766,7 +3031,7 @@ async function mockWorkspaceSidebarProjects(page: Page) {
             favored: true,
             id: 7,
             isPrivate: false,
-            logoUrl: "/assets/images/project_default_logo.png",
+            logoUrl: projectLogoUrl,
             overview: "Sample project",
             ownerName: "admin",
             projectName: "sample",
@@ -2776,7 +3041,7 @@ async function mockWorkspaceSidebarProjects(page: Page) {
           {
             id: 7,
             isPrivate: false,
-            logoUrl: "/assets/images/project_default_logo.png",
+            logoUrl: projectLogoUrl,
             ownerName: "admin",
             projectName: "sample",
           },
@@ -2793,6 +3058,7 @@ async function mockWorkspaceSidebarProjects(page: Page) {
       }),
     });
   });
+  return state;
 }
 
 async function mockSiteUsers(page: Page) {
@@ -3024,9 +3290,6 @@ async function canonicalizeScreenRoots(page: Page) {
         "src",
         "target",
         "title",
-        "data-location",
-        "data-organization-id",
-        "data-project-id",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -3096,9 +3359,6 @@ async function canonicalizeSelector(page: Page, selector: string) {
         "src",
         "target",
         "title",
-        "data-location",
-        "data-organization-id",
-        "data-project-id",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -3161,9 +3421,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           "src",
           "target",
           "title",
-          "data-location",
-          "data-organization-id",
-          "data-project-id",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))

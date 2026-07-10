@@ -33,6 +33,7 @@ type LegacyLoginFormLinkSearch = {
   password: string;
   redirectUrl: string;
 };
+type SidebarTab = "favorite" | "project" | "recent";
 
 const LEGACY_USER_LINK_SEARCH = {
   daysAgo: undefined!,
@@ -67,6 +68,8 @@ const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
 const LEGACY_AUTHENTICATED_LOGOUT_PATH: string = "/users/logout";
 const LEGACY_ANONYMOUS_LOGOUT_PATH: string = "/logout";
+const LEGACY_LEFT_SIDEBAR_OPEN_KEY = "shallWeOpenLeftNavigation";
+const LEGACY_LEFT_SIDEBAR_TAB_KEY = "sidebarActiveMenu";
 const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS";
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
@@ -707,6 +710,7 @@ export function SiteLayoutShell({
   showLegacyProjectHeaderLinks?: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const queryClient = useQueryClient();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const session = sessionQuery.data;
   const navbarWorkspaceQuery = useQuery({
@@ -745,6 +749,9 @@ export function SiteLayoutShell({
     initialSearchScope,
   );
   const [isSearchScopeMenuOpen, setIsSearchScopeMenuOpen] = React.useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = React.useState(readStoredLeftSidebarOpen);
+  const [activeLeftSidebarTab, setActiveLeftSidebarTab] =
+    React.useState<SidebarTab>(readStoredLeftSidebarTab);
   React.useEffect(() => {
     setSelectedSearchScope(initialSearchScope);
     setIsSearchScopeMenuOpen(false);
@@ -779,176 +786,342 @@ export function SiteLayoutShell({
       setSelectedSearchScope(scope);
       setIsSearchScopeMenuOpen(false);
     };
+  const showLeftSidebar = session?.isAnonymous === false && isLeftSidebarOpen;
+  const handleLeftSidebarOpen = () => {
+    setIsLeftSidebarOpen(true);
+    writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "true");
+  };
+  const handleLeftSidebarClose = () => {
+    setIsLeftSidebarOpen(false);
+    writeStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY, "false");
+  };
+  const handleLeftSidebarTabChange = (tab: SidebarTab) => {
+    setActiveLeftSidebarTab(tab);
+    writeStoredValue(LEGACY_LEFT_SIDEBAR_TAB_KEY, storedSidebarTabValue(tab));
+  };
+  const handleLeftSidebarRefresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["workspace", "overview", "sidebar"] });
+  };
 
   return (
-    <>
-      <div className="unsupported hidden">
-        <div className="unsupported-inner">
-          <p id="unsupported-content" />
-        </div>
-      </div>
-      {shouldRenderSiteAdminAffix ? (
-        <div className="admin-logged-in-affix">
-          {t("user.siteAdminLoggedInAffix")}{" "}
-          <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
-        </div>
+    <div className={showLeftSidebar ? "legacy-framed-shell is-open" : "legacy-framed-shell"}>
+      {showLeftSidebar ? (
+        <LegacyFramedSidebar
+          activeTab={activeLeftSidebarTab}
+          basePath={runtimeConfig.basePath}
+          onClose={handleLeftSidebarClose}
+          onRefresh={handleLeftSidebarRefresh}
+          onTabChange={handleLeftSidebarTabChange}
+          session={session ?? {}}
+          workspace={navbarWorkspaceQuery.data}
+        />
       ) : null}
-      <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
-        <div className="gnb-inner">
-          <span className="pin" title="Sidebar">
-            <i className="yobicon-arrow-left" aria-hidden="true" />
-            <i className="yobicon-arrow-right" aria-hidden="true" />
-          </span>
-          <ul className="gnb-nav">
-            <li>
-              <Link
-                activeOptions={{
-                  exact: true,
-                  explicitUndefined: true,
-                  includeHash: true,
-                  includeSearch: true,
-                }}
-                activeProps={{
-                  "aria-current": undefined,
-                  className: undefined,
-                  "data-status": undefined,
-                }}
-                className="logo logo-letter"
-                search={LEGACY_GNB_LOGO_ACTIVE_MARKER_SEARCH}
-                to="/"
+      <div className="legacy-framed-main">
+        <div className="unsupported hidden">
+          <div className="unsupported-inner">
+            <p id="unsupported-content" />
+          </div>
+        </div>
+        {shouldRenderSiteAdminAffix ? (
+          <div className="admin-logged-in-affix">
+            {t("user.siteAdminLoggedInAffix")}{" "}
+            <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
+          </div>
+        ) : null}
+        <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
+          <div className="gnb-inner">
+            {!showLeftSidebar ? (
+              <button
+                aria-controls="sidebar"
+                aria-expanded="false"
+                className="pin"
+                onClick={handleLeftSidebarOpen}
+                title="Sidebar"
+                type="button"
               >
-                Y
-              </Link>
-            </li>
-            {shouldRenderProjectListingLink ? (
-              <>
-                <li className={activeMenu === "projects" ? "active" : undefined}>
-                  <Link
-                    to="/projects"
-                    search={LEGACY_PROJECTS_LINK_SEARCH}
-                    className="show-progress-bar"
-                  >
-                    {t("title.list")}
-                  </Link>
-                </li>
-                <li className="divider"></li>
-              </>
+                <i className="yobicon-arrow-left" aria-hidden="true" />
+                <i className="yobicon-arrow-right" aria-hidden="true" />
+              </button>
             ) : null}
-            {feedbackUrl ? (
+            <ul className="gnb-nav">
               <li>
-                <Link to={feedbackUrl} href={feedbackUrl} target="_blank">
-                  {t("title.yobi.feedback")}
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  className="logo logo-letter"
+                  search={LEGACY_GNB_LOGO_ACTIVE_MARKER_SEARCH}
+                  to="/"
+                >
+                  Y
                 </Link>
               </li>
-            ) : null}
-            <li>
-              <form
-                action={gnbSearchAction}
-                className="input-prepend gnb-search-form"
-                name="gnb-search-form"
-              >
-                <input type="hidden" name="searchType" value="auto" />
-                {hasScopedSearch ? (
-                  <div
-                    className={isSearchScopeMenuOpen ? "btn-group open" : "btn-group"}
-                    onBlur={handleSearchScopeBlur}
-                  >
-                    <button
-                      className="ybtn dropdown-toggle"
-                      type="button"
-                      id="gnb-search-scope-title"
-                      onClick={handleSearchScopeToggleClick}
+              {shouldRenderProjectListingLink ? (
+                <>
+                  <li className={activeMenu === "projects" ? "active" : undefined}>
+                    <Link
+                      to="/projects"
+                      search={LEGACY_PROJECTS_LINK_SEARCH}
+                      className="show-progress-bar"
                     >
-                      {gnbSearchScopeTitle}
+                      {t("title.list")}
+                    </Link>
+                  </li>
+                  <li className="divider"></li>
+                </>
+              ) : null}
+              {feedbackUrl ? (
+                <li>
+                  <Link to={feedbackUrl} href={feedbackUrl} target="_blank">
+                    {t("title.yobi.feedback")}
+                  </Link>
+                </li>
+              ) : null}
+              <li>
+                <form
+                  action={gnbSearchAction}
+                  className="input-prepend gnb-search-form"
+                  name="gnb-search-form"
+                >
+                  <input type="hidden" name="searchType" value="auto" />
+                  {hasScopedSearch ? (
+                    <div
+                      className={isSearchScopeMenuOpen ? "btn-group open" : "btn-group"}
+                      onBlur={handleSearchScopeBlur}
+                    >
+                      <button
+                        className="ybtn dropdown-toggle"
+                        type="button"
+                        id="gnb-search-scope-title"
+                        onClick={handleSearchScopeToggleClick}
+                      >
+                        {gnbSearchScopeTitle}
+                      </button>
+                      <ul className="dropdown-menu flat right">
+                        {projectSearchAction ? (
+                          <li>
+                            <button type="button" onClick={handleSearchScopeItemClick("project")}>
+                              {t("search.scope.project")}
+                            </button>
+                          </li>
+                        ) : null}
+                        {projectSearchAction && groupSearchAction ? (
+                          <li>
+                            <button type="button" onClick={handleSearchScopeItemClick("group")}>
+                              {t("search.scope.group")}
+                            </button>
+                          </li>
+                        ) : null}
+                        {shouldRenderAllProjectsSearchScope ? (
+                          <li>
+                            <button type="button" onClick={handleSearchScopeItemClick("all")}>
+                              {t("search.scope.all")}
+                            </button>
+                          </li>
+                        ) : null}
+                      </ul>
+                    </div>
+                  ) : null}
+                  <div className={hasScopedSearch ? "search-box select" : "search-box"}>
+                    {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
+                    <input type="text" name="keyword" autoComplete="off" accessKey="S" />
+                    <button type="submit">
+                      <i className="yobicon-search" />
                     </button>
-                    <ul className="dropdown-menu flat right">
-                      {projectSearchAction ? (
-                        <li>
-                          <button type="button" onClick={handleSearchScopeItemClick("project")}>
-                            {t("search.scope.project")}
-                          </button>
-                        </li>
-                      ) : null}
-                      {projectSearchAction && groupSearchAction ? (
-                        <li>
-                          <button type="button" onClick={handleSearchScopeItemClick("group")}>
-                            {t("search.scope.group")}
-                          </button>
-                        </li>
-                      ) : null}
-                      {shouldRenderAllProjectsSearchScope ? (
-                        <li>
-                          <button type="button" onClick={handleSearchScopeItemClick("all")}>
-                            {t("search.scope.all")}
-                          </button>
-                        </li>
-                      ) : null}
-                    </ul>
                   </div>
-                ) : null}
-                <div className={hasScopedSearch ? "search-box select" : "search-box"}>
-                  {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
-                  <input type="text" name="keyword" autoComplete="off" accessKey="S" />
-                  <button type="submit">
-                    <i className="yobicon-search" />
-                  </button>
-                </div>
-              </form>
-            </li>
-          </ul>
-          {shouldRenderAnonymousUserMenu ? (
-            <AnonymousSiteUserMenu basePath={runtimeConfig.basePath} />
-          ) : (
-            <AuthenticatedSiteUserMenu
-              basePath={runtimeConfig.basePath}
-              runtimeConfig={runtimeConfig}
-              session={session ?? {}}
+                </form>
+              </li>
+            </ul>
+            {shouldRenderAnonymousUserMenu ? (
+              <AnonymousSiteUserMenu basePath={runtimeConfig.basePath} />
+            ) : (
+              <AuthenticatedSiteUserMenu
+                basePath={runtimeConfig.basePath}
+                runtimeConfig={runtimeConfig}
+                session={session ?? {}}
+                workspace={navbarWorkspaceQuery.data}
+              />
+            )}
+          </div>
+        </header>
+        {children}
+        <footer className="page-footer-outer">
+          <div className="page-footer">
+            <span className="provider">
+              Copyright{" "}
+              <Link
+                to={YONA_AUTHORS_URL}
+                href={YONA_AUTHORS_URL}
+                reloadDocument
+                target="_blank"
+                className="yona-author"
+              >
+                Yona authors
+              </Link>
+              {" & © "}
+              <Link to={NAVER_CORP_URL} href={NAVER_CORP_URL} reloadDocument target="_blank">
+                NAVER Corp.
+              </Link>
+              {" & "}
+              <Link
+                to={NAVER_LABS_URL}
+                href={NAVER_LABS_URL}
+                reloadDocument
+                target="_blank"
+                className="naver-labs"
+              >
+                NAVER LABS
+              </Link>{" "}
+              Supported by{" "}
+              <Link
+                to={NAVER_CLOUD_PLATFORM_URL}
+                href={NAVER_CLOUD_PLATFORM_URL}
+                reloadDocument
+                target="_blank"
+                className="naver-cloud-platform"
+              >
+                NAVER CLOUD PLATFORM
+              </Link>
+            </span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function LegacyFramedSidebar({
+  activeTab,
+  basePath,
+  onClose,
+  onRefresh,
+  onTabChange,
+  session,
+  workspace,
+}: {
+  activeTab: SidebarTab;
+  basePath: string;
+  onClose: () => void;
+  onRefresh: () => void;
+  onTabChange: (tab: SidebarTab) => void;
+  session: YonaRecord;
+  workspace: YonaRecord | undefined;
+}) {
+  const { t } = useLegacyMessages();
+  const [showBottom, setShowBottom] = React.useState(true);
+  const loginId = stringField(session, "loginId", "anonymous");
+  const workspaceProfile = recordValue(workspace?.profile);
+  const avatarUrl = prefixBasePath(
+    basePath,
+    stringField(
+      workspaceProfile,
+      "avatarUrl",
+      stringField(session, "avatarUrl", "/legacy-assets/images/default-avatar-34.png"),
+    ),
+  );
+  const userLabel = stringField(session, "userLabel", loginId);
+  const selectTab = (tab: SidebarTab) => {
+    onTabChange(tab);
+    setShowBottom(tab === "recent");
+  };
+
+  return (
+    <aside aria-label="Sidebar" className="sidebar hide-in-mobile" id="sidebar">
+      <div className="row-fluid user-menu-wrap">
+        <span className="user-menu">
+          <Link
+            activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
+            params={{ user: loginId }}
+            search={LEGACY_USER_LINK_SEARCH}
+            to="/$user"
+          >
+            <span className="avatar-wrap smaller">
+              <img alt="" src={avatarUrl} />
+            </span>
+            <span className="caret-text hide-in-mobile">{userLabel}</span>
+          </Link>
+        </span>
+        <span className="user-menu">
+          <Link to="/user/editform">{t("userinfo.accountSetting")}</Link>
+        </span>
+        <Link
+          href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}
+          reloadDocument
+          to={LEGACY_AUTHENTICATED_LOGOUT_PATH}
+        >
+          <span className="user-menu logout label">{t("title.logout")}</span>
+        </Link>
+        <button
+          aria-controls="sidebar"
+          aria-expanded="true"
+          className="pin-in-sidebar"
+          onClick={onClose}
+          title="Sidebar"
+          type="button"
+        >
+          <i aria-hidden="true" className="yobicon-arrow-left" />
+        </button>
+      </div>
+      <ul className="nav nav-tabs nm">
+        <li className={`myOrganizationList${activeTab === "favorite" ? " active" : ""}`}>
+          <button type="button" onClick={() => selectTab("favorite")}>
+            {t("title.favorite")}
+          </button>
+        </li>
+        <li className={`myProjectList${activeTab === "project" ? " active" : ""}`}>
+          <button type="button" onClick={() => selectTab("project")}>
+            {t("title.project")}
+          </button>
+        </li>
+        <li className={`myRecentIssueList${activeTab === "recent" ? " active" : ""}`}>
+          <button type="button" onClick={() => selectTab("recent")}>
+            {t("title.recently.visited.issue")}
+          </button>
+        </li>
+        <li>
+          <button
+            aria-label="Refresh"
+            className="btn-transparent refresh-button"
+            onClick={onRefresh}
+            type="button"
+          >
+            <i aria-hidden="true" className="yobicon-refresh" />
+          </button>
+        </li>
+      </ul>
+      <div className="tab-content tab-box">
+        <div className="tab-content" id="left-sidebar-tab-content-list">
+          {workspace ? (
+            <SidebarTabContent
+              activeTab={activeTab}
+              idPrefix="left-sidebar"
+              sessionLoginId={loginId}
+              workspace={workspace}
             />
+          ) : (
+            "Loading..."
           )}
         </div>
-      </header>
-      {children}
-      <footer className="page-footer-outer">
-        <div className="page-footer">
-          <span className="provider">
-            Copyright{" "}
-            <Link
-              to={YONA_AUTHORS_URL}
-              href={YONA_AUTHORS_URL}
-              reloadDocument
-              target="_blank"
-              className="yona-author"
-            >
-              Yona authors
-            </Link>
-            {" & © "}
-            <Link to={NAVER_CORP_URL} href={NAVER_CORP_URL} reloadDocument target="_blank">
-              NAVER Corp.
-            </Link>
-            {" & "}
-            <Link
-              to={NAVER_LABS_URL}
-              href={NAVER_LABS_URL}
-              reloadDocument
-              target="_blank"
-              className="naver-labs"
-            >
-              NAVER LABS
-            </Link>{" "}
-            Supported by{" "}
-            <Link
-              to={NAVER_CLOUD_PLATFORM_URL}
-              href={NAVER_CLOUD_PLATFORM_URL}
-              reloadDocument
-              target="_blank"
-              className="naver-cloud-platform"
-            >
-              NAVER CLOUD PLATFORM
-            </Link>
-          </span>
+      </div>
+      {showBottom ? (
+        <div className="sidebar-bottom" id="sidebar-bottom">
+          Yona, made by <i aria-hidden="true" className="yobicon-hearts" />
         </div>
-      </footer>
-    </>
+      ) : null}
+    </aside>
   );
 }
 
@@ -956,10 +1129,12 @@ function AuthenticatedSiteUserMenu({
   basePath,
   runtimeConfig,
   session,
+  workspace,
 }: {
   basePath: string;
   runtimeConfig: RuntimeConfig;
   session: YonaRecord;
+  workspace: YonaRecord | undefined;
 }) {
   const { t } = useLegacyMessages();
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
@@ -967,13 +1142,16 @@ function AuthenticatedSiteUserMenu({
   );
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = React.useState(false);
-  const workspaceQuery = useQuery({
-    enabled: Boolean(session.loginId),
-    queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
-    queryKey: ["workspace", "overview", "sidebar"],
-  });
   const loginId = stringField(session, "loginId", "anonymous");
-  const avatarUrl = stringField(session, "avatarUrl", "/assets/images/default-avatar-32.png");
+  const workspaceProfile = recordValue(workspace?.profile);
+  const avatarUrl = prefixBasePath(
+    basePath,
+    stringField(
+      workspaceProfile,
+      "avatarUrl",
+      stringField(session, "avatarUrl", "/legacy-assets/images/default-avatar-34.png"),
+    ),
+  );
   const isSiteAdmin = booleanField(session, "isSiteAdmin", false);
   const isGuest = booleanField(session, "isGuest", false);
   const navbarCustomLinkName = runtimeConfig.navbarCustomLinkName?.trim() ?? "";
@@ -1054,12 +1232,11 @@ function AuthenticatedSiteUserMenu({
           </ul>
           <div className="tab-content tab-box">
             <div id="usermenu-tab-content-list" className="tab-content">
-              {workspaceQuery.data ? (
+              {workspace ? (
                 <SidebarTabContent
                   activeTab={activeSidebarTab}
-                  basePath={basePath}
                   sessionLoginId={loginId}
-                  workspace={workspaceQuery.data}
+                  workspace={workspace}
                 />
               ) : (
                 "Loading..."
@@ -1270,39 +1447,53 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
 
 function SidebarTabContent({
   activeTab,
-  basePath,
+  idPrefix,
   sessionLoginId,
   workspace,
 }: {
-  activeTab: "favorite" | "project" | "recent";
-  basePath: string;
+  activeTab: SidebarTab;
+  idPrefix?: string;
   sessionLoginId: string;
   workspace: YonaRecord;
 }) {
-  if (activeTab === "project") {
-    return <SidebarProjectList basePath={basePath} workspace={workspace} />;
-  }
-  if (activeTab === "recent") {
-    return <SidebarRecentIssueList basePath={basePath} workspace={workspace} />;
-  }
-  if (hasSidebarFavoriteData(workspace)) {
-    return (
-      <SidebarOrganizationList
-        basePath={basePath}
-        sessionLoginId={sessionLoginId}
-        workspace={workspace}
-      />
-    );
-  }
-  return <>{"Loading..."}</>;
+  return (
+    <>
+      <div
+        className={`tab-pane user-project-list${activeTab === "favorite" ? " active" : ""}`}
+        id={sidebarDomId(idPrefix, "myOrganizationList")}
+      >
+        {hasSidebarFavoriteData(workspace) ? (
+          <SidebarOrganizationList
+            idPrefix={idPrefix}
+            sessionLoginId={sessionLoginId}
+            workspace={workspace}
+          />
+        ) : (
+          "Loading..."
+        )}
+      </div>
+      <div
+        className={`tab-pane user-project-list${activeTab === "project" ? " active" : ""}`}
+        id={sidebarDomId(idPrefix, "myProjectList")}
+      >
+        <SidebarProjectList idPrefix={idPrefix} workspace={workspace} />
+      </div>
+      <div
+        className={`tab-pane user-project-list${activeTab === "recent" ? " active" : ""}`}
+        id={sidebarDomId(idPrefix, "myRecentIssueList")}
+      >
+        <SidebarRecentIssueList idPrefix={idPrefix} workspace={workspace} />
+      </div>
+    </>
+  );
 }
 
 function SidebarOrganizationList({
-  basePath,
+  idPrefix,
   sessionLoginId,
   workspace,
 }: {
-  basePath: string;
+  idPrefix?: string;
   sessionLoginId: string;
   workspace: YonaRecord;
 }) {
@@ -1340,7 +1531,7 @@ function SidebarOrganizationList({
           />
           <span className="bar"></span>
         </div>
-        <div id="organizations" className="no-result tab-pane user-ul">
+        <div id={sidebarDomId(idPrefix, "organizations")} className="no-result tab-pane user-ul">
           {t("title.no.results")}
         </div>
       </div>
@@ -1358,7 +1549,7 @@ function SidebarOrganizationList({
         />
         <span className="bar"></span>
       </div>
-      <ul className="tab-pane user-ul " id="organizations">
+      <ul className="tab-pane user-ul " id={sidebarDomId(idPrefix, "organizations")}>
         {ownProjects.length > 0 ? (
           <li className="org-li">
             <div className="org-list project-flex-container all-orgs">
@@ -1376,7 +1567,6 @@ function SidebarOrganizationList({
             <ul className="project-ul">
               {ownProjects.map((project) => (
                 <SidebarAllProjectItem
-                  basePath={basePath}
                   favored={booleanValue(project.favored)}
                   key={projectKey(project)}
                   project={project}
@@ -1387,7 +1577,6 @@ function SidebarOrganizationList({
         ) : null}
         {favoriteOrganizations.map((organization, index) => (
           <SidebarOrganizationItem
-            basePath={basePath}
             favored
             isLast={index === favoriteOrganizations.length - 1}
             key={organizationKey(organization)}
@@ -1396,7 +1585,6 @@ function SidebarOrganizationList({
         ))}
         {regularOrganizations.map((organization) => (
           <SidebarOrganizationItem
-            basePath={basePath}
             favored={false}
             key={organizationKey(organization)}
             organization={organization}
@@ -1404,7 +1592,7 @@ function SidebarOrganizationList({
         ))}
         <ul className="etc-favorites"></ul>
         {favoriteProjects.map((project) => (
-          <SidebarProjectItem basePath={basePath} key={projectKey(project)} project={project} />
+          <SidebarProjectItem key={projectKey(project)} project={project} />
         ))}
       </ul>
     </div>
@@ -1412,18 +1600,15 @@ function SidebarOrganizationList({
 }
 
 function SidebarOrganizationItem({
-  basePath,
   favored,
   isLast = false,
   organization,
 }: {
-  basePath: string;
   favored: boolean;
   isLast?: boolean;
   organization: YonaRecord;
 }) {
   const organizationName = valueString(organization.organizationName ?? organization.name, "");
-  const organizationId = valueString(organization.id ?? organization.organizationId, "");
   const projectCount = valueString(
     organization.projectCount ??
       organization.projectsCount ??
@@ -1444,14 +1629,13 @@ function SidebarOrganizationItem({
             <div className="project-owner flex-item">{projectCount}</div>
           </div>
         </div>
-        <div className="star-org flex-item" data-organization-id={organizationId}>
+        <div className="star-org flex-item">
           <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
         </div>
       </div>
       <ul className="project-ul">
         {projects.map((project) => (
           <SidebarAllProjectItem
-            basePath={basePath}
             favored={booleanValue(project.favored)}
             key={projectKey(project)}
             project={project}
@@ -1462,27 +1646,21 @@ function SidebarOrganizationItem({
   );
 }
 
-function SidebarAllProjectItem({
-  basePath,
-  favored,
-  project,
-}: {
-  basePath: string;
-  favored: boolean;
-  project: YonaRecord;
-}) {
+function SidebarAllProjectItem({ favored, project }: { favored: boolean; project: YonaRecord }) {
   const ownerName = valueString(project.ownerName ?? project.owner, "");
   const projectName = valueString(project.projectName ?? project.name, "");
-  const projectId = valueString(project.id ?? project.projectId, "");
   const overview = valueString(project.overview, "");
   const logoUrl = valueString(project.logoUrl ?? project.projectLogoUrl, "");
   const isPrivate = booleanValue(project.isPrivate);
-  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
 
   return (
-    <li className={`user-li ${favored ? "show-always" : "hide"}`} data-location={projectHref}>
+    <li className={`user-li ${favored ? "show-always" : "hide"}`}>
       <SidebarHoverPopover content={overview}>
-        <div className="project-item project-item-container">
+        <Link
+          className="project-item project-item-container sidebar-project-link sidebar-row-link"
+          params={{ ownerName, projectName }}
+          to="/$ownerName/$projectName"
+        >
           <div className="flex-item site-logo all-project-names">
             <i className="project-avatar">
               {logoUrl ? (
@@ -1497,8 +1675,8 @@ function SidebarAllProjectItem({
               {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
             </div>
           </div>
-        </div>
-        <div className="star-project flex-item" data-project-id={projectId}>
+        </Link>
+        <div className="star-project flex-item">
           <i className={favored ? "star starred material-icons" : "star material-icons"}>star</i>
         </div>
       </SidebarHoverPopover>
@@ -1506,7 +1684,7 @@ function SidebarAllProjectItem({
   );
 }
 
-function SidebarProjectList({ basePath, workspace }: { basePath: string; workspace: YonaRecord }) {
+function SidebarProjectList({ idPrefix, workspace }: { idPrefix?: string; workspace: YonaRecord }) {
   const { t } = useLegacyMessages();
   const [activeSubtab, setActiveSubtab] = React.useState<
     "recentlyVisited" | "createdByMe" | "watching" | "joinmember"
@@ -1523,7 +1701,7 @@ function SidebarProjectList({ basePath, workspace }: { basePath: string; workspa
             <input
               className="search-input project-search"
               type="text"
-              id="query"
+              id={sidebarDomId(idPrefix, "query")}
               autoComplete="off"
               placeholder={t("title.type.name")}
             />
@@ -1556,26 +1734,26 @@ function SidebarProjectList({ basePath, workspace }: { basePath: string; workspa
           <div className="tab-content">
             <SidebarProjectPane
               active={activeSubtab === "recentlyVisited"}
-              basePath={basePath}
               id="recentlyVisited"
+              idPrefix={idPrefix}
               projects={recentProjects}
             />
             <SidebarProjectPane
               active={activeSubtab === "watching"}
-              basePath={basePath}
               id="watching"
+              idPrefix={idPrefix}
               projects={watchedProjects}
             />
             <SidebarProjectPane
               active={activeSubtab === "createdByMe"}
-              basePath={basePath}
               id="createdByMe"
+              idPrefix={idPrefix}
               projects={[]}
             />
             <SidebarProjectPane
               active={activeSubtab === "joinmember"}
-              basePath={basePath}
               id="joinmember"
+              idPrefix={idPrefix}
               projects={memberProjects}
             />
           </div>
@@ -1587,44 +1765,47 @@ function SidebarProjectList({ basePath, workspace }: { basePath: string; workspa
 
 function SidebarProjectPane({
   active = false,
-  basePath,
   id,
+  idPrefix,
   projects,
 }: {
   active?: boolean;
-  basePath: string;
   id: string;
+  idPrefix?: string;
   projects: YonaRecord[];
 }) {
   const { t } = useLegacyMessages();
+  const paneId = sidebarDomId(idPrefix, id);
   if (projects.length === 0) {
     return (
-      <div id={id} className={`no-result tab-pane user-ul ${active ? "active" : ""}`}>
+      <div id={paneId} className={`no-result tab-pane user-ul ${active ? "active" : ""}`}>
         {t("title.no.results")}
       </div>
     );
   }
   return (
-    <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={id}>
+    <ul className={`tab-pane user-ul ${active ? "active" : ""}`} id={paneId}>
       {projects.map((project) => (
-        <SidebarProjectItem basePath={basePath} key={projectKey(project)} project={project} />
+        <SidebarProjectItem key={projectKey(project)} project={project} />
       ))}
     </ul>
   );
 }
 
-function SidebarProjectItem({ basePath, project }: { basePath: string; project: YonaRecord }) {
+function SidebarProjectItem({ project }: { project: YonaRecord }) {
   const ownerName = valueString(project.ownerName ?? project.owner, "");
   const projectName = valueString(project.projectName ?? project.name, "");
-  const projectId = valueString(project.id ?? project.projectId, "");
   const logoUrl = valueString(project.logoUrl ?? project.projectLogoUrl, "");
   const isPrivate = booleanValue(project.isPrivate);
-  const projectHref = prefixBasePath(basePath, `/${ownerName}/${projectName}`);
 
   return (
-    <li className="user-li" data-location={projectHref}>
+    <li className="user-li">
       <div className="project-list project-flex-container">
-        <div className="project-item project-item-container">
+        <Link
+          className="project-item project-item-container sidebar-project-link sidebar-row-link"
+          params={{ ownerName, projectName }}
+          to="/$ownerName/$projectName"
+        >
           <div className="flex-item site-logo">
             <i className="project-avatar">
               {logoUrl ? (
@@ -1638,24 +1819,10 @@ function SidebarProjectItem({ basePath, project }: { basePath: string; project: 
             <div className="project-name flex-item">
               {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
             </div>
-            <div className="project-owner flex-item">
-              <Link
-                to="/$user"
-                params={{ user: ownerName }}
-                search={LEGACY_USER_LINK_SEARCH}
-                activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                activeProps={{
-                  "aria-current": undefined,
-                  className: undefined,
-                  "data-status": undefined,
-                }}
-              >
-                {ownerName}
-              </Link>
-            </div>
+            <div className="project-owner flex-item">{ownerName}</div>
           </div>
-        </div>
-        <div className="star-project flex-item" data-project-id={projectId}>
+        </Link>
+        <div className="star-project flex-item">
           <i className="star material-icons">star</i>
         </div>
       </div>
@@ -1664,10 +1831,10 @@ function SidebarProjectItem({ basePath, project }: { basePath: string; project: 
 }
 
 function SidebarRecentIssueList({
-  basePath,
+  idPrefix,
   workspace,
 }: {
-  basePath: string;
+  idPrefix?: string;
   workspace: YonaRecord;
 }) {
   const { t } = useLegacyMessages();
@@ -1681,7 +1848,7 @@ function SidebarRecentIssueList({
             <input
               className="search-input project-search"
               type="text"
-              id="query"
+              id={sidebarDomId(idPrefix, "recent-issue-query")}
               autoComplete="off"
               placeholder={t("title.type.name")}
             />
@@ -1689,17 +1856,19 @@ function SidebarRecentIssueList({
           </div>
           <div className="tab-content">
             {issues.length === 0 ? (
-              <div id="recentlyVisitedIssues" className="no-result tab-pane user-ul active">
+              <div
+                id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}
+                className="no-result tab-pane user-ul active"
+              >
                 {t("title.no.results")}
               </div>
             ) : (
-              <ul className="tab-pane user-ul active" id="recentlyVisitedIssues">
+              <ul
+                className="tab-pane user-ul active"
+                id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}
+              >
                 {issues.map((issue) => (
-                  <SidebarRecentIssueItem
-                    basePath={basePath}
-                    issue={issue}
-                    key={recentIssueKey(issue)}
-                  />
+                  <SidebarRecentIssueItem issue={issue} key={recentIssueKey(issue)} />
                 ))}
               </ul>
             )}
@@ -1710,25 +1879,25 @@ function SidebarRecentIssueList({
   );
 }
 
-function SidebarRecentIssueItem({ basePath, issue }: { basePath: string; issue: YonaRecord }) {
+function SidebarRecentIssueItem({ issue }: { issue: YonaRecord }) {
   const ownerName = valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "");
   const projectName = valueString(issue.projectName ?? issue.project_name ?? issue.project, "");
   const issueNumber = valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "");
   const title = valueString(issue.title, "");
-  const issueHref = valueString(
-    issue.url ?? issue.href,
-    prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/${issueNumber}`),
-  );
 
   return (
-    <li className="user-li" data-location={issueHref}>
+    <li className="user-li">
       <SidebarHoverPopover content={issueNumber}>
-        <div className="project-item project-item-container">
+        <Link
+          className="project-item project-item-container sidebar-row-link"
+          params={{ issueNumber, ownerName, projectName }}
+          to="/$ownerName/$projectName/issue/$issueNumber"
+        >
           <div className="issue-item projectName-owner flex-item">
             <div className="issue-title-start">-</div>
             <div className="issue-title flex-item">{title}</div>
           </div>
-        </div>
+        </Link>
       </SidebarHoverPopover>
     </li>
   );
@@ -1766,6 +1935,58 @@ function SidebarHoverPopover({
 function stringField(record: YonaRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function readStoredValue(key: string) {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredValue(key: string, value: string) {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage can be disabled without changing the in-memory React behavior.
+  }
+}
+
+function readStoredLeftSidebarOpen() {
+  return readStoredValue(LEGACY_LEFT_SIDEBAR_OPEN_KEY) === "true";
+}
+
+function readStoredLeftSidebarTab(): SidebarTab {
+  switch (readStoredValue(LEGACY_LEFT_SIDEBAR_TAB_KEY)) {
+    case "myProjectList":
+      return "project";
+    case "myRecentIssueList":
+      return "recent";
+    default:
+      return "favorite";
+  }
+}
+
+function storedSidebarTabValue(tab: SidebarTab) {
+  switch (tab) {
+    case "project":
+      return "myProjectList";
+    case "recent":
+      return "myRecentIssueList";
+    default:
+      return "myOrganizationList";
+  }
+}
+
+function sidebarDomId(prefix: string | undefined, id: string) {
+  return prefix ? `${prefix}-${id}` : id;
 }
 
 function safeDefaultLandingPath(path: string) {
