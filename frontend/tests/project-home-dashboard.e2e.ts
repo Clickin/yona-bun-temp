@@ -42,6 +42,52 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
   });
 });
 
+test("project home empty asset fields use the base path on desktop", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = basePath === "/" ? "" : basePath;
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockProjectHome(page, {
+    project: {
+      backgroundImageUrl: "",
+      logoUrl: "",
+    },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample?tabId=dashboard`);
+
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/assets/images/project_default_logo.png`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCSS(
+    "background-image",
+    `url("${new URL(`${mountPrefix}/assets/images/bg-default-project.png`, page.url()).href}")`,
+  );
+});
+
+test("project home empty asset fields use the base path on mobile", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = basePath === "/" ? "" : basePath;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectHome(page, {
+    project: {
+      backgroundImageUrl: "",
+      logoUrl: "",
+    },
+  });
+
+  await page.goto(`${mountPrefix}/admin/sample?tabId=dashboard`);
+
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${mountPrefix}/assets/images/project_default_logo.png`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCSS(
+    "background-image",
+    `url("${new URL(`${mountPrefix}/assets/images/bg-default-project.png`, page.url()).href}")`,
+  );
+});
+
 test("project home Dashboard tab drops clone URL clipboard marker", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectHome(page);

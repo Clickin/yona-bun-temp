@@ -1275,11 +1275,11 @@ export function ProjectHeader({
   const projectName = stringField(project.projectName, "project");
   const projectIdValue = projectId(project);
   const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
-  const logoUrl = projectLogoUrl(project);
+  const logoUrl = projectLogoUrl(project, basePath);
   const backgroundImageUrl =
     stringField(recordField(project).backgroundImageUrl, "") ||
     stringField(recordField(project).backgroundUrl, "") ||
-    "/assets/images/bg-default-project.png";
+    prefixBasePath(basePath, "/assets/images/bg-default-project.png");
   const isForked =
     booleanField(recordField(project).isForkedFromOrigin) ||
     booleanField(recordField(project).isForked);
@@ -1833,8 +1833,11 @@ function projectId(project: ProjectContainer) {
   );
 }
 
-function projectLogoUrl(project: ProjectContainer) {
-  return stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+function projectLogoUrl(project: ProjectContainer, basePath: string) {
+  return (
+    stringField(project.logoUrl, "") ||
+    prefixBasePath(basePath, "/assets/images/project_default_logo.png")
+  );
 }
 
 function projectFavorited(project: ProjectContainer) {
