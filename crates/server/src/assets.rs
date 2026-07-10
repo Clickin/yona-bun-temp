@@ -29,6 +29,7 @@ pub(crate) fn apply_asset_routes(
             let browser_runtime_for_assets = browser_runtime.clone();
             let asset_root_for_images = asset_root.clone();
             let browser_runtime_for_images = browser_runtime.clone();
+            let asset_root_for_legacy_assets = asset_root.clone();
             let asset_root_for_index = asset_root.clone();
             let browser_runtime_for_index = browser_runtime.clone();
             let asset_root_for_fallback = asset_root.clone();
@@ -81,6 +82,13 @@ pub(crate) fn apply_asset_routes(
                             )
                             .await
                         }
+                    }),
+                )
+                .route(
+                    "/legacy-assets/{*path}",
+                    get(move |AxumPath(path): AxumPath<String>| {
+                        let asset_root = asset_root_for_legacy_assets.clone();
+                        async move { serve_filesystem_legacy_asset(asset_root, &path).await }
                     }),
                 )
                 .route(
@@ -156,6 +164,12 @@ pub(crate) fn apply_asset_routes(
                         async move {
                             serve_embedded_public_asset("images", &path, browser_runtime).await
                         }
+                    }),
+                )
+                .route(
+                    "/legacy-assets/{*path}",
+                    get(move |AxumPath(path): AxumPath<String>| async move {
+                        serve_embedded_legacy_asset(&path)
                     }),
                 )
                 .route(
@@ -462,6 +476,36 @@ pub(crate) async fn serve_embedded_public_asset(
         .into_response()
 }
 
+async fn serve_filesystem_legacy_asset(asset_root: PathBuf, requested_path: &str) -> Response {
+    let Some(relative_path) = sanitize_relative_path(requested_path) else {
+        return (axum::http::StatusCode::NOT_FOUND, "not found").into_response();
+    };
+    let file_path = asset_root.join("legacy-assets").join(relative_path);
+    let Ok(bytes) = tokio::fs::read(&file_path).await else {
+        return (axum::http::StatusCode::NOT_FOUND, "not found").into_response();
+    };
+
+    let mime = mime_guess::from_path(&file_path).first_or_octet_stream();
+    ([(axum::http::header::CONTENT_TYPE, mime.as_ref())], bytes).into_response()
+}
+
+fn serve_embedded_legacy_asset(requested_path: &str) -> Response {
+    let Some(relative_path) = sanitize_relative_path(requested_path) else {
+        return (axum::http::StatusCode::NOT_FOUND, "not found").into_response();
+    };
+    let normalized = relative_path.to_string_lossy().replace('\\', "/");
+    let Some(bytes) = embedded_assets::get(&format!("legacy-assets/{normalized}")) else {
+        return (axum::http::StatusCode::NOT_FOUND, "not found").into_response();
+    };
+
+    let mime = mime_guess::from_path(&normalized).first_or_octet_stream();
+    (
+        [(axum::http::header::CONTENT_TYPE, mime.as_ref())],
+        bytes.to_vec(),
+    )
+        .into_response()
+}
+
 pub(crate) async fn serve_filesystem_fallback(
     asset_root: PathBuf,
     method: Method,
@@ -544,6 +588,14 @@ fn html_with_base_path_assets(index_html: String, base_path: &str) -> String {
     }
 
     index_html
+        .replace(
+            "src=\"/legacy-assets/",
+            &format!("src=\"{base_path}/legacy-assets/"),
+        )
+        .replace(
+            "href=\"/legacy-assets/",
+            &format!("href=\"{base_path}/legacy-assets/"),
+        )
         .replace("src=\"/assets/", &format!("src=\"{base_path}/assets/"))
         .replace("href=\"/assets/", &format!("href=\"{base_path}/assets/"))
         .replace("src=\"/images/", &format!("src=\"{base_path}/images/"))

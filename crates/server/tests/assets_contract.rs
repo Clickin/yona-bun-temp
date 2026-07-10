@@ -421,6 +421,147 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 }
 
 #[tokio::test]
+async fn filesystem_legacy_assets_respect_nested_and_root_base_paths() {
+    let temp = tempdir().expect("tempdir");
+    let asset_root = temp.path();
+    fs::create_dir_all(asset_root.join("legacy-assets/stylesheets"))
+        .expect("legacy stylesheets dir");
+    fs::write(
+        asset_root.join("index.html"),
+        "<!doctype html><html><head><link rel=\"stylesheet\" href=\"/legacy-assets/stylesheets/yobi.css\"><link rel=\"stylesheet\" href=\"/team/yoram/legacy-assets/stylesheets/already-prefixed.css\"></head><body><div id=\"root\"></div><script src=\"/legacy-assets/javascripts/yobi.js\"></script></body></html>",
+    )
+    .expect("write index");
+    fs::write(
+        asset_root.join("legacy-assets/stylesheets/yobi.css"),
+        ".clearfix{display:block}",
+    )
+    .expect("write legacy stylesheet");
+
+    let nested_app = create_router_with_filesystem_assets(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/team/yoram".to_string(),
+            public_origin: String::new(),
+        },
+        asset_root.to_path_buf(),
+    );
+
+    let index = nested_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(index.status(), StatusCode::OK);
+    let html = String::from_utf8(
+        index
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap();
+    assert!(html.contains("href=\"/team/yoram/legacy-assets/stylesheets/yobi.css\""));
+    assert!(html.contains("href=\"/team/yoram/legacy-assets/stylesheets/already-prefixed.css\""));
+    assert!(html.contains("src=\"/team/yoram/legacy-assets/javascripts/yobi.js\""));
+    assert!(!html.contains("/team/yoram/team/yoram/legacy-assets"));
+
+    let stylesheet = nested_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/legacy-assets/stylesheets/yobi.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(stylesheet.status(), StatusCode::OK);
+    assert_eq!(
+        stylesheet
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/css")
+    );
+    let stylesheet_body = stylesheet.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(stylesheet_body.as_ref(), b".clearfix{display:block}");
+
+    let missing = nested_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/legacy-assets/stylesheets/missing.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+
+    let traversal = nested_app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/legacy-assets/%2e%2e%2findex.html")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(traversal.status(), StatusCode::NOT_FOUND);
+
+    let root_app = create_router_with_filesystem_assets(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/".to_string(),
+            public_origin: String::new(),
+        },
+        asset_root.to_path_buf(),
+    );
+    let root_index = root_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(root_index.status(), StatusCode::OK);
+
+    let root_stylesheet = root_app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/legacy-assets/stylesheets/yobi.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(root_stylesheet.status(), StatusCode::OK);
+    let root_stylesheet_body = root_stylesheet
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert_eq!(root_stylesheet_body.as_ref(), b".clearfix{display:block}");
+}
+
+#[tokio::test]
 // Guards asset-owned embedded fallback, runtime injection, and base-path SPA routing.
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     // Guards app-config-owned runtime projection for project scope, site name, languages, and email visibility.
@@ -604,6 +745,103 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         let html = String::from_utf8(body.to_vec()).unwrap();
         assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"), "{path}");
     }
+}
+
+#[tokio::test]
+async fn embedded_legacy_assets_respect_nested_and_root_base_paths() {
+    let nested_app = create_router_with_embedded_assets(RuntimeConfig {
+        allow_anonymous_access: true,
+        base_path: "/team/yoram".to_string(),
+        public_origin: String::new(),
+    });
+
+    let stylesheet = nested_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/legacy-assets/stylesheets/yobi.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(stylesheet.status(), StatusCode::OK);
+    assert_eq!(
+        stylesheet
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/css")
+    );
+    let stylesheet_body = stylesheet.into_body().collect().await.unwrap().to_bytes();
+    assert!(String::from_utf8(stylesheet_body.to_vec())
+        .unwrap()
+        .contains(".clearfix"));
+
+    let missing = nested_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/legacy-assets/stylesheets/missing.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+
+    let traversal = nested_app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/team/yoram/legacy-assets/%2e%2e%2findex.html")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(traversal.status(), StatusCode::NOT_FOUND);
+
+    let root_app = create_router_with_embedded_assets(RuntimeConfig {
+        allow_anonymous_access: true,
+        base_path: "/".to_string(),
+        public_origin: String::new(),
+    });
+    let root_index = root_app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(root_index.status(), StatusCode::OK);
+
+    let root_stylesheet = root_app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/legacy-assets/stylesheets/yobi.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(root_stylesheet.status(), StatusCode::OK);
+    let root_stylesheet_body = root_stylesheet
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert!(String::from_utf8(root_stylesheet_body.to_vec())
+        .unwrap()
+        .contains(".clearfix"));
 }
 
 #[tokio::test]

@@ -132,7 +132,15 @@ export function prefixBasePath(basePath: string, href: string): string {
   }
 
   const normalizedHref = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return basePath === "/" ? normalizedHref : `${basePath}${normalizedHref}`;
+  if (basePath === "/") {
+    return normalizedHref;
+  }
+
+  const suffixIndex = normalizedHref.search(/[?#]/);
+  const pathname = suffixIndex === -1 ? normalizedHref : normalizedHref.slice(0, suffixIndex);
+  return pathname === basePath || pathname.startsWith(`${basePath}/`)
+    ? normalizedHref
+    : `${basePath}${normalizedHref}`;
 }
 
 function normalizeOptionalString(input: string | null | undefined): string {
