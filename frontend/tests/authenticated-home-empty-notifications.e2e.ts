@@ -368,15 +368,79 @@ const EXPECTED_EMPTY_NOTIFICATION_DESKTOP_METRICS = {
   warningPaddingTop: "15px",
 };
 
-test("authenticated index redirects to the configured non-root default landing", async ({
-  page,
-}) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockAuthenticatedNotifications(page, [], { defaultLandingPath: "/me" });
+const DEFAULT_LANDING_CASES = [
+  { expected: (basePath: string) => `${basePath}/me`, landing: () => "/me", name: "profile" },
+  {
+    expected: (basePath: string) => `${basePath}/notifications`,
+    landing: () => "/notifications",
+    name: "notifications",
+  },
+  {
+    expected: (basePath: string) => `${basePath}/search?pageSize=20&scope=global`,
+    landing: () => "/search?pageSize=20&scope=global",
+    name: "search",
+  },
+  { expected: (basePath: string) => `${basePath}/`, landing: () => "/", name: "root" },
+  {
+    expected: (basePath: string) => `${basePath}/`,
+    landing: (basePath: string) => basePath,
+    name: "already-prefixed root",
+  },
+  {
+    expected: (basePath: string) => `${basePath}/me`,
+    landing: (basePath: string) => `${basePath}/me`,
+    name: "already-prefixed profile",
+  },
+  {
+    expected: (basePath: string) => `${basePath}/`,
+    landing: () => "https://evil.example/escape",
+    name: "external URL",
+  },
+  {
+    expected: (basePath: string) => `${basePath}/`,
+    landing: () => "//evil.example/escape",
+    name: "scheme-relative URL",
+  },
+] as const;
 
-  await page.goto(`${basePath}/`);
-  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/me`);
-});
+for (const defaultLandingCase of DEFAULT_LANDING_CASES) {
+  test(`authenticated index normalizes the ${defaultLandingCase.name} default landing inside the SPA`, async ({
+    page,
+  }) => {
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    const documentPaths: string[] = [];
+    page.on("request", (request) => {
+      if (request.resourceType() === "document") {
+        documentPaths.push(new URL(request.url()).pathname);
+      }
+    });
+    const session = await mockDeferredAuthenticatedDefaultLanding(
+      page,
+      defaultLandingCase.landing(basePath),
+    );
+
+    await page.goto(`${basePath}/`);
+    await session.requested;
+    await page.evaluate(() => {
+      (
+        window as Window & { __authenticatedHomeDefaultLandingSentinel?: string }
+      ).__authenticatedHomeDefaultLandingSentinel = "alive";
+    });
+    session.release();
+
+    await expect(page).toHaveURL(defaultLandingCase.expected(basePath));
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __authenticatedHomeDefaultLandingSentinel?: string })
+              .__authenticatedHomeDefaultLandingSentinel,
+        ),
+      )
+      .toBe("alive");
+    expect(documentPaths).toEqual([`${basePath}/`]);
+  });
+}
 
 test("shared shell logo keeps legacy navbar link with normal TanStack Link ownership", async ({
   page,
@@ -2568,6 +2632,47 @@ async function authenticatedHomeDropdownBubbleClicks(page: Page) {
 
 async function mockAuthenticatedEmptyNotifications(page: Page) {
   await mockAuthenticatedNotifications(page, []);
+}
+
+async function mockDeferredAuthenticatedDefaultLanding(page: Page, defaultLandingPath: string) {
+  let release = () => {};
+  let markRequested = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requested = new Promise<void>((resolve) => {
+    markRequested = resolve;
+  });
+  let requestMarked = false;
+
+  await page.route("**/api/v1/session", async (route) => {
+    if (!requestMarked) {
+      requestMarked = true;
+      markRequested();
+    }
+    await gate;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        actorId: 1,
+        defaultLandingPath,
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
+      },
+    });
+  });
+  await page.route("**/api/v1/notifications?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { hasMore: false, items: [], total: 0 },
+    });
+  });
+
+  return { release, requested };
 }
 
 async function mockAnonymousSession(page: Page) {

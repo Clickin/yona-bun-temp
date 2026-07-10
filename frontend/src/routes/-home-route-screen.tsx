@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
@@ -103,6 +103,16 @@ const HOME_SIDEBAR_POPOVER_STYLE: React.CSSProperties = {
   zIndex: 1060,
 };
 
+function DefaultLandingRedirect({ href }: { href: string }) {
+  const router = useRouter();
+
+  React.useEffect(() => {
+    router.history.replace(href);
+  }, [href, router.history]);
+
+  return null;
+}
+
 export function HomeRouteScreen({
   flashMessageKey = "",
   notificationFragmentOnly = false,
@@ -163,6 +173,22 @@ function HomeScreen({
   const routePathWithoutSlash = routePath.replace(/^\/+/u, "");
   const defaultLandingWithoutSlash = defaultLandingPath.replace(/^\/+/u, "");
   const defaultLandingTarget = safeDefaultLandingPath(defaultLandingPath);
+  const domainLocalDefaultLandingTarget =
+    runtimeConfig.basePath !== "/" && defaultLandingTarget === runtimeConfig.basePath
+      ? "/"
+      : runtimeConfig.basePath !== "/" &&
+          defaultLandingTarget.startsWith(`${runtimeConfig.basePath}/`)
+        ? defaultLandingTarget.slice(runtimeConfig.basePath.length)
+        : defaultLandingTarget;
+  const shouldRedirectToDefaultLanding =
+    isAuthenticated &&
+    routePath === "/" &&
+    domainLocalDefaultLandingTarget !== "" &&
+    domainLocalDefaultLandingTarget !== "/";
+  const defaultLandingHref = prefixBasePath(
+    runtimeConfig.basePath,
+    domainLocalDefaultLandingTarget,
+  );
   const shouldShowDefaultLandingButton =
     routePath !== "/" &&
     routePathWithoutSlash !== "" &&
@@ -301,13 +327,8 @@ function HomeScreen({
     );
   }
 
-  if (
-    isAuthenticated &&
-    routePath === "/" &&
-    defaultLandingTarget &&
-    defaultLandingTarget !== "/"
-  ) {
-    return <Navigate to={defaultLandingTarget} />;
+  if (shouldRedirectToDefaultLanding) {
+    return <DefaultLandingRedirect href={defaultLandingHref} />;
   }
 
   if (isAuthenticated) {
