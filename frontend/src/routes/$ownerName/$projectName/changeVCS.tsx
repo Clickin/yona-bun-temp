@@ -262,10 +262,12 @@ function ProjectHeader({ project }: { project: ProjectChangeVcsScreenData }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectId = stringField(recordField(project).projectId, stringField(project.id, ""));
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+  const logoUrl =
+    stringField(project.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
   const backgroundImageUrl =
     stringField(recordField(project).backgroundUrl, stringField(project.backgroundImageUrl, "")) ||
-    "/assets/images/bg-default-project.png";
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
   const isForked = booleanField(project.isForkedFromOrigin) || booleanField(project.isForked);
   const originalOwnerName = stringField(
     recordField(project).originOwnerName,

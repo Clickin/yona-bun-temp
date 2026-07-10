@@ -197,6 +197,45 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   });
 });
 
+test("project change-VCS empty header assets use the configured application context", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const mountPrefix = basePath === "/" ? "" : basePath;
+
+  for (const viewport of [
+    { width: 1280, height: 720, name: "desktop" },
+    { width: 390, height: 844, name: "mobile" },
+  ]) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockProjectAdmin(page, {
+      project: { logoUrl: "", backgroundImageUrl: "", backgroundUrl: "" },
+    });
+    await page.goto(`${mountPrefix}/admin/sample/changeVCS`);
+
+    await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+      "src",
+      `${mountPrefix}/assets/images/project_default_logo.png`,
+    );
+    expect(await page.locator(".project-header-outer").getAttribute("style")).toContain(
+      `${mountPrefix}/assets/images/bg-default-project.png`,
+    );
+    expect(await page.locator(".project-header-outer").getAttribute("style")).not.toContain(
+      "url('/assets/",
+    );
+
+    const metrics = await page.locator(".project-header-outer").evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { width: Math.round(box.width), height: Math.round(box.height) };
+    });
+    expect(metrics).toEqual({
+      width: viewport.width,
+      height: viewport.name === "mobile" ? 70 : 120,
+    });
+    await page.screenshot({ path: `/tmp/project-change-vcs-${viewport.name}.png`, fullPage: true });
+  }
+});
+
 test("project change-VCS protected project shell exposes legacy group search scope", async ({
   page,
 }) => {
