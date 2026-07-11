@@ -318,6 +318,21 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
     assert_eq!(form["selected"]["projectName"], "projectYobi");
     assert_eq!(form["canFork"], true);
     assert_eq!(form["ownerOptions"][0]["ownerName"], "guest");
+    assert_eq!(form["existingForks"], json!([]));
+
+    let owner_form = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/fork-options",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner_form["selected"]["projectName"], "projectYobi-1");
 
     let direct_clone = ok_json(
         rest_form(
@@ -346,6 +361,20 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
         head_commit(&repository_path(data_dir.path(), direct_fork.id)),
         source_head
     );
+
+    let form_after_other_owner_fork = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/fork-options",
+            Some(&guest_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(form_after_other_owner_fork["existingForks"], json!([]));
 
     let direct_missing = ok_json(
         rest_form(

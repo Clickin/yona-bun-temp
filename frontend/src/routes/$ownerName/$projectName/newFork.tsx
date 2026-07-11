@@ -3,8 +3,8 @@ import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
+  readProjectContainerQueryOptions,
   readProjectForkOptionsQueryOptions,
-  toggleFavoriteProjectRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectForkOptionsResponse } from "../../../api/org-project";
@@ -15,6 +15,7 @@ import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
+import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type ForkCloneProgress = {
   originalOwnerName: string;
@@ -95,6 +96,14 @@ function ProjectForkRouteShell({
   const isGitProject = query.data
     ? stringField(recordField(query.data.source).vcs, "").toUpperCase() === "GIT"
     : null;
+  const projectQueryOptions = readProjectContainerQueryOptions(runtimeConfig, {
+    ownerName,
+    projectName,
+  });
+  const projectQuery = useQuery({
+    ...projectQueryOptions,
+    enabled: isGitProject === true,
+  });
 
   if (!query.data) {
     return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
@@ -114,8 +123,12 @@ function ProjectForkRouteShell({
     );
   }
 
+  if (!projectQuery.data) {
+    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
+  }
+
   const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(query.data.source, ownerName),
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
     ownerName,
     projectName,
   };
@@ -127,6 +140,7 @@ function ProjectForkRouteShell({
         forkOwnerName={forkOwnerName}
         ownerName={ownerName}
         options={query.data}
+        project={projectQuery.data}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
       />
@@ -138,21 +152,21 @@ function ProjectForkScreen({
   forkOwnerName,
   ownerName,
   options,
+  project,
   projectName,
   runtimeConfig,
 }: {
   forkOwnerName?: string;
   ownerName: string;
   options: ProjectForkOptionsResponse;
+  project: ProjectContainer;
   projectName: string;
   runtimeConfig: RuntimeConfig;
 }) {
-  const project = projectContainerFromForkSource(options.source);
-
   return (
     <>
-      <ProjectHeader project={project} />
-      <ProjectMenu project={project} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
       <ProjectForkBody
         forkOwnerName={forkOwnerName}
         ownerName={ownerName}
@@ -306,7 +320,7 @@ function ProjectForkBody({
                           className="img-polaroid"
                           src={prefixBasePath(
                             runtimeConfig.basePath,
-                            "/assets/images/fork-pull/fork.jpg",
+                            "/legacy-assets/images/fork-pull/fork.jpg",
                           )}
                           alt=""
                         />
@@ -385,7 +399,7 @@ function ProjectForkBody({
                     value="PUBLIC"
                     className="radio-btn"
                     defaultChecked
-                  />
+                  />{" "}
                   <label htmlFor="public" className="bg-radiobtn label-public">
                     {t("project.public")}
                   </label>
@@ -395,25 +409,26 @@ function ProjectForkBody({
                       stringField(ownerOption.ownerName, "") === selectedOwner,
                   ) ? (
                     <>
+                      {" "}
                       <input
                         name="projectScope"
                         type="radio"
                         id="protected"
                         value="PROTECTED"
                         className="radio-btn"
-                      />
+                      />{" "}
                       <label htmlFor="protected" className="bg-radiobtn label-protected">
                         {t("project.protected")}
                       </label>
                     </>
-                  ) : null}
+                  ) : null}{" "}
                   <input
                     name="projectScope"
                     type="radio"
                     id="private"
                     value="PRIVATE"
                     className="radio-btn"
-                  />
+                  />{" "}
                   <label htmlFor="private" className="bg-radiobtn label-private">
                     {t("project.private")}
                   </label>
@@ -423,7 +438,7 @@ function ProjectForkBody({
                 <div className="controls">
                   <button type="submit" className="ybtn ybtn-info">
                     {t("fork")}
-                  </button>
+                  </button>{" "}
                   <Link
                     to={pullRequestsPath(ownerName, projectName)}
                     className="ybtn"
@@ -467,262 +482,7 @@ function ProjectForkCloneProgress({ progress }: { progress: ForkCloneProgress })
   );
 }
 
-function ProjectHeader({ project }: { project: ProjectContainer }) {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectId = stringField(project.id, "");
-  const logoUrl =
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
-  const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
-  const isForked = booleanField(project.isForkedFromOrigin);
-  const originalOwnerName = stringField(project.originalOwnerName, "");
-  const originalProjectName = stringField(project.originalProjectName, "");
-  const [isFavoritedProject, setIsFavoritedProject] = useState(
-    () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
-  );
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.forkOptions(ownerName, projectName),
-      });
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link
-                  to={userPath(ownerName)}
-                  activeOptions={legacyProjectShellLinkActiveOptions}
-                  activeProps={legacyProjectShellLinkActiveProps}
-                >
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  to={projectPath(ownerName, projectName)}
-                  activeOptions={legacyProjectShellLinkActiveOptions}
-                  activeProps={legacyProjectShellLinkActiveProps}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              <span
-                className="user-project-list"
-                data-project-id={projectId}
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {booleanField(project.isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(project.isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  to={projectPath(originalOwnerName, originalProjectName)}
-                  className="project-origin-name"
-                  activeOptions={legacyProjectShellLinkActiveOptions}
-                  activeProps={legacyProjectShellLinkActiveProps}
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenu({ project }: { project: ProjectContainer }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = recordField(project.menuSetting);
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            to={projectPath(ownerName, projectName)}
-            label={t("title.projectHome")}
-            short="H"
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              to={projectSubPath(ownerName, projectName, "code")}
-              label={t("menu.code")}
-              short="C"
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              to={projectSubPath(ownerName, projectName, "issues")}
-              label={t("menu.issue")}
-              short="I"
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              className="active"
-              to={pullRequestsPath(ownerName, projectName)}
-              label={t("menu.pullRequest")}
-              short="P"
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              to={projectSubPath(ownerName, projectName, "reviews")}
-              label={t("menu.review")}
-              short="R"
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              to={projectSubPath(ownerName, projectName, "milestones")}
-              label={t("milestone")}
-              short="M"
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              to={projectSubPath(ownerName, projectName, "posts")}
-              label={t("menu.board")}
-              short="B"
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="">
-                <Link
-                  to={projectSubPath(ownerName, projectName, "setting")}
-                  activeOptions={legacyProjectShellLinkActiveOptions}
-                  activeProps={legacyProjectShellLinkActiveProps}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={countField(project.enrolledUsers)} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  label,
-  short,
-  to,
-}: {
-  className?: string;
-  label: string;
-  short: string;
-  to: string;
-}) {
-  return (
-    <li className={className}>
-      <Link
-        to={to}
-        activeOptions={legacyProjectShellLinkActiveOptions}
-        activeProps={legacyProjectShellLinkActiveProps}
-      >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-      </Link>
-    </li>
-  );
-}
-
-function CountBadge({
-  className = "project-menu-count",
-  count,
-}: {
-  className?: string;
-  count: number;
-}) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
-}
-
-function projectContainerFromForkSource(
-  source: ProjectForkOptionsResponse["source"],
-): ProjectContainer {
-  return {
-    ...source,
-    enrollmentRequestCount: numberField(recordField(source).enrollmentRequestCount),
-    members: [],
-  };
-}
-
-function projectSearchScopeOrganizationName(
-  source: ProjectForkOptionsResponse["source"],
-  ownerName: string,
-) {
+function projectSearchScopeOrganizationName(source: ProjectContainer, ownerName: string) {
   const sourceRecord = recordField(source);
   const organizationName = stringField(sourceRecord.organizationName, "");
   if (organizationName) {
@@ -738,10 +498,6 @@ function projectIsProtected(source: Record<string, unknown>) {
     booleanField(source.isProtected) ||
     projectScope === "PROTECTED"
   );
-}
-
-function userPath(ownerName: string) {
-  return `/${ownerName}`;
 }
 
 function projectPath(ownerName: string, projectName: string) {
@@ -768,14 +524,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
-}
-
-function countField(value: unknown) {
-  return Array.isArray(value) ? value.length : 0;
 }
 
 function booleanField(value: unknown) {

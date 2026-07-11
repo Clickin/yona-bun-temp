@@ -133,11 +133,36 @@ async fn rest_project_fork_options_response(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .into_iter()
+        .filter(|project| project.owner_name.eq_ignore_ascii_case(selected_owner_name))
         .map(|project| RestProjectForkSummary {
             owner_name: project.owner_name,
             project_name: project.project_name,
         })
         .collect();
+    let selected_project_name = if repository
+        .read_project_by_owner_and_name(selected_owner_name, selected_project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .is_none()
+    {
+        selected_project_name.to_string()
+    } else {
+        let mut suffix = 1_u64;
+        loop {
+            let candidate = format!("{selected_project_name}-{suffix}");
+            if repository
+                .read_project_by_owner_and_name(selected_owner_name, &candidate)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .is_none()
+            {
+                break candidate;
+            }
+            suffix += 1;
+        }
+    };
     Ok(RestProjectForkOptionsResponse {
         can_fork: authorization.project.vcs.eq_ignore_ascii_case("GIT")
             && !owner_options.is_empty(),
@@ -145,7 +170,7 @@ async fn rest_project_fork_options_response(
         owner_options,
         selected: RestProjectForkSelected {
             owner_name: selected_owner_name.to_string(),
-            project_name: selected_project_name.to_string(),
+            project_name: selected_project_name,
             project_scope: selected_project_scope.to_string(),
         },
         source: RestProjectForkSource {
