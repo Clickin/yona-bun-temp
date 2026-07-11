@@ -723,7 +723,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
     await patchLocalWorkspaceProfile(page, baseUrl, adminAccount);
     await ensureAdminFixtures();
     await ensureAliceSampleFork();
-    return true;
+    return ensureLocalAccountSession(page, baseUrl, adminAccount);
   }
   const suffix = Date.now().toString(36);
   const registeredSweepUser = await registerLocalAccount(page, baseUrl, {
@@ -736,11 +736,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
 }
 
 async function loginLocal(page, baseUrl) {
-  const bootstrapped = await bootstrapLocalAccount(page, baseUrl);
-  if (!bootstrapped) {
-    return false;
-  }
-  return login(page, baseUrl);
+  return bootstrapLocalAccount(page, baseUrl);
 }
 
 async function discoverProjectPaths(page, baseUrl) {
