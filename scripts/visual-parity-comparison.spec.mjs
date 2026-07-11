@@ -410,6 +410,8 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
   assert.match(source, /async function postLocalJson\(page, baseUrl, path, data\)/u);
   assert.match(source, /async function patchLocalJson\(page, baseUrl, path, data\)/u);
   assert.match(source, /Parity seed project for the admin workspace/u);
+  assert.match(source, /\/api\/v1\/projects\/admin\/sample\/posts\/1/u);
+  assert.match(source, /title: "Sample board post"/u);
   assert.match(
     source,
     /async function signInLocalAccount\(page, baseUrl, identifier, accountPassword\)/u,

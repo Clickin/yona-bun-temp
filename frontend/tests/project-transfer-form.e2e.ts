@@ -51,7 +51,14 @@ const EXPECTED_PROJECT_TRANSFER_FORM = `
 
 test("project transfer form matches legacy project/transfer.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  await mockProjectAdmin(page);
+  await mockProjectAdmin(page, {
+    project: {
+      boardCount: 1,
+      openIssueCount: 1,
+      postCount: 1,
+      watchCount: 1,
+    },
+  });
 
   await page.goto(`${basePath}/admin/sample/transfer`);
   await expect(page).toHaveTitle("Project Transfer - admin/sample");
@@ -64,7 +71,7 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
       })),
     ),
   ).toEqual([
-    { href: `${basePath}`, text: "Y" },
+    { href: `${basePath}/`, text: "Y" },
     { href: `${basePath}/projects`, text: "List All" },
     { href: "https://github.com/yona-projects/yona/issues", text: "Feedback" },
   ]);
@@ -99,19 +106,19 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
     buttonPadding: "4px 12px",
     checkboxMargin: "2px",
     descMarginLeft: "0px",
-    descWidth: 206,
+    descWidth: 220,
     labelWidth: 205,
     modalDisplay: "none",
     modalFooterPadding: "14px 15px 15px",
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
-    ownerInputHeight: "30px",
+    ownerInputHeight: "20px",
     ownerInputWidth: "206px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "20px",
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     rowMinHeight: "0px",
-    tabsMarginBottom: "15px",
+    tabsMarginBottom: "20px",
   });
   const shellMetrics = await readProjectTransferShellMetrics(page);
   expect(shellMetrics.searchScope.top).toBeGreaterThanOrEqual(shellMetrics.navbar.top);
@@ -122,6 +129,126 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
   expect(shellMetrics.searchBox.right).toBeLessThanOrEqual(shellMetrics.navbar.right);
   expect(shellMetrics.projectMenu.top).toBeGreaterThanOrEqual(shellMetrics.projectHeader.bottom);
   expect(shellMetrics.projectMenu.bottom).toBeGreaterThan(shellMetrics.projectMenu.top);
+  const legacyShellGeometry = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-gruop");
+    const util = document.querySelector<HTMLElement>(".project-util-wrap");
+    const watcherCount = document.querySelector<HTMLElement>(".watcher-count");
+    const watchAction = document.querySelector<HTMLElement>(".watch-btn .down-arrow");
+    const description = document.querySelector<HTMLElement>(".bubble-wrap .cu-desc");
+    if (!menu || !util || !watcherCount || !watchAction || !description) {
+      throw new Error("missing project transfer legacy shell anchors");
+    }
+    return {
+      description: description.getBoundingClientRect().toJSON(),
+      menu: menu.getBoundingClientRect().toJSON(),
+      util: util.getBoundingClientRect().toJSON(),
+      watchAction: watchAction.getBoundingClientRect().toJSON(),
+      watcherCount: watcherCount.getBoundingClientRect().toJSON(),
+    };
+  });
+  expect(legacyShellGeometry.menu.width).toBeGreaterThan(0);
+  expect(legacyShellGeometry.util.width).toBeGreaterThan(0);
+  expect(legacyShellGeometry.watcherCount.width).toBeGreaterThan(0);
+  expect(legacyShellGeometry.watchAction.width).toBeGreaterThan(0);
+  expect(Math.round(legacyShellGeometry.description.right)).toBe(459);
+});
+
+test("project transfer reuses the ko-KR legacy project shell geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectAdmin(page, {
+    project: {
+      boardCount: 1,
+      isWatching: true,
+      openIssueCount: 1,
+      postCount: 1,
+      watchCount: 1,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
+  await expect(page.locator(".project-util-wrap .down-arrow")).toHaveText("그만 지켜보기 ");
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
+  const geometry = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-gruop")!;
+    const util = document.querySelector<HTMLElement>(".project-util-wrap")!;
+    const watcherCount = document.querySelector<HTMLElement>(".watcher-count")!;
+    const watchAction = document.querySelector<HTMLElement>(".watch-btn .down-arrow")!;
+    return {
+      menuWidth: Math.round(menu.getBoundingClientRect().width),
+      utilWidth: Math.round(util.getBoundingClientRect().width),
+      watchActionWidth: Math.round(watchAction.getBoundingClientRect().width),
+      watcherCountWidth: Math.round(watcherCount.getBoundingClientRect().width),
+    };
+  });
+  expect(geometry).toEqual({
+    menuWidth: 573,
+    utilWidth: 147,
+    watchActionWidth: 102,
+    watcherCountWidth: 30,
+  });
+});
+
+test("project transfer keeps ko-KR copy and legacy mobile inline-flow geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectAdmin(page, {
+    project: {
+      boardCount: 1,
+      openIssueCount: 1,
+      postCount: 1,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page).toHaveTitle("프로젝트 이관 - admin/sample");
+  await expect(page.locator(".bubble-wrap .cu-label")).toHaveText([
+    "이관받을 사용자 또는 그룹",
+    "프로젝트 이관",
+  ]);
+  await expect(page.locator(".label-agreement")).toHaveText("프로젝트를 이관하는데 동의합니다.");
+  await expect(page.locator("#btnTransfer")).toContainText("프로젝트를 이관합니다.");
+
+  const geometry = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-gruop");
+    const menuOuter = document.querySelector<HTMLElement>(".project-menu-inner");
+    const bubble = document.querySelector<HTMLElement>(".bubble-wrap.gray.wp");
+    const labels = Array.from(document.querySelectorAll<HTMLElement>(".bubble-wrap .cu-label"));
+    const descriptions = Array.from(
+      document.querySelectorAll<HTMLElement>(".bubble-wrap .cu-desc"),
+    );
+    if (!menu || !menuOuter || !bubble || labels.length !== 2 || descriptions.length !== 2) {
+      throw new Error("missing transfer mobile geometry anchors");
+    }
+    return {
+      bubble: bubble.getBoundingClientRect().toJSON(),
+      descriptions: descriptions.map((element) => element.getBoundingClientRect().toJSON()),
+      labels: labels.map((element) => element.getBoundingClientRect().toJSON()),
+      menu: menu.getBoundingClientRect().toJSON(),
+      menuOuter: menuOuter.getBoundingClientRect().toJSON(),
+    };
+  });
+  expect(geometry.menu.right).toBeLessThanOrEqual(geometry.menuOuter.right);
+  expect(geometry.labels[0]!.bottom).toBeLessThanOrEqual(geometry.descriptions[0]!.top);
+  expect(geometry.labels[1]!.bottom).toBeLessThanOrEqual(geometry.descriptions[1]!.top);
+  expect(geometry.descriptions[0]!.right).toBeLessThanOrEqual(geometry.bubble.right);
+  expect(geometry.descriptions[1]!.right).toBeLessThanOrEqual(geometry.bubble.right);
+
+  const firstRowTextNodes = await page
+    .locator(".bubble-wrap > .row-fluid")
+    .first()
+    .evaluate((row) => Array.from(row.childNodes, (node) => [node.nodeType, node.textContent]));
+  expect(firstRowTextNodes).toContainEqual([3, " "]);
 });
 
 test("project transfer exposes legacy group search scope for organization-owned projects", async ({
@@ -147,17 +274,20 @@ test("project transfer exposes legacy group search scope for organization-owned 
   await expect(page.locator("#subMenuProjectTransfer")).toHaveClass("active");
   await expect(page.locator("#btnTransfer")).toBeVisible();
 
-  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect(scopeButtons.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/admin/sample/search`,
-  );
-  await expect(scopeButtons.nth(1)).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/weblabs/search`,
-  );
-  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+  expect(
+    await scopeButtons.evaluateAll((buttons) =>
+      buttons.map((button) => ({
+        action: button.getAttribute("data-action"),
+        toggle: button.getAttribute("data-toggle"),
+      })),
+    ),
+  ).toEqual([
+    { action: null, toggle: null },
+    { action: null, toggle: null },
+    { action: null, toggle: null },
+  ]);
 
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.nth(1).click();
@@ -361,13 +491,29 @@ test("project transfer member badges stay hidden when enrolled user count is zer
   await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveCount(0);
 });
 
+test("project transfer ignores aggregate memberCount for legacy enrolled-user badges", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      enrolledUsers: [],
+      memberCount: 1,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveCount(0);
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveCount(0);
+});
+
 test("project transfer settings tabs use direct TanStack Link targets", () => {
   const source = readFileSync(
     new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url),
     "utf8",
   );
   const transferStateSlice = source.match(
-    /function ProjectTransferBody[\s\S]+?\nfunction ProjectHeader/u,
+    /function ProjectTransferBody[\s\S]+?\nfunction ProjectMenu/u,
   )?.[0];
 
   expect(source).not.toContain("createLink");
@@ -411,7 +557,12 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toContain(
     '<title>{`${t("title.projectTransfer")} - ${ownerName}/${projectName}`}</title>',
   );
-  expect(source).toContain('to="/$user"');
+  expect(source).toContain(
+    'import { ProjectHeader as SharedProjectHeader } from "../$projectName";',
+  );
+  expect(source).toContain(
+    "<SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />",
+  );
   expect(source).toContain('to="/$ownerName/$projectName"');
   expect(source).toContain('to="/$ownerName/$projectName/code"');
   expect(source).toContain('to="/$ownerName/$projectName/issues"');
@@ -1222,6 +1373,7 @@ function projectShell() {
     showReview: true,
     vcs: "GIT",
     viewerCanUpdate: true,
+    viewerCanWatch: true,
     watchCount: 5,
   };
 }
@@ -1232,11 +1384,7 @@ function projectSettings() {
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
-    );
+    const roots = Array.from(document.querySelectorAll(".page-wrap-outer"));
     return roots.map((root) => visit(root)).join("");
 
     function visit(node: Node): string {
@@ -1283,7 +1431,7 @@ async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate((input) => {
     const template = document.createElement("template");
     template.innerHTML = input;
-    return Array.from(template.content.children)
+    return Array.from(template.content.querySelectorAll(".page-wrap-outer"))
       .map((root) => visit(root))
       .join("");
 

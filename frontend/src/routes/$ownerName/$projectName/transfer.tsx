@@ -5,7 +5,6 @@ import {
   readProjectContainerQueryOptions,
   readProjectTransferQueryOptions,
   requestProjectTransferRest,
-  toggleFavoriteProjectRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectTransferResponse } from "../../../api/org-project";
@@ -15,6 +14,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { ProjectHeader as SharedProjectHeader } from "../$projectName";
 
 type ProjectTransferScreenData = ProjectTransferResponse & ProjectContainer;
 
@@ -163,14 +163,14 @@ function ProjectTransferBody({
 
   return (
     <>
-      <ProjectHeader project={project} />
+      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
           <div className="bubble-wrap gray wp">
             <div className="row-fluid">
-              <div className="cu-label">{t("project.transfer.new.owner")}</div>
+              <div className="cu-label">{t("project.transfer.new.owner")}</div>{" "}
               <div className="cu-desc">
                 <p>
                   <input
@@ -186,7 +186,7 @@ function ProjectTransferBody({
               </div>
             </div>
             <div className="row-fluid">
-              <div className="cu-label">{t("project.transfer")}</div>
+              <div className="cu-label">{t("project.transfer")}</div>{" "}
               <div className="cu-desc">
                 <ul>
                   <li className="notice">
@@ -279,134 +279,19 @@ function ProjectTransferBody({
   );
 }
 
-function ProjectHeader({ project }: { project: ProjectTransferScreenData }) {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectId = projectIdentifier(project);
-  const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
-  const logoUrl = projectLogoUrl(project);
-  const backgroundImageUrl = projectBackgroundImageUrl(project);
-  const isForked = projectIsForked(project);
-  const originalOwnerName = projectOriginOwnerName(project);
-  const originalProjectName = projectOriginProjectName(project);
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.transfer(ownerName, projectName),
-      });
-    },
-  });
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$user"
-                  params={{ user: ownerName }}
-                  search={{}}
-                >
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              <span
-                className="user-project-list"
-                data-project-id={projectId}
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
-              {booleanField(project.isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(project.isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
-                  className="project-origin-name"
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const menuSetting = projectMenuSetting(project);
   const memberEnrollmentCount = projectMemberCount(project);
+  const menuCounts = {
+    board:
+      numberField(recordField(project).boardCount) || numberField(recordField(project).postCount),
+    issue: numberField(recordField(project).openIssueCount),
+    pullRequest: numberField(recordField(project).openPullRequestCount),
+    review: numberField(recordField(project).reviewCount),
+  };
 
   return (
     <div className="project-menu-outer">
@@ -429,6 +314,7 @@ function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
+              count={menuCounts.issue}
               label={t("menu.issue")}
               params={{ ownerName, projectName }}
               short="I"
@@ -437,6 +323,7 @@ function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
+              count={menuCounts.pullRequest}
               label={t("menu.pullRequest")}
               params={{ ownerName, projectName }}
               short="P"
@@ -445,6 +332,7 @@ function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
+              count={menuCounts.review}
               label={t("menu.review")}
               params={{ ownerName, projectName }}
               short="R"
@@ -461,6 +349,7 @@ function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
+              count={menuCounts.board}
               label={t("menu.board")}
               params={{ ownerName, projectName }}
               short="B"
@@ -495,12 +384,14 @@ function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
 
 function ProjectMenuItem({
   className = "",
+  count = 0,
   label,
   params,
   short,
   to,
 }: {
   className?: string;
+  count?: number;
   label: string;
   params: { ownerName: string; projectName: string };
   short: string;
@@ -523,6 +414,12 @@ function ProjectMenuItem({
       >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
+        {count > 0 ? (
+          <>
+            {" "}
+            <CountBadge count={count} />
+          </>
+        ) : null}
       </Link>
     </li>
   );
@@ -687,43 +584,5 @@ function projectMenuSetting(project: ProjectTransferScreenData) {
 
 function projectMemberCount(project: ProjectTransferScreenData) {
   const record = recordField(project);
-  return countField(record.enrolledUsers) || numberField(record.memberCount);
-}
-
-function projectIdentifier(project: ProjectTransferScreenData) {
-  const record = recordField(project);
-  return stringField(record.id, "") || stringField(record.projectId, "");
-}
-
-function projectLogoUrl(project: ProjectTransferScreenData) {
-  return stringField(recordField(project).logoUrl, "") || "/assets/images/project_default_logo.png";
-}
-
-function projectBackgroundImageUrl(project: ProjectTransferScreenData) {
-  const record = recordField(project);
-  return (
-    stringField(record.backgroundImageUrl, "") ||
-    stringField(record.backgroundUrl, "") ||
-    "/assets/images/bg-default-project.png"
-  );
-}
-
-function projectFavorited(project: ProjectTransferScreenData) {
-  const record = recordField(project);
-  return booleanField(record.isFavorite) || booleanField(record.isFavorited);
-}
-
-function projectIsForked(project: ProjectTransferScreenData) {
-  const record = recordField(project);
-  return booleanField(record.isForkedFromOrigin) || booleanField(record.isForked);
-}
-
-function projectOriginOwnerName(project: ProjectTransferScreenData) {
-  const record = recordField(project);
-  return stringField(record.originalOwnerName, "") || stringField(record.originOwnerName, "");
-}
-
-function projectOriginProjectName(project: ProjectTransferScreenData) {
-  const record = recordField(project);
-  return stringField(record.originalProjectName, "") || stringField(record.originProjectName, "");
+  return countField(record.enrolledUsers);
 }

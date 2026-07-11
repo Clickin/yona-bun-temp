@@ -679,6 +679,23 @@ async function bootstrapLocalAccount(page, baseUrl) {
         title: "Sample issue",
       });
     }
+    const postResponse = await page.request.get(`${baseUrl}/api/v1/projects/admin/sample/posts/1`);
+    if (!postResponse.ok()) {
+      await postLocalJson(page, baseUrl, "/api/v1/projects/admin/sample/posts", {
+        attachmentIds: [],
+        bodyMarkdown: "Sample board post body",
+        branch: "",
+        edit: false,
+        issueTemplate: false,
+        labelIds: [],
+        lineEnding: "",
+        newFileName: "",
+        notice: false,
+        path: "",
+        readme: false,
+        title: "Sample board post",
+      });
+    }
     let sampleMilestoneId = 1;
     const milestoneResponse = await page.request.get(
       `${baseUrl}/api/v1/owners/admin/projects/sample/milestones/1`,
