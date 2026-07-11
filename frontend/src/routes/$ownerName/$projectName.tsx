@@ -1649,7 +1649,7 @@ export function ProjectMenu({
   const projectName = stringField(project.projectName, "project");
   const menuSetting = projectMenuSetting(project);
   const projectMenuCounts = {
-    board: counts?.board ?? numberField(project.postCount),
+    board: counts?.board ?? (numberField(project.boardCount) || numberField(project.postCount)),
     issue: counts?.issue ?? numberField(project.openIssueCount),
     pullRequest: counts?.pullRequest ?? numberField(project.openPullRequestCount),
     review: counts?.review ?? numberField(project.reviewCount),

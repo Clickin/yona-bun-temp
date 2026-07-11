@@ -3429,6 +3429,7 @@ test("project issue detail matches live legacy Korean milestone event and mobile
   await setBrowserLanguage(page, "ko-KR");
   await page.setViewportSize({ width: 390, height: 844 });
   await mockProjectIssueDetail(page, {
+    __projectOverrides: { boardCount: 1, openIssueCount: 1 },
     commentCount: 0,
     comments: [],
     timeline: [
@@ -3480,6 +3481,24 @@ test("project issue detail matches live legacy Korean milestone event and mobile
   expect(desktopUpload.x).toBeCloseTo(64, 0);
   expect(desktopUpload.width).toBeCloseTo(948, 0);
   expect(desktopUpload.height).toBeCloseTo(70, 0);
+
+  const desktopIssueUpdateForm = await page.locator("#issueUpdateForm").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { width: box.width, x: box.x };
+  });
+  expect(desktopIssueUpdateForm.x).toBeCloseTo(1051, 0);
+  expect(desktopIssueUpdateForm.width).toBeCloseTo(305, 0);
+
+  const desktopProjectMenu = await page.locator(".project-menu-gruop").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { width: box.width };
+  });
+  expect(desktopProjectMenu.width).toBeCloseTo(566, 0);
+  await expect(page.locator("#issueUpdateForm")).toContainText("목표 완료일");
+  await expect(page.locator("#issueUpdateForm")).toContainText("이슈 라벨");
+  await expect(page.locator(".comment-header")).toHaveCount(2);
+  await expect(page.locator(".comment-header").first()).toContainText("댓글");
+  await expect(page.locator(".comment-header").last()).toContainText("댓글");
 });
 
 test("project issue detail renders legacy null milestone timeline event", async ({ page }) => {
