@@ -706,7 +706,7 @@ async fn notification_contract_lists_current_user_notifications_with_paging() {
     .await;
 
     assert_eq!(payload["total"], 1);
-    assert_eq!(payload["hasMore"], false);
+    assert_eq!(payload["hasMore"], true);
     let items = payload["items"].as_array().unwrap();
     assert_eq!(items.len(), 1);
     assert!(items[0]["targetHref"]
@@ -751,7 +751,7 @@ async fn notification_contract_direct_notification_route_returns_api_payload() {
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(payload["total"], 1);
-    assert_eq!(payload["hasMore"], false);
+    assert_eq!(payload["hasMore"], true);
     let items = payload["items"].as_array().unwrap();
     assert_eq!(items.len(), 1);
     assert_eq!(items[0]["eventType"], "ISSUE_SHARER_CHANGED");
@@ -1228,7 +1228,7 @@ async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_l
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
-    let (_, _, watcher_id) = register_user(app.clone(), "watcher").await;
+    let (_, watcher_cookie, watcher_id) = register_user(app.clone(), "watcher").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     create_issue(
         app.clone(),
@@ -1257,7 +1257,9 @@ async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_l
     .unwrap();
     let event = notification_event::ActiveModel {
         id: NotSet,
-        title: Set(None),
+        title: Set(Some(
+            "Re: [projectYobi] Comment reply target issue (#1)".to_string(),
+        )),
         sender_id: Set(issue_model.author_id),
         created: Set(issue_model.created_date),
         resource_type: Set(Some("ISSUE_COMMENT".to_string())),
@@ -1305,6 +1307,24 @@ async fn notification_contract_issue_comment_mail_replies_to_parent_issue_like_l
         .as_deref()
         .unwrap_or_default()
         .contains("issue_comment"));
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&watcher_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        payload["items"][0]["targetHref"],
+        "/yona/owner/projectYobi/issue/1#comment-1"
+    );
+    assert_eq!(
+        payload["items"][0]["targetTitle"],
+        "Re: [projectYobi] Comment reply target issue (#1)"
+    );
     clear_test_outbox();
 }
 

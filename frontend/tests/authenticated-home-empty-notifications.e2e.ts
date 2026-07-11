@@ -2231,6 +2231,59 @@ test("direct notifications route matches legacy populated notification row DOM",
   });
 });
 
+test("authenticated home renders notification newlines as escaped React nodes", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockAuthenticatedNotifications(page, [
+    {
+      actor: {
+        avatarUrl: "/assets/images/default-avatar-128.png",
+        displayName: "Alice Kim",
+        loginId: "alice",
+      },
+      createdAt: "2026-07-07T11:25:34Z",
+      createdLabel: "4 days ago",
+      eventType: "NEW_COMMENT",
+      id: "5",
+      message:
+        "Board seed confirmed.\nFirst\r\nSecond\n--- Original posting ---<script>safe</script>",
+      targetHref: "/admin/sample/post/1#comment-1",
+      targetTitle: "Re: [sample] Seed notes (1)",
+      typeIcon: "comment2",
+    },
+  ]);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/`);
+  const message = page.locator(".notification-stream .message");
+  await expect(message.locator("br")).toHaveCount(3);
+  expect(
+    await message.evaluate((element) =>
+      [...element.childNodes].map((node) =>
+        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
+      ),
+    ),
+  ).toEqual([
+    "Board seed confirmed.",
+    "BR",
+    "First",
+    "BR",
+    "Second",
+    "BR",
+    "--- Original posting ---<script>safe</script>",
+  ]);
+  await expect(message.locator("script")).toHaveCount(0);
+  const desktop = await readDesktopNotificationStreamMetrics(page);
+  expect(desktop.messageLineHeight).toBe("20px");
+  expect(desktop.metaMarginTop).toBe("5px");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await readMobileNotificationStreamMetrics(page);
+  expect(mobile.messageLineHeight).toBe("20px");
+  expect(mobile.metaFontSize).toBe("12px");
+});
+
 test("direct notifications route keeps React-owned learn-more behavior without legacy JS hooks", async ({
   page,
 }) => {
@@ -2399,13 +2452,38 @@ test("direct notifications route appends legacy notification-more rows", async (
   const notificationMore = page.locator("button[type='button'].ybtn#notification-more");
   await expect(notificationMore).toBeVisible();
   await expect(notificationMore).toHaveText("More");
+  await expect(notificationMore).toHaveCSS("box-sizing", "content-box");
   await expect(page.locator("a[href^='javascript:']#notification-more")).toHaveCount(0);
+  const desktopMore = await readNotificationMoreGeometry(page);
+  expect(desktopMore.buttonLeft).toBeCloseTo(desktopMore.parentLeft, 1);
+  expect(desktopMore.buttonWidth).toBeCloseTo(
+    desktopMore.contentWidth + desktopMore.horizontalChrome,
+    1,
+  );
+  expect(desktopMore.buttonRight).toBeCloseTo(
+    desktopMore.buttonLeft + desktopMore.contentWidth + desktopMore.horizontalChrome,
+    1,
+  );
+  expect(desktopMore.horizontalChrome).toBeGreaterThan(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileMore = await readNotificationMoreGeometry(page);
+  expect(mobileMore.buttonLeft).toBeCloseTo(mobileMore.parentLeft, 1);
+  expect(mobileMore.buttonWidth).toBeCloseTo(
+    mobileMore.contentWidth + mobileMore.horizontalChrome,
+    1,
+  );
+  expect(mobileMore.buttonRight).toBeCloseTo(
+    mobileMore.buttonLeft + mobileMore.contentWidth + mobileMore.horizontalChrome,
+    1,
+  );
+  expect(mobileMore.horizontalChrome).toBeGreaterThan(0);
+  await page.setViewportSize({ width: 1366, height: 900 });
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_DIRECT_NOTIFICATIONS.replace(
         `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
-        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button" class="ybtn">More</button></li>`,
+        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button" class="ybtn" style="box-sizing:content-box">More</button></li>`,
       ).replaceAll("__BASE_PATH__", basePath),
     ),
   );
@@ -2430,6 +2508,65 @@ test("direct notifications route appends legacy notification-more rows", async (
     ),
   );
 });
+
+test("authenticated home notification-more keeps legacy content-box geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const item = createMockNotification("1", "Issue #1 updated");
+  await mockAuthenticatedNotificationsByPage(page, (url) =>
+    url.searchParams.get("from") === "1"
+      ? { hasMore: false, items: [], total: 1 }
+      : { hasMore: true, items: [item], total: 1 },
+  );
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/`);
+  const more = page.locator("#notification-more");
+  await expect(more).toHaveCSS("box-sizing", "content-box");
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const geometry = await readNotificationMoreGeometry(page);
+    expect(geometry.buttonLeft).toBeCloseTo(geometry.parentLeft, 1);
+    expect(geometry.buttonWidth).toBeCloseTo(geometry.contentWidth + geometry.horizontalChrome, 1);
+    expect(geometry.buttonRight).toBeCloseTo(
+      geometry.buttonLeft + geometry.contentWidth + geometry.horizontalChrome,
+      1,
+    );
+  }
+  await more.click();
+  await expect(more).toHaveCount(0);
+});
+
+async function readNotificationMoreGeometry(page: Page) {
+  return page.locator("#notification-more").evaluate((button) => {
+    const parent = button.parentElement;
+    const list = button.closest(".activity-streams");
+    if (!parent || !list) throw new Error("notification-more container is missing");
+    const buttonBox = button.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    const parentBox = parent.getBoundingClientRect();
+    const style = getComputedStyle(button);
+    const horizontalChrome =
+      Number.parseFloat(style.paddingLeft) +
+      Number.parseFloat(style.paddingRight) +
+      Number.parseFloat(style.borderLeftWidth) +
+      Number.parseFloat(style.borderRightWidth);
+    return {
+      buttonLeft: buttonBox.left,
+      buttonRight: buttonBox.right,
+      buttonWidth: buttonBox.width,
+      contentWidth: Number.parseFloat(style.width),
+      horizontalChrome,
+      listRight: listBox.right,
+      listWidth: listBox.width,
+      parentLeft: parentBox.left,
+      parentRight: parentBox.right,
+      parentWidth: parentBox.width,
+    };
+  });
+}
 
 function createMockNotification(id: string, targetTitle: string) {
   return {

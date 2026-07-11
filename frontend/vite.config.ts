@@ -74,9 +74,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const basePath = normalizeBasePath(env.VITE_YONA_BASE_PATH);
   const backendTarget = env.YONA_DEV_BACKEND_TARGET || "http://127.0.0.1:8089";
+  const assetBasePath = mode === "production" ? "/" : basePath;
 
   return {
-    base: basePath === "/" ? "/" : `${basePath}/`,
+    base: assetBasePath === "/" ? "/" : `${assetBasePath}/`,
     plugins: [
       tanstackRouter({
         generatedRouteTree: "src/routeTree.gen.ts",

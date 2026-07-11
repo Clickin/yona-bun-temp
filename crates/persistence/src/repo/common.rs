@@ -534,6 +534,15 @@ pub(super) fn notification_message(event_type: &str, old_value: &str, new_value:
         }
         "NEW_COMMENT" if !new_value.is_empty() || !old_value.is_empty() => {
             format!("{new_value}{old_value}")
+                .replace("<br />\r\n", "\n")
+                .replace("<br/>\r\n", "\n")
+                .replace("<br>\r\n", "\n")
+                .replace("<br />\n", "\n")
+                .replace("<br/>\n", "\n")
+                .replace("<br>\n", "\n")
+                .replace("<br />", "\n")
+                .replace("<br/>", "\n")
+                .replace("<br>", "\n")
         }
         "ISSUE_BODY_CHANGED" => "Issue body changed".to_string(),
         "COMMENT_UPDATED" => "COMMENT_UPDATED".to_string(),

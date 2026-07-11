@@ -96,7 +96,6 @@ struct StartupConfigFile {
     application: Option<ApplicationConfigFile>,
     asset_root: Option<String>,
     auth: Option<AuthConfigFile>,
-    base_path: Option<String>,
     bind_addr: Option<String>,
     data_root: Option<String>,
     database: Option<DatabaseConfigFile>,
@@ -146,7 +145,6 @@ struct ApplicationUseLdapLoginConfigFile {
 struct SiteConfigFile {
     allow_anonymous_access: Option<bool>,
     allowed_sending_mail_domains: Option<Vec<String>>,
-    base_path: Option<String>,
     guest_login_prefix: Option<String>,
     hostname: Option<String>,
     feedback_url: Option<String>,
@@ -314,12 +312,7 @@ pub fn load_startup_config(
     let update = file.update.unwrap_or_default();
     let webhook = file.webhook.unwrap_or_default();
 
-    let base_path = env
-        .get("YONA_BASE_PATH")
-        .cloned()
-        .or(file.base_path)
-        .or(site.base_path)
-        .unwrap_or_default();
+    let base_path = env.get("YONA_BASE_PATH").cloned().unwrap_or_default();
     let base_path = normalize_base_path(&base_path);
     let public_origin = env
         .get("YONA_PUBLIC_ORIGIN")

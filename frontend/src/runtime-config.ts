@@ -88,7 +88,7 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
 function readViteRuntimeConfig(): RuntimeConfigInput {
   return {
     apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL,
-    basePath: import.meta.env.VITE_YONA_BASE_PATH,
+    basePath: import.meta.env.DEV ? import.meta.env.VITE_YONA_BASE_PATH : undefined,
     feedbackUrl: import.meta.env.VITE_YONA_FEEDBACK_URL,
     hideProjectListing: import.meta.env.VITE_YONA_HIDE_PROJECT_LISTING,
     maxUploadedFileSize: import.meta.env.VITE_YONA_MAX_UPLOADED_FILE_SIZE,

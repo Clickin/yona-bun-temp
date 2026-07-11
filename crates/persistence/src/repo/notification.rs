@@ -143,12 +143,12 @@ impl AppRepositoryImpl<'_> {
         let total = events.len() as u32;
         let from = from as usize;
         let size = size.clamp(1, 100) as usize;
-        let has_more = from.saturating_add(size) < events.len();
         let page = events.into_iter().skip(from).take(size);
         let mut items = Vec::new();
         for event in page {
             items.push(self.notification_item_record(event).await?);
         }
+        let has_more = !items.is_empty();
 
         Ok(NotificationListRecord {
             has_more,

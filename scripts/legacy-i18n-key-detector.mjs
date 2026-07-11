@@ -23,7 +23,10 @@ export function parseLegacyMessageKeys(source) {
 }
 
 export function buildRawLegacyI18nKeyPattern(keys) {
-  const escapedKeys = [...keys].sort((left, right) => right.length - left.length).map(escapeRegExp);
+  const escapedKeys = [...keys]
+    .filter((key) => key.includes("."))
+    .sort((left, right) => right.length - left.length)
+    .map(escapeRegExp);
   return new RegExp(`(?<![A-Za-z0-9_.-])(?:${escapedKeys.join("|")})(?![A-Za-z0-9_.-])`, "gu");
 }
 

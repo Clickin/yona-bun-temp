@@ -53,7 +53,7 @@ data_root = "/var/lib/yona-test"
     )
     .expect("load startup config");
 
-    assert_eq!(config.runtime.base_path, "/toml");
+    assert_eq!(config.runtime.base_path, "/");
     assert_eq!(config.runtime.public_origin, "https://example.com");
     assert_eq!(config.database_url, "mysql://db");
     assert_eq!(config.schema_policy, RuntimeSchemaPolicy::Adopt);
@@ -73,7 +73,7 @@ fn discovers_default_yoram_toml_and_accepts_legacy_env_alias() {
     fs::write(&default_path, "base_path = \"/default\"\n").expect("write default config");
     let default_config =
         load_startup_config(BTreeMap::new(), dir.path()).expect("load default config");
-    assert_eq!(default_config.runtime.base_path, "/default");
+    assert_eq!(default_config.runtime.base_path, "/");
     assert_eq!(
         default_config.config_source,
         default_path.display().to_string()
@@ -89,7 +89,7 @@ fn discovers_default_yoram_toml_and_accepts_legacy_env_alias() {
         dir.path(),
     )
     .expect("load legacy env config");
-    assert_eq!(legacy_config.runtime.base_path, "/legacy-env");
+    assert_eq!(legacy_config.runtime.base_path, "/");
 }
 
 #[test]
@@ -203,7 +203,7 @@ draft_time = "1s"
     )
     .expect("load startup config");
 
-    assert_eq!(config.runtime.base_path, "/sectioned");
+    assert_eq!(config.runtime.base_path, "/");
     assert_eq!(config.database_url, "postgres://db");
     assert_eq!(config.site_name.as_deref(), Some("Legacy Yona"));
     assert_eq!(config.site_hostname.as_deref(), Some("yona.example.com"));

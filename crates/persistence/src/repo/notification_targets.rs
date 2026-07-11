@@ -33,6 +33,12 @@ impl AppRepositoryImpl<'_> {
                 event.resource_id.as_deref().unwrap_or_default(),
             )
             .await?;
+        let target_title = event
+            .title
+            .as_deref()
+            .filter(|title| !title.trim().is_empty())
+            .unwrap_or(&target.1)
+            .to_string();
         let reply_target = self
             .notification_reply_target(
                 event.resource_type.as_deref().unwrap_or_default(),
@@ -57,7 +63,7 @@ impl AppRepositoryImpl<'_> {
             resource_id: event.resource_id.unwrap_or_default(),
             resource_type: event.resource_type.unwrap_or_default(),
             target_path: target.0,
-            target_title: target.1,
+            target_title,
             type_icon: notification_type_icon(&event_type, &new_value).to_string(),
         })
     }
@@ -155,6 +161,7 @@ impl AppRepositoryImpl<'_> {
         resource_type: &str,
         resource_id: i64,
     ) -> Result<(String, String), DbErr> {
+        let mut comment_anchor = String::new();
         let issue_model = match resource_type {
             "issue" | "issue_post" => issue::Entity::find_by_id(resource_id).one(&self.db).await?,
             "issue_comment" => {
@@ -164,6 +171,7 @@ impl AppRepositoryImpl<'_> {
                 else {
                     return Ok((String::new(), String::new()));
                 };
+                comment_anchor = format!("#comment-{}", comment.id);
                 match comment.issue_id {
                     Some(issue_id) => issue::Entity::find_by_id(issue_id).one(&self.db).await?,
                     None => None,
@@ -183,8 +191,8 @@ impl AppRepositoryImpl<'_> {
         let issue_number = issue_model.number.unwrap_or_default();
         Ok((
             format!(
-                "/{}/{}/issue/{}",
-                project.owner_name, project.project_name, issue_number
+                "/{}/{}/issue/{}{}",
+                project.owner_name, project.project_name, issue_number, comment_anchor
             ),
             issue_model.title.unwrap_or_default(),
         ))

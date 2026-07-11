@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::assets::serve_frontend_page;
 use crate::{
-    base_path_href, direct_toggle_workspace_notification, format_project_date_label,
-    internal_error, persistence, redirect_to, require_project_read, require_session, AssetMode,
-    BrowserRuntimeConfig, ConnectError, PilotBackend, PilotServiceImpl, RestRouteError,
+    base_path_href, direct_toggle_workspace_notification, internal_error, persistence, redirect_to,
+    require_project_read, require_session, AssetMode, BrowserRuntimeConfig, ConnectError,
+    PilotBackend, PilotServiceImpl, RestRouteError,
 };
 
 #[derive(Default, Deserialize)]
@@ -161,27 +161,55 @@ fn rest_notifications_response(
         items: record
             .items
             .into_iter()
-            .map(|item| RestNotificationItem {
-                actor: RestNotificationActor {
-                    avatar_url: item.actor.avatar_url,
-                    display_name: item.actor.display_name,
-                    login_id: item.actor.login_id,
-                },
-                created_at: item
+            .map(|item| {
+                let created_label = item
                     .created
-                    .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
-                    .unwrap_or_default(),
-                created_label: format_project_date_label(item.created),
-                event_type: item.event_type,
-                id: item.id.to_string(),
-                message: item.message,
-                target_href: if item.target_path.is_empty() {
-                    String::new()
-                } else {
-                    base_path_href(base_path, &item.target_path)
-                },
-                target_title: item.target_title,
-                type_icon: item.type_icon,
+                    .map(|created| {
+                        let now = sea_orm::entity::prelude::DateTimeUtc::from(
+                            std::time::SystemTime::now(),
+                        )
+                        .naive_utc();
+                        let elapsed = now - created;
+                        let calendar_days = (now.date() - created.date()).num_days();
+                        if elapsed.num_minutes() < 1 {
+                            "방금 전".to_string()
+                        } else if elapsed.num_hours() < 1 {
+                            format!("{}분 전", elapsed.num_minutes())
+                        } else if calendar_days < 1 {
+                            format!("{}시간 전", elapsed.num_hours())
+                        } else if calendar_days < 7 {
+                            format!("{calendar_days}일 전")
+                        } else {
+                            created.format("%Y-%m-%d").to_string()
+                        }
+                    })
+                    .unwrap_or_default();
+                RestNotificationItem {
+                    actor: RestNotificationActor {
+                        avatar_url: if item.actor.avatar_url.is_empty() {
+                            base_path_href(base_path, "/legacy-assets/images/default-avatar-64.png")
+                        } else {
+                            item.actor.avatar_url
+                        },
+                        display_name: item.actor.display_name,
+                        login_id: item.actor.login_id,
+                    },
+                    created_at: item
+                        .created
+                        .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
+                        .unwrap_or_default(),
+                    created_label,
+                    event_type: item.event_type,
+                    id: item.id.to_string(),
+                    message: item.message,
+                    target_href: if item.target_path.is_empty() {
+                        String::new()
+                    } else {
+                        base_path_href(base_path, &item.target_path)
+                    },
+                    target_title: item.target_title,
+                    type_icon: item.type_icon,
+                }
             })
             .collect(),
         total: record.total,

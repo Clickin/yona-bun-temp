@@ -24,4 +24,5 @@ test("raw legacy i18n detector ignores translated copy and embedded substrings",
   assert.equal(hasRawLegacyI18nKey("불러오는 중", keys), false);
   assert.equal(hasRawLegacyI18nKey("prefixcommon.loading", keys), false);
   assert.equal(hasRawLegacyI18nKey("common.loadingSuffix", keys), false);
+  assert.equal(hasRawLegacyI18nKey("Board seed confirmed from the fork contributor side.", keys), false);
 });

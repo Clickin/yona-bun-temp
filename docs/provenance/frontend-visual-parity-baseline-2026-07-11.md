@@ -18,7 +18,7 @@ Union of failing paths: **147**. Order is stable by path; status changes from OP
 
 | Path | Desktop diff | Mobile diff | Status |
 | --- | --- | --- | --- |
-| `/` | major visible text loss: 869->187 (78% loss)<br>visible selector missing or hidden locally: pageWrap | major visible text loss: 867->187 (78% loss)<br>visible selector missing or hidden locally: pageWrap | OPEN |
+| `/` | major visible text loss: 869->187 (78% loss)<br>visible selector missing or hidden locally: pageWrap | major visible text loss: 867->187 (78% loss)<br>visible selector missing or hidden locally: pageWrap | CLOSED — focused production desktop/mobile diff 0 (`2026-07-11T09:08:01.875Z` / `2026-07-11T09:08:16.126Z`) |
 | `/_import` | visible selector has new horizontal overflow: pageWrap<br>visible selector has new horizontal overflow: projectPageWrap | — | OPEN |
 | `/_import?owner=` | visible selector has new horizontal overflow: pageWrap<br>visible selector has new horizontal overflow: projectPageWrap | — | OPEN |
 | `/admin/sample/changeVCS` | visible selector missing or hidden locally: projectUtilWrap<br>visible selector geometry drift: projectMenuNav (right 683->636 (>=24px), width 573->526 (>=24px)) | visible selector has new horizontal overflow: projectMenu | CLOSED — focused production desktop/mobile diff 0 (`2026-07-11T06:50:40.464Z` / `2026-07-11T06:50:20.214Z`) |

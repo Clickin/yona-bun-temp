@@ -1657,7 +1657,8 @@ Legacy Play/JVM 전용 키(`application.secret`, `application.global`, `applicat
 ```toml
 # yoram.toml — legacy application.conf에서 변환
 
-base_path = "/yona"                     # application.context; "/" 또는 비어 있으면 root mount
+# context mount는 설정 파일이 아니라 YONA_BASE_PATH 환경변수로만 지정한다.
+# 환경변수가 없거나 비어 있으면 반드시 root(`/`)에 mount한다.
 public_origin = "https://yona.example.com" # application.scheme + application.hostname + application.port
 bind_addr = "127.0.0.1:8089"            # Rust listen address; legacy %prod.http.port와 별도 매핑
 database_url = "mysql://yona:password@127.0.0.1:3306/yona?charset=utf8mb4"
@@ -1748,7 +1749,7 @@ default_menus = ["issue", "milestone", "board"]  # project.creation.default.menu
 max_file_size = 2147483454             # application.maxFileSize
 ```
 
-Environment variable equivalents use the names exercised by `crates/server/tests/runtime_config_contract.rs`, for example `YORAM_CONFIG_TOML`, `YONA_BASE_PATH`, `YONA_PUBLIC_ORIGIN`, `YONA_BIND_ADDR`, `YONA_DATABASE_URL`, `YONA_SCHEMA_POLICY`, `YONA_SITE_NAME`, `YONA_APPLICATION_HOSTNAME`, `YONA_ALLOWED_MAIL_DOMAINS`, `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`, `YONA_SESSION_TIMEOUT_SECONDS`, `YONA_SMTP_*`, `YONA_NOTIFICATION_*`, `YONA_MAILBOX_*`, `YONA_UPDATE_*`, `YONA_PROJECT_DEFAULT_*`, legacy-style `slack.<EventType>` webhook color keys, `YONA_MAX_FILE_SIZE`, `YONA_USE_EMBEDDED_ASSETS`, and `YONA_ASSET_ROOT`.
+Environment variable equivalents use the names exercised by `crates/server/tests/runtime_config_contract.rs`, for example `YORAM_CONFIG_TOML`, `YONA_BASE_PATH`, `YONA_PUBLIC_ORIGIN`, `YONA_BIND_ADDR`, `YONA_DATABASE_URL`, `YONA_SCHEMA_POLICY`, `YONA_SITE_NAME`, `YONA_APPLICATION_HOSTNAME`, `YONA_ALLOWED_MAIL_DOMAINS`, `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`, `YONA_SESSION_TIMEOUT_SECONDS`, `YONA_SMTP_*`, `YONA_NOTIFICATION_*`, `YONA_MAILBOX_*`, `YONA_UPDATE_*`, `YONA_PROJECT_DEFAULT_*`, legacy-style `slack.<EventType>` webhook color keys, `YONA_MAX_FILE_SIZE`, `YONA_USE_EMBEDDED_ASSETS`, and `YONA_ASSET_ROOT`. `YONA_BASE_PATH` is exceptional: it is the sole context-mount source, is never inferred from `Host`/proxy headers or TOML, and defaults to `/` when unset or blank. The production frontend artifact is built with root-relative asset paths; the Rust server injects and rewrites the runtime mount for the deployed context.
 
 ---
 

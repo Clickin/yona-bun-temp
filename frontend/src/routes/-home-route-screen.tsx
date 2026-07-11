@@ -320,6 +320,7 @@ function HomeScreen({
               id="notification-more"
               type="button"
               className="ybtn"
+              style={{ boxSizing: "content-box" }}
               onClick={() => {
                 void loadMoreNotifications();
               }}
@@ -481,6 +482,7 @@ function HomeScreen({
                           id="notification-more"
                           type="button"
                           className="ybtn"
+                          style={{ boxSizing: "content-box" }}
                           onClick={() => {
                             void loadMoreNotifications();
                           }}
@@ -650,7 +652,7 @@ function NotificationStreamItem({
             style={expandedMinHeight ? { minHeight: expandedMinHeight } : undefined}
           >
             <div className="message" ref={messageRef}>
-              {notification.message}
+              <LegacyNotificationMessage message={notification.message} />
             </div>
           </div>
           {hasOverflow ? (
@@ -697,6 +699,23 @@ function NotificationStreamItem({
       {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
     </li>
   );
+}
+
+function LegacyNotificationMessage({ message }: { message: string }) {
+  const lines = message.split(/\r?\n/u);
+  let offset = 0;
+  const content: React.ReactNode[] = [];
+
+  for (const [lineNumber, line] of lines.entries()) {
+    content.push(line);
+    offset += line.length;
+    if (lineNumber < lines.length - 1) {
+      content.push(<br key={`break-${offset}`} />);
+      offset += 1;
+    }
+  }
+
+  return <>{content}</>;
 }
 
 export function SiteLayoutShell({
