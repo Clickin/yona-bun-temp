@@ -17,10 +17,7 @@ import {
   updateProjectLabelCategoryRest,
   updateProjectLabelRest,
 } from "../../../../api/project-labels";
-import {
-  readProjectSettingsQueryOptions,
-  toggleFavoriteProjectRest,
-} from "../../../../api/org-project";
+import { readProjectSettingsQueryOptions } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import type { ProjectContainer, YonaRecord } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
@@ -28,6 +25,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
+import { ProjectHeader } from "../../$projectName";
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -124,7 +122,7 @@ function ProjectLabelsScreen({
   return (
     <>
       <title>{legacyTitle}</title>
-      <ProjectHeader project={project} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu project={project} />
       <ProjectLabelsBody
         labels={labelsQuery.data.labels}
@@ -971,6 +969,13 @@ function dismissIssueLabelModalButtonClick(
   handleIssueLabelModalButtonClick(event, onCancel);
 }
 
+function activateLabelSelectOption(event: KeyboardEvent<HTMLElement>, activate: () => void) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    activate();
+  }
+}
+
 function LegacyDialogText({ className, text }: { className: string; text: string }) {
   const lineOccurrences = new Map<string, number>();
   const lines = text.split(/<br\s*\/?>/iu).map((line) => {
@@ -1056,6 +1061,7 @@ function EditCategoryModal({
   onSubmit: () => void;
 }) {
   const { t } = useLegacyMessages();
+  const [isExclusiveSelectOpen, setIsExclusiveSelectOpen] = useState(false);
 
   return (
     <>
@@ -1095,6 +1101,7 @@ function EditCategoryModal({
                 key={category ? `category-exclusive-${category.id}` : "category-exclusive-empty"}
                 name="isExclusive"
                 data-dropdown-css-class="select2-without-searchbox"
+                className="select2-offscreen"
                 value={category ? String(category.isExclusive) : undefined}
                 onChange={(event) =>
                   category &&
@@ -1104,6 +1111,80 @@ function EditCategoryModal({
                 <option value="false">{t("label.category.option.multiple")}</option>
                 <option value="true">{t("label.category.option.single")}</option>
               </select>
+              <div
+                className={`select2-container${isExclusiveSelectOpen ? " select2-dropdown-open" : ""}`}
+              >
+                <div
+                  className="select2-choice"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExclusiveSelectOpen}
+                  onClick={() => setIsExclusiveSelectOpen((current) => !current)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setIsExclusiveSelectOpen((current) => !current);
+                    }
+                  }}
+                >
+                  <span className="select2-chosen">
+                    {t(
+                      category?.isExclusive
+                        ? "label.category.option.single"
+                        : "label.category.option.multiple",
+                    )}
+                  </span>
+                  <span className="select2-arrow" aria-hidden="true">
+                    <b></b>
+                  </span>
+                </div>
+                <div
+                  className={`select2-drop${isExclusiveSelectOpen ? " select2-drop-active" : " select2-display-none"}`}
+                >
+                  <ul className="select2-results" role="listbox">
+                    <li>
+                      <div
+                        className="select2-result-label"
+                        role="option"
+                        tabIndex={0}
+                        aria-selected={!category?.isExclusive}
+                        onClick={() => {
+                          if (category) onChange({ ...category, isExclusive: false });
+                          setIsExclusiveSelectOpen(false);
+                        }}
+                        onKeyDown={(event) =>
+                          activateLabelSelectOption(event, () => {
+                            if (category) onChange({ ...category, isExclusive: false });
+                            setIsExclusiveSelectOpen(false);
+                          })
+                        }
+                      >
+                        {t("label.category.option.multiple")}
+                      </div>
+                    </li>
+                    <li>
+                      <div
+                        className="select2-result-label"
+                        role="option"
+                        tabIndex={0}
+                        aria-selected={category?.isExclusive ?? false}
+                        onClick={() => {
+                          if (category) onChange({ ...category, isExclusive: true });
+                          setIsExclusiveSelectOpen(false);
+                        }}
+                        onKeyDown={(event) =>
+                          activateLabelSelectOption(event, () => {
+                            if (category) onChange({ ...category, isExclusive: true });
+                            setIsExclusiveSelectOpen(false);
+                          })
+                        }
+                      >
+                        {t("label.category.option.single")}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1140,6 +1221,7 @@ function EditLabelModal({
   onSubmit: () => void;
 }) {
   const { t } = useLegacyMessages();
+  const [isCategorySelectOpen, setIsCategorySelectOpen] = useState(false);
   const categoriesById = new Map<string, { id: string; name: string }>();
   for (const label of labels) {
     const id = stringField(label.categoryId, "");
@@ -1172,6 +1254,7 @@ function EditLabelModal({
             <select
               key={label ? `label-category-${label.id}` : "label-category-empty"}
               name="category.id"
+              className="select2-offscreen"
               value={label?.categoryId || undefined}
               onChange={(event) =>
                 label && onChange({ ...label, categoryId: event.currentTarget.value })
@@ -1183,6 +1266,59 @@ function EditLabelModal({
                 </option>
               ))}
             </select>
+            <div
+              className={`select2-container${isCategorySelectOpen ? " select2-dropdown-open" : ""}`}
+            >
+              <div
+                className="select2-choice"
+                role="button"
+                tabIndex={0}
+                aria-expanded={isCategorySelectOpen}
+                onClick={() => setIsCategorySelectOpen((current) => !current)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setIsCategorySelectOpen((current) => !current);
+                  }
+                }}
+              >
+                <span className="select2-chosen">
+                  {categories.find((category) => category.id === label?.categoryId)?.name ??
+                    categories[0]?.name}
+                </span>
+                <span className="select2-arrow" aria-hidden="true">
+                  <b></b>
+                </span>
+              </div>
+              <div
+                className={`select2-drop${isCategorySelectOpen ? " select2-drop-active" : " select2-display-none"}`}
+              >
+                <ul className="select2-results" role="listbox">
+                  {categories.map((category) => (
+                    <li key={category.id}>
+                      <div
+                        className="select2-result-label"
+                        role="option"
+                        tabIndex={0}
+                        aria-selected={category.id === label?.categoryId}
+                        onClick={() => {
+                          if (label) onChange({ ...label, categoryId: category.id });
+                          setIsCategorySelectOpen(false);
+                        }}
+                        onKeyDown={(event) =>
+                          activateLabelSelectOption(event, () => {
+                            if (label) onChange({ ...label, categoryId: category.id });
+                            setIsCategorySelectOpen(false);
+                          })
+                        }
+                      >
+                        {category.name}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
 
             <input
               key={label ? `label-name-${label.id}` : "label-name-empty"}
@@ -1257,130 +1393,6 @@ function ColorButton({
   );
 }
 
-function ProjectHeader({ project }: { project: ProjectContainer }) {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectIdValue = projectId(project);
-  const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
-  const logoUrl = projectLogoUrl(project, runtimeConfig.basePath);
-  const backgroundImageUrl =
-    stringField(recordField(project).backgroundImageUrl, "") ||
-    stringField(recordField(project).backgroundUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
-  const isForked =
-    booleanField(recordField(project).isForkedFromOrigin) ||
-    booleanField(recordField(project).isForked);
-  const originalOwnerName =
-    stringField(recordField(project).originalOwnerName, "") ||
-    stringField(recordField(project).originOwnerName, "");
-  const originalProjectName =
-    stringField(recordField(project).originalProjectName, "") ||
-    stringField(recordField(project).originProjectName, "");
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.base(ownerName, projectName),
-      });
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link {...LEGACY_LINK_PROPS} to="/$user" params={{ user: ownerName }}>
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              <span
-                className="user-project-list"
-                data-project-id={projectIdValue}
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
-              {booleanField(recordField(project).isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(recordField(project).isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
-                  className="project-origin-name"
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ProjectMenu({ project }: { project: ProjectContainer }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
@@ -1409,6 +1421,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
+              count={Number(project.openIssueCount) || 0}
               label={t("menu.issue")}
               params={{ ownerName, projectName }}
               short="I"
@@ -1417,6 +1430,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
+              count={Number(project.openPullRequestCount) || 0}
               label={t("menu.pullRequest")}
               params={{ ownerName, projectName }}
               short="P"
@@ -1425,6 +1439,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
+              count={Number(project.reviewCount) || 0}
               label={t("menu.review")}
               params={{ ownerName, projectName }}
               short="R"
@@ -1441,6 +1456,7 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
+              count={Number(project.boardCount) || Number(project.postCount) || 0}
               label={t("menu.board")}
               params={{ ownerName, projectName }}
               short="B"
@@ -1474,12 +1490,14 @@ function ProjectMenu({ project }: { project: ProjectContainer }) {
 
 function ProjectMenuItem({
   className = "",
+  count = 0,
   label,
   params,
   short,
   to,
 }: {
   className?: string;
+  count?: number;
   label: string;
   params: { ownerName: string; projectName: string };
   short: string;
@@ -1490,6 +1508,8 @@ function ProjectMenuItem({
       <Link {...LEGACY_LINK_PROPS} to={to} params={params}>
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
+        {count > 0 ? " " : null}
+        <CountBadge count={count} />
       </Link>
     </li>
   );
@@ -1628,19 +1648,6 @@ function projectMenuSetting(project: ProjectContainer) {
 function projectId(project: ProjectContainer) {
   return (
     stringField(recordField(project).id, "") || stringField(recordField(project).projectId, "")
-  );
-}
-
-function projectLogoUrl(project: ProjectContainer, basePath: string) {
-  return (
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(basePath, "/assets/images/project_default_logo.png")
-  );
-}
-
-function projectFavorited(project: ProjectContainer) {
-  return (
-    booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
   );
 }
 

@@ -21,7 +21,7 @@ impl Default for RuntimeConfig {
     fn default() -> Self {
         Self {
             allow_anonymous_access: true,
-            base_path: String::new(),
+            base_path: "/".to_string(),
             public_origin: String::new(),
         }
     }

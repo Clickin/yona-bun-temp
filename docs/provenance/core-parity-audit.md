@@ -1432,6 +1432,13 @@ Project review-list rows now follow legacy `DiffRenderer.urlToCommentThread` for
   `auth_workspace_contract::read_auth_ui_capabilities_reflects_runtime_config_without_env_mutation`
   and
   `assets_contract::embedded_assets_support_base_path_injection_and_spa_fallback`.
+- 2026-07-11 runtime context invariant note: `RuntimeConfig::default()` now
+  exposes `/` directly, matching the existing `YONA_BASE_PATH` absent/blank
+  normalization, router context mount, and runtime HTML/asset rewriting path.
+  `runtime_config_contract::runtime_config_defaults_to_root_context` fixes the
+  default contract; filesystem and embedded asset contracts continue to cover
+  both `/` and nested context delivery. Host/proxy headers remain outside context
+  discovery, so no allowed-host setting is required for this mount behavior.
 - 2026-06-20 build/check diet note: shared server state/error types, backend and
   asset mode enums, browser runtime config, login constants, `yona_data_root`,
   and repository provisioning lock moved from monolithic
