@@ -538,12 +538,13 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         database
           .prepare(
             `update posting
-             set title = ?, updated_date = ?, author_id = ?, author_login_id = ?, author_name = ?,
+             set title = ?, created_date = ?, updated_date = ?, author_id = ?, author_login_id = ?, author_name = ?,
                  num_of_comments = ?, notice = ?, readme = ?, updated_by_author_id = ?, body = ?, history = null
              where id = ?`,
           )
           .run(
             parityProjectSeed.post.title,
+            parityCreatedAt,
             parityCreatedAt,
             adminUser.id,
             "admin",
