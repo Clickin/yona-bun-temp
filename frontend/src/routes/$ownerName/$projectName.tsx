@@ -765,10 +765,10 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                   className="avatar-wrap pull-left mr10"
                 >
                   <img
-                    src={stringField(
-                      itemRecord.actorAvatarUrl,
-                      "/assets/images/default-avatar-64.png",
-                    )}
+                    src={
+                      stringField(itemRecord.actorAvatarUrl) ||
+                      prefixBasePath(basePath, "/assets/images/default-avatar-64.png")
+                    }
                     width="32"
                     height="32"
                     alt=""
@@ -912,10 +912,10 @@ function DashboardPane({
                             >
                               <span className="avatar-wrap smaller">
                                 <img
-                                  src={stringField(
-                                    record.avatarUrl,
-                                    "/assets/images/default-avatar-32.png",
-                                  )}
+                                  src={
+                                    stringField(record.avatarUrl) ||
+                                    prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+                                  }
                                   width="20"
                                   height="20"
                                   alt=""
@@ -1068,10 +1068,10 @@ function DashboardPane({
                                 title={`${stringField(record.contributorUserLabel, "")} (@${stringField(record.contributorLoginId, "")})`}
                               >
                                 <img
-                                  src={stringField(
-                                    record.contributorAvatarUrl,
-                                    "/assets/images/default-avatar-32.png",
-                                  )}
+                                  src={
+                                    stringField(record.contributorAvatarUrl) ||
+                                    prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+                                  }
                                   width="20"
                                   height="20"
                                   alt=""
@@ -1256,7 +1256,10 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
         className="avatar-wrap img-rounded pull-left small"
       >
         <img
-          src={stringField(member.avatarUrl, "/assets/images/default-avatar-32.png")}
+          src={
+            stringField(member.avatarUrl) ||
+            prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+          }
           alt={loginId}
           width="24"
           height="24"

@@ -1,0 +1,493 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { type CSSProperties, type FormEvent } from "react";
+import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import {
+  projectReviewsQueryOptions,
+  type ReviewThread,
+  type ReviewThreadListResponse,
+} from "../../../api/pull-requests";
+import type { ProjectContainer } from "../../../api/types";
+import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
+import { YonaQueryProvider } from "../../../query-client";
+import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { SiteLayoutShell } from "../../-home-route-screen";
+import { SitePagination } from "../../sites/-pagination";
+import { ProjectHeader, ProjectMenu } from "../$projectName";
+
+type ProjectReviewsSearch = {
+  authorId: number;
+  filter: string;
+  orderBy: string;
+  orderDir: string;
+  pageNum: number;
+  participantId: number;
+  state: string;
+};
+
+const legacyInlineSideEffectButtonStyle: CSSProperties = {
+  background: "none",
+  border: 0,
+  color: "inherit",
+  cursor: "pointer",
+  display: "inline",
+  font: "inherit",
+  margin: 0,
+  padding: 0,
+  textAlign: "inherit",
+  width: "auto",
+};
+
+export const Route = createFileRoute("/$ownerName/$projectName/reviews")({
+  component: ProjectReviewsRoute,
+  validateSearch(search): ProjectReviewsSearch {
+    return {
+      authorId: Number(search.authorId) || 0,
+      filter: typeof search.filter === "string" ? search.filter : "",
+      orderBy: typeof search.orderBy === "string" ? search.orderBy : "",
+      orderDir: typeof search.orderDir === "string" ? search.orderDir : "",
+      pageNum: Number(search.pageNum) || 1,
+      participantId: Number(search.participantId) || 0,
+      state: typeof search.state === "string" ? search.state : "open",
+    };
+  },
+});
+
+function ProjectReviewsRoute() {
+  const { runtimeConfig } = Route.useRouteContext();
+
+  return (
+    <YonaQueryProvider>
+      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <ProjectReviewsScreen runtimeConfig={runtimeConfig} />
+      </LegacyI18nProvider>
+    </YonaQueryProvider>
+  );
+}
+
+function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const search = Route.useSearch();
+  const { t } = useLegacyMessages();
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const reviewsQuery = useQuery(
+    projectReviewsQueryOptions(runtimeConfig, {
+      authorId: search.authorId,
+      filter: search.filter,
+      orderBy: effectiveOrderBy(search),
+      orderDir: effectiveOrderDir(search),
+      ownerName,
+      pageNum: search.pageNum,
+      participantId: search.participantId,
+      projectName,
+      state: search.state,
+    }),
+  );
+
+  if (!projectQuery.data || !reviewsQuery.data) {
+    return null;
+  }
+
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <>
+      <title>{`${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`}</title>
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu
+          active="review"
+          basePath={runtimeConfig.basePath}
+          project={projectQuery.data}
+        />
+        <ProjectReviewsBody
+          project={projectQuery.data}
+          reviews={reviewsQuery.data}
+          runtimeConfig={runtimeConfig}
+          search={search}
+        />
+      </SiteLayoutShell>
+    </>
+  );
+}
+
+function ProjectReviewsBody({
+  project,
+  reviews,
+  runtimeConfig,
+  search,
+}: {
+  project: ProjectContainer;
+  reviews: ReviewThreadListResponse;
+  runtimeConfig: RuntimeConfig;
+  search: ProjectReviewsSearch;
+}) {
+  const { t } = useLegacyMessages();
+  const router = useRouter();
+  const ownerName = stringField(project.ownerName);
+  const projectName = stringField(project.projectName);
+  const baseRoute = `/${ownerName}/${projectName}/reviews`;
+  const action = prefixBasePath(runtimeConfig.basePath, baseRoute);
+  const exportQuery = reviewsQuery(search, { format: "xls", pageNum: 1 });
+  const currentUserId =
+    numberField(project.viewerUserId) || numberField(project.currentUserId) || 1;
+  const activeState = search.state || reviews.state || "open";
+  const activeOrderBy = effectiveOrderBy(search);
+  const activeOrderDir = effectiveOrderDir(search);
+  const nextCreatedDateOrderDir =
+    activeOrderBy === "createdDate" ? (activeOrderDir === "asc" ? "desc" : "asc") : "desc";
+
+  function pushReviews(next: Partial<ProjectReviewsSearch>) {
+    router.history.push(
+      prefixBasePath(
+        runtimeConfig.basePath,
+        `${baseRoute}${reviewsQuery(
+          { ...search, orderBy: activeOrderBy, orderDir: activeOrderDir, state: activeState },
+          next,
+        )}`,
+      ),
+    );
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    pushReviews({
+      filter: String(new FormData(form).get("filter") ?? ""),
+      pageNum: 1,
+    });
+  }
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="row-fluid issue-list-wrap">
+          <div className="span2 search-wrap span-hard-wrap">
+            <div className="inner advanced">
+              <ul className="lst-stacked unstyled">
+                <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
+                  <button type="button" onClick={() => filterClick({})}>
+                    {t("review.allReview")}
+                    <span className="num-badge pull-right">{reviews.allCount}</span>
+                  </button>
+                </li>
+                <li className={search.participantId === currentUserId ? "active" : ""}>
+                  <button
+                    type="button"
+                    onClick={() => filterClick({ participantId: currentUserId })}
+                  >
+                    {t("review.involvingYou")}
+                    <span className="num-badge pull-right">{reviews.participantCount}</span>
+                  </button>
+                </li>
+                <li className={search.authorId === currentUserId ? "active" : ""}>
+                  <button type="button" onClick={() => filterClick({ authorId: currentUserId })}>
+                    {t("review.createdByYou")}
+                    <span className="num-badge pull-right">{reviews.authorCount}</span>
+                  </button>
+                </li>
+              </ul>
+              <form id="search" name="search" action={action} method="get" onSubmit={onSubmit}>
+                <input type="hidden" name="authorId" value={search.authorId || ""} />
+                <input type="hidden" name="participantId" value={search.participantId || ""} />
+                <input type="hidden" name="orderDir" value={activeOrderDir} />
+                <input type="hidden" name="orderBy" value={activeOrderBy} />
+                <input type="hidden" name="state" value={activeState} />
+                <hr className="hide-in-mobile" />
+                <div className="search-bar span-hard-wrap">
+                  <input
+                    name="filter"
+                    className="textbox full"
+                    type="text"
+                    defaultValue={search.filter}
+                  />
+                  <button type="submit" className="search-btn">
+                    <i className="yobicon-search"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div className="span10 span-hard-wrap">
+            <div className="pull-right filters">
+              <button
+                type="button"
+                className="filter"
+                onClick={() => {
+                  pushReviews({
+                    orderBy: "createdDate",
+                    orderDir: nextCreatedDateOrderDir,
+                    pageNum: 1,
+                  });
+                }}
+                style={legacyInlineSideEffectButtonStyle}
+              >
+                <i
+                  className={`ico btn-gray-arrow ${
+                    activeOrderBy === "createdDate" && activeOrderDir !== "desc" ? "" : "down"
+                  }`}
+                ></i>
+                {t("common.order.date")}
+              </button>
+            </div>
+            <ul className="nav nav-tabs nm">
+              <li className={activeState === "open" ? "active" : ""}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    pushReviews({ pageNum: 1, state: "open" });
+                  }}
+                >
+                  {t("issue.state.open")}
+                  <span className="num-badge">{reviews.openCount}</span>
+                </button>
+              </li>
+              <li className={activeState === "closed" ? "active" : ""}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    pushReviews({ pageNum: 1, state: "closed" });
+                  }}
+                >
+                  {t("issue.state.closed")}
+                  <span className="num-badge">{reviews.closedCount}</span>
+                </button>
+              </li>
+            </ul>
+            <div className="review-list-wrap">
+              <ProjectReviewRows
+                basePath={runtimeConfig.basePath}
+                ownerName={ownerName}
+                projectName={projectName}
+                reviews={reviews}
+              />
+            </div>
+            <div className="pull-left" style={{ padding: 10 }}>
+              <Link
+                href={`${action}${exportQuery}`}
+                to={`${baseRoute}${exportQuery}`}
+                reloadDocument
+                className="ybtn small"
+              >
+                <i className="yobicon-file-excel"></i> {t("issue.downloadAsExcel")}
+              </Link>
+            </div>
+            <ProjectReviewPagination
+              action={action}
+              basePath={runtimeConfig.basePath}
+              reviews={reviews}
+              search={search}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  function filterClick(next: Partial<ProjectReviewsSearch>) {
+    pushReviews({
+      authorId: next.authorId ?? 0,
+      pageNum: 1,
+      participantId: next.participantId ?? 0,
+    });
+  }
+}
+
+function ProjectReviewRows({
+  basePath,
+  ownerName,
+  projectName,
+  reviews,
+}: {
+  basePath: string;
+  ownerName: string;
+  projectName: string;
+  reviews: ReviewThreadListResponse;
+}) {
+  const { t } = useLegacyMessages();
+  if (reviews.items.length === 0) {
+    return (
+      <div className="error-wrap">
+        <i className="ico ico-err1"></i>
+        <p>{t("review.is.empty")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="post-list-wrap">
+      {reviews.items.map((thread) => (
+        <ProjectReviewRow
+          basePath={basePath}
+          key={thread.id}
+          ownerName={ownerName}
+          projectName={projectName}
+          thread={thread}
+        />
+      ))}
+    </ul>
+  );
+}
+
+function ProjectReviewRow({
+  basePath,
+  ownerName,
+  projectName,
+  thread,
+}: {
+  basePath: string;
+  ownerName: string;
+  projectName: string;
+  thread: ReviewThread;
+}) {
+  const { t } = useLegacyMessages();
+  const firstComment = thread.comments[0];
+  const authorLoginId = firstComment?.authorLoginId || thread.authorLoginId;
+  const authorLabel = firstComment?.authorLabel || thread.authorLabel;
+  const contents = firstComment?.contentsMarkdown || firstComment?.contentsHtml || "";
+  const commentCount = Math.max(thread.comments.length - 1, 0);
+  const authorRoute = `/${authorLoginId}`;
+  const threadRoute = reviewThreadRoute(ownerName, projectName, thread);
+
+  return (
+    <li className="post-item">
+      <Link to={authorRoute} className="avatar-wrap mlarge hide-in-mobile" title={authorLoginId}>
+        <img
+          src={
+            firstComment?.authorAvatarUrl ||
+            thread.authorAvatarUrl ||
+            prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+          }
+          alt={authorLabel}
+          width="32"
+          height="32"
+        />
+      </Link>
+      <div className="title-wrap">
+        <span className="post-id">{thread.id}</span>
+        <Link to={threadRoute.to} hash={threadRoute.hash} className="title">
+          {contents}
+        </Link>
+      </div>
+      <div className="infos">
+        {authorLabel ? (
+          <Link to={authorRoute} className="infos-item infos-link-item" title={authorLoginId}>
+            {authorLabel}
+          </Link>
+        ) : (
+          <span className="infos-item">{t("issue.noAuthor")}</span>
+        )}
+        <span className="infos-item" title={thread.createdLabel}>
+          {thread.createdLabel}
+        </span>
+        {commentCount > 0 ? (
+          <span className="infos-item item-count-groups">
+            <Link to={threadRoute.to} hash={threadRoute.hash} className="comments-count">
+              <span className="count-groups item-icon">
+                <i className="yobicon-comment2"></i>
+              </span>
+              <span className="count-groups item-count">{commentCount}</span>
+            </Link>
+          </span>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+function ProjectReviewPagination({
+  action,
+  basePath,
+  reviews,
+  search,
+}: {
+  action: string;
+  basePath: string;
+  reviews: ReviewThreadListResponse;
+  search: ProjectReviewsSearch;
+}) {
+  const pages = Math.ceil(reviews.totalCount / Math.max(reviews.pageSize, 1));
+  if (pages <= 1) {
+    return <div id="pagination"></div>;
+  }
+  return (
+    <SitePagination
+      basePath={basePath}
+      currentPage={reviews.pageNum}
+      pageHref={(pageNum) => `${action}${reviewsQuery(search, { pageNum })}`}
+      totalPages={pages}
+    />
+  );
+}
+
+function reviewThreadRoute(ownerName: string, projectName: string, thread: ReviewThread) {
+  const hash = `thread-${thread.id}`;
+  if (thread.pullRequestNumber && thread.commitId) {
+    return {
+      hash,
+      to: `/${ownerName}/${projectName}/pullRequest/${thread.pullRequestNumber}/changes/${thread.commitId}`,
+    };
+  }
+  if (thread.pullRequestNumber) {
+    return {
+      hash,
+      to: `/${ownerName}/${projectName}/pullRequest/${thread.pullRequestNumber}/changes`,
+    };
+  }
+  return {
+    hash,
+    to: `/${ownerName}/${projectName}/commit/${thread.commitId}`,
+  };
+}
+
+function reviewsQuery(
+  search: ProjectReviewsSearch,
+  next: Partial<ProjectReviewsSearch> & { format?: string },
+) {
+  const merged = { ...search, ...next };
+  const query = new URLSearchParams();
+  if (merged.authorId) query.set("authorId", String(merged.authorId));
+  if (merged.participantId) query.set("participantId", String(merged.participantId));
+  if (merged.orderDir) query.set("orderDir", merged.orderDir);
+  if (merged.orderBy) query.set("orderBy", merged.orderBy);
+  if (merged.state) query.set("state", merged.state);
+  if (merged.filter) query.set("filter", merged.filter);
+  if (merged.pageNum && merged.pageNum !== 1) query.set("pageNum", String(merged.pageNum));
+  if (next.format) query.set("format", next.format);
+  const serialized = query.toString();
+  return serialized ? `?${serialized}` : "";
+}
+
+function stringField(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function numberField(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : Number(value) || 0;
+}
+
+function effectiveOrderBy(search: ProjectReviewsSearch) {
+  return search.orderBy || "createdDate";
+}
+
+function effectiveOrderDir(search: ProjectReviewsSearch) {
+  return search.orderDir || "desc";
+}
+
+function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
+  const organizationName = stringField(project.organizationName, "");
+  if (organizationName) {
+    return organizationName;
+  }
+  return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function booleanField(value: unknown) {
+  return typeof value === "boolean" ? value : Boolean(value);
+}
