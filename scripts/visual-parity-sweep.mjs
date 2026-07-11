@@ -645,7 +645,7 @@ async function bootstrapLocalAccount(page, baseUrl) {
     );
     if (seededIssueResponse.ok()) {
       const seededIssue = await seededIssueResponse.json().catch(() => null);
-      if (Number(seededIssue?.milestoneId ?? 0) !== sampleMilestoneId) {
+      if (Number(seededIssue?.milestoneId ?? 0) === 0) {
         await putLocalJson(page, baseUrl, "/api/v1/projects/admin/sample/issues/1", {
           assigneeLoginId: seededIssue?.assigneeLoginId ?? "",
           attachmentIds: [],

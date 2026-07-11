@@ -481,6 +481,15 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         }
       }
 
+      if (hasTable(database, "issue_event")) {
+        const removedEvents = database
+          .prepare("delete from issue_event where issue_id = ?")
+          .run(issue.id).changes;
+        if (removedEvents > 0) {
+          report.issueEvents = `removed:${removedEvents}`;
+        }
+      }
+
       const existingIssueComment = database
         .prepare(
           "select id from issue_comment where issue_id = ? and author_login_id = ? and contents = ? limit 1",
@@ -588,6 +597,18 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         .prepare("update project set last_issue_number = ?, last_posting_number = ? where id = ?")
         .run(1, 1, sampleProject.id);
 
+      const sampleWatch = database
+        .prepare(
+          "select id from watch where user_id = ? and resource_type = ? and resource_id = ? limit 1",
+        )
+        .get(adminUser.id, "PROJECT", String(sampleProject.id));
+      if (!sampleWatch?.id) {
+        database
+          .prepare("insert into watch (user_id, resource_type, resource_id) values (?, ?, ?)")
+          .run(adminUser.id, "PROJECT", String(sampleProject.id));
+        report.watchers.push("admin:sample:inserted");
+      }
+
       if (portalProject?.id && carolUser?.id) {
         for (const watcher of [
           { loginId: "admin", userId: Number(adminUser.id) },
@@ -631,6 +652,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
     if (
       report.issue !== "unchanged" ||
       report.issueComment !== "unchanged" ||
+      report.issueEvents !== undefined ||
       report.labels.length > 0 ||
       report.milestone !== "unchanged" ||
       report.post !== "unchanged" ||

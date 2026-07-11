@@ -138,6 +138,16 @@ function seedParityFoundationFixture(database) {
       parent_comment_id bigint,
       contents text
     );
+    create table issue_event (
+      id integer primary key autoincrement,
+      created integer,
+      sender_login_id text,
+      sender_email text,
+      issue_id integer,
+      event_type text,
+      old_value text,
+      new_value text
+    );
     create table posting (
       id integer primary key autoincrement,
       title varchar,
@@ -196,6 +206,8 @@ function seedParityFoundationFixture(database) {
     values
       (2, 'Sample issue', '2026-07-06 00:00:00.000', '2026-07-06 00:00:00.000', 2, 'admin',
        'Site Admin', 2, 1, 0, 1, null, 1, null, 2, 0, 'Sample issue body', null);
+    insert into issue_event (created, sender_login_id, issue_id, event_type, old_value, new_value)
+    values (1, 'admin', 2, 'milestone', null, '1');
   `);
 }
 
@@ -337,6 +349,15 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         )
         .all()
         .map((row) => row.login_id);
+      const sampleWatcherLogins = database
+        .prepare(
+          `select n4user.login_id
+             from watch join n4user on n4user.id = watch.user_id
+            where watch.resource_type = 'PROJECT' and watch.resource_id = '2'
+            order by n4user.login_id`,
+        )
+        .all()
+        .map((row) => row.login_id);
 
       assert.equal(alice.name, "Alice Kim");
       assert.equal(bob.name, "Bob Park");
@@ -365,6 +386,11 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       });
       assert.deepEqual(labelNames, ["bug", "parity"]);
       assert.deepEqual(watcherLogins, ["admin", "carol"]);
+      assert.deepEqual(sampleWatcherLogins, ["admin"]);
+      assert.equal(
+        Number(database.prepare("select count(*) as count from issue_event").get().count),
+        0,
+      );
     } finally {
       database.close();
     }
@@ -425,6 +451,13 @@ test("reconcileDefaultDevParitySeed is idempotent for already-seeded localhost d
             )
             .get().count,
         ),
+        sampleWatchers: Number(
+          database
+            .prepare(
+              "select count(*) as count from watch where resource_type = 'PROJECT' and resource_id = '2'",
+            )
+            .get().count,
+        ),
       };
       assert.deepEqual(counts, {
         issueComment: 1,
@@ -432,6 +465,7 @@ test("reconcileDefaultDevParitySeed is idempotent for already-seeded localhost d
         postComment: 1,
         users: 5,
         watchers: 2,
+        sampleWatchers: 1,
       });
     } finally {
       database.close();

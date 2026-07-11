@@ -6143,6 +6143,10 @@ div.markdown-preview {
 }
 
 @media (max-width: 720px) {
+  .issue-detail-page .board-comment-wrap #comment-form .write-comment-box {
+    padding: 0;
+  }
+
   .span-left-pane {
     width: 100% !important;
   }
