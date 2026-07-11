@@ -255,32 +255,33 @@ const alwaysScreenshotPaths = new Set([
 ]);
 
 function localSettledSelectorForPath(path) {
-  if (path.endsWith("/issueform") || path.endsWith("/editform")) {
+  const pathname = path.split("?", 1)[0];
+  if (pathname.endsWith("/issueform") || pathname.endsWith("/editform")) {
     return ".textarea-box";
   }
-  if (/\/code(?:\/|$)/u.test(path)) {
+  if (/\/code(?:\/|$)/u.test(pathname)) {
     return ".project-header-outer";
   }
-  const issueDetailMatch = path.match(/\/issue\/(\d+)$/u);
+  const issueDetailMatch = pathname.match(/\/issue\/(\d+)$/u);
   if (issueDetailMatch) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
   }
-  if (path.endsWith("/issues") || path === "/user/issues") {
+  if (pathname.endsWith("/issues") || pathname === "/user/issues") {
     return ".row-fluid.issue-list-wrap";
   }
   if (
-    path.endsWith("/settingform") ||
-    path.endsWith("/transfer") ||
-    path.endsWith("/deleteform") ||
-    path.endsWith("/changeVCS")
+    pathname.endsWith("/settingform") ||
+    pathname.endsWith("/transfer") ||
+    pathname.endsWith("/deleteform") ||
+    pathname.endsWith("/changeVCS")
   ) {
     return ".bubble-wrap.gray, .box-wrap";
   }
   if (
-    path.endsWith("/members") ||
-    path.endsWith("/watchers") ||
-    path.endsWith("/webhooks") ||
-    /^\/[^/?#]+\/[^/?#]+\/?$/u.test(path)
+    pathname.endsWith("/members") ||
+    pathname.endsWith("/watchers") ||
+    pathname.endsWith("/webhooks") ||
+    /^\/[^/?#]+\/[^/?#]+\/?$/u.test(pathname)
   ) {
     return ".project-page-wrap";
   }
@@ -996,9 +997,20 @@ async function inspectPage(page, baseUrl, path, label) {
   page.on("requestfailed", onRequestFailed);
   const localSessionResponsePromise =
     label === "local" ? waitForNavigationSessionResponse(page, baseUrl) : null;
+  let navigationPath = path;
+  if (label === "local" && path === "/admin/sample/issueform?parentIssueId=1") {
+    const response = await page.request.get(
+      `${baseUrl}/api/v1/projects/admin/sample/issues/parent-options`,
+    );
+    const payload = response.ok() ? await response.json().catch(() => null) : null;
+    const parent = payload?.items?.find((item) => Number(item.issueNumber) === 1);
+    if (parent?.id) {
+      navigationPath = `/admin/sample/issueform?parentIssueId=${encodeURIComponent(parent.id)}`;
+    }
+  }
   let response = null;
   try {
-    response = await page.goto(urlFor(baseUrl, path), {
+    response = await page.goto(urlFor(baseUrl, navigationPath), {
       waitUntil: "domcontentloaded",
       timeout: 20_000,
     });

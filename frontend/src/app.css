@@ -8238,13 +8238,6 @@ div.markdown-preview {
   border-radius: 0;
 }
 
-.issue-form-page-wrap .subtask-wrap.show {
-  display: block;
-  clear: both;
-  min-height: 30px;
-  margin-bottom: 10px;
-}
-
 .issue-form-page-wrap .subtask-parent-control[hidden] {
   display: none;
 }
@@ -8443,12 +8436,6 @@ div.markdown-preview {
 .issue-form-page-wrap .issue-combobox,
 .issue-form-page-wrap .title-head-combobox {
   position: relative;
-}
-
-.issue-form-page-wrap #title {
-  box-sizing: content-box;
-  width: calc(97% - 12px);
-  min-height: 0;
 }
 
 .issue-form-page-wrap .issue-assignee-control,
@@ -8743,6 +8730,10 @@ div.markdown-preview {
 }
 
 @media (max-width: 720px) {
+  .content-wrap .text {
+    width: 95%;
+  }
+
   .issue-form-project-header {
     height: 120px;
   }

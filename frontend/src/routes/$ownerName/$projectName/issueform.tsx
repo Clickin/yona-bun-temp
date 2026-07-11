@@ -996,6 +996,8 @@ function ProjectIssueFormBody({
   const [isSubtaskOptionVisible, setIsSubtaskOptionVisible] = useState(
     initialParentIssueId !== "" || showSubtaskOptionOnMount,
   );
+  const [isSubtaskOptionHighlighted, setIsSubtaskOptionHighlighted] =
+    useState(showSubtaskOptionOnMount);
   const [targetProjectId, setTargetProjectId] = useState(() => projectIdNumber(project));
   const [parentIssueId, setParentIssueId] = useState(initialParentIssueId);
   const [draftNotice, setDraftNotice] = useState("");
@@ -1412,9 +1414,15 @@ function ProjectIssueFormBody({
                       </div>
                       <button
                         type="button"
-                        className={`span1 subtask-message${isSubtaskOptionVisible ? " option-on" : ""}`}
+                        className={`span1 subtask-message${isSubtaskOptionHighlighted ? " option-on" : ""}`}
                         aria-expanded={isSubtaskOptionVisible}
-                        onClick={() => setIsSubtaskOptionVisible((current) => !current)}
+                        onClick={() =>
+                          setIsSubtaskOptionVisible((current) => {
+                            const next = !current;
+                            setIsSubtaskOptionHighlighted(next);
+                            return next;
+                          })
+                        }
                       >
                         {t("issue.option")}
                       </button>
@@ -1755,16 +1763,106 @@ function SubtaskSelects({
 }) {
   const { t } = useLegacyMessages();
   const isCrossProject = targetProjectId !== currentProjectId;
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [parentOpen, setParentOpen] = useState(false);
+  const selectedProject =
+    formProjects.find((project) => project.projectId === targetProjectId) ?? formProjects[0];
+  const selectedParent = parentOptions.find((issue) => String(issue.id) === String(parentIssueId));
+
+  const selectProject = (projectId: number) => {
+    onTargetProjectChange(projectId);
+    setProjectOpen(false);
+  };
+
+  const selectParent = (value: string) => {
+    onParentIssueChange(value);
+    setParentOpen(false);
+  };
 
   return (
     <div className={`subtask-wrap${showOption ? " show" : ""}`} aria-hidden={!showOption}>
       <div className="span3">
-        <label className="blind" htmlFor="targetProjectId">
-          {t("organization.choose.projects")}
-        </label>
+        <div
+          id="s2id_targetProjectId"
+          className={`select2-container fullsize${projectOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setProjectOpen(false);
+            }
+          }}
+        >
+          <div
+            className="select2-choice"
+            role="combobox"
+            tabIndex={0}
+            aria-label={t("organization.choose.projects")}
+            aria-controls="targetProjectId-options"
+            aria-expanded={projectOpen}
+            onClick={() => setProjectOpen((current) => !current)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setProjectOpen((current) => !current);
+              }
+            }}
+          >
+            <span className="select2-chosen">
+              <span className="usf-group" title={selectedProject?.projectName}>
+                <span className="width25px" />
+                <span className="loginid">
+                  {selectedProject?.projectId === currentProjectId
+                    ? ""
+                    : `${selectedProject?.ownerName} /`}
+                </span>
+                <span className="name">{selectedProject?.projectName}</span>
+              </span>
+            </span>
+            <abbr className="select2-search-choice-close" />
+            <span className="select2-arrow" aria-hidden="true">
+              <b />
+            </span>
+          </div>
+          <input
+            className="select2-focusser select2-offscreen"
+            type="text"
+            aria-label={t("organization.choose.projects")}
+          />
+          <div
+            id="targetProjectId-options"
+            className={`select2-drop select2-with-searchbox${projectOpen ? " select2-drop-active" : " select2-display-none"}`}
+          >
+            <div className="select2-search">
+              <input className="select2-input" type="text" autoComplete="off" />
+            </div>
+            <ul className="select2-results" role="listbox">
+              {formProjects.map((formProject) => (
+                <li key={formProject.projectId}>
+                  <div
+                    className="select2-result-label"
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={formProject.projectId === targetProjectId}
+                    onClick={() => selectProject(formProject.projectId)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectProject(formProject.projectId);
+                      }
+                    }}
+                  >
+                    {formProject.projectId === currentProjectId
+                      ? formProject.projectName
+                      : `${formProject.ownerName} / ${formProject.projectName}`}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
         <select
           id="targetProjectId"
           name="targetProjectId"
+          className="select2-offscreen"
           value={String(targetProjectId)}
           disabled={!showOption}
           onChange={(event) => onTargetProjectChange(Number(event.currentTarget.value))}
@@ -1779,12 +1877,104 @@ function SubtaskSelects({
         </select>
       </div>
       <div className="span6 subtask-parent-control" hidden={isCrossProject}>
-        <label className="blind" htmlFor="parentId">
-          {t("issue.subtask.select")}
-        </label>
+        <div
+          id="s2id_parentId"
+          className={`select2-container fullsize${parentOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setParentOpen(false);
+            }
+          }}
+        >
+          <div
+            className="select2-choice"
+            role="combobox"
+            tabIndex={0}
+            aria-label={t("issue.subtask.select")}
+            aria-controls="parentId-options"
+            aria-expanded={parentOpen}
+            onClick={() => setParentOpen((current) => !current)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setParentOpen((current) => !current);
+              }
+            }}
+          >
+            <span className="select2-chosen">
+              <span
+                title={
+                  selectedParent
+                    ? `#${String(selectedParent.issueNumber)}. ${selectedParent.title}`
+                    : undefined
+                }
+              >
+                {selectedParent
+                  ? `#${String(selectedParent.issueNumber)}. ${selectedParent.title}`
+                  : t("issue.subtask.select")}
+              </span>
+            </span>
+            <abbr className="select2-search-choice-close" />
+            <span className="select2-arrow" aria-hidden="true">
+              <b />
+            </span>
+          </div>
+          <input
+            className="select2-focusser select2-offscreen"
+            type="text"
+            aria-label={t("issue.subtask.select")}
+          />
+          <div
+            id="parentId-options"
+            className={`select2-drop select2-with-searchbox${parentOpen ? " select2-drop-active" : " select2-display-none"}`}
+          >
+            <div className="select2-search">
+              <input className="select2-input" type="text" autoComplete="off" />
+            </div>
+            <ul className="select2-results" role="listbox">
+              <li>
+                <div
+                  className="select2-result-label"
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={parentIssueId === ""}
+                  onClick={() => selectParent("")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      selectParent("");
+                    }
+                  }}
+                >
+                  {t("issue.subtask.select")}
+                </div>
+              </li>
+              {parentOptions.map((issue) => (
+                <li key={String(issue.id)}>
+                  <div
+                    className="select2-result-label"
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={String(issue.id) === parentIssueId}
+                    onClick={() => selectParent(String(issue.id))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectParent(String(issue.id));
+                      }
+                    }}
+                  >
+                    #{String(issue.issueNumber)}. {issue.title}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
         <select
           id="parentId"
           name="parentIssueId"
+          className="select2-offscreen"
           value={parentIssueId}
           disabled={!showOption || isCrossProject}
           onChange={(event) => onParentIssueChange(event.currentTarget.value)}

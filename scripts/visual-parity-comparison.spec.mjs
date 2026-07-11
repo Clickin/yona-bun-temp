@@ -418,7 +418,7 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
     /async function registerLocalAccount\(page, baseUrl, \{ emailAddress, loginId, name, password \}\)/u,
   );
   assert.match(source, /async function loginLocal\(page, baseUrl\)/u);
-  assert.match(source, /const bootstrapped = await bootstrapLocalAccount\(page, baseUrl\);/u);
+  assert.match(source, /return bootstrapLocalAccount\(page, baseUrl\);/u);
   assert.match(source, /await postLocalJson\(page, baseUrl, "\/api\/v1\/organizations"/u);
   assert.match(source, /organizationName: "weblabs"/u);
   assert.match(
@@ -455,7 +455,6 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
     /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/admin\/projects\/sample\/fork"/u,
   );
   assert.match(source, /owner: "alice"/u);
-  assert.match(source, /return login\(page, baseUrl\);/u);
   assert.match(
     source,
     /const loginPath = new URL\(urlFor\(baseUrl, "\/users\/loginform"\)\)\.pathname;/u,
@@ -484,7 +483,7 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /viewportProfile: viewportProfile\.name/u);
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
-  assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(path\)\)/u);
+  assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(pathname\)\)/u);
   assert.match(source, /return "\.project-header-outer";/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);
@@ -579,4 +578,16 @@ test("visual sweep records P2 and P3 template verifier metrics", () => {
     assert.match(source, new RegExp(`${selector}: selectorState`, "u"));
     assert.match(source, new RegExp(`${selector}: metrics\\.${selector}`, "u"));
   }
+});
+
+test("visual sweep waits for form routes with query state", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /const pathname = path\.split\("\?", 1\)\[0\];/u);
+  assert.match(source, /pathname\.endsWith\("\/issueform"\)/u);
+  assert.match(source, /Number\(item\.issueNumber\) === 1/u);
+  assert.match(
+    source,
+    /navigationPath = `\/admin\/sample\/issueform\?parentIssueId=\$\{encodeURIComponent\(parent\.id\)\}`/u,
+  );
 });
