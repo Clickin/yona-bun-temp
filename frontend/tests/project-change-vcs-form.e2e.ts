@@ -12,6 +12,25 @@ test("project change-VCS shell keeps legacy watcher and menu counts", async ({ p
   await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
 });
 
+test("project change-VCS mobile menu ignores ordinary members for enrollment badges", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectAdmin(page, {
+    project: { enrolledUsers: [], memberCount: 1, members: [{ id: 1, loginId: "admin" }] },
+  });
+
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveCount(0);
+  const menuWidth = await page.locator(".project-menu-outer").evaluate((element) => ({
+    client: element.clientWidth,
+    scroll: element.scrollWidth,
+  }));
+  expect(menuWidth.scroll).toBe(menuWidth.client);
+});
+
 test("project change-VCS form matches legacy project/change_vcs.scala.html DOM", async ({
   page,
 }) => {

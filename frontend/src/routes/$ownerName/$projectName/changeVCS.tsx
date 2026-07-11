@@ -510,16 +510,6 @@ function enrolledUserCount(project: ProjectChangeVcsScreenData) {
 }
 
 function projectMemberCount(project: ProjectChangeVcsScreenData) {
-  const memberCount = numberField(recordField(project).memberCount);
-  if (memberCount > 0) {
-    return memberCount;
-  }
-
-  const members = recordField(project).members;
-  if (Array.isArray(members)) {
-    return members.length;
-  }
-
   return enrolledUserCount(project);
 }
 

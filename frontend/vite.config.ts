@@ -91,6 +91,9 @@ export default defineConfig(({ mode }) => {
       port: 3101,
       proxy: buildBackendProxy(basePath, backendTarget),
     },
+    preview: {
+      proxy: buildBackendProxy(basePath, backendTarget),
+    },
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
