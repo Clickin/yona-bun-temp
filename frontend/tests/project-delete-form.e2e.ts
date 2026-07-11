@@ -254,6 +254,43 @@ test("project delete form localhost legacy portal shell is restored", async ({ p
   ]);
 });
 
+test("project delete form restores watcher util and full project menu on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    project: {
+      backgroundImageUrl: "",
+      backgroundUrl: "",
+      logoUrl: "",
+      menuSetting: undefined,
+      viewerCanWatch: true,
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/deleteform`);
+  await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    `${basePath}/legacy-assets/images/project_default_logo.png`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveAttribute(
+    "style",
+    `background-image: url("${basePath}/legacy-assets/images/bg-default-project.jpg");`,
+  );
+  await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
+  const desktop = await projectDeleteMenuGeometry(page);
+  expect(desktop.menuWidth).toBeGreaterThanOrEqual(573);
+  expect(desktop.menuRight).toBeLessThanOrEqual(desktop.viewportWidth);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await projectDeleteMenuGeometry(page);
+  expect(mobile.menuWidth).toBeCloseTo(234, 0);
+  expect(mobile.menuRight).toBeLessThanOrEqual(mobile.viewportWidth);
+  expect(mobile.bodyScrollWidth).toBeLessThanOrEqual(mobile.viewportWidth);
+});
+
 test("project delete form route has no TanStack route-cast escapes", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
   expect(source).not.toContain("as never");
@@ -286,7 +323,7 @@ test("project delete confirmation modal source stays route-owned", async () => {
   const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
   const modalSource = source.slice(
     source.indexOf("const insulateDeletionModalButtonClick"),
-    source.indexOf("function ProjectHeader"),
+    source.indexOf("function ProjectMenu"),
   );
 
   expect(modalSource).toContain("event.preventDefault();");
@@ -1090,6 +1127,20 @@ function projectSettings({
     viewerCanWatch: false,
     watchCount: 5,
   };
+}
+
+async function projectDeleteMenuGeometry(page: Page) {
+  return page.evaluate(() => {
+    const menu = document.querySelector(".project-menu-gruop");
+    if (!menu) throw new Error("project menu is missing");
+    const box = menu.getBoundingClientRect();
+    return {
+      bodyScrollWidth: document.body.scrollWidth,
+      menuRight: box.right,
+      menuWidth: box.width,
+      viewportWidth: window.innerWidth,
+    };
+  });
 }
 
 async function auditDeleteNativeListeners(page: Page) {
