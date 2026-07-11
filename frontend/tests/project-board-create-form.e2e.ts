@@ -378,6 +378,83 @@ test("project board create form preserves uploader and zero-gap actions on mobil
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
 });
 
+test("project board create issue-template state matches legacy query-owned visible form", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const postRequests: unknown[] = [];
+  await mockProjectBoardCreateForm(page, postRequests);
+
+  await page.goto(`${basePath}/admin/sample/postform?issueTemplate=true`);
+
+  await expect(page.locator("#title")).toHaveValue("ISSUE_TEMPLATE.md: Project Issue Template");
+  await expect(page.locator(".attach-wrap .help-droppable")).toHaveText(
+    "Issue templates do not support attachments.",
+  );
+  await expect(page.locator("#upload")).toHaveCount(0);
+  await expect(page.locator("#notice")).toHaveCount(0);
+  await expect(page.locator("#readme")).toHaveCount(0);
+  await expect(page.locator(".file-path-wrap")).toHaveCount(0);
+  await expect(page.locator(".new-file-name")).toHaveCount(0);
+  await expect(page.locator("#issueTemplate")).toHaveValue("true");
+  await expect(page.locator("#branch")).toHaveValue("main");
+  await expect(page.locator("#path")).toHaveValue("ISSUE_TEMPLATE.md");
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+
+  const desktopEditor = await page
+    .locator(".content-wrap.frm-wrap .textarea-box")
+    .evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { bottom: Math.round(box.bottom), top: Math.round(box.top) };
+    });
+  expect(desktopEditor).toEqual({ bottom: 678, top: 368 });
+
+  await page.fill("#editor-body-body", "Template body");
+  const postResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/projects/admin/sample/posts") &&
+      response.request().method() === "POST",
+  );
+  await page.click("form.nm .actions .ybtn-success");
+  await postResponsePromise;
+  expect(postRequests).toEqual([
+    {
+      attachmentIds: [],
+      bodyMarkdown: "Template body",
+      branch: "main",
+      edit: false,
+      issueTemplate: true,
+      labelIds: [],
+      lineEnding: "",
+      newFileName: "",
+      notice: false,
+      path: "ISSUE_TEMPLATE.md",
+      readme: false,
+      title: "ISSUE_TEMPLATE.md: Project Issue Template",
+    },
+  ]);
+});
+
+test("project board create issue-template state preserves legacy mobile editor geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectBoardCreateForm(page, []);
+
+  await page.goto(`${basePath}/admin/sample/postform?issueTemplate=true`);
+
+  await expect(page.locator(".file-path-wrap")).toHaveCount(0);
+  const mobileEditor = await page
+    .locator(".content-wrap.frm-wrap .textarea-box")
+    .evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { bottom: Math.round(box.bottom), top: Math.round(box.top) };
+    });
+  expect(mobileEditor).toEqual({ bottom: 761, top: 451 });
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+});
+
 async function boardCreateActionWhitespace(page: Page) {
   return page.locator(".actions").evaluate((actions) => {
     const save = actions.querySelector<HTMLElement>("button.ybtn-success");
@@ -455,6 +532,8 @@ async function mockProjectBoardCreateForm(
   await page.route(
     `**/api/v1/projects/${ownerName}/${projectName}/posts/form-options**`,
     async (route) => {
+      const issueTemplate =
+        new URL(route.request().url()).searchParams.get("issueTemplate") === "true";
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
@@ -469,12 +548,12 @@ async function mockProjectBoardCreateForm(
           },
           labels: [],
           onlineCommit: {
-            branch: "",
+            branch: issueTemplate ? "main" : "",
             edit: false,
-            issueTemplate: false,
-            path: "",
-            preparedBodyMarkdown: "",
-            title: "",
+            issueTemplate,
+            path: issueTemplate ? "ISSUE_TEMPLATE.md" : "",
+            preparedBodyMarkdown: issueTemplate ? "Template body draft" : "",
+            title: issueTemplate ? "ISSUE_TEMPLATE.md: Project Issue Template" : "",
           },
           readme: false,
         }),

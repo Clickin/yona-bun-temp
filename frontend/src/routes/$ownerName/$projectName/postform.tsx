@@ -129,7 +129,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   const path = onlineCommit?.path ?? search.path;
   const branch = onlineCommit?.branch ?? search.branch;
   const issueTemplate = onlineCommit?.issueTemplate ?? search.issueTemplate;
-  const isOnlineCommit = path !== "";
+  const isOnlineCommit = search.path !== "";
   const canShowNotice = Boolean(options?.canMarkNotice) && !issueTemplate && !isOnlineCommit;
   const canShowUploader = Boolean(options?.canAttachFiles) && !issueTemplate && !isOnlineCommit;
   const canShowReadme = Boolean(options?.canMarkReadme) && search.readme && !issueTemplate;
