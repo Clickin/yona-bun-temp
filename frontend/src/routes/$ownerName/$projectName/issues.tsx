@@ -2903,7 +2903,6 @@ function IssueSearchLabelSelect({
                 </div>
                 <span
                   className="select2-search-choice-close"
-                  title={t("button.delete")}
                   aria-label={`${t("button.delete")} ${label.name}`}
                   role="button"
                   tabIndex={0}

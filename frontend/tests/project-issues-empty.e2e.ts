@@ -1156,6 +1156,35 @@ test("project issue list preserves legacy selected-label Select2 DOM", async ({ 
   expect(mobileOverflow).toBeLessThanOrEqual(0);
 });
 
+test("project issue list labelIds=2 keeps legacy hidden close sprite and removal", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "selected-label-two");
+  await page.goto(`${basePath}/admin/sample/issues?state=open&labelIds=2`);
+
+  const control = page.locator("#s2id_labelIds");
+  await expect(control).not.toHaveClass(/\bhide\b/u);
+  const chip = control.locator('.select2-search-choice .issue-label[data-label-id="2"]');
+  await expect(chip).toHaveText("parity");
+  const category = control.locator(".select2-result-with-children");
+  await expect(category).toHaveClass(/select2-selected/u);
+  await expect(category.locator(":scope > .select2-result-label > span")).toHaveText("area");
+  const option = category.locator('[role="option"]');
+  await expect(option).toHaveClass(/select2-selected/u);
+  await expect(option.locator('.issue-label[data-label-id="2"]')).toHaveText("parity");
+  const close = control.locator(".select2-search-choice-close");
+  await expect(close).toHaveText("");
+  await expect(close).not.toHaveAttribute("title");
+  await expect(close).toHaveCSS("opacity", "0");
+
+  await control.hover();
+  await expect(close).toHaveCSS("opacity", "1");
+  await close.click();
+  await expect(page).not.toHaveURL(/labelIds=2/u);
+  await expect(control.locator(".select2-search-choice")).toHaveCount(0);
+});
+
 test("project issue list label select hides legacy edit link for non-managers", async ({
   page,
 }) => {
@@ -3873,6 +3902,7 @@ async function mockProjectIssues(
     | "project-labels-non-manager"
     | "project-wide-options"
     | "selected-label-one"
+    | "selected-label-two"
     | "sharer"
     | "subtask"
     | "upcoming"
@@ -4210,15 +4240,15 @@ async function mockProjectIssues(
                   name: "bug",
                 },
               ]
-            : state === "selected-label-one"
+            : state === "selected-label-one" || state === "selected-label-two"
               ? [
                   {
-                    categoryId: 1,
+                    categoryId: state === "selected-label-two" ? 2 : 1,
                     categoryIsExclusive: false,
-                    categoryName: "type",
-                    color: "#f44336",
-                    id: 1,
-                    name: "bug",
+                    categoryName: state === "selected-label-two" ? "area" : "type",
+                    color: state === "selected-label-two" ? "#2196f3" : "#f44336",
+                    id: state === "selected-label-two" ? 2 : 1,
+                    name: state === "selected-label-two" ? "parity" : "bug",
                   },
                 ]
               : state === "project-wide-options"
@@ -4260,6 +4290,7 @@ async function mockProjectIssues(
           state === "no-milestone-menu" ||
           state === "non-member" ||
           state === "selected-label-one" ||
+          state === "selected-label-two" ||
           state === "project-wide-options"
           ? state === "blank-assignee-label"
             ? {
@@ -4271,7 +4302,7 @@ async function mockProjectIssues(
                   },
                 ],
               }
-            : state === "selected-label-one"
+            : state === "selected-label-one" || state === "selected-label-two"
               ? {
                   ...populatedIssueResponse(),
                   items: [
@@ -4279,12 +4310,12 @@ async function mockProjectIssues(
                       ...populatedIssueResponse().items[0],
                       labels: [
                         {
-                          categoryId: 1,
+                          categoryId: state === "selected-label-two" ? 2 : 1,
                           categoryIsExclusive: false,
-                          categoryName: "type",
-                          color: "#f44336",
-                          id: 1,
-                          name: "bug",
+                          categoryName: state === "selected-label-two" ? "area" : "type",
+                          color: state === "selected-label-two" ? "#2196f3" : "#f44336",
+                          id: state === "selected-label-two" ? 2 : 1,
+                          name: state === "selected-label-two" ? "parity" : "bug",
                         },
                       ],
                     },
