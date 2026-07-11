@@ -19,6 +19,23 @@ records a gap or deviation.
 When these sources disagree, prefer visible legacy behavior from
 `yona-original/app/views/**`, then legacy LESS, then current implementation.
 
+## Frozen Pixel-Parity Styles
+
+The complete `yona-original/app/assets/stylesheets/yobi.less` import graph and
+the legacy Bootstrap CSS files listed above are an immutable styling baseline.
+Do not edit them, and do not compensate for screenshot differences with new
+route-specific spacing, positioning, transforms, fixed dimensions, or
+viewport-specific numeric offsets.
+
+Pixel parity must come from the same visible element roles, DOM nesting and
+order, legacy class composition, assets/fonts, cascade, and box model. When a
+legacy jQuery plugin is replaced by React, reproduce its user-visible generated
+DOM with React state and events. Any CSS needed for that replacement must be a
+directly traceable legacy LESS/CSS rule, scoped only to the React-owned surface;
+record its original file, selector, and rule in provenance and focused tests.
+An unexplained new numeric CSS value is a parity failure, even if it makes a
+screenshot metric pass.
+
 ## Global Shell
 
 - Background: use legacy white (`#fff`) as the default page background.

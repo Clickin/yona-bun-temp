@@ -28,6 +28,7 @@
 - frontend route TSX를 바꾸는 goal turn은 같은 staged change에서 `docs/provenance/frontend-scala-html-goal-violation-audit.md`에 대상 route/screen state, legacy Scala HTML root, 포함 partial, TSX write scope, focused verification을 남긴다. `tools/scala-html-goal-guard.mjs`가 이 memo 갱신을 강제한다.
 - 기존 TSX가 legacy Scala HTML과 다르면 기존 구현을 보존하려고 부분 패치하지 말고 화면 단위로 legacy template skeleton을 다시 만든다.
 - subagent 지시문에는 반드시 legacy DOM/UX를 React state/events/components + TanStack Router/Query로 번역한다는 조건을 포함한다. subagent 산출물이 legacy Scala HTML source-of-truth를 먼저 대조하지 않았거나, 기존 React DOM에 맞춘 보정이거나, legacy DOM-control JS를 내부 구현으로 복사하면 통합하지 않고 폐기한다.
+- Pixel parity styling은 `yona-original/app/assets/stylesheets/yobi.less` 전체 import graph와 legacy `bootstrap.css`/`bootstrap-responsive.css`를 수정 불가한 동결 기준선으로 사용한다. 원본에 없는 margin/padding/position/transform/fixed size/viewport offset으로 diff를 상쇄하지 않는다. DOM/class/cascade/font/asset/box-model을 먼저 고치며, React plugin 대체용 CSS는 legacy rule을 추적 가능하게 그대로 scope한 경우에만 허용하고 provenance에 원본 file/selector/rule을 기록한다.
 
 ## 테스트 실행
 

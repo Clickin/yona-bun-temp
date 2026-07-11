@@ -77,6 +77,8 @@
 - multi-day unattended frontend goal turn을 resume할 때는 구현 대상을 고르기 전에 `pnpm agent:scala-html-goal-automation`을 실행한다. 이 명령은 `YONA_SCALA_HTML_GOAL_HISTORY_RANGE` 또는 `.agent/scala-html-goal-history-range`가 없거나 range audit이 실패하면 중단해야 한다.
 - `YONA_ALLOW_SCALA_HTML_*` 예외 marker는 unattended `pnpm agent:turn-commit` 경로에서 사용하지 않는다. 사람이 감독하는 수동 예외 commit에만 쓰고, route/reason/follow-up 감사 note를 남긴다.
 - frontend component design 또는 화면 styling 작업 전에는 [`DESIGN.md`](/G:/programming/yona/DESIGN.md)를 확인하고, `yona-original/`의 view/LESS 근거를 우선한다.
+- **Pixel parity 스타일 기준선은 동결한다.** `yona-original/app/assets/stylesheets/yobi.less`와 그 import 전체, `yona-original/public/bootstrap/css/bootstrap.css`, `bootstrap-responsive.css`만을 canonical styling source로 사용하며 이 legacy 파일들은 수정하지 않는다. React 화면은 대응 Scala HTML과 legacy plugin의 사용자-visible 생성 DOM에 맞는 element/클래스 조합을 재현하고, 위 동결 CSS의 cascade와 box model로 렌더링해야 한다.
+- Screenshot/geometry diff를 상쇄하려고 원본에 없는 route 전용 `margin`, `padding`, `top/right/bottom/left`, `transform`, 고정 `width/height` 또는 viewport별 보정값을 추가하지 않는다. 차이가 나면 먼저 element 종류, DOM nesting/order, legacy class, imported stylesheet, cascade/specificity, font/asset, box model 누락을 수정한다. React-owned plugin 대체에 CSS가 꼭 필요하면 동결된 legacy LESS/CSS 규칙을 selector만 React 소유 경계로 좁혀 그대로 옮기고, 원본 파일/selector/rule 근거를 provenance와 focused test에 남긴다. 근거 없는 새 수치는 parity gate 실패다.
 - `reference/mixed-code/**`를 구현 근거로 읽거나 사용하지 않는다. 기능/UX 근거는 `yona-original/`에서만 찾는다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.
 - root Bun/Go 혼합 코드, `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend 관련 결정은 현재 baseline처럼 서술하지 않는다.

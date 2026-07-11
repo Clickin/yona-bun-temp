@@ -42,6 +42,87 @@ const LEFT_CONSECUTIVE_SHARER_ADDED_EVENT_TIMELINE = `<div id="comments" class="
 const LEFT_CONSECUTIVE_LABEL_DELETED_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-102"><span class="state label-deleted">Removed</span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-102">Jul 4, 2026</a></span></li><li class="event" id="event-103"><span class="state"></span><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a> removed <div class="label issue-label" style="background-color: rgb(81, 170, 204)">bug</div> label<span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-103">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 const LEFT_DEFAULT_EVENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"><li class="event" id="event-89">fallback noteby <a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" data-placement="top" title="dev"><strong>Dev Member</strong></a><span class="date"><a href="__BASE_PATH__/admin/sample/issue/11#event-89">Jul 4, 2026</a></span></li></ul></div></div>${COMMENT_FORM}</div>`;
 
+test("project issue detail restores live Korean metadata controls and editor geometry", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window.navigator, "languages", { value: ["ko-KR"], configurable: true });
+    Object.defineProperty(window.navigator, "language", { value: "ko-KR", configurable: true });
+  });
+  const { massUpdateRequests } = await mockProjectIssueDetail(page, {
+    dueDateUntilLabel: "13 days",
+  });
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  const assignee = page.getByRole("combobox", { name: "담당자" });
+  const labels = page.locator(".issue-info .select2-container-multi.issue-labels");
+  await expect(assignee).toBeVisible();
+  await expect(assignee.locator(".select2-chosen")).toContainText("Site Admin");
+  await expect(labels).toBeVisible();
+  await expect(labels.locator(".select2-search-choice .label")).toHaveText("bug");
+  await expect(page.locator("#comment-form .nav-tabs > li").nth(0)).toHaveText("편집");
+  await expect(page.locator("#comment-form .nav-tabs > li").nth(1)).toHaveText("미리보기");
+  await expect(page.locator("#comment-form .add-task-list-button")).toContainText(
+    "체크리스트 추가",
+  );
+  await expect(page.locator(".duedate-status")).toContainText("13일");
+
+  await assignee.locator(".select2-choice").click();
+  await assignee.getByRole("button", { name: "담당자 없음" }).click();
+  await expect(page.locator("#assignee")).toHaveValue("");
+  await labels.getByRole("button", { name: "bug 삭제" }).click();
+  await expect(labels.locator(".select2-search-choice")).toHaveCount(0);
+  await expect.poll(() => massUpdateRequests.length).toBe(2);
+
+  const geometry = await page.evaluate(() => {
+    const form = document.querySelector<HTMLElement>("#issueUpdateForm");
+    const assigneeControl = document.querySelector<HTMLElement>(
+      '#issueUpdateForm .select2-container[aria-label="담당자"]',
+    );
+    const labelControl = document.querySelector<HTMLElement>(
+      "#issueUpdateForm .select2-container-multi.issue-labels",
+    );
+    const assigneeChoice = assigneeControl?.querySelector<HTMLElement>(".select2-choice");
+    const labelChoices = labelControl?.querySelector<HTMLElement>(".select2-choices");
+    const editor = document.querySelector<HTMLElement>("#comment-form .mt10");
+    const upload = document.querySelector<HTMLElement>("#comment-form .upload-wrap");
+    if (
+      !form ||
+      !assigneeControl ||
+      !labelControl ||
+      !assigneeChoice ||
+      !labelChoices ||
+      !editor ||
+      !upload
+    )
+      return null;
+    const f = form.getBoundingClientRect();
+    const a = assigneeControl.getBoundingClientRect();
+    const l = labelControl.getBoundingClientRect();
+    const e = editor.getBoundingClientRect();
+    const u = upload.getBoundingClientRect();
+    return {
+      assigneeChoiceContained: assigneeChoice.getBoundingClientRect().bottom <= a.bottom,
+      assigneeBeforeLabels: a.bottom <= l.top,
+      editorBoxSizing: getComputedStyle(
+        document.querySelector<HTMLElement>("#comment-form textarea.comment")!,
+      ).boxSizing,
+      formContainsLabels: l.bottom <= f.bottom,
+      labelChoicesContained: labelChoices.getBoundingClientRect().bottom <= l.bottom,
+      uploadFollowsEditor: u.top >= e.bottom,
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry).toEqual({
+    assigneeBeforeLabels: true,
+    assigneeChoiceContained: true,
+    editorBoxSizing: "content-box",
+    formContainsLabels: true,
+    labelChoicesContained: true,
+    uploadFollowsEditor: true,
+  });
+});
+
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);

@@ -314,8 +314,6 @@ textarea {
 input,
 textarea,
 select {
-  box-sizing: border-box;
-  min-height: 30px;
   padding: 4px 6px;
   color: #333;
   background-color: #fff;
@@ -6057,7 +6055,6 @@ div.markdown-preview {
 }
 
 .board-view .board-comment-wrap textarea.comment {
-  box-sizing: border-box;
   width: 100%;
   min-height: 120px;
 }
