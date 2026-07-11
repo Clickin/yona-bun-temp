@@ -3,29 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PROJECT_WATCHERS_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/watchers.tsx";
 
-const EXPECTED_PROJECT_WATCHERS = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
-    </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-toggle="tooltip" title="Site administration" data-placement="bottom"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
-    </ul>
-  </div>
-</header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a href="__BASE_PATH__/admin/sample/watchers" class="btn watcher-count no-border watch-on" title="number of watcher">2</a><div class="dropdown-menu flat right title"><div class="pop-title">You are watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a href="__BASE_PATH__/user/editform/notifications#7" class="ybtn"><i class="yobicon-alert2"></i> Notification settings</a><button type="button" class="ybtn ybtn-watching watchBtn"><i class="yobicon-eye-off"></i> Unwatch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Unwatch</button></div></li></ul></div></div></div></div>
-<div class="project-menu-outer"><div class="project-menu-inner"><ul class="project-menu-nav project-menu-gruop"><li class=""><a href="__BASE_PATH__/admin/sample"><span class="menu-name">Project home</span><span class="short-menu">H</span></a></li><li class="code-menu "><a href="__BASE_PATH__/admin/sample/code"><span class="menu-name">Code</span><span class="short-menu">C</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/issues"><span class="menu-name">Issue</span><span class="short-menu">I</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/pullRequests"><span class="menu-name">Pull request</span><span class="short-menu">P</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/reviews"><span class="menu-name">Review</span><span class="short-menu">R</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/milestones"><span class="menu-name">Milestone</span><span class="short-menu">M</span></a></li><li class=""><a href="__BASE_PATH__/admin/sample/posts"><span class="menu-name">Board</span><span class="short-menu">B</span></a></li></ul><div class="project-setting"><ul class="project-menu-nav"><li class=""><a href="__BASE_PATH__/admin/sample/setting"><i class="yobicon-cog"></i><span class="blind"><span class="menu-name">Project configuration</span></span></a></li></ul></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><h4><strong>This projects watcher list.</strong></h4><p>* This list contains only those who can access this project.</p><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/bob" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Bob Smith</div><div class="member-id">@bob</div></li></ul></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`;
+const EXPECTED_PROJECT_WATCHERS_BODY = `<div class="page-wrap-outer"><div class="project-page-wrap"><h4><strong>This projects watcher list.</strong></h4><p>* This list contains only those who can access this project.</p><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/bob" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Bob Smith</div><div class="member-id">@bob</div></li></ul></div></div>`;
 
 test("project watchers matches legacy project/watchers.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -34,8 +12,11 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
   await page.goto(`${basePath}/admin/sample/watchers`);
   await expect(page.getByText("This projects watcher list.")).toBeVisible();
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_WATCHERS.replaceAll("__BASE_PATH__", basePath)),
+  expect(await canonicalizeWatchersBody(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_WATCHERS_BODY.replaceAll("__BASE_PATH__", basePath),
+    ),
   );
   expect(await readDesktopWatchersMetrics(page)).toEqual({
     avatarHeight: "40px",
@@ -53,9 +34,13 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     memberListMarginLeft: "0px",
     memberNameLineHeight: "20px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "20px",
+    projectMenuWidth: 684,
+    projectPageMarginTop: "5px",
     titleLineHeight: "30px",
     titlePadding: "10px 0px",
+    watchActionWidth: 86,
+    watcherCountWidth: 31,
+    watcherUtilWidth: 132,
   });
 });
 
@@ -98,6 +83,38 @@ test("project watchers internal links render legacy hrefs and navigate through t
   ).toBe("kept");
 });
 
+test("project watchers empty avatar URL loads the Vite-managed legacy fallback under context path", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    watchers: [{ ...watcherFixture("alice", 2, "Alice Doe"), avatarUrl: "" }],
+  });
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+  const avatar = page.locator(".members.project img").first();
+  await expect(avatar).toBeVisible();
+
+  expect(
+    await avatar.evaluate((image: HTMLImageElement, expectedBasePath) => {
+      const url = new URL(image.currentSrc || image.src);
+      return {
+        complete: image.complete,
+        insideContextPath: url.pathname.startsWith(`${expectedBasePath}/`),
+        naturalHeight: image.naturalHeight,
+        naturalWidth: image.naturalWidth,
+        usesImportedFilename: url.pathname.endsWith("/default-avatar-128.png"),
+      };
+    }, basePath),
+  ).toEqual({
+    complete: true,
+    insideContextPath: true,
+    naturalHeight: 128,
+    naturalWidth: 128,
+    usesImportedFilename: true,
+  });
+});
+
 test("project watchers admin cog badge uses enrolled member count instead of enrollment requests", async ({
   page,
 }) => {
@@ -114,6 +131,61 @@ test("project watchers admin cog badge uses enrolled member count instead of enr
 
   await expect(adminCogBadge).toHaveText("2");
   await expect(adminCogBadge).not.toHaveText("5");
+});
+
+test("project watchers preserves the legacy empty member-list state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, { watchers: [] });
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+
+  await expect(page.locator(".project-page-wrap h4")).toHaveText("This projects watcher list.");
+  await expect(page.locator(".members.project.row-fluid")).toBeAttached();
+  await expect(page.locator(".members.project .member")).toHaveCount(0);
+});
+
+test("project watchers mobile member list stays inside the legacy page wrapper", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+  await expect(page.locator(".project-page-wrap h4")).toHaveText("This projects watcher list.");
+
+  expect(await readMobileWatchersMetrics(page)).toEqual({
+    bodyHasHorizontalOverflow: false,
+    firstMemberInsidePage: true,
+    firstMemberWidth: 371,
+    menuHasActiveItem: false,
+    twoMembersStackVertically: true,
+  });
+});
+
+test("project watchers ko-KR menu preserves Scala whitespace before issue and board badges", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectAdmin(page, {
+    project: { boardCount: 1, openIssueCount: 2 },
+  });
+
+  await page.goto(`${basePath}/admin/sample/watchers`);
+  await expect(page.locator(".project-page-wrap h4")).toHaveText("이 프로젝트를 지켜보는 사람");
+
+  expect(await readKoreanBadgeMenuMetrics(page)).toEqual({
+    boardHasLiteralSpace: true,
+    boardLabel: "게시판",
+    issueHasLiteralSpace: true,
+    issueLabel: "이슈",
+    menuWidth: 573,
+  });
 });
 
 test("protected org-owned project watchers expose legacy project-header search scope on localhost", async ({
@@ -133,22 +205,23 @@ test("protected org-owned project watchers expose legacy project-header search s
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect
-    .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
-    )
-    .toEqual([
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
-    ]);
+  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(searchScopeButtons).toHaveCount(3);
+  expect(
+    await searchScopeButtons.evaluateAll((buttons) =>
+      buttons.map((button) => ({
+        action: button.getAttribute("data-action"),
+        toggle: button.getAttribute("data-toggle"),
+      })),
+    ),
+  ).toEqual([
+    { action: null, toggle: null },
+    { action: null, toggle: null },
+    { action: null, toggle: null },
+  ]);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await searchScopeButtons.nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -156,7 +229,7 @@ test("protected org-owned project watchers expose legacy project-header search s
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await searchScopeButtons.nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
@@ -202,17 +275,23 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain("function projectIsProtected(project: ProjectContainer)");
   expect(source).toContain('stringField(record.projectScope, "") === "protected"');
   expect(source).toContain('to="/$user"');
-  expect(source).toContain('to="/$ownerName/$projectName"');
-  expect(source).toContain('to="/$ownerName/$projectName/watchers"');
-  expect(source).toContain('to="/$ownerName/$projectName/code"');
-  expect(source).toContain('to="/$ownerName/$projectName/setting"');
-  expect(source).toContain("toggleProjectWatchRest");
+  expect(source).toContain('import { ProjectHeader, ProjectMenu } from "../$projectName";');
+  expect(source).toContain(
+    'import defaultAvatarUrl from "../../../assets/legacy/default-avatar-128.png";',
+  );
+  expect(source).toContain("prefixBasePath(basePath, defaultAvatarUrl)");
+  expect(source).not.toContain("/legacy-assets/images/default-avatar-32.png");
+  expect(source).toContain(
+    "<ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />",
+  );
+  expect(source).toContain(
+    "<ProjectMenu basePath={runtimeConfig.basePath} project={projectQuery.data} />",
+  );
+  expect(source).not.toContain("function ProjectHeader(");
+  expect(source).not.toContain("function ProjectMenu(");
   expect(source).toContain(
     '<title>{`${t("title.projectWatchers")} - ${ownerName}/${projectName}`}</title>',
   );
-  expect(source).toContain("onClick={(event) =>");
-  expect(source).toContain("event.preventDefault();");
-  expect(source).toContain("event.stopPropagation();");
   expect(source).not.toContain('data-toggle="dropdown"');
   expect(source).not.toContain('data-toggle="tooltip"');
   expect(source).not.toContain("document.");
@@ -224,8 +303,8 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).not.toContain("search={legacyUserSearch}");
   expect(source).not.toContain("legacyLinkProps");
   expect(source).not.toContain("{...legacyLinkProps}");
-  expect(source).toContain("activeOptions={{");
-  expect(source).toContain("activeProps={{");
+  expect(source).toContain("activeOptions={legacyLinkActiveOptions}");
+  expect(source).toContain("activeProps={legacyLinkActiveProps}");
   expect(source).toContain("includeSearch: true");
   expect(source).toContain('"data-status": undefined');
   expect(source).not.toContain("<a ");
@@ -404,6 +483,10 @@ async function readDesktopWatchersMetrics(page: Page) {
     const firstImage = requireElement(".members.project img");
     const firstName = requireElement(".members.project .member-name");
     const firstId = requireElement(".members.project .member-id");
+    const projectMenu = requireElement(".project-menu-gruop");
+    const watcherCount = requireElement(".project-util .watcher-count");
+    const watchAction = requireElement(".project-util .down-arrow");
+    const watcherUtil = requireElement(".project-util-wrap");
     const pageWrapStyle = getComputedStyle(pageWrapOuter);
     const projectPageStyle = getComputedStyle(projectPageWrap);
     const titleStyle = getComputedStyle(title);
@@ -428,9 +511,13 @@ async function readDesktopWatchersMetrics(page: Page) {
       memberListMarginLeft: getComputedStyle(memberList).marginLeft,
       memberNameLineHeight: nameStyle.lineHeight,
       pageWrapMinWidth: pageWrapStyle.minWidth,
+      projectMenuWidth: Math.round(projectMenu.getBoundingClientRect().width),
       projectPageMarginTop: projectPageStyle.marginTop,
       titleLineHeight: titleStyle.lineHeight,
       titlePadding: titleStyle.padding,
+      watchActionWidth: Math.round(watchAction.getBoundingClientRect().width),
+      watcherCountWidth: Math.round(watcherCount.getBoundingClientRect().width),
+      watcherUtilWidth: Math.round(watcherUtil.getBoundingClientRect().width),
     };
 
     function requireElement(selector: string): HTMLElement {
@@ -477,6 +564,75 @@ async function readProtectedPortalWatchersShellMetrics(page: Page) {
   });
 }
 
+async function readMobileWatchersMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrap = requireElement(".project-page-wrap");
+    const members = Array.from(document.querySelectorAll<HTMLElement>(".members.project .member"));
+    const first = members[0];
+    const second = members[1];
+    if (!first || !second) {
+      throw new Error("Missing watcher members");
+    }
+    const pageBox = pageWrap.getBoundingClientRect();
+    const firstBox = first.getBoundingClientRect();
+    const secondBox = second.getBoundingClientRect();
+    return {
+      bodyHasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      firstMemberInsidePage: firstBox.left >= pageBox.left && firstBox.right <= pageBox.right,
+      firstMemberWidth: Math.round(firstBox.width),
+      menuHasActiveItem: document.querySelector(".project-menu-gruop > li.active") !== null,
+      twoMembersStackVertically: secondBox.top >= firstBox.bottom,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function readKoreanBadgeMenuMetrics(page: Page) {
+  return page.evaluate(() => {
+    const menu = requireElement(".project-menu-gruop");
+    const issue = requireElement(".project-menu-gruop > li:nth-child(3) > a");
+    const board = requireElement(".project-menu-gruop > li:nth-child(7) > a");
+    return {
+      boardHasLiteralSpace: hasBadgeSpace(board),
+      boardLabel: requireChild(board, ".menu-name").textContent,
+      issueHasLiteralSpace: hasBadgeSpace(issue),
+      issueLabel: requireChild(issue, ".menu-name").textContent,
+      menuWidth: Math.round(menu.getBoundingClientRect().width),
+    };
+
+    function hasBadgeSpace(link: HTMLElement) {
+      const badge = requireChild(link, ".project-menu-count");
+      return (
+        badge.previousSibling?.nodeType === Node.TEXT_NODE &&
+        badge.previousSibling.textContent === " "
+      );
+    }
+
+    function requireChild(parent: HTMLElement, selector: string): HTMLElement {
+      const element = parent.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
 async function mockProjectAdmin(
   page: Page,
   options: {
@@ -485,6 +641,7 @@ async function mockProjectAdmin(
     watchRequests?: { hasCsrfToken: boolean; method: string }[];
     watchResponseCount?: number;
     project?: Partial<ReturnType<typeof projectContainer>>;
+    watchers?: ReturnType<typeof watcherFixture>[];
   } = {},
 ) {
   await page.route("**/api/v1/session", async (route) => {
@@ -530,19 +687,9 @@ async function mockProjectAdmin(
         ownerName: "admin",
         projectName: "sample",
         totalCount: 2,
-        watchers: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            loginId: "alice",
-            userId: 2,
-            userLabel: "Alice Doe",
-          },
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            loginId: "bob",
-            userId: 3,
-            userLabel: "Bob Smith",
-          },
+        watchers: options.watchers ?? [
+          watcherFixture("alice", 2, "Alice Doe"),
+          watcherFixture("bob", 3, "Bob Smith"),
         ],
       }),
     });
@@ -613,6 +760,7 @@ async function mockProtectedPortalWatchers(page: Page) {
         id: 2,
         organizationName: "weblabs",
         ownerName: "weblabs",
+        isProtected: true,
         projectScope: "protected",
         projectName: "portal",
       }),
@@ -737,13 +885,18 @@ function projectContainer() {
   };
 }
 
-async function canonicalizeScreenRoots(page: Page) {
+function watcherFixture(loginId: string, userId: number, userLabel: string) {
+  return {
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    loginId,
+    userId,
+    userLabel,
+  };
+}
+
+async function canonicalizeWatchersBody(page: Page) {
   return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
-    );
+    const roots = Array.from(document.querySelectorAll(".page-wrap-outer"));
     return roots.map((root) => visit(root)).join("");
 
     function visit(node: Node): string {

@@ -400,6 +400,8 @@ test("visual sweep fixes both browser targets to the Korean legacy locale", () =
 
   assert.match(source, /const sweepLocale = "ko-KR";/u);
   assert.match(source, /locale: sweepLocale,/u);
+  assert.match(source, /https:\/\/www\.gravatar\.com\/avatar\/\*\*/u);
+  assert.match(source, /src\/assets\/legacy\/default-avatar-128\.png/u);
 });
 
 test("visual sweep bootstraps local parity data before browser-form login", () => {
