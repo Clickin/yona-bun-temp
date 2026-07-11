@@ -620,6 +620,7 @@ test("visual sweep captures queued route states with query strings", () => {
   assert.match(source, /"\/admin\/sample\/newMilestoneForm"/u);
   assert.match(source, /"\/admin\/sample\/newPullRequestForm"/u);
   assert.match(source, /"\/admin\/sample\/post\/1"/u);
+  assert.match(source, /"\/admin\/sample\/post\/1\/editform"/u);
 });
 
 test("focused pull request sweep aligns the compared repository refs", () => {
