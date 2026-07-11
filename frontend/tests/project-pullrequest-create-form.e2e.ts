@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 test.setTimeout(60_000);
 
 const EXPECTED_CREATE_FORM = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5"><option></option><option value="7" selected="">admin / sample</option><option value="8">admin / fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5"><option></option><option value="7" selected="">admin / sample</option><option value="8">admin / fork</option></select><select id="toBranch" name="toBranch" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/pullRequests" enctype="multipart/form-data" class="nm"><div class="pull-request-wrap"><div class="pull-left"><label for="fromProjectId" class="field-title">From</label><select id="fromProjectId" name="fromProjectId" class="mr5"><option></option><option value="7" selected="">admin / sample</option><option value="8">admin / fork</option></select><select id="fromBranch" name="fromBranch" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="feature/ui" selected="">feature/ui</option><option value="main">main</option></select></div><div class="arrow"><i class="yobicon-right-2"></i></div><div class="pull-right"><label for="toProjectId" class="field-title">To</label><select id="toProjectId" name="toProjectId" class="mr5"><option></option><option value="7" selected="">admin / sample</option><option value="8">admin / fork</option></select><select id="toBranch" name="toBranch" data-format="branch" data-dropdown-css-class="branches" data-placeholder="Select branch"><option></option><option value="main" selected="">main</option></select></div></div><span id="pullRequestState"></span><div id="status" class="alert mt20 mb20 alert-success">This pull request can be merged safely.</div><div><input type="text" id="title" name="title" maxlength="255" class="text" placeholder="Title"><div style="position:relative"><div class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></div><div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="actions"><button type="submit" class="ybtn ybtn-success">Send pull request</button><button type="button" class="ybtn">Cancel</button></div></div><ul class="nav nav-tabs mt20"><li class="active"><button type="button"><span class="vmiddle-inline">Commits</span><span id="numOfCommits" class="num-badge vmiddle-inline">1</span></button></li></ul><div class="tab-content"><div id="__commits" class="code-browse-wrap tab-pane active"><div id="mergeResult" class="code-browser-wrap"><div class="commit-wrap"><table class="code-table commits"><thead class="thead"><tr><td class="commit-id"><strong>@</strong></td><td class="messages"><strong>Commit message</strong></td><td class="date"><strong>Commit date</strong></td><td class="author"><strong>Author</strong></td></tr></thead><tbody class="tbody"><tr><td class="commit-id"><a href="__BASE_PATH__/admin/sample/commit/abcdef1234567890">abcdef1</a></td><td class="messages"><span class="commitMsg short">Add UI</span></td><td class="date" title="Jul 2, 2026">Jul 2, 2026</td><td class="author dev@example.com"><div class="avatar-wrap"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></div></td></tr></tbody></table></div></div></div></div></form></div>
 `;
 const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/newPullRequestForm.tsx", import.meta.url),
@@ -31,10 +31,150 @@ const DEFAULT_PROJECT_ROUTE: MockProjectRoute = {
   projectName: "sample",
 };
 
+test("project pull request create form resolves legacy defaults without query parameters", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const formOptionRequests: string[] = [];
+  await mockProjectPullRequestCreateForm(page, [], { formOptionRequests });
+
+  await page.goto(`${basePath}/admin/sample/newPullRequestForm`);
+
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
+  await expect(page.locator(".content-wrap.frm-wrap form.nm")).toBeVisible();
+  await expect(page.locator("#fromProjectId")).toHaveValue("7");
+  await expect(page.locator("#toProjectId")).toHaveValue("7");
+  await expect(page.locator("#fromBranch")).toHaveValue("feature/ui");
+  await expect(page.locator("#toBranch")).toHaveValue("main");
+  await expect(page.locator("#status")).toHaveClass(/alert-success/u);
+  await expect(page.locator("#title")).toHaveValue("Add UI");
+  await expect(page.locator("#editor-body-body")).toHaveValue("");
+  await expect(page.locator("#mergeResult .code-table.commits tbody tr")).toHaveCount(1);
+  for (const [id, text] of [
+    ["fromProjectId", "admin / sample"],
+    ["fromBranch", "branch feature/ui"],
+    ["toProjectId", "admin / sample"],
+    ["toBranch", "branch main"],
+  ] as const) {
+    await expect(page.locator(`#s2id_${id} .select2-chosen`)).toHaveText(text);
+    await expect(page.locator(`#s2id_${id} + #${id}.select2-offscreen`)).toHaveCount(1);
+  }
+  expect(await select2ChoiceGeometry(page)).toEqual([
+    { height: 28, id: "fromProjectId", width: 218 },
+    { height: 28, id: "fromBranch", width: 218 },
+    { height: 28, id: "toProjectId", width: 218 },
+    { height: 28, id: "toBranch", width: 218 },
+  ]);
+  expect(await select2ContainerGeometry(page)).toEqual([
+    { height: 30, id: "fromProjectId", width: 220 },
+    { height: 30, id: "fromBranch", width: 220 },
+    { height: 30, id: "toProjectId", width: 220 },
+    { height: 30, id: "toBranch", width: 220 },
+  ]);
+  await page.locator("#s2id_fromBranch .select2-choice").click();
+  await expect(page.locator("#fromBranch")).toBeFocused();
+  await expect(page.locator("#fromBranch")).toHaveValue("feature/ui");
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator("#upload")
+        .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
+    )
+    .toBe(70);
+  expect(await inlineControlWhitespace(page)).toEqual({
+    actionGap: 4,
+    actionWhitespace: true,
+    fromSelectorWhitespace: true,
+    toSelectorWhitespace: true,
+  });
+  expect(formOptionRequests).toHaveLength(1);
+  expect(new URL(formOptionRequests[0]).search).toBe("");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator("#upload")
+        .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
+    )
+    .toBe(100);
+  const mobileY = await page.evaluate(() => ({
+    editor: Math.round(document.querySelector<HTMLElement>(".mt10")!.getBoundingClientRect().top),
+    status: Math.round(
+      document.querySelector<HTMLElement>("#status")!.getBoundingClientRect().bottom,
+    ),
+    upload: Math.round(document.querySelector<HTMLElement>("#upload")!.getBoundingClientRect().top),
+  }));
+  expect(mobileY.editor).toBeGreaterThanOrEqual(mobileY.status);
+  expect(mobileY.upload).toBeGreaterThan(mobileY.editor);
+  const select2Boxes = await page.evaluate(() =>
+    ["fromProjectId", "fromBranch", "toProjectId", "toBranch"].map((id) => {
+      const box = document.querySelector<HTMLElement>(`#s2id_${id}`)!.getBoundingClientRect();
+      return {
+        bottom: Math.round(box.bottom),
+        height: Math.round(box.height),
+        id,
+        top: Math.round(box.top),
+        width: Math.round(box.width),
+      };
+    }),
+  );
+  expect(select2Boxes.map((box) => box.width)).toEqual([220, 220, 220, 220]);
+  expect(select2Boxes.map((box) => box.height)).toEqual([30, 30, 30, 30]);
+  expect(select2Boxes[1].top).toBeGreaterThanOrEqual(select2Boxes[0].bottom);
+  expect(select2Boxes[3].top).toBeGreaterThanOrEqual(select2Boxes[2].bottom);
+  expect(await select2ChoiceGeometry(page)).toEqual([
+    { height: 28, id: "fromProjectId", width: 218 },
+    { height: 28, id: "fromBranch", width: 218 },
+    { height: 28, id: "toProjectId", width: 218 },
+    { height: 28, id: "toBranch", width: 218 },
+  ]);
+  expect(await commitTabBadgeMetrics(page)).toEqual({
+    badgeBackground: "rgba(0, 0, 0, 0)",
+    badgePadding: "2px 4px",
+    tabWidth: 85,
+  });
+});
+
+test("project pull request commit row uses ko-KR relative time and runtime avatar asset", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await page.clock.install({ time: new Date("2026-07-12T12:00:00Z") });
+  await mockProjectPullRequestCreateForm(page, [], {
+    authorDateLabel: "2026-07-12T10:00:00Z",
+  });
+  await page.goto(`${basePath}/admin/sample/newPullRequestForm`);
+
+  const date = page.locator("#mergeResult tbody td.date");
+  await expect(date).toHaveText("2시간 전");
+  await expect(date).toHaveAttribute("title", "2026-07-12T10:00:00Z");
+  await expect(page.locator("#mergeResult .avatar-wrap img")).toHaveAttribute(
+    "src",
+    `${basePath}/legacy-assets/images/default-avatar-128.png`,
+  );
+  const avatar = page.locator("#mergeResult .avatar-wrap img");
+  await expect(avatar).toHaveAttribute("width", "32");
+  await expect(avatar).toHaveAttribute("height", "32");
+  const avatarResponse = await page.request.get(
+    `${new URL(page.url()).origin}${basePath}/legacy-assets/images/default-avatar-128.png`,
+  );
+  expect(avatarResponse.ok()).toBe(true);
+  expect(avatarResponse.headers()["content-type"]).toMatch(/^image\//u);
+});
+
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="PULL_REQUEST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
   );
 }
 
@@ -105,7 +245,7 @@ test("project pull request create form restores legacy shell parity for project 
 
     const searchScopeTexts = (
       await page
-        .locator('#gnb-search-scope-title, .gnb-search-form [data-toggle="search-scope"]')
+        .locator("#gnb-search-scope-title, .gnb-search-form .dropdown-menu > li > button")
         .allTextContents()
     )
       .map((value) => value.replace(/\s+/gu, " ").trim())
@@ -316,10 +456,12 @@ test("project pull request create form matches legacy git/create.scala.html core
   expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
     await canonicalizeHtml(
       page,
-      withLegacyFileUploader(withLegacyEditor(EXPECTED_CREATE_FORM)).replaceAll(
-        "__BASE_PATH__",
-        basePath,
-      ),
+      withLegacyFileUploader(withLegacyEditor(EXPECTED_CREATE_FORM))
+        .replaceAll("__BASE_PATH__", basePath)
+        .replace(
+          `${basePath}/assets/images/default-avatar-32.png`,
+          `${basePath}/legacy-assets/images/default-avatar-128.png`,
+        ),
     ),
   );
   expect(await createFormMetrics(page)).toEqual({
@@ -341,7 +483,12 @@ test("project pull request create form matches legacy git/create.scala.html core
     fieldTitleFontWeight: "700",
     mergeTableWidth: 1260,
     mergeWrapWidth: 1260,
-    titleWidth: 1222,
+    titleWidth: 1236,
+  });
+  expect(await commitTabBadgeMetrics(page)).toEqual({
+    badgeBackground: "rgba(0, 0, 0, 0)",
+    badgePadding: "2px 4px",
+    tabWidth: 135,
   });
   expect(await markdownHelpMetrics(page)).toEqual({
     firstItemHeightClosed: "0px",
@@ -722,6 +869,62 @@ async function createFormMetrics(page: Page) {
   });
 }
 
+async function commitTabBadgeMetrics(page: Page) {
+  return page.locator("form.nm > ul.nav-tabs.mt20 > li.active").evaluate((tab) => {
+    const badge = tab.querySelector<HTMLElement>("#numOfCommits");
+    if (!badge) throw new Error("Expected pull request commit badge is missing");
+    const badgeStyle = getComputedStyle(badge);
+    return {
+      badgeBackground: badgeStyle.backgroundColor,
+      badgePadding: badgeStyle.padding,
+      tabWidth: Math.round(tab.getBoundingClientRect().width),
+    };
+  });
+}
+
+async function inlineControlWhitespace(page: Page) {
+  return page.evaluate(() => {
+    const save = document.querySelector<HTMLElement>('.actions button[type="submit"]');
+    const cancel = save?.nextElementSibling as HTMLElement | null;
+    const fromProject = document.querySelector<HTMLElement>("#fromProjectId");
+    const toProject = document.querySelector<HTMLElement>("#toProjectId");
+    if (!save || !cancel || !fromProject || !toProject) {
+      throw new Error("Expected pull request inline controls are missing");
+    }
+    const hasWhitespaceAfter = (element: HTMLElement) =>
+      element.nextSibling?.nodeType === Node.TEXT_NODE &&
+      /\s/u.test(element.nextSibling.textContent ?? "");
+    return {
+      actionGap: Math.round(
+        cancel.getBoundingClientRect().left - save.getBoundingClientRect().right,
+      ),
+      actionWhitespace: hasWhitespaceAfter(save),
+      fromSelectorWhitespace: hasWhitespaceAfter(fromProject),
+      toSelectorWhitespace: hasWhitespaceAfter(toProject),
+    };
+  });
+}
+
+async function select2ChoiceGeometry(page: Page) {
+  return page.evaluate(() =>
+    ["fromProjectId", "fromBranch", "toProjectId", "toBranch"].map((id) => {
+      const box = document
+        .querySelector<HTMLElement>(`#s2id_${id} .select2-choice`)!
+        .getBoundingClientRect();
+      return { height: Math.round(box.height), id, width: Math.round(box.width) };
+    }),
+  );
+}
+
+async function select2ContainerGeometry(page: Page) {
+  return page.evaluate(() =>
+    ["fromProjectId", "fromBranch", "toProjectId", "toBranch"].map((id) => {
+      const box = document.querySelector<HTMLElement>(`#s2id_${id}`)!.getBoundingClientRect();
+      return { height: Math.round(box.height), id, width: Math.round(box.width) };
+    }),
+  );
+}
+
 async function markdownHelpMetrics(page: Page) {
   return page.locator(".markdown-help").evaluate((root) => {
     const nav = root.querySelector<HTMLElement>(".markdown-help-nav");
@@ -785,6 +988,8 @@ async function mockProjectPullRequestCreateForm(
   page: Page,
   postRequests: unknown[],
   options: {
+    authorDateLabel?: string;
+    formOptionRequests?: string[];
     mergeMode?: "conflict" | "empty" | "normal";
     mergeResultRequests?: string[];
     project?: Partial<MockProjectRoute>;
@@ -793,7 +998,7 @@ async function mockProjectPullRequestCreateForm(
 ) {
   const project = { ...DEFAULT_PROJECT_ROUTE, ...options.project };
   const containerPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/container`;
-  const formOptionsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/form-options?*`;
+  const formOptionsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/form-options**`;
   const mergeResultPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests/merge-result?*`;
   const pullRequestsPath = `**/api/v1/owners/${project.ownerName}/projects/${project.projectName}/pull-requests`;
 
@@ -851,6 +1056,7 @@ async function mockProjectPullRequestCreateForm(
   });
   await page.route(formOptionsPath, async (route) => {
     const url = new URL(route.request().url());
+    options.formOptionRequests?.push(url.toString());
     const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
     const fromProjectId = Number(url.searchParams.get("fromProjectId")) || project.projectId;
     const toProjectId = Number(url.searchParams.get("toProjectId")) || project.projectId;
@@ -920,7 +1126,7 @@ async function mockProjectPullRequestCreateForm(
             ? []
             : [
                 {
-                  authorDateLabel: "Jul 2, 2026",
+                  authorDateLabel: options.authorDateLabel ?? "Jul 2, 2026",
                   authorEmail: "dev@example.com",
                   commitId: "abcdef1234567890",
                   commitMessage,
@@ -1015,7 +1221,14 @@ async function selectLegacyOption(page: Page, selector: string, value: string) {
 
 async function canonicalize(page: Page, selector: string) {
   return page.locator(selector).evaluate((root) => {
-    return visit(root);
+    const clone = root.cloneNode(true) as Element;
+    clone.querySelectorAll(".select2-container").forEach((element) => element.remove());
+    clone.querySelectorAll("select.select2-offscreen").forEach((element) => {
+      element.classList.remove("select2-offscreen");
+      if (element.getAttribute("class") === "") element.removeAttribute("class");
+      element.removeAttribute("tabindex");
+    });
+    return visit(clone);
 
     function visit(node: Node): string {
       if (node.nodeType === Node.TEXT_NODE) {

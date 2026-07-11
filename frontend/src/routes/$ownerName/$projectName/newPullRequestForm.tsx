@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   createPullRequestRest,
   pullRequestCreateFormOptionsQueryOptions,
@@ -122,7 +122,7 @@ function ProjectNewPullRequestBody({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
-  const { t } = useLegacyMessages();
+  const { language, t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
   const selected = formOptions.selected;
@@ -298,7 +298,7 @@ function ProjectNewPullRequestBody({
                 <div className="actions">
                   <button type="submit" className="ybtn ybtn-success">
                     {t("pullRequest.send")}
-                  </button>
+                  </button>{" "}
                   <button type="button" className="ybtn" onClick={() => router.history.back()}>
                     {t("button.cancel")}
                   </button>
@@ -319,9 +319,11 @@ function ProjectNewPullRequestBody({
                   {mergeResult ? (
                     <MergeResult
                       authorLabel={t("code.author")}
+                      basePath={runtimeConfig.basePath}
                       commitDateLabel={t("code.commitDate")}
                       commitMessageLabel={t("code.commitMsg")}
                       commits={mergeResult.commits}
+                      language={language}
                       noChangesLabel={t("pullRequest.diff.noChanges")}
                       ownerName={ownerName}
                       projectName={projectName}
@@ -365,6 +367,10 @@ function PullRequestBranchSelectors({
   selected: PullRequestFormSelected;
 }) {
   const { t } = useLegacyMessages();
+  const fromProjectRef = useRef<HTMLSelectElement>(null);
+  const fromBranchRef = useRef<HTMLSelectElement>(null);
+  const toProjectRef = useRef<HTMLSelectElement>(null);
+  const toBranchRef = useRef<HTMLSelectElement>(null);
   const changeValue = (
     field: keyof PullRequestFormSelected,
     value: string,
@@ -384,10 +390,20 @@ function PullRequestBranchSelectors({
         <label htmlFor="fromProjectId" className="field-title">
           {t("pullRequest.from")}
         </label>
+        <PullRequestSelect2Closed
+          controlId="fromProjectId"
+          controlRef={fromProjectRef}
+          label={projectOptionLabel(
+            formOptions.fromProjects.find((project) => project.id === selected.fromProjectId) ??
+              formOptions.fromProjects[0],
+          )}
+        />
         <select
+          ref={fromProjectRef}
           id="fromProjectId"
           name="fromProjectId"
-          className="mr5"
+          className="mr5 select2-offscreen"
+          tabIndex={-1}
           defaultValue={String(selected.fromProjectId)}
           key={`from-project-${selected.fromProjectId}`}
           onChange={(event) => changeValue("fromProjectId", event.currentTarget.value, true)}
@@ -398,13 +414,22 @@ function PullRequestBranchSelectors({
               {projectOptionLabel(project)}
             </option>
           ))}
-        </select>
+        </select>{" "}
+        <PullRequestSelect2Closed
+          controlId="fromBranch"
+          controlRef={fromBranchRef}
+          label={selected.fromBranch}
+          branch
+        />
         <select
+          ref={fromBranchRef}
           id="fromBranch"
           name="fromBranch"
           data-format="branch"
           data-dropdown-css-class="branches"
           data-placeholder={t("pullRequest.select.branch")}
+          className="select2-offscreen"
+          tabIndex={-1}
           defaultValue={selected.fromBranch}
           key={`from-branch-${selected.fromBranch}`}
           onChange={(event) => changeValue("fromBranch", event.currentTarget.value)}
@@ -424,10 +449,20 @@ function PullRequestBranchSelectors({
         <label htmlFor="toProjectId" className="field-title">
           {t("pullRequest.to")}
         </label>
+        <PullRequestSelect2Closed
+          controlId="toProjectId"
+          controlRef={toProjectRef}
+          label={projectOptionLabel(
+            formOptions.toProjects.find((project) => project.id === selected.toProjectId) ??
+              formOptions.toProjects[0],
+          )}
+        />
         <select
+          ref={toProjectRef}
           id="toProjectId"
           name="toProjectId"
-          className="mr5"
+          className="mr5 select2-offscreen"
+          tabIndex={-1}
           defaultValue={String(selected.toProjectId)}
           key={`to-project-${selected.toProjectId}`}
           onChange={(event) => changeValue("toProjectId", event.currentTarget.value, true)}
@@ -438,13 +473,22 @@ function PullRequestBranchSelectors({
               {projectOptionLabel(project)}
             </option>
           ))}
-        </select>
+        </select>{" "}
+        <PullRequestSelect2Closed
+          controlId="toBranch"
+          controlRef={toBranchRef}
+          label={selected.toBranch}
+          branch
+        />
         <select
+          ref={toBranchRef}
           id="toBranch"
           name="toBranch"
           data-format="branch"
           data-dropdown-css-class="branches"
           data-placeholder={t("pullRequest.select.branch")}
+          className="select2-offscreen"
+          tabIndex={-1}
           defaultValue={selected.toBranch}
           key={`to-branch-${selected.toBranch}`}
           onChange={(event) => changeValue("toBranch", event.currentTarget.value)}
@@ -461,8 +505,47 @@ function PullRequestBranchSelectors({
   );
 }
 
-function projectOptionLabel(project: { ownerName: string; projectName: string }) {
-  return `${project.ownerName} / ${project.projectName}`;
+function PullRequestSelect2Closed({
+  branch = false,
+  controlId,
+  controlRef,
+  label,
+}: {
+  branch?: boolean;
+  controlId: string;
+  controlRef: RefObject<HTMLSelectElement | null>;
+  label: string;
+}) {
+  return (
+    <div id={`s2id_${controlId}`} className="select2-container" style={{ width: 220 }}>
+      <button
+        type="button"
+        className="select2-choice"
+        aria-expanded="false"
+        onClick={() => controlRef.current?.focus()}
+      >
+        <span className="select2-chosen">
+          {branch ? <strong className="branch-label branch">branch</strong> : null}
+          {branch ? " " : null}
+          {label}
+        </span>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </button>
+      <input className="select2-focusser select2-offscreen" type="text" aria-hidden="true" />
+      <div className="select2-drop select2-display-none select2-with-searchbox">
+        <div className="select2-search">
+          <input className="select2-input" type="text" />
+        </div>
+        <ul className="select2-results"></ul>
+      </div>
+    </div>
+  );
+}
+
+function projectOptionLabel(project: { ownerName: string; projectName: string } | undefined) {
+  return project ? `${project.ownerName} / ${project.projectName}` : "";
 }
 
 function PullRequestMarkdownEditor({
@@ -548,6 +631,11 @@ function PullRequestMarkdownEditor({
 
 function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
   const { t } = useLegacyMessages();
+  const pasteSupported =
+    typeof document !== "undefined" &&
+    "onpaste" in document &&
+    typeof FormData !== "undefined" &&
+    typeof FileReader !== "undefined";
   return (
     <div
       id="upload"
@@ -564,7 +652,12 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
           </div>
         </div>
         <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+        <span
+          className="help help-pastable"
+          style={pasteSupported ? { display: "block" } : undefined}
+        >
+          {t("common.attach.pastehere")}
+        </span>
       </div>
       <ul className="attached-files unstyled"></ul>
       <p className="right-txt help">
@@ -622,17 +715,21 @@ function PullRequestConflictConfirmModal({
 
 function MergeResult({
   authorLabel,
+  basePath,
   commitDateLabel,
   commitMessageLabel,
   commits,
+  language,
   noChangesLabel,
   ownerName,
   projectName,
 }: {
   authorLabel: string;
+  basePath: string;
   commitDateLabel: string;
   commitMessageLabel: string;
   commits: PullRequestCommit[];
+  language: string;
   noChangesLabel: string;
   ownerName: string;
   projectName: string;
@@ -682,15 +779,12 @@ function MergeResult({
                   <span className="commitMsg short">{commit.commitMessage}</span>
                 </td>
                 <td className="date" title={commit.authorDateLabel}>
-                  {commit.authorDateLabel}
+                  {legacyRelativeDateLabel(commit.authorDateLabel, language)}
                 </td>
                 <td className={`author ${commit.authorEmail}`}>
                   <div className="avatar-wrap">
                     <img
-                      src={prefixBasePath(
-                        runtimeConfig.basePath,
-                        "/assets/images/default-avatar-32.png",
-                      )}
+                      src={prefixBasePath(basePath, "/legacy-assets/images/default-avatar-128.png")}
                       width="32"
                       height="32"
                       alt=""
@@ -709,6 +803,20 @@ function MergeResult({
 function legacyUrlSearch(locationHref: string): URLSearchParams {
   const queryIndex = locationHref.indexOf("?");
   return new URLSearchParams(queryIndex >= 0 ? locationHref.slice(queryIndex) : "");
+}
+
+function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
+  if (language !== "ko-KR" || rawLabel === "") return rawLabel;
+  const timestamp = Date.parse(rawLabel);
+  if (Number.isNaN(timestamp)) return rawLabel;
+  const elapsedSeconds = Math.floor((now - timestamp) / 1000);
+  if (elapsedSeconds < 0) return rawLabel;
+  if (elapsedSeconds < 60) return "방금 전";
+  if (elapsedSeconds < 60 * 60) return `${Math.floor(elapsedSeconds / 60)}분 전`;
+  if (elapsedSeconds < 24 * 60 * 60) return `${Math.floor(elapsedSeconds / (60 * 60))}시간 전`;
+  if (elapsedSeconds < 30 * 24 * 60 * 60)
+    return `${Math.floor(elapsedSeconds / (24 * 60 * 60))}일 전`;
+  return rawLabel;
 }
 
 function stringFormValue(formData: FormData, name: string): string {

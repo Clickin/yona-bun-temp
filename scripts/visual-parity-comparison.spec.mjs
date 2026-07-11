@@ -600,6 +600,8 @@ test("visual sweep waits for form routes with query state", () => {
   assert.match(source, /const pathname = path\.split\("\?", 1\)\[0\];/u);
   assert.match(source, /pathname\.endsWith\("\/issueform"\)/u);
   assert.match(source, /pathname\.endsWith\("\/newFork"\)/u);
+  assert.match(source, /pathname\.endsWith\("\/newPullRequestForm"\)/u);
+  assert.match(source, /return "#status\.alert-success"/u);
   assert.match(source, /Number\(item\.issueNumber\) === 1/u);
   assert.match(
     source,
@@ -614,6 +616,15 @@ test("visual sweep captures queued route states with query strings", () => {
   assert.match(source, /"\/admin\/sample\/milestone\/1\/editform"/u);
   assert.match(source, /"\/admin\/sample\/newFork"/u);
   assert.match(source, /"\/admin\/sample\/newMilestoneForm"/u);
+  assert.match(source, /"\/admin\/sample\/newPullRequestForm"/u);
+});
+
+test("focused pull request sweep aligns the compared repository refs", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /synchronizePullRequestRepositoryFixture/u);
+  assert.match(source, /\+refs\/heads\/main:refs\/heads\/main/u);
+  assert.match(source, /\+refs\/heads\/feature\/ui:refs\/heads\/feature\/ui/u);
 });
 
 test("visual sweep waits for dynamic project label styles before measuring issue lists", () => {

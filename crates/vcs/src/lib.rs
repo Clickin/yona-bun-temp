@@ -3126,7 +3126,7 @@ fn list_pull_request_commits(
         &[
             "log",
             "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad",
-            "--date=short",
+            "--date=iso-strict",
             &range,
         ],
     )?;
@@ -3146,7 +3146,7 @@ fn list_pull_request_commits_in_worktree(
         &[
             "log",
             "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad",
-            "--date=short",
+            "--date=iso-strict",
             &range,
         ],
     )?;
@@ -3495,6 +3495,9 @@ fn git_worktree_output_with_path(
     args: &[&str],
     path_arg: &Path,
 ) -> Result<String, VcsError> {
+    let path_arg = path_arg
+        .canonicalize()
+        .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
     let mut args = args.iter().map(OsString::from).collect::<Vec<_>>();
     args.push(path_arg.as_os_str().to_os_string());
     let bytes = git_worktree_bytes(work_tree_path, args)?;

@@ -2041,8 +2041,13 @@ pub(crate) async fn rest_read_pull_request_create_form_options(
         &from_authorization.project,
         &query.from_branch,
     )?;
+    let default_to_branch = if query.to_branch.trim().is_empty() {
+        default_branch_for_project_id(&service, to_authorization.project.id)
+    } else {
+        query.to_branch.clone()
+    };
     let (to_branches, selected_to_branch) =
-        rest_pull_request_branch_options(&service, &to_authorization.project, &query.to_branch)?;
+        rest_pull_request_branch_options(&service, &to_authorization.project, &default_to_branch)?;
 
     Ok(Json(RestPullRequestFormOptionsResponse {
         from_branches,

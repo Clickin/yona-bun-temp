@@ -28,6 +28,14 @@ button {
   padding: 0;
 }
 
+/* React owns Select2 choices as buttons; preserve the frozen anchor sizing semantics. */
+.pull-request-wrap .select2-container > button.select2-choice {
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  text-align: left;
+}
+
 body {
   margin: 0;
   background-color: #fff;
@@ -4445,6 +4453,7 @@ h1 {
     width: 100% !important;
   }
 
+  .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
   .content-wrap.frm-wrap .mt10 > .nav-tabs > li > button {
     padding-right: 5px !important;
     padding-left: 5px !important;
@@ -6991,17 +7000,6 @@ div.markdown-preview {
 .search-category-wrap li.empty a,
 .search-category-wrap li.empty button {
   color: #999;
-}
-
-.num-badge {
-  min-width: 24px;
-  padding: 1px 7px;
-  color: #777;
-  font-size: 12px;
-  line-height: 18px;
-  text-align: center;
-  background: #eee;
-  border-radius: 10px;
 }
 
 .lst-stacked li {

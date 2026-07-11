@@ -1115,6 +1115,17 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .iter()
         .any(|branch| branch["name"] == "main" && branch["selected"] == true));
 
+    let default_form_options = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/form-options",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(default_form_options["selected"]["toBranch"], "main");
+
     let merge_result = response_json(
         rest_get(
             app.clone(),
