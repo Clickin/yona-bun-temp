@@ -609,6 +609,21 @@ async function bootstrapLocalAccount(page, baseUrl) {
       review: true,
       vcs: "git",
     });
+    await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/watch", {});
+    const sampleLabelsResponse = await page.request.get(
+      `${baseUrl}/api/v1/owners/admin/projects/sample/labels`,
+    );
+    const sampleLabels = sampleLabelsResponse.ok()
+      ? await sampleLabelsResponse.json().catch(() => [])
+      : [];
+    if (!Array.isArray(sampleLabels) || sampleLabels.length === 0) {
+      await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/labels", {
+        categoryIsExclusive: false,
+        categoryName: "종류",
+        labelColor: "#51aacc",
+        labelName: "버그",
+      });
+    }
     const issueResponse = await page.request.get(
       `${baseUrl}/api/v1/projects/admin/sample/issues/1`,
     );
