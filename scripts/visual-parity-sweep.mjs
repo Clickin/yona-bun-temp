@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { hasRawLegacyI18nKey, rawLegacyI18nKeys } from "./legacy-i18n-key-detector.mjs";
@@ -255,6 +256,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/milestone/1/editform",
   "/admin/sample/newFork",
   "/admin/sample/newMilestoneForm",
+  "/admin/sample/newPullRequestForm",
 ]);
 
 function localSettledSelectorForPath(path) {
@@ -264,6 +266,9 @@ function localSettledSelectorForPath(path) {
   }
   if (pathname.endsWith("/newFork")) {
     return ".content-wrap.frm-wrap";
+  }
+  if (pathname.endsWith("/newPullRequestForm")) {
+    return "#status.alert-success";
   }
   if (/\/code(?:\/|$)/u.test(pathname)) {
     return ".project-header-outer";
@@ -1559,7 +1564,39 @@ async function runTargetSafely(label, baseUrl) {
   }
 }
 
+function synchronizePullRequestRepositoryFixture() {
+  if (
+    requestedSweepPaths.length > 0 &&
+    !requestedSweepPaths.includes("/admin/sample/newPullRequestForm")
+  ) {
+    return;
+  }
+  const repoPath = resolve(
+    repoRoot,
+    process.env.YORAM_SWEEP_SAMPLE_REPO ?? ".yona-data/repo/2.git",
+  );
+  if (!existsSync(repoPath)) {
+    throw new Error(`Visual sweep sample repository is missing: ${repoPath}`);
+  }
+  const result = spawnSync(
+    "git",
+    [
+      "--git-dir",
+      repoPath,
+      "fetch",
+      `${legacyBaseUrl}/admin/sample`,
+      "+refs/heads/main:refs/heads/main",
+      "+refs/heads/feature/ui:refs/heads/feature/ui",
+    ],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  if (result.status !== 0) {
+    throw new Error(`Unable to synchronize PR parity refs: ${result.stderr.trim()}`);
+  }
+}
+
 const legacy = sweepTarget === "local" ? null : await runTargetSafely("legacy", legacyBaseUrl);
+if (sweepTarget === "both") synchronizePullRequestRepositoryFixture();
 const local = sweepTarget === "legacy" ? null : await runTargetSafely("local", localBaseUrl);
 const comparison = buildVisualComparison({
   legacyResults: legacy?.results ?? [],
