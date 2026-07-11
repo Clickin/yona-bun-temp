@@ -3468,6 +3468,18 @@ test("project issue detail matches live legacy Korean milestone event and mobile
   expect(mobileMetrics).not.toBeNull();
   expect(mobileMetrics!.uploadHeight).toBeCloseTo(100, 0);
   expect(mobileMetrics!.userMenuTop).toBe(83);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const desktopUpload = await page
+    .locator(".write-comment-box .upload-wrap")
+    .evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { height: box.height, width: box.width, x: box.x };
+    });
+  expect(desktopUpload.x).toBeCloseTo(64, 0);
+  expect(desktopUpload.width).toBeCloseTo(948, 0);
+  expect(desktopUpload.height).toBeCloseTo(70, 0);
 });
 
 test("project issue detail renders legacy null milestone timeline event", async ({ page }) => {

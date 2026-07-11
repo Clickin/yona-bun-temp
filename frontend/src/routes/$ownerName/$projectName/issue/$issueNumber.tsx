@@ -762,7 +762,7 @@ function IssueDetailBody({
 
   return (
     <div className="page-wrap-outer">
-      <div className="project-page-wrap board-view">
+      <div className="project-page-wrap board-view issue-detail-page">
         <div className="board-header issue">
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={createdLabel}>
