@@ -4527,10 +4527,6 @@ h1 {
     margin-top: 5px !important;
   }
 
-  .project-header-outer {
-    height: 70px;
-  }
-
   .project-home-header .project-clone-wrap .project-clone-url {
     width: 100px !important;
     max-width: 125px;
@@ -4556,22 +4552,8 @@ h1 {
     max-width: calc(100% - 20px);
   }
 
-  .project-menu-outer,
-  .project-menu-inner,
-  .project-menu-nav {
-    height: auto;
-  }
-
-  .project-menu-gruop,
-  .project-menu-nav > li,
-  .project-setting {
-    float: none;
+  .project-menu-gruop {
     margin-left: 0;
-  }
-
-  .project-menu-nav > li > a {
-    display: block;
-    padding: 5px 12px 4px !important;
   }
 
   .span-hard-wrap {
@@ -5377,6 +5359,7 @@ div.markdown-preview {
 }
 
 .write-comment-box .upload-wrap {
+  box-sizing: content-box;
   padding: 10px;
   margin-bottom: 10px;
   background: #efefef;
@@ -5389,6 +5372,10 @@ div.markdown-preview {
 
 .upload-wrap .help-droppable {
   display: inline;
+}
+
+.write-comment-box .upload-wrap .help-pastable {
+  display: block;
 }
 
 .upload-wrap .attach-wrap {
