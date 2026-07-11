@@ -136,7 +136,7 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     pageWrapMinWidth: "1100px",
     presetColorHeight: "24px",
     presetColorWidth: "auto",
-    projectPageMarginTop: "20px",
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     tabsMarginBottom: "15px",
   });
@@ -640,6 +640,25 @@ test("project labels keeps legacy project shell, responsive containment, and gen
   await expect(page.locator("#editCategory .select2-container .select2-chosen")).toHaveText(
     "여러개 선택할 수 있습니다",
   );
+  await expect(
+    page.locator("#editCategory .select2-choice + .select2-focusser.select2-offscreen"),
+  ).toHaveAttribute("autocomplete", "off");
+  const categoryDrop = page.locator(
+    "#editCategory .select2-drop.select2-without-searchbox.select2-with-searchbox",
+  );
+  await expect(categoryDrop).toHaveClass(/select2-display-none/);
+  await expect(
+    categoryDrop.locator(":scope > .select2-search > input.select2-input"),
+  ).toHaveAttribute("spellcheck", "false");
+  await expect(categoryDrop.locator(":scope > ul.select2-results [role='option']")).toHaveCount(2);
+  await page.locator("#editCategory .select2-choice").click();
+  await expect(categoryDrop).toHaveClass(/select2-drop-active/);
+  await categoryDrop.locator("[role='option']").nth(1).click();
+  await expect(page.locator('#editCategory select[name="isExclusive"]')).toHaveValue("true");
+  await expect(page.locator("#editCategory .select2-chosen")).toHaveText(
+    "하나만 선택할 수 있습니다",
+  );
+  await expect(categoryDrop).toHaveClass(/select2-display-none/);
   await page.locator("#editCategory .btn-dismiss button").click();
   await page
     .locator('#labelsList tr[data-label-id="8"] .actions .ybtn-small:not(.ybtn-danger)')
@@ -660,6 +679,22 @@ test("project labels keeps legacy project shell, responsive containment, and gen
     )
     .toEqual({ height: 1, position: "absolute", width: 1 });
   await expect(page.locator("#editLabel .select2-container .select2-chosen")).toHaveText("type");
+  await expect(
+    page.locator("#editLabel .select2-choice + .select2-focusser.select2-offscreen"),
+  ).toHaveAttribute("type", "text");
+  const labelDrop = page.locator("#editLabel .select2-drop.select2-with-searchbox");
+  await expect(labelDrop).toHaveClass(/select2-display-none/);
+  await expect(labelDrop.locator(":scope > .select2-search > input.select2-input")).toHaveAttribute(
+    "autocomplete",
+    "off",
+  );
+  await expect(labelDrop.locator(":scope > ul.select2-results [role='option']")).toHaveCount(2);
+  await page.locator("#editLabel .select2-choice").press("Enter");
+  await expect(labelDrop).toHaveClass(/select2-drop-active/);
+  await labelDrop.locator("[role='option']").nth(1).press("Space");
+  await expect(page.locator('#editLabel select[name="category.id"]')).toHaveValue("4");
+  await expect(page.locator("#editLabel .select2-chosen")).toHaveText("priority");
+  await expect(labelDrop).toHaveClass(/select2-display-none/);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileLayout = await page.evaluate(() => {
