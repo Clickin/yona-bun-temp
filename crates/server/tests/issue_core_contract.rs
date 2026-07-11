@@ -188,6 +188,109 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 }
 
 #[tokio::test]
+async fn project_issue_list_reports_legacy_sidebar_counts_independent_of_search_and_page() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue sidebar count parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    for (title, assignee_login_id) in [("Open issue", "owner"), ("Closed issue", "")] {
+        response_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                "/yona/api/v1/projects/owner/projectYobi/issues",
+                Some(&cookie),
+                Some(&csrf),
+                Some(json!({
+                    "title": title,
+                    "bodyMarkdown": title,
+                    "assigneeLoginId": assignee_login_id,
+                })),
+            )
+            .await,
+        )
+        .await;
+    }
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({ "contentsMarkdown": "Owner comment" })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2/state",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+
+    let open = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open&filter=no-match&pageNum=9",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(open["totalCount"], 0);
+    assert_eq!(open["openIssueCount"], 1);
+    assert_eq!(open["closedIssueCount"], 1);
+    assert_eq!(open["assignedToMeCount"], 1);
+    assert_eq!(open["authoredByMeCount"], 1);
+    assert_eq!(open["commentedByMeCount"], 1);
+
+    let closed = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=closed&filter=no-match&pageNum=9",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(closed["totalCount"], 0);
+    assert_eq!(closed["openIssueCount"], 1);
+    assert_eq!(closed["closedIssueCount"], 1);
+    assert_eq!(closed["assignedToMeCount"], 0);
+    assert_eq!(closed["authoredByMeCount"], 1);
+    assert_eq!(closed["commentedByMeCount"], 0);
+}
+
+#[tokio::test]
 async fn issue_core_contract_enqueues_legacy_body_changed_webhook_payload() {
     // Guards legacy NotificationEvent.afterIssueBodyChanged -> Webhook fan-out
     // from the issue lifecycle route using the app-scoped integration snapshot.

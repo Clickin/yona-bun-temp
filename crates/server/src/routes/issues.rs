@@ -781,8 +781,13 @@ struct RestIssueListItem {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectIssueListResponse {
+    assigned_to_me_count: u32,
+    authored_by_me_count: u32,
+    closed_issue_count: u32,
+    commented_by_me_count: u32,
     draft_items: Vec<RestIssueListItem>,
     items: Vec<RestIssueListItem>,
+    open_issue_count: u32,
     owner_name: String,
     page_num: u32,
     page_size: u32,
@@ -2780,6 +2785,11 @@ async fn rest_list_project_issues(
     let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    let count_state = if normalize_identifier(&query.state) == "closed" {
+        "closed"
+    } else {
+        "open"
+    };
     let mut filter =
         rest_project_issue_filter_from_query(query).map_err(RestRouteError::from_connect_error)?;
     if let Some(actor_id) = actor_id {
@@ -2796,7 +2806,77 @@ async fn rest_list_project_issues(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
 
+    let count_filter = persistence::IssueListFilter {
+        assignee_id: None,
+        assignee_login_id: None,
+        author_id: None,
+        author_login_id: None,
+        commenter_id: None,
+        due_date: None,
+        draft_author_login_id: None,
+        filter: None,
+        label_ids: Vec::new(),
+        milestone_id: None,
+        order_by: "updatedDate".to_string(),
+        order_dir: "desc".to_string(),
+        page_num: 1,
+        state: None,
+    };
+    let mut open_filter = count_filter.clone();
+    open_filter.state = Some("open".to_string());
+    let open_issue_count = repository
+        .list_project_issues_filtered(&owner_name, &project_name, open_filter)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .total_count;
+    let mut closed_filter = count_filter.clone();
+    closed_filter.state = Some("closed".to_string());
+    let closed_issue_count = repository
+        .list_project_issues_filtered(&owner_name, &project_name, closed_filter)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .total_count;
+    let (assigned_to_me_count, authored_by_me_count, commented_by_me_count) =
+        if let Some(actor_id) = actor_id {
+            let mut assigned_filter = count_filter.clone();
+            assigned_filter.assignee_id = Some(actor_id);
+            assigned_filter.state = Some(count_state.to_string());
+            let assigned = repository
+                .list_project_issues_filtered(&owner_name, &project_name, assigned_filter)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .total_count;
+            let mut authored_filter = count_filter.clone();
+            authored_filter.author_id = Some(actor_id);
+            authored_filter.state = Some(count_state.to_string());
+            let authored = repository
+                .list_project_issues_filtered(&owner_name, &project_name, authored_filter)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .total_count;
+            let mut commented_filter = count_filter;
+            commented_filter.commenter_id = Some(actor_id);
+            commented_filter.state = Some(count_state.to_string());
+            let commented = repository
+                .list_project_issues_filtered(&owner_name, &project_name, commented_filter)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .total_count;
+            (assigned, authored, commented)
+        } else {
+            (0, 0, 0)
+        };
+
     Ok(Json(RestProjectIssueListResponse {
+        assigned_to_me_count,
+        authored_by_me_count,
+        closed_issue_count,
+        commented_by_me_count,
         draft_items: record
             .draft_items
             .into_iter()
@@ -2807,6 +2887,7 @@ async fn rest_list_project_issues(
             .into_iter()
             .map(rest_issue_list_item_from_record)
             .collect(),
+        open_issue_count,
         owner_name: authorization.project.owner_name,
         page_num: record.page_num,
         page_size: record.page_size,
