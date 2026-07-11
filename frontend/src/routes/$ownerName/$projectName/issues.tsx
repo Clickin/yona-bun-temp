@@ -2533,12 +2533,22 @@ function IssueSearchForm({
         <dl className="issue-option">
           <dt>{t("issue.author")}</dt>
           <dd>
+            <IssueSearchSingleSelectDisplay
+              id="authorId"
+              label={
+                search.authorId
+                  ? (authors.find((author) => author.id === search.authorId)?.label ??
+                    t("issue.list.authoredByMe"))
+                  : t("common.order.all")
+              }
+            />
             <select
               key={issueSearchUserSelectKey("author", search.authorId, authors)}
               id="authorId"
               name="authorId"
               data-format="user"
               data-container-css-class="fullsize"
+              className="select2-offscreen"
               defaultValue={search.authorId}
               onChange={(event) => submitSearchControlForm(event.currentTarget)}
             >
@@ -2559,12 +2569,24 @@ function IssueSearchForm({
         <dl className="issue-option">
           <dt>{t("issue.assignee")}</dt>
           <dd>
+            <IssueSearchSingleSelectDisplay
+              id="assigneeId"
+              label={
+                search.assigneeId === "0"
+                  ? t("issue.noAssignee")
+                  : search.assigneeId
+                    ? (assignees.find((assignee) => assignee.id === search.assigneeId)?.label ??
+                      t("issue.list.assignedToMe"))
+                    : t("common.order.all")
+              }
+            />
             <select
               key={issueSearchUserSelectKey("assignee", search.assigneeId, assignees)}
               id="assigneeId"
               name="assigneeId"
               data-format="user"
               data-container-css-class="fullsize"
+              className="select2-offscreen"
               defaultValue={search.assigneeId}
               onChange={(event) => submitSearchControlForm(event.currentTarget)}
             >
@@ -2587,6 +2609,16 @@ function IssueSearchForm({
           <dl className="issue-option">
             <dt>{t("milestone")}</dt>
             <dd>
+              <IssueSearchSingleSelectDisplay
+                id="milestoneId"
+                label={
+                  search.milestoneId === "-1"
+                    ? t("issue.noMilestone")
+                    : selectedMilestone
+                      ? stringField(selectedMilestone.title, "")
+                      : t("milestone.state.all")
+                }
+              />
               <select
                 id="milestoneId"
                 key={[search.milestoneId, milestones.open.length, milestones.closed.length].join(
@@ -2595,6 +2627,7 @@ function IssueSearchForm({
                 name="milestoneId"
                 data-format="milestone"
                 data-container-css-class="fullsize"
+                className="select2-offscreen"
                 defaultValue={search.milestoneId}
                 onChange={(event) => submitSearchControlForm(event.currentTarget)}
               >
@@ -2680,6 +2713,19 @@ function IssueSearchForm({
         </div>
       </div>
     </form>
+  );
+}
+
+function IssueSearchSingleSelectDisplay({ id, label }: { id: string; label: string }) {
+  return (
+    <div id={`s2id_${id}`} className="select2-container fullsize">
+      <div className="select2-choice" role="presentation">
+        <span className="select2-chosen">{label}</span>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -2851,7 +2897,9 @@ function IssueSearchLabelSelect({
             {selectedLabels.map((label) => (
               <li className="select2-search-choice" key={label.id}>
                 <div>
-                  <span className="issue-label active list-label">{label.name}</span>
+                  <div className="label issue-label active static" data-label-id={label.id}>
+                    {label.name}
+                  </div>
                 </div>
                 <span
                   className="select2-search-choice-close"
@@ -2881,7 +2929,8 @@ function IssueSearchLabelSelect({
                 role="combobox"
                 aria-controls="labelIds-options"
                 aria-expanded={open}
-                placeholder={t("label.select")}
+                placeholder={selectedLabels.length > 0 ? "" : t("label.select")}
+                style={selectedLabels.length > 0 ? { width: 10 } : undefined}
                 onClick={() => setOpen(true)}
                 onFocus={() => setOpen(true)}
                 onKeyDown={(event) => {
@@ -2897,40 +2946,63 @@ function IssueSearchLabelSelect({
             className={`select2-drop select2-drop-multi issue-labels${open ? " select2-drop-active" : " select2-display-none"}`}
           >
             <ul id="labelIds-options" className="select2-results" role="listbox">
-              {groupedLabels.map((category) => (
-                <li className="select2-result-with-children" key={category.id}>
-                  <div className="select2-result-label">{category.name}</div>
-                  <ul className="select2-result-sub">
-                    {category.labels.map((label) => {
-                      const selected = search.labelIds.includes(label.id);
-                      return (
-                        <li
-                          className={`select2-results-dept-1 select2-result select2-result-selectable${selected ? " select2-disabled" : ""}`}
-                          key={label.id}
-                          role="option"
-                          aria-selected={selected}
-                          tabIndex={selected ? -1 : 0}
-                          onClick={() => {
-                            if (!selected) {
-                              updateSelectedLabels([...search.labelIds, label.id]);
-                            }
-                          }}
-                          onKeyDown={(event) => {
-                            if (!selected && (event.key === "Enter" || event.key === " ")) {
-                              event.preventDefault();
-                              updateSelectedLabels([...search.labelIds, label.id]);
-                            }
-                          }}
-                        >
-                          <div className="select2-result-label">
-                            <span className="issue-label active list-label">{label.name}</span>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </li>
-              ))}
+              {groupedLabels.map((category) => {
+                const categorySelected = category.labels.every((label) =>
+                  search.labelIds.includes(label.id),
+                );
+                return (
+                  <li
+                    className={`select2-result-with-children${categorySelected ? " select2-selected" : ""}`}
+                    key={category.id}
+                  >
+                    <div className="select2-result-label">
+                      <i
+                        className={
+                          category.isExclusive
+                            ? "yobicon-tag category-exclusive single"
+                            : "yobicon-tags category-exclusive multiple"
+                        }
+                        title={`${t("label.category.option")}\n${t(category.isExclusive ? "label.category.option.single" : "label.category.option.multiple")}`}
+                      ></i>
+                      <span>{category.name}</span>
+                    </div>
+                    <ul className="select2-result-sub">
+                      {category.labels.map((label) => {
+                        const selected = search.labelIds.includes(label.id);
+                        return (
+                          <li
+                            className={`select2-results-dept-1 select2-result select2-result-selectable${selected ? " select2-selected" : ""}`}
+                            key={label.id}
+                            role="option"
+                            aria-selected={selected}
+                            tabIndex={selected ? -1 : 0}
+                            onClick={() => {
+                              if (!selected) {
+                                updateSelectedLabels([...search.labelIds, label.id]);
+                              }
+                            }}
+                            onKeyDown={(event) => {
+                              if (!selected && (event.key === "Enter" || event.key === " ")) {
+                                event.preventDefault();
+                                updateSelectedLabels([...search.labelIds, label.id]);
+                              }
+                            }}
+                          >
+                            <div className="select2-result-label">
+                              <div
+                                className="label issue-label active static"
+                                data-label-id={label.id}
+                              >
+                                {label.name}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

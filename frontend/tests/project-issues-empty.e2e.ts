@@ -995,9 +995,7 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   await expect(control).toHaveClass(/bordered/u);
   await expect(control.locator('[role="listbox"]')).toBeHidden();
   await expect(control.locator(".select2-search-choice")).toContainText("bug");
-  await expect(
-    control.locator('.select2-search-field input[placeholder="Select label"]'),
-  ).toBeVisible();
+  await expect(control.locator(".select2-search-field input")).toHaveAttribute("placeholder", "");
   await expect(control.locator('[role="option"] > .select2-result-label')).toHaveCount(1);
   await expect(control.locator('[role="option"] > button.select2-result-label')).toHaveCount(0);
   expect(
@@ -1052,6 +1050,110 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".labels-wrap")).toBeHidden();
+});
+
+test("project issue list preserves legacy selected-label Select2 DOM", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "selected-label-one");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issues?state=open&labelIds=1`);
+
+  const control = page.locator("#s2id_labelIds");
+  const selectedLabel = control.locator(".select2-search-choice .issue-label");
+  await expect(selectedLabel).toHaveClass("label issue-label active static");
+  await expect(selectedLabel).toHaveAttribute("data-label-id", "1");
+  await expect(selectedLabel).toHaveText("bug");
+  await expect(page.locator("#labelIds")).toHaveValues(["1"]);
+  await expect(page.locator('#issue-item-42 .issue-label[data-label-id="1"]')).toHaveText("bug");
+  for (const id of ["authorId", "assigneeId", "milestoneId"]) {
+    await expect(page.locator(`#${id}`)).toHaveClass(/select2-offscreen/u);
+    await expect(page.locator(`#s2id_${id}`)).toBeVisible();
+  }
+  const precedingSelectMetrics = await page.evaluate(() =>
+    ["authorId", "assigneeId", "milestoneId"].map((id) => {
+      const container = document.querySelector(`#s2id_${id}`);
+      const native = document.querySelector(`#${id}`);
+      if (!container || !native) return null;
+      const containerBox = container.getBoundingClientRect();
+      const nativeBox = native.getBoundingClientRect();
+      return {
+        containerHeight: containerBox.height,
+        nativeHeight: nativeBox.height,
+        nativeWidth: nativeBox.width,
+      };
+    }),
+  );
+  expect(precedingSelectMetrics).not.toContain(null);
+  for (const metric of precedingSelectMetrics) {
+    expect(metric!.containerHeight).toBeCloseTo(30, 0);
+    expect(metric!.nativeHeight).toBeLessThanOrEqual(1);
+    expect(metric!.nativeWidth).toBeLessThanOrEqual(1);
+  }
+  const selectedSearch = control.locator(".select2-search-field input");
+  await expect(selectedSearch).toHaveAttribute("placeholder", "");
+
+  const selectedControlBoxes = await page.evaluate(() => {
+    const controlElement = document.querySelector("#s2id_labelIds");
+    const choices = document.querySelector("#s2id_labelIds .select2-choices");
+    const chip = document.querySelector("#s2id_labelIds .select2-search-choice");
+    const searchInput = document.querySelector("#s2id_labelIds .select2-search-field input");
+    if (!controlElement || !choices || !chip || !searchInput) return null;
+    const controlBox = controlElement.getBoundingClientRect();
+    const choicesBox = choices.getBoundingClientRect();
+    const chipBox = chip.getBoundingClientRect();
+    const searchBox = searchInput.getBoundingClientRect();
+    return {
+      chipBox,
+      choicesBox,
+      controlBox,
+      searchBox,
+      searchContentWidth: Number.parseFloat(getComputedStyle(searchInput).width),
+    };
+  });
+  expect(selectedControlBoxes).not.toBeNull();
+  expect(selectedControlBoxes!.searchContentWidth).toBeCloseTo(10, 0);
+  expect(selectedControlBoxes!.searchBox.width).toBeCloseTo(20, 0);
+  expect(selectedControlBoxes!.controlBox.height).toBeCloseTo(30, 0);
+  expect(selectedControlBoxes!.choicesBox.height).toBeCloseTo(28, 0);
+  expect(selectedControlBoxes!.chipBox.top).toBeGreaterThanOrEqual(
+    selectedControlBoxes!.choicesBox.top,
+  );
+  expect(selectedControlBoxes!.chipBox.bottom).toBeLessThanOrEqual(
+    selectedControlBoxes!.choicesBox.bottom,
+  );
+
+  await selectedSearch.click();
+  const category = control.locator(".select2-result-with-children");
+  await expect(category).toHaveClass(/select2-selected/u);
+  await expect(category.locator(".select2-result-label > i")).toHaveClass(
+    "yobicon-tags category-exclusive multiple",
+  );
+  await expect(category.locator(":scope > .select2-result-label > span")).toHaveText("type");
+  await expect(control.locator('[role="option"]')).toHaveClass(/select2-selected/u);
+  await expect(control.locator('[role="option"]')).not.toHaveClass(/select2-disabled/u);
+
+  const boxes = await page.evaluate(() => {
+    const controlElement = document.querySelector("#s2id_labelIds");
+    const choices = document.querySelector("#s2id_labelIds .select2-choices");
+    const list = document.querySelector(".issue-list-wrap");
+    if (!controlElement || !choices || !list) return null;
+    const controlBox = controlElement.getBoundingClientRect();
+    const choicesBox = choices.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    return { controlBox, choicesBox, listBox, viewportWidth: document.documentElement.clientWidth };
+  });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.choicesBox.left).toBeGreaterThanOrEqual(boxes!.controlBox.left);
+  expect(boxes!.choicesBox.right).toBeLessThanOrEqual(boxes!.controlBox.right + 1);
+  expect(boxes!.listBox.right).toBeLessThanOrEqual(boxes!.viewportWidth);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".labels-wrap")).toBeHidden();
+  const mobileOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(mobileOverflow).toBeLessThanOrEqual(0);
 });
 
 test("project issue list label select hides legacy edit link for non-managers", async ({
@@ -3770,6 +3872,7 @@ async function mockProjectIssues(
     | "project-labels"
     | "project-labels-non-manager"
     | "project-wide-options"
+    | "selected-label-one"
     | "sharer"
     | "subtask"
     | "upcoming"
@@ -4107,26 +4210,37 @@ async function mockProjectIssues(
                   name: "bug",
                 },
               ]
-            : state === "project-wide-options"
+            : state === "selected-label-one"
               ? [
                   {
-                    categoryId: 3,
+                    categoryId: 1,
                     categoryIsExclusive: false,
-                    categoryName: "bug",
-                    color: "#51aacc",
-                    id: 8,
+                    categoryName: "type",
+                    color: "#f44336",
+                    id: 1,
                     name: "bug",
                   },
-                  {
-                    categoryId: 5,
-                    categoryIsExclusive: false,
-                    categoryName: "area",
-                    color: "#7bc043",
-                    id: 10,
-                    name: "backend",
-                  },
                 ]
-              : [],
+              : state === "project-wide-options"
+                ? [
+                    {
+                      categoryId: 3,
+                      categoryIsExclusive: false,
+                      categoryName: "bug",
+                      color: "#51aacc",
+                      id: 8,
+                      name: "bug",
+                    },
+                    {
+                      categoryId: 5,
+                      categoryIsExclusive: false,
+                      categoryName: "area",
+                      color: "#7bc043",
+                      id: 10,
+                      name: "backend",
+                    },
+                  ]
+                : [],
       }),
     });
   });
@@ -4145,6 +4259,7 @@ async function mockProjectIssues(
           state === "empty-avatar-options" ||
           state === "no-milestone-menu" ||
           state === "non-member" ||
+          state === "selected-label-one" ||
           state === "project-wide-options"
           ? state === "blank-assignee-label"
             ? {
@@ -4156,7 +4271,26 @@ async function mockProjectIssues(
                   },
                 ],
               }
-            : populatedIssueResponse()
+            : state === "selected-label-one"
+              ? {
+                  ...populatedIssueResponse(),
+                  items: [
+                    {
+                      ...populatedIssueResponse().items[0],
+                      labels: [
+                        {
+                          categoryId: 1,
+                          categoryIsExclusive: false,
+                          categoryName: "type",
+                          color: "#f44336",
+                          id: 1,
+                          name: "bug",
+                        },
+                      ],
+                    },
+                  ],
+                }
+              : populatedIssueResponse()
           : state === "normal-draft"
             ? {
                 ...populatedIssueResponse(),
@@ -4652,7 +4786,12 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
-      if (node.id === "s2id_labelIds") {
+      if (
+        node.id === "s2id_labelIds" ||
+        node.id === "s2id_authorId" ||
+        node.id === "s2id_assigneeId" ||
+        node.id === "s2id_milestoneId"
+      ) {
         return "";
       }
       const stateTabLink = node.matches(
@@ -4696,7 +4835,10 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((className) => className && className !== "active")
           .join(" ");
       }
-      if (attr.name === "class" && attr.ownerElement?.id === "labelIds") {
+      if (
+        attr.name === "class" &&
+        ["authorId", "assigneeId", "milestoneId", "labelIds"].includes(attr.ownerElement?.id ?? "")
+      ) {
         return attr.value
           .split(/\s+/u)
           .filter((className) => className && className !== "select2-offscreen")
