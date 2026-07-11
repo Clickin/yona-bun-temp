@@ -1796,7 +1796,12 @@ function ProjectMenuItem({
       >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
-        <CountBadge count={count} />
+        {count > 0 ? (
+          <>
+            {" "}
+            <CountBadge count={count} />
+          </>
+        ) : null}
       </Link>
     </li>
   );

@@ -1549,6 +1549,14 @@ async function runTarget(label, baseUrl) {
       locale: sweepLocale,
       viewport: { width: viewportProfile.width, height: viewportProfile.height },
     });
+    if (label === "local") {
+      await context.route("https://www.gravatar.com/avatar/**", (route) =>
+        route.fulfill({
+          contentType: "image/png",
+          path: resolve(repoRoot, "frontend/src/assets/legacy/default-avatar-128.png"),
+        }),
+      );
+    }
     const page = await context.newPage();
     const loggedIn =
       label === "local" ? await loginLocal(page, baseUrl) : await login(page, baseUrl);
