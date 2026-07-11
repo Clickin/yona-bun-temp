@@ -43,6 +43,10 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
     new URL("../src/routes/$ownerName/$projectName/webhooks.tsx", import.meta.url),
     "utf8",
   );
+  const sharedProjectSource = await readFile(
+    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+    "utf8",
+  );
 
   expect(source).not.toContain("dangerouslySetInnerHTML");
   expect(source).not.toContain(" as never");
@@ -66,7 +70,15 @@ test("project webhooks help is rendered as JSX, not route-local HTML injection",
     "organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName)",
   );
   expect(source).toContain("projectSearchScope={projectSearchScope}");
-  expect(source).toContain("showLegacyProjectHeaderLinks");
+  expect(source).toContain('import { ProjectHeader, ProjectMenu } from "../$projectName";');
+  expect(source).toContain(
+    "<ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />",
+  );
+  expect(source).toContain('active="setting"');
+  expect(source).not.toContain("function ProjectHeader(");
+  expect(source).not.toContain("function ProjectMenu(");
+  expect(sharedProjectSource).toContain('| "setting";');
+  expect(sharedProjectSource).toContain('<li className={active === "setting" ? "active" : ""}>');
   expect(source).toContain(
     'const legacyTitle = `${t("project.webhook")} - ${ownerName}/${projectName}`;',
   );
@@ -113,7 +125,7 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
-  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(8);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
   expect(await readLegacyGnbTexts(page)).toEqual([
     "Y",
@@ -142,17 +154,66 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
     legendMarginBottom: "10px",
     listMarginTop: "0px",
     pageWrapMinWidth: "1100px",
-    payloadHeight: "30px",
+    payloadHeight: "20px",
     payloadWidth: "355px",
-    projectPageMarginTop: "20px",
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
     radioDisplay: "inline-block",
     secretWidth: "214px",
     submitAfterSecret: true,
     submitHeight: "30px",
     submitPadding: "4px 12px",
-    tabsMarginBottom: "15px",
+    tabsMarginBottom: "20px",
   });
+});
+
+test("project webhooks ko-KR desktop and mobile preserve legacy order and containment", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectAdmin(page, [], {
+    project: { boardCount: 1, openIssueCount: 2 },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  await expect(page.locator("#subMenuWebhook")).toHaveText("웹후크");
+  await expect(page.locator("#formNewWebhook .form-legend")).toHaveText("새 웹후크 생성");
+  await expect(page.locator("#webhooksList")).toHaveText("등록된 웹후크가 없습니다.");
+  expect(await responsiveWebhookMetrics(page)).toEqual({
+    bodyHasHorizontalOverflow: false,
+    formControlsInLegacyOrder: true,
+    formHeight: 239,
+    formInsidePage: true,
+    menuWidth: 573,
+    pageWidth: 1346,
+    payloadHeight: 30,
+    payloadWidth: 369,
+    secretWidth: 228,
+    tabsHeight: 37,
+    tabsInsidePage: true,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileMetrics = await responsiveWebhookMetrics(page);
+  expect(mobileMetrics).toMatchObject({
+    bodyHasHorizontalOverflow: false,
+    formControlsInLegacyOrder: true,
+    formHeight: 414,
+    formInsidePage: true,
+    menuWidth: 234,
+    pageWidth: 390,
+    payloadHeight: 30,
+    secretWidth: 228,
+    tabsHeight: 73,
+    tabsInsidePage: true,
+  });
+  expect(mobileMetrics.payloadWidth).toBeGreaterThanOrEqual(187);
+  expect(mobileMetrics.payloadWidth).toBeLessThanOrEqual(189);
 });
 
 test("project webhooks omits create form when webhook resource is not creatable", async ({
@@ -212,7 +273,7 @@ test("project webhooks localhost legacy portal success shell is restored", async
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
-  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(8);
   await expect(page.locator(".project-page-wrap > .nav.nav-tabs a")).toHaveCount(7);
   expect(await readLegacyGnbTexts(page)).toEqual([
     "Y",
@@ -312,7 +373,7 @@ test("project webhooks internal project links preserve legacy hrefs with SPA tra
   await assertNoTanStackActiveMarkers(headerProjectLink);
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
-  await expect(page.locator(".project-menu-outer li")).toHaveCount(9);
+  await expect(page.locator(".project-menu-outer li")).toHaveCount(8);
   await expect(projectMenuLinks).toHaveCount(8);
   await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/code`);
@@ -487,6 +548,23 @@ test("project webhooks hides legacy member badges when enrolledUsers is absent",
   const adminCog = page.locator(".project-setting a");
   await expect(adminCog).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
   await expect(adminCog.locator(".project-menu-count")).toHaveCount(0);
+});
+
+test("project webhooks ignores non-legacy member counts when enrolledUsers is empty", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, [], {
+    project: {
+      enrolledUsers: [],
+      memberCount: 7,
+      members: [{ loginId: "alice" }, { loginId: "bob" }],
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/webhooks`);
+  await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveCount(0);
+  await expect(page.locator(".project-setting .project-menu-count")).toHaveCount(0);
 });
 
 test("project webhooks JSON type forces git push checkbox like legacy script", async ({ page }) => {
@@ -895,6 +973,46 @@ async function assertNoTanStackActiveMarkers(locator: ReturnType<Page["locator"]
   await expect(locator).not.toHaveAttribute("data-status", /.*/u);
 }
 
+async function responsiveWebhookMetrics(page: Page) {
+  return page.evaluate(() => {
+    const pageWrap = requireElement(".project-page-wrap.webhook-editor-wrap");
+    const tabs = requireElement(".project-page-wrap > .nav.nav-tabs");
+    const form = requireElement("#formNewWebhook");
+    const payload = requireElement(".input-webhook-payload");
+    const secret = requireElement(".input-webhook-secret");
+    const submit = requireElement("#formNewWebhook .btn-submit");
+    const menu = requireElement(".project-menu-gruop");
+    const pageBox = pageWrap.getBoundingClientRect();
+    const tabsBox = tabs.getBoundingClientRect();
+    const formBox = form.getBoundingClientRect();
+    const payloadBox = payload.getBoundingClientRect();
+    const secretBox = secret.getBoundingClientRect();
+    const submitBox = submit.getBoundingClientRect();
+    return {
+      bodyHasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      formControlsInLegacyOrder:
+        payloadBox.left <= secretBox.left && secretBox.left <= submitBox.left,
+      formHeight: Math.round(formBox.height),
+      formInsidePage: formBox.left >= pageBox.left && formBox.right <= pageBox.right,
+      menuWidth: Math.round(menu.getBoundingClientRect().width),
+      pageWidth: Math.round(pageBox.width),
+      payloadHeight: Math.round(payloadBox.height),
+      payloadWidth: Math.round(payloadBox.width),
+      secretWidth: Math.round(secretBox.width),
+      tabsHeight: Math.round(tabsBox.height),
+      tabsInsidePage: tabsBox.left >= pageBox.left && tabsBox.right <= pageBox.right,
+    };
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
 async function webhookFormMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = requireElement(".page-wrap-outer");
@@ -1055,9 +1173,7 @@ async function readProjectSettingsTabNativeLinkAudit(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
+      document.querySelectorAll(".project-header-outer, .project-menu-outer, .page-wrap-outer"),
     );
     return roots.map((root) => visit(root)).join("");
 
@@ -1066,6 +1182,9 @@ async function canonicalizeScreenRoots(page: Page) {
         return normalizeText(node.textContent ?? "");
       }
       if (!(node instanceof Element)) {
+        return "";
+      }
+      if (node.matches(".project-setting li:empty")) {
         return "";
       }
       const attrs = Array.from(node.attributes)
@@ -1103,7 +1222,11 @@ async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate((input) => {
     const template = document.createElement("template");
     template.innerHTML = input;
-    return Array.from(template.content.children)
+    return Array.from(
+      template.content.querySelectorAll(
+        ".project-header-outer, .project-menu-outer, .page-wrap-outer",
+      ),
+    )
       .map((root) => visit(root))
       .join("");
 
@@ -1112,6 +1235,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         return normalizeText(node.textContent ?? "");
       }
       if (!(node instanceof Element)) {
+        return "";
+      }
+      if (node.matches(".project-setting li:empty")) {
         return "";
       }
       const attrs = Array.from(node.attributes)

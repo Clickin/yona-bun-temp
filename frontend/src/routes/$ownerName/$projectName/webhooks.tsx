@@ -6,7 +6,6 @@ import {
   deleteProjectWebhookRest,
   readProjectContainerQueryOptions,
   readProjectWebhooksQueryOptions,
-  toggleFavoriteProjectRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type {
@@ -20,6 +19,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -56,11 +56,7 @@ function ProjectWebhooksRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
     : { ownerName, projectName };
 
   return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectWebhooksScreen runtimeConfig={runtimeConfig} />
     </SiteLayoutShell>
   );
@@ -84,8 +80,8 @@ function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   return (
     <>
       <title>{legacyTitle}</title>
-      <ProjectHeader project={projectQuery.data} />
-      <ProjectMenu project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectWebhooksBody
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
@@ -184,7 +180,7 @@ function ProjectWebhooksBody({
                   maxLength={2000}
                   autoComplete="off"
                   placeholder={t("project.webhook.payloadUrl")}
-                />
+                />{" "}
                 <input
                   type="text"
                   name="secret"
@@ -192,7 +188,7 @@ function ProjectWebhooksBody({
                   maxLength={250}
                   autoComplete="off"
                   placeholder={t("project.webhook.secret")}
-                />
+                />{" "}
                 <button type="submit" className="ybtn ybtn-primary btn-submit">
                   {t("project.webhook.add")}
                 </button>
@@ -404,248 +400,6 @@ function preventReadOnlyCheckboxKeyDown(event: KeyboardEvent<HTMLInputElement>) 
   }
 }
 
-function ProjectHeader({ project }: { project: ProjectContainer }) {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectId = projectIdentifier(project);
-  const [isFavoritedProject, setIsFavoritedProject] = useState(
-    () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
-  );
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
-  const backgroundImageUrl = projectBackgroundImageUrl(project);
-  const isForked =
-    booleanField(project.isForkedFromOrigin) || booleanField(recordField(project).isForked);
-  const originalOwnerName = projectOriginalOwnerName(project);
-  const originalProjectName = projectOriginalProjectName(project);
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.container(ownerName, projectName),
-      });
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link {...LEGACY_LINK_PROPS} to="/$user" params={{ user: ownerName }}>
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              <span
-                className="user-project-list"
-                data-project-id={projectId}
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
-              {booleanField(project.isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(project.isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
-                  className="project-origin-name"
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenu({ project }: { project: ProjectContainer }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const canSeeCodeMenu = projectCodeMenuVisible(project);
-  const memberCount = projectMemberCount(project);
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            label={t("title.projectHome")}
-            short="H"
-            to="/$ownerName/$projectName"
-            params={{ ownerName, projectName }}
-          />
-          {canSeeCodeMenu ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              short="C"
-              to="/$ownerName/$projectName/code"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {projectMenuEnabled(project, "issue", "showIssue") ? (
-            <ProjectMenuItem
-              label={t("menu.issue")}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {canSeeCodeMenu &&
-          projectMenuEnabled(project, "pullRequest", "showPullRequest") &&
-          stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              label={t("menu.pullRequest")}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {canSeeCodeMenu && projectMenuEnabled(project, "review", "showReview") ? (
-            <ProjectMenuItem
-              label={t("menu.review")}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {projectMenuEnabled(project, "milestone", "showMilestone") ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {projectMenuEnabled(project, "board", "showBoard") ? (
-            <ProjectMenuItem
-              label={t("menu.board")}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-        </ul>
-        {projectAdminMenuVisible(project) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="active">
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$ownerName/$projectName/setting"
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={memberCount} />
-                </Link>
-              </li>
-              <li></li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  label,
-  params,
-  short,
-  to,
-}: {
-  className?: string;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to:
-    | "/$ownerName/$projectName"
-    | "/$ownerName/$projectName/code"
-    | "/$ownerName/$projectName/issues"
-    | "/$ownerName/$projectName/pullRequests"
-    | "/$ownerName/$projectName/reviews"
-    | "/$ownerName/$projectName/milestones"
-    | "/$ownerName/$projectName/posts";
-}) {
-  return (
-    <li className={className}>
-      <Link {...LEGACY_LINK_PROPS} to={to} params={params}>
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-      </Link>
-    </li>
-  );
-}
-
 function ProjectSettingMenu({
   ownerName,
   project,
@@ -763,10 +517,6 @@ function stringField(value: unknown, fallback: string) {
   return fallback;
 }
 
-function countField(value: unknown, fallback: number) {
-  return Array.isArray(value) ? value.length : fallback;
-}
-
 function booleanField(value: unknown) {
   return value === true;
 }
@@ -790,55 +540,9 @@ function projectMenuEnabled(project: ProjectContainer, menuKey: string, fallback
   return booleanField(recordField(project)[fallbackKey]);
 }
 
-function projectCodeMenuVisible(project: ProjectContainer) {
-  const record = recordField(project);
-  return (
-    projectMenuEnabled(project, "code", "showCode") &&
-    (!booleanField(record.codeMemberOnly) || booleanField(record.viewerIsProjectMember))
-  );
-}
-
-function projectAdminMenuVisible(project: ProjectContainer) {
-  const record = recordField(project);
-  if (typeof record.showAdmin === "boolean") {
-    return booleanField(record.showAdmin);
-  }
-  return booleanField(record.viewerCanUpdate);
-}
-
 function projectMemberCount(project: ProjectContainer) {
-  const record = recordField(project);
-  if (typeof record.memberCount === "number" && Number.isFinite(record.memberCount)) {
-    return record.memberCount;
-  }
-  if (Array.isArray(record.members)) {
-    return record.members.length;
-  }
-  return countField(record.enrolledUsers, 0);
-}
-
-function projectIdentifier(project: ProjectContainer) {
-  const record = recordField(project);
-  return stringField(record.id, "") || stringField(record.projectId, "");
-}
-
-function projectBackgroundImageUrl(project: ProjectContainer) {
-  const record = recordField(project);
-  return (
-    stringField(record.backgroundUrl, "") ||
-    stringField(project.backgroundImageUrl, "") ||
-    "/assets/images/bg-default-project.png"
-  );
-}
-
-function projectOriginalOwnerName(project: ProjectContainer) {
-  const record = recordField(project);
-  return stringField(record.originalOwnerName, "") || stringField(record.originOwnerName, "");
-}
-
-function projectOriginalProjectName(project: ProjectContainer) {
-  const record = recordField(project);
-  return stringField(record.originalProjectName, "") || stringField(record.originProjectName, "");
+  const enrolledUsers = recordField(project).enrolledUsers;
+  return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {

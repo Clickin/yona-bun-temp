@@ -1637,7 +1637,7 @@ export function ProjectMenu({
   counts,
   project,
 }: {
-  active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
+  active?: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review" | "setting";
   basePath: string;
   counts?: {
     board?: number;
@@ -1743,7 +1743,7 @@ export function ProjectMenu({
         {booleanField(project.viewerCanUpdate) ? (
           <div className="project-setting">
             <ul className="project-menu-nav">
-              <li className="">
+              <li className={active === "setting" ? "active" : ""}>
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
