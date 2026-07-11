@@ -253,12 +253,16 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/issue/1/editform",
   "/admin/sample/issue/1",
   "/admin/sample/milestone/1/editform",
+  "/admin/sample/newFork",
 ]);
 
 function localSettledSelectorForPath(path) {
   const pathname = path.split("?", 1)[0];
   if (pathname.endsWith("/issueform") || pathname.endsWith("/editform")) {
     return ".textarea-box";
+  }
+  if (pathname.endsWith("/newFork")) {
+    return ".content-wrap.frm-wrap";
   }
   if (/\/code(?:\/|$)/u.test(pathname)) {
     return ".project-header-outer";

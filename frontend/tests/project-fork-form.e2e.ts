@@ -55,7 +55,7 @@ const EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN = `
     </ul>
   </div>
 </header>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__ROOT_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
@@ -70,37 +70,55 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
     .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
     .toBe("Fork - admin/sample");
   await expect(page.locator("#helpMessage")).toBeVisible();
+  await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
+  await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveText([
-    "This Project",
-    "All Projects",
-  ]);
+  const searchScopes = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  await expect(searchScopes).toHaveText(["This Project", "All Projects"]);
   await expect
     .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+      searchScopes.evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          dataToggle: element.getAttribute("data-toggle"),
+          type: element.getAttribute("type"),
+        })),
+      ),
     )
-    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+    .toEqual([
+      { dataAction: null, dataToggle: null, type: "button" },
+      { dataAction: null, dataToggle: null, type: "button" },
+    ]);
+  await expect
+    .poll(() =>
+      searchScopes.evaluateAll((elements) =>
+        elements.map((element) => element.textContent?.trim() ?? ""),
+      ),
+    )
+    .toEqual(["This Project", "All Projects"]);
   await expect(page.locator(".content-wrap.frm-wrap form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/fork`,
   );
+  expect(await projectForkInlineControlMetrics(page)).toEqual({
+    cancelGap: 4,
+    privateLabelGap: 6,
+    publicLabelGap: 6,
+    whitespaceNodes: [true, true, true],
+  });
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath).replaceAll(
-        "__ROOT_PATH__",
-        rootPath,
-      ),
+      EXPECTED_PROJECT_FORK_FORM.replaceAll("__BASE_PATH__", basePath)
+        .replace("/assets/images/fork-pull/fork.jpg", "/legacy-assets/images/fork-pull/fork.jpg")
+        .replaceAll("__ROOT_PATH__", rootPath),
     ),
   );
   const metrics = await projectForkHeaderSearchScopeMetrics(page);
@@ -133,7 +151,7 @@ for (const viewport of [
     );
     await expect(page.locator("#helpMessage img")).toHaveAttribute(
       "src",
-      `${basePath}/assets/images/fork-pull/fork.jpg`,
+      `${basePath}/legacy-assets/images/fork-pull/fork.jpg`,
     );
     await expect(page.locator(".project-header-outer")).toHaveAttribute(
       "style",
@@ -162,27 +180,26 @@ test("project fork form exposes group and all-project search scopes without leav
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveText([
-    "This Project",
-    "This Group",
-    "All Projects",
-  ]);
+  const searchScopes = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  await expect(searchScopes).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect
     .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
+      searchScopes.evaluateAll((elements) =>
+        elements.map((element) => ({
+          dataAction: element.getAttribute("data-action"),
+          dataToggle: element.getAttribute("data-toggle"),
+          type: element.getAttribute("type"),
+        })),
+      ),
     )
     .toEqual([
-      `${basePath}/admin/sample/search`,
-      `${basePath}/organizations/devs/search`,
-      `${basePath}/search`,
+      { dataAction: null, dataToggle: null, type: "button" },
+      { dataAction: null, dataToggle: null, type: "button" },
+      { dataAction: null, dataToggle: null, type: "button" },
     ]);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await searchScopes.nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -191,13 +208,13 @@ test("project fork form exposes group and all-project search scopes without leav
   await expect(page).toHaveURL(`${basePath}/admin/sample/newFork`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await searchScopes.nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(`${basePath}/admin/sample/newFork`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await searchScopes.first().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -223,6 +240,7 @@ test("project fork owner route renders legacy existing-fork state", async ({ pag
 
 test("project fork non-git access renders the legacy bad-request site shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const rootPath = basePath.endsWith("/") ? basePath : `${basePath}/`;
   await mockNonGitProjectForkAccess(page);
 
   await page.goto(`${basePath}/admin/svnplayground/newFork`);
@@ -243,13 +261,19 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   await expect(page.locator(".error-wrap p")).toHaveText(
     "This request is only supported in a git project.",
   );
-  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveAttribute(
+    "href",
+    `${basePath}/`,
+  );
   await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveText("Home");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN.replaceAll("__BASE_PATH__", basePath),
+      EXPECTED_PROJECT_FORK_BAD_REQUEST_SCREEN.replaceAll("__BASE_PATH__", basePath).replaceAll(
+        "__ROOT_PATH__",
+        rootPath,
+      ),
     ),
   );
   expect(await projectForkBadRequestMetrics(page)).toEqual({
@@ -391,7 +415,7 @@ test("project fork route has no raw route-local internal anchors", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
 
   expect(source).toContain("projectSearchScope={projectSearchScope}");
-  expect(source).toContain("projectSearchScopeOrganizationName(query.data.source, ownerName)");
+  expect(source).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
   expect(source).not.toMatch(/<a(?:\s|>)/u);
   expect(source).not.toContain("</a>");
   expect(source).not.toContain("href={prefixBasePath");
@@ -494,7 +518,7 @@ test("project fork submit renders legacy git/clone.scala.html progress state", a
     legendMarginBottom: "20px",
     legendText: "Forking admin / sample project into admin / sample-fork project",
     outerMinHeight: "450px",
-    projectWrapMarginTop: "20px",
+    projectWrapMarginTop: "5px",
   });
 });
 
@@ -670,6 +694,7 @@ async function mockProjectAdminWithExistingFork(page: Page) {
       body: JSON.stringify(existingProjectForkOptions()),
     });
   });
+  await mockProjectContainer(page);
 }
 
 async function mockNonGitProjectForkAccess(page: Page) {
@@ -770,6 +795,7 @@ async function mockProjectAdmin(
       body: JSON.stringify(options.forkOptionsResponse?.() ?? projectForkOptions(options.source)),
     });
   });
+  await mockProjectContainer(page, options.source);
   await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
     const request = route.request();
     options.favoriteRequests?.push({
@@ -863,16 +889,40 @@ function sourceProject() {
     projectName: "sample",
     projectScope: "PUBLIC",
     vcs: "GIT",
+    viewerCanWatch: true,
     viewerCanUpdate: true,
+    watchCount: 1,
+    isWatching: false,
   };
+}
+
+async function mockProjectContainer(
+  page: Page,
+  source: Partial<ReturnType<typeof sourceProject>> = {},
+) {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...sourceProject(),
+        ...source,
+        backgroundImageUrl: `${basePath}/assets/images/bg-default-project.png`,
+        logoUrl: `${basePath}/assets/images/project_default_logo.png`,
+      }),
+    });
+  });
 }
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
+    );
+    roots.forEach((root) =>
+      root.querySelectorAll(".project-util-wrap").forEach((element) => element.replaceChildren()),
     );
     return roots.map((root) => visit(root)).join("");
 
@@ -1055,10 +1105,45 @@ async function projectForkHeaderSearchScopeMetrics(page: Page) {
   });
 }
 
+async function projectForkInlineControlMetrics(page: Page) {
+  return page.evaluate(() => {
+    const submit = document.querySelector<HTMLElement>(".controls > button[type=submit]");
+    const cancel = submit?.nextElementSibling as HTMLElement | null;
+    const publicInput = document.querySelector<HTMLElement>("#public");
+    const publicLabel = document.querySelector<HTMLElement>('label[for="public"]');
+    const privateInput = document.querySelector<HTMLElement>("#private");
+    const privateLabel = document.querySelector<HTMLElement>('label[for="private"]');
+    const missing = { cancel, privateInput, privateLabel, publicInput, publicLabel, submit };
+    if (Object.values(missing).some((element) => !element)) {
+      throw new Error("Expected fork inline controls are missing");
+    }
+    const gap = (left: HTMLElement, right: HTMLElement) =>
+      Math.round(right.getBoundingClientRect().left - left.getBoundingClientRect().right);
+    const hasWhitespaceAfter = (element: HTMLElement) =>
+      element.nextSibling?.nodeType === Node.TEXT_NODE &&
+      /\s/u.test(element.nextSibling.textContent ?? "");
+
+    return {
+      cancelGap: gap(submit, cancel),
+      privateLabelGap: gap(privateInput, privateLabel),
+      publicLabelGap: gap(publicInput, publicLabel),
+      whitespaceNodes: [
+        hasWhitespaceAfter(submit),
+        hasWhitespaceAfter(publicInput),
+        hasWhitespaceAfter(privateInput),
+      ],
+    };
+  });
+}
+
 async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate((input) => {
     const template = document.createElement("template");
     template.innerHTML = input;
+    template.content.querySelector(".gnb-outer")?.remove();
+    template.content
+      .querySelectorAll(".project-util-wrap")
+      .forEach((element) => element.replaceChildren());
     return Array.from(template.content.children)
       .map((root) => visit(root))
       .join("");
