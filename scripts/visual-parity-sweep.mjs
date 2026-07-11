@@ -259,11 +259,16 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/newPullRequestForm",
   "/admin/sample/post/1",
   "/admin/sample/post/1/editform",
+  "/admin/sample/postform",
 ]);
 
 function localSettledSelectorForPath(path) {
   const pathname = path.split("?", 1)[0];
-  if (pathname.endsWith("/issueform") || pathname.endsWith("/editform")) {
+  if (
+    pathname.endsWith("/issueform") ||
+    pathname.endsWith("/editform") ||
+    pathname.endsWith("/postform")
+  ) {
     return ".textarea-box";
   }
   if (pathname.endsWith("/newFork")) {
