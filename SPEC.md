@@ -41,6 +41,7 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | N-08 | 변환 범위를 벗어난 아키텍처 논의를 현재 작업에 끌어들이기                                   | scope creep              |
 | N-09 | `reference/mixed-code/**` 코드를 parity 근거 또는 canonical implementation처럼 취급          | legacy reference 원칙 위반 |
 | N-10 | 현재 Phase에 속하지 않는 기능을 선행 구현                                                   | Phase gate 위반          |
+| N-11 | 동결된 legacy Yona CSS/LESS 밖의 새 수치나 route 전용 보정 CSS로 screenshot/geometry diff를 상쇄 | pixel parity 기준선 위반 |
 
 ### 0.4 권한과 근거 우선순위
 
@@ -63,6 +64,14 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | 2    | 이 문서 (`SPEC.md`)       | legacy 근거를 Rust 구현으로 번역한 실행 명세                  |
 | 3    | `docs/provenance/*`       | legacy source → Rust target 매핑, gap/deviation/deferred 근거 |
 | 4    | `repo root` 현재 코드     | 현재 canonical implementation baseline                        |
+
+Pixel parity의 styling source는 `yona-original/app/assets/stylesheets/yobi.less`의
+전체 import graph와 `yona-original/public/bootstrap/css/bootstrap.css`,
+`bootstrap-responsive.css`로 동결한다. 이 파일들은 수정하지 않으며, 화면 보정에는
+이 동결 CSS/LESS만 사용한다. 차이는 새 `margin`, `padding`, 위치·크기·transform
+수치로 덮지 않고 legacy element/DOM/class/cascade/asset/font/box-model 구성을
+복원하여 해결한다. React가 legacy plugin을 대체하는 경계에만 원본 rule을 값 변경
+없이 좁혀 옮길 수 있고, 원본 file/selector/rule 근거를 provenance에 남겨야 한다.
 
 ---
 

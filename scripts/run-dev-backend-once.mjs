@@ -514,6 +514,14 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         report.issueComment = "inserted";
       }
 
+      database
+        .prepare(
+          `update issue
+              set created_date = (select min(created_date) from issue_comment where issue_id = ?)
+            where id = ? and exists (select 1 from issue_comment where issue_id = ?)`,
+        )
+        .run(issue.id, issue.id, issue.id);
+
       let post = database
         .prepare("select id, title, body from posting where project_id = ? and number = ? limit 1")
         .get(sampleProject.id, 1);

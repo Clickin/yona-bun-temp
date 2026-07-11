@@ -46,33 +46,101 @@ test("project issue detail restores live Korean metadata controls and editor geo
   page,
 }) => {
   await page.addInitScript(() => {
+    Date.now = () => Date.parse("2026-07-11T12:00:00Z");
     Object.defineProperty(window.navigator, "languages", { value: ["ko-KR"], configurable: true });
     Object.defineProperty(window.navigator, "language", { value: "ko-KR", configurable: true });
   });
   const { massUpdateRequests } = await mockProjectIssueDetail(page, {
+    __projectOverrides: { backgroundImageUrl: "", logoUrl: "" },
+    createdLabel: "2026-07-07",
+    comments: [
+      {
+        attachments: [],
+        authorAvatarUrl: "/assets/images/default-avatar-32.png",
+        authorLabel: "Bob Park",
+        authorLoginId: "bob",
+        childComments: [],
+        contentsMarkdown: "I can reproduce the legacy issue view from this seed.",
+        createdLabel: "2026-07-07",
+        id: 77,
+        viewerCanDelete: true,
+        viewerCanUpdate: true,
+        viaEmail: false,
+        voterCount: 0,
+        voters: [],
+      },
+    ],
     dueDateUntilLabel: "13 days",
   });
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
+  await expect(page.locator(".board-header.issue > .hide-in-mobile .date")).toHaveText("4일 전");
+  await expect(page.locator(".board-header.issue > .hide-in-mobile .date")).toHaveAttribute(
+    "title",
+    "2026-07-07",
+  );
+  await expect(page.locator(".span-left-pane #comment-77 .ago").first()).toHaveText("4일 전");
+  await expect(page.locator(".span-left-pane #comment-77 .ago").first()).toHaveAttribute(
+    "title",
+    "2026-07-07",
+  );
+  await expect(page.locator(".span-right-pane #comment-77 .ago").first()).toHaveText("4일 전");
+  await expect(page.locator(".project-header-outer")).toHaveAttribute(
+    "style",
+    /legacy-assets\/images\/project_default\.jpg/u,
+  );
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    /legacy-assets\/images\/project_default_logo\.png$/u,
+  );
+
   const assignee = page.getByRole("combobox", { name: "담당자" });
+  const milestone = page.getByRole("combobox", { name: "마일스톤" });
   const labels = page.locator(".issue-info .select2-container-multi.issue-labels");
   await expect(assignee).toBeVisible();
   await expect(assignee.locator(".select2-chosen")).toContainText("Site Admin");
   await expect(labels).toBeVisible();
   await expect(labels.locator(".select2-search-choice .label")).toHaveText("bug");
+  await expect(page.locator("#milestone.select2-offscreen")).toHaveValue("5");
+  await expect(milestone.locator(".select2-choice > .select2-chosen")).toHaveText("v1.0");
+  await expect(labels.locator(":scope > .select2-choices > li")).toHaveCount(2);
+  await expect(
+    labels.locator(".select2-search-choice > div > .label.issue-label.active.static"),
+  ).toHaveText("bug");
+  await expect(labels.locator("span.label.issue-label.active.static")).toHaveCount(0);
+  await expect(labels.locator("strong.label.issue-label.active.static")).toHaveCount(1);
+  await expect(labels.locator("input.select2-input")).toHaveAttribute("style", "width: 10px;");
   await expect(page.locator("#comment-form .nav-tabs > li").nth(0)).toHaveText("편집");
   await expect(page.locator("#comment-form .nav-tabs > li").nth(1)).toHaveText("미리보기");
   await expect(page.locator("#comment-form .add-task-list-button")).toContainText(
     "체크리스트 추가",
   );
+  const editorTabMetrics = await page
+    .locator("#comment-form .markdown-editor")
+    .evaluate((editor) => {
+      const edit = editor.querySelector<HTMLElement>(".nav-tabs > li:nth-child(1) > button");
+      const preview = editor.querySelector<HTMLElement>(".nav-tabs > li:nth-child(2) > button");
+      if (!edit || !preview) return null;
+      const editStyle = getComputedStyle(edit);
+      const previewStyle = getComputedStyle(preview);
+      return {
+        editBorderBottom: editStyle.borderBottomWidth,
+        editHeight: Math.round(edit.getBoundingClientRect().height),
+        editPadding: editStyle.padding,
+        previewBorder: previewStyle.borderWidth,
+        previewHeight: Math.round(preview.getBoundingClientRect().height),
+        previewPadding: previewStyle.padding,
+      };
+    });
+  expect(editorTabMetrics).toEqual({
+    editBorderBottom: "1px",
+    editHeight: 30,
+    editPadding: "4px 15px",
+    previewBorder: "1px",
+    previewHeight: 30,
+    previewPadding: "4px 15px",
+  });
   await expect(page.locator(".duedate-status")).toContainText("13일");
-
-  await assignee.locator(".select2-choice").click();
-  await assignee.getByRole("button", { name: "담당자 없음" }).click();
-  await expect(page.locator("#assignee")).toHaveValue("");
-  await labels.getByRole("button", { name: "bug 삭제" }).click();
-  await expect(labels.locator(".select2-search-choice")).toHaveCount(0);
-  await expect.poll(() => massUpdateRequests.length).toBe(2);
 
   const geometry = await page.evaluate(() => {
     const form = document.querySelector<HTMLElement>("#issueUpdateForm");
@@ -84,6 +152,10 @@ test("project issue detail restores live Korean metadata controls and editor geo
     );
     const assigneeChoice = assigneeControl?.querySelector<HTMLElement>(".select2-choice");
     const labelChoices = labelControl?.querySelector<HTMLElement>(".select2-choices");
+    const labelToken = labelControl?.querySelector<HTMLElement>(
+      "strong.label.issue-label.active.static",
+    );
+    const labelSearch = labelControl?.querySelector<HTMLInputElement>("input.select2-input");
     const editor = document.querySelector<HTMLElement>("#comment-form .mt10");
     const upload = document.querySelector<HTMLElement>("#comment-form .upload-wrap");
     if (
@@ -92,6 +164,8 @@ test("project issue detail restores live Korean metadata controls and editor geo
       !labelControl ||
       !assigneeChoice ||
       !labelChoices ||
+      !labelToken ||
+      !labelSearch ||
       !editor ||
       !upload
     )
@@ -99,6 +173,8 @@ test("project issue detail restores live Korean metadata controls and editor geo
     const f = form.getBoundingClientRect();
     const a = assigneeControl.getBoundingClientRect();
     const l = labelControl.getBoundingClientRect();
+    const token = labelToken.getBoundingClientRect();
+    const search = labelSearch.getBoundingClientRect();
     const e = editor.getBoundingClientRect();
     const u = upload.getBoundingClientRect();
     return {
@@ -109,6 +185,8 @@ test("project issue detail restores live Korean metadata controls and editor geo
       ).boxSizing,
       formContainsLabels: l.bottom <= f.bottom,
       labelChoicesContained: labelChoices.getBoundingClientRect().bottom <= l.bottom,
+      labelTokenHeight: Math.round(token.height),
+      labelTokenSearchSameRow: token.top < search.bottom && search.top < token.bottom,
       uploadFollowsEditor: u.top >= e.bottom,
     };
   });
@@ -119,8 +197,20 @@ test("project issue detail restores live Korean metadata controls and editor geo
     editorBoxSizing: "content-box",
     formContainsLabels: true,
     labelChoicesContained: true,
+    labelTokenHeight: 16,
+    labelTokenSearchSameRow: true,
     uploadFollowsEditor: true,
   });
+
+  await assignee.locator(".select2-choice").click();
+  await assignee.getByRole("option", { name: "담당자 없음" }).click();
+  await expect(page.locator("#assignee")).toHaveValue("");
+  await labels.getByRole("button", { name: "bug 삭제" }).click();
+  await expect(labels.locator(".select2-search-choice")).toHaveCount(0);
+  await milestone.locator(".select2-choice").click();
+  await milestone.getByRole("option", { name: "v2.0" }).click();
+  await expect(page.locator("#milestone")).toHaveValue("9");
+  await expect.poll(() => massUpdateRequests.length).toBe(3);
 });
 
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {

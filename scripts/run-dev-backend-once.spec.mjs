@@ -322,7 +322,7 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       const bob = database.prepare("select name from n4user where login_id = 'bob'").get();
       const issue = database
         .prepare(
-          "select title, body, state, due_date, num_of_comments, assignee_id from issue where project_id = 2 and number = 1",
+          "select title, body, state, due_date, num_of_comments, assignee_id, created_date from issue where project_id = 2 and number = 1",
         )
         .get();
       const post = database
@@ -331,7 +331,9 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         )
         .get();
       const issueComment = database
-        .prepare("select author_login_id, author_name, contents from issue_comment where issue_id = 2")
+        .prepare(
+          "select author_login_id, author_name, contents, created_date from issue_comment where issue_id = 2",
+        )
         .get();
       const postComment = database
         .prepare("select author_login_id, author_name, contents from posting_comment")
@@ -370,6 +372,7 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       assert.equal(issue.due_date, "2026-07-24 23:59:59.999");
       assert.equal(Number(issue.num_of_comments), 1);
       assert.ok(Number(issue.assignee_id) > 0);
+      assert.equal(issue.created_date, issueComment.created_date);
       assert.equal(post.title, "Seed notes");
       assert.equal(post.body, "This board post exists to seed the legacy board list and detail flows.");
       assert.equal(Number(post.notice), 1);
@@ -378,6 +381,7 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         author_login_id: "bob",
         author_name: "Bob Park",
         contents: "I can reproduce the legacy issue view from this seed.",
+        created_date: issue.created_date,
       });
       assert.deepEqual({ ...postComment }, {
         author_login_id: "alice",

@@ -547,6 +547,7 @@ function IssueDetailBody({
   const issueState = stringField(issue.state, "open").toLowerCase();
   const stateLabel = issueStateLabel(issueState, t);
   const createdLabel = stringField(issue.createdLabel);
+  const createdDisplayLabel = legacyRelativeDateLabel(createdLabel, language);
   const isDraft = booleanField(issue.isDraft);
   const isWatching = booleanField(issue.isWatching);
   const [isWatchingIssue, setIsWatchingIssue] = useState(isWatching);
@@ -574,6 +575,9 @@ function IssueDetailBody({
   const newSubtaskPath = `/${ownerName}/${projectName}/issueform?parentIssueId=${parentIssueId}`;
   const assigneeLoginId = stringField(issue.assigneeLoginId);
   const [selectedAssigneeLoginId, setSelectedAssigneeLoginId] = useState(assigneeLoginId);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState(
+    stringField(issue.milestoneId, "-1"),
+  );
   const sharers = issue.sharers ?? [];
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
   const sharerListVisible = sharers.length > 0 || sharerListOpen;
@@ -731,6 +735,7 @@ function IssueDetailBody({
       addLabelIds?: number[];
       assigneeLoginId?: string;
       removeLabelIds?: number[];
+      milestoneId?: number;
     }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
       return massUpdateIssues(runtimeConfig, csrfToken, {
@@ -738,6 +743,8 @@ function IssueDetailBody({
         assigneeLoginId: input.assigneeLoginId ?? "",
         assigneeUpdate: input.assigneeLoginId !== undefined,
         issueNumbers: [Number(issueNumber) || 0],
+        milestoneId: input.milestoneId,
+        milestoneUpdate: input.milestoneId !== undefined,
         removeLabelIds: input.removeLabelIds ?? [],
         ownerName,
         projectName,
@@ -797,7 +804,7 @@ function IssueDetailBody({
         <div className="board-header issue">
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={createdLabel}>
-              {createdLabel}
+              {createdDisplayLabel}
             </div>
             <span className={`badge badge-issue-${issueState}`}>{stateLabel}</span>
           </div>
@@ -823,7 +830,7 @@ function IssueDetailBody({
             </span>
             <div className="pull-right hide show-in-mobile" style={{ fontSize: "0.7em" }}>
               <span className="date" title={createdLabel}>
-                {createdLabel}
+                {createdDisplayLabel}
               </span>
               <span className={`badge badge-small badge-issue-${issueState}`}>{stateLabel}</span>
             </div>
@@ -1102,7 +1109,14 @@ function IssueDetailBody({
                     <dd>
                       {hasProjectMilestones ? (
                         canUpdate ? (
-                          <IssueMilestoneSelect issue={issue} milestones={milestones} />
+                          <IssueMilestoneSelect
+                            milestones={milestones}
+                            selectedMilestoneId={selectedMilestoneId}
+                            onChange={(value) => {
+                              setSelectedMilestoneId(value);
+                              metadataMutation.mutate({ milestoneId: Number(value) });
+                            }}
+                          />
                         ) : issue.milestoneId ? (
                           <Link
                             {...LEGACY_LINK_PROPS}
@@ -1626,50 +1640,147 @@ function IssueWeight({
 }
 
 function IssueMilestoneSelect({
-  issue,
   milestones,
+  onChange,
+  selectedMilestoneId,
 }: {
-  issue: RestIssueDetailResponse;
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
   };
+  onChange: (value: string) => void;
+  selectedMilestoneId: string;
 }) {
   const { t } = useLegacyMessages();
-  const selectedMilestoneId = stringField(issue.milestoneId);
+  const [open, setOpen] = useState(false);
+  const allMilestones = [...milestones.open, ...milestones.closed];
+  const selectedTitle =
+    allMilestones.find((milestone) => stringField(milestone.id) === selectedMilestoneId)?.title ??
+    t("issue.noMilestone");
 
   return (
-    <select
-      id="milestone"
-      name="milestone.id"
-      data-format="milestone"
-      data-container-css-class="fullsize"
-      defaultValue={selectedMilestoneId || "-1"}
+    <>
+      <select
+        id="milestone"
+        name="milestone.id"
+        data-format="milestone"
+        data-container-css-class="fullsize"
+        value={selectedMilestoneId}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        className="select2-offscreen"
+      >
+        <option value="-1">{t("issue.noMilestone")}</option>
+        <optgroup label={t("milestone.state.open")}>
+          {milestones.open.map((milestone) => (
+            <option
+              key={stringField(milestone.id)}
+              value={stringField(milestone.id)}
+              data-state={stringField(milestone.state, "open")}
+            >
+              {stringField(milestone.title)}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label={t("milestone.state.closed")}>
+          {milestones.closed.map((milestone) => (
+            <option
+              key={stringField(milestone.id)}
+              value={stringField(milestone.id)}
+              data-state={stringField(milestone.state, "closed")}
+            >
+              {stringField(milestone.title)}
+            </option>
+          ))}
+        </optgroup>
+      </select>
+      <LegacySingleSelectControl
+        ariaLabel={t("milestone")}
+        open={open}
+        options={[
+          { label: t("issue.noMilestone"), value: "-1" },
+          ...allMilestones.map((milestone) => ({
+            label: stringField(milestone.title),
+            value: stringField(milestone.id),
+          })),
+        ]}
+        selectedLabel={stringField(selectedTitle)}
+        selectedValue={selectedMilestoneId}
+        setOpen={setOpen}
+        onChange={onChange}
+        className="fullsize"
+      />
+    </>
+  );
+}
+
+function LegacySingleSelectControl({
+  ariaLabel,
+  className,
+  onChange,
+  open,
+  options,
+  selectedLabel,
+  selectedValue,
+  setOpen,
+}: {
+  ariaLabel: string;
+  className: string;
+  onChange: (value: string) => void;
+  open: boolean;
+  options: Array<{ label: string; value: string }>;
+  selectedLabel: string;
+  selectedValue: string;
+  setOpen: (open: boolean) => void;
+}) {
+  return (
+    <div
+      className={`select2-container ${className}${open ? " select2-dropdown-open" : ""}`}
+      role="combobox"
+      aria-label={ariaLabel}
+      aria-expanded={open}
     >
-      <option value="-1">{t("issue.noMilestone")}</option>
-      <optgroup label={t("milestone.state.open")}>
-        {milestones.open.map((milestone) => (
-          <option
-            key={stringField(milestone.id)}
-            value={stringField(milestone.id)}
-            data-state={stringField(milestone.state, "open")}
-          >
-            {stringField(milestone.title)}
-          </option>
-        ))}
-      </optgroup>
-      <optgroup label={t("milestone.state.closed")}>
-        {milestones.closed.map((milestone) => (
-          <option
-            key={stringField(milestone.id)}
-            value={stringField(milestone.id)}
-            data-state={stringField(milestone.state, "closed")}
-          >
-            {stringField(milestone.title)}
-          </option>
-        ))}
-      </optgroup>
-    </select>
+      <div
+        className="select2-choice"
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(!open)}
+        onKeyDown={(event) => activateLegacyControl(event, () => setOpen(!open))}
+      >
+        <span className="select2-chosen">{selectedLabel}</span>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </div>
+      <div className={`select2-drop${open ? " select2-drop-active" : " select2-display-none"}`}>
+        <ul className="select2-results" role="listbox">
+          {options.map((option) => (
+            <li
+              key={option.value}
+              className={selectedValue === option.value ? "select2-highlighted" : undefined}
+            >
+              <div
+                className="select2-result-label"
+                role="option"
+                tabIndex={open ? 0 : -1}
+                aria-selected={selectedValue === option.value}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                onKeyDown={(event) =>
+                  activateLegacyControl(event, () => {
+                    onChange(option.value);
+                    setOpen(false);
+                  })
+                }
+              >
+                {option.label}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
@@ -1802,16 +1913,19 @@ function LegacyAssigneeControl({
   const loginId = stringField(issue.assigneeLoginId);
   return (
     <div
-      className={`select2-container fullsize${open ? " select2-dropdown-open" : ""}`}
+      className={`select2-container bigdrop${open ? " select2-dropdown-open" : ""}`}
       role="combobox"
       aria-label={t("issue.assignee")}
       aria-expanded={open}
       aria-controls="issue-assignee-results"
+      style={{ width: "100%" }}
     >
-      <button
-        type="button"
+      <div
         className="select2-choice"
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((current) => !current)}
+        onKeyDown={(event) => activateLegacyControl(event, () => setOpen((current) => !current))}
       >
         <span className="select2-chosen">
           {value && loginId ? (
@@ -1831,34 +1945,50 @@ function LegacyAssigneeControl({
         <span className="select2-arrow" aria-hidden="true">
           <b></b>
         </span>
-      </button>
+      </div>
       {open ? (
         <div className="select2-drop select2-drop-active">
           <ul id="issue-assignee-results" className="select2-results" role="listbox">
             <li className={!value ? "select2-highlighted" : undefined}>
-              <button
-                type="button"
+              <div
                 className="select2-result-label"
+                role="option"
+                tabIndex={0}
+                aria-selected={!value}
                 onClick={() => {
                   onChange("");
                   setOpen(false);
                 }}
+                onKeyDown={(event) =>
+                  activateLegacyControl(event, () => {
+                    onChange("");
+                    setOpen(false);
+                  })
+                }
               >
                 {t("issue.noAssignee")}
-              </button>
+              </div>
             </li>
             {loginId ? (
               <li className={value === loginId ? "select2-highlighted" : undefined}>
-                <button
-                  type="button"
+                <div
                   className="select2-result-label"
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={value === loginId}
                   onClick={() => {
                     onChange(loginId);
                     setOpen(false);
                   }}
+                  onKeyDown={(event) =>
+                    activateLegacyControl(event, () => {
+                      onChange(loginId);
+                      setOpen(false);
+                    })
+                  }
                 >
                   {stringField(issue.assigneeLabel, loginId)} {loginId}
-                </button>
+                </div>
               </li>
             ) : null}
           </ul>
@@ -1886,28 +2016,40 @@ function LegacyLabelControl({
     );
   return (
     <div
-      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
+      className={`select2-container select2-container-multi hide issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
+      style={{ display: "inline-block" }}
     >
       <ul className="select2-choices">
         {labels
           .filter((label) => selectedLabelIds.has(stringField(label.id)))
           .map((label) => (
             <li className="select2-search-choice" key={stringField(label.id)}>
-              <span className="label" style={{ background: stringField(label.color) }}>
-                {stringField(label.name)}
-              </span>
-              <button
-                type="button"
+              <div>
+                <strong
+                  className="label issue-label active static"
+                  style={{ background: stringField(label.color) }}
+                >
+                  {stringField(label.name)}
+                </strong>
+              </div>
+              <span
                 className="select2-search-choice-close"
+                role="button"
+                tabIndex={0}
                 aria-label={`${stringField(label.name)} ${t("button.delete")}`}
                 onClick={() => toggle(stringField(label.id))}
-              ></button>
+                onKeyDown={(event) =>
+                  activateLegacyControl(event, () => toggle(stringField(label.id)))
+                }
+              ></span>
             </li>
           ))}
         <li className="select2-search-field">
           <input
+            className="select2-input"
             aria-label={t("label.select")}
             autoComplete="off"
+            style={{ width: "10px" }}
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
           />
@@ -1923,11 +2065,18 @@ function LegacyLabelControl({
                   key={id}
                   className={selectedLabelIds.has(id) ? "select2-highlighted" : undefined}
                 >
-                  <button type="button" className="select2-result-label" onClick={() => toggle(id)}>
+                  <div
+                    className="select2-result-label"
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={selectedLabelIds.has(id)}
+                    onClick={() => toggle(id)}
+                    onKeyDown={(event) => activateLegacyControl(event, () => toggle(id))}
+                  >
                     <span className="label" style={{ background: stringField(label.color) }}>
                       {stringField(label.name)}
                     </span>
-                  </button>
+                  </div>
                 </li>
               );
             })}
@@ -2562,7 +2711,7 @@ function IssueEventRow({
         {issueStateEventText(newValue)}
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2586,7 +2735,7 @@ function IssueEventRow({
         )}
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2625,7 +2774,7 @@ function IssueEventRow({
         )}
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2651,7 +2800,7 @@ function IssueEventRow({
         </strong>
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2677,7 +2826,7 @@ function IssueEventRow({
         </strong>
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2704,7 +2853,7 @@ function IssueEventRow({
         </strong>
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2739,7 +2888,7 @@ function IssueEventRow({
         {target}
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2767,7 +2916,7 @@ function IssueEventRow({
         {label} label
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-            {stringField(event.createdLabel)}
+            {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
         </span>
       </li>
@@ -2779,7 +2928,7 @@ function IssueEventRow({
       {stringField(event.newValue)} by {sender}
       <span className="date">
         <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
-          {stringField(event.createdLabel)}
+          {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
         </Link>
       </span>
     </li>
@@ -2838,6 +2987,7 @@ function IssueCommentRow({
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { language } = useLegacyMessages();
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
@@ -2951,7 +3101,7 @@ function IssueCommentRow({
               className="ago"
               title={stringField(comment.createdLabel)}
             >
-              {stringField(comment.createdLabel)}
+              {legacyRelativeDateLabel(stringField(comment.createdLabel), language)}
             </Link>
             <Link
               {...LEGACY_LINK_PROPS}
@@ -3493,7 +3643,7 @@ function MarkdownEditor({
   };
 
   return (
-    <div className="mt10">
+    <div className="mt10 markdown-editor">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={(event) => switchTab(event, "edit")}>
@@ -3685,6 +3835,7 @@ function IssueIndexComment({
   currentUserLoginId: string;
 }) {
   const router = useRouter();
+  const { language } = useLegacyMessages();
   const commentId = stringField(comment.id);
   const commentHash = `comment-${commentId}`;
   const authorLoginId = stringField(comment.authorLoginId);
@@ -3755,7 +3906,7 @@ function IssueIndexComment({
               className="ago"
               title={stringField(comment.createdLabel)}
             >
-              {stringField(comment.createdLabel)}
+              {legacyRelativeDateLabel(stringField(comment.createdLabel), language)}
             </Link>
             <Link
               {...LEGACY_LINK_PROPS}
@@ -4016,6 +4167,40 @@ function localizeIssueDuration(value: string, language: string) {
   return value.replace(/^(\d+)\s+days?$/u, "$1일");
 }
 
+function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
+  if (language !== "ko-KR" || rawLabel === "") {
+    return rawLabel;
+  }
+  const timestamp = Date.parse(rawLabel);
+  if (Number.isNaN(timestamp)) {
+    return rawLabel;
+  }
+  const elapsedSeconds = Math.floor((now - timestamp) / 1000);
+  if (elapsedSeconds < 0) {
+    return rawLabel;
+  }
+  if (elapsedSeconds < 60) {
+    return "방금 전";
+  }
+  if (elapsedSeconds < 60 * 60) {
+    return `${Math.floor(elapsedSeconds / 60)}분 전`;
+  }
+  if (elapsedSeconds < 24 * 60 * 60) {
+    return `${Math.floor(elapsedSeconds / (60 * 60))}시간 전`;
+  }
+  if (elapsedSeconds < 30 * 24 * 60 * 60) {
+    return `${Math.floor(elapsedSeconds / (24 * 60 * 60))}일 전`;
+  }
+  return rawLabel;
+}
+
+function activateLegacyControl(event: KeyboardEvent<HTMLElement>, activate: () => void) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    activate();
+  }
+}
+
 function issueStateEventText(state: string) {
   return state === "closed" ? " closed this issue" : " reopened this issue";
 }
@@ -4073,7 +4258,7 @@ function projectWithLegacyHeaderAssets(project: ProjectContainer, basePath: stri
   const backgroundImageUrl =
     stringField(project.backgroundImageUrl) ||
     stringField(project.backgroundUrl) ||
-    prefixBasePath(basePath, "/legacy-assets/images/bg-default-project.jpg");
+    prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg");
   return { ...project, backgroundImageUrl, logoUrl };
 }
 
