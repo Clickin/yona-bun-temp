@@ -395,6 +395,13 @@ test("visual sweep scans chrome text and attributes for visible raw legacy keys"
   assert.match(source, /raw i18n key visible/u);
 });
 
+test("visual sweep fixes both browser targets to the Korean legacy locale", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /const sweepLocale = "ko-KR";/u);
+  assert.match(source, /locale: sweepLocale,/u);
+});
+
 test("visual sweep bootstraps local parity data before browser-form login", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 

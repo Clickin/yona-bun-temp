@@ -2285,23 +2285,23 @@ function IssueCommentForm({
 }
 
 function UploadForm({ resourceType }: { resourceType: string }) {
+  const { t } = useLegacyMessages();
   return (
     <div className="upload-wrap content-footer" data-resource-type={resourceType} id="upload">
       <div className="attach-wrap">
-        <span className="help help-droppable">Drag &amp; Drop files to attach here or</span>
+        <span className="help help-droppable">{t("common.attach.drophere")}</span>
         <div className="btn-wrap">
           <div className="nbtn medium white fake-file-wrap">
-            <i className="yobicon-upload"></i> File upload
+            <i className="yobicon-upload"></i> {t("button.upload")}
             <input type="file" className="file" name="filePath" multiple />
           </div>
         </div>
-        <span className="plain">Click upload button</span>
-        <span className="help help-pastable">Paste the clipboard image</span>
+        <span className="plain">{t("common.attach.clickbutton")}</span>
+        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
       <ul className="attached-files unstyled"></ul>
       <p className="right-txt help">
-        <i className="yobicon-supportrequest"></i> Selected file will be attached when your comment
-        is saved.
+        <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>
   );
@@ -2316,7 +2316,7 @@ function IssueEventRow({
   issue: RestIssueDetailResponse;
   previousEvent?: IssueTimelineItem;
 }) {
-  const { t } = useLegacyMessages();
+  const { language, t } = useLegacyMessages();
   const eventType = stringField(event.eventType);
   if (eventType === "ISSUE_BODY_CHANGED") {
     return null;
@@ -2381,14 +2381,14 @@ function IssueEventRow({
     const milestoneTitle = stringField(event.milestoneTitle, stringField(event.newValue));
     const milestone =
       milestoneId === "0" || milestoneId === "-1" ? (
-        <span className="bold">None</span>
+        <span className="bold">{t("common.none")}</span>
       ) : (
         <span className="bold font-blue">
           <Link
             {...LEGACY_LINK_PROPS}
             to="/$ownerName/$projectName/milestone/$milestoneId"
             params={{ ownerName, projectName, milestoneId }}
-            title="Milestone"
+            title={t("milestone")}
           >
             {milestoneTitle}
           </Link>
@@ -2396,8 +2396,16 @@ function IssueEventRow({
       );
     return (
       <li className="event" id={`event-${eventId}`}>
-        <span className="state milestone-changed">Update milestone</span>
-        {sender} changed milestone to {milestone}
+        <span className="state milestone-changed">{t("issue.update.milestone.id")}</span>
+        {language === "ko-KR" ? (
+          <>
+            {sender}님이 마일스톤을 {milestone}(으)로 변경했습니다.
+          </>
+        ) : (
+          <>
+            {sender} changed milestone to {milestone}
+          </>
+        )}
         <span className="date">
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {stringField(event.createdLabel)}

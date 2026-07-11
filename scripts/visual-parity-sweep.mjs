@@ -22,6 +22,7 @@ const password = process.env.YONA_LEGACY_PASSWORD ?? "admin";
 const sweepTarget = process.env.YORAM_SWEEP_TARGET ?? "both";
 const requestedSweepPaths = parseRequestedSweepPaths(process.env.YORAM_SWEEP_PATHS);
 const viewportProfile = parseViewportProfile(process.env.YORAM_SWEEP_VIEWPORT);
+const sweepLocale = "ko-KR";
 const latestOutputName =
   viewportProfile.name === "desktop" ? "latest.json" : `latest-${viewportProfile.name}.json`;
 
@@ -1382,6 +1383,7 @@ async function runTarget(label, baseUrl) {
   const browser = await launchBrowser();
   try {
     const context = await browser.newContext({
+      locale: sweepLocale,
       viewport: { width: viewportProfile.width, height: viewportProfile.height },
     });
     const page = await context.newPage();

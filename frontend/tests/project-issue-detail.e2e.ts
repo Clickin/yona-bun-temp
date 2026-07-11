@@ -3391,6 +3391,7 @@ test("project issue detail renders legacy assignee timeline event", async ({ pag
 
 test("project issue detail renders legacy milestone timeline event", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await setBrowserLanguage(page, "en-US");
   await mockProjectIssueDetail(page, {
     commentCount: 0,
     comments: [],
@@ -3421,8 +3422,57 @@ test("project issue detail renders legacy milestone timeline event", async ({ pa
   );
 });
 
+test("project issue detail matches live legacy Korean milestone event and mobile header", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await setBrowserLanguage(page, "ko-KR");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectIssueDetail(page, {
+    commentCount: 0,
+    comments: [],
+    timeline: [
+      {
+        createdLabel: "2026-07-04",
+        eventType: "ISSUE_MILESTONE_CHANGED",
+        id: 91,
+        kind: "event",
+        milestoneId: 5,
+        milestoneTitle: "v1.0",
+        newValue: "5",
+        senderAvatarUrl: "/assets/images/default-avatar-32.png",
+        senderLabel: "개발자",
+        senderLoginId: "dev",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  await expect(page.locator(".project-header-outer")).toHaveCSS("height", "120px");
+  await expect(page.locator("#event-91 .state.milestone-changed")).toHaveText("마일스톤 변경");
+  await expect(page.locator("#event-91")).toContainText(
+    "개발자님이 마일스톤을 v1.0(으)로 변경했습니다.",
+  );
+  await expect(page.locator("#event-91 a[title='마일스톤']")).toHaveText("v1.0");
+  await expect(page.locator(".gnb-nav")).toContainText("개발팀에게 문의하기");
+
+  const mobileMetrics = await page.evaluate(() => {
+    const upload = document.querySelector<HTMLElement>(".write-comment-box .upload-wrap");
+    const userMenu = document.querySelector<HTMLElement>(".gnb-usermenu");
+    if (!upload || !userMenu) return null;
+    const uploadBox = upload.getBoundingClientRect();
+    const userMenuBox = userMenu.getBoundingClientRect();
+    return { uploadHeight: uploadBox.height, userMenuTop: userMenuBox.top };
+  });
+  expect(mobileMetrics).not.toBeNull();
+  expect(mobileMetrics!.uploadHeight).toBeCloseTo(100, 0);
+  expect(mobileMetrics!.userMenuTop).toBe(83);
+});
+
 test("project issue detail renders legacy null milestone timeline event", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await setBrowserLanguage(page, "en-US");
   await mockProjectIssueDetail(page, {
     commentCount: 0,
     comments: [],
@@ -5003,4 +5053,17 @@ async function canonicalizeHtml(page: Page, html: string) {
       );
     }
   }, html);
+}
+
+async function setBrowserLanguage(page: Page, language: string) {
+  await page.addInitScript((nextLanguage) => {
+    Object.defineProperty(navigator, "language", {
+      configurable: true,
+      get: () => nextLanguage,
+    });
+    Object.defineProperty(navigator, "languages", {
+      configurable: true,
+      get: () => [nextLanguage],
+    });
+  }, language);
 }
