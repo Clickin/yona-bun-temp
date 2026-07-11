@@ -1,6 +1,17 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+test("project change-VCS shell keeps legacy watcher and menu counts", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+
+  await expect(page.locator(".project-util-wrap")).toBeVisible();
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
+});
+
 test("project change-VCS form matches legacy project/change_vcs.scala.html DOM", async ({
   page,
 }) => {
@@ -67,7 +78,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/issues`,
-      text: "IssueI",
+      text: "IssueI1",
     },
     {
       ariaCurrent: null,
@@ -95,7 +106,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/posts`,
-      text: "BoardB",
+      text: "BoardB1",
     },
     {
       ariaCurrent: null,
@@ -105,6 +116,9 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       text: "Project configuration2",
     },
   ]);
+  await expect(page.locator(".project-util-wrap")).toBeVisible();
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
   expect(await readProjectSettingMenuAnchorState(page)).toEqual({
     activeItemClass: "active",
     anchors: [
@@ -1265,13 +1279,17 @@ function projectChangeVcs() {
       pullRequest: true,
       review: true,
     },
+    boardCount: 1,
     nextVcs: "Subversion",
+    openIssueCount: 1,
     ownerName: "admin",
     projectName: "sample",
     vcs: "GIT",
     viewerCanChange: true,
     viewerIsProjectMember: true,
     viewerCanUpdate: true,
+    viewerCanWatch: true,
+    watchCount: 1,
   };
 }
 

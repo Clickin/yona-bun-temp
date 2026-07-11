@@ -5,7 +5,6 @@ import {
   changeProjectVcsRest,
   readProjectContainerQueryOptions,
   readProjectChangeVcsQueryOptions,
-  toggleFavoriteProjectRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectChangeVcsResponse } from "../../../api/org-project";
@@ -15,6 +14,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { ProjectHeader as SharedProjectHeader } from "../$projectName";
 
 type ProjectChangeVcsScreenData = ProjectContainer & Partial<ProjectChangeVcsResponse>;
 
@@ -167,7 +167,7 @@ function ProjectChangeVcsBody({
 
   return (
     <>
-      <ProjectHeader project={project} />
+      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
@@ -255,140 +255,6 @@ function ProjectChangeVcsBody({
   );
 }
 
-function ProjectHeader({ project }: { project: ProjectChangeVcsScreenData }) {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectId = stringField(recordField(project).projectId, stringField(project.id, ""));
-  const logoUrl =
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
-  const backgroundImageUrl =
-    stringField(recordField(project).backgroundUrl, stringField(project.backgroundImageUrl, "")) ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
-  const isForked = booleanField(project.isForkedFromOrigin) || booleanField(project.isForked);
-  const originalOwnerName = stringField(
-    recordField(project).originOwnerName,
-    stringField(project.originalOwnerName, ""),
-  );
-  const originalProjectName = stringField(
-    recordField(project).originProjectName,
-    stringField(project.originalProjectName, ""),
-  );
-  const [isFavoritedProject, setIsFavoritedProject] = useState(
-    () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
-  );
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.changeVcs(ownerName, projectName),
-      });
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$user"
-                  params={{ user: ownerName }}
-                >
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              <span
-                className="user-project-list"
-                data-project-id={projectId}
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
-              {booleanField(project.isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(project.isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
-                  className="project-origin-name"
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "owner");
@@ -417,6 +283,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
           ) : null}
           {projectMenuEnabled(project, "issue", "showIssue") ? (
             <ProjectMenuItem
+              count={numberField(project.openIssueCount)}
               label={t("menu.issue")}
               params={{ ownerName, projectName }}
               short="I"
@@ -451,6 +318,7 @@ function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
           ) : null}
           {projectMenuEnabled(project, "board", "showBoard") ? (
             <ProjectMenuItem
+              count={numberField(project.boardCount) || numberField(project.postCount)}
               label={t("menu.board")}
               params={{ ownerName, projectName }}
               short="B"
@@ -493,12 +361,14 @@ function projectCodeMenuVisible(project: ProjectChangeVcsScreenData) {
 
 function ProjectMenuItem({
   className = "",
+  count = 0,
   label,
   params,
   short,
   to,
 }: {
   className?: string;
+  count?: number;
   label: string;
   params: { ownerName: string; projectName: string };
   short: string;
@@ -514,6 +384,7 @@ function ProjectMenuItem({
       >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
+        <CountBadge count={count} />
       </Link>
     </li>
   );
