@@ -183,6 +183,22 @@ function seedParityFoundationFixture(database) {
       resource_type varchar,
       resource_id varchar
     );
+    create table notification_event (
+      id integer primary key autoincrement,
+      title varchar,
+      sender_id bigint,
+      created datetime_text,
+      resource_type varchar,
+      resource_id varchar,
+      event_type varchar,
+      old_value text,
+      new_value text
+    );
+    create table notification_event_n4user (
+      notification_event_id bigint not null,
+      n4user_id bigint not null,
+      primary key (notification_event_id, n4user_id)
+    );
   `);
 
   database.exec(`
@@ -360,6 +376,20 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         )
         .all()
         .map((row) => row.login_id);
+      const notifications = database
+        .prepare(
+          `select notification_event.title, notification_event.sender_id,
+                  notification_event.resource_type, notification_event.resource_id,
+                  notification_event.event_type, notification_event.old_value,
+                  notification_event.new_value,
+                  notification_event_n4user.n4user_id
+             from notification_event
+             join notification_event_n4user
+               on notification_event_n4user.notification_event_id = notification_event.id
+            order by notification_event.id`,
+        )
+        .all()
+        .map((row) => ({ ...row }));
 
       assert.equal(alice.name, "Alice Kim");
       assert.equal(bob.name, "Bob Park");
@@ -391,6 +421,30 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       assert.deepEqual(labelNames, ["bug", "parity"]);
       assert.deepEqual(watcherLogins, ["admin", "carol"]);
       assert.deepEqual(sampleWatcherLogins, ["admin"]);
+      assert.deepEqual(notifications, [
+        {
+          event_type: "NEW_COMMENT",
+          n4user_id: 2,
+          new_value: "I can reproduce the legacy issue view from this seed.",
+          old_value:
+            "\n\n<br />\n\n--- Original issue from @admin  at 11:24 오전 ---\n\n<br />\n\nUse this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
+          resource_id: "1",
+          resource_type: "issue_comment",
+          sender_id: 5,
+          title: "Re: [sample] Review rail parity check (#1)",
+        },
+        {
+          event_type: "NEW_COMMENT",
+          n4user_id: 2,
+          new_value: "Board seed confirmed from the fork contributor side.",
+          old_value:
+            "\n\n<br />\n\n--- Original posting from @admin  at 11:24 오전 ---\n\n<br />\n\nThis board post exists to seed the legacy board list and detail flows.",
+          resource_id: "1",
+          resource_type: "posting_comment",
+          sender_id: 3,
+          title: "Re: [sample] Seed notes (1)",
+        },
+      ]);
       assert.equal(
         Number(database.prepare("select count(*) as count from issue_event").get().count),
         0,
@@ -462,11 +516,19 @@ test("reconcileDefaultDevParitySeed is idempotent for already-seeded localhost d
             )
             .get().count,
         ),
+        notificationEvents: Number(
+          database.prepare("select count(*) as count from notification_event").get().count,
+        ),
+        notificationReceivers: Number(
+          database.prepare("select count(*) as count from notification_event_n4user").get().count,
+        ),
       };
       assert.deepEqual(counts, {
         issueComment: 1,
         issueLabels: 2,
         postComment: 1,
+        notificationEvents: 2,
+        notificationReceivers: 2,
         users: 5,
         watchers: 2,
         sampleWatchers: 1,

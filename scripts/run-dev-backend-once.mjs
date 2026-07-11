@@ -9,6 +9,7 @@ import { normalizeBasePath } from "./dev-config.mjs";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, "..");
 const defaultAdminLoginId = process.env.YONA_DEV_DEFAULT_ADMIN_LOGIN_ID ?? "admin";
+const parityCreatedAt = "2026-07-07 11:24:00.000";
 const parityDueDate = "2026-07-24 23:59:59.999";
 const parityMilestoneDueDate = "2026-07-31 23:59:59.999";
 const parityProjectSeed = Object.freeze({
@@ -247,6 +248,8 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
       "issue_label_category",
       "milestone",
       "n4user",
+      "notification_event",
+      "notification_event_n4user",
       "posting",
       "posting_comment",
       "project",
@@ -285,6 +288,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
       issueComment: "unchanged",
       labels: [],
       milestone: "unchanged",
+      notifications: [],
       post: "unchanged",
       postComment: "unchanged",
       repositories: [],
@@ -418,7 +422,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
           )
           .run(
             parityProjectSeed.issue.title,
-            timestamp,
+            parityCreatedAt,
             adminUser.id,
             "admin",
             adminUser.name ?? "Site Admin",
@@ -447,8 +451,8 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
           )
           .run(
             parityProjectSeed.issue.title,
-            timestamp,
-            timestamp,
+            parityCreatedAt,
+            parityCreatedAt,
             adminUser.id,
             "admin",
             adminUser.name ?? "Site Admin",
@@ -490,20 +494,20 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         }
       }
 
-      const existingIssueComment = database
+      let issueComment = database
         .prepare(
-          "select id from issue_comment where issue_id = ? and author_login_id = ? and contents = ? limit 1",
+          "select id, created_date from issue_comment where issue_id = ? and author_login_id = ? and contents = ? limit 1",
         )
         .get(issue.id, "bob", parityProjectSeed.issue.commentBody);
-      if (!existingIssueComment?.id) {
-        database
+      if (!issueComment?.id) {
+        const inserted = database
           .prepare(
             `insert into issue_comment
               (created_date, author_id, author_login_id, author_name, issue_id, project_id, parent_comment_id, contents)
              values (?, ?, ?, ?, ?, ?, null, ?)`,
           )
           .run(
-            timestamp,
+            parityCreatedAt,
             bobUserId,
             "bob",
             "Bob Park",
@@ -511,8 +515,13 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
             sampleProject.id,
             parityProjectSeed.issue.commentBody,
           );
+        issueComment = { created_date: parityCreatedAt, id: Number(inserted.lastInsertRowid) };
         report.issueComment = "inserted";
       }
+      database
+        .prepare("update issue_comment set created_date = ? where id = ?")
+        .run(parityCreatedAt, issueComment.id);
+      issueComment.created_date = parityCreatedAt;
 
       database
         .prepare(
@@ -535,7 +544,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
           )
           .run(
             parityProjectSeed.post.title,
-            timestamp,
+            parityCreatedAt,
             adminUser.id,
             "admin",
             adminUser.name ?? "Site Admin",
@@ -560,8 +569,8 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
           )
           .run(
             parityProjectSeed.post.title,
-            timestamp,
-            timestamp,
+            parityCreatedAt,
+            parityCreatedAt,
             adminUser.id,
             "admin",
             adminUser.name ?? "Site Admin",
@@ -577,20 +586,20 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         report.post = "inserted";
       }
 
-      const existingPostComment = database
+      let postComment = database
         .prepare(
-          "select id from posting_comment where posting_id = ? and author_login_id = ? and contents = ? limit 1",
+          "select id, created_date from posting_comment where posting_id = ? and author_login_id = ? and contents = ? limit 1",
         )
         .get(post.id, "alice", parityProjectSeed.post.commentBody);
-      if (!existingPostComment?.id) {
-        database
+      if (!postComment?.id) {
+        const inserted = database
           .prepare(
             `insert into posting_comment
               (created_date, author_id, author_login_id, author_name, posting_id, project_id, parent_comment_id, contents)
              values (?, ?, ?, ?, ?, ?, null, ?)`,
           )
           .run(
-            timestamp,
+            parityCreatedAt,
             aliceUser.id,
             "alice",
             "Alice Kim",
@@ -598,8 +607,94 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
             sampleProject.id,
             parityProjectSeed.post.commentBody,
           );
+        postComment = { created_date: parityCreatedAt, id: Number(inserted.lastInsertRowid) };
         report.postComment = "inserted";
       }
+      database
+        .prepare("update posting_comment set created_date = ? where id = ?")
+        .run(parityCreatedAt, postComment.id);
+      postComment.created_date = parityCreatedAt;
+
+      const ensureNotification = ({
+        createdAt,
+        message,
+        previous,
+        resourceId,
+        resourceType,
+        senderId,
+        title,
+      }) => {
+        let event = database
+          .prepare(
+            `select id from notification_event
+              where sender_id = ? and resource_type = ? and resource_id = ? and event_type = ?
+              limit 1`,
+          )
+          .get(senderId, resourceType, String(resourceId), "NEW_COMMENT");
+        if (!event?.id) {
+          const inserted = database
+            .prepare(
+              `insert into notification_event
+                (title, sender_id, created, resource_type, resource_id, event_type, old_value, new_value)
+               values (?, ?, ?, ?, ?, ?, ?, ?)`,
+            )
+            .run(
+              title,
+              senderId,
+              createdAt,
+              resourceType,
+              String(resourceId),
+              "NEW_COMMENT",
+              previous,
+              message,
+            );
+          event = { id: Number(inserted.lastInsertRowid) };
+          report.notifications.push(`${resourceType}:inserted`);
+        } else {
+          database
+            .prepare(
+              `update notification_event
+                  set title = ?, created = ?, old_value = ?, new_value = ?
+                where id = ?`,
+            )
+            .run(title, createdAt, previous, message, event.id);
+        }
+        if (
+          !database
+            .prepare(
+              `select 1 from notification_event_n4user
+                where notification_event_id = ? and n4user_id = ? limit 1`,
+            )
+            .get(event.id, adminUser.id)
+        ) {
+          database
+            .prepare(
+              `insert into notification_event_n4user (notification_event_id, n4user_id)
+               values (?, ?)`,
+            )
+            .run(event.id, adminUser.id);
+          report.notifications.push(`${resourceType}:admin-receiver`);
+        }
+      };
+
+      ensureNotification({
+        createdAt: issueComment.created_date,
+        message: parityProjectSeed.issue.commentBody,
+        previous: `\n\n<br />\n\n--- Original issue from @admin  at 11:24 오전 ---\n\n<br />\n\n${parityProjectSeed.issue.body}`,
+        resourceId: issueComment.id,
+        resourceType: "issue_comment",
+        senderId: bobUserId,
+        title: `Re: [sample] ${parityProjectSeed.issue.title} (#1)`,
+      });
+      ensureNotification({
+        createdAt: postComment.created_date,
+        message: parityProjectSeed.post.commentBody,
+        previous: `\n\n<br />\n\n--- Original posting from @admin  at 11:24 오전 ---\n\n<br />\n\n${parityProjectSeed.post.body}`,
+        resourceId: postComment.id,
+        resourceType: "posting_comment",
+        senderId: aliceUser.id,
+        title: `Re: [sample] ${parityProjectSeed.post.title} (1)`,
+      });
 
       database
         .prepare("update project set last_issue_number = ?, last_posting_number = ? where id = ?")
@@ -722,7 +817,6 @@ export function runDevBackendOnce(env = process.env) {
     : `./${relativeDatabasePath}`;
 
   const config = [
-    `base_path = ${JSON.stringify(basePath)}`,
     `database_url = ${JSON.stringify(`sqlite://${normalizedDatabasePath}?mode=rwc`)}`,
     `public_origin = ${JSON.stringify(publicOrigin)}`,
     'schema_policy = "up"',
@@ -736,6 +830,7 @@ export function runDevBackendOnce(env = process.env) {
     cwd: repoRoot,
     env: {
       ...env,
+      YONA_BASE_PATH: basePath,
       YORAM_CONFIG_TOML: configPath,
     },
     stdio: "inherit",
