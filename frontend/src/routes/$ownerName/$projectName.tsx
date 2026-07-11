@@ -1618,7 +1618,7 @@ export function ProjectHeader({
                         toggleProjectUtilDropdown("watch");
                       }}
                     >
-                      {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
+                      {t(watchState.isWatching ? "project.unwatch" : "project.watch")}{" "}
                     </button>
                   </div>
                 </li>

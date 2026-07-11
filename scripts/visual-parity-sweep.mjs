@@ -507,6 +507,19 @@ async function putLocalJson(page, baseUrl, path, data) {
   });
 }
 
+async function patchLocalJson(page, baseUrl, path, data) {
+  const csrfToken = await readLocalCsrfToken(page, baseUrl);
+  if (!csrfToken) {
+    return null;
+  }
+  return page.request.patch(`${baseUrl}${path}`, {
+    data,
+    headers: {
+      "x-csrf-token": csrfToken,
+    },
+  });
+}
+
 async function patchLocalWorkspaceProfile(page, baseUrl, { emailAddress, name }) {
   const csrfToken = await readLocalCsrfToken(page, baseUrl);
   if (!csrfToken) {
@@ -632,6 +645,9 @@ async function bootstrapLocalAccount(page, baseUrl) {
       pullRequest: true,
       review: true,
       vcs: "git",
+    });
+    await patchLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/overview", {
+      overview: "Parity seed project for the admin workspace",
     });
     await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/sample/watch", {});
     const sampleLabelsResponse = await page.request.get(
@@ -1231,6 +1247,8 @@ async function inspectPage(page, baseUrl, path, label) {
       projectHeaderAvatar: selectorState(".project-header-avatar"),
       projectBreadcrumbWrap: selectorState(".project-breadcrumb-wrap"),
       projectUtilWrap: selectorState(".project-util-wrap"),
+      projectWatcherCount: selectorState(".project-util-wrap .watcher-count"),
+      projectWatchAction: selectorState(".project-util-wrap .down-arrow"),
       projectMenu: selectorState(".project-menu-outer"),
       projectMenuNav: selectorState(".project-menu-nav"),
       pageWrap: selectorState(".page-wrap-outer, .project-page-wrap"),
@@ -1239,6 +1257,8 @@ async function inspectPage(page, baseUrl, path, label) {
       boxWrap: selectorState(".box-wrap"),
       cuLabel: selectorState(".cu-label"),
       cuDesc: selectorState(".cu-desc"),
+      projectSettingRight: selectorState(".setting-box.right"),
+      projectDescription: selectorState("#project-desc"),
       issueListWrap: selectorState(".row-fluid.issue-list-wrap"),
       leftMenu: selectorState(".left-menu"),
       postListWrap: selectorState(".post-list-wrap"),
@@ -1386,6 +1406,8 @@ async function inspectPage(page, baseUrl, path, label) {
       projectHeaderAvatar: metrics.projectHeaderAvatar,
       projectBreadcrumbWrap: metrics.projectBreadcrumbWrap,
       projectUtilWrap: metrics.projectUtilWrap,
+      projectWatcherCount: metrics.projectWatcherCount,
+      projectWatchAction: metrics.projectWatchAction,
       projectMenu: metrics.projectMenu,
       projectMenuNav: metrics.projectMenuNav,
       pageWrap: metrics.pageWrap,
@@ -1394,6 +1416,8 @@ async function inspectPage(page, baseUrl, path, label) {
       boxWrap: metrics.boxWrap,
       cuLabel: metrics.cuLabel,
       cuDesc: metrics.cuDesc,
+      projectSettingRight: metrics.projectSettingRight,
+      projectDescription: metrics.projectDescription,
       issueListWrap: metrics.issueListWrap,
       leftMenu: metrics.leftMenu,
       postListWrap: metrics.postListWrap,

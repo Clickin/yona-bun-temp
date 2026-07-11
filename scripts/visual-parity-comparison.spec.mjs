@@ -408,6 +408,8 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
   assert.match(source, /async function bootstrapLocalAccount\(page, baseUrl\)/u);
   assert.match(source, /async function readLocalCsrfToken\(page, baseUrl\)/u);
   assert.match(source, /async function postLocalJson\(page, baseUrl, path, data\)/u);
+  assert.match(source, /async function patchLocalJson\(page, baseUrl, path, data\)/u);
+  assert.match(source, /Parity seed project for the admin workspace/u);
   assert.match(
     source,
     /async function signInLocalAccount\(page, baseUrl, identifier, accountPassword\)/u,
@@ -663,4 +665,10 @@ test("legacy CSS build preserves Less 1.x division semantics", () => {
     legacyCss,
     /\.select2-container-multi\.issue-labels:hover \.select2-choices \.select2-search-choice-close,[^{]+\{[^}]*opacity: 1;/su,
   );
+});
+
+test("React tab translations leave Bootstrap's frozen nav margin in control", () => {
+  const source = readFileSync(resolve(repoRoot, "frontend/src/app.css"), "utf8");
+  const navTabsRule = source.match(/\.nav-tabs\s*\{(?<body>[^}]*)\}/u)?.groups?.body ?? "";
+  assert.doesNotMatch(navTabsRule, /margin\s*:/u);
 });

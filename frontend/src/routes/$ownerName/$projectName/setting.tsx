@@ -1,13 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
-import {
-  readProjectSettingsQueryOptions,
-  toggleFavoriteProjectRest,
-  updateProjectRest,
-} from "../../../api/org-project";
+import { readProjectSettingsQueryOptions, updateProjectRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
@@ -15,6 +11,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { ProjectHeader as SharedProjectHeader } from "../$projectName";
 
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
@@ -141,7 +138,7 @@ function ProjectSettingScreen({
   return (
     <>
       <title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>
-      <ProjectHeader project={project} runtimeConfig={runtimeConfig} />
+      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu project={project} selfRoutePath={selfRoutePath} />
       <ProjectSettingBody
         branches={branches}
@@ -202,7 +199,16 @@ function ProjectSettingBody({
   );
   const [projectNamePopoverFocused, setProjectNamePopoverFocused] = useState(false);
   const [projectNamePopoverHovered, setProjectNamePopoverHovered] = useState(false);
+  const [overview, setOverview] = useState(() => stringField(project.overview, ""));
+  const [overviewHeight, setOverviewHeight] = useState(80);
+  const overviewRef = useRef<HTMLTextAreaElement>(null);
   const isProjectNamePopoverVisible = projectNamePopoverFocused || projectNamePopoverHovered;
+  useLayoutEffect(() => {
+    const textarea = overviewRef.current;
+    if (textarea) {
+      setOverviewHeight(legacyAutosizeContentHeight(textarea));
+    }
+  }, [overview]);
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -397,18 +403,26 @@ function ProjectSettingBody({
                 </dt>
                 <dd>
                   <textarea
+                    ref={overviewRef}
                     id="project-desc"
                     name="overview"
                     maxLength={250}
                     className="textarea"
-                    defaultValue={stringField(project.overview, "")}
+                    style={{
+                      height: `${overviewHeight}px`,
+                      overflow: "hidden",
+                      overflowWrap: "break-word",
+                      resize: "none",
+                    }}
+                    value={overview}
+                    onChange={(event) => setOverview(event.currentTarget.value)}
                   ></textarea>
                 </dd>
               </dl>
             </div>
 
             <div className="box-wrap middle">
-              <div className="cu-label">{t("project.shareOption")}</div>
+              <div className="cu-label">{t("project.shareOption")}</div>{" "}
               <div className="cu-desc">
                 <input
                   name="projectScope"
@@ -420,7 +434,7 @@ function ProjectSettingBody({
                 />
                 <label htmlFor="public" className="bg-radiobtn label-public">
                   {t("project.public")}
-                </label>
+                </label>{" "}
                 {stringField(project.organizationName, "") ? (
                   <>
                     <input
@@ -433,7 +447,7 @@ function ProjectSettingBody({
                     />
                     <label htmlFor="protected" className="bg-radiobtn label-protected">
                       {t("project.protected")}
-                    </label>
+                    </label>{" "}
                   </>
                 ) : null}
                 <input
@@ -446,14 +460,14 @@ function ProjectSettingBody({
                 />
                 <label htmlFor="private" className="bg-radiobtn label-private">
                   {t("project.private")}
-                </label>
+                </label>{" "}
                 <span className="note">{t("project.private.notice")}</span>
               </div>
             </div>
 
             {isGit ? (
               <div className="box-wrap middle">
-                <div className="cu-label">{t("issue.template")}</div>
+                <div className="cu-label">{t("issue.template")}</div>{" "}
                 <div className="cu-desc">
                   <Link
                     activeOptions={legacyProjectSettingsLinkActiveOptions}
@@ -471,7 +485,7 @@ function ProjectSettingBody({
             ) : null}
 
             <div className="box-wrap middle">
-              <div className="cu-label">{t("project.codeAccessible")}</div>
+              <div className="cu-label">{t("project.codeAccessible")}</div>{" "}
               <div className="cu-desc">
                 <input
                   name="isCodeAccessibleMemberOnly"
@@ -483,7 +497,7 @@ function ProjectSettingBody({
                 />
                 <label htmlFor="codeAccessibleMemberOnly" className="bg-radiobtn label-public">
                   {t("button.yes")}
-                </label>
+                </label>{" "}
                 <input
                   name="isCodeAccessibleMemberOnly"
                   type="radio"
@@ -506,7 +520,7 @@ function ProjectSettingBody({
                   id="reviewerCountSettingPanel"
                   style={reviewerCountPanelVisible ? undefined : { display: "none" }}
                 >
-                  <div className="cu-label vmiddle">{t("project.reviewer.count")}</div>
+                  <div className="cu-label vmiddle">{t("project.reviewer.count")}</div>{" "}
                   <div className="cu-desc">
                     <input
                       name="isUsingReviewerCount"
@@ -519,7 +533,7 @@ function ProjectSettingBody({
                     />
                     <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
                       {t("project.reviewer.count.enable")}
-                    </label>
+                    </label>{" "}
                     <input
                       name="isUsingReviewerCount"
                       type="radio"
@@ -532,7 +546,6 @@ function ProjectSettingBody({
                     <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
                       {t("project.reviewer.count.disable")}
                     </label>
-
                     <div
                       id="welReviewerCount"
                       className="hide"
@@ -587,29 +600,16 @@ function ProjectSettingBody({
                   id="defaultBranceSettingPanel"
                   style={menuCodeChecked ? undefined : { display: "none" }}
                 >
-                  <div className="cu-label vmiddle">{t("code.branches.defaultBranch")}</div>
+                  <div className="cu-label vmiddle">{t("code.branches.defaultBranch")}</div>{" "}
                   <div className="cu-desc">
-                    <select
-                      id="project-default-branch"
-                      name="defaultBranch"
-                      data-format="branch"
-                      data-dropdown-css-class="branches"
-                      style={{ minWidth: "220px" }}
-                      defaultValue={defaultBranch}
-                    >
-                      {branches.map((branchName) => (
-                        <option value={branchName} key={branchName}>
-                          {branchName}
-                        </option>
-                      ))}
-                    </select>
+                    <DefaultBranchSelect2 branches={branches} defaultBranch={defaultBranch} />
                   </div>
                 </div>
               </>
             ) : null}
 
             <div className="box-wrap middle">
-              <div className="cu-label vmiddle">{t("project.menu.setting")}</div>
+              <div className="cu-label vmiddle">{t("project.menu.setting")}</div>{" "}
               <div className="cu-desc">
                 <MenuCheckbox
                   id="menuSettingCode"
@@ -625,30 +625,32 @@ function ProjectSettingBody({
                       setReviewerCountPanelVisible(false);
                     }
                   }}
-                />
+                />{" "}
                 <MenuCheckbox
                   id="menuSettingIssue"
                   name="issue"
                   defaultChecked={booleanField(menuSetting.issue)}
                   label={t("menu.issue")}
-                />
+                />{" "}
                 {isGit ? (
-                  <MenuCheckbox
-                    id="menuSettingPullRequest"
-                    name="pullRequest"
-                    checked={menuPullRequestChecked}
-                    label={t("menu.pullRequest")}
-                    onChange={(checked) => {
-                      setMenuPullRequestChecked(checked);
-                      if (checked) {
-                        setMenuCodeChecked(true);
-                        setReviewerCountPanelVisible(true);
-                      } else {
-                        setReviewerCountEnabled(false);
-                        setReviewerCountPanelVisible(false);
-                      }
-                    }}
-                  />
+                  <>
+                    <MenuCheckbox
+                      id="menuSettingPullRequest"
+                      name="pullRequest"
+                      checked={menuPullRequestChecked}
+                      label={t("menu.pullRequest")}
+                      onChange={(checked) => {
+                        setMenuPullRequestChecked(checked);
+                        if (checked) {
+                          setMenuCodeChecked(true);
+                          setReviewerCountPanelVisible(true);
+                        } else {
+                          setReviewerCountEnabled(false);
+                          setReviewerCountPanelVisible(false);
+                        }
+                      }}
+                    />{" "}
+                  </>
                 ) : null}
                 <MenuCheckbox
                   id="menuSettingReview"
@@ -661,13 +663,13 @@ function ProjectSettingBody({
                       setMenuCodeChecked(true);
                     }
                   }}
-                />
+                />{" "}
                 <MenuCheckbox
                   id="menuSettingMilestone"
                   name="milestone"
                   defaultChecked={booleanField(menuSetting.milestone)}
                   label={t("milestone")}
-                />
+                />{" "}
                 <MenuCheckbox
                   id="menuSettingBoard"
                   name="board"
@@ -686,6 +688,110 @@ function ProjectSettingBody({
         </form>
       </div>
     </div>
+  );
+}
+
+function legacyAutosizeContentHeight(textarea: HTMLTextAreaElement) {
+  const style = getComputedStyle(textarea);
+  const verticalPadding =
+    Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+  return Math.max(80, Math.ceil(textarea.scrollHeight - verticalPadding));
+}
+
+function DefaultBranchSelect2({
+  branches,
+  defaultBranch,
+}: {
+  branches: string[];
+  defaultBranch: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState(defaultBranch);
+
+  return (
+    <>
+      <div
+        id="s2id_project-default-branch"
+        className={`select2-container${open ? " select2-dropdown-open select2-container-active" : ""}`}
+        style={{ width: 220 }}
+      >
+        <button
+          type="button"
+          className="select2-choice"
+          style={{
+            boxSizing: "border-box",
+            fontFamily: "inherit",
+            fontSize: "inherit",
+            fontWeight: "inherit",
+            height: "auto",
+            textAlign: "left",
+            width: "100%",
+          }}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span className="select2-chosen">
+            <strong className="branch-label branch">branch</strong> {selectedBranch}
+          </span>
+          <span className="select2-arrow" aria-hidden="true">
+            <b></b>
+          </span>
+        </button>
+        <input className="select2-focusser select2-offscreen" type="text" />
+        <div
+          className={`select2-drop select2-display-none select2-with-searchbox branches${open ? " select2-drop-active" : ""}`}
+          style={open ? { display: "block", width: 220 } : undefined}
+        >
+          <div className="select2-search">
+            <input className="select2-input" type="text" />
+          </div>
+          <ul className="select2-results">
+            {branches.map((branchName) => (
+              <li
+                key={branchName}
+                className={`select2-results-dept-0 select2-result select2-result-selectable${branchName === selectedBranch ? " select2-selected" : ""}`}
+              >
+                <button
+                  type="button"
+                  className="select2-result-label"
+                  style={{
+                    fontFamily: "inherit",
+                    fontSize: "inherit",
+                    fontWeight: "inherit",
+                    textAlign: "left",
+                    width: "100%",
+                  }}
+                  onClick={() => {
+                    setSelectedBranch(branchName);
+                    setOpen(false);
+                  }}
+                >
+                  <strong className="branch-label branch">branch</strong> {branchName}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <select
+        id="project-default-branch"
+        name="defaultBranch"
+        data-format="branch"
+        data-dropdown-css-class="branches"
+        className="select2-offscreen"
+        style={{ minWidth: "220px" }}
+        tabIndex={-1}
+        key={selectedBranch}
+        defaultValue={selectedBranch}
+        onChange={(event) => setSelectedBranch(event.currentTarget.value)}
+      >
+        {branches.map((branchName) => (
+          <option value={branchName} key={branchName}>
+            {branchName}
+          </option>
+        ))}
+      </select>
+    </>
   );
 }
 
@@ -721,133 +827,6 @@ function MenuCheckbox({
   );
 }
 
-function ProjectHeader({
-  project,
-  runtimeConfig,
-}: {
-  project: ProjectContainer;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectIdValue = projectId(project);
-  const [isFavoritedProject, setIsFavoritedProject] = useState(() => projectFavorited(project));
-  const logoUrl = projectLogoUrl(project, runtimeConfig.basePath);
-  const backgroundImageUrl =
-    stringField(recordField(project).backgroundImageUrl, "") ||
-    stringField(recordField(project).backgroundUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
-  const isForked =
-    booleanField(recordField(project).isForkedFromOrigin) ||
-    booleanField(recordField(project).isForked);
-  const originalOwnerName =
-    stringField(recordField(project).originalOwnerName, "") ||
-    stringField(recordField(project).originOwnerName, "");
-  const originalProjectName =
-    stringField(recordField(project).originalProjectName, "") ||
-    stringField(recordField(project).originProjectName, "");
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.base(ownerName, projectName),
-      });
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link
-                  activeOptions={legacyProjectSettingsLinkActiveOptions}
-                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-                  to="/$user"
-                  params={{ user: ownerName }}
-                >
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  activeOptions={legacyProjectSettingsLinkActiveOptions}
-                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              <span
-                className="user-project-list"
-                data-project-id={projectIdValue}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {/* oxlint-enable jsx-a11y/click-events-have-key-events */}
-              {booleanField(recordField(project).isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(recordField(project).isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  activeOptions={legacyProjectSettingsLinkActiveOptions}
-                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
-                  className="project-origin-name"
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util"></ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ProjectMenu({
   project,
   selfRoutePath,
@@ -860,6 +839,13 @@ function ProjectMenu({
   const projectName = stringField(project.projectName, "project");
   const menuSetting = projectMenuSetting(project);
   const enrolledMemberCount = enrolledUserCount(project);
+  const menuCounts = {
+    board:
+      numberField(recordField(project).boardCount) || numberField(recordField(project).postCount),
+    issue: numberField(recordField(project).openIssueCount),
+    pullRequest: numberField(recordField(project).openPullRequestCount),
+    review: numberField(recordField(project).reviewCount),
+  };
 
   return (
     <div className="project-menu-outer">
@@ -882,6 +868,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.issue) ? (
             <ProjectMenuItem
+              count={menuCounts.issue}
               label={t("menu.issue")}
               short="I"
               to="/$ownerName/$projectName/issues"
@@ -890,6 +877,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <ProjectMenuItem
+              count={menuCounts.pullRequest}
               label={t("menu.pullRequest")}
               short="P"
               to="/$ownerName/$projectName/pullRequests"
@@ -898,6 +886,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.review) ? (
             <ProjectMenuItem
+              count={menuCounts.review}
               label={t("menu.review")}
               short="R"
               to="/$ownerName/$projectName/reviews"
@@ -914,6 +903,7 @@ function ProjectMenu({
           ) : null}
           {booleanField(menuSetting.board) ? (
             <ProjectMenuItem
+              count={menuCounts.board}
               label={t("menu.board")}
               short="B"
               to="/$ownerName/$projectName/posts"
@@ -949,12 +939,14 @@ function ProjectMenu({
 
 function ProjectMenuItem({
   className = "",
+  count = 0,
   label,
   params,
   short,
   to,
 }: {
   className?: string;
+  count?: number;
   label: string;
   params: { ownerName: string; projectName: string };
   short: string;
@@ -970,6 +962,12 @@ function ProjectMenuItem({
       >
         <span className="menu-name">{label}</span>
         <span className="short-menu">{short}</span>
+        {count > 0 ? (
+          <>
+            {" "}
+            <CountBadge count={count} />
+          </>
+        ) : null}
       </Link>
     </li>
   );
@@ -1113,13 +1111,7 @@ function projectId(project: ProjectContainer) {
 function projectLogoUrl(project: ProjectContainer, basePath: string) {
   return (
     stringField(project.logoUrl, "") ||
-    prefixBasePath(basePath, "/assets/images/project_default_logo.png")
-  );
-}
-
-function projectFavorited(project: ProjectContainer) {
-  return (
-    booleanField(recordField(project).isFavorite) || booleanField(recordField(project).isFavorited)
+    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png")
   );
 }
 
