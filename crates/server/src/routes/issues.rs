@@ -12,13 +12,13 @@ use std::collections::{HashMap, HashSet};
 #[cfg(debug_assertions)]
 use super::utils::organization_issue_list_item_to_api;
 use super::utils::{
-    accepts_legacy_json, base_path_href, gravatar_url, legacy_content_update_body_from_value,
-    legacy_external_api_auth_error_response, legacy_external_api_token_from_headers,
-    legacy_external_attachment_result, legacy_external_authenticated_user_id,
-    legacy_external_post_author, legacy_external_temporary_upload_file_ids,
-    legacy_issue_comment_create_body_from_value, legacy_issue_detect_change_body_from_value,
-    legacy_issue_update_body_from_value, legacy_json_find_value, preferred_language_from_headers,
-    project_issue_list_item_to_api,
+    accepts_legacy_json, base_path_href, format_project_date_label, gravatar_url,
+    legacy_content_update_body_from_value, legacy_external_api_auth_error_response,
+    legacy_external_api_token_from_headers, legacy_external_attachment_result,
+    legacy_external_authenticated_user_id, legacy_external_post_author,
+    legacy_external_temporary_upload_file_ids, legacy_issue_comment_create_body_from_value,
+    legacy_issue_detect_change_body_from_value, legacy_issue_update_body_from_value,
+    legacy_json_find_value, preferred_language_from_headers, project_issue_list_item_to_api,
 };
 use crate::api_types::*;
 use crate::markdown::{rest_markdown_references, RestMarkdownReferencesBody};
@@ -694,6 +694,7 @@ struct RestIssueDetailResponse {
     child_closed_count: u32,
     child_issues: Vec<RestIssueChildIssue>,
     child_open_count: u32,
+    created_label: String,
     due_date_label: String,
     due_date_overdue: bool,
     due_date_until_label: String,
@@ -4294,6 +4295,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
             .map(rest_issue_child_issue_from_record)
             .collect(),
         child_open_count: issue.child_open_count,
+        created_label: format_project_date_label(issue.created_at),
         due_date_label: issue.due_date_label.clone(),
         due_date_overdue: issue.due_date_overdue,
         due_date_until_label: issue.due_date_until_label.clone(),

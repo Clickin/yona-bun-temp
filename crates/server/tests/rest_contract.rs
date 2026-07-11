@@ -825,6 +825,9 @@ async fn rest_issue_create_update_persists_legacy_parent_issue_id() {
     )
     .await;
     assert!(parent_detail["authorId"].as_i64().unwrap_or_default() > 0);
+    assert!(parent_detail["createdLabel"]
+        .as_str()
+        .is_some_and(|label| !label.is_empty()));
     assert_eq!(parent_detail["childOpenCount"], 1);
     assert_eq!(parent_detail["childClosedCount"], 0);
     assert_eq!(parent_detail["childIssues"][0]["issueNumber"], 2);

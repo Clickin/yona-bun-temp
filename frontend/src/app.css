@@ -8,6 +8,26 @@
   line-height: 18px;
 }
 
+body,
+div,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+h1,
+h2,
+h3,
+h4,
+form,
+fieldset,
+p,
+button {
+  margin: 0;
+  padding: 0;
+}
+
 body {
   margin: 0;
   background-color: #fff;
@@ -329,7 +349,6 @@ select:focus {
   box-shadow: 0 0 3px rgba(243, 108, 34, 0.35);
 }
 
-button,
 .ybtn {
   display: inline-block;
   padding: 4px 12px;
@@ -346,8 +365,6 @@ button,
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
 }
 
-button:hover,
-button:focus,
 .ybtn:hover,
 .ybtn:focus {
   color: #292929;
@@ -358,8 +375,7 @@ button:focus,
 
 .ybtn-primary,
 .ybtn-success,
-.btn-primary,
-button[type="submit"] {
+.btn-primary {
   color: #fff;
   background-color: #ff7332;
   border-color: #e95e01;
@@ -370,9 +386,7 @@ button[type="submit"] {
 .ybtn-success:hover,
 .ybtn-success:focus,
 .btn-primary:hover,
-.btn-primary:focus,
-button[type="submit"]:hover,
-button[type="submit"]:focus {
+.btn-primary:focus {
   color: #fff;
   background-color: #e95e01;
 }
@@ -2741,7 +2755,7 @@ h1 {
 #mySidenav .right-menu > .nav-tabs.nm > li > button,
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button,
+.board-view .markdown-editor > .nav-tabs > li > button,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button,
 .codediff-wrap .review-container .nav-tabs > li > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
@@ -2759,7 +2773,7 @@ h1 {
 #mySidenav .right-menu > .nav-tabs.nm > li > button,
 .user-stream-box .nav-tabs > li > button,
 .issue-list-wrap .nav-tabs.nm > li > button,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button,
+.board-view .markdown-editor > .nav-tabs > li > button,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button,
 .codediff-wrap .review-container .nav-tabs > li > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
@@ -2793,8 +2807,8 @@ h1 {
 .user-stream-box .nav-tabs > li > button:focus,
 .issue-list-wrap .nav-tabs.nm > li > button:hover,
 .issue-list-wrap .nav-tabs.nm > li > button:focus,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li > button:focus,
+.board-view .markdown-editor > .nav-tabs > li > button:hover,
+.board-view .markdown-editor > .nav-tabs > li > button:focus,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:focus,
 .codediff-wrap .review-container .nav-tabs > li > button:hover,
@@ -2827,9 +2841,9 @@ h1 {
 .issue-list-wrap .nav-tabs.nm > li.active > button,
 .issue-list-wrap .nav-tabs.nm > li.active > button:hover,
 .issue-list-wrap .nav-tabs.nm > li.active > button:focus,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li.active > button,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:hover,
-.board-view [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:focus,
+.board-view .markdown-editor > .nav-tabs > li.active > button,
+.board-view .markdown-editor > .nav-tabs > li.active > button:hover,
+.board-view .markdown-editor > .nav-tabs > li.active > button:focus,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:hover,
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:focus,
@@ -2864,6 +2878,10 @@ h1 {
 }
 
 .nav-tabs.small > li > a {
+  padding: 4px 15px;
+}
+
+.board-view .markdown-editor > .nav-tabs.small > li > button {
   padding: 4px 15px;
 }
 
@@ -3006,7 +3024,7 @@ h1 {
 }
 
 .page-wrap-outer > .project-page-wrap {
-  margin-top: 20px !important;
+  margin-top: 5px !important;
 }
 
 .all-projects {
@@ -5207,27 +5225,6 @@ h1 {
   border-color: #a9c7e8;
 }
 
-.board-view {
-  margin-top: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid #ddd;
-}
-
-.board-view header {
-  margin-bottom: 14px;
-}
-
-.board-view h1,
-.board-view h3 {
-  margin-bottom: 10px;
-}
-
-.board-body,
-.project-readme-post {
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-
 .readme .readme-wrap {
   overflow: hidden;
   background-color: #fff;
@@ -5519,10 +5516,6 @@ div.markdown-preview {
   margin-top: 10px;
 }
 
-.issue-detail-page .board-body.row-fluid {
-  margin-top: 18px;
-}
-
 .issue-detail-page .board-body .author-info {
   display: block;
   margin: 10px 20px;
@@ -5653,10 +5646,6 @@ div.markdown-preview {
   margin-bottom: 20px;
 }
 
-.board-body .content.markdown-wrap {
-  padding: 0 20px !important;
-}
-
 .board-body textarea.content,
 .issue-detail-page .board-body textarea.content {
   padding: 6px;
@@ -5674,20 +5663,6 @@ div.markdown-preview {
   margin-top: 20px;
   font-size: 0;
   text-align: right;
-}
-
-.issue-detail-page .vote-wrap,
-.issue-detail-page .act-row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.issue-detail-page .watcher-list,
-.issue-detail-page .issue-labels,
-.issue-detail-page .issue-info {
-  margin: 0 0 12px;
 }
 
 .issue-detail-page .issue-info {
@@ -6056,7 +6031,6 @@ div.markdown-preview {
 
 .board-view .board-comment-wrap textarea.comment {
   width: 100%;
-  min-height: 120px;
 }
 
 .issue-detail-page .comments .event {
