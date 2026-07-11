@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html requires positive tab order on title/body/save/cancel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import {
   createProjectPostRest,
@@ -317,14 +317,26 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
     <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
+          <Link
+            to="."
+            search={(previous) => previous}
+            hash="edit-body"
+            activeProps={{}}
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
-          </button>
+          </Link>
         </li>
         <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
+          <Link
+            to="."
+            search={(previous) => previous}
+            hash="preview-body"
+            activeProps={{}}
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
-          </button>
+          </Link>
         </li>
         <li>
           <div className="task-list-button">
@@ -385,6 +397,11 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
 
 function BoardPostFileUploader() {
   const { t } = useLegacyMessages();
+  const pasteSupported =
+    typeof document !== "undefined" &&
+    "onpaste" in document &&
+    typeof FormData !== "undefined" &&
+    typeof FileReader !== "undefined";
   return (
     <div id="upload" className="upload-wrap content-footer" data-resource-type="BOARD_POST">
       <div className="attach-wrap">
@@ -396,7 +413,12 @@ function BoardPostFileUploader() {
           </div>
         </div>
         <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+        <span
+          className="help help-pastable"
+          style={pasteSupported ? { display: "block" } : undefined}
+        >
+          {t("common.attach.pastehere")}
+        </span>
       </div>
       <ul className="attached-files unstyled"></ul>
       <p className="right-txt help">
