@@ -1055,6 +1055,44 @@ async function inspectPage(page, baseUrl, path, label) {
   if (localSettledSelector) {
     await page.waitForSelector(localSettledSelector, { timeout: 10_000 }).catch(() => {});
   }
+  if (label === "local" && path.split("?", 1)[0].endsWith("/issues")) {
+    await page
+      .waitForFunction(
+        () =>
+          [...document.styleSheets].some(
+            (sheet) => sheet.href?.includes("/issue/labels.css") && sheet.cssRules.length > 0,
+          ),
+        { timeout: 10_000 },
+      )
+      .catch(() => {});
+    await page
+      .waitForFunction(
+        () => {
+          const element = document.querySelector(
+            ".labels-wrap .select2-search-choice .issue-label",
+          );
+          if (!element) return true;
+          const sheet = [...document.styleSheets].find((candidate) =>
+            candidate.href?.includes("/issue/labels.css"),
+          );
+          if (!sheet) return false;
+          const expected = [...sheet.cssRules]
+            .filter(
+              (rule) =>
+                rule instanceof CSSStyleRule &&
+                element.matches(rule.selectorText) &&
+                rule.style.backgroundColor,
+            )
+            .at(-1);
+          return (
+            !(expected instanceof CSSStyleRule) ||
+            getComputedStyle(element).backgroundColor === expected.style.backgroundColor
+          );
+        },
+        { timeout: 10_000 },
+      )
+      .catch(() => {});
+  }
 
   const metrics = await page.evaluate(() => {
     const cloneChromeWithoutUserMarkdown = () => {
@@ -1180,6 +1218,7 @@ async function inspectPage(page, baseUrl, path, label) {
       leftMenu: selectorState(".left-menu"),
       postListWrap: selectorState(".post-list-wrap"),
       postItemTitle: selectorState(".post-item.title"),
+      selectedFilterLabel: selectorState(".labels-wrap .select2-search-choice .issue-label"),
       contentFormWrap: selectorState(".content-wrap.frm-wrap"),
       markdownEditor: selectorState(".textarea-box"),
       markdownPreview: selectorState(".markdown-preview.markdown-wrap"),
@@ -1279,7 +1318,7 @@ async function inspectPage(page, baseUrl, path, label) {
   if (effectiveRequestFailures.length > 0) {
     errors.push(`${effectiveRequestFailures.length} request failure(s)`);
   }
-  if (errors.length > 0 || alwaysScreenshotPaths.has(path)) {
+  if (errors.length > 0 || alwaysScreenshotPaths.has(path.split("?", 1)[0])) {
     const screenshotLabel =
       viewportProfile.name === "desktop" ? label : `${label}-${viewportProfile.name}`;
     await page.screenshot({
@@ -1334,6 +1373,7 @@ async function inspectPage(page, baseUrl, path, label) {
       leftMenu: metrics.leftMenu,
       postListWrap: metrics.postListWrap,
       postItemTitle: metrics.postItemTitle,
+      selectedFilterLabel: metrics.selectedFilterLabel,
       contentFormWrap: metrics.contentFormWrap,
       markdownEditor: metrics.markdownEditor,
       markdownPreview: metrics.markdownPreview,

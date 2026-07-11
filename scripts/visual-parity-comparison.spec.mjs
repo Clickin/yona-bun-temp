@@ -566,6 +566,7 @@ test("visual sweep records P2 and P3 template verifier metrics", () => {
     "leftMenu",
     "postListWrap",
     "postItemTitle",
+    "selectedFilterLabel",
     "contentFormWrap",
     "markdownEditor",
     "markdownPreview",
@@ -590,4 +591,19 @@ test("visual sweep waits for form routes with query state", () => {
     source,
     /navigationPath = `\/admin\/sample\/issueform\?parentIssueId=\$\{encodeURIComponent\(parent\.id\)\}`/u,
   );
+});
+
+test("visual sweep captures queued route states with query strings", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /alwaysScreenshotPaths\.has\(path\.split\("\?", 1\)\[0\]\)/u);
+});
+
+test("visual sweep waits for dynamic project label styles before measuring issue lists", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /sheet\.href\?\.includes\("\/issue\/labels\.css"\)/u);
+  assert.match(source, /sheet\.cssRules\.length > 0/u);
+  assert.match(source, /getComputedStyle\(element\)\.backgroundColor/u);
+  assert.match(source, /expected\.style\.backgroundColor/u);
 });
