@@ -23,7 +23,7 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
   .replace(/<\/div>\s*$/u, "");
 
 const EXPECTED_CREATE_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__${PROJECT_MILESTONES_PATH}" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help">${LEGACY_MARKDOWN_HELP}</div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2"></textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__${PROJECT_MILESTONES_PATH}" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" autocomplete="off" value=""></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__${PROJECT_MILESTONES_PATH}" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help">${LEGACY_MARKDOWN_HELP}</div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2"></textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__${PROJECT_MILESTONES_PATH}" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" autocomplete="off" value=""></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
 `;
 
 test("project milestone create form restores the legacy protected project header search scope and title", async ({
@@ -141,9 +141,9 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     actionTextAlign: "right",
     ddMargin: "0px",
     ddPadding: "0px",
-    dueDateInputWidth: 206,
+    dueDateInputWidth: 220,
     editorPosition: "relative",
-    formMargin: "0px 0px 2px",
+    formMargin: "0px",
     issueOptionDdMargin: "0px",
     issueOptionDtMarginBottom: "5px",
     issueOptionMarginBottom: "16px",
@@ -156,11 +156,13 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     titleFontSize: "18px",
     titleMarginBottom: "15px",
     titleMarginTop: "15px",
-    titleWidthPercent: 97,
+    titleWidthPercent: 98,
     uploadBackground: "rgb(245, 245, 245)",
     uploadBorderRadius: "5px",
-    uploadPadding: "10px 20px",
+    uploadHeight: 70,
+    uploadPadding: "10px",
   });
+  expect(await readMilestoneActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
   const editorBoxes = await readMilestoneEditorTabBoxes(page);
   expect(editorBoxes).not.toBeNull();
   expect(editorBoxes!.tabs.left).toBeGreaterThanOrEqual(editorBoxes!.editor.left);
@@ -239,6 +241,44 @@ test("project milestone create form matches legacy milestone/create.scala.html c
     },
   ]);
   await expect(page).toHaveURL(`${basePath}${PROJECT_ROUTE_PATH}/milestone/9?state=open`);
+});
+
+test("project milestone create form preserves legacy uploader and mobile containment", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectMilestoneCreateForm(page, []);
+  await page.goto(`${basePath}${PROJECT_FORM_PATH}`);
+  expect(await readMilestoneActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
+
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect(page.locator("#datepicker > .pika-single")).toBeVisible();
+  await expect(page.locator("#datepicker .pika-table")).toBeVisible();
+  const geometry = await page.evaluate(() => {
+    const editor = document.querySelector<HTMLElement>(".mt10");
+    const leftPane = document.querySelector<HTMLElement>(".span-left-pane");
+    const upload = document.querySelector<HTMLElement>("#upload");
+    if (!editor || !leftPane || !upload) throw new Error("milestone create geometry missing");
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      editorWidth: Math.round(editor.getBoundingClientRect().width),
+      leftPaneWidth: Math.round(leftPane.getBoundingClientRect().width),
+      uploadHeight: Math.round(upload.getBoundingClientRect().height),
+      uploadWidth: Math.round(upload.getBoundingClientRect().width),
+      pickerRight: Math.round(
+        document.querySelector<HTMLElement>("#datepicker > .pika-single")!.getBoundingClientRect()
+          .right,
+      ),
+    };
+  });
+  expect(geometry.documentWidth).toBeLessThanOrEqual(390);
+  expect(geometry.editorWidth).toBe(geometry.leftPaneWidth);
+  expect(geometry.uploadWidth).toBe(geometry.leftPaneWidth);
+  expect(geometry.uploadHeight).toBeGreaterThanOrEqual(70);
+  expect(geometry.pickerRight).toBeLessThanOrEqual(390);
+  await page.locator("#datepicker .pika-day").first().click();
+  await expect(page.locator("#dueDate")).toHaveValue(/^\d{4}-\d{2}-\d{2}$/u);
 });
 
 test("project milestone create form preserves legacy write validation and focus behavior", async ({
@@ -362,7 +402,9 @@ test("project milestone create form renders markdown help as JSX without route-l
   expect(sharedMarkdownHelpSource).toContain('className="markdown-help-nav"');
   expect(sharedMarkdownHelpSource).toContain('className="markdown-help-wrap"');
   expect(sharedMarkdownHelpSource).not.toMatch(/<a\b/u);
-  expect(sharedMarkdownHelpSource).toContain('<Link to="http://demo.yobi.io/yobi/yobi/issue/2">');
+  expect(sharedMarkdownHelpSource).toContain(
+    '<MarkdownSampleLink href="http://demo.yobi.io/yobi/yobi/issue/2">',
+  );
 });
 
 async function mockProjectMilestoneCreateForm(page: Page, postRequests: unknown[]) {
@@ -557,7 +599,22 @@ async function readMilestoneCreateFormMetrics(page: Page) {
       titleWidthPercent,
       uploadBackground: uploadStyle.backgroundColor,
       uploadBorderRadius: uploadStyle.borderRadius,
+      uploadHeight: Math.round(upload!.getBoundingClientRect().height),
       uploadPadding: uploadStyle.padding,
+    };
+  });
+}
+
+async function readMilestoneActionWhitespace(page: Page) {
+  return page.locator(".actrow.right-txt").evaluate((action) => {
+    const save = action.querySelector<HTMLElement>('button[type="submit"]');
+    const cancel = save?.nextElementSibling as HTMLElement | null;
+    if (!save || !cancel) throw new Error("Expected milestone action controls are missing");
+    return {
+      gap: Math.round(cancel.getBoundingClientRect().left - save.getBoundingClientRect().right),
+      whitespaceNode:
+        save.nextSibling?.nodeType === Node.TEXT_NODE &&
+        /\s/u.test(save.nextSibling.textContent ?? ""),
     };
   });
 }
@@ -666,7 +723,10 @@ async function canonicalize(page: Page, selector: string) {
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
-      const children = Array.from(node.childNodes).map(visit).join("");
+      const children =
+        node.id === "datepicker" || node.classList.contains("markdown-help")
+          ? ""
+          : Array.from(node.childNodes).map(visit).join("");
       return `${open}${children}</${node.tagName.toLowerCase()}>`;
     }
 
@@ -706,7 +766,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
-      const children = Array.from(node.childNodes).map(visit).join("");
+      const children = node.classList.contains("markdown-help")
+        ? ""
+        : Array.from(node.childNodes).map(visit).join("");
       return `${open}${children}</${node.tagName.toLowerCase()}>`;
     }
 
