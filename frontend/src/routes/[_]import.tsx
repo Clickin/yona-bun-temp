@@ -82,6 +82,8 @@ function ProjectImportScreen({
     "";
   const selectedOwnerOption = ownerOptions.find((option) => option.ownerName === selectedOwner);
   const [ownerName, setOwnerName] = React.useState(selectedOwner);
+  const [ownerMenuOpen, setOwnerMenuOpen] = React.useState(false);
+  const currentOwnerOption = ownerOptions.find((option) => option.ownerName === ownerName);
   const isSelectedOwnerGroup =
     ownerOptions.find((option) => option.ownerName === ownerName)?.organization ??
     selectedOwnerOption?.organization ??
@@ -302,11 +304,118 @@ function ProjectImportScreen({
                   </label>
                 </dt>
                 <dd>
+                  <div
+                    className={`select2-container mb10${ownerMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+                    style={{ width: 220 }}
+                  >
+                    <button
+                      type="button"
+                      className="select2-choice"
+                      style={{
+                        fontFamily: "inherit",
+                        fontSize: "inherit",
+                        fontWeight: "inherit",
+                        textAlign: "left",
+                        width: "100%",
+                      }}
+                      aria-expanded={ownerMenuOpen}
+                      onClick={() => setOwnerMenuOpen((open) => !open)}
+                    >
+                      <span className="select2-chosen">
+                        <span className="usf-group" title={`${ownerName} `}>
+                          <span className="avatar-wrap smaller">
+                            <img
+                              src={prefixBasePath(
+                                runtimeConfig.basePath,
+                                currentOwnerOption?.avatarUrl?.trim() ||
+                                  (isSelectedOwnerGroup
+                                    ? "/assets/images/group_default.png"
+                                    : "/assets/images/default-avatar-128.png"),
+                              )}
+                              width="20"
+                              height="20"
+                              alt=""
+                            />
+                          </span>
+                          <strong className="name">{ownerName}</strong>
+                          <span className="loginid"></span>
+                        </span>
+                      </span>
+                      <span className="select2-arrow" aria-hidden="true">
+                        <b></b>
+                      </span>
+                    </button>
+                    <input
+                      className="select2-focusser select2-offscreen"
+                      type="text"
+                      disabled={ownerMenuOpen}
+                      aria-label={t("project.owner")}
+                    />
+                    <div
+                      className={`select2-drop select2-display-none select2-with-searchbox${ownerMenuOpen ? " select2-drop-active" : ""}`}
+                      style={ownerMenuOpen ? { display: "block", width: 220 } : undefined}
+                    >
+                      <div className="select2-search">
+                        <input
+                          type="text"
+                          className={`select2-input${ownerMenuOpen ? " select2-focused" : ""}`}
+                          aria-label={t("project.owner")}
+                        />
+                      </div>
+                      <ul className="select2-results">
+                        {ownerOptions.map((option) => (
+                          <li
+                            key={option.ownerName}
+                            className={`select2-results-dept-0 select2-result select2-result-selectable${option.ownerName === ownerName ? " select2-selected" : ""}`}
+                          >
+                            <button
+                              type="button"
+                              className="select2-result-label"
+                              style={{
+                                fontFamily: "inherit",
+                                fontSize: "inherit",
+                                fontWeight: "inherit",
+                                textAlign: "left",
+                                width: "100%",
+                              }}
+                              onClick={() => {
+                                setOwnerName(option.ownerName);
+                                setOwnerMenuOpen(false);
+                                if (!option.organization && projectScope === "PROTECTED") {
+                                  setProjectScope("PUBLIC");
+                                }
+                              }}
+                            >
+                              <span className="usf-group" title={`${option.ownerName} `}>
+                                <span className="avatar-wrap smaller">
+                                  <img
+                                    src={prefixBasePath(
+                                      runtimeConfig.basePath,
+                                      option.avatarUrl?.trim() ||
+                                        (option.organization
+                                          ? "/assets/images/group_default.png"
+                                          : "/assets/images/default-avatar-128.png"),
+                                    )}
+                                    width="20"
+                                    height="20"
+                                    alt=""
+                                  />
+                                </span>
+                                <strong className="name">{option.ownerName}</strong>
+                                <span className="loginid"></span>
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                   <select
                     id="project-owner"
                     name="owner"
                     data-format="user"
-                    className="mb10"
+                    className="mb10 select2-offscreen"
+                    tabIndex={-1}
                     value={ownerName}
                     onChange={(event) => {
                       const nextOwner = event.currentTarget.value;
@@ -447,7 +556,41 @@ function ProjectImportScreen({
                     <label htmlFor="vcs">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
-                    <select className="mb10 mt5" disabled>
+                    <div
+                      className="select2-container select2-container-disabled mb10 mt5"
+                      style={{ width: 220 }}
+                    >
+                      <button
+                        type="button"
+                        className="select2-choice"
+                        style={{
+                          fontFamily: "inherit",
+                          fontSize: "inherit",
+                          fontWeight: "inherit",
+                          textAlign: "left",
+                          width: "100%",
+                        }}
+                        disabled
+                      >
+                        <span className="select2-chosen">{t("project.new.vcsType.git")}</span>
+                        <span className="select2-arrow" aria-hidden="true">
+                          <b></b>
+                        </span>
+                      </button>
+                      <input
+                        className="select2-focusser select2-offscreen"
+                        type="text"
+                        disabled
+                        aria-label={t("project.vcs")}
+                      />
+                      <div className="select2-drop select2-display-none select2-with-searchbox">
+                        <div className="select2-search">
+                          <input className="select2-input" type="text" disabled />
+                        </div>
+                        <ul className="select2-results"></ul>
+                      </div>
+                    </div>
+                    <select className="mb10 mt5 select2-offscreen" disabled tabIndex={-1}>
                       <option>{t("project.new.vcsType.git")}</option>
                     </select>
                     <input type="hidden" name="vcs" value="GIT" />

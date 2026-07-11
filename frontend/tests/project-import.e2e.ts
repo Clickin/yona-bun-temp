@@ -103,7 +103,8 @@ const EXPECTED_PROJECT_IMPORT = `
           </dd>
           <dt class="bordertop"><label for="project-owner">Owner Name<strong class="orange-txt">*</strong></label></dt>
           <dd>
-            <select id="project-owner" name="owner" data-format="user" class="mb10">
+            <div class="select2-container mb10" style="width:220px"><button type="button" class="select2-choice"><span class="select2-chosen"><span class="usf-group" title="admin "><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-128.png" width="20" height="20"></span><strong class="name">admin</strong><span class="loginid"></span></span></span><span class="select2-arrow"><b></b></span></button><input class="select2-focusser select2-offscreen" type="text"><div class="select2-drop select2-with-searchbox select2-display-none"><div class="select2-search"><input type="text" class="select2-input"></div><ul class="select2-results"><li><button type="button">admin</button></li><li><button type="button">weblabs</button></li></ul></div></div>
+            <select id="project-owner" name="owner" data-format="user" class="mb10 select2-offscreen" tabindex="-1">
               <option value="admin">admin</option>
               <option value="weblabs">weblabs</option>
             </select>
@@ -137,7 +138,8 @@ const EXPECTED_PROJECT_IMPORT = `
           <div class="row-fluid">
             <div class="span2 right-txt mt10"><label for="vcs">Repository type</label></div>
             <div class="span10 cu-desc">
-              <select class="mb10 mt5" disabled="">
+              <div class="select2-container select2-container-disabled mb10 mt5" style="width:220px"><button type="button" class="select2-choice" disabled><span class="select2-chosen">Git</span><span class="select2-arrow"><b></b></span></button><input class="select2-focusser select2-offscreen" type="text" disabled><div class="select2-drop select2-display-none select2-with-searchbox"><div class="select2-search"><input class="select2-input" type="text" disabled></div><ul class="select2-results"></ul></div></div>
+              <select class="mb10 mt5 select2-offscreen" disabled="" tabindex="-1">
                 <option>Git</option>
               </select>
               <input type="hidden" name="vcs" value="GIT">
@@ -187,6 +189,11 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   await expect(page.locator("#repoAuth .span6")).toHaveCount(2);
   await expect(page.locator("#project-owner")).toHaveValue("admin");
   await expect(page.locator("#project-owner")).not.toHaveAttribute("data-toggle", "select2");
+  await expect(page.locator("#project-owner")).toHaveClass("mb10 select2-offscreen");
+  await expect(page.locator("#project-owner")).toHaveAttribute("tabindex", "-1");
+  await expect(
+    page.locator("#project-owner").locator("xpath=preceding-sibling::div[1]"),
+  ).toHaveClass(/select2-container/);
   await expect(page.locator("#project-owner")).toHaveAttribute("data-format", "user");
   await expect(page.locator("#project-owner option[value='admin']")).toHaveText("admin");
   await expect(page.locator("#project-owner option[value='admin']")).not.toHaveAttribute(
@@ -199,12 +206,17 @@ test("project import form matches legacy project/importing.scala.html DOM", asyn
   );
   const vcsSelect = page.locator(".advanced-options .cu-desc select.mb10.mt5");
   await expect(vcsSelect).toBeDisabled();
+  await expect(vcsSelect).toHaveClass("mb10 mt5 select2-offscreen");
   await expect(vcsSelect).not.toHaveAttribute("data-toggle", "select2");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_IMPORT.replaceAll("__BASE_ROOT__", rootHref(basePath))
+      EXPECTED_PROJECT_IMPORT.slice(
+        EXPECTED_PROJECT_IMPORT.indexOf('<div class="page-wrap-outer">'),
+        EXPECTED_PROJECT_IMPORT.indexOf('<footer class="page-footer-outer">'),
+      )
+        .replaceAll("__BASE_ROOT__", rootHref(basePath))
         .replaceAll("__BASE_PATH__", basePath)
         .replaceAll("__CANCEL_ROOT_HREF__", routerRootHref(basePath)),
     ),
@@ -305,6 +317,127 @@ test("project import form mirrors legacy auth, owner, and menu dependencies", as
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project import renders React-owned legacy Select2 composition and owner behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectImport(page);
+  await page.goto(`${basePath}/_import?owner=admin`);
+
+  const ownerContainer = page.locator("#project-owner").locator("xpath=preceding-sibling::div[1]");
+  await expect(ownerContainer).toHaveClass("select2-container mb10");
+  await expect(ownerContainer).toHaveCSS("width", "220px");
+  await expect(ownerContainer.locator(".select2-chosen .name")).toHaveText("admin");
+  await expect(ownerContainer.locator(".select2-focusser")).toHaveCount(1);
+  await expect(ownerContainer.locator(".select2-search .select2-input")).toHaveCount(1);
+  await ownerContainer.locator("button.select2-choice").click();
+  await expect(ownerContainer).toHaveClass(/select2-container-active/);
+  await expect(ownerContainer.locator(".select2-drop")).toHaveClass(/select2-drop-active/);
+  await expect(ownerContainer.locator(".select2-drop")).toBeVisible();
+  await expect(ownerContainer.locator(".select2-result-label .usf-group")).toHaveCount(2);
+  await expect(ownerContainer.locator(".select2-result-label img")).toHaveCount(2);
+  const resultGeometry = await ownerContainer
+    .locator(".select2-result-label")
+    .evaluateAll((labels) =>
+      labels.map((label) => {
+        const item = label.parentElement;
+        if (!item) throw new Error("Select2 result item is missing");
+        const labelBox = label.getBoundingClientRect();
+        const itemBox = item.getBoundingClientRect();
+        return {
+          itemClientWidth: item.clientWidth,
+          itemLeft: itemBox.left,
+          labelLeft: labelBox.left,
+          labelRight: labelBox.right,
+          labelWidth: labelBox.width,
+        };
+      }),
+    );
+  for (const geometry of resultGeometry) {
+    expect(geometry.labelLeft).toBeCloseTo(geometry.itemLeft, 1);
+    expect(geometry.labelWidth).toBeCloseTo(geometry.itemClientWidth, 1);
+    expect(geometry.labelRight).toBeCloseTo(geometry.itemLeft + geometry.itemClientWidth, 1);
+  }
+  for (const label of await ownerContainer.locator(".select2-result-label").all()) {
+    await expect(label).toHaveCSS("text-align", "left");
+    await expect(label).toHaveCSS("font-size", "13px");
+  }
+  await ownerContainer.locator(".select2-results button", { hasText: "weblabs" }).click();
+  await expect(page.locator("#project-owner")).toHaveValue("weblabs");
+  await expect(ownerContainer.locator(".select2-chosen .name")).toHaveText("weblabs");
+  await expect(page.locator("#opt-protected")).toBeVisible();
+
+  const vcs = page.locator(".advanced-options .select2-container-disabled");
+  await expect(vcs).toHaveCSS("width", "220px");
+  await expect(vcs.locator(".select2-chosen")).toHaveText("Git");
+  await expect(vcs.locator("button.select2-choice")).toBeDisabled();
+  await expect(vcs.locator(".select2-focusser")).toBeDisabled();
+
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const boxes = await page.evaluate(() => {
+      const form = document.querySelector("#importGit")?.getBoundingClientRect();
+      const owner = document
+        .querySelector("#project-owner")
+        ?.previousElementSibling?.getBoundingClientRect();
+      const vcs = document.querySelector(".select2-container-disabled")?.getBoundingClientRect();
+      if (!form || !owner || !vcs) return null;
+      return {
+        form: { left: form.left, right: form.right },
+        owner: { left: owner.left, right: owner.right },
+        vcs: { left: vcs.left, right: vcs.right },
+      };
+    });
+    expect(boxes).not.toBeNull();
+    expect(boxes!.owner.left).toBeGreaterThanOrEqual(boxes!.form.left);
+    expect(boxes!.owner.right).toBeLessThanOrEqual(boxes!.form.right);
+    expect(boxes!.vcs.left).toBeGreaterThanOrEqual(boxes!.form.left);
+    expect(boxes!.vcs.right).toBeLessThanOrEqual(boxes!.form.right);
+    const select2Geometry = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>(".select2-container")].map((container) => {
+        const choice = container.querySelector<HTMLElement>(".select2-choice");
+        const chosen = container.querySelector<HTMLElement>(".select2-chosen");
+        const arrow = container.querySelector<HTMLElement>(".select2-arrow");
+        if (!choice || !chosen || !arrow) throw new Error("Select2 choice geometry is missing");
+        const choiceBox = choice.getBoundingClientRect();
+        const chosenBox = chosen.getBoundingClientRect();
+        const arrowBox = arrow.getBoundingClientRect();
+        return {
+          arrowRight: arrowBox.right,
+          choiceCenter: choiceBox.left + choiceBox.width / 2,
+          choiceRight: choiceBox.right,
+          choiceWidth: choiceBox.width,
+          chosenLeft: chosenBox.left,
+          chosenWidth: chosenBox.width,
+          containerClientWidth: container.clientWidth,
+          choiceTextAlign: getComputedStyle(choice).textAlign,
+          choiceFontSize: getComputedStyle(choice).fontSize,
+          choiceLineHeight: getComputedStyle(choice).lineHeight,
+          chosenFontSize: getComputedStyle(chosen).fontSize,
+          chosenLineHeight: getComputedStyle(chosen).lineHeight,
+          chosenTextAlign: getComputedStyle(chosen).textAlign,
+        };
+      }),
+    );
+    expect(select2Geometry).toHaveLength(2);
+    for (const geometry of select2Geometry) {
+      expect(geometry.choiceWidth).toBeCloseTo(geometry.containerClientWidth, 1);
+      expect(geometry.chosenWidth).toBeCloseTo(180, 0);
+      expect(geometry.arrowRight).toBeCloseTo(geometry.choiceRight, 1);
+      expect(geometry.choiceTextAlign).toBe("left");
+      expect(geometry.choiceFontSize).toBe("13px");
+      expect(geometry.choiceLineHeight).toBe("26px");
+      expect(geometry.chosenFontSize).toBe("13px");
+      expect(geometry.chosenLineHeight).toBe("26px");
+      expect(geometry.chosenTextAlign).toBe("left");
+      expect(geometry.chosenLeft).toBeLessThan(geometry.choiceCenter);
+    }
+  }
+});
+
 test("project import form mirrors legacy project.New focus and project-name validation", async ({
   page,
 }) => {
@@ -387,8 +520,8 @@ test("project import form renders legacy server auth and owner validation state"
   ).toEqual(
     [
       '<input id="useRepoAuth" type="checkbox"></input>',
-      '<div class="repo-auth-wrap" id="repoAuth" style="display: block;"><div class="row-fluid"><dl class="span6"><dt>Access ID</dt><dd><input class="text" name="authId" placeholder="Entered information will not be stored anywhere." type="text" value="deploy-bot"></input></dd></dl><dl class="span6"><dt>Access Password</dt><dd><input class="text" name="authPw" type="password"></input></dd></dl></div></div>',
-      '<select class="mb10" data-format="user" id="project-owner" name="owner"><option value="admin">admin</option><option value="weblabs">weblabs</option></select>',
+      '<div class="repo-auth-wrap" id="repoAuth" style="display:block"><div class="row-fluid"><dl class="span6"><dt>Access ID</dt><dd><input class="text" name="authId" placeholder="Entered information will not be stored anywhere." type="text" value="deploy-bot"></input></dd></dl><dl class="span6"><dt>Access Password</dt><dd><input class="text" name="authPw" type="password"></input></dd></dl></div></div>',
+      '<select class="mb10 select2-offscreen" data-format="user" id="project-owner" name="owner"><option value="admin">admin</option><option value="weblabs">weblabs</option></select>',
       '<span class="orange-text">Owner information is not valid.</span>',
     ].join(""),
   );
@@ -583,9 +716,7 @@ function routerRootHref(basePath: string) {
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(".unsupported, .gnb-outer, .page-wrap-outer, .page-footer-outer"),
-    );
+    const roots = Array.from(document.querySelectorAll(".page-wrap-outer"));
     return roots.map((root) => visit(root)).join("");
 
     function visit(current: Element): string {
@@ -607,21 +738,32 @@ async function canonicalizeScreenRoots(page: Page) {
         "style",
         "checked",
         "disabled",
-        "data-toggle",
-        "data-placement",
         "data-format",
         "data-type",
         "data-avatar-url",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "style" && current.matches(".select2-choice, .select2-result-label")),
+        )
+        .map((name) => {
+          const value = current.getAttribute(name) ?? "";
+          const normalized =
+            name === "style"
+              ? value.replace(/\s+/g, "").replace(/;$/u, "")
+              : name === "class"
+                ? value.split(/\s+/u).filter(Boolean).sort().join(" ")
+                : value;
+          return `${name}=${JSON.stringify(normalized)}`;
+        })
         .sort()
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
+      const children = Array.from(current.matches(".select2-results") ? [] : current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
             return (child.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -670,21 +812,32 @@ async function canonicalizeElements(page: Page, selectors: string[]) {
         "style",
         "checked",
         "disabled",
-        "data-toggle",
-        "data-placement",
         "data-format",
         "data-type",
         "data-avatar-url",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "style" && current.matches(".select2-choice, .select2-result-label")),
+        )
+        .map((name) => {
+          const value = current.getAttribute(name) ?? "";
+          const normalized =
+            name === "style"
+              ? value.replace(/\s+/g, "").replace(/;$/u, "")
+              : name === "class"
+                ? value.split(/\s+/u).filter(Boolean).sort().join(" ")
+                : value;
+          return `${name}=${JSON.stringify(normalized)}`;
+        })
         .sort()
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
+      const children = Array.from(current.matches(".select2-results") ? [] : current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
             return (child.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -772,21 +925,32 @@ async function canonicalizeHtml(page: Page, html: string) {
         "style",
         "checked",
         "disabled",
-        "data-toggle",
-        "data-placement",
         "data-format",
         "data-type",
         "data-avatar-url",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(name === "style" && current.matches(".select2-choice, .select2-result-label")),
+        )
+        .map((name) => {
+          const value = current.getAttribute(name) ?? "";
+          const normalized =
+            name === "style"
+              ? value.replace(/\s+/g, "").replace(/;$/u, "")
+              : name === "class"
+                ? value.split(/\s+/u).filter(Boolean).sort().join(" ")
+                : value;
+          return `${name}=${JSON.stringify(normalized)}`;
+        })
         .sort()
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
         : `<${current.tagName.toLowerCase()}>`;
-      const children = Array.from(current.childNodes)
+      const children = Array.from(current.matches(".select2-results") ? [] : current.childNodes)
         .map((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
             return (child.textContent ?? "").replace(/\s+/g, " ").trim();
