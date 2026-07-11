@@ -1138,9 +1138,26 @@ function EditCategoryModal({
                     <b></b>
                   </span>
                 </div>
+                <input
+                  className="select2-focusser select2-offscreen"
+                  type="text"
+                  autoComplete="off"
+                  aria-label={t("label.category.option")}
+                />
                 <div
-                  className={`select2-drop${isExclusiveSelectOpen ? " select2-drop-active" : " select2-display-none"}`}
+                  className={`select2-drop select2-without-searchbox select2-with-searchbox${isExclusiveSelectOpen ? " select2-drop-active" : " select2-display-none"}`}
                 >
+                  <div className="select2-search">
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      className="select2-input"
+                      aria-label={t("label.category.option")}
+                    />
+                  </div>
                   <ul className="select2-results" role="listbox">
                     <li>
                       <div
@@ -1290,9 +1307,26 @@ function EditLabelModal({
                   <b></b>
                 </span>
               </div>
+              <input
+                className="select2-focusser select2-offscreen"
+                type="text"
+                autoComplete="off"
+                aria-label={t("label.category")}
+              />
               <div
-                className={`select2-drop${isCategorySelectOpen ? " select2-drop-active" : " select2-display-none"}`}
+                className={`select2-drop select2-with-searchbox${isCategorySelectOpen ? " select2-drop-active" : " select2-display-none"}`}
               >
+                <div className="select2-search">
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    className="select2-input"
+                    aria-label={t("label.category")}
+                  />
+                </div>
                 <ul className="select2-results" role="listbox">
                   {categories.map((category) => (
                     <li key={category.id}>
