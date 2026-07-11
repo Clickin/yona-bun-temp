@@ -8215,27 +8215,6 @@ div.markdown-preview {
   }
 }
 
-/* Legacy issue create geometry with React-owned controls. */
-.issue-form-page-wrap .project-page-wrap {
-  margin-top: 5px !important;
-}
-
-.issue-form-page-wrap .content-wrap {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 0;
-}
-
-.issue-form-page-wrap #issue-form {
-  position: relative;
-  width: 100%;
-}
-
-.issue-form-page-wrap .issue-title-row,
-.issue-form-page-wrap .issue-form-columns {
-  width: 100%;
-}
-
 .issue-form-page-wrap .markdown-help .markdown-help-nav {
   padding: 0;
   margin: 0;
@@ -8283,8 +8262,6 @@ div.markdown-preview {
 
 .issue-form-page-wrap .issue-markdown-editor {
   position: relative;
-  width: 100%;
-  margin-top: 10px;
 }
 
 .issue-form-page-wrap .issue-markdown-editor > .nav-tabs {
@@ -8333,17 +8310,6 @@ div.markdown-preview {
 .issue-form-page-wrap .issue-editor-tab-content {
   position: relative;
   overflow: visible;
-}
-
-.issue-form-page-wrap .textarea-box {
-  padding-right: 0;
-}
-
-.issue-form-page-wrap #editor-body-body {
-  width: 100%;
-  height: 310px;
-  min-height: 310px;
-  overflow-y: hidden;
 }
 
 .issue-form-page-wrap #preview-body .markdown-preview {

@@ -1830,6 +1830,7 @@ function IssueMarkdownEditor({
   const [dismissedMentionKey, setDismissedMentionKey] = useState<string | null>(null);
   const [mentionPopupPosition, setMentionPopupPosition] = useState({ left: 4, top: 34 });
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
+  const [textareaContentHeight, setTextareaContentHeight] = useState(300);
   const textareaBoxRef = useRef<HTMLDivElement>(null);
   const mentionMarkerRef = useRef<HTMLSpanElement>(null);
   const mentionPopupRef = useRef<HTMLDivElement>(null);
@@ -2111,10 +2112,25 @@ function IssueMarkdownEditor({
                   ? `editor-mention-option-${Math.max(activeSuggestion, 0)}`
                   : undefined
               }
+              style={{
+                height: `${textareaContentHeight}px`,
+                overflow: "hidden",
+                overflowWrap: "break-word",
+                resize: "none",
+              }}
               onChange={(event) => {
+                setTextareaContentHeight(300);
                 setDismissedMentionKey(null);
                 onBodyChange(event.currentTarget.value);
                 setCaretPosition(event.currentTarget.selectionStart);
+                requestAnimationFrame(() => {
+                  const textarea = bodyRef.current;
+                  if (!textarea) return;
+                  const style = getComputedStyle(textarea);
+                  const verticalPadding =
+                    Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+                  setTextareaContentHeight(Math.max(300, textarea.scrollHeight - verticalPadding));
+                });
               }}
               onFocus={onBodyFocus}
               onClick={(event) => {
@@ -2398,23 +2414,22 @@ function IssueAssigneeSelect({
     <dl className="issue-option issue-assignee-option">
       <dt>{t("issue.assignee")}</dt>
       <dd>
-        <input type="hidden" name="assigneeLoginId" value={selected?.loginId ?? ""} />
         <div
-          className="issue-combobox issue-assignee-control"
+          className={`select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
+          style={{ width: "100%" }}
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setIsOpen(false);
             }
           }}
         >
-          <button
-            type="button"
-            className={`issue-assignee-selection${isOpen ? " open" : ""}`}
+          <div
+            className={`select2-choice${selected ? "" : " select2-default"}`}
             role="combobox"
+            tabIndex={0}
             aria-label={t("issue.assignee")}
             aria-controls="assignee-options"
             aria-expanded={isOpen}
-            aria-haspopup="listbox"
             onClick={() => {
               const nextOpen = !isOpen;
               setIsOpen(nextOpen);
@@ -2422,23 +2437,36 @@ function IssueAssigneeSelect({
                 requestAnimationFrame(() => searchInputRef.current?.focus());
               }
             }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setIsOpen(true);
+                requestAnimationFrame(() => searchInputRef.current?.focus());
+              }
+            }}
           >
-            {selected?.avatarUrl ? (
-              <img src={selected.avatarUrl} alt="" width="20" height="20" />
-            ) : null}
-            <span className="issue-assignee-value">
+            <span className="select2-chosen issue-assignee-value">
               {selected ? `${displayName(selected)} (${selected.loginId})` : t("issue.noAssignee")}
             </span>
-            <span className="issue-assignee-arrow" aria-hidden="true">
-              <span />
+            <span className="select2-arrow" aria-hidden="true">
+              <b />
             </span>
-          </button>
-          {isOpen ? (
-            <div id="assignee-options" className="issue-combobox-options" role="listbox">
+          </div>
+          <input
+            className="select2-focusser select2-offscreen"
+            type="text"
+            autoComplete="off"
+            aria-label={t("issue.assignee")}
+          />
+          <div
+            id="assignee-options"
+            className={`select2-drop select2-with-searchbox issue-combobox-options${isOpen ? " select2-drop-active" : " select2-display-none"}`}
+          >
+            <div className="select2-search">
               <input
                 ref={searchInputRef}
                 type="text"
-                className="issue-assignee-dropdown-search"
+                className="select2-input issue-assignee-dropdown-search"
                 value={query}
                 aria-label={t("issue.assignee")}
                 aria-autocomplete="list"
@@ -2454,28 +2482,45 @@ function IssueAssigneeSelect({
                   )
                 }
               />
-              {users.map((user, index) => (
-                <button
-                  type="button"
-                  id={`assignee-option-${index}`}
-                  key={`${user.type}-${user.loginId}`}
-                  className={index === activeIndex ? "active" : undefined}
-                  role="option"
-                  aria-selected={index === activeIndex}
-                  aria-label={`${displayName(user)} (${user.loginId})`}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => choose(user)}
-                >
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" width="20" height="20" />
-                  ) : null}
-                  <span>{displayName(user)}</span>
-                  <small>{user.loginId}</small>
-                </button>
-              ))}
             </div>
-          ) : null}
+            <ul className="select2-results" role="listbox">
+              {users.map((user, index) => (
+                <li key={`${user.type}-${user.loginId}`}>
+                  <div
+                    id={`assignee-option-${index}`}
+                    className={`select2-result-label${index === activeIndex ? " active" : ""}`}
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={index === activeIndex}
+                    aria-label={`${displayName(user)} (${user.loginId})`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => choose(user)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        choose(user);
+                      }
+                    }}
+                  >
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="" width="20" height="20" />
+                    ) : null}
+                    <span>{displayName(user)}</span>
+                    <small>{user.loginId}</small>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
+        <input
+          type="hidden"
+          id="assignee"
+          className="bigdrop select2-offscreen"
+          name="assigneeLoginId"
+          value={selected?.loginId ?? ""}
+          readOnly
+        />
       </dd>
     </dl>
   );
@@ -2495,6 +2540,10 @@ function IssueMilestoneSelect({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedMilestone = milestones.find(
+    (milestone) => stringField(milestone.id, "") === milestoneId,
+  );
 
   return (
     <dl id="milestoneOption" className="issue-option">
@@ -2510,19 +2559,95 @@ function IssueMilestoneSelect({
             {t("milestone.menu.new")}
           </Link>
         ) : (
-          <select
-            id="milestoneId"
-            name="milestoneId"
-            value={milestoneId}
-            onChange={(event) => onChange(event.currentTarget.value)}
-          >
-            <option value="">{t("issue.noMilestone")}</option>
-            {milestones.map((milestone) => (
-              <option key={stringField(milestone.id, "")} value={stringField(milestone.id, "")}>
-                {stringField(milestone.title, "")}
-              </option>
-            ))}
-          </select>
+          <>
+            <div
+              className={`select2-container fullsize${isOpen ? " select2-dropdown-open" : ""}`}
+              style={{ width: "100%" }}
+            >
+              <div
+                className="select2-choice"
+                role="button"
+                tabIndex={0}
+                aria-expanded={isOpen}
+                aria-label={t("milestone")}
+                onClick={() => setIsOpen((current) => !current)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setIsOpen((current) => !current);
+                  }
+                }}
+              >
+                <span className="select2-chosen">
+                  {selectedMilestone?.title ?? t("issue.noMilestone")}
+                </span>
+                <abbr className="select2-search-choice-close" />
+                <span className="select2-arrow" aria-hidden="true">
+                  <b />
+                </span>
+              </div>
+              <input
+                className="select2-focusser select2-offscreen"
+                type="text"
+                autoComplete="off"
+                aria-label={t("milestone")}
+              />
+              <div
+                className={`select2-drop select2-with-searchbox${isOpen ? " select2-drop-active" : " select2-display-none"}`}
+              >
+                <div className="select2-search">
+                  <input
+                    type="text"
+                    className="select2-input"
+                    autoComplete="off"
+                    aria-label={t("milestone")}
+                  />
+                </div>
+                <ul className="select2-results" role="listbox">
+                  {[{ id: "", title: t("issue.noMilestone") }, ...milestones].map((milestone) => {
+                    const value = stringField(milestone.id, "");
+                    return (
+                      <li key={value || "none"}>
+                        <div
+                          className="select2-result-label"
+                          role="option"
+                          tabIndex={0}
+                          aria-selected={value === milestoneId}
+                          onClick={() => {
+                            onChange(value);
+                            setIsOpen(false);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onChange(value);
+                              setIsOpen(false);
+                            }
+                          }}
+                        >
+                          {stringField(milestone.title, "")}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+            <select
+              id="milestoneId"
+              name="milestoneId"
+              className="select2-offscreen"
+              value={milestoneId}
+              onChange={(event) => onChange(event.currentTarget.value)}
+            >
+              <option value="">{t("issue.noMilestone")}</option>
+              {milestones.map((milestone) => (
+                <option key={stringField(milestone.id, "")} value={stringField(milestone.id, "")}>
+                  {stringField(milestone.title, "")}
+                </option>
+              ))}
+            </select>
+          </>
         )}
       </dd>
     </dl>
@@ -2623,6 +2748,12 @@ function IssueLabelSelect({
     const label = labels.find((candidate) => candidate.id === id);
     return label ? [label] : [];
   });
+  const labelGroups = new Map<number, { labels: IssueLabelOption[]; name: string }>();
+  for (const label of labels) {
+    const group = labelGroups.get(label.categoryId);
+    if (group) group.labels.push(label);
+    else labelGroups.set(label.categoryId, { labels: [label], name: label.categoryName });
+  }
 
   return (
     <dl className="issue-option issue-label-option">
@@ -2642,73 +2773,109 @@ function IssueLabelSelect({
         ) : null}
       </dt>
       <dd>
-        {selectedLabelIds.map((id) => (
-          <input key={id} type="hidden" name="labelIds" value={id} />
-        ))}
         <div
-          className="issue-combobox issue-label-combobox issue-label-control"
+          className={`select2-container select2-container-multi hide issue-labels bordered fullsize issue-combobox issue-label-combobox issue-label-control${isOpen ? " select2-dropdown-open" : ""}`}
+          style={{ display: "inline-block" }}
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setIsOpen(false);
             }
           }}
         >
-          <div className="issue-label-selection">
+          <ul className="select2-choices">
             {selectedLabels.map((label) => (
-              <span
-                key={label.id}
-                className="issue-label-token"
-                style={{ borderColor: normalizedColor(label.color) }}
-              >
-                <span
-                  className="issue-label-color"
-                  style={{ backgroundColor: normalizedColor(label.color) }}
-                />
-                {label.name}
+              <li key={label.id} className="select2-search-choice issue-label-token">
+                <div>
+                  <strong
+                    className="label issue-label active static"
+                    style={{ backgroundColor: normalizedColor(label.color) }}
+                  >
+                    {label.name}
+                  </strong>
+                </div>
                 <button
                   type="button"
-                  className="btn-transparent"
+                  className="select2-search-choice-close btn-transparent"
                   aria-label={`${t("button.delete")} ${label.name}`}
                   onClick={() => onRemove(label.id)}
-                >
-                  &times;
-                </button>
-              </span>
+                ></button>
+              </li>
             ))}
-            <button
-              type="button"
-              className="issue-label-trigger"
-              role="combobox"
-              aria-label={t("label.select")}
-              aria-controls="issue-label-options"
-              aria-expanded={isOpen}
-              onClick={() => setIsOpen((current) => !current)}
-            >
-              {selectedLabels.length === 0 ? t("label.select") : ""}
-            </button>
-          </div>
-          {isOpen ? (
-            <div id="issue-label-options" className="issue-combobox-options" role="listbox">
+            <li className="select2-search-field">
+              <input
+                type="text"
+                className={`select2-input${selectedLabels.length === 0 ? " select2-default" : ""}`}
+                value=""
+                placeholder={selectedLabels.length === 0 ? t("label.select") : undefined}
+                aria-label={t("label.select")}
+                role="combobox"
+                aria-controls="issue-label-options"
+                aria-expanded={isOpen}
+                autoComplete="off"
+                onFocus={() => setIsOpen(true)}
+                onClick={() => setIsOpen(true)}
+                onChange={() => undefined}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") setIsOpen(false);
+                }}
+              />
+            </li>
+          </ul>
+          <div
+            id="issue-label-options"
+            className={`select2-drop select2-drop-multi issue-labels issue-combobox-options${isOpen ? " select2-drop-active" : " select2-display-none"}`}
+          >
+            <ul className="select2-results" role="listbox">
               {labels.map((label) => (
-                <button
-                  type="button"
-                  key={label.id}
-                  role="option"
-                  aria-selected={selectedLabelIds.includes(label.id)}
-                  aria-label={displayLabelName(label.name)}
-                  onClick={() => onSelect(label.id)}
-                >
-                  <span
-                    className="issue-label-color"
-                    style={{ backgroundColor: normalizedColor(label.color) }}
-                  />
-                  <span>{label.name}</span>
-                  <small>{label.categoryName}</small>
-                </button>
+                <li key={label.id}>
+                  <div
+                    className="select2-result-label"
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={selectedLabelIds.includes(label.id)}
+                    aria-label={displayLabelName(label.name)}
+                    onClick={() => onSelect(label.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onSelect(label.id);
+                      }
+                    }}
+                  >
+                    <strong
+                      className="label issue-label active static"
+                      style={{ backgroundColor: normalizedColor(label.color) }}
+                    >
+                      {label.name}
+                    </strong>
+                    <small>{label.categoryName}</small>
+                  </div>
+                </li>
               ))}
-            </div>
-          ) : null}
+            </ul>
+          </div>
         </div>
+        <select
+          id="labelIds"
+          name="labelIds"
+          className="hide select2-offscreen"
+          multiple
+          value={selectedLabelIds.map(String)}
+          onChange={(event) => {
+            for (const option of event.currentTarget.selectedOptions)
+              onSelect(Number(option.value));
+          }}
+        >
+          {Array.from(labelGroups.entries()).map(([categoryId, group]) => (
+            <optgroup key={categoryId} label={group.name}>
+              {group.labels.map((label) => (
+                <option key={label.id} value={label.id}>
+                  {label.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </dd>
     </dl>
   );

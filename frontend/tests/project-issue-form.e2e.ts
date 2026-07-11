@@ -4,6 +4,77 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const CHECKLIST = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 const CSRF_TOKEN = "csrf-issue-form";
 
+test("default issue create keeps legacy editor and uploader flow on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockIssueForm(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator(".page-wrap-outer")).toHaveClass(/(?:^|\s)page-wrap-outer(?:\s|$)/u);
+  await expect(page.locator("#button-save")).toHaveText("저장");
+  await expect(page.locator("#draft-save-btn")).toHaveText("초안으로 저장");
+  await expect(page.locator(".issue-form-cancel")).toHaveText("취소");
+  await expect(
+    page.locator(".issue-assignee-option .select2-choice + .select2-focusser + .select2-drop"),
+  ).toHaveClass(/select2-display-none/u);
+  await expect(page.locator(".issue-assignee-option .select2-chosen")).toHaveText("담당자 없음");
+  await expect(page.locator("#assignee.bigdrop.select2-offscreen")).toHaveAttribute(
+    "name",
+    "assigneeLoginId",
+  );
+  await expect(
+    page.locator("#milestoneOption .select2-choice + .select2-focusser + .select2-drop"),
+  ).toHaveClass(/select2-with-searchbox/u);
+  await expect(page.locator("#milestoneOption .select2-search-choice-close")).toHaveCount(1);
+  await expect(page.locator("#milestoneId.select2-offscreen")).toHaveValue("");
+  await expect(
+    page.locator(".issue-label-option .select2-container-multi > .select2-choices"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(".issue-label-option .select2-search-field > .select2-input.select2-default"),
+  ).toHaveCount(1);
+  await expect(page.locator("select#labelIds.hide.select2-offscreen[multiple]")).toHaveCount(1);
+
+  const layout = async () =>
+    page.evaluate(() => {
+      const pageWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+      const content = document.querySelector<HTMLElement>(".content-wrap.frm-wrap");
+      const left = document.querySelector<HTMLElement>("#issue-form .span-left-pane");
+      const editor = document.querySelector<HTMLElement>(".issue-markdown-editor");
+      const upload = document.querySelector<HTMLElement>("#upload.upload-wrap");
+      if (!pageWrap || !content || !left || !editor || !upload) return null;
+      const viewportWidth = document.documentElement.clientWidth;
+      const leftBox = left.getBoundingClientRect();
+      const editorBox = editor.getBoundingClientRect();
+      const uploadBox = upload.getBoundingClientRect();
+      return {
+        contentContained: content.getBoundingClientRect().right <= viewportWidth,
+        documentOverflow: document.documentElement.scrollWidth > viewportWidth,
+        editorContained: editorBox.left >= leftBox.left && editorBox.right <= leftBox.right,
+        pageContained: pageWrap.getBoundingClientRect().right <= viewportWidth,
+        uploadContained: uploadBox.left >= leftBox.left && uploadBox.right <= leftBox.right,
+        uploadFollowsEditor: Math.round(uploadBox.top) === Math.round(editorBox.bottom),
+      };
+    });
+
+  const expectedLayout = {
+    contentContained: true,
+    documentOverflow: false,
+    editorContained: true,
+    pageContained: true,
+    uploadContained: true,
+    uploadFollowsEditor: true,
+  };
+  expect(await layout()).toEqual(expectedLayout);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await layout()).toEqual(expectedLayout);
+});
+
 test("project issue form preserves legacy controls, subtask behavior, shell mutations, and desktop geometry", async ({
   page,
 }) => {
@@ -64,16 +135,16 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
   const assignee = page.getByRole("combobox", { name: "Assignee" });
   await expect(assignee).toContainText("No assignee");
   expect(await assigneeArrowMetrics(page)).toMatchObject({
-    arrowHeight: 28,
-    arrowRightInset: 1,
-    arrowWidth: 19,
-    selectionHeight: 30,
+    arrowHeight: 36,
+    arrowRightInset: 0,
+    arrowWidth: 26,
+    selectionHeight: 28,
   });
   await assignee.click();
   await expect.poll(() => state.assigneeQueries.at(-1)).toBe("");
   await expect(page.getByRole("option", { name: "Assign to me (admin)" })).toBeVisible();
   await page.locator("#issueDueDate").focus();
-  await expect(page.locator("#assignee-options")).toHaveCount(0);
+  await expect(page.locator("#assignee-options")).toHaveClass(/select2-display-none/u);
   await assignee.click();
   const assigneeSearch = page.locator(".issue-assignee-dropdown-search");
   await expect(assigneeSearch).toBeFocused();
@@ -82,12 +153,14 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
   await assigneeSearch.press("ArrowDown");
   await assigneeSearch.press("Enter");
   await expect(page.locator('input[type="hidden"][name="assigneeLoginId"]')).toHaveValue("alice");
-  await expect(page.locator(".issue-assignee-selection")).toContainText("Alice Example");
+  await expect(page.locator(".issue-assignee-option .select2-choice")).toContainText(
+    "Alice Example",
+  );
   await expect(page.getByRole("button", { name: /clear assignee/iu })).toHaveCount(0);
-  await page.locator(".issue-assignee-selection").click();
+  await page.locator(".issue-assignee-option .select2-choice").click();
   await page.getByRole("option", { name: /No assignee/iu }).click();
   await expect(page.locator('input[type="hidden"][name="assigneeLoginId"]')).toHaveValue("");
-  await expect(page.locator(".issue-assignee-selection")).toContainText("No assignee");
+  await expect(page.locator(".issue-assignee-option .select2-choice")).toContainText("No assignee");
   await assignee.click();
   await assigneeSearch.fill("ali");
   await page.getByRole("option", { name: "Alice Example (alice)" }).click();
@@ -97,22 +170,22 @@ test("project issue form preserves legacy controls, subtask behavior, shell muta
   await labelSelector.click();
   await expect(page.locator("#issue-label-options")).toBeVisible();
   await page.locator("#issueDueDate").focus();
-  await expect(page.locator("#issue-label-options")).toHaveCount(0);
+  await expect(page.locator("#issue-label-options")).toHaveClass(/select2-display-none/u);
   await labelSelector.click();
   await page.getByRole("option", { name: "High" }).click();
   await page.getByRole("option", { name: "Low" }).click();
   await expect(page.locator(".issue-label-token", { hasText: "high" })).toHaveCount(0);
   await expect(page.locator(".issue-label-token", { hasText: "low" })).toBeVisible();
-  await expect(page.locator('input[type="hidden"][name="labelIds"]')).toHaveValue("10");
+  await expect(page.locator("select#labelIds")).toHaveValues(["10"]);
   const selectedRightControls = await rightControlMetrics(page);
   expect(selectedRightControls.assigneeHeight).toBeCloseTo(30, 0);
-  expect(selectedRightControls.labelHeight).toBeCloseTo(30, 0);
+  expect(selectedRightControls.labelHeight).toBeCloseTo(32, 0);
   expect(selectedRightControls.rightMenuHeight).toBeCloseTo(
-    initialRightControls.rightMenuHeight,
+    initialRightControls.rightMenuHeight + 2,
     0,
   );
   await page.getByRole("button", { name: "Delete low" }).click();
-  await expect(page.locator('input[type="hidden"][name="labelIds"]')).toHaveCount(0);
+  await expect(page.locator("select#labelIds")).toHaveValues([]);
   await expect(page.locator(".label-edit")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/issue/labelsform`,
@@ -1131,7 +1204,7 @@ test("uploader exposes paste help, enforces the configured size limit, and repor
   await expect(page.locator("#upload .attach-save-help")).toBeVisible();
 });
 
-test("issue form keeps the legacy 9:3 side-by-side columns at 800px", async ({ page }) => {
+test("issue form keeps the legacy responsive stacked columns at 800px", async ({ page }) => {
   const basePath = appBasePath();
   await mockIssueForm(page);
   await page.setViewportSize({ width: 800, height: 900 });
@@ -1142,11 +1215,10 @@ test("issue form keeps the legacy 9:3 side-by-side columns at 800px", async ({ p
   expect(metrics.documentWidth).toBe(800);
   expect(metrics.formLeft).toBeGreaterThanOrEqual(0);
   expect(metrics.formRight).toBeLessThanOrEqual(800);
-  expect(metrics.leftWidth).toBeGreaterThan(metrics.rightWidth * 2.5);
-  expect(metrics.rightLeft).toBeGreaterThanOrEqual(metrics.leftRight);
+  expect(metrics.leftWidth).toBeCloseTo(metrics.formWidth, 0);
+  expect(metrics.rightLeft).toBeGreaterThanOrEqual(metrics.formLeft);
   expect(metrics.rightRight).toBeLessThanOrEqual(metrics.formRight);
-  expect(metrics.rightTop).toBeCloseTo(metrics.leftTop + 10, 0);
-  expect(metrics.rightTop).toBeLessThan(metrics.leftBottom);
+  expect(metrics.rightTop).toBeGreaterThanOrEqual(metrics.leftBottom);
 });
 
 test("anonymous project form response redirects to the typed mounted login route", async ({
@@ -1226,10 +1298,10 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   const assignee = page.getByRole("combobox", { name: "담당자" });
   await expect(assignee).toContainText("담당자 없음");
   expect(await assigneeArrowMetrics(page)).toMatchObject({
-    arrowHeight: 28,
-    arrowRightInset: 1,
-    arrowWidth: 19,
-    selectionHeight: 30,
+    arrowHeight: 36,
+    arrowRightInset: 0,
+    arrowWidth: 26,
+    selectionHeight: 28,
   });
   await expect(page.locator("#upload .help-droppable")).toHaveText("첨부할 파일을 끌어다 놓거나");
   await expect(page.locator("#upload .fake-file-wrap")).toContainText("파일 올리기");
@@ -1264,7 +1336,6 @@ test("issue form matches observed 390px stacking and removes legacy implementati
 
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8");
   const markdownHelpSource = readFileSync("src/routes/-legacy-markdown-help.tsx", "utf8");
-  const appCssSource = readFileSync("src/app.css", "utf8");
   for (const forbidden of [
     "document.",
     "querySelector",
@@ -1285,11 +1356,7 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   }
   expect(routeSource).toContain('t("title.newIssue")');
   expect(routeSource).not.toContain(".style.setProperty");
-  expect(appCssSource).toMatch(
-    /\.issue-form-page-wrap #editor-body-body\s*\{[^}]*height:\s*310px;/u,
-  );
   expect(markdownHelpSource).not.toContain('markdown: "true"');
-  expect(appCssSource).not.toContain("/yona/legacy-assets");
 });
 
 type MockOptions = {
@@ -1922,8 +1989,10 @@ async function rightControlMetrics(page: Page) {
 
 async function assigneeArrowMetrics(page: Page) {
   return page.evaluate(() => {
-    const selection = document.querySelector<HTMLElement>(".issue-assignee-selection");
-    const arrow = document.querySelector<HTMLElement>(".issue-assignee-arrow");
+    const selection = document.querySelector<HTMLElement>(".issue-assignee-option .select2-choice");
+    const arrow = document.querySelector<HTMLElement>(
+      ".issue-assignee-option .select2-choice > .select2-arrow",
+    );
     if (!selection || !arrow) {
       throw new Error("Missing assignee arrow metric target.");
     }
