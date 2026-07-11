@@ -462,8 +462,11 @@ function PullRequestStateEventMessage({
 }
 
 function PullRequestEventUser({ event }: { event: PullRequestEvent }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const label = event.senderLabel || event.senderLoginId;
-  const avatarUrl = event.senderAvatarUrl || "/assets/images/default-avatar-32.png";
+  const avatarUrl =
+    event.senderAvatarUrl ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png");
 
   return (
     <>
@@ -508,6 +511,7 @@ function PullRequestEventCommit({
   event: PullRequestEvent;
   pullRequest: PullRequestDetailResponse;
 }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const commitChangeParams = {
     commitId: commit.commitId,
     ownerName: pullRequest.ownerName,
@@ -538,12 +542,18 @@ function PullRequestEventCommit({
           title={event.senderLabel || commitAuthorLoginId}
           {...LEGACY_LINK_PROPS}
         >
-          <img src={event.senderAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />{" "}
+          <img
+            src={
+              event.senderAvatarUrl ||
+              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+            }
+            alt=""
+          />{" "}
           {commit.authorEmail}
         </Link>
       ) : (
         <img
-          src="/assets/images/default-avatar-32.png"
+          src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
           className="avatar-wrap small hide-in-mobile"
           alt=""
         />
@@ -1020,6 +1030,7 @@ function PullRequestConflictGuide({
 }
 
 function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: HelpModalState }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const isOpen = state === "open";
   const modalStyle = state === "initial" ? undefined : { display: isOpen ? "block" : "none" };
@@ -1038,7 +1049,11 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
         <div className="modal-body">
           <div className="row-fluid">
             <div className="pull-left">
-              <img className="img-polaroid" src="/assets/images/fork-pull/merge.jpg" alt="" />
+              <img
+                className="img-polaroid"
+                src={prefixBasePath(runtimeConfig.basePath, "/assets/images/fork-pull/merge.jpg")}
+                alt=""
+              />
               <br />
             </div>
             <div className="pull-left help-messages mt10">

@@ -584,7 +584,12 @@ function SvnCommitDetailBody({
 
           <p className="commitInfo">
             <span className="avatar-wrap">
-              <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+              <img
+                src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
+                width="32"
+                height="32"
+                alt=""
+              />
             </span>
             <strong>{commit?.authorName || commit?.authorEmail || anonymousAuthorName}</strong>
             <span className="ago" title={commit?.authorDate ?? ""}>
@@ -1089,7 +1094,10 @@ function CodeCommentThreadView({
                   title={comment.authorLabel}
                 >
                   <img
-                    src={comment.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+                    src={
+                      comment.authorAvatarUrl ||
+                      prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+                    }
                     width="32"
                     height="32"
                     alt={comment.authorLoginId}
@@ -1420,6 +1428,7 @@ function AttachmentFileMarker({ file }: { file: CodeReviewAttachment }) {
 }
 
 function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const anonymousAuthorName = t("user.role.anonymous");
   const commit = detail.commit as
@@ -1443,7 +1452,10 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
           className="avatar-wrap smaller"
         >
           <img
-            src={commit.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+            src={
+              commit.authorAvatarUrl ||
+              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+            }
             alt={authorName}
             width="32"
             height="32"
@@ -1458,7 +1470,10 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
     <>
       <span className="avatar-wrap smaller">
         <img
-          src={commit.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+          src={
+            commit.authorAvatarUrl ||
+            prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+          }
           width="32"
           height="32"
           alt=""
@@ -1723,6 +1738,7 @@ function ReviewCards({
   isActive?: boolean;
   threads: CodeReviewThread[];
 }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { branch, path } = Route.useSearch();
   const hashSearch = {
     ...(branch ? { branch } : {}),
@@ -1756,7 +1772,10 @@ function ReviewCards({
             </span>
             <span className="avatar-wrap smaller margin-right-5">
               <img
-                src={thread.comments[0]?.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+                src={
+                  thread.comments[0]?.authorAvatarUrl ||
+                  prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+                }
                 alt={thread.comments[0]?.authorLabel ?? ""}
               />
             </span>

@@ -13,6 +13,7 @@ fn normalizes_base_paths_like_the_go_pilot() {
     assert_eq!(normalize_base_path("yona"), "/yona");
     assert_eq!(normalize_base_path("/yona/"), "/yona");
     assert_eq!(normalize_base_path("/tools/yona//"), "/tools/yona");
+    assert_eq!(normalize_base_path("///tools////yona///"), "/tools/yona");
 }
 
 #[test]

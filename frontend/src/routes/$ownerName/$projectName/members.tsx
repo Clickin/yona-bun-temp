@@ -256,7 +256,9 @@ function ProjectMembersBody({
     queryKey: ["legacy-member-users", ownerName, projectName, normalizedLoginQuery],
     staleTime: 30_000,
   });
-  const memberSuggestions = (memberSearchQuery.data?.items ?? []).map(parseLegacyMemberSearchItem);
+  const memberSuggestions = (memberSearchQuery.data?.items ?? []).map((item) =>
+    parseLegacyMemberSearchItem(item, runtimeConfig.basePath),
+  );
   const showTypeaheadSuggestions =
     isTypeaheadOpen && normalizedLoginQuery.length > 0 && memberSuggestions.length > 0;
   const addMutation = useMutation({
@@ -490,6 +492,7 @@ function ProjectMembersBody({
               <div className="row-fluid">
                 {members.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
+                    basePath={runtimeConfig.basePath}
                     key={stringField(user.userId, user.loginId)}
                     onAccept={acceptEnrollment}
                     user={user}
@@ -612,7 +615,10 @@ function ProjectMemberListItem({
         className="avatar-wrap mlarge pull-left mr10"
       >
         <img
-          src={stringField(member.avatarUrl, "/assets/images/default-avatar-32.png")}
+          src={
+            stringField(member.avatarUrl, "") ||
+            prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+          }
           width="64"
           height="64"
           alt=""
@@ -674,9 +680,11 @@ function ProjectMemberListItem({
 }
 
 function EnrollmentRequest({
+  basePath,
   onAccept,
   user,
 }: {
+  basePath: string;
   onAccept: (loginId: string) => void;
   user: ProjectEnrollmentRequestEntry;
 }) {
@@ -693,7 +701,10 @@ function EnrollmentRequest({
           params={{ user: loginId }}
         >
           <img
-            src={stringField(user.avatarUrl, "/assets/images/default-avatar-32.png")}
+            src={
+              stringField(user.avatarUrl, "") ||
+              prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+            }
             height="65"
             width="65"
             className="img-circle"
@@ -739,12 +750,13 @@ type LegacyMemberSuggestionView = {
   userLabel: string;
 };
 
-const defaultMemberSuggestionAvatar = "/assets/images/default-avatar-32.png";
-
-function parseLegacyMemberSearchItem(item: {
-  info: string;
-  loginId: string;
-}): LegacyMemberSuggestionView {
+function parseLegacyMemberSearchItem(
+  item: {
+    info: string;
+    loginId: string;
+  },
+  basePath: string,
+): LegacyMemberSuggestionView {
   const info = stringField(item.info, "");
   const loginId = stringField(item.loginId, "");
   // ponytail: legacy UserApp.java builds item.info as
@@ -752,7 +764,8 @@ function parseLegacyMemberSearchItem(item: {
   // Native DOMParser+querySelector replaces the hand-rolled regex HTML parser.
   const doc = new DOMParser().parseFromString(info, "text/html");
   const imageSrc =
-    doc.querySelector(".mention_image")?.getAttribute("src") || defaultMemberSuggestionAvatar;
+    doc.querySelector(".mention_image")?.getAttribute("src") ||
+    prefixBasePath(basePath, "/assets/images/default-avatar-32.png");
   const userLabel = doc.querySelector(".mention_name")?.textContent?.trim() || loginId;
   const mentionUsername =
     doc.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
@@ -805,11 +818,13 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
     count: projectWatchingCount(project),
     isWatching: projectIsWatching(project),
   });
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+  const logoUrl =
+    stringField(project.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
   const backgroundImageUrl =
     stringField(projectRecord.backgroundImageUrl, "") ||
     stringField(projectRecord.backgroundUrl, "") ||
-    "/assets/images/bg-default-project.png";
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
   const isForked =
     booleanField(projectRecord.isForkedFromOrigin) || booleanField(projectRecord.isForked);
   const originalOwnerName =

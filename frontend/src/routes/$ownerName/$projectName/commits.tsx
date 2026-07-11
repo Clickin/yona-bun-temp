@@ -296,7 +296,7 @@ function ProjectCodeHistoryBody({
                           </td>
                           <td className="date">{commit.authorDate}</td>
                           <td className="author">
-                            <CommitAuthor commit={commit} />
+                            <CommitAuthor basePath={runtimeConfig.basePath} commit={commit} />
                           </td>
                         </tr>
                       );
@@ -382,10 +382,17 @@ function CommitMessage({
   );
 }
 
-function CommitAuthor({ commit }: { commit: CodeHistoryResponse["commits"][number] }) {
+function CommitAuthor({
+  basePath,
+  commit,
+}: {
+  basePath: string;
+  commit: CodeHistoryResponse["commits"][number];
+}) {
   const { t } = useLegacyMessages();
-  const avatarUrl = commit.authorAvatarUrl || "/assets/images/default-avatar-32.png";
-  const usesGeneratedAvatar = avatarUrl === "/assets/images/default-avatar-32.png";
+  const usesGeneratedAvatar = !commit.authorAvatarUrl;
+  const avatarUrl =
+    commit.authorAvatarUrl || prefixBasePath(basePath, "/assets/images/default-avatar-32.png");
 
   if (commit.authorLoginId) {
     const authorPath = `/${commit.authorLoginId}` as "/";

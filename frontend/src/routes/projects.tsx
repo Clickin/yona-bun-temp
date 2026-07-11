@@ -288,7 +288,10 @@ function ProjectListItem({
       <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
         <div className="info-wrap" style={{ opacity: 0.3 }}>
           <div className="owner-avatar-wrap">
-            <img src="/assets/images/project_default_logo.png" alt={projectName} />
+            <img
+              src={prefixBasePath(basePath, "/assets/images/project_default_logo.png")}
+              alt={projectName}
+            />
           </div>
           <div style={{ float: "left", color: "gray" }}>
             You do not have permission to view this project's information

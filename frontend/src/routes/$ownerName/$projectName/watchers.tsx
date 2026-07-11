@@ -13,7 +13,7 @@ import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
-import { type RuntimeConfig } from "../../../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/$ownerName/$projectName/watchers")({
@@ -57,12 +57,18 @@ function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       <title>{`${t("title.projectWatchers")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader project={projectQuery.data} />
       <ProjectMenu project={projectQuery.data} />
-      <ProjectWatchersBody watchers={watchersQuery.data} />
+      <ProjectWatchersBody basePath={runtimeConfig.basePath} watchers={watchersQuery.data} />
     </SiteLayoutShell>
   );
 }
 
-function ProjectWatchersBody({ watchers }: { watchers: ProjectWatchersResponse }) {
+function ProjectWatchersBody({
+  basePath,
+  watchers,
+}: {
+  basePath: string;
+  watchers: ProjectWatchersResponse;
+}) {
   const { t } = useLegacyMessages();
 
   return (
@@ -97,7 +103,10 @@ function ProjectWatchersBody({ watchers }: { watchers: ProjectWatchersResponse }
                   }}
                 >
                   <img
-                    src={stringField(watcher.avatarUrl, "/assets/images/default-avatar-32.png")}
+                    src={
+                      stringField(watcher.avatarUrl) ||
+                      prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+                    }
                     width="64"
                     height="64"
                     alt=""
@@ -121,9 +130,12 @@ function ProjectHeader({ project }: { project: ProjectContainer }) {
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
   const projectId = stringField(project.id, "");
-  const logoUrl = stringField(project.logoUrl, "") || "/assets/images/project_default_logo.png";
+  const logoUrl =
+    stringField(project.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
   const backgroundImageUrl =
-    stringField(project.backgroundImageUrl, "") || "/assets/images/bg-default-project.png";
+    stringField(project.backgroundImageUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
   const isForked = booleanField(project.isForkedFromOrigin);
   const originalOwnerName = stringField(project.originalOwnerName, "");
   const originalProjectName = stringField(project.originalProjectName, "");

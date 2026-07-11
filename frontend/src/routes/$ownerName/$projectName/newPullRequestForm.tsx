@@ -686,7 +686,15 @@ function MergeResult({
                 </td>
                 <td className={`author ${commit.authorEmail}`}>
                   <div className="avatar-wrap">
-                    <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+                    <img
+                      src={prefixBasePath(
+                        runtimeConfig.basePath,
+                        "/assets/images/default-avatar-32.png",
+                      )}
+                      width="32"
+                      height="32"
+                      alt=""
+                    />
                   </div>
                 </td>
               </tr>

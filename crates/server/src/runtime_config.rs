@@ -649,7 +649,10 @@ pub fn normalize_base_path(input: &str) -> String {
         format!("/{trimmed}")
     };
 
-    let collapsed = with_leading.replace("//", "/");
+    let mut collapsed = with_leading;
+    while collapsed.contains("//") {
+        collapsed = collapsed.replace("//", "/");
+    }
     let normalized = collapsed.trim_end_matches('/');
 
     if normalized.is_empty() {

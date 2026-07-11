@@ -262,6 +262,7 @@ function ProjectReviewsBody({
             </ul>
             <div className="review-list-wrap">
               <ProjectReviewRows
+                basePath={runtimeConfig.basePath}
                 ownerName={ownerName}
                 projectName={projectName}
                 reviews={reviews}
@@ -299,10 +300,12 @@ function ProjectReviewsBody({
 }
 
 function ProjectReviewRows({
+  basePath,
   ownerName,
   projectName,
   reviews,
 }: {
+  basePath: string;
   ownerName: string;
   projectName: string;
   reviews: ReviewThreadListResponse;
@@ -321,6 +324,7 @@ function ProjectReviewRows({
     <ul className="post-list-wrap">
       {reviews.items.map((thread) => (
         <ProjectReviewRow
+          basePath={basePath}
           key={thread.id}
           ownerName={ownerName}
           projectName={projectName}
@@ -332,10 +336,12 @@ function ProjectReviewRows({
 }
 
 function ProjectReviewRow({
+  basePath,
   ownerName,
   projectName,
   thread,
 }: {
+  basePath: string;
   ownerName: string;
   projectName: string;
   thread: ReviewThread;
@@ -356,7 +362,7 @@ function ProjectReviewRow({
           src={
             firstComment?.authorAvatarUrl ||
             thread.authorAvatarUrl ||
-            "/assets/images/default-avatar-32.png"
+            prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
           }
           alt={authorLabel}
           width="32"

@@ -295,6 +295,51 @@ test("project code branch selector navigates slash branch in the SPA", async ({ 
     .toBe(markerBefore);
 });
 
+test("project code branch renders React-owned legacy Select2 geometry and navigation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page);
+  await page.goto(`${basePath}/admin/sample/code/main`);
+  const container = page.locator("#branches").locator("xpath=preceding-sibling::div[1]");
+  await expect(container).toHaveClass(/select2-container/);
+  await expect(container).toHaveCSS("width", "220px");
+  await expect(container.locator(".select2-chosen")).toHaveText("main");
+  await expect(page.locator("#branches")).toHaveClass("pull-left select2-offscreen");
+  await container.locator("button.select2-choice").click();
+  await expect(container).toHaveClass(/select2-container-active/);
+  await expect(container.locator(".select2-drop-active")).toBeVisible();
+  await expect(container.locator(".select2-result-label")).toHaveText(["main", "feature/release"]);
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const geometry = await container.evaluate((root) => {
+      const choice = root.querySelector<HTMLElement>(".select2-choice")!;
+      const chosen = root.querySelector<HTMLElement>(".select2-chosen")!;
+      const arrow = root.querySelector<HTMLElement>(".select2-arrow")!;
+      const choiceBox = choice.getBoundingClientRect();
+      return {
+        arrowRight: arrow.getBoundingClientRect().right,
+        choiceRight: choiceBox.right,
+        choiceWidth: choiceBox.width,
+        clientWidth: (root as HTMLElement).clientWidth,
+        fontSize: getComputedStyle(choice).fontSize,
+        lineHeight: getComputedStyle(choice).lineHeight,
+        textAlign: getComputedStyle(chosen).textAlign,
+      };
+    });
+    expect(geometry.choiceWidth).toBeCloseTo(geometry.clientWidth, 1);
+    expect(geometry.arrowRight).toBeCloseTo(geometry.choiceRight, 1);
+    expect(geometry.fontSize).toBe("13px");
+    expect(geometry.lineHeight).toBe("26px");
+    expect(geometry.textAlign).toBe("left");
+  }
+  await container.locator(".select2-result-label", { hasText: "feature/release" }).click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease`);
+});
+
 test("project code branch route source converts internal raw anchors to Link", async () => {
   expect(ROUTE_SOURCE).toContain(
     "import { Link, createFileRoute, Outlet, useRouter, useRouterState }",
@@ -412,7 +457,9 @@ async function shellMetrics(page: Page) {
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const projectMenu = document.querySelector<HTMLElement>(".project-menu-outer");
     const codeTabs = document.querySelector<HTMLElement>(".code-browse-wrap > .nav.nav-tabs");
-    const branchSelect = document.querySelector<HTMLElement>("#branches");
+    const branchSelect = document.querySelector<HTMLElement>(
+      ".code-browse-header > .select2-container",
+    );
     const breadcrumbs = document.querySelector<HTMLElement>("#breadcrumbs");
     const missing = Object.entries({
       branchSelect,
@@ -572,8 +619,14 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      if (node.matches(".select2-container")) {
+        return "";
+      }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") && attr.name !== "alt" && attr.name !== "tabindex",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -586,7 +639,15 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      if (attr.name === "style") {
+        return attr.value.replace(/\s+/g, "").replace(/;$/u, "");
+      }
+      return attr.name === "class"
+        ? attr.value
+            .split(/\s+/u)
+            .filter((name) => name && name !== "select2-offscreen")
+            .join(" ")
+        : attr.value;
     }
   });
 }

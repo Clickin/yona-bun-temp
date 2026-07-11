@@ -216,34 +216,8 @@ pub(crate) fn mount_base_path(
     } else if let AssetMode::Filesystem(asset_root) = assets {
         let browser_runtime_for_mount = browser_runtime;
         let asset_root_for_mount = asset_root;
-        let asset_root_for_root_assets = asset_root_for_mount.clone();
-        let browser_runtime_for_root_assets = browser_runtime_for_mount.clone();
-        let asset_root_for_root_images = asset_root_for_mount.clone();
-        let browser_runtime_for_root_images = browser_runtime_for_mount.clone();
 
         Router::new()
-            .route(
-                "/assets/{*path}",
-                get(move |AxumPath(path): AxumPath<String>| {
-                    let asset_root = asset_root_for_root_assets.clone();
-                    let browser_runtime = browser_runtime_for_root_assets.clone();
-                    async move {
-                        serve_filesystem_public_asset(asset_root, "assets", &path, browser_runtime)
-                            .await
-                    }
-                }),
-            )
-            .route(
-                "/images/{*path}",
-                get(move |AxumPath(path): AxumPath<String>| {
-                    let asset_root = asset_root_for_root_images.clone();
-                    let browser_runtime = browser_runtime_for_root_images.clone();
-                    async move {
-                        serve_filesystem_public_asset(asset_root, "images", &path, browser_runtime)
-                            .await
-                    }
-                }),
-            )
             .route(
                 &format!("{base_path}/"),
                 get(move || {
@@ -255,24 +229,8 @@ pub(crate) fn mount_base_path(
             .nest(&base_path, base_router)
     } else if matches!(assets, AssetMode::Embedded) {
         let browser_runtime_for_mount = browser_runtime;
-        let browser_runtime_for_root_assets = browser_runtime_for_mount.clone();
-        let browser_runtime_for_root_images = browser_runtime_for_mount.clone();
 
         Router::new()
-            .route(
-                "/assets/{*path}",
-                get(move |AxumPath(path): AxumPath<String>| {
-                    let browser_runtime = browser_runtime_for_root_assets.clone();
-                    async move { serve_embedded_public_asset("assets", &path, browser_runtime).await }
-                }),
-            )
-            .route(
-                "/images/{*path}",
-                get(move |AxumPath(path): AxumPath<String>| {
-                    let browser_runtime = browser_runtime_for_root_images.clone();
-                    async move { serve_embedded_public_asset("images", &path, browser_runtime).await }
-                }),
-            )
             .route(
                 &format!("{base_path}/"),
                 get(move || {

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { prefixBasePath } from "../runtime-config";
 
 export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
@@ -353,6 +354,7 @@ function IssueLabel({
 }
 
 function AvatarDemo({ label, size }: { label: string; size: string }) {
+  const { runtimeConfig } = Route.useRouteContext();
   return (
     <dl>
       <dt>
@@ -360,7 +362,10 @@ function AvatarDemo({ label, size }: { label: string; size: string }) {
       </dt>
       <dd>
         <button type="button" className={`avatar-wrap ${size}`}>
-          <img src="/assets/images/default-avatar-128.png" alt="" />
+          <img
+            src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-128.png")}
+            alt=""
+          />
         </button>
       </dd>
     </dl>

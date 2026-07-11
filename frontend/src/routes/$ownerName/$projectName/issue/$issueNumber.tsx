@@ -1084,7 +1084,10 @@ function IssueDetailBody({
                           <img
                             src={stringField(
                               issue.assigneeAvatarUrl,
-                              "/assets/images/default-avatar-32.png",
+                              prefixBasePath(
+                                runtimeConfig.basePath,
+                                "/assets/images/default-avatar-32.png",
+                              ),
                             )}
                             width="20"
                             height="20"
@@ -2683,6 +2686,7 @@ function IssueEventRow({
   previousEvent?: IssueTimelineItem;
 }) {
   const { language, t } = useLegacyMessages();
+  const { runtimeConfig } = Route.useRouteContext();
   const eventType = stringField(event.eventType);
   if (eventType === "ISSUE_BODY_CHANGED") {
     return null;
@@ -2697,7 +2701,10 @@ function IssueEventRow({
   const projectName = stringField(issue.projectName);
   const sender = (
     <EventUserLink
-      avatarUrl={stringField(event.senderAvatarUrl, "/assets/images/default-avatar-32.png")}
+      avatarUrl={stringField(
+        event.senderAvatarUrl,
+        prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png"),
+      )}
       label={senderLabel}
       loginId={senderLoginId}
     />
@@ -2728,7 +2735,10 @@ function IssueEventRow({
         {targetLoginId === senderLoginId ? " self-assigned this issue" : " assigned this issue to "}
         {targetLoginId === senderLoginId ? null : (
           <EventUserLink
-            avatarUrl={stringField(event.targetAvatarUrl, "/assets/images/default-avatar-32.png")}
+            avatarUrl={stringField(
+              event.targetAvatarUrl,
+              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png"),
+            )}
             label={targetLabel}
             loginId={targetLoginId}
           />
@@ -2869,7 +2879,10 @@ function IssueEventRow({
     );
     const target = (
       <EventUserLink
-        avatarUrl={stringField(event.targetAvatarUrl, "/assets/images/default-avatar-32.png")}
+        avatarUrl={stringField(
+          event.targetAvatarUrl,
+          prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png"),
+        )}
         label={stringField(event.targetLabel, targetLoginId)}
         loginId={targetLoginId}
       />

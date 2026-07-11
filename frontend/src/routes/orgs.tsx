@@ -130,6 +130,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <ul className="all-projects">
                   {organizations.map((organization) => (
                     <OrganizationListItem
+                      basePath={runtimeConfig.basePath}
                       key={organizationDisplayName(organization)}
                       organization={organization}
                     />
@@ -258,14 +259,23 @@ function OrganizationsPagination({
   );
 }
 
-function OrganizationListItem({ organization }: { organization: OrganizationDirectoryItem }) {
+function OrganizationListItem({
+  basePath,
+  organization,
+}: {
+  basePath: string;
+  organization: OrganizationDirectoryItem;
+}) {
   const organizationName = organizationDisplayName(organization);
   if (!organizationIsReadable(organization)) {
     return (
       <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
         <div className="info-wrap" style={{ opacity: 0.3 }}>
           <div className="owner-avatar-wrap">
-            <img src="/assets/images/organization_default_logo.png" alt={organizationName} />
+            <img
+              src={prefixBasePath(basePath, "/assets/images/organization_default_logo.png")}
+              alt={organizationName}
+            />
           </div>
           <div style={{ float: "left", color: "gray" }}>
             You do not have permission to view this project's information

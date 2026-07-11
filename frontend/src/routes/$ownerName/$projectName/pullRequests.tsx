@@ -782,7 +782,7 @@ function ProjectPullRequestRow({
           className="avatar-wrap mlarge"
           title={pullRequest.contributorLoginId}
         >
-          <img src="/assets/images/default-avatar-32.png" alt="" />
+          <img src={prefixBasePath(basePath, "/assets/images/default-avatar-32.png")} alt="" />
         </Link>
         <div className="title-wrap">
           <span className="post-id">{pullRequest.pullRequestNumber}</span>
@@ -869,7 +869,12 @@ function ProjectPullRequestRow({
               className="avatar-wrap assinee"
               title={pullRequest.receiverLabel}
             >
-              <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+              <img
+                src={prefixBasePath(basePath, "/assets/images/default-avatar-32.png")}
+                width="32"
+                height="32"
+                alt=""
+              />
             </Link>
           ) : (
             <div className="empty-avatar-wrap">&nbsp;</div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
@@ -106,6 +107,7 @@ function ProjectCodeFolderBody({
   const selectedBranch = code.selectedBranch || branch;
   const encodedBranch = encodeBranch(selectedBranch);
   const isGit = project.vcs === "GIT";
+  const [branchMenuOpen, setBranchMenuOpen] = useState(false);
 
   return (
     <div className="page-wrap-outer">
@@ -173,11 +175,87 @@ function ProjectCodeFolderBody({
           </ul>
 
           <div className="code-browse-header">
+            <div
+              className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              style={{ width: 220 }}
+            >
+              <button
+                type="button"
+                className="select2-choice"
+                style={{
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                  fontWeight: "inherit",
+                  textAlign: "left",
+                  width: "100%",
+                }}
+                aria-expanded={branchMenuOpen}
+                onClick={() => setBranchMenuOpen((open) => !open)}
+              >
+                <span className="select2-chosen">{selectedBranch}</span>
+                <span className="select2-arrow" aria-hidden="true">
+                  <b></b>
+                </span>
+              </button>
+              <input
+                className="select2-focusser select2-offscreen"
+                type="text"
+                disabled={branchMenuOpen}
+                aria-label={t("title.branches")}
+              />
+              <div
+                className={`select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
+                style={branchMenuOpen ? { display: "block", width: 220 } : undefined}
+              >
+                <div className="select2-search">
+                  <input
+                    type="text"
+                    className={`select2-input${branchMenuOpen ? " select2-focused" : ""}`}
+                    aria-label={t("title.branches")}
+                  />
+                </div>
+                <ul className="select2-results">
+                  {code.branches.map((item) => (
+                    <li
+                      key={item.name}
+                      className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === selectedBranch ? " select2-selected" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className="select2-result-label"
+                        style={{
+                          fontFamily: "inherit",
+                          fontSize: "inherit",
+                          fontWeight: "inherit",
+                          textAlign: "left",
+                          width: "100%",
+                        }}
+                        onClick={() => {
+                          setBranchMenuOpen(false);
+                          router.history.push(
+                            projectHref(
+                              runtimeConfig.basePath,
+                              ownerName,
+                              projectName,
+                              "code",
+                              encodeBranch(item.name),
+                            ),
+                          );
+                        }}
+                      >
+                        {item.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
             <select
               id="branches"
               data-format="branch"
               data-dropdown-css-class="branches"
-              className="pull-left"
+              className="pull-left select2-offscreen"
+              tabIndex={-1}
               defaultValue={projectHref(
                 runtimeConfig.basePath,
                 ownerName,

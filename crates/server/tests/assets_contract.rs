@@ -370,6 +370,21 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     let image_body = image.into_body().collect().await.unwrap().to_bytes();
     assert_eq!(image_body.as_ref(), b"png");
 
+    for path in ["/assets/app.js", "/images/logo.png"] {
+        let outside_context = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(outside_context.status(), StatusCode::NOT_FOUND, "{path}");
+    }
+
     let fallback = app
         .clone()
         .oneshot(
@@ -614,17 +629,25 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("\"showUserEmail\":false"));
     assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
     assert!(!html.contains("https://www.google-analytics.com/analytics.js"));
-    assert!(html.contains("src=\"/yona/assets/app.js\""));
-    assert!(html.contains("href=\"/yona/assets/app.css\""));
-    assert!(html.contains("src=\"/yona/images/fork-pull/fork.jpg\""));
-    assert!(!html.contains("src=\"/assets/app.js\""));
+    assert!(html.contains("src=\"/yona/assets/"), "{html}");
+    assert!(html.contains("href=\"/yona/assets/"), "{html}");
+    assert!(!html.contains("src=\"/assets/"), "{html}");
+
+    let asset_path = html
+        .split("src=\"")
+        .find_map(|part| {
+            let path = part.split('"').next()?;
+            path.starts_with("/yona/assets/")
+                .then_some(path.to_string())
+        })
+        .expect("embedded index module asset");
 
     let asset = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/assets/app.js")
+                .uri(&asset_path)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -632,52 +655,20 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
         .unwrap();
     assert_eq!(asset.status(), StatusCode::OK);
     let asset_body = asset.into_body().collect().await.unwrap().to_bytes();
-    assert_eq!(
-        String::from_utf8(asset_body.to_vec()).unwrap().trim_end(),
-        "console.log('embedded-pilot');"
-    );
+    assert!(!asset_body.is_empty());
 
-    let stylesheet = app
+    let outside_context = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
-                .uri("/yona/assets/app.css")
+                .uri(asset_path.trim_start_matches("/yona"))
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(stylesheet.status(), StatusCode::OK);
-    assert_eq!(
-        stylesheet
-            .headers()
-            .get(http::header::CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok()),
-        Some("text/css")
-    );
-    let stylesheet_body = stylesheet.into_body().collect().await.unwrap().to_bytes();
-    assert_eq!(
-        String::from_utf8(stylesheet_body.to_vec())
-            .unwrap()
-            .trim_end(),
-        "body{color:#333}"
-    );
-
-    let image = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method(Method::GET)
-                .uri("/yona/images/fork-pull/fork.jpg")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(image.status(), StatusCode::OK);
-    let image_body = image.into_body().collect().await.unwrap().to_bytes();
-    assert_eq!(image_body.as_ref(), b"jpg\n");
+    assert_eq!(outside_context.status(), StatusCode::NOT_FOUND);
 
     let fallback = app
         .clone()

@@ -1273,7 +1273,12 @@ function MassUpdateToolbar({
                   onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", user.id)}
                 >
                   <span className="avatar-wrap smaller">
-                    <img src={user.avatarUrl} width="20" height="20" alt="" />
+                    <img
+                      src={mountedAppLocalUrl(runtimeConfig.basePath, user.avatarUrl)}
+                      width="20"
+                      height="20"
+                      alt=""
+                    />
                   </span>
                   <strong className="name">{user.label}</strong>
                   <span className="loginid">
@@ -1879,7 +1884,10 @@ function ProjectIssueItem({
               title={`${t("issue.assignee")}: ${assigneeLabel}`}
             >
               <img
-                src={issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png"}
+                src={mountedAppLocalUrl(
+                  basePath,
+                  issue.assigneeAvatarUrl || "/assets/images/default-avatar-32.png",
+                )}
                 width="32"
                 height="32"
                 alt={assigneeLabel}
@@ -3621,6 +3629,10 @@ function stringField(value: unknown, fallback: string) {
 function avatarUrlField(value: unknown, fallback = "/assets/images/default-avatar-32.png") {
   const normalized = stringField(value, "").trim();
   return normalized || fallback;
+}
+
+function mountedAppLocalUrl(basePath: string, url: string) {
+  return /^\/(?:assets|images)\//u.test(url) ? prefixBasePath(basePath, url) : url;
 }
 
 function projectMilestoneMenuEnabled(project: ProjectContainer) {

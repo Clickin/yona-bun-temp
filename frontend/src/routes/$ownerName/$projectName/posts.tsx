@@ -522,7 +522,9 @@ function ProjectBoardPost({
         title={post.authorLoginId}
       >
         <img
-          src={post.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+          src={
+            post.authorAvatarUrl || prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
+          }
           alt=""
           width="32"
           height="32"

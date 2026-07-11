@@ -555,7 +555,10 @@ function NonRangedThreadComment({
           title={comment.authorLabel}
         >
           <img
-            src={comment.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+            src={
+              comment.authorAvatarUrl ||
+              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+            }
             width="32"
             height="32"
             alt={comment.authorLoginId}
@@ -799,6 +802,7 @@ function ReviewCard({
   pullRequest: PullRequestDetailResponse;
   thread: ReviewThread;
 }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
 
@@ -824,7 +828,10 @@ function ReviewCard({
         </span>
         <span className="avatar-wrap smaller ml5">
           <img
-            src={thread.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+            src={
+              thread.authorAvatarUrl ||
+              prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+            }
             alt={thread.authorLabel}
           />
         </span>
@@ -1568,13 +1575,19 @@ function CommitDropdown({
 }
 
 function SelectedCommitInfo({ commit }: { commit: PullRequestCommit }) {
+  const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
 
   return (
     <>
       <p className="commitInfo">
         <span className="avatar-wrap smaller">
-          <img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="" />
+          <img
+            src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
+            width="32"
+            height="32"
+            alt=""
+          />
         </span>
         <strong>{commit.authorEmail || t("user.role.anonymous")}</strong>
         <span className="ago" title={commit.authorDateLabel}>

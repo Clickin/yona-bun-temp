@@ -790,7 +790,15 @@ function MassUpdateShell({
                   }}
                 >
                   <span className="avatar-wrap smaller">
-                    <img src={normalizedAvatarUrl(user.avatarUrl)} width="20" height="20" alt="" />
+                    <img
+                      src={mountedAppLocalUrl(
+                        runtimeConfig.basePath,
+                        normalizedAvatarUrl(user.avatarUrl),
+                      )}
+                      width="20"
+                      height="20"
+                      alt=""
+                    />
                   </span>
                   <strong className="name">{user.label}</strong>
                   <span className="loginid">
@@ -1252,7 +1260,10 @@ function MilestoneIssueRow({
               title={`${t("issue.assignee")}: ${stringField(issue.assigneeLabel)}`}
             >
               <img
-                src={stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png")}
+                src={mountedAppLocalUrl(
+                  runtimeConfig.basePath,
+                  stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+                )}
                 width="32"
                 height="32"
                 alt={stringField(issue.assigneeLabel)}
@@ -1717,6 +1728,10 @@ function addUser(
 function normalizedAvatarUrl(value: unknown) {
   const avatarUrl = stringField(value).trim();
   return avatarUrl || "/assets/images/default-avatar-32.png";
+}
+
+function mountedAppLocalUrl(basePath: string, url: string) {
+  return /^\/(?:assets|images)\//u.test(url) ? prefixBasePath(basePath, url) : url;
 }
 
 function recordArray(value: unknown): Array<Record<string, unknown>> {
