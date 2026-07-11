@@ -1,4 +1,4 @@
-/* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable -- legacy issue detail Bootstrap modal and index-comment DOM parity keeps plain modal divs/backdrops and aria-hidden close controls while React owns behavior. */
+/* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -193,12 +193,16 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     ownerName,
     projectName,
   };
+  const projectWithHeaderAssets = projectWithLegacyHeaderAssets(
+    projectQuery.data,
+    runtimeConfig.basePath,
+  );
 
   if (restApiErrorStatus(issueQuery.error) === 404) {
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
         <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
         <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
       </SiteLayoutShell>
@@ -222,7 +226,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         ownerName={ownerName}
         projectName={projectName}
       />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <IssueDetailAssets
         basePath={runtimeConfig.basePath}
@@ -530,7 +534,7 @@ function IssueDetailBody({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { t } = useLegacyMessages();
+  const { language, t } = useLegacyMessages();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [sharerListOpen, setSharerListOpen] = useState(false);
   const [translatedBodyMarkdown, setTranslatedBodyMarkdown] = useState<string | null>(null);
@@ -557,6 +561,9 @@ function IssueDetailBody({
   const [hasVotedIssue, setHasVotedIssue] = useState(hasVoted);
   const translationApiEnabled = booleanField(issue.translationApiEnabled);
   const labels = (issue.labels ?? []).slice().sort(compareLabels);
+  const [selectedLabelIds, setSelectedLabelIds] = useState(() =>
+    labels.map((label) => stringField(label.id)),
+  );
   const selectableLabels = (projectLabels ?? []).slice().sort(compareLabels);
   const canManageProjectLabels = booleanField(project.viewerCanUpdate);
   const hasProjectMilestones = milestones.open.length > 0 || milestones.closed.length > 0;
@@ -566,6 +573,7 @@ function IssueDetailBody({
   const parentIssueId = stringField(issue.parentIssueId, issueId);
   const newSubtaskPath = `/${ownerName}/${projectName}/issueform?parentIssueId=${parentIssueId}`;
   const assigneeLoginId = stringField(issue.assigneeLoginId);
+  const [selectedAssigneeLoginId, setSelectedAssigneeLoginId] = useState(assigneeLoginId);
   const sharers = issue.sharers ?? [];
   const sharerValue = sharers.map((sharer) => stringField(sharer.loginId)).join(",");
   const sharerListVisible = sharers.length > 0 || sharerListOpen;
@@ -587,7 +595,7 @@ function IssueDetailBody({
   const dueDateInputRef = useRef<HTMLInputElement>(null);
   const dueDateStatusLabel = booleanField(issue.dueDateOverdue)
     ? "Overdue"
-    : stringField(issue.dueDateUntilLabel);
+    : localizeIssueDuration(stringField(issue.dueDateUntilLabel), language);
   const shouldShowDueDateStatus = dueDateLabel !== "" && issueState === "open";
   const weight = numberField(issue.weight);
   const [commentDeleteRequestUri, setCommentDeleteRequestUri] = useState<string | null>(null);
@@ -713,6 +721,29 @@ function IssueDetailBody({
     },
     onSuccess(_response, dueDate) {
       setCommittedDueDateValue(dueDate);
+      queryClient.invalidateQueries({
+        queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
+      });
+    },
+  });
+  const metadataMutation = useMutation({
+    mutationFn: async (input: {
+      addLabelIds?: number[];
+      assigneeLoginId?: string;
+      removeLabelIds?: number[];
+    }) => {
+      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
+      return massUpdateIssues(runtimeConfig, csrfToken, {
+        addLabelIds: input.addLabelIds ?? [],
+        assigneeLoginId: input.assigneeLoginId ?? "",
+        assigneeUpdate: input.assigneeLoginId !== undefined,
+        issueNumbers: [Number(issueNumber) || 0],
+        removeLabelIds: input.removeLabelIds ?? [],
+        ownerName,
+        projectName,
+      });
+    },
+    onSuccess() {
       queryClient.invalidateQueries({
         queryKey: ["project-issue-detail", ownerName, projectName, Number(issueNumber) || 0],
       });
@@ -1015,15 +1046,26 @@ function IssueDetailBody({
                   <dt>{t("issue.assignee")}</dt>
                   <dd>
                     {canUpdate ? (
-                      <input
-                        type="hidden"
-                        className="bigdrop"
-                        id="assignee"
-                        name="assigneeLoginId"
-                        placeholder={t("issue.noAssignee")}
-                        defaultValue={assigneeLoginId}
-                        style={{ width: "100%" }}
-                      />
+                      <>
+                        <input
+                          type="hidden"
+                          className="bigdrop"
+                          id="assignee"
+                          name="assigneeLoginId"
+                          placeholder={t("issue.noAssignee")}
+                          value={selectedAssigneeLoginId}
+                          readOnly
+                          style={{ width: "100%" }}
+                        />
+                        <LegacyAssigneeControl
+                          issue={issue}
+                          value={selectedAssigneeLoginId}
+                          onChange={(value) => {
+                            setSelectedAssigneeLoginId(value);
+                            metadataMutation.mutate({ assigneeLoginId: value });
+                          }}
+                        />
+                      </>
                     ) : assigneeLoginId ? (
                       <Link
                         to="/$user"
@@ -1131,7 +1173,19 @@ function IssueDetailBody({
                     labels={selectableLabels}
                     ownerName={ownerName}
                     projectName={projectName}
-                    selectedLabelIds={new Set(labels.map((label) => stringField(label.id)))}
+                    selectedLabelIds={new Set(selectedLabelIds)}
+                    onChange={(nextIds) => {
+                      const currentIds = new Set(selectedLabelIds);
+                      setSelectedLabelIds(nextIds);
+                      metadataMutation.mutate({
+                        addLabelIds: nextIds
+                          .filter((id) => !currentIds.has(id))
+                          .map((id) => Number(id)),
+                        removeLabelIds: [...currentIds]
+                          .filter((id) => !nextIds.includes(id))
+                          .map((id) => Number(id)),
+                      });
+                    }}
                   />
                 ) : selectableLabels.length > 0 ? (
                   <IssueSelectedLabels
@@ -1624,12 +1678,14 @@ function IssueLabelSelect({
   labels,
   ownerName,
   projectName,
+  onChange,
   selectedLabelIds,
 }: {
   canManageLabels: boolean;
   labels: YonaRecord[];
   ownerName: string;
   projectName: string;
+  onChange: (labelIds: string[]) => void;
   selectedLabelIds: Set<string>;
 }) {
   const { t } = useLegacyMessages();
@@ -1682,6 +1738,9 @@ function IssueLabelSelect({
           data-placeholder={t("label.select")}
           data-close-on-select="false"
           className="hide"
+          onChange={(event) =>
+            onChange(Array.from(event.currentTarget.selectedOptions, (option) => option.value))
+          }
         >
           <option></option>
           {Array.from(categoryGroups.values()).map((group) => (
@@ -1719,8 +1778,166 @@ function IssueLabelSelect({
             </optgroup>
           ))}
         </select>
+        <LegacyLabelControl
+          labels={labels}
+          onChange={onChange}
+          selectedLabelIds={selectedLabelIds}
+        />
       </dd>
     </dl>
+  );
+}
+
+function LegacyAssigneeControl({
+  issue,
+  onChange,
+  value,
+}: {
+  issue: RestIssueDetailResponse;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const loginId = stringField(issue.assigneeLoginId);
+  return (
+    <div
+      className={`select2-container fullsize${open ? " select2-dropdown-open" : ""}`}
+      role="combobox"
+      aria-label={t("issue.assignee")}
+      aria-expanded={open}
+      aria-controls="issue-assignee-results"
+    >
+      <button
+        type="button"
+        className="select2-choice"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="select2-chosen">
+          {value && loginId ? (
+            <span className="usf-group">
+              {issue.assigneeAvatarUrl ? (
+                <span className="avatar-wrap smaller">
+                  <img src={stringField(issue.assigneeAvatarUrl)} width="20" height="20" alt="" />
+                </span>
+              ) : null}
+              <strong className="name">{stringField(issue.assigneeLabel, loginId)}</strong>
+              <span className="loginid"> {loginId}</span>
+            </span>
+          ) : (
+            t("issue.noAssignee")
+          )}
+        </span>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </button>
+      {open ? (
+        <div className="select2-drop select2-drop-active">
+          <ul id="issue-assignee-results" className="select2-results" role="listbox">
+            <li className={!value ? "select2-highlighted" : undefined}>
+              <button
+                type="button"
+                className="select2-result-label"
+                onClick={() => {
+                  onChange("");
+                  setOpen(false);
+                }}
+              >
+                {t("issue.noAssignee")}
+              </button>
+            </li>
+            {loginId ? (
+              <li className={value === loginId ? "select2-highlighted" : undefined}>
+                <button
+                  type="button"
+                  className="select2-result-label"
+                  onClick={() => {
+                    onChange(loginId);
+                    setOpen(false);
+                  }}
+                >
+                  {stringField(issue.assigneeLabel, loginId)} {loginId}
+                </button>
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LegacyLabelControl({
+  labels,
+  onChange,
+  selectedLabelIds,
+}: {
+  labels: YonaRecord[];
+  onChange: (labelIds: string[]) => void;
+  selectedLabelIds: Set<string>;
+}) {
+  const { t } = useLegacyMessages();
+  const [open, setOpen] = useState(false);
+  const selectedIds = [...selectedLabelIds];
+  const toggle = (id: string) =>
+    onChange(
+      selectedLabelIds.has(id) ? selectedIds.filter((item) => item !== id) : [...selectedIds, id],
+    );
+  return (
+    <div
+      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
+    >
+      <ul className="select2-choices">
+        {labels
+          .filter((label) => selectedLabelIds.has(stringField(label.id)))
+          .map((label) => (
+            <li className="select2-search-choice" key={stringField(label.id)}>
+              <span className="label" style={{ background: stringField(label.color) }}>
+                {stringField(label.name)}
+              </span>
+              <button
+                type="button"
+                className="select2-search-choice-close"
+                aria-label={`${stringField(label.name)} ${t("button.delete")}`}
+                onClick={() => toggle(stringField(label.id))}
+              ></button>
+            </li>
+          ))}
+        <li className="select2-search-field">
+          <input
+            aria-label={t("label.select")}
+            autoComplete="off"
+            onFocus={() => setOpen(true)}
+            onClick={() => setOpen(true)}
+          />
+        </li>
+      </ul>
+      {open ? (
+        <div className="select2-drop issue-labels select2-drop-active">
+          <ul className="select2-results" role="listbox" aria-multiselectable="true">
+            {labels.map((label) => {
+              const id = stringField(label.id);
+              return (
+                <li
+                  key={id}
+                  className={selectedLabelIds.has(id) ? "select2-highlighted" : undefined}
+                >
+                  <button type="button" className="select2-result-label" onClick={() => toggle(id)}>
+                    <span className="label" style={{ background: stringField(label.color) }}>
+                      {stringField(label.name)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <button type="button" className="ybtn ybtn-small" onClick={() => setOpen(false)}>
+            {t("button.close")}
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -3266,6 +3483,7 @@ function MarkdownEditor({
   value: string;
   wrapId: string;
 }) {
+  const { t } = useLegacyMessages();
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const switchTab = (event: MouseEvent<HTMLElement>, nextTab: "edit" | "preview") => {
@@ -3279,12 +3497,12 @@ function MarkdownEditor({
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={(event) => switchTab(event, "edit")}>
-            Edit
+            {t("common.editor.edit")}
           </button>
         </li>
         <li className={activeTab === "preview" ? "active" : undefined}>
           <button type="button" onClick={(event) => switchTab(event, "preview")}>
-            Preview
+            {t("common.editor.preview")}
           </button>
         </li>
         <li>
@@ -3293,7 +3511,7 @@ function MarkdownEditor({
               type="button"
               className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
             >
-              <i className="yobicon-list task-list-icon"></i> Add checklist
+              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
             </button>
           </div>
         </li>
@@ -3305,7 +3523,7 @@ function MarkdownEditor({
                 id="button-clear-temporary"
                 className="ybtn ybtn-small ybtn-warning"
               >
-                Clear Temporary
+                {t("button.clear.temporary")}
               </button>
             </div>
           </div>
@@ -3342,7 +3560,9 @@ function MarkdownEditor({
           className="notification-receiver"
           style={notificationVisible ? { display: "block" } : undefined}
         >
-          <span className="notification-receiver-title">Notification receivers </span>
+          <span className="notification-receiver-title">
+            {t("notification.receiver.list.title")}
+          </span>
           <span className="notification-receiver-list"></span>
         </div>
       </div>
@@ -3789,6 +4009,13 @@ function issueStateLabel(state: string, t: (key: string) => string) {
   return state === "closed" ? t("issue.state.closed") : t("issue.state.open");
 }
 
+function localizeIssueDuration(value: string, language: string) {
+  if (language !== "ko-KR") {
+    return value;
+  }
+  return value.replace(/^(\d+)\s+days?$/u, "$1일");
+}
+
 function issueStateEventText(state: string) {
   return state === "closed" ? " closed this issue" : " reopened this issue";
 }
@@ -3837,6 +4064,17 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
+}
+
+function projectWithLegacyHeaderAssets(project: ProjectContainer, basePath: string) {
+  const logoUrl =
+    stringField(project.logoUrl) ||
+    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png");
+  const backgroundImageUrl =
+    stringField(project.backgroundImageUrl) ||
+    stringField(project.backgroundUrl) ||
+    prefixBasePath(basePath, "/legacy-assets/images/bg-default-project.jpg");
+  return { ...project, backgroundImageUrl, logoUrl };
 }
 
 function isValidIssueDueDate(value: string) {
