@@ -14,13 +14,17 @@ impl AppRepositoryImpl<'_> {
         };
         let labels = issue_label::Entity::find()
             .filter(issue_label::Column::ProjectId.eq(Some(project.id)))
-            .order_by_asc(issue_label::Column::Name)
             .all(&self.db)
             .await?;
         let mut records = Vec::new();
         for label in labels {
             records.push(self.issue_label_record(label).await?);
         }
+        records.sort_by(|left, right| {
+            left.category_name
+                .cmp(&right.category_name)
+                .then_with(|| left.name.cmp(&right.name))
+        });
         Ok(records)
     }
 

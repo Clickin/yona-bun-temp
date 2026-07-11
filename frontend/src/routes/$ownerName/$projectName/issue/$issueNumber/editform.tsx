@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type InputHTMLAttributes,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, YonaRecord } from "../../../../../api/types";
@@ -126,6 +134,13 @@ function ProjectIssueEditFormBody({
   const showSubtaskOptionOnMount = parentIssueId !== "" || currentIssueId !== "";
   const [isSubtaskOptionVisible, setIsSubtaskOptionVisible] = useState(showSubtaskOptionOnMount);
   const [isSubtaskMessageOn, setIsSubtaskMessageOn] = useState(false);
+  const [assigneeLoginId, setAssigneeLoginId] = useState(() =>
+    stringField(issue.assigneeLoginId, ""),
+  );
+  const [milestoneId, setMilestoneId] = useState(() => stringField(issue.milestoneId, "0"));
+  const [selectedLabelIds, setSelectedLabelIds] = useState(() =>
+    (issue.labels ?? []).map((label) => stringField(label.id, "")),
+  );
   const dueDateRef = useRef<HTMLInputElement>(null);
   const submitIntentRef = useRef<"draft" | "publish" | "save">("save");
 
@@ -157,6 +172,7 @@ function ProjectIssueEditFormBody({
         ownerName,
         parentIssueId: stringFormValue(formData, "parentIssueId"),
         projectName,
+        state: stringFormValue(formData, "state"),
         title: stringFormValue(formData, "title"),
       });
     },
@@ -361,12 +377,54 @@ function ProjectIssueEditFormBody({
                         id="assignee"
                         name="assigneeLoginId"
                         placeholder={t("issue.noAssignee")}
-                        defaultValue={stringField(issue.assigneeLoginId, "")}
+                        value={assigneeLoginId}
+                        readOnly
                         style={{ width: "100%" }}
+                      />
+                      <LegacyEditSingleSelect
+                        label={t("issue.assignee")}
+                        value={assigneeLoginId}
+                        options={[
+                          { label: t("issue.noAssignee"), value: "" },
+                          ...(stringField(issue.assigneeLoginId, "")
+                            ? [
+                                {
+                                  label: `${stringField(issue.assigneeLabel, assigneeLoginId)} ${assigneeLoginId}`,
+                                  value: assigneeLoginId,
+                                },
+                              ]
+                            : []),
+                        ]}
+                        onChange={setAssigneeLoginId}
+                        className="bigdrop"
+                        selectedContent={
+                          assigneeLoginId ? (
+                            <span className="usf-group">
+                              {issue.assigneeAvatarUrl ? (
+                                <span className="avatar-wrap smaller">
+                                  <img
+                                    src={stringField(issue.assigneeAvatarUrl, "")}
+                                    width="20"
+                                    height="20"
+                                    alt=""
+                                  />
+                                </span>
+                              ) : null}
+                              <strong className="name">
+                                {stringField(issue.assigneeLabel, assigneeLoginId)}
+                              </strong>
+                              <span className="loginid"> {assigneeLoginId}</span>
+                            </span>
+                          ) : undefined
+                        }
                       />
                     </dd>
                   </dl>
-                  <MilestoneOption issue={issue} />
+                  <MilestoneOption
+                    issue={issue}
+                    milestoneId={milestoneId}
+                    onChange={setMilestoneId}
+                  />
                   <dl className="issue-option">
                     <dt>{t("issue.dueDate")}</dt>
                     <dd>
@@ -386,10 +444,11 @@ function ProjectIssueEditFormBody({
                     </dd>
                   </dl>
                   <IssueLabelSelect
-                    issue={issue}
                     labels={labels}
                     ownerName={ownerName}
                     projectName={projectName}
+                    selectedLabelIds={selectedLabelIds}
+                    onChange={setSelectedLabelIds}
                   />
                 </div>
               </div>
@@ -405,7 +464,9 @@ function StateOption({ state }: { state: string }) {
   const { t } = useLegacyMessages();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedState, setSelectedState] = useState(() => normalizeIssueState(state));
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState(() =>
+    normalizeIssueState(state) === "CLOSED" ? t("issue.state.closed") : t("issue.state.open"),
+  );
   const options = [
     { label: t("issue.state.open"), value: "OPEN" },
     { label: t("issue.state.closed"), value: "CLOSED" },
@@ -424,7 +485,9 @@ function StateOption({ state }: { state: string }) {
               setIsMenuOpen((current) => !current);
             }}
           >
-            <span className="d-label">{selectedLabel ?? t("issue.state")}</span>
+            <span className="d-label">
+              <span>{selectedLabel}</span>
+            </span>
             <span className="d-caret">
               <span className="caret"></span>
             </span>
@@ -455,6 +518,7 @@ function StateOption({ state }: { state: string }) {
               );
             })}
           </ul>
+          <input type="hidden" name="state" value={selectedState} readOnly />
         </div>
       </dd>
     </dl>
@@ -465,10 +529,21 @@ function normalizeIssueState(state: string) {
   return state.toLowerCase() === "closed" ? "CLOSED" : "OPEN";
 }
 
-function MilestoneOption({ issue }: { issue: RestIssueDetailResponse }) {
+function MilestoneOption({
+  issue,
+  milestoneId,
+  onChange,
+}: {
+  issue: RestIssueDetailResponse;
+  milestoneId: string;
+  onChange: (value: string) => void;
+}) {
   const { t } = useLegacyMessages();
-  const milestoneId = stringField(issue.milestoneId, "0");
   const milestoneTitle = stringField(issue.milestoneTitle, "");
+  const options = [
+    { label: t("issue.noMilestone"), value: "0" },
+    ...(milestoneTitle ? [{ label: milestoneTitle, value: milestoneId }] : []),
+  ];
   return (
     <dl id="milestoneOption" className="issue-option">
       <dt>{t("milestone")}</dt>
@@ -478,7 +553,9 @@ function MilestoneOption({ issue }: { issue: RestIssueDetailResponse }) {
           name="milestoneId"
           data-format="milestone"
           data-container-css-class="fullsize"
-          defaultValue={milestoneId}
+          className="select2-offscreen"
+          value={milestoneId}
+          onChange={(event) => onChange(event.currentTarget.value)}
         >
           <option value="0">{t("issue.noMilestone")}</option>
           {milestoneTitle ? (
@@ -489,6 +566,18 @@ function MilestoneOption({ issue }: { issue: RestIssueDetailResponse }) {
             </optgroup>
           ) : null}
         </select>
+        <LegacyEditSingleSelect
+          className="fullsize"
+          label={t("milestone")}
+          onChange={onChange}
+          options={options}
+          value={milestoneId}
+          selectedContent={
+            milestoneTitle ? (
+              <div title={`${t("milestone.state.open")} ${milestoneTitle}`}>{milestoneTitle}</div>
+            ) : undefined
+          }
+        />
       </dd>
     </dl>
   );
@@ -518,6 +607,28 @@ function SubtaskSelects({
   const visibleParentOptions = hasChildIssue
     ? parentOptions.filter((parentIssue) => String(parentIssue.id) === parentIssueId)
     : parentOptions;
+  const projectOptions = [
+    {
+      label: stringField(project.projectName, ""),
+      value: stringField(project.id, ""),
+    },
+    ...movableProjects.map((movableProject) => ({
+      label: movableProject.name,
+      value: movableProject.id,
+    })),
+  ];
+  const parentSelectOptions = [
+    {
+      label: hasChildIssue ? "이미 부모 이슈입니다." : t("issue.subtask.select"),
+      value: "",
+    },
+    ...visibleParentOptions.map((parentIssue) => ({
+      label: `#${String(parentIssue.issueNumber)}. ${parentIssue.title}`,
+      value: String(parentIssue.id),
+    })),
+  ];
+  const [targetProjectId, setTargetProjectId] = useState(() => stringField(project.id, ""));
+  const [selectedParentIssueId, setSelectedParentIssueId] = useState(parentIssueId);
   return (
     <div className={`subtask-wrap ${showOption ? "show" : ""}`}>
       <div className="span3">
@@ -527,7 +638,10 @@ function SubtaskSelects({
           data-format="projects"
           data-placeholder={t("organization.choose.projects")}
           data-container-css-class="fullsize"
+          className="select2-offscreen"
           disabled={!showOption}
+          value={targetProjectId}
+          onChange={(event) => setTargetProjectId(event.currentTarget.value)}
         >
           <option value={stringField(project.id, "")}>
             {stringField(project.projectName, "")}
@@ -542,6 +656,14 @@ function SubtaskSelects({
             </option>
           ))}
         </select>
+        <LegacyEditSingleSelect
+          className="fullsize"
+          id="s2id_targetProjectId"
+          label={t("organization.choose.projects")}
+          onChange={setTargetProjectId}
+          options={projectOptions}
+          value={targetProjectId}
+        />
       </div>
       <div className="span6">
         <select
@@ -550,8 +672,10 @@ function SubtaskSelects({
           data-format="issues"
           data-placeholder={t("organization.choose.projects")}
           data-container-css-class="fullsize"
+          className="select2-offscreen"
           disabled={!showOption}
-          defaultValue={parentIssueId}
+          value={selectedParentIssueId}
+          onChange={(event) => setSelectedParentIssueId(event.currentTarget.value)}
         >
           <option value="">
             {hasChildIssue ? "이미 부모 이슈입니다." : t("issue.subtask.select")}
@@ -562,27 +686,37 @@ function SubtaskSelects({
             </option>
           ))}
         </select>
+        <LegacyEditSingleSelect
+          className="fullsize"
+          id="s2id_parentId"
+          label={t("issue.subtask.select")}
+          onChange={setSelectedParentIssueId}
+          options={parentSelectOptions}
+          value={selectedParentIssueId}
+        />
       </div>
     </div>
   );
 }
 
 function IssueLabelSelect({
-  issue,
   labels,
   ownerName,
   projectName,
+  onChange,
+  selectedLabelIds,
 }: {
-  issue: RestIssueDetailResponse;
   labels: YonaRecord[];
   ownerName: string;
   projectName: string;
+  onChange: (value: string[]) => void;
+  selectedLabelIds: string[];
 }) {
   const { t } = useLegacyMessages();
   if (labels.length === 0) {
     return null;
   }
-  const selectedLabelIds = new Set((issue.labels ?? []).map((label) => stringField(label.id, "")));
+  const selectedIds = new Set(selectedLabelIds);
   return (
     <dl className="issue-option">
       <dt>
@@ -608,8 +742,11 @@ function IssueLabelSelect({
           data-container-css-class="issue-labels bordered fullsize"
           data-placeholder={t("label.select")}
           data-close-on-select="false"
-          className="hide"
-          defaultValue={Array.from(selectedLabelIds)}
+          className="hide select2-offscreen"
+          value={selectedLabelIds}
+          onChange={(event) =>
+            onChange(Array.from(event.currentTarget.selectedOptions, (option) => option.value))
+          }
         >
           <option></option>
           {groupLabels(labels).map((group) => (
@@ -632,9 +769,152 @@ function IssueLabelSelect({
             </optgroup>
           ))}
         </select>
+        <LegacyEditLabelSelect labels={labels} onChange={onChange} selectedLabelIds={selectedIds} />
       </dd>
     </dl>
   );
+}
+
+function LegacyEditSingleSelect({
+  className,
+  id,
+  label,
+  onChange,
+  options,
+  value,
+  selectedContent,
+}: {
+  className: string;
+  id?: string;
+  label: string;
+  onChange: (value: string) => void;
+  options: Array<{ label: string; value: string }>;
+  value: string;
+  selectedContent?: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ?? options[0]?.label;
+  return (
+    <div
+      id={id}
+      className={`select2-container ${className}${open ? " select2-dropdown-open" : ""}`}
+      style={className === "bigdrop" ? { width: "100%" } : undefined}
+    >
+      <div
+        className="select2-choice"
+        role="button"
+        aria-label={label}
+        aria-expanded={open}
+        tabIndex={0}
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={(event) => activateEditControl(event, () => setOpen((current) => !current))}
+      >
+        <span className="select2-chosen">{selectedContent ?? selectedLabel}</span>
+        <span className="select2-arrow" aria-hidden="true">
+          <b></b>
+        </span>
+      </div>
+      <div className={`select2-drop${open ? " select2-drop-active" : " select2-display-none"}`}>
+        <ul className="select2-results" role="listbox">
+          {options.map((option) => (
+            <li
+              key={option.value}
+              className={option.value === value ? "select2-highlighted" : undefined}
+            >
+              <div
+                className="select2-result-label"
+                role="option"
+                tabIndex={open ? 0 : -1}
+                aria-selected={option.value === value}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                onKeyDown={(event) =>
+                  activateEditControl(event, () => {
+                    onChange(option.value);
+                    setOpen(false);
+                  })
+                }
+              >
+                {option.label}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function LegacyEditLabelSelect({
+  labels,
+  onChange,
+  selectedLabelIds,
+}: {
+  labels: YonaRecord[];
+  onChange: (value: string[]) => void;
+  selectedLabelIds: Set<string>;
+}) {
+  const { t } = useLegacyMessages();
+  const selected = [...selectedLabelIds];
+  const toggle = (id: string) =>
+    onChange(
+      selectedLabelIds.has(id) ? selected.filter((value) => value !== id) : [...selected, id],
+    );
+  const selectedLabelElements: ReactNode[] = [];
+  for (const label of labels) {
+    const labelId = stringField(label.id, "");
+    if (!selectedLabelIds.has(labelId)) continue;
+    const labelName = stringField(label.name, "");
+    selectedLabelElements.push(
+      <li className="select2-search-choice" key={labelId}>
+        <div>
+          <strong
+            className="label issue-label active static"
+            data-label-id={labelId}
+            style={{ background: stringField(label.color, "") }}
+          >
+            {labelName}
+          </strong>
+        </div>
+        <span
+          className="select2-search-choice-close"
+          role="button"
+          tabIndex={0}
+          aria-label={`${labelName} ${t("button.delete")}`}
+          onClick={() => toggle(labelId)}
+          onKeyDown={(event) => activateEditControl(event, () => toggle(labelId))}
+        ></span>
+      </li>,
+    );
+  }
+  return (
+    <div
+      className="select2-container select2-container-multi hide issue-labels bordered fullsize"
+      style={{ display: "inline-block" }}
+    >
+      <ul className="select2-choices">
+        {selectedLabelElements}
+        <li className="select2-search-field">
+          <input
+            className="select2-input"
+            aria-label={t("label.select")}
+            autoComplete="off"
+            style={{ width: "10px" }}
+          />
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function activateEditControl(event: KeyboardEvent<HTMLElement>, activate: () => void) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    activate();
+  }
 }
 
 function LegacyTabIndexInput({
@@ -747,7 +1027,9 @@ function IssuePostFileUploader({ resourceId }: { resourceId: string }) {
           </div>
         </div>
         <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+        <span className="help help-pastable" style={{ display: "block" }}>
+          {t("common.attach.pastehere")}
+        </span>
       </div>
       <ul className="attached-files unstyled"></ul>
       <p className="right-txt help">

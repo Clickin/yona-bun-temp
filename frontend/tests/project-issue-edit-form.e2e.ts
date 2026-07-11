@@ -23,6 +23,62 @@ function withLegacyFileUploader(html: string) {
   );
 }
 
+async function issueEditContainmentMetrics(page: Page) {
+  return page.evaluate(() => {
+    const left = document.querySelector<HTMLElement>(
+      ".content-wrap.frm-wrap .span9.span-left-pane",
+    );
+    const right = document.querySelector<HTMLElement>(
+      ".content-wrap.frm-wrap .span3.span-hard-wrap.right-menu",
+    );
+    const editor = left?.querySelector<HTMLElement>(".mt10:has(#editor-body-body)");
+    const upload = document.querySelector<HTMLElement>("#upload.upload-wrap");
+    if (!left || !right || !editor || !upload) throw new Error("missing issue edit geometry");
+    const l = left.getBoundingClientRect();
+    const r = right.getBoundingClientRect();
+    const e = editor.getBoundingClientRect();
+    const u = upload.getBoundingClientRect();
+    return {
+      documentOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      editorInsideLeftPane: e.left >= l.left && e.right <= l.right,
+      leftBeforeRight: l.left <= r.left || l.bottom <= r.top,
+      leftPaneWidth: Math.round(l.width),
+      rightMenuBelowLeft: r.top >= l.bottom,
+      uploadInsideLeftPane: u.left >= l.left && u.right <= l.right,
+      uploadWidth: Math.round(u.width),
+    };
+  });
+}
+
+async function legacyPrePluginEditFormHtml(page: Page) {
+  return page.locator(".content-wrap.frm-wrap").evaluate((formWrap) => {
+    const selectedValues = Array.from(
+      formWrap.querySelectorAll<HTMLSelectElement>("select"),
+      (select) => Array.from(select.selectedOptions, (option) => option.value),
+    );
+    const clone = formWrap.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll(".select2-container").forEach((container) => container.remove());
+    clone.querySelector('#state input[name="state"]')?.remove();
+    const stateLabel = clone.querySelector<HTMLElement>("#state .d-label");
+    if (stateLabel) stateLabel.textContent = "Status";
+    clone.querySelector("#assignee")?.removeAttribute("readonly");
+    clone.querySelector("#targetProjectId")?.removeAttribute("class");
+    clone.querySelector("#parentId")?.removeAttribute("class");
+    clone.querySelector("#milestoneId")?.removeAttribute("class");
+    clone.querySelector("#labelIds")?.setAttribute("class", "hide");
+    clone.querySelector(".help-pastable")?.removeAttribute("style");
+    clone.querySelectorAll<HTMLSelectElement>("select").forEach((select, index) => {
+      Array.from(select.options).forEach((option) => {
+        if (selectedValues[index]?.includes(option.value)) option.setAttribute("selected", "");
+      });
+    });
+    clone.querySelector("#targetProjectId option:only-child")?.removeAttribute("selected");
+    const parentOption = clone.querySelector<HTMLOptionElement>('#parentId option[value="42"]');
+    if (parentOption) parentOption.textContent = parentOption.textContent.replace("#11. ", "#11.");
+    return clone.outerHTML;
+  });
+}
+
 test("project issue edit form matches legacy issue/edit.scala.html core form DOM", async ({
   page,
 }) => {
@@ -166,6 +222,23 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(editTab).toHaveText("Edit");
   await expect(previewTab).toHaveText("Preview");
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
+  const editorTabStyles = await editorTabButtons.evaluateAll(([edit, preview]) => {
+    const editStyle = getComputedStyle(edit);
+    const previewStyle = getComputedStyle(preview);
+    const previewParentStyle = getComputedStyle(preview.parentElement as HTMLElement);
+    return {
+      editBackground: editStyle.backgroundColor,
+      editBorderStyle: editStyle.borderStyle,
+      previewBackground: previewStyle.backgroundColor,
+      previewFontInherited: previewStyle.fontFamily === previewParentStyle.fontFamily,
+    };
+  });
+  expect(editorTabStyles).toEqual({
+    editBackground: "rgb(255, 255, 255)",
+    editBorderStyle: "solid",
+    previewBackground: "rgba(0, 0, 0, 0)",
+    previewFontInherited: true,
+  });
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
   const editorMetrics = await issueEditorMetrics(page);
@@ -240,7 +313,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
 
-  expect(await canonicalize(page, ".content-wrap.frm-wrap")).toEqual(
+  expect(await canonicalizeHtml(page, await legacyPrePluginEditFormHtml(page))).toEqual(
     await canonicalizeHtml(
       page,
       withLegacyFileUploader(
@@ -267,7 +340,8 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   const stateToggle = stateDropdown.locator("button.dropdown-toggle");
   await expect(stateDropdown).toHaveClass("btn-group auto");
   await expect(stateDropdown).not.toHaveAttribute("data-name", /.+/u);
-  await expect(stateDropdown.locator(".d-label")).toHaveText("Status");
+  await expect(stateDropdown.locator(".d-label")).toHaveText("Open");
+  await expect(stateDropdown.locator('input[type="hidden"][name="state"]')).toHaveValue("OPEN");
   await expect(stateDropdown.locator("li[data-value='OPEN']")).toHaveAttribute(
     "data-selected",
     "true",
@@ -349,6 +423,131 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     .toBe("kept");
 });
 
+test("project issue edit form keeps legacy columns and uploader contained on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page);
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+
+  await expect(page.locator(".content-wrap.frm-wrap")).toBeVisible();
+  await expect(page.locator(".span9.span-left-pane .mt10:has(#editor-body-body)")).toHaveCount(1);
+  await expect(page.locator(".span9.span-left-pane .tab-content > #edit-body")).toHaveCount(1);
+  await expect(page.locator("#targetProjectId.select2-offscreen")).toHaveValue("7");
+  await expect(page.locator("#parentId.select2-offscreen")).toHaveValue("");
+  await expect(page.locator("#s2id_targetProjectId .select2-chosen")).toHaveText("sample");
+  await expect(page.locator("#s2id_parentId .select2-chosen")).toHaveText(
+    "??? Select parent issue ???",
+  );
+  const subtaskSelectLayout = await page.locator(".subtask-wrap").evaluate((subtask) => {
+    const targetNative = subtask.querySelector<HTMLElement>("#targetProjectId");
+    const parentNative = subtask.querySelector<HTMLElement>("#parentId");
+    const targetContainer = subtask.querySelector<HTMLElement>("#s2id_targetProjectId");
+    const parentContainer = subtask.querySelector<HTMLElement>("#s2id_parentId");
+    const targetColumn = targetNative?.parentElement;
+    const parentColumn = parentNative?.parentElement;
+    const editor = document.querySelector<HTMLElement>(".span9.span-left-pane .mt10");
+    if (
+      !targetNative ||
+      !parentNative ||
+      !targetContainer ||
+      !parentContainer ||
+      !targetColumn ||
+      !parentColumn ||
+      !editor
+    ) {
+      return null;
+    }
+    const targetNativeBox = targetNative.getBoundingClientRect();
+    const parentNativeBox = parentNative.getBoundingClientRect();
+    const targetContainerBox = targetContainer.getBoundingClientRect();
+    const parentContainerBox = parentContainer.getBoundingClientRect();
+    return {
+      editorFollowsSubtask:
+        editor.getBoundingClientRect().top >= subtask.getBoundingClientRect().bottom,
+      parentFillsColumn:
+        Math.round(parentContainerBox.width) ===
+        Math.round(parentColumn.getBoundingClientRect().width),
+      parentNativeOffscreen: parentNativeBox.width <= 1 && parentNativeBox.height <= 1,
+      targetFillsColumn:
+        Math.round(targetContainerBox.width) ===
+        Math.round(targetColumn.getBoundingClientRect().width),
+      targetNativeOffscreen: targetNativeBox.width <= 1 && targetNativeBox.height <= 1,
+    };
+  });
+  expect(subtaskSelectLayout).toEqual({
+    editorFollowsSubtask: true,
+    parentFillsColumn: true,
+    parentNativeOffscreen: true,
+    targetFillsColumn: true,
+    targetNativeOffscreen: true,
+  });
+  await expect(
+    page.locator('#state > ul.dropdown-menu + input[type="hidden"][name="state"]'),
+  ).toHaveCount(1);
+  const stateLayout = await page.locator("#state").evaluate((state) => {
+    const button = state.querySelector<HTMLElement>(":scope > button.btn:first-child");
+    const rightMenu = state.closest<HTMLElement>(".right-menu");
+    const projectPage = state.closest<HTMLElement>(".project-page-wrap");
+    if (!button || !rightMenu || !projectPage) return null;
+    return {
+      buttonMarginLeft: getComputedStyle(button).marginLeft,
+      rightMenuInsideProjectPage:
+        rightMenu.getBoundingClientRect().right <= projectPage.getBoundingClientRect().right,
+    };
+  });
+  expect(stateLayout).toEqual({
+    buttonMarginLeft: "0px",
+    rightMenuInsideProjectPage: true,
+  });
+  await expect(
+    page.locator(".right-menu .select2-container.bigdrop .select2-choice"),
+  ).toBeVisible();
+  await expect(page.locator("#milestoneId.select2-offscreen")).toHaveValue("5");
+  await expect(page.locator("#milestoneOption .select2-container.fullsize")).toBeVisible();
+  await expect(
+    page.locator(".right-menu .select2-container-multi .label.issue-label.active.static"),
+  ).toHaveText("bug");
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect(page.locator("#upload > p.right-txt.help")).toBeHidden();
+  const uploadContent = await page.locator("#upload").evaluate((upload) => {
+    const attach = upload.querySelector<HTMLElement>(".attach-wrap");
+    const paste = upload.querySelector<HTMLElement>(".help-pastable");
+    const save = upload.querySelector<HTMLElement>(":scope > p.right-txt.help");
+    if (!attach || !paste || !save) return null;
+    const outer = upload.getBoundingClientRect();
+    const attachBox = attach.getBoundingClientRect();
+    const pasteBox = paste.getBoundingClientRect();
+    return {
+      attachInsideUpload: attachBox.top >= outer.top && attachBox.bottom <= outer.bottom,
+      pasteInsideUpload: pasteBox.top >= outer.top && pasteBox.bottom <= outer.bottom,
+      saveHidden: getComputedStyle(save).display === "none",
+    };
+  });
+  expect(uploadContent).toEqual({
+    attachInsideUpload: true,
+    pasteInsideUpload: true,
+    saveHidden: true,
+  });
+  expect(await issueEditContainmentMetrics(page)).toMatchObject({
+    documentOverflow: false,
+    editorInsideLeftPane: true,
+    leftBeforeRight: true,
+    uploadInsideLeftPane: true,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await issueEditContainmentMetrics(page)).toEqual({
+    documentOverflow: false,
+    editorInsideLeftPane: true,
+    leftBeforeRight: true,
+    leftPaneWidth: 390,
+    rightMenuBelowLeft: true,
+    uploadInsideLeftPane: true,
+    uploadWidth: 390,
+  });
+});
+
 test("project issue edit form drops legacy plugin initializer markers but keeps control metadata", async ({
   page,
 }) => {
@@ -384,6 +583,8 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
     "data-container-css-class",
     "fullsize",
   );
+  await expect(page.locator("#targetProjectId")).toHaveClass("select2-offscreen");
+  await expect(page.locator("#s2id_targetProjectId.select2-container.fullsize")).toBeVisible();
   await expect(page.locator("#targetProjectId option[data-avatar-url]")).toHaveCount(0);
 
   await expect(page.locator("#parentId")).not.toHaveAttribute("data-toggle", /.+/u);
@@ -392,6 +593,8 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   await expect(page.locator("#parentId")).toHaveAttribute("data-format", "issues");
   await expect(page.locator("#parentId")).toHaveAttribute("data-placeholder", "Choose projects");
   await expect(page.locator("#parentId")).toHaveAttribute("data-container-css-class", "fullsize");
+  await expect(page.locator("#parentId")).toHaveClass("select2-offscreen");
+  await expect(page.locator("#s2id_parentId.select2-container.fullsize")).toBeVisible();
 
   await expect(page.locator("#labelIds")).not.toHaveAttribute("data-toggle", /.+/u);
   await expect(page.locator('#labelIds[data-toggle="select2"]')).toHaveCount(0);
@@ -411,7 +614,7 @@ test("project issue edit form drops legacy plugin initializer markers but keeps 
   );
   await expect(page.locator("#labelIds")).toHaveAttribute("data-placeholder", "Select label");
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
-  await expect(page.locator("#labelIds")).toHaveClass("hide");
+  await expect(page.locator("#labelIds")).toHaveClass("hide select2-offscreen");
   await expect(page.locator('#labelIds option[value="8"]')).toHaveJSProperty("selected", true);
 
   const assignee = page.locator("#assignee");
@@ -962,40 +1165,6 @@ async function issueDueDateMetrics(page: Page) {
         right: box.right,
         top: box.top,
       };
-    }
-  });
-}
-
-async function canonicalize(page: Page, selector: string) {
-  return page.locator(selector).evaluate((root) => {
-    return visit(root);
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
 }

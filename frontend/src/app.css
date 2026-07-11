@@ -2734,7 +2734,7 @@ h1 {
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button,
 .codediff-wrap .review-container .nav-tabs > li > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button {
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li > button {
   display: block;
   padding: 8px 30px;
   margin-right: 2px;
@@ -2752,7 +2752,7 @@ h1 {
 .codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button,
 .codediff-wrap .review-container .nav-tabs > li > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button {
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li > button {
   font: inherit;
   cursor: pointer;
   appearance: none;
@@ -2790,8 +2790,8 @@ h1 {
 .codediff-wrap .review-container .nav-tabs > li > button:focus,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button:hover,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button:focus,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:focus {
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li > button:hover,
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li > button:focus {
   border-color: #eee #eee #ddd;
   text-decoration: none;
   background-color: #f2f2f2;
@@ -2828,9 +2828,9 @@ h1 {
 .content-wrap.frm-wrap form.nm > .nav-tabs > li.active > button,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li.active > button:hover,
 .content-wrap.frm-wrap form.nm > .nav-tabs > li.active > button:focus,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:hover,
-.content-wrap.frm-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:focus {
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li.active > button,
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li.active > button:hover,
+.content-wrap.frm-wrap .mt10 > .nav-tabs > li.active > button:focus {
   color: #555;
   cursor: default;
   background-color: #fff;
@@ -4569,6 +4569,11 @@ h1 {
     width: 100% !important;
   }
 
+  .content-wrap.frm-wrap .mt10 > .nav-tabs > li > button {
+    padding-right: 5px !important;
+    padding-left: 5px !important;
+  }
+
   .span-right-pane {
     display: none !important;
   }
@@ -6150,40 +6155,6 @@ div.markdown-preview {
   position: relative;
   margin-top: 20px;
   text-align: center;
-}
-
-.content-wrap.frm-wrap .span-left-pane {
-  width: 74.46808510638297% !important;
-}
-
-.content-wrap.frm-wrap .span-hard-wrap {
-  width: 23.404255319148934% !important;
-  min-width: 0 !important;
-  margin-left: 2.127659574468085% !important;
-}
-
-.content-wrap.frm-wrap .issue-option {
-  width: 100%;
-  margin-bottom: 16px !important;
-}
-
-.content-wrap.frm-wrap .issue-option dt {
-  margin-bottom: 5px;
-}
-
-.content-wrap.frm-wrap .issue-option dd {
-  margin: 0;
-}
-
-.content-wrap.frm-wrap .content-footer {
-  padding: 10px 20px !important;
-  background-color: #f5f5f5;
-  border-radius: 5px;
-}
-
-.content-wrap.frm-wrap .actrow {
-  display: block;
-  margin-top: 20px;
 }
 
 .textarea-box {
@@ -8093,12 +8064,6 @@ div.markdown-preview {
 
 .hidden {
   display: none;
-}
-
-.actrow {
-  display: flex;
-  gap: 8px;
-  align-items: center;
 }
 
 .margin-top-20 {
