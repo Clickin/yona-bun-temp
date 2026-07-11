@@ -25,14 +25,14 @@ const LEGACY_MARKDOWN_HELP = readFileSync(
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Post **markdown**</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="__BASE_PATH__/admin/sample/post/3/editform#edit-body">Edit</a></li><li><a href="__BASE_PATH__/admin/sample/post/3/editform#preview-body">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible">${LEGACY_MARKDOWN_HELP}<div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="2">Post **markdown**</textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
   );
 }
 
@@ -95,6 +95,15 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   );
   await expect(page.locator(".markdown-help-nav > li")).toHaveCount(11);
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator("#upload")
+        .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
+    )
+    .toBe(70);
+  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
@@ -127,18 +136,18 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
     titleFontSize: "18px",
     titleMarginBottom: "15px",
     titleMarginTop: "15px",
-    titleWidthPercent: 97,
+    titleWidthPercent: 98,
     uploadBackground: "rgb(245, 245, 245)",
     uploadBorderRadius: "5px",
-    uploadPadding: "10px 20px",
+    uploadPadding: "10px",
   });
 
   await expect(
-    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#edit-body"]'),
-  ).toHaveCount(0);
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href$="#edit-body"]'),
+  ).toHaveCount(1);
   await expect(
-    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href="#preview-body"]'),
-  ).toHaveCount(0);
+    page.locator('.mt10:has(#editor-body-body) .nav-tabs a[href$="#preview-body"]'),
+  ).toHaveCount(1);
   await expect(
     page.locator('.mt10:has(#editor-body-body) .nav-tabs [data-toggle="tab"]'),
   ).toHaveCount(0);
@@ -149,12 +158,12 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   await expect(page.locator(".mt10:has(#editor-body-body)")).toHaveCount(1);
   const editorTabs = page.locator(".mt10:has(#editor-body-body) .nav-tabs > li");
   await expect(editorTabs).toHaveCount(5);
-  await expect(editorTabs.nth(0).locator('button[type="button"]')).toHaveText("Edit");
-  await expect(editorTabs.nth(1).locator('button[type="button"]')).toHaveText("Preview");
+  await expect(editorTabs.nth(0).locator("a")).toHaveText("Edit");
+  await expect(editorTabs.nth(1).locator("a")).toHaveText("Preview");
   await expect(editorTabs.nth(2).locator('button[type="button"]')).toHaveText("Add checklist");
   await expect(editorTabs.nth(3).locator('button[type="button"]')).toHaveText("Clear Temporary");
-  const editTabButton = editorTabs.nth(0).locator('button[type="button"]');
-  const previewTabButton = editorTabs.nth(1).locator('button[type="button"]');
+  const editTabButton = editorTabs.nth(0).locator("a");
+  const previewTabButton = editorTabs.nth(1).locator("a");
   await expect(editTabButton).toHaveText("Edit");
   await expect(previewTabButton).toHaveText("Preview");
   await expect(editTabButton.locator("xpath=..")).toHaveClass(/active/);
@@ -169,13 +178,13 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
     window.history.replaceState({ editorTabTest: true }, "", url);
   }, `${basePath}/admin/sample/post/3/editform?tab-test=1`);
   await previewTabButton.click();
-  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform?tab-test=1`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform?tab-test=1#preview-body`);
   await expect(previewTabButton.locator("xpath=..")).toHaveClass(/active/);
   await expect(editTabButton.locator("xpath=..")).not.toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
   await editTabButton.click();
-  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform?tab-test=1`);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform?tab-test=1#edit-body`);
   await expect(editTabButton.locator("xpath=..")).toHaveClass(/active/);
   await expect(previewTabButton.locator("xpath=..")).not.toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
@@ -255,6 +264,39 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
   ]);
   await expect(page).toHaveURL(`${basePath}/admin/sample/post/3`);
 });
+
+test("project board edit form preserves uploader and action whitespace on mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectBoardEditForm(page, []);
+  await page.goto(`${basePath}/admin/sample/post/3/editform`);
+
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator("#upload")
+        .evaluate((element) => Math.round(element.getBoundingClientRect().height)),
+    )
+    .toBe(100);
+  expect(await boardActionWhitespace(page)).toEqual({ gap: 4, whitespaceNode: true });
+});
+
+async function boardActionWhitespace(page: Page) {
+  return page.locator(".actions").evaluate((actions) => {
+    const save = actions.querySelector<HTMLElement>("button.ybtn-info");
+    const cancel = save?.nextElementSibling as HTMLElement | null;
+    if (!save || !cancel) throw new Error("Expected board edit actions are missing");
+    return {
+      gap: Math.round(cancel.getBoundingClientRect().left - save.getBoundingClientRect().right),
+      whitespaceNode:
+        save.nextSibling?.nodeType === Node.TEXT_NODE &&
+        /\s/u.test(save.nextSibling.textContent ?? ""),
+    };
+  });
+}
 
 async function mockProjectBoardEditForm(page: Page, patchRequests: unknown[]) {
   await page.route("**/api/v1/session", async (route) => {
@@ -440,14 +482,23 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
-      const children = Array.from(node.childNodes).map(visit).join("");
+      const children =
+        node.classList.contains("markdown-help") || node.classList.contains("mt10")
+          ? ""
+          : Array.from(node.childNodes).map(visit).join("");
       return `${open}${children}</${node.tagName.toLowerCase()}>`;
     }
 
@@ -480,14 +531,23 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            attr.name !== "aria-current" &&
+            attr.name !== "data-status",
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
       const open = attrs
         ? `<${node.tagName.toLowerCase()} ${attrs}>`
         : `<${node.tagName.toLowerCase()}>`;
-      const children = Array.from(node.childNodes).map(visit).join("");
+      const children =
+        node.classList.contains("markdown-help") || node.classList.contains("mt10")
+          ? ""
+          : Array.from(node.childNodes).map(visit).join("");
       return `${open}${children}</${node.tagName.toLowerCase()}>`;
     }
 

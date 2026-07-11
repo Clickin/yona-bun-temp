@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets positive tabindex values on the edit form controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import {
@@ -173,9 +173,11 @@ function ProjectBoardEditFormBody({
                   </span>
                 ) : null}
                 {canUpdate ? (
-                  <button tabIndex={3} className="ybtn ybtn-info">
-                    {t("button.save")}
-                  </button>
+                  <>
+                    <button tabIndex={3} className="ybtn ybtn-info">
+                      {t("button.save")}
+                    </button>{" "}
+                  </>
                 ) : null}
                 <HistoryBackLink>{t("button.cancel")}</HistoryBackLink>
               </div>
@@ -210,14 +212,24 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
     <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
+          <Link
+            to="."
+            search={(previous) => previous}
+            hash="edit-body"
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
-          </button>
+          </Link>
         </li>
         <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
+          <Link
+            to="."
+            search={(previous) => previous}
+            hash="preview-body"
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
-          </button>
+          </Link>
         </li>
         <li>
           <div className="task-list-button">
@@ -278,6 +290,11 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
 
 function BoardPostFileUploader({ resourceId }: { resourceId: string }) {
   const { t } = useLegacyMessages();
+  const pasteSupported =
+    typeof document !== "undefined" &&
+    "onpaste" in document &&
+    typeof FormData !== "undefined" &&
+    typeof FileReader !== "undefined";
   return (
     <div
       id="upload"
@@ -294,7 +311,12 @@ function BoardPostFileUploader({ resourceId }: { resourceId: string }) {
           </div>
         </div>
         <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+        <span
+          className="help help-pastable"
+          style={pasteSupported ? { display: "block" } : undefined}
+        >
+          {t("common.attach.pastehere")}
+        </span>
       </div>
       <ul className="attached-files unstyled"></ul>
       <p className="right-txt help">
